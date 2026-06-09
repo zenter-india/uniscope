@@ -1,0 +1,24 @@
+{
+  "name": "medconnect",
+  "version": "0.1.0",
+  "private": true,
+  "description": "MedConnect monorepo — connecting prospective medical students with verified mentors",
+  "workspaces": [
+    "mobile",
+    "backend",
+    "admin"
+  ],
+  "scripts": {
+    "dev:mobile": "npm run start --workspace=mobile",
+    "dev:backend": "npm run start:dev --workspace=backend",
+    "dev:admin": "npm run dev --workspace=admin",
+    "build": "npm run build --workspaces --if-present",
+    "lint": "npm run lint --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
+    "format": "prettier --write \"**/*.{ts,tsx,js,json,md}\" --ignore-path .gitignore"
+  },
+  "engines": {
+    "node": ">=20.0.0",
+    "npm": ">=10.0.0"
+  }
+}

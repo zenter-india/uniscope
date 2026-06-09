@@ -1,0 +1,21 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: medconnect-postgres
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: medconnect
+      POSTGRES_PASSWORD: medconnect
+      POSTGRES_DB: medconnect_dev
+    volumes:
+      - medconnect_pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U medconnect -d medconnect_dev"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  medconnect_pg_data:
