@@ -1,7 +1,8 @@
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
+  ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -12,17 +13,60 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { updateProfile } from '../../api/users';
 import { colors, fontSize, fontWeight, radius, spacing } from '../../constants/theme';
+import { useAuthStore } from '../../store/useAuthStore';
 import type { AuthStackParamList } from '../../types/navigation';
 
 type Nav = NativeStackNavigationProp<AuthStackParamList, 'ProfileSetup'>;
 
 export function ProfileSetupScreen() {
   const navigation = useNavigation<Nav>();
+  const currentUser = useAuthStore((s) => s.user);
+  const setUser = useAuthStore((s) => s.setUser);
+  const setAuth = useAuthStore((s) => s.setAuth);
+  const accessToken = useAuthStore((s) => s.accessToken);
+  const refreshToken = useAuthStore((s) => s.refreshToken);
+
   const [displayName, setDisplayName] = useState('');
-  const [university, setUniversity] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    if (currentUser?.displayName) {
+      setDisplayName(currentUser.displayName);
+    }
+  }, [currentUser?.displayName]);
 
   const isValid = displayName.trim().length >= 2;
+
+  const handleFinish = async () => {
+    if (!isValid || loading) return;
+    setLoading(true);
+    setError('');
+
+    try {
+      const updated = await updateProfile({ displayName: displayName.trim() });
+      if (currentUser && accessToken && refreshToken) {
+        setAuth(accessToken, refreshToken, {
+          id: updated.id,
+          role: updated.role,
+          displayName: updated.displayName,
+        });
+      }
+      // RootNavigator will switch to Main tab once isAuthenticated is true
+    } catch {
+      setError('Failed to save profile. Please try again.');
+      setLoading(false);
+    }
+  };
+
+  const handleSkip = () => {
+    // Already authenticated — RootNavigator will navigate to Main
+    if (currentUser && accessToken && refreshToken) {
+      setAuth(accessToken, refreshToken, currentUser);
+    }
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -41,60 +85,59 @@ export function ProfileSetupScreen() {
             </Text>
           </View>
 
-          {/* Avatar placeholder */}
-          <TouchableOpacity style={styles.avatar}>
-            <Text style={styles.avatarText}>📷</Text>
-            <Text style={styles.avatarLabel}>Add photo</Text>
-          </TouchableOpacity>
+          <View style={styles.avatarContainer}>
+            <View style={styles.avatar}>
+              <Text style={styles.avatarText}>📷</Text>
+              <Text style={styles.avatarLabel}>Add photo</Text>
+            </View>
+          </View>
 
           <View style={styles.fields}>
             <View style={styles.field}>
               <Text style={styles.label}>Display name *</Text>
               <TextInput
-                style={styles.input}
+                style={[styles.input, error ? styles.inputError : null]}
                 placeholder="e.g. MedStudent_Chennai"
                 placeholderTextColor={colors.text.muted}
                 value={displayName}
-                onChangeText={setDisplayName}
+                onChangeText={(t) => {
+                  setDisplayName(t);
+                  if (error) setError('');
+                }}
                 maxLength={60}
                 autoFocus
+                editable={!loading}
               />
               <Text style={styles.hint}>
                 This is your public pseudonym — not your real name.
               </Text>
             </View>
-
-            <View style={styles.field}>
-              <Text style={styles.label}>University (optional)</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="Search your college..."
-                placeholderTextColor={colors.text.muted}
-                value={university}
-                onChangeText={setUniversity}
-              />
-            </View>
           </View>
+
+          {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
           <View style={styles.privacyNote}>
             <Text style={styles.privacyIcon}>🔒</Text>
             <Text style={styles.privacyText}>
-              Your real identity is never shared publicly. Verify your student status to unlock all features.
+              Your real identity is never shared publicly. Verify your student
+              status to unlock all features.
             </Text>
           </View>
 
           <TouchableOpacity
-            style={[styles.button, !isValid && styles.buttonDisabled]}
-            disabled={!isValid}
-            onPress={() => {
-              // Sprint 1: dispatch to auth store, navigate to Main
-            }}
+            style={[styles.button, (!isValid || loading) && styles.buttonDisabled]}
+            disabled={!isValid || loading}
+            onPress={handleFinish}
             activeOpacity={0.85}
           >
-            <Text style={styles.buttonText}>Finish Setup</Text>
+            {loading ? (
+              <ActivityIndicator color={colors.text.inverse} size="small" />
+            ) : (
+              <Text style={styles.buttonText}>Finish Setup</Text>
+            )}
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.skip}>
+          <TouchableOpacity style={styles.skip} onPress={handleSkip} disabled={loading}>
             <Text style={styles.skipText}>Skip for now</Text>
           </TouchableOpacity>
         </ScrollView>
@@ -127,8 +170,10 @@ const styles = StyleSheet.create({
     color: colors.text.secondary,
     lineHeight: 24,
   },
+  avatarContainer: {
+    alignItems: 'center',
+  },
   avatar: {
-    alignSelf: 'center',
     width: 88,
     height: 88,
     borderRadius: radius.full,
@@ -167,9 +212,17 @@ const styles = StyleSheet.create({
     color: colors.text.primary,
     backgroundColor: colors.background,
   },
+  inputError: {
+    borderColor: colors.status.error,
+  },
   hint: {
     fontSize: fontSize.xs,
     color: colors.text.muted,
+  },
+  errorText: {
+    fontSize: fontSize.sm,
+    color: colors.status.error,
+    textAlign: 'center',
   },
   privacyNote: {
     flexDirection: 'row',
@@ -191,6 +244,8 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.md,
     borderRadius: radius.md,
     alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 50,
   },
   buttonDisabled: {
     backgroundColor: colors.border,

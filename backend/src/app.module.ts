@@ -19,6 +19,10 @@ import {
 // Infrastructure
 import { SupabaseModule } from './supabase/index.js';
 import { FirebaseModule } from './firebase/index.js';
+import { RedisModule } from './redis/index.js';
+
+// Auth
+import { AuthModule } from './auth/auth.module.js';
 
 // Domain modules
 import { UsersModule } from './modules/users/users.module.js';
@@ -44,6 +48,10 @@ import { NotificationsModule } from './modules/notifications/notifications.modul
     PrismaModule,
     SupabaseModule,
     FirebaseModule,
+    RedisModule,
+
+    // Auth
+    AuthModule,
 
     // Feature modules
     HealthModule,

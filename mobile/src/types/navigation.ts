@@ -4,7 +4,7 @@ import type { NavigatorScreenParams } from '@react-navigation/native';
 export type AuthStackParamList = {
   Welcome: undefined;
   Login: undefined;
-  OTP: { phone: string };
+  OTP: { phone: string; requestId: string };
   RoleSelection: undefined;
   ProfileSetup: undefined;
 };

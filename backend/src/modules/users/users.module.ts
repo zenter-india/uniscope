@@ -1,15 +1,12 @@
 import { Module } from '@nestjs/common';
 import { PrismaModule } from '../../database/prisma/prisma.module.js';
+import { UsersController } from './users.controller.js';
+import { UsersService } from './users.service.js';
 
-/**
- * UsersModule owns all user-related domain logic:
- * user profile management, role transitions, account settings,
- * and soft-delete / account closure workflows.
- */
 @Module({
   imports: [PrismaModule],
-  controllers: [], // Sprint 1: add UsersController
-  providers: [], // Sprint 1: add UsersService
-  exports: [],
+  controllers: [UsersController],
+  providers: [UsersService],
+  exports: [UsersService],
 })
 export class UsersModule {}

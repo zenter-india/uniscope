@@ -3,6 +3,7 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RouteProp } from '@react-navigation/native';
 import { useEffect, useRef, useState } from 'react';
 import {
+  ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
   StyleSheet,
@@ -12,23 +13,29 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { requestOtp, verifyOtp } from '../../api/auth';
 import { colors, fontSize, fontWeight, radius, spacing } from '../../constants/theme';
+import { useAuthStore } from '../../store/useAuthStore';
 import type { AuthStackParamList } from '../../types/navigation';
 
 type Nav = NativeStackNavigationProp<AuthStackParamList, 'OTP'>;
 type Route = RouteProp<AuthStackParamList, 'OTP'>;
 
 const OTP_LENGTH = 6;
-const RESEND_COOLDOWN = 30;
+const RESEND_COOLDOWN = 60;
 
 export function OTPScreen() {
   const navigation = useNavigation<Nav>();
   const route = useRoute<Route>();
-  const { phone } = route.params;
+  const { phone, requestId: initialRequestId } = route.params;
+
+  const setAuth = useAuthStore((s) => s.setAuth);
 
   const [otp, setOtp] = useState('');
   const [countdown, setCountdown] = useState(RESEND_COOLDOWN);
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [currentRequestId, setCurrentRequestId] = useState(initialRequestId);
   const inputRef = useRef<TextInput>(null);
 
   useEffect(() => {
@@ -46,16 +53,49 @@ export function OTPScreen() {
     }
   };
 
-  const handleVerify = (code: string) => {
-    // Placeholder: navigate forward (Sprint 1 will call API)
-    navigation.navigate('RoleSelection');
+  const handleVerify = async (code: string) => {
+    if (loading) return;
+    setLoading(true);
+    setError('');
+
+    try {
+      const result = await verifyOtp(currentRequestId, code);
+      setAuth(result.accessToken, result.refreshToken, {
+        id: result.user.id,
+        role: result.user.role,
+        displayName: result.user.displayName,
+      });
+
+      if (result.user.isNewUser) {
+        navigation.navigate('RoleSelection');
+      } else {
+        // Navigate to main app — handled by RootNavigator reacting to isAuthenticated
+        navigation.navigate('ProfileSetup');
+      }
+    } catch {
+      setError('Incorrect or expired code. Please try again.');
+      setOtp('');
+      inputRef.current?.focus();
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleResend = () => {
+  const handleResend = async () => {
     setOtp('');
     setError('');
-    setCountdown(RESEND_COOLDOWN);
-    inputRef.current?.focus();
+    setLoading(true);
+
+    try {
+      const { requestId } = await requestOtp(phone);
+      setCurrentRequestId(requestId);
+      setCountdown(RESEND_COOLDOWN);
+      inputRef.current?.focus();
+    } catch {
+      setError('Failed to resend OTP. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const maskedPhone = phone.replace(/(\+91)(\d{3})(\d{3})(\d{4})/, '$1 $2 *** $4');
@@ -74,7 +114,6 @@ export function OTPScreen() {
           </Text>
         </View>
 
-        {/* OTP digit display */}
         <TouchableOpacity
           style={styles.otpContainer}
           onPress={() => inputRef.current?.focus()}
@@ -85,8 +124,8 @@ export function OTPScreen() {
               key={i}
               style={[
                 styles.otpCell,
-                otp.length === i && styles.otpCellActive,
-                error && styles.otpCellError,
+                otp.length === i && !loading && styles.otpCellActive,
+                !!error && styles.otpCellError,
               ]}
             >
               <Text style={styles.otpDigit}>{otp[i] ?? ''}</Text>
@@ -94,7 +133,6 @@ export function OTPScreen() {
           ))}
         </TouchableOpacity>
 
-        {/* Hidden real input */}
         <TextInput
           ref={inputRef}
           style={styles.hiddenInput}
@@ -103,25 +141,34 @@ export function OTPScreen() {
           keyboardType="number-pad"
           maxLength={OTP_LENGTH}
           autoFocus
+          editable={!loading}
         />
+
+        {loading && (
+          <ActivityIndicator color={colors.primary} size="small" style={styles.loader} />
+        )}
 
         {error ? <Text style={styles.error}>{error}</Text> : null}
 
         <TouchableOpacity
           onPress={handleResend}
-          disabled={countdown > 0}
+          disabled={countdown > 0 || loading}
           style={styles.resendRow}
         >
-          <Text style={styles.resendText}>
-            {countdown > 0
-              ? `Resend code in ${countdown}s`
-              : 'Resend code'}
+          <Text
+            style={[
+              styles.resendText,
+              (countdown > 0 || loading) && styles.resendDisabled,
+            ]}
+          >
+            {countdown > 0 ? `Resend code in ${countdown}s` : 'Resend code'}
           </Text>
         </TouchableOpacity>
 
         <TouchableOpacity
           style={styles.changeNumber}
           onPress={() => navigation.goBack()}
+          disabled={loading}
         >
           <Text style={styles.changeNumberText}>Change number</Text>
         </TouchableOpacity>
@@ -196,6 +243,9 @@ const styles = StyleSheet.create({
     width: 1,
     height: 1,
   },
+  loader: {
+    marginTop: -spacing.sm,
+  },
   error: {
     fontSize: fontSize.sm,
     color: colors.status.error,
@@ -208,6 +258,9 @@ const styles = StyleSheet.create({
     fontSize: fontSize.md,
     color: colors.primary,
     fontWeight: fontWeight.medium,
+  },
+  resendDisabled: {
+    color: colors.text.muted,
   },
   changeNumber: {
     paddingVertical: spacing.sm,

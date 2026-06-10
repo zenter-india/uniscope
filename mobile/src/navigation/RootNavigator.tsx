@@ -1,20 +1,28 @@
+import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { AdminNavigator } from './AdminNavigator';
 import { AuthNavigator } from './AuthNavigator';
 import { MainTabNavigator } from './MainTabNavigator';
+import { useAuthStore } from '../store/useAuthStore';
+import { colors } from '../constants/theme';
 import type { RootStackParamList } from '../types/navigation';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
-/**
- * RootNavigator switches between Auth, Main app, and Admin portal.
- * In Sprint 1, replace the initial route with an auth-gate that checks
- * the stored JWT and routes accordingly.
- */
 export function RootNavigator() {
-  // TODO Sprint 1: replace 'Auth' with dynamic initial route based on auth state
-  const isAuthenticated = false;
-  const isAdmin = false;
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const isHydrated = useAuthStore((s) => s.isHydrated);
+  const user = useAuthStore((s) => s.user);
+
+  const isAdmin = user?.role === 'ADMIN';
+
+  if (!isHydrated) {
+    return (
+      <View style={styles.loading}>
+        <ActivityIndicator size="large" color={colors.primary} />
+      </View>
+    );
+  }
 
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
@@ -32,3 +40,12 @@ export function RootNavigator() {
     </Stack.Navigator>
   );
 }
+
+const styles = StyleSheet.create({
+  loading: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.surface,
+  },
+});
