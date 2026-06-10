@@ -1,5 +1,12 @@
-// MedConnect — database schema foundation
-// Business models will be added in future sprints.
+// MedConnect — Production Prisma Schema
+// M1: Core Infrastructure & Data Layer
+//
+// Notes:
+//   • PKs use uuid() — optimal for Supabase/PostgreSQL.
+//   • datasource has no `url` field; Prisma 7 reads it from prisma.config.ts.
+//   • searchVector (tsvector) fields are marked Unsupported — a raw SQL migration
+//     creates the GENERATED ALWAYS AS STORED column and GIN indexes.
+//   • All table/column names follow snake_case PostgreSQL convention via @@map / @map.
 
 generator client {
   provider = "prisma-client-js"
@@ -7,4 +14,438 @@ generator client {
 
 datasource db {
   provider = "postgresql"
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Enums
+// ─────────────────────────────────────────────────────────────────────────────
+
+enum UserRole {
+  PROSPECTIVE_STUDENT
+  CURRENT_STUDENT
+  ALUMNI
+  ADMIN
+}
+
+enum VerificationStatus {
+  DRAFT
+  SUBMITTED
+  UNDER_REVIEW
+  VERIFIED
+  REJECTED
+  SUSPENDED
+}
+
+enum UniversityType {
+  GOVERNMENT
+  PRIVATE
+  DEEMED
+  CENTRAL
+}
+
+enum DocumentType {
+  STUDENT_ID
+  STUDENT_PORTAL_SCREENSHOT
+  DEGREE_CERTIFICATE
+  NMC_REGISTRATION
+}
+
+enum QuestionStatus {
+  ACTIVE
+  CLOSED
+  ARCHIVED
+}
+
+enum ReviewStatus {
+  ACTIVE
+  HIDDEN
+  REMOVED
+}
+
+enum ChatRoomStatus {
+  ACTIVE
+  CLOSED
+  BLOCKED
+}
+
+enum ChatRoomType {
+  DIRECT
+  UNIVERSITY
+}
+
+enum MessageType {
+  TEXT
+  SYSTEM
+}
+
+enum MediaType {
+  IMAGE
+  FILE
+}
+
+enum NotificationType {
+  MESSAGE
+  ANSWER
+  REVIEW
+  VERIFICATION
+  SYSTEM
+}
+
+enum ReportTargetType {
+  QUESTION
+  ANSWER
+  REVIEW
+  MESSAGE
+  USER
+}
+
+enum ReportReason {
+  SPAM
+  MISINFORMATION
+  HARASSMENT
+  IMPERSONATION
+  INAPPROPRIATE
+  OTHER
+}
+
+enum ReportStatus {
+  OPEN
+  UNDER_REVIEW
+  RESOLVED
+  DISMISSED
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Models
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// Central identity record. One record per phone number.
+/// Phone stored as bcrypt hash — never plaintext.
+model User {
+  id                   String             @id @default(uuid())
+  phoneHash            String             @unique @db.VarChar(128) @map("phone_hash")
+  displayName          String             @db.VarChar(60) @map("display_name")
+  role                 UserRole
+  verificationStatus   VerificationStatus @default(DRAFT) @map("verification_status")
+  isActive             Boolean            @default(true) @map("is_active")
+  isBanned             Boolean            @default(false) @map("is_banned")
+  refreshTokenHash     String?            @db.VarChar(256) @map("refresh_token_hash")
+  lastActiveAt         DateTime?          @map("last_active_at") @db.Timestamptz
+  createdAt            DateTime           @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt            DateTime           @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt            DateTime?          @map("deleted_at") @db.Timestamptz
+
+  // Relations
+  profile                   UserProfile?
+  verificationRequests      VerificationRequest[]  @relation("UserVerificationRequests")
+  reviewedRequests          VerificationRequest[]  @relation("ReviewerVerificationRequests")
+  questions                 Question[]
+  answers                   Answer[]
+  answerVotes               AnswerVote[]
+  reviews                   Review[]
+  initiatedChatRooms        ChatRoom[]             @relation("InitiatorChatRooms")
+  mentorChatRooms           ChatRoom[]             @relation("MentorChatRooms")
+  messages                  Message[]
+  sentReports               Report[]               @relation("ReporterReports")
+  actionedReports           Report[]               @relation("ActionedByReports")
+  notifications             Notification[]
+
+  @@index([role])
+  @@index([verificationStatus])
+  @@index([createdAt])
+  @@map("users")
+}
+
+/// Extended profile data — one-to-one with User.
+/// Sensitive fields (real name) stored AES-256-GCM encrypted.
+model UserProfile {
+  id                String      @id @default(uuid())
+  userId            String      @unique @map("user_id")
+  realNameEncrypted String?     @db.Text @map("real_name_encrypted")
+  universityId      String?     @map("university_id")
+  graduationYear    Int?        @db.SmallInt @map("graduation_year")
+  yearOfStudy       Int?        @db.SmallInt @map("year_of_study")
+  specialty         String?     @db.VarChar(100)
+  bio               String?     @db.VarChar(500)
+  avatarKey         String?     @db.VarChar(500) @map("avatar_key")
+  isMentorAvailable Boolean     @default(false) @map("is_mentor_available")
+  createdAt         DateTime    @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt         DateTime    @updatedAt @map("updated_at") @db.Timestamptz
+
+  user              User        @relation(fields: [userId], references: [id])
+  university        University? @relation(fields: [universityId], references: [id])
+
+  @@index([universityId])
+  @@index([isMentorAvailable, universityId])
+  @@map("user_profiles")
+}
+
+/// Master data for medical institutions. Admin-managed.
+model University {
+  id              String         @id @default(uuid())
+  name            String         @db.VarChar(200)
+  slug            String         @unique @db.VarChar(200)
+  type            UniversityType
+  state           String         @db.VarChar(100)
+  city            String         @db.VarChar(100)
+  nirfRank        Int?           @db.SmallInt @map("nirf_rank")
+  mbbsSeats       Int?           @db.SmallInt @map("mbbs_seats")
+  establishedYear Int?           @db.SmallInt @map("established_year")
+  website         String?        @db.VarChar(300)
+  description     String?        @db.Text
+  isActive        Boolean        @default(true) @map("is_active")
+  /// Full-text search vector — populated via SQL migration trigger on name/state/city
+  searchVector    Unsupported("tsvector")? @map("search_vector")
+  createdAt       DateTime       @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt       DateTime       @updatedAt @map("updated_at") @db.Timestamptz
+
+  profiles             UserProfile[]
+  programs             Program[]
+  verificationRequests VerificationRequest[]
+  questions            Question[]
+  reviews              Review[]
+  chatRooms            ChatRoom[]
+
+  @@index([state])
+  @@index([type])
+  @@index([nirfRank])
+  @@map("universities")
+}
+
+/// Degree programs offered at a university (e.g. MBBS, MD, MS, DNB).
+model Program {
+  id            String     @id @default(uuid())
+  universityId  String     @map("university_id")
+  name          String     @db.VarChar(100)
+  description   String?    @db.Text
+  durationYears Int?       @db.SmallInt @map("duration_years")
+  totalSeats    Int?       @db.SmallInt @map("total_seats")
+  isActive      Boolean    @default(true) @map("is_active")
+  createdAt     DateTime   @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt     DateTime   @updatedAt @map("updated_at") @db.Timestamptz
+
+  university    University @relation(fields: [universityId], references: [id])
+
+  @@unique([universityId, name])
+  @@index([universityId])
+  @@map("programs")
+}
+
+/// Mentor identity verification submission.
+/// One submission per user per document type; admin reviews before granting VERIFIED status.
+model VerificationRequest {
+  id           String             @id @default(uuid())
+  userId       String             @map("user_id")
+  universityId String             @map("university_id")
+  documentType DocumentType       @map("document_type")
+  documentKey  String             @db.VarChar(500) @map("document_key")
+  status       VerificationStatus @default(DRAFT)
+  reviewedBy   String?            @map("reviewed_by")
+  reviewNote   String?            @db.VarChar(500) @map("review_note")
+  submittedAt  DateTime?          @map("submitted_at") @db.Timestamptz
+  reviewedAt   DateTime?          @map("reviewed_at") @db.Timestamptz
+  createdAt    DateTime           @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt    DateTime           @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt    DateTime?          @map("deleted_at") @db.Timestamptz
+
+  user         User               @relation("UserVerificationRequests", fields: [userId], references: [id])
+  university   University         @relation(fields: [universityId], references: [id])
+  reviewer     User?              @relation("ReviewerVerificationRequests", fields: [reviewedBy], references: [id])
+
+  @@index([userId])
+  @@index([status, submittedAt])
+  @@index([reviewedBy])
+  @@map("verification_requests")
+}
+
+/// Question posted by a prospective student, tagged to a university.
+model Question {
+  id           String         @id @default(uuid())
+  authorId     String         @map("author_id")
+  universityId String         @map("university_id")
+  title        String         @db.VarChar(300)
+  body         String?        @db.Text
+  tags         String[]       @default([])
+  status       QuestionStatus @default(ACTIVE)
+  viewCount    Int            @default(0) @map("view_count")
+  answerCount  Int            @default(0) @map("answer_count")
+  isPinned     Boolean        @default(false) @map("is_pinned")
+  isLocked     Boolean        @default(false) @map("is_locked")
+  /// Full-text search vector — populated via SQL migration trigger on title/body
+  searchVector Unsupported("tsvector")? @map("search_vector")
+  createdAt    DateTime       @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt    DateTime       @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt    DateTime?      @map("deleted_at") @db.Timestamptz
+
+  author       User           @relation(fields: [authorId], references: [id])
+  university   University     @relation(fields: [universityId], references: [id])
+  answers      Answer[]
+
+  @@index([universityId, createdAt(sort: Desc)])
+  @@index([authorId])
+  @@map("questions")
+}
+
+/// Response to a Question by a verified student or alumni.
+model Answer {
+  id           String    @id @default(uuid())
+  questionId   String    @map("question_id")
+  authorId     String    @map("author_id")
+  body         String    @db.Text
+  upvoteCount  Int       @default(0) @map("upvote_count")
+  isAccepted   Boolean   @default(false) @map("is_accepted")
+  /// Full-text search vector — populated via SQL migration trigger on body
+  searchVector Unsupported("tsvector")? @map("search_vector")
+  createdAt    DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt    DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt    DateTime? @map("deleted_at") @db.Timestamptz
+
+  question     Question    @relation(fields: [questionId], references: [id])
+  author       User        @relation(fields: [authorId], references: [id])
+  votes        AnswerVote[]
+
+  @@unique([questionId, authorId])
+  @@index([questionId, upvoteCount(sort: Desc)])
+  @@index([questionId, createdAt(sort: Asc)])
+  @@index([authorId])
+  @@map("answers")
+}
+
+/// Upvote on an Answer. One vote per user per answer; no soft delete.
+model AnswerVote {
+  id        String   @id @default(uuid())
+  answerId  String   @map("answer_id")
+  userId    String   @map("user_id")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  answer    Answer   @relation(fields: [answerId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@unique([answerId, userId])
+  @@index([userId])
+  @@map("answer_votes")
+}
+
+/// Multi-dimensional university review by a verified student or alumni.
+model Review {
+  id                     String       @id @default(uuid())
+  authorId               String       @map("author_id")
+  universityId           String       @map("university_id")
+  status                 ReviewStatus @default(ACTIVE)
+  overallRating          Int          @db.SmallInt @map("overall_rating")
+  facultyRating          Int?         @db.SmallInt @map("faculty_rating")
+  infrastructureRating   Int?         @db.SmallInt @map("infrastructure_rating")
+  clinicalExposureRating Int?         @db.SmallInt @map("clinical_exposure_rating")
+  campusLifeRating       Int?         @db.SmallInt @map("campus_life_rating")
+  placementsRating       Int?         @db.SmallInt @map("placements_rating")
+  pros                   String?      @db.Text
+  cons                   String?      @db.Text
+  body                   String?      @db.Text
+  helpfulCount           Int          @default(0) @map("helpful_count")
+  /// Full-text search vector — populated via SQL migration trigger on pros/cons/body
+  searchVector           Unsupported("tsvector")? @map("search_vector")
+  createdAt              DateTime     @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt              DateTime     @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt              DateTime?    @map("deleted_at") @db.Timestamptz
+
+  author                 User         @relation(fields: [authorId], references: [id])
+  university             University   @relation(fields: [universityId], references: [id])
+
+  @@unique([authorId, universityId])
+  @@index([universityId, createdAt(sort: Desc)])
+  @@index([universityId, overallRating(sort: Desc)])
+  @@index([authorId])
+  @@map("reviews")
+}
+
+/// 1:1 conversation between a prospective student and a verified mentor.
+model ChatRoom {
+  id            String         @id @default(uuid())
+  initiatorId   String         @map("initiator_id")
+  mentorId      String         @map("mentor_id")
+  universityId  String?        @map("university_id")
+  type          ChatRoomType   @default(DIRECT)
+  status        ChatRoomStatus @default(ACTIVE)
+  lastMessageAt DateTime?      @map("last_message_at") @db.Timestamptz
+  createdAt     DateTime       @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt     DateTime       @updatedAt @map("updated_at") @db.Timestamptz
+
+  initiator     User           @relation("InitiatorChatRooms", fields: [initiatorId], references: [id])
+  mentor        User           @relation("MentorChatRooms", fields: [mentorId], references: [id])
+  university    University?    @relation(fields: [universityId], references: [id])
+  messages      Message[]
+
+  @@unique([initiatorId, mentorId])
+  @@index([initiatorId, lastMessageAt(sort: Desc)])
+  @@index([mentorId, lastMessageAt(sort: Desc)])
+  @@index([status])
+  @@map("chat_rooms")
+}
+
+/// Individual message within a ChatRoom. Soft-deleted for "unsend" feature.
+model Message {
+  id        String      @id @default(uuid())
+  roomId    String      @map("room_id")
+  senderId  String      @map("sender_id")
+  type      MessageType @default(TEXT)
+  body      String?     @db.Text
+  mediaKey  String?     @db.VarChar(500) @map("media_key")
+  mediaType MediaType?  @map("media_type")
+  isRead    Boolean     @default(false) @map("is_read")
+  readAt    DateTime?   @map("read_at") @db.Timestamptz
+  createdAt DateTime    @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime    @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt DateTime?   @map("deleted_at") @db.Timestamptz
+
+  room      ChatRoom    @relation(fields: [roomId], references: [id])
+  sender    User        @relation(fields: [senderId], references: [id])
+
+  @@index([roomId, createdAt(sort: Asc)])
+  @@index([senderId])
+  @@map("messages")
+}
+
+/// User-submitted flag on any content. Polymorphic via targetType + targetId.
+model Report {
+  id           String           @id @default(uuid())
+  reporterId   String           @map("reporter_id")
+  targetType   ReportTargetType @map("target_type")
+  targetId     String           @map("target_id")
+  reason       ReportReason
+  description  String?          @db.VarChar(500)
+  status       ReportStatus     @default(OPEN)
+  actionedBy   String?          @map("actioned_by")
+  resolution   String?          @db.VarChar(500)
+  createdAt    DateTime         @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt    DateTime         @updatedAt @map("updated_at") @db.Timestamptz
+
+  reporter     User             @relation("ReporterReports", fields: [reporterId], references: [id])
+  actionedByUser User?          @relation("ActionedByReports", fields: [actionedBy], references: [id])
+
+  @@index([status, createdAt(sort: Desc)])
+  @@index([reporterId])
+  @@index([targetType, targetId])
+  @@index([actionedBy])
+  @@map("reports")
+}
+
+/// In-app notification record linked to a user.
+model Notification {
+  id        String           @id @default(uuid())
+  userId    String           @map("user_id")
+  type      NotificationType
+  title     String           @db.VarChar(200)
+  body      String?          @db.Text
+  isRead    Boolean          @default(false) @map("is_read")
+  readAt    DateTime?        @map("read_at") @db.Timestamptz
+  metadata  Json?
+  createdAt DateTime         @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime         @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt DateTime?        @map("deleted_at") @db.Timestamptz
+
+  user      User             @relation(fields: [userId], references: [id])
+
+  @@index([userId, createdAt(sort: Desc)])
+  @@index([userId, isRead])
+  @@map("notifications")
 }
