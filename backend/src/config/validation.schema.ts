@@ -15,14 +15,15 @@ export const validationSchema = Joi.object({
   // Database
   DATABASE_URL: Joi.string().uri().required(),
 
-  // Supabase
-  SUPABASE_URL: Joi.string().uri().required(),
-  SUPABASE_ANON_KEY: Joi.string().required(),
-  SUPABASE_SERVICE_ROLE_KEY: Joi.string().required(),
+  // Supabase (required in production; placeholder allowed in local dev)
+  SUPABASE_URL: Joi.string().default('https://placeholder.supabase.co'),
+  SUPABASE_ANON_KEY: Joi.string().default('placeholder-anon-key'),
+  SUPABASE_SERVICE_ROLE_KEY: Joi.string().default('placeholder-service-role-key'),
 
-  // Firebase
-  FIREBASE_PROJECT_ID: Joi.string().required(),
+  // Firebase (optional in local dev — set FIREBASE_DISABLED=true to skip)
+  FIREBASE_PROJECT_ID: Joi.string().default('medconnect-local'),
   FIREBASE_SERVICE_ACCOUNT_KEY_PATH: Joi.string().default('./firebase-service-account.json'),
+  FIREBASE_DISABLED: Joi.string().valid('true', 'false').default('false'),
 
   // JWT (Sprint 1)
   JWT_ACCESS_SECRET: Joi.string().min(16).required(),
