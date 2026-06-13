@@ -1,23 +1,27 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
+import { createHash } from 'crypto';
 import { UsersService } from '../modules/users/users.service.js';
-import { OtpService } from './otp.service.js';
+import { MockOtpProvider } from './otp/mock-otp.provider.js';
+import { OTP_PROVIDER } from './otp/otp-provider.interface.js';
+import type { OtpProvider } from './otp/otp-provider.interface.js';
 import { TokenService } from './token.service.js';
 
 @Injectable()
 export class AuthService {
   constructor(
-    private readonly otpService: OtpService,
+    @Inject(OTP_PROVIDER) private readonly otpProvider: OtpProvider,
     private readonly tokenService: TokenService,
     private readonly usersService: UsersService,
   ) {}
 
-  async requestOtp(phone: string): Promise<{ requestId: string }> {
-    return this.otpService.requestOtp(phone);
+  async requestOtp(phone: string): Promise<{ serviceId: string }> {
+    return this.otpProvider.sendOtp(phone);
   }
 
   async verifyOtp(
-    requestId: string,
-    otp: string,
+    serviceId: string,
+    phone: string,
+    code: string,
   ): Promise<{
     accessToken: string;
     refreshToken: string;
@@ -28,7 +32,23 @@ export class AuthService {
       isNewUser: boolean;
     };
   }> {
-    const { phoneHash } = await this.otpService.verifyOtp(requestId, otp);
+    await this.otpProvider.verifyOtp(phone, code, serviceId);
+
+    // Derive phone hash to look up / create the user.
+    // MockOtpProvider stores the hash; for Twilio we compute it here from the
+    // verified phone number (Twilio handles the OTP truth — we just hash phone).
+    let phoneHash: string;
+
+    if (this.otpProvider instanceof MockOtpProvider) {
+      phoneHash = this.otpProvider.sha256Public(
+        this.otpProvider.normalisePhonePublic(phone),
+      );
+    } else {
+      phoneHash = createHash('sha256')
+        .update(phone.replace(/\s+/g, '').trim())
+        .digest('hex');
+    }
+
     const { user, isNewUser } =
       await this.usersService.findOrCreateByPhoneHash(phoneHash);
 

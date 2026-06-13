@@ -1,15 +1,17 @@
 # MedConnect — System Architecture v1
 
-**Version:** 1.0  
-**Status:** Draft  
-**Date:** 2026-06-09  
+**Version:** 1.1  
+**Status:** Active  
+**Date:** 2026-06-14  
 **Owner:** Engineering
 
 ---
 
 ## 1. Architecture Overview
 
-MedConnect is a mobile-first platform with a monolithic NestJS backend, PostgreSQL persistence, and a Next.js admin portal. The architecture is deliberately simple for the MVP — optimised for team velocity over horizontal scalability — with clear seams to evolve toward microservices or service extraction when warranted by growth.
+MedConnect is a mobile-first platform with a monolithic NestJS backend, Supabase PostgreSQL persistence, and a Next.js admin portal. The architecture is deliberately simple for the MVP — optimised for team velocity over horizontal scalability — with clear seams to evolve toward microservices or service extraction when warranted by growth.
+
+All infrastructure is **cloud-first**: no local services are required for development. See [docs/infrastructure/cloud-services.md](../infrastructure/cloud-services.md) for details.
 
 ```mermaid
 flowchart TB
@@ -18,8 +20,9 @@ flowchart TB
         AdminPortal["Admin Portal\n(Next.js)"]
     end
 
-    subgraph cdn [Edge / CDN]
-        CDN["CDN\n(Static assets, media)"]
+    subgraph hosting [Hosting]
+        Render["Render\n(Backend API)"]
+        EAS["Expo EAS Build\n(iOS / Android)"]
     end
 
     subgraph api [API Layer]
@@ -28,7 +31,7 @@ flowchart TB
     end
 
     subgraph services [Service Layer — NestJS Modules]
-        AuthSvc["Auth Service\n(OTP, JWT)"]
+        AuthSvc["Auth Service\n(Twilio OTP, JWT)"]
         UserSvc["User Service"]
         UnivSvc["University Service"]
         QASvc["Q&A Service"]
@@ -40,38 +43,39 @@ flowchart TB
         StorageSvc["Storage Service"]
     end
 
-    subgraph data [Data Layer]
-        PG[("PostgreSQL\n(Primary)")]
-        Redis[("Redis\n(Sessions, OTP, Presence)")]
-        ObjectStore["Object Storage\n(S3-compatible)\nVerification docs\nProfile photos"]
+    subgraph cloud [Cloud Infrastructure]
+        Supabase[("Supabase PostgreSQL\n(Primary DB)")]
+        SupabaseStorage["Supabase Storage\n(Verification docs\nAvatars\nMedia)"]
+        Upstash[("Upstash Redis\n(Sessions, OTP, Presence)")]
     end
 
-    subgraph notifications [Notification Layer]
+    subgraph external [External Services]
+        Twilio["Twilio Verify\n(SMS OTP)"]
         FCM["Firebase Cloud Messaging\n(Push — Android)"]
         APNS["APNs\n(Push — iOS)"]
-        SMS["SMS Provider\n(OTP delivery)"]
     end
 
-    Mobile -->|HTTPS REST| Gateway
-    Mobile -->|WSS| WS
-    AdminPortal -->|HTTPS REST| Gateway
-    Mobile --> CDN
+    Mobile -->|HTTPS REST| Render
+    Mobile -->|WSS| Render
+    AdminPortal -->|HTTPS REST| Render
+    Render --> Gateway & WS
     Gateway --> AuthSvc & UserSvc & UnivSvc & QASvc & ReviewSvc & ChatSvc & VerifSvc & NotifSvc & ModerationSvc & StorageSvc
     WS --> ChatSvc & NotifSvc
-    AuthSvc --> Redis
-    AuthSvc --> SMS
-    ChatSvc --> PG & Redis
+    AuthSvc --> Upstash
+    AuthSvc --> Twilio
+    ChatSvc --> Supabase & Upstash
     NotifSvc --> FCM & APNS
-    UserSvc & UnivSvc & QASvc & ReviewSvc & VerifSvc & ModerationSvc --> PG
-    StorageSvc --> ObjectStore
-    VerifSvc --> ObjectStore
+    UserSvc & UnivSvc & QASvc & ReviewSvc & VerifSvc & ModerationSvc --> Supabase
+    StorageSvc --> SupabaseStorage
+    VerifSvc --> SupabaseStorage
 ```
 
 ---
 
 ## 2. Mobile Application
 
-**Technology:** React Native + Expo (TypeScript)
+**Technology:** React Native + Expo (TypeScript)  
+**Distribution:** Expo EAS Build → App Store / Play Store
 
 ### Responsibilities
 - Student and mentor-facing UI
@@ -120,7 +124,8 @@ mobile/src/
 
 ## 3. Backend API
 
-**Technology:** NestJS (TypeScript), strict mode
+**Technology:** NestJS (TypeScript), strict mode  
+**Hosting:** Render (auto-deploy from GitHub)
 
 ### REST API conventions
 
@@ -172,10 +177,17 @@ When concurrent chat and notifications load requires it:
 
 ---
 
-## 4. PostgreSQL
+## 4. Database: Supabase PostgreSQL
 
+**Provider:** Supabase  
 **Version:** PostgreSQL 16  
-**ORM:** Prisma 7
+**ORM:** Prisma 7  
+**Environments:** medconnect-dev, medconnect-qa, medconnect-prod
+
+### Connection configuration
+
+- `DATABASE_URL` — Supabase connection pooler (port 6543, pgBouncer) for runtime queries
+- `DIRECT_URL` — Direct connection (port 5432) for Prisma migrations
 
 ### Logical database layout
 
@@ -205,21 +217,22 @@ medconnect_db
 - Full-text search via PostgreSQL `tsvector` on questions, answers, reviews, university name/location
 - `pg_trgm` extension for similarity search (university autocomplete)
 - Partial indexes on `is_deleted = false` for soft-delete patterns
-- Connection pooling via PgBouncer in front of PostgreSQL in production
+- Connection pooling via Supabase's built-in pgBouncer
 
 ---
 
-## 5. Object Storage
+## 5. Object Storage: Supabase Storage
 
-**Provider:** S3-compatible (AWS S3 or Cloudflare R2)
+**Provider:** Supabase Storage
 
 ### Buckets
 
 | Bucket | Contents | Access | Retention |
 |--------|----------|--------|-----------|
-| `medconnect-verification-docs` | Student ID cards, degree certificates | Private — pre-signed URLs only | 7 years (compliance) |
-| `medconnect-profile-photos` | User avatars | Public CDN-served | Indefinite |
-| `medconnect-chat-media` | Images/files sent in chat | Private — pre-signed | 90 days |
+| `verification-docs` | Student ID cards, degree certificates | Private — pre-signed URLs only | 7 years (compliance) |
+| `avatars` | User profile photos | Public CDN-served | Indefinite |
+| `university-images` | University logos and photos | Public CDN-served | Indefinite |
+| `message-media` | Images/files sent in chat | Private — pre-signed | 90 days |
 
 ### Upload flow (verification documents)
 
@@ -227,13 +240,13 @@ medconnect_db
 sequenceDiagram
     participant App as Mobile App
     participant API as Backend API
-    participant S3 as Object Storage
+    participant Storage as Supabase Storage
     participant Admin as Admin Portal
 
     App->>API: POST /verification/upload-url (file type, size)
-    API->>S3: Generate pre-signed PUT URL (15 min TTL)
+    API->>Storage: Generate pre-signed PUT URL (15 min TTL)
     API-->>App: { uploadUrl, documentKey }
-    App->>S3: PUT file directly (no API in path)
+    App->>Storage: PUT file directly (no API in path)
     App->>API: POST /verification/submit { documentKey, type }
     API->>API: Record VerificationRequest in DB
     API-->>App: { status: PENDING }
@@ -279,10 +292,11 @@ flowchart LR
 
 ### OTP (SMS)
 
-- Provider: AWS SNS or Twilio (ADR required before Sprint 1)
+- **Provider:** Twilio Verify API v2
+- **Pattern:** Provider interface (`OtpProvider`) with `twilio` and `mock` implementations
 - OTP: 6-digit numeric, 10-minute TTL
-- Rate limit: 3 OTP requests per phone per 15 minutes
-- Stored in Redis (not PostgreSQL) with TTL
+- Rate limit: 5 OTP requests per phone per hour
+- `OTP_PROVIDER_TYPE=twilio` in production; `mock` for local development (stores in Redis)
 
 ---
 
@@ -320,45 +334,39 @@ admin/app/
 
 ---
 
-## 8. Infrastructure topology (production target)
+## 8. Infrastructure topology (production)
 
 ```mermaid
 flowchart TB
     subgraph internet [Internet]
-        MobileApp[Mobile App]
+        MobileApp[Mobile App\nExpo / EAS Build]
         Admins[Admin Browser]
     end
 
-    subgraph edge [Edge]
-        CF[Cloudflare\nDNS + WAF + CDN]
+    subgraph hosting [Hosting — Render]
+        API[NestJS API\nRender Web Service]
+        AdminApp[Admin Next.js\nRender Static / Serverless]
     end
 
-    subgraph compute [Compute — single region initially]
-        LB[Load Balancer]
-        API1[API Instance 1]
-        API2[API Instance 2]
-        AdminApp[Admin Next.js\nServerless]
+    subgraph supabase [Supabase]
+        PG[(PostgreSQL\nmedconnect-prod)]
+        SupaStorage[Supabase Storage\nverification-docs, avatars\nuniversity-images, message-media]
     end
 
-    subgraph data [Data]
-        PGPrimary[(PostgreSQL Primary)]
-        PGReplica[(PostgreSQL Replica\nread-only)]
-        RedisCluster[(Redis)]
-        S3[(Object Storage)]
+    subgraph upstash [Upstash]
+        Redis[(Redis\nTLS / serverless)]
     end
 
     subgraph external [External Services]
-        SMS[SMS Provider]
-        FCM_APNS[FCM / APNs]
+        Twilio[Twilio Verify\nSMS OTP]
+        FCM_APNS[FCM / APNs\nPush notifications]
     end
 
-    MobileApp --> CF
-    Admins --> CF
-    CF --> LB & AdminApp
-    LB --> API1 & API2
-    API1 & API2 --> PGPrimary & RedisCluster & S3
-    PGPrimary --> PGReplica
-    API1 & API2 --> SMS & FCM_APNS
+    MobileApp -->|HTTPS REST + WSS| API
+    Admins --> AdminApp
+    AdminApp -->|HTTPS REST| API
+    API --> PG & SupaStorage & Redis
+    API --> Twilio & FCM_APNS
 ```
 
 ---
@@ -370,7 +378,7 @@ flowchart TB
 | API p95 latency | < 300ms | Excluding media upload |
 | Availability | 99.5% | MVP; 99.9% post-scale |
 | Chat message delivery | < 500ms p95 | WebSocket; real-time feel |
-| OTP delivery | < 10 seconds | SMS provider SLA |
+| OTP delivery | < 10 seconds | Twilio Verify SLA |
 | Verification review SLA | < 48 hours | Manual admin process |
 | Max concurrent WebSocket connections | 10,000 | Single instance; Redis adapter for scale-out |
 | File upload size limit | 10 MB | Verification documents |
@@ -385,6 +393,9 @@ flowchart TB
 | ORM | Prisma 7 | TypeORM (weaker DX), Drizzle (too new) |
 | Real-time | Socket.IO via NestJS Gateway | WebSockets raw (less feature-rich), SSE (no bidirectional) |
 | State management (mobile) | Zustand | Redux Toolkit (overhead), Jotai (less familiar) |
-| Cache / OTP store | Redis | PostgreSQL (wrong tool), Memcached (less feature-rich) |
-| Object storage | S3-compatible | Cloudinary (cost at scale), Firebase Storage (lock-in) |
+| Cache / OTP store | Upstash Redis | Local Redis (not cloud-native), PostgreSQL (wrong tool) |
+| Object storage | Supabase Storage | AWS S3 (extra account), Cloudinary (cost at scale) |
 | Push | FCM + APNs via backend | Expo Push (abstraction loss at scale) |
+| OTP provider | Twilio Verify | AWS SNS (higher latency in IN region), Firebase Phone Auth (mobile SDK lock-in) |
+| Backend hosting | Render | Railway (pricing), Fly.io (ops complexity for MVP) |
+| Database | Supabase PostgreSQL | AWS RDS (ops overhead), PlanetScale (MySQL only) |

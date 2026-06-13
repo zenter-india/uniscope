@@ -20,14 +20,14 @@ export class AuthController {
 
   @Post('otp/request')
   @HttpCode(HttpStatus.OK)
-  requestOtp(@Body() dto: RequestOtpDto): Promise<{ requestId: string }> {
+  requestOtp(@Body() dto: RequestOtpDto): Promise<{ serviceId: string }> {
     return this.authService.requestOtp(dto.phone);
   }
 
   @Post('otp/verify')
   @HttpCode(HttpStatus.OK)
   verifyOtp(@Body() dto: VerifyOtpDto) {
-    return this.authService.verifyOtp(dto.requestId, dto.otp);
+    return this.authService.verifyOtp(dto.serviceId, dto.phone, dto.code);
   }
 
   @Post('token/refresh')

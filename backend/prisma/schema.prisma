@@ -3,7 +3,9 @@
 //
 // Notes:
 //   • PKs use uuid() — optimal for Supabase/PostgreSQL.
-//   • datasource has no `url` field; Prisma 7 reads it from prisma.config.ts.
+//   • datasource has no `url` field; Prisma 7 reads DATABASE_URL and DIRECT_URL
+//     from prisma.config.ts. DIRECT_URL bypasses the Supabase pgBouncer pooler
+//     for migrations (required when DATABASE_URL uses port 6543).
 //   • searchVector (tsvector) fields are marked Unsupported — a raw SQL migration
 //     creates the GENERATED ALWAYS AS STORED column and GIN indexes.
 //   • All table/column names follow snake_case PostgreSQL convention via @@map / @map.

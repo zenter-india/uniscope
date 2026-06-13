@@ -9,13 +9,26 @@ export const redisProvider = {
   inject: [ConfigService],
   useFactory: (config: ConfigService): Redis => {
     const cfg = config.get<RedisConfig>('redis')!;
-    const client = new Redis({
-      host: cfg.host,
-      port: cfg.port,
-      password: cfg.password || undefined,
-      lazyConnect: false,
-      maxRetriesPerRequest: 3,
-    });
+
+    let client: Redis;
+
+    if (cfg.url) {
+      // Upstash Redis — TLS connection via rediss:// URL
+      client = new Redis(cfg.url, {
+        tls: {},
+        lazyConnect: false,
+        maxRetriesPerRequest: 3,
+      });
+    } else {
+      // Legacy local Redis via host/port
+      client = new Redis({
+        host: cfg.host,
+        port: cfg.port,
+        password: cfg.password || undefined,
+        lazyConnect: false,
+        maxRetriesPerRequest: 3,
+      });
+    }
 
     client.on('error', (err) => {
       console.error('[Redis] connection error:', err.message);

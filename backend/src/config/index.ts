@@ -16,4 +16,7 @@ export type { JwtConfig } from './jwt.config.js';
 export { redisConfig } from './redis.config.js';
 export type { RedisConfig } from './redis.config.js';
 
+export { twilioConfig } from './twilio.config.js';
+export type { TwilioConfig } from './twilio.config.js';
+
 export { validationSchema } from './validation.schema.js';

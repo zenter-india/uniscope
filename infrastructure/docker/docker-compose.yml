@@ -1,3 +1,14 @@
+# DEPRECATED — 2026-06-14
+# MedConnect has moved to cloud-first infrastructure.
+# This file is kept for historical reference only.
+# DO NOT USE for active development.
+#
+# Use instead:
+#   Database: Supabase (medconnect-dev / medconnect-qa / medconnect-prod)
+#   Redis:    Upstash Redis
+#   OTP:      Twilio Verify
+#   Storage:  Supabase Storage
+
 services:
   postgres:
     image: postgres:16-alpine
