@@ -30,4 +30,4 @@ async function bootstrap() {
     `Uniscope API listening on http://localhost:${port}/${apiPrefix}`,
   );
 }
-bootstrap();
+void bootstrap();
