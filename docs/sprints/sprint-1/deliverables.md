@@ -1,7 +1,25 @@
 # Uniscope — Sprint 1 Deliverables
 
 **Sprint:** 1  
-**Status:** Not started
+**Status:** In progress — see [Implementation Status](#implementation-status)
+
+---
+
+## Implementation Status
+
+Verified against a local stack (Postgres 16 + Redis 8, mock OTP provider):
+
+| Area | Status | Notes |
+| ---- | ------ | ----- |
+| Backend boot + `/health` | ✅ Done | Global `/api/v1` prefix, ValidationPipe, config-driven port |
+| Auth: OTP request/verify, JWT, refresh, logout | ✅ Done | Contract is `serviceId` + `phone` + `code` |
+| `GET /users/me`, role/profile updates | ✅ Done | Serialized — no `phoneHash`/`refreshTokenHash` leak |
+| Universities list + detail | ✅ Done | Pagination, filters, search; public |
+| Prisma migrate + seed | ✅ Done | `npm run prisma:seed` → 10 universities + admin user |
+| Prod build (`start:prod`) | ✅ Done | Emits `dist/main.js` |
+| Mobile auth client | ✅ Done | Aligned to `/api/v1` + real OTP contract |
+| Admin login + dashboard + route guard | ✅ Done | Self-contained HMAC cookie session (skeleton credentials) |
+| Domain modules: verification, questions, reviews, chat, reports, notifications | ⬜ Stub | Empty modules — later sprints |
 
 ---
 
@@ -153,9 +171,9 @@ POST /api/v1/users/me/push-token
 
 ### Universities
 
-> **Status: NOT YET IMPLEMENTED.** `UniversitiesModule` is currently an empty
-> stub (`controllers: []`), so these routes return 404. Listed here as the
-> intended Sprint 1 contract.
+> **Status: Implemented.** Public endpoints with cursor pagination, `state`/
+> `type` filters, and case-insensitive name/city/state search. Full-text via
+> the `search_vector` column is a later enhancement.
 
 ```
 GET /api/v1/universities
