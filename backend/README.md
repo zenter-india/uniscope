@@ -1,6 +1,6 @@
-# MedConnect API
+# Uniscope API
 
-NestJS backend for MedConnect. Sprint 0 provides infrastructure only — no business APIs.
+NestJS backend for Uniscope. Sprint 0 provides infrastructure only — no business APIs.
 
 ## Scripts
 

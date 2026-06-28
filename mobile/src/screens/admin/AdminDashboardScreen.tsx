@@ -29,7 +29,7 @@ export function AdminDashboardScreen() {
       <ScrollView showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
           <Text style={styles.title}>Admin Dashboard</Text>
-          <Text style={styles.subtitle}>MedConnect Operations</Text>
+          <Text style={styles.subtitle}>Uniscope Operations</Text>
         </View>
 
         <View style={styles.statsGrid}>

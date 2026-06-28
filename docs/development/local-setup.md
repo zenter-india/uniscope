@@ -17,8 +17,8 @@ Optional:
 ## 1. Clone and install
 
 ```bash
-git clone <repository-url> medconnect
-cd medconnect
+git clone <repository-url> uniscope
+cd uniscope
 npm install
 ```
 
@@ -46,7 +46,7 @@ docker compose up -d
 Default connection (matches `backend/.env.example`):
 
 ```
-postgresql://medconnect:medconnect@localhost:5432/medconnect_dev
+postgresql://uniscope:uniscope@localhost:5432/uniscope_dev
 ```
 
 ### Option B — Local PostgreSQL
@@ -54,8 +54,8 @@ postgresql://medconnect:medconnect@localhost:5432/medconnect_dev
 Create database and user:
 
 ```sql
-CREATE USER medconnect WITH PASSWORD 'medconnect';
-CREATE DATABASE medconnect_dev OWNER medconnect;
+CREATE USER uniscope WITH PASSWORD 'uniscope';
+CREATE DATABASE uniscope_dev OWNER uniscope;
 ```
 
 ## 4. Prisma setup

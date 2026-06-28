@@ -20,9 +20,9 @@ export function WelcomeScreen() {
     <SafeAreaView style={styles.container}>
       <View style={styles.hero}>
         <View style={styles.logoCircle}>
-          <Text style={styles.logoText}>MC</Text>
+          <Text style={styles.logoText}>U</Text>
         </View>
-        <Text style={styles.appName}>MedConnect</Text>
+        <Text style={styles.appName}>Uniscope</Text>
         <Text style={styles.tagline}>
           Real answers from verified medical students and alumni
         </Text>

@@ -1,10 +1,10 @@
 # DEPRECATED — 2026-06-14
-# MedConnect has moved to cloud-first infrastructure.
+# Uniscope has moved to cloud-first infrastructure.
 # This file is kept for historical reference only.
 # DO NOT USE for active development.
 #
 # Use instead:
-#   Database: Supabase (medconnect-dev / medconnect-qa / medconnect-prod)
+#   Database: Supabase (uniscope-dev / uniscope-qa / uniscope-prod)
 #   Redis:    Upstash Redis
 #   OTP:      Twilio Verify
 #   Storage:  Supabase Storage
@@ -12,25 +12,25 @@
 services:
   postgres:
     image: postgres:16-alpine
-    container_name: medconnect-postgres
+    container_name: uniscope-postgres
     restart: unless-stopped
     ports:
       - "5432:5432"
     environment:
-      POSTGRES_USER: medconnect
-      POSTGRES_PASSWORD: medconnect
-      POSTGRES_DB: medconnect_dev
+      POSTGRES_USER: uniscope
+      POSTGRES_PASSWORD: uniscope
+      POSTGRES_DB: uniscope_dev
     volumes:
-      - medconnect_pg_data:/var/lib/postgresql/data
+      - uniscope_pg_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U medconnect -d medconnect_dev"]
+      test: ["CMD-SHELL", "pg_isready -U uniscope -d uniscope_dev"]
       interval: 5s
       timeout: 5s
       retries: 5
 
   redis:
     image: redis:7-alpine
-    container_name: medconnect-redis
+    container_name: uniscope-redis
     restart: unless-stopped
     ports:
       - "6379:6379"
@@ -42,4 +42,4 @@ services:
       retries: 5
 
 volumes:
-  medconnect_pg_data:
+  uniscope_pg_data:

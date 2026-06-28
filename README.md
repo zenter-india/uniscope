@@ -1,13 +1,13 @@
-# MedConnect
+# Uniscope
 
-MedConnect connects prospective medical students with verified current students and alumni to learn about universities through anonymous discussions, reviews, Q&A, and chat.
+Uniscope connects prospective medical students with verified current students and alumni to learn about universities through anonymous discussions, reviews, Q&A, and chat.
 
 This repository is a **production-grade monorepo foundation**. Business features (auth, chat, reviews, APIs) are intentionally out of scope until later sprints.
 
 ## Repository structure
 
 ```
-medconnect/
+uniscope/
 ├── mobile/          # React Native + Expo (TypeScript)
 ├── backend/         # NestJS API (TypeScript) + Prisma
 ├── admin/           # Next.js admin portal (TypeScript)
@@ -77,4 +77,4 @@ Read [CONTRIBUTING.md](CONTRIBUTING.md) before opening a pull request.
 
 ## License
 
-Proprietary — MedConnect. All rights reserved.
+Proprietary — Uniscope. All rights reserved.

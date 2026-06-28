@@ -1,8 +1,8 @@
-# MedConnect — Cloud Services
+# Uniscope — Cloud Services
 
 ## Database: Supabase PostgreSQL
 
-- **Environments:** medconnect-dev, medconnect-qa, medconnect-prod
+- **Environments:** uniscope-dev, uniscope-qa, uniscope-prod
 - **Connection:** Prisma via `DATABASE_URL` (pooler, port 6543) + `DIRECT_URL` (migrations, port 5432)
 - **Dashboard:** [app.supabase.com](https://app.supabase.com)
 - The pooler URL (`?pgbouncer=true`) must be used for runtime — direct URL only for migrations

@@ -9,7 +9,7 @@ export const validationSchema = Joi.object({
   // App
   NODE_ENV: Joi.string().valid('development', 'production', 'test').default('development'),
   PORT: Joi.number().integer().positive().default(3000),
-  APP_NAME: Joi.string().default('MedConnect API'),
+  APP_NAME: Joi.string().default('Uniscope API'),
   API_PREFIX: Joi.string().default('api/v1'),
 
   // Database
@@ -21,7 +21,7 @@ export const validationSchema = Joi.object({
   SUPABASE_SERVICE_ROLE_KEY: Joi.string().default('placeholder-service-role-key'),
 
   // Firebase (optional in local dev — set FIREBASE_DISABLED=true to skip)
-  FIREBASE_PROJECT_ID: Joi.string().default('medconnect-local'),
+  FIREBASE_PROJECT_ID: Joi.string().default('uniscope-local'),
   FIREBASE_SERVICE_ACCOUNT_KEY_PATH: Joi.string().default('./firebase-service-account.json'),
   FIREBASE_DISABLED: Joi.string().valid('true', 'false').default('false'),
 

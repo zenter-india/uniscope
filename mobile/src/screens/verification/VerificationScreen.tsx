@@ -59,7 +59,7 @@ export function VerificationScreen() {
         <View style={styles.privacyNote}>
           <Text style={styles.privacyIcon}>🔒</Text>
           <Text style={styles.privacyText}>
-            Documents are stored securely and reviewed only by verified MedConnect admins.
+            Documents are stored securely and reviewed only by verified Uniscope admins.
             They are never shared publicly or with third parties.
           </Text>
         </View>

@@ -6,7 +6,7 @@
 
 ## Context
 
-MedConnect ships a mobile app, API, and admin portal. Shared conventions, coordinated releases, and a single PR workflow benefit a small startup team.
+Uniscope ships a mobile app, API, and admin portal. Shared conventions, coordinated releases, and a single PR workflow benefit a small startup team.
 
 ## Decision
 

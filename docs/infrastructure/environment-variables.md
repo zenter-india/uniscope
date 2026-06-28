@@ -1,4 +1,4 @@
-# MedConnect — Environment Variables Reference
+# Uniscope — Environment Variables Reference
 
 All environment variables for the backend service. Copy `backend/.env.example` → `backend/.env` and fill in values.
 
@@ -7,7 +7,7 @@ All environment variables for the backend service. Copy `backend/.env.example` �
 | **App** | | | | |
 | `NODE_ENV` | No | `development` | Runtime environment | Set manually |
 | `PORT` | No | `3000` | HTTP server port | Set manually |
-| `APP_NAME` | No | `MedConnect API` | Application name (logging) | Set manually |
+| `APP_NAME` | No | `Uniscope API` | Application name (logging) | Set manually |
 | `API_PREFIX` | No | `api/v1` | URL prefix for all routes | Set manually |
 | **Database** | | | | |
 | `DATABASE_URL` | Yes | — | Supabase pooler connection string (pgBouncer, port 6543) | Supabase Dashboard → Settings → Database → Connection string (Transaction pooler) |
@@ -17,7 +17,7 @@ All environment variables for the backend service. Copy `backend/.env.example` �
 | `SUPABASE_ANON_KEY` | Yes | — | Supabase anon/public JWT key | Supabase Dashboard → Settings → API → anon key |
 | `SUPABASE_SERVICE_ROLE_KEY` | Yes | — | Supabase service role JWT key (server-side only, never expose to clients) | Supabase Dashboard → Settings → API → service_role key |
 | **Firebase** | | | | |
-| `FIREBASE_PROJECT_ID` | Yes | `medconnect-local` | Firebase project ID for FCM | Firebase Console → Project settings |
+| `FIREBASE_PROJECT_ID` | Yes | `uniscope-local` | Firebase project ID for FCM | Firebase Console → Project settings |
 | `FIREBASE_SERVICE_ACCOUNT_KEY_PATH` | Yes | `./firebase-service-account.json` | Path to Firebase service account JSON file | Firebase Console → Project settings → Service accounts → Generate new private key |
 | `FIREBASE_DISABLED` | No | `false` | Set `true` to disable FCM (useful in local dev without credentials) | Set manually |
 | **JWT** | | | | |
