@@ -100,25 +100,30 @@ infrastructure/
 
 ## API Contract (Sprint 1 endpoints)
 
+> **Base path:** all business routes are served under the global prefix
+> **`/api/v1`** (e.g. `POST /api/v1/auth/otp/request`). Only `/health` is
+> exposed at the root, for infra liveness checks. The prefix is applied in
+> `backend/src/main.ts` and appended by the mobile client in `src/api/client.ts`.
+
 ### Auth
 
 ```
-POST /auth/otp/request
+POST /api/v1/auth/otp/request
   Body:    { "phone": "+919876543210" }
-  Returns: { "requestId": "req_xxxxxx" }
-  Errors:  429 Too Many Requests (rate limit)
+  Returns: { "serviceId": "<uuid>" }
+  Errors:  400 Invalid phone | 429 Too Many Requests (rate limit)
 
-POST /auth/otp/verify
-  Body:    { "requestId": "req_xxxxxx", "otp": "123456" }
-  Returns: { "accessToken": "...", "refreshToken": "...", "isNewUser": true }
-  Errors:  401 Invalid OTP | 401 Expired OTP
+POST /api/v1/auth/otp/verify
+  Body:    { "serviceId": "<uuid>", "phone": "+919876543210", "code": "123456" }
+  Returns: { "accessToken": "...", "refreshToken": "...", "user": { ... } }
+  Errors:  401 OTP expired or invalid
 
-POST /auth/token/refresh
+POST /api/v1/auth/token/refresh
   Body:    { "refreshToken": "..." }
   Returns: { "accessToken": "...", "refreshToken": "..." }
   Errors:  401 Invalid Token
 
-POST /auth/logout
+POST /api/v1/auth/logout
   Auth:    Bearer <accessToken>
   Returns: 204 No Content
 ```
@@ -126,26 +131,39 @@ POST /auth/logout
 ### Users
 
 ```
-PATCH /users/me
+GET /api/v1/users/me
   Auth:    Bearer <accessToken>
-  Body:    { "role"?: "STUDENT_UNVERIFIED" | "ALUMNI_UNVERIFIED", "displayName"?: "..." }
-  Returns: { "id": "...", "role": "...", "displayName": "..." }
+  Returns: { user object }
 
-POST /users/me/push-token
+PATCH /api/v1/users/me
+  Auth:    Bearer <accessToken>
+  Body:    { "displayName"?: "..." }   (UpdateProfileDto)
+  Returns: { user object }
+
+PATCH /api/v1/users/me/role
+  Auth:    Bearer <accessToken>
+  Body:    { "role": "..." }           (UpdateRoleDto)
+  Returns: { user object }
+
+POST /api/v1/users/me/push-token
   Auth:    Bearer <accessToken>
   Body:    { "token": "ExponentPushToken[xxx]", "platform": "ios" | "android" }
-  Returns: 201 Created
+  Returns: 204 No Content
 ```
 
 ### Universities
 
+> **Status: NOT YET IMPLEMENTED.** `UniversitiesModule` is currently an empty
+> stub (`controllers: []`), so these routes return 404. Listed here as the
+> intended Sprint 1 contract.
+
 ```
-GET /universities
+GET /api/v1/universities
   Query:   ?cursor=&state=Karnataka&type=GOVERNMENT&search=medical&limit=20
   Auth:    None (public)
   Returns: { "data": [...], "nextCursor": "..." | null }
 
-GET /universities/:slug
+GET /api/v1/universities/:slug
   Auth:    None (public)
   Returns: { University object }
 ```

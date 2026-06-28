@@ -1,10 +1,14 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
 import { useAuthStore } from '../store/useAuthStore';
 
-const BASE_URL = process.env['EXPO_PUBLIC_API_URL'] ?? 'http://localhost:3000';
+// EXPO_PUBLIC_API_URL is the host only (no path); the backend serves all
+// business routes under a global prefix (see backend main.ts setGlobalPrefix).
+const API_HOST = process.env['EXPO_PUBLIC_API_URL'] ?? 'http://localhost:3000';
+const API_PREFIX = '/api/v1';
+export const API_BASE_URL = `${API_HOST}${API_PREFIX}`;
 
 export const apiClient = axios.create({
-  baseURL: BASE_URL,
+  baseURL: API_BASE_URL,
   timeout: 10_000,
   headers: { 'Content-Type': 'application/json' },
 });
@@ -72,7 +76,7 @@ apiClient.interceptors.response.use(
       const { data } = await axios.post<{
         accessToken: string;
         refreshToken: string;
-      }>(`${BASE_URL}/auth/token/refresh`, { refreshToken });
+      }>(`${API_BASE_URL}/auth/token/refresh`, { refreshToken });
 
       setTokens(data.accessToken, data.refreshToken);
       processQueue(null, data.accessToken);
