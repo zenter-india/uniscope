@@ -4,6 +4,7 @@ import {
   Get,
   HttpCode,
   HttpStatus,
+  NotFoundException,
   Patch,
   Post,
   UseGuards,
@@ -14,6 +15,7 @@ import { CurrentUser } from '../../auth/decorators/current-user.decorator.js';
 import type { JwtPayload } from '../../auth/decorators/current-user.decorator.js';
 import { UpdateProfileDto } from './dto/update-profile.dto.js';
 import { UpdateRoleDto } from './dto/update-role.dto.js';
+import { toPublicUser } from './user-response.js';
 import { UsersService } from './users.service.js';
 
 class StorePushTokenDto {
@@ -31,7 +33,11 @@ export class UsersController {
 
   @Get('me')
   async getMe(@CurrentUser() user: JwtPayload) {
-    return this.usersService.findById(user.sub);
+    const found = await this.usersService.findById(user.sub);
+    if (!found) {
+      throw new NotFoundException('User not found');
+    }
+    return toPublicUser(found);
   }
 
   @Patch('me')
@@ -40,7 +46,7 @@ export class UsersController {
     @CurrentUser() user: JwtPayload,
     @Body() dto: UpdateProfileDto,
   ) {
-    return this.usersService.updateProfile(user.sub, dto);
+    return toPublicUser(await this.usersService.updateProfile(user.sub, dto));
   }
 
   @Patch('me/role')
@@ -49,7 +55,7 @@ export class UsersController {
     @CurrentUser() user: JwtPayload,
     @Body() dto: UpdateRoleDto,
   ) {
-    return this.usersService.updateRole(user.sub, dto);
+    return toPublicUser(await this.usersService.updateRole(user.sub, dto));
   }
 
   @Post('me/push-token')
