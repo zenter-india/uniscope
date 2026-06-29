@@ -15,8 +15,8 @@ describe('AppController', () => {
   });
 
   describe('root', () => {
-    it('should return "Hello World!"', () => {
-      expect(appController.getHello()).toBe('Hello World!');
+    it('returns the API identity string', () => {
+      expect(appController.getHello()).toContain('Uniscope API');
     });
   });
 });
