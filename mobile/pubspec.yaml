@@ -1,0 +1,37 @@
+name: uniscope
+description: "Uniscope — anonymous medical-university mentorship marketplace (Flutter app)."
+publish_to: "none"
+version: 1.0.0+1
+
+environment:
+  sdk: ">=3.5.0 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # State management
+  flutter_riverpod: ^2.6.1
+
+  # Routing
+  go_router: ^14.6.2
+
+  # Networking
+  dio: ^5.7.0
+
+  # Secure token storage (access/refresh JWTs are sensitive)
+  flutter_secure_storage: ^9.2.4
+
+  # Misc
+  intl: ^0.19.0
+  flutter_svg: ^2.0.16
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+
+flutter:
+  uses-material-design: true
+  # assets:
+  #   - assets/
