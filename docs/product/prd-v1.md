@@ -1,4 +1,4 @@
-# Uniscope — Product Requirements Document v1
+# MedConnect — Product Requirements Document v1
 
 **Version:** 1.0  
 **Status:** Draft  
@@ -9,7 +9,7 @@
 
 ## 1. Vision
 
-Uniscope is the trusted discovery layer for aspiring medical professionals. We give prospective students candid, verified peer perspectives on medical universities — not glossy brochures — so they can make the most consequential decision of their academic lives with confidence.
+MedConnect is the trusted discovery layer for aspiring medical professionals. We give prospective students candid, verified peer perspectives on medical universities — not glossy brochures — so they can make the most consequential decision of their academic lives with confidence.
 
 > "The university that fits you is not necessarily the one ranked highest. It's the one whose culture, curriculum, and community match who you are."
 
@@ -41,7 +41,7 @@ There is no structured platform to contribute back to the community — to help 
 | Prospective students | NEET aspirants and post-12th students researching MBBS/MD programs | ~1.8M NEET candidates/year |
 | Current students | MBBS/MD students enrolled at target universities | ~400K active MBBS students |
 | Alumni | Graduates and postgraduate doctors willing to mentor | ~2M+ registered practitioners |
-| Admins | Uniscope operations and trust & safety team | Internal |
+| Admins | MedConnect operations and trust & safety team | Internal |
 
 ---
 
@@ -74,7 +74,7 @@ There is no structured platform to contribute back to the community — to help 
 ### Persona 4 — Arjun, the Trust & Safety Admin
 
 - **Age:** 29 | **Location:** Remote
-- **Context:** Uniscope internal operations staff.
+- **Context:** MedConnect internal operations staff.
 - **Goals:** Keep the platform trustworthy — verify mentor credentials, moderate harmful content, manage reports.
 - **Frustrations:** Scale of verification requests. False information or impersonation attempts.
 - **Needs:** Efficient verification dashboard, moderation queue, user management tools.

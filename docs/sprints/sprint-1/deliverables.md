@@ -1,25 +1,7 @@
-# Uniscope — Sprint 1 Deliverables
+# MedConnect — Sprint 1 Deliverables
 
 **Sprint:** 1  
-**Status:** In progress — see [Implementation Status](#implementation-status)
-
----
-
-## Implementation Status
-
-Verified against a local stack (Postgres 16 + Redis 8, mock OTP provider):
-
-| Area | Status | Notes |
-| ---- | ------ | ----- |
-| Backend boot + `/health` | ✅ Done | Global `/api/v1` prefix, ValidationPipe, config-driven port |
-| Auth: OTP request/verify, JWT, refresh, logout | ✅ Done | Contract is `serviceId` + `phone` + `code` |
-| `GET /users/me`, role/profile updates | ✅ Done | Serialized — no `phoneHash`/`refreshTokenHash` leak |
-| Universities list + detail | ✅ Done | Pagination, filters, search; public |
-| Prisma migrate + seed | ✅ Done | `npm run prisma:seed` → 10 universities + admin user |
-| Prod build (`start:prod`) | ✅ Done | Emits `dist/main.js` |
-| Mobile auth client | ✅ Done | Aligned to `/api/v1` + real OTP contract |
-| Admin login + dashboard + route guard | ✅ Done | Self-contained HMAC cookie session (skeleton credentials) |
-| Domain modules: verification, questions, reviews, chat, reports, notifications | ⬜ Stub | Empty modules — later sprints |
+**Status:** Not started
 
 ---
 
@@ -118,30 +100,25 @@ infrastructure/
 
 ## API Contract (Sprint 1 endpoints)
 
-> **Base path:** all business routes are served under the global prefix
-> **`/api/v1`** (e.g. `POST /api/v1/auth/otp/request`). Only `/health` is
-> exposed at the root, for infra liveness checks. The prefix is applied in
-> `backend/src/main.ts` and appended by the mobile client in `src/api/client.ts`.
-
 ### Auth
 
 ```
-POST /api/v1/auth/otp/request
+POST /auth/otp/request
   Body:    { "phone": "+919876543210" }
-  Returns: { "serviceId": "<uuid>" }
-  Errors:  400 Invalid phone | 429 Too Many Requests (rate limit)
+  Returns: { "requestId": "req_xxxxxx" }
+  Errors:  429 Too Many Requests (rate limit)
 
-POST /api/v1/auth/otp/verify
-  Body:    { "serviceId": "<uuid>", "phone": "+919876543210", "code": "123456" }
-  Returns: { "accessToken": "...", "refreshToken": "...", "user": { ... } }
-  Errors:  401 OTP expired or invalid
+POST /auth/otp/verify
+  Body:    { "requestId": "req_xxxxxx", "otp": "123456" }
+  Returns: { "accessToken": "...", "refreshToken": "...", "isNewUser": true }
+  Errors:  401 Invalid OTP | 401 Expired OTP
 
-POST /api/v1/auth/token/refresh
+POST /auth/token/refresh
   Body:    { "refreshToken": "..." }
   Returns: { "accessToken": "...", "refreshToken": "..." }
   Errors:  401 Invalid Token
 
-POST /api/v1/auth/logout
+POST /auth/logout
   Auth:    Bearer <accessToken>
   Returns: 204 No Content
 ```
@@ -149,39 +126,26 @@ POST /api/v1/auth/logout
 ### Users
 
 ```
-GET /api/v1/users/me
+PATCH /users/me
   Auth:    Bearer <accessToken>
-  Returns: { user object }
+  Body:    { "role"?: "STUDENT_UNVERIFIED" | "ALUMNI_UNVERIFIED", "displayName"?: "..." }
+  Returns: { "id": "...", "role": "...", "displayName": "..." }
 
-PATCH /api/v1/users/me
-  Auth:    Bearer <accessToken>
-  Body:    { "displayName"?: "..." }   (UpdateProfileDto)
-  Returns: { user object }
-
-PATCH /api/v1/users/me/role
-  Auth:    Bearer <accessToken>
-  Body:    { "role": "..." }           (UpdateRoleDto)
-  Returns: { user object }
-
-POST /api/v1/users/me/push-token
+POST /users/me/push-token
   Auth:    Bearer <accessToken>
   Body:    { "token": "ExponentPushToken[xxx]", "platform": "ios" | "android" }
-  Returns: 204 No Content
+  Returns: 201 Created
 ```
 
 ### Universities
 
-> **Status: Implemented.** Public endpoints with cursor pagination, `state`/
-> `type` filters, and case-insensitive name/city/state search. Full-text via
-> the `search_vector` column is a later enhancement.
-
 ```
-GET /api/v1/universities
+GET /universities
   Query:   ?cursor=&state=Karnataka&type=GOVERNMENT&search=medical&limit=20
   Auth:    None (public)
   Returns: { "data": [...], "nextCursor": "..." | null }
 
-GET /api/v1/universities/:slug
+GET /universities/:slug
   Auth:    None (public)
   Returns: { University object }
 ```

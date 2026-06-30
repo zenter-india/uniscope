@@ -7,20 +7,18 @@ export interface VerifyOtpResponse {
   user: AuthUser & { isNewUser: boolean };
 }
 
-export async function requestOtp(phone: string): Promise<{ serviceId: string }> {
-  const { data } = await apiClient.post<{ serviceId: string }>('/auth/otp/request', { phone });
+export async function requestOtp(phone: string): Promise<{ requestId: string }> {
+  const { data } = await apiClient.post<{ requestId: string }>('/auth/otp/request', { phone });
   return data;
 }
 
 export async function verifyOtp(
-  serviceId: string,
-  phone: string,
-  code: string,
+  requestId: string,
+  otp: string,
 ): Promise<VerifyOtpResponse> {
   const { data } = await apiClient.post<VerifyOtpResponse>('/auth/otp/verify', {
-    serviceId,
-    phone,
-    code,
+    requestId,
+    otp,
   });
   return data;
 }

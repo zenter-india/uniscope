@@ -1,4 +1,4 @@
-# Uniscope — Domain Model v1
+# MedConnect — Domain Model v1
 
 **Version:** 1.0  
 **Status:** Draft  

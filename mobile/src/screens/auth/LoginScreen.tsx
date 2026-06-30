@@ -33,8 +33,8 @@ export function LoginScreen() {
 
     try {
       const fullPhone = `+91${phone.replace(/\D/g, '')}`;
-      const { serviceId } = await requestOtp(fullPhone);
-      navigation.navigate('OTP', { phone: fullPhone, serviceId });
+      const { requestId } = await requestOtp(fullPhone);
+      navigation.navigate('OTP', { phone: fullPhone, requestId });
     } catch (err: unknown) {
       const msg =
         err instanceof Error && 'response' in err

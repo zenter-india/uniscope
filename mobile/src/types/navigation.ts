@@ -4,7 +4,7 @@ import type { NavigatorScreenParams } from '@react-navigation/native';
 export type AuthStackParamList = {
   Welcome: undefined;
   Login: undefined;
-  OTP: { phone: string; serviceId: string };
+  OTP: { phone: string; requestId: string };
   RoleSelection: undefined;
   ProfileSetup: undefined;
 };
@@ -17,19 +17,6 @@ export type UniversityStackParamList = {
   UniversityQuestions: { universityId: string };
   UniversityStudents: { universityId: string };
   UniversityAlumni: { universityId: string };
-};
-
-// ─── Q&A Stack ────────────────────────────────────────────────────────────────
-export type QAStackParamList = {
-  QuestionFeed: undefined;
-  QuestionDetail: { questionId: string };
-  AskQuestion: { universityId?: string };
-};
-
-// ─── Reviews Stack ────────────────────────────────────────────────────────────
-export type ReviewsStackParamList = {
-  ReviewFeed: undefined;
-  WriteReview: { universityId: string; universityName: string };
 };
 
 // ─── Messages Stack ───────────────────────────────────────────────────────────
@@ -57,14 +44,18 @@ export type AdminStackParamList = {
   AdminUniversities: undefined;
 };
 
+// ─── Mentors Stack ────────────────────────────────────────────────────────────
+export type MentorsStackParamList = {
+  MentorList: undefined;
+  MentorProfile: { mentorId: string };
+};
+
 // ─── Main Tab Navigator ───────────────────────────────────────────────────────
 export type MainTabParamList = {
   Home: undefined;
-  Universities: NavigatorScreenParams<UniversityStackParamList>;
-  QA: NavigatorScreenParams<QAStackParamList>;
-  Reviews: NavigatorScreenParams<ReviewsStackParamList>;
-  Messages: NavigatorScreenParams<MessagesStackParamList>;
-  Notifications: undefined;
+  Colleges: NavigatorScreenParams<UniversityStackParamList>;
+  Mentors: NavigatorScreenParams<MentorsStackParamList>;
+  Chats: NavigatorScreenParams<MessagesStackParamList>;
   Profile: NavigatorScreenParams<ProfileStackParamList>;
 };
 

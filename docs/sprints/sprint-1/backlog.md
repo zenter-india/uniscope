@@ -1,4 +1,4 @@
-# Uniscope — Sprint 1 Backlog
+# MedConnect — Sprint 1 Backlog
 
 **Sprint:** 1  
 **Total Points:** 34  

@@ -1,4 +1,4 @@
-# Uniscope Mobile
+# MedConnect Mobile
 
 React Native app built with Expo and TypeScript.
 

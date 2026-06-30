@@ -1,6 +1,6 @@
-# Contributing to Uniscope
+# Contributing to MedConnect
 
-Thank you for helping build Uniscope. This guide covers how we work in the monorepo during the foundation and early product phases.
+Thank you for helping build MedConnect. This guide covers how we work in the monorepo during the foundation and early product phases.
 
 ## Before you start
 

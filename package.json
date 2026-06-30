@@ -1,8 +1,8 @@
 {
-  "name": "uniscope",
+  "name": "medconnect",
   "version": "0.1.0",
   "private": true,
-  "description": "Uniscope monorepo — connecting prospective medical students with verified mentors",
+  "description": "MedConnect monorepo — connecting prospective medical students with verified mentors",
   "workspaces": [
     "mobile",
     "backend",

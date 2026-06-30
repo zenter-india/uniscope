@@ -1,4 +1,4 @@
-# Uniscope — Database Standards
+# MedConnect — Database Standards
 
 **Version:** 1.0  
 **Status:** Approved  

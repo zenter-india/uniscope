@@ -4,7 +4,7 @@
 
 | Item | Convention | Example |
 | ---- | ---------- | ------- |
-| Repo | `uniscope` | — |
+| Repo | `medconnect` | — |
 | Main branch | `main` | production-ready |
 | Integration branch | `develop` | integration |
 | Feature branches | `feature/<short-description>` | `feature/user-onboarding` |
@@ -15,7 +15,7 @@
 
 | Package | npm name | Folder |
 | ------- | -------- | ------ |
-| Monorepo root | `uniscope` | `/` |
+| Monorepo root | `medconnect` | `/` |
 | Mobile | `mobile` | `mobile/` |
 | API | `backend` | `backend/` |
 | Admin | `admin` | `admin/` |

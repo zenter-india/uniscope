@@ -1,4 +1,4 @@
-# Uniscope — Sprint 1 Plan
+# MedConnect — Sprint 1 Plan
 
 **Sprint:** 1  
 **Duration:** 2 weeks  

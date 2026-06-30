@@ -1,6 +1,7 @@
 import { useNavigation } from '@react-navigation/native';
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import {
+  Image,
   ScrollView,
   StyleSheet,
   Text,
@@ -13,18 +14,22 @@ import type { MainTabParamList } from '../../types/navigation';
 
 type Nav = BottomTabNavigationProp<MainTabParamList, 'Home'>;
 
-// Tabs that have nested navigators require params; simple tabs do not.
-type QuickAction =
-  | { icon: string; label: string; name: 'Home' | 'Reviews' | 'Notifications' }
-  | { icon: string; label: string; name: 'Universities'; params: object }
-  | { icon: string; label: string; name: 'QA'; params: object }
-  | { icon: string; label: string; name: 'Messages'; params: object };
+const ICONS = {
+  Colleges: require('../../assets/icons/hospital-alt.png'),
+  Mentors: require('../../assets/icons/man.png'),
+  Chats: require('../../assets/icons/chat.png'),
+};
+
+type QuickAction = {
+  icon: keyof typeof ICONS;
+  label: string;
+  name: 'Colleges' | 'Mentors' | 'Chats';
+};
 
 const QUICK_ACTIONS: QuickAction[] = [
-  { icon: '🏥', label: 'Universities', name: 'Universities', params: {} },
-  { icon: '❓', label: 'Q&A', name: 'QA', params: {} },
-  { icon: '⭐', label: 'Reviews', name: 'Reviews' },
-  { icon: '💬', label: 'Messages', name: 'Messages', params: {} },
+  { icon: 'Colleges', label: 'Colleges', name: 'Colleges' },
+  { icon: 'Mentors', label: 'Mentors', name: 'Mentors' },
+  { icon: 'Chats', label: 'Chats', name: 'Chats' },
 ];
 
 export function HomeScreen() {
@@ -36,15 +41,9 @@ export function HomeScreen() {
         {/* Header */}
         <View style={styles.header}>
           <View>
-            <Text style={styles.greeting}>Good evening 👋</Text>
+            <Text style={styles.greeting}>Good evening</Text>
             <Text style={styles.subGreeting}>What are you looking for today?</Text>
           </View>
-          <TouchableOpacity
-            style={styles.notifButton}
-            onPress={() => navigation.navigate('Notifications')}
-          >
-            <Text style={styles.notifIcon}>🔔</Text>
-          </TouchableOpacity>
         </View>
 
         {/* Quick actions */}
@@ -53,20 +52,20 @@ export function HomeScreen() {
             <TouchableOpacity
               key={action.name}
               style={styles.quickCard}
-              onPress={() => navigation.navigate(action as any)}
+              onPress={() => navigation.navigate(action.name as any)}
               activeOpacity={0.8}
             >
-              <Text style={styles.quickIcon}>{action.icon}</Text>
+              <Image source={ICONS[action.icon]} style={styles.quickIcon} />
               <Text style={styles.quickLabel}>{action.label}</Text>
             </TouchableOpacity>
           ))}
         </View>
 
-        {/* Featured Universities placeholder */}
+        {/* Top Colleges */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Top Universities</Text>
-            <TouchableOpacity onPress={() => navigation.navigate('Universities' as any)}>
+            <Text style={styles.sectionTitle}>Top Colleges</Text>
+            <TouchableOpacity onPress={() => navigation.navigate('Colleges' as any)}>
               <Text style={styles.seeAll}>See all</Text>
             </TouchableOpacity>
           </View>
@@ -75,22 +74,16 @@ export function HomeScreen() {
           <PlaceholderCard label="JIPMER Puducherry" sub="Government · Rank #3 · 150 seats" />
         </View>
 
-        {/* Recent Q&A placeholder */}
+        {/* Top Mentors */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Recent Questions</Text>
-            <TouchableOpacity onPress={() => navigation.navigate('QA' as any)}>
+            <Text style={styles.sectionTitle}>Top Mentors</Text>
+            <TouchableOpacity onPress={() => navigation.navigate('Mentors' as any)}>
               <Text style={styles.seeAll}>See all</Text>
             </TouchableOpacity>
           </View>
-          <PlaceholderCard
-            label="How is the clinical exposure at AIIMS Delhi?"
-            sub="3 answers · AIIMS New Delhi"
-          />
-          <PlaceholderCard
-            label="Is the hostel situation better at CMC now?"
-            sub="7 answers · CMC Vellore"
-          />
+          <PlaceholderCard label="MBBS Final Year · AIIMS Delhi" sub="₹8/min · 4.8 ★ · 512 sessions" />
+          <PlaceholderCard label="MD Radiology · CMC Vellore" sub="₹12/min · 4.7 ★ · 203 sessions" />
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -149,17 +142,6 @@ const styles = StyleSheet.create({
     color: colors.text.secondary,
     marginTop: spacing.xs,
   },
-  notifButton: {
-    width: 40,
-    height: 40,
-    borderRadius: radius.full,
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  notifIcon: { fontSize: 18 },
   quickActions: {
     flexDirection: 'row',
     paddingHorizontal: spacing.md,
@@ -176,7 +158,11 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.md,
     gap: spacing.xs,
   },
-  quickIcon: { fontSize: 22 },
+  quickIcon: {
+    width: 24,
+    height: 24,
+    tintColor: colors.primary,
+  },
   quickLabel: {
     fontSize: fontSize.xs,
     fontWeight: fontWeight.medium,

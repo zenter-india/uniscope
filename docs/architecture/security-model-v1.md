@@ -1,4 +1,4 @@
-# Uniscope — Security Model v1
+# MedConnect — Security Model v1
 
 **Version:** 1.0  
 **Status:** Draft  
@@ -9,7 +9,7 @@
 
 ## 1. Security Philosophy
 
-Uniscope is built on a fundamental tension: we must **verify real identities** to produce trustworthy content, while **protecting those identities** in public to enable honest discourse. The security model is designed around three principles:
+MedConnect is built on a fundamental tension: we must **verify real identities** to produce trustworthy content, while **protecting those identities** in public to enable honest discourse. The security model is designed around three principles:
 
 1. **Verify the credential, anonymise the person** — we know who you are; the public does not.
 2. **Least privilege by default** — every user can only access what their role explicitly permits.
@@ -196,15 +196,15 @@ sequenceDiagram
 
 ## 6. JWT Strategy
 
-Uniscope uses short-lived access tokens to minimise the impact of token compromise.
+MedConnect uses short-lived access tokens to minimise the impact of token compromise.
 
 ### Token specification
 
 | Property | Access Token | Admin Access Token |
 |----------|-------------|-------------------|
 | Algorithm | RS256 | RS256 |
-| Issuer (`iss`) | `uniscope-api` | `uniscope-api` |
-| Audience (`aud`) | `uniscope-app` | `uniscope-admin` |
+| Issuer (`iss`) | `medconnect-api` | `medconnect-api` |
+| Audience (`aud`) | `medconnect-app` | `medconnect-admin` |
 | Expiry (`exp`) | 15 minutes | 15 minutes |
 | Subject (`sub`) | User UUID | Admin User UUID |
 | Custom claims | `role`, `verificationStatus` | `role` (ADMIN/MODERATOR/SUPER_ADMIN) |
@@ -214,8 +214,8 @@ Uniscope uses short-lived access tokens to minimise the impact of token compromi
 
 ```json
 {
-  "iss": "uniscope-api",
-  "aud": "uniscope-app",
+  "iss": "medconnect-api",
+  "aud": "medconnect-app",
   "sub": "user_cuid_here",
   "exp": 1749481200,
   "iat": 1749480300,

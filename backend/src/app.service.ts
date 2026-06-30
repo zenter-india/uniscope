@@ -3,6 +3,6 @@ import { Injectable } from '@nestjs/common';
 @Injectable()
 export class AppService {
   getHello(): string {
-    return 'Uniscope API — foundation only';
+    return 'MedConnect API — foundation only';
   }
 }

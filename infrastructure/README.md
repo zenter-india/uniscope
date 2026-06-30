@@ -1,8 +1,8 @@
 # Infrastructure
 
-Uniscope infrastructure documentation.
+MedConnect infrastructure documentation.
 
-> **Note:** As of 2026-06-14, Uniscope has migrated to **cloud-first infrastructure**.
+> **Note:** As of 2026-06-14, MedConnect has migrated to **cloud-first infrastructure**.
 > Local Docker Compose is deprecated. See [Cloud Services](#cloud-services) below.
 
 ## Cloud Services

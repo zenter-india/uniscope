@@ -1,4 +1,4 @@
-# Uniscope — Entity Relationship Diagram v1
+# MedConnect — Entity Relationship Diagram v1
 
 **Version:** 1.0  
 **Status:** Draft  

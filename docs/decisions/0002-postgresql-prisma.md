@@ -6,7 +6,7 @@
 
 ## Context
 
-Uniscope needs relational data (users, universities, reviews, discussions) with strong consistency, migrations, and type-safe access from NestJS.
+MedConnect needs relational data (users, universities, reviews, discussions) with strong consistency, migrations, and type-safe access from NestJS.
 
 ## Decision
 

@@ -1,5 +1,5 @@
 export const colors = {
-  primary: '#1A6B4A',       // Uniscope green
+  primary: '#1A6B4A',       // MedConnect green
   primaryLight: '#E8F5EE',
   primaryDark: '#0F4A33',
   accent: '#F4A261',

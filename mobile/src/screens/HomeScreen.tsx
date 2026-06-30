@@ -3,7 +3,7 @@ import { StyleSheet, Text, View } from 'react-native';
 export function HomeScreen() {
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Uniscope</Text>
+      <Text style={styles.title}>MedConnect</Text>
       <Text style={styles.subtitle}>
         Mobile app foundation — business features coming in future sprints.
       </Text>

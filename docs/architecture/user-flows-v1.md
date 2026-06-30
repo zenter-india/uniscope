@@ -1,4 +1,4 @@
-# Uniscope — User Flows v1
+# MedConnect — User Flows v1
 
 **Version:** 1.0  
 **Status:** Draft  

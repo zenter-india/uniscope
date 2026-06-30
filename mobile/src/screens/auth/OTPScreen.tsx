@@ -27,7 +27,7 @@ const RESEND_COOLDOWN = 60;
 export function OTPScreen() {
   const navigation = useNavigation<Nav>();
   const route = useRoute<Route>();
-  const { phone, serviceId: initialServiceId } = route.params;
+  const { phone, requestId: initialRequestId } = route.params;
 
   const setAuth = useAuthStore((s) => s.setAuth);
 
@@ -35,7 +35,7 @@ export function OTPScreen() {
   const [countdown, setCountdown] = useState(RESEND_COOLDOWN);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const [currentServiceId, setCurrentServiceId] = useState(initialServiceId);
+  const [currentRequestId, setCurrentRequestId] = useState(initialRequestId);
   const inputRef = useRef<TextInput>(null);
 
   useEffect(() => {
@@ -59,7 +59,7 @@ export function OTPScreen() {
     setError('');
 
     try {
-      const result = await verifyOtp(currentServiceId, phone, code);
+      const result = await verifyOtp(currentRequestId, code);
       setAuth(result.accessToken, result.refreshToken, {
         id: result.user.id,
         role: result.user.role,
@@ -87,8 +87,8 @@ export function OTPScreen() {
     setLoading(true);
 
     try {
-      const { serviceId } = await requestOtp(phone);
-      setCurrentServiceId(serviceId);
+      const { requestId } = await requestOtp(phone);
+      setCurrentRequestId(requestId);
       setCountdown(RESEND_COOLDOWN);
       inputRef.current?.focus();
     } catch {

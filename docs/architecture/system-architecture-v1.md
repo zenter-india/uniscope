@@ -1,4 +1,4 @@
-# Uniscope — System Architecture v1
+# MedConnect — System Architecture v1
 
 **Version:** 1.1  
 **Status:** Active  
@@ -9,7 +9,7 @@
 
 ## 1. Architecture Overview
 
-Uniscope is a mobile-first platform with a monolithic NestJS backend, Supabase PostgreSQL persistence, and a Next.js admin portal. The architecture is deliberately simple for the MVP — optimised for team velocity over horizontal scalability — with clear seams to evolve toward microservices or service extraction when warranted by growth.
+MedConnect is a mobile-first platform with a monolithic NestJS backend, Supabase PostgreSQL persistence, and a Next.js admin portal. The architecture is deliberately simple for the MVP — optimised for team velocity over horizontal scalability — with clear seams to evolve toward microservices or service extraction when warranted by growth.
 
 All infrastructure is **cloud-first**: no local services are required for development. See [docs/infrastructure/cloud-services.md](../infrastructure/cloud-services.md) for details.
 
@@ -182,7 +182,7 @@ When concurrent chat and notifications load requires it:
 **Provider:** Supabase  
 **Version:** PostgreSQL 16  
 **ORM:** Prisma 7  
-**Environments:** uniscope-dev, uniscope-qa, uniscope-prod
+**Environments:** medconnect-dev, medconnect-qa, medconnect-prod
 
 ### Connection configuration
 
@@ -192,7 +192,7 @@ When concurrent chat and notifications load requires it:
 ### Logical database layout
 
 ```
-uniscope_db
+medconnect_db
 ├── users                    # Core identity
 ├── user_profiles            # Role-specific extended profile
 ├── verification_requests    # ID/credential uploads + status
@@ -349,7 +349,7 @@ flowchart TB
     end
 
     subgraph supabase [Supabase]
-        PG[(PostgreSQL\nuniscope-prod)]
+        PG[(PostgreSQL\nmedconnect-prod)]
         SupaStorage[Supabase Storage\nverification-docs, avatars\nuniversity-images, message-media]
     end
 

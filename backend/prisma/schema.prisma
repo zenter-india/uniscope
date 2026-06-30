@@ -1,5 +1,5 @@
-// Uniscope — Production Prisma Schema
-// M1: Core Infrastructure & Data Layer
+// MedConnect — Production Prisma Schema
+// Marketplace domain: anonymous mentorship marketplace with wallet-based billing.
 //
 // Notes:
 //   • PKs use uuid() — optimal for Supabase/PostgreSQL.
@@ -9,9 +9,10 @@
 //   • searchVector (tsvector) fields are marked Unsupported — a raw SQL migration
 //     creates the GENERATED ALWAYS AS STORED column and GIN indexes.
 //   • All table/column names follow snake_case PostgreSQL convention via @@map / @map.
+//   • Money is always stored as integer paise (Minor) — never floats.
 
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
   previewFeatures = ["driverAdapters"]
 }
 
@@ -27,6 +28,7 @@ enum UserRole {
   PROSPECTIVE_STUDENT
   CURRENT_STUDENT
   ALUMNI
+  MENTOR
   ADMIN
 }
 
@@ -53,53 +55,73 @@ enum DocumentType {
   NMC_REGISTRATION
 }
 
-enum QuestionStatus {
-  ACTIVE
-  CLOSED
-  ARCHIVED
-}
-
 enum ReviewStatus {
   ACTIVE
   HIDDEN
   REMOVED
 }
 
-enum ChatRoomStatus {
+enum MentorOnlineStatus {
+  ONLINE
+  BUSY
+  OFFLINE
+}
+
+enum LedgerEntryType {
+  RECHARGE
+  SESSION_DEBIT
+  EARNING_CREDIT
+  COMMISSION
+  REFUND
+  BONUS
+  PAYOUT
+}
+
+enum PaymentOrderStatus {
+  CREATED
+  AUTHORIZED
+  CAPTURED
+  FAILED
+  REFUNDED
+}
+
+enum SessionType {
+  CHAT
+  CALL
+}
+
+enum SessionStatus {
+  REQUESTED
   ACTIVE
-  CLOSED
-  BLOCKED
+  PAUSED
+  ENDED
+  CANCELLED
+  DISPUTED
 }
 
-enum ChatRoomType {
-  DIRECT
-  UNIVERSITY
-}
-
-enum MessageType {
-  TEXT
+enum SessionEndReason {
+  NORMAL
+  LOW_BALANCE
+  MENTOR_LEFT
+  ASPIRANT_LEFT
+  TIMEOUT
   SYSTEM
-}
-
-enum MediaType {
-  IMAGE
-  FILE
 }
 
 enum NotificationType {
   MESSAGE
-  ANSWER
   REVIEW
   VERIFICATION
   SYSTEM
+  SESSION
+  WALLET
+  PAYMENT
 }
 
 enum ReportTargetType {
-  QUESTION
-  ANSWER
   REVIEW
-  MESSAGE
   USER
+  SESSION
 }
 
 enum ReportReason {
@@ -125,33 +147,35 @@ enum ReportStatus {
 /// Central identity record. One record per phone number.
 /// Phone stored as bcrypt hash — never plaintext.
 model User {
-  id                   String             @id @default(uuid())
-  phoneHash            String             @unique @db.VarChar(128) @map("phone_hash")
-  displayName          String             @db.VarChar(60) @map("display_name")
-  role                 UserRole
-  verificationStatus   VerificationStatus @default(DRAFT) @map("verification_status")
-  isActive             Boolean            @default(true) @map("is_active")
-  isBanned             Boolean            @default(false) @map("is_banned")
-  refreshTokenHash     String?            @db.VarChar(256) @map("refresh_token_hash")
-  lastActiveAt         DateTime?          @map("last_active_at") @db.Timestamptz
-  createdAt            DateTime           @default(now()) @map("created_at") @db.Timestamptz
-  updatedAt            DateTime           @updatedAt @map("updated_at") @db.Timestamptz
-  deletedAt            DateTime?          @map("deleted_at") @db.Timestamptz
+  id                 String             @id @default(uuid())
+  phoneHash          String             @unique @map("phone_hash") @db.VarChar(128)
+  displayName        String             @map("display_name") @db.VarChar(60)
+  role               UserRole
+  verificationStatus VerificationStatus @default(DRAFT) @map("verification_status")
+  isActive           Boolean            @default(true) @map("is_active")
+  isBanned           Boolean            @default(false) @map("is_banned")
+  refreshTokenHash   String?            @map("refresh_token_hash") @db.VarChar(256)
+  lastActiveAt       DateTime?          @map("last_active_at") @db.Timestamptz
+  createdAt          DateTime           @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt          DateTime           @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt          DateTime?          @map("deleted_at") @db.Timestamptz
 
   // Relations
-  profile                   UserProfile?
-  verificationRequests      VerificationRequest[]  @relation("UserVerificationRequests")
-  reviewedRequests          VerificationRequest[]  @relation("ReviewerVerificationRequests")
-  questions                 Question[]
-  answers                   Answer[]
-  answerVotes               AnswerVote[]
-  reviews                   Review[]
-  initiatedChatRooms        ChatRoom[]             @relation("InitiatorChatRooms")
-  mentorChatRooms           ChatRoom[]             @relation("MentorChatRooms")
-  messages                  Message[]
-  sentReports               Report[]               @relation("ReporterReports")
-  actionedReports           Report[]               @relation("ActionedByReports")
-  notifications             Notification[]
+  profile                UserProfile?
+  mentorProfile          MentorProfile?
+  wallet                 Wallet?
+  mentorVerifications    MentorVerification[] @relation("UserMentorVerifications")
+  reviewedVerifications  MentorVerification[] @relation("ReviewerMentorVerifications")
+  reviews                Review[]
+  sessionsAsAspirant     Session[]            @relation("AspirantSessions")
+  sessionsAsMentor       Session[]            @relation("MentorSessions")
+  sessionRatingsGiven    SessionRating[]      @relation("RaterSessionRatings")
+  sessionRatingsReceived SessionRating[]      @relation("MentorSessionRatings")
+  blocksInitiated        Block[]              @relation("BlockerBlocks")
+  blocksReceived         Block[]              @relation("BlockedByBlocks")
+  sentReports            Report[]             @relation("ReporterReports")
+  actionedReports        Report[]             @relation("ActionedByReports")
+  notifications          Notification[]
 
   @@index([role])
   @@index([verificationStatus])
@@ -162,52 +186,49 @@ model User {
 /// Extended profile data — one-to-one with User.
 /// Sensitive fields (real name) stored AES-256-GCM encrypted.
 model UserProfile {
-  id                String      @id @default(uuid())
-  userId            String      @unique @map("user_id")
-  realNameEncrypted String?     @db.Text @map("real_name_encrypted")
-  universityId      String?     @map("university_id")
-  graduationYear    Int?        @db.SmallInt @map("graduation_year")
-  yearOfStudy       Int?        @db.SmallInt @map("year_of_study")
-  specialty         String?     @db.VarChar(100)
-  bio               String?     @db.VarChar(500)
-  avatarKey         String?     @db.VarChar(500) @map("avatar_key")
-  isMentorAvailable Boolean     @default(false) @map("is_mentor_available")
-  createdAt         DateTime    @default(now()) @map("created_at") @db.Timestamptz
-  updatedAt         DateTime    @updatedAt @map("updated_at") @db.Timestamptz
+  id                String   @id @default(uuid())
+  userId            String   @unique @map("user_id")
+  realNameEncrypted String?  @map("real_name_encrypted") @db.Text
+  universityId      String?  @map("university_id")
+  graduationYear    Int?     @map("graduation_year") @db.SmallInt
+  yearOfStudy       Int?     @map("year_of_study") @db.SmallInt
+  specialty         String?  @db.VarChar(100)
+  bio               String?  @db.VarChar(500)
+  avatarKey         String?  @map("avatar_key") @db.VarChar(500)
+  createdAt         DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt         DateTime @updatedAt @map("updated_at") @db.Timestamptz
 
-  user              User        @relation(fields: [userId], references: [id])
-  university        University? @relation(fields: [universityId], references: [id])
+  user       User        @relation(fields: [userId], references: [id])
+  university University? @relation(fields: [universityId], references: [id])
 
   @@index([universityId])
-  @@index([isMentorAvailable, universityId])
   @@map("user_profiles")
 }
 
 /// Master data for medical institutions. Admin-managed.
 model University {
-  id              String         @id @default(uuid())
-  name            String         @db.VarChar(200)
-  slug            String         @unique @db.VarChar(200)
+  id              String                   @id @default(uuid())
+  name            String                   @db.VarChar(200)
+  slug            String                   @unique @db.VarChar(200)
   type            UniversityType
-  state           String         @db.VarChar(100)
-  city            String         @db.VarChar(100)
-  nirfRank        Int?           @db.SmallInt @map("nirf_rank")
-  mbbsSeats       Int?           @db.SmallInt @map("mbbs_seats")
-  establishedYear Int?           @db.SmallInt @map("established_year")
-  website         String?        @db.VarChar(300)
-  description     String?        @db.Text
-  isActive        Boolean        @default(true) @map("is_active")
+  state           String                   @db.VarChar(100)
+  city            String                   @db.VarChar(100)
+  nirfRank        Int?                     @map("nirf_rank") @db.SmallInt
+  mbbsSeats       Int?                     @map("mbbs_seats") @db.SmallInt
+  establishedYear Int?                     @map("established_year") @db.SmallInt
+  website         String?                  @db.VarChar(300)
+  description     String?                  @db.Text
+  isActive        Boolean                  @default(true) @map("is_active")
   /// Full-text search vector — populated via SQL migration trigger on name/state/city
   searchVector    Unsupported("tsvector")? @map("search_vector")
-  createdAt       DateTime       @default(now()) @map("created_at") @db.Timestamptz
-  updatedAt       DateTime       @updatedAt @map("updated_at") @db.Timestamptz
+  createdAt       DateTime                 @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt       DateTime                 @updatedAt @map("updated_at") @db.Timestamptz
 
-  profiles             UserProfile[]
-  programs             Program[]
-  verificationRequests VerificationRequest[]
-  questions            Question[]
-  reviews              Review[]
-  chatRooms            ChatRoom[]
+  profiles            UserProfile[]
+  programs            Program[]
+  mentorVerifications MentorVerification[]
+  mentorProfiles      MentorProfile[]
+  reviews             Review[]
 
   @@index([state])
   @@index([type])
@@ -217,142 +238,106 @@ model University {
 
 /// Degree programs offered at a university (e.g. MBBS, MD, MS, DNB).
 model Program {
-  id            String     @id @default(uuid())
-  universityId  String     @map("university_id")
-  name          String     @db.VarChar(100)
-  description   String?    @db.Text
-  durationYears Int?       @db.SmallInt @map("duration_years")
-  totalSeats    Int?       @db.SmallInt @map("total_seats")
-  isActive      Boolean    @default(true) @map("is_active")
-  createdAt     DateTime   @default(now()) @map("created_at") @db.Timestamptz
-  updatedAt     DateTime   @updatedAt @map("updated_at") @db.Timestamptz
+  id            String   @id @default(uuid())
+  universityId  String   @map("university_id")
+  name          String   @db.VarChar(100)
+  description   String?  @db.Text
+  durationYears Int?     @map("duration_years") @db.SmallInt
+  totalSeats    Int?     @map("total_seats") @db.SmallInt
+  isActive      Boolean  @default(true) @map("is_active")
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt     DateTime @updatedAt @map("updated_at") @db.Timestamptz
 
-  university    University @relation(fields: [universityId], references: [id])
+  university     University      @relation(fields: [universityId], references: [id])
+  mentorProfiles MentorProfile[]
 
   @@unique([universityId, name])
   @@index([universityId])
   @@map("programs")
 }
 
-/// Mentor identity verification submission.
+/// Mentor credential verification submission, tied to earning money.
 /// One submission per user per document type; admin reviews before granting VERIFIED status.
-model VerificationRequest {
-  id           String             @id @default(uuid())
-  userId       String             @map("user_id")
-  universityId String             @map("university_id")
-  documentType DocumentType       @map("document_type")
-  documentKey  String             @db.VarChar(500) @map("document_key")
-  status       VerificationStatus @default(DRAFT)
-  reviewedBy   String?            @map("reviewed_by")
-  reviewNote   String?            @db.VarChar(500) @map("review_note")
-  submittedAt  DateTime?          @map("submitted_at") @db.Timestamptz
-  reviewedAt   DateTime?          @map("reviewed_at") @db.Timestamptz
-  createdAt    DateTime           @default(now()) @map("created_at") @db.Timestamptz
-  updatedAt    DateTime           @updatedAt @map("updated_at") @db.Timestamptz
-  deletedAt    DateTime?          @map("deleted_at") @db.Timestamptz
+model MentorVerification {
+  id               String             @id @default(uuid())
+  userId           String             @map("user_id")
+  universityId     String             @map("university_id")
+  documentType     DocumentType       @map("document_type")
+  documentKey      String             @map("document_key") @db.VarChar(500)
+  enrollmentNumber String?            @map("enrollment_number") @db.VarChar(100)
+  status           VerificationStatus @default(DRAFT)
+  reviewedBy       String?            @map("reviewed_by")
+  reviewNote       String?            @map("review_note") @db.VarChar(500)
+  submittedAt      DateTime?          @map("submitted_at") @db.Timestamptz
+  reviewedAt       DateTime?          @map("reviewed_at") @db.Timestamptz
+  createdAt        DateTime           @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt        DateTime           @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt        DateTime?          @map("deleted_at") @db.Timestamptz
 
-  user         User               @relation("UserVerificationRequests", fields: [userId], references: [id])
-  university   University         @relation(fields: [universityId], references: [id])
-  reviewer     User?              @relation("ReviewerVerificationRequests", fields: [reviewedBy], references: [id])
+  user       User       @relation("UserMentorVerifications", fields: [userId], references: [id])
+  university University @relation(fields: [universityId], references: [id])
+  reviewer   User?      @relation("ReviewerMentorVerifications", fields: [reviewedBy], references: [id])
 
   @@index([userId])
   @@index([status, submittedAt])
   @@index([reviewedBy])
-  @@map("verification_requests")
+  @@map("mentor_verifications")
 }
 
-/// Question posted by a prospective student, tagged to a university.
-model Question {
-  id           String         @id @default(uuid())
-  authorId     String         @map("author_id")
-  universityId String         @map("university_id")
-  title        String         @db.VarChar(300)
-  body         String?        @db.Text
-  tags         String[]       @default([])
-  status       QuestionStatus @default(ACTIVE)
-  viewCount    Int            @default(0) @map("view_count")
-  answerCount  Int            @default(0) @map("answer_count")
-  isPinned     Boolean        @default(false) @map("is_pinned")
-  isLocked     Boolean        @default(false) @map("is_locked")
-  /// Full-text search vector — populated via SQL migration trigger on title/body
-  searchVector Unsupported("tsvector")? @map("search_vector")
-  createdAt    DateTime       @default(now()) @map("created_at") @db.Timestamptz
-  updatedAt    DateTime       @updatedAt @map("updated_at") @db.Timestamptz
-  deletedAt    DateTime?      @map("deleted_at") @db.Timestamptz
+/// Mentor-facing profile — rates, availability, expertise. 1:1 with User(role=MENTOR).
+model MentorProfile {
+  id                  String             @id @default(uuid())
+  userId              String             @unique @map("user_id")
+  universityId        String?            @map("university_id")
+  programId           String?            @map("program_id")
+  yearOfStudy         Int?               @map("year_of_study") @db.SmallInt
+  bio                 String?            @db.VarChar(500)
+  expertiseTags       String[]           @default([]) @map("expertise_tags")
+  chatRatePerMinMinor Int                @default(0) @map("chat_rate_per_min_minor")
+  callRatePerMinMinor Int?               @map("call_rate_per_min_minor")
+  onlineStatus        MentorOnlineStatus @default(OFFLINE) @map("online_status")
+  isAcceptingChats    Boolean            @default(false) @map("is_accepting_chats")
+  freeFirstMinutes    Int                @default(0) @map("free_first_minutes")
+  ratingAvg           Decimal            @default(0) @map("rating_avg") @db.Decimal(3, 2)
+  ratingCount         Int                @default(0) @map("rating_count")
+  totalEarningsMinor  Int                @default(0) @map("total_earnings_minor")
+  totalSessionCount   Int                @default(0) @map("total_session_count")
+  createdAt           DateTime           @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt           DateTime           @updatedAt @map("updated_at") @db.Timestamptz
 
-  author       User           @relation(fields: [authorId], references: [id])
-  university   University     @relation(fields: [universityId], references: [id])
-  answers      Answer[]
+  user       User        @relation(fields: [userId], references: [id])
+  university University? @relation(fields: [universityId], references: [id])
+  program    Program?    @relation(fields: [programId], references: [id])
 
-  @@index([universityId, createdAt(sort: Desc)])
-  @@index([authorId])
-  @@map("questions")
-}
-
-/// Response to a Question by a verified student or alumni.
-model Answer {
-  id           String    @id @default(uuid())
-  questionId   String    @map("question_id")
-  authorId     String    @map("author_id")
-  body         String    @db.Text
-  upvoteCount  Int       @default(0) @map("upvote_count")
-  isAccepted   Boolean   @default(false) @map("is_accepted")
-  /// Full-text search vector — populated via SQL migration trigger on body
-  searchVector Unsupported("tsvector")? @map("search_vector")
-  createdAt    DateTime  @default(now()) @map("created_at") @db.Timestamptz
-  updatedAt    DateTime  @updatedAt @map("updated_at") @db.Timestamptz
-  deletedAt    DateTime? @map("deleted_at") @db.Timestamptz
-
-  question     Question    @relation(fields: [questionId], references: [id])
-  author       User        @relation(fields: [authorId], references: [id])
-  votes        AnswerVote[]
-
-  @@unique([questionId, authorId])
-  @@index([questionId, upvoteCount(sort: Desc)])
-  @@index([questionId, createdAt(sort: Asc)])
-  @@index([authorId])
-  @@map("answers")
-}
-
-/// Upvote on an Answer. One vote per user per answer; no soft delete.
-model AnswerVote {
-  id        String   @id @default(uuid())
-  answerId  String   @map("answer_id")
-  userId    String   @map("user_id")
-  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
-
-  answer    Answer   @relation(fields: [answerId], references: [id])
-  user      User     @relation(fields: [userId], references: [id])
-
-  @@unique([answerId, userId])
-  @@index([userId])
-  @@map("answer_votes")
+  @@index([universityId])
+  @@index([onlineStatus, isAcceptingChats])
+  @@map("mentor_profiles")
 }
 
 /// Multi-dimensional university review by a verified student or alumni.
 model Review {
-  id                     String       @id @default(uuid())
-  authorId               String       @map("author_id")
-  universityId           String       @map("university_id")
-  status                 ReviewStatus @default(ACTIVE)
-  overallRating          Int          @db.SmallInt @map("overall_rating")
-  facultyRating          Int?         @db.SmallInt @map("faculty_rating")
-  infrastructureRating   Int?         @db.SmallInt @map("infrastructure_rating")
-  clinicalExposureRating Int?         @db.SmallInt @map("clinical_exposure_rating")
-  campusLifeRating       Int?         @db.SmallInt @map("campus_life_rating")
-  placementsRating       Int?         @db.SmallInt @map("placements_rating")
-  pros                   String?      @db.Text
-  cons                   String?      @db.Text
-  body                   String?      @db.Text
-  helpfulCount           Int          @default(0) @map("helpful_count")
+  id                     String                   @id @default(uuid())
+  authorId               String                   @map("author_id")
+  universityId           String                   @map("university_id")
+  status                 ReviewStatus             @default(ACTIVE)
+  overallRating          Int                      @map("overall_rating") @db.SmallInt
+  facultyRating          Int?                     @map("faculty_rating") @db.SmallInt
+  infrastructureRating   Int?                     @map("infrastructure_rating") @db.SmallInt
+  clinicalExposureRating Int?                     @map("clinical_exposure_rating") @db.SmallInt
+  campusLifeRating       Int?                     @map("campus_life_rating") @db.SmallInt
+  placementsRating       Int?                     @map("placements_rating") @db.SmallInt
+  pros                   String?                  @db.Text
+  cons                   String?                  @db.Text
+  body                   String?                  @db.Text
+  helpfulCount           Int                      @default(0) @map("helpful_count")
   /// Full-text search vector — populated via SQL migration trigger on pros/cons/body
   searchVector           Unsupported("tsvector")? @map("search_vector")
-  createdAt              DateTime     @default(now()) @map("created_at") @db.Timestamptz
-  updatedAt              DateTime     @updatedAt @map("updated_at") @db.Timestamptz
-  deletedAt              DateTime?    @map("deleted_at") @db.Timestamptz
+  createdAt              DateTime                 @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt              DateTime                 @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt              DateTime?                @map("deleted_at") @db.Timestamptz
 
-  author                 User         @relation(fields: [authorId], references: [id])
-  university             University   @relation(fields: [universityId], references: [id])
+  author     User       @relation(fields: [authorId], references: [id])
+  university University @relation(fields: [universityId], references: [id])
 
   @@unique([authorId, universityId])
   @@index([universityId, createdAt(sort: Desc)])
@@ -361,69 +346,143 @@ model Review {
   @@map("reviews")
 }
 
-/// 1:1 conversation between a prospective student and a verified mentor.
-model ChatRoom {
-  id            String         @id @default(uuid())
-  initiatorId   String         @map("initiator_id")
-  mentorId      String         @map("mentor_id")
-  universityId  String?        @map("university_id")
-  type          ChatRoomType   @default(DIRECT)
-  status        ChatRoomStatus @default(ACTIVE)
-  lastMessageAt DateTime?      @map("last_message_at") @db.Timestamptz
-  createdAt     DateTime       @default(now()) @map("created_at") @db.Timestamptz
-  updatedAt     DateTime       @updatedAt @map("updated_at") @db.Timestamptz
+/// Wallet holding a cached balance for an aspirant or mentor. Source of truth is LedgerEntry.
+model Wallet {
+  id           String   @id @default(uuid())
+  userId       String   @unique @map("user_id")
+  balanceMinor Int      @default(0) @map("balance_minor")
+  currency     String   @default("INR") @db.VarChar(3)
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt    DateTime @updatedAt @map("updated_at") @db.Timestamptz
 
-  initiator     User           @relation("InitiatorChatRooms", fields: [initiatorId], references: [id])
-  mentor        User           @relation("MentorChatRooms", fields: [mentorId], references: [id])
-  university    University?    @relation(fields: [universityId], references: [id])
-  messages      Message[]
+  user          User           @relation(fields: [userId], references: [id])
+  ledgerEntries LedgerEntry[]
+  paymentOrders PaymentOrder[]
 
-  @@unique([initiatorId, mentorId])
-  @@index([initiatorId, lastMessageAt(sort: Desc)])
-  @@index([mentorId, lastMessageAt(sort: Desc)])
-  @@index([status])
-  @@map("chat_rooms")
+  @@map("wallets")
 }
 
-/// Individual message within a ChatRoom. Soft-deleted for "unsend" feature.
-model Message {
-  id        String      @id @default(uuid())
-  roomId    String      @map("room_id")
-  senderId  String      @map("sender_id")
-  type      MessageType @default(TEXT)
-  body      String?     @db.Text
-  mediaKey  String?     @db.VarChar(500) @map("media_key")
-  mediaType MediaType?  @map("media_type")
-  isRead    Boolean     @default(false) @map("is_read")
-  readAt    DateTime?   @map("read_at") @db.Timestamptz
-  createdAt DateTime    @default(now()) @map("created_at") @db.Timestamptz
-  updatedAt DateTime    @updatedAt @map("updated_at") @db.Timestamptz
-  deletedAt DateTime?   @map("deleted_at") @db.Timestamptz
+/// Append-only, immutable ledger. Never UPDATE/DELETE — the audit trail to the paisa.
+model LedgerEntry {
+  id                String          @id @default(uuid())
+  walletId          String          @map("wallet_id")
+  type              LedgerEntryType
+  amountMinor       Int             @map("amount_minor")
+  balanceAfterMinor Int             @map("balance_after_minor")
+  referenceType     String?         @map("reference_type") @db.VarChar(50)
+  referenceId       String?         @map("reference_id")
+  idempotencyKey    String          @unique @map("idempotency_key") @db.VarChar(255)
+  description       String?         @db.VarChar(500)
+  createdAt         DateTime        @default(now()) @map("created_at") @db.Timestamptz
 
-  room      ChatRoom    @relation(fields: [roomId], references: [id])
-  sender    User        @relation(fields: [senderId], references: [id])
+  wallet Wallet @relation(fields: [walletId], references: [id])
 
-  @@index([roomId, createdAt(sort: Asc)])
-  @@index([senderId])
-  @@map("messages")
+  @@index([walletId, createdAt(sort: Desc)])
+  @@index([referenceType, referenceId])
+  @@map("ledger_entries")
+}
+
+/// Razorpay order lifecycle for wallet recharges.
+model PaymentOrder {
+  id                String             @id @default(uuid())
+  walletId          String             @map("wallet_id")
+  razorpayOrderId   String             @unique @map("razorpay_order_id") @db.VarChar(100)
+  razorpayPaymentId String?            @map("razorpay_payment_id") @db.VarChar(100)
+  razorpaySignature String?            @map("razorpay_signature") @db.VarChar(255)
+  amountMinor       Int                @map("amount_minor")
+  bonusMinor        Int                @default(0) @map("bonus_minor")
+  status            PaymentOrderStatus @default(CREATED)
+  createdAt         DateTime           @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt         DateTime           @updatedAt @map("updated_at") @db.Timestamptz
+
+  wallet Wallet @relation(fields: [walletId], references: [id])
+
+  @@index([walletId, createdAt(sort: Desc)])
+  @@index([status])
+  @@map("payment_orders")
+}
+
+/// Billable 1:1 session between an aspirant and a mentor. Billing clock is server-authoritative.
+/// externalChannelId points to the Stream Chat channel — the only chat pointer kept in Postgres.
+model Session {
+  id                 String            @id @default(uuid())
+  aspirantId         String            @map("aspirant_id")
+  mentorId           String            @map("mentor_id")
+  type               SessionType       @default(CHAT)
+  status             SessionStatus     @default(REQUESTED)
+  ratePerMinSnapshot Int               @map("rate_per_min_snapshot")
+  commissionRate     Int               @map("commission_rate")
+  freeSecondsApplied Int               @default(0) @map("free_seconds_applied")
+  startedAt          DateTime?         @map("started_at") @db.Timestamptz
+  endedAt            DateTime?         @map("ended_at") @db.Timestamptz
+  billedSeconds      Int               @default(0) @map("billed_seconds")
+  totalAmountMinor   Int               @default(0) @map("total_amount_minor")
+  commissionMinor    Int               @default(0) @map("commission_minor")
+  mentorEarningMinor Int               @default(0) @map("mentor_earning_minor")
+  externalChannelId  String?           @map("external_channel_id") @db.VarChar(255)
+  endReason          SessionEndReason? @map("end_reason")
+  createdAt          DateTime          @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt          DateTime          @updatedAt @map("updated_at") @db.Timestamptz
+
+  aspirant User           @relation("AspirantSessions", fields: [aspirantId], references: [id])
+  mentor   User           @relation("MentorSessions", fields: [mentorId], references: [id])
+  rating   SessionRating?
+
+  @@index([aspirantId, createdAt(sort: Desc)])
+  @@index([mentorId, createdAt(sort: Desc)])
+  @@index([status])
+  @@map("sessions")
+}
+
+/// Post-session 1–5 star rating with optional comment.
+model SessionRating {
+  id        String   @id @default(uuid())
+  sessionId String   @unique @map("session_id")
+  raterId   String   @map("rater_id")
+  mentorId  String   @map("mentor_id")
+  rating    Int      @db.SmallInt
+  comment   String?  @db.VarChar(500)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  session Session @relation(fields: [sessionId], references: [id])
+  rater   User    @relation("RaterSessionRatings", fields: [raterId], references: [id])
+  mentor  User    @relation("MentorSessionRatings", fields: [mentorId], references: [id])
+
+  @@index([mentorId, createdAt(sort: Desc)])
+  @@map("session_ratings")
+}
+
+/// One-way block between two users — hides mentors/aspirants from each other.
+model Block {
+  id        String   @id @default(uuid())
+  blockerId String   @map("blocker_id")
+  blockedId String   @map("blocked_id")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  blocker User @relation("BlockerBlocks", fields: [blockerId], references: [id])
+  blocked User @relation("BlockedByBlocks", fields: [blockedId], references: [id])
+
+  @@unique([blockerId, blockedId])
+  @@index([blockedId])
+  @@map("blocks")
 }
 
 /// User-submitted flag on any content. Polymorphic via targetType + targetId.
 model Report {
-  id           String           @id @default(uuid())
-  reporterId   String           @map("reporter_id")
-  targetType   ReportTargetType @map("target_type")
-  targetId     String           @map("target_id")
-  reason       ReportReason
-  description  String?          @db.VarChar(500)
-  status       ReportStatus     @default(OPEN)
-  actionedBy   String?          @map("actioned_by")
-  resolution   String?          @db.VarChar(500)
-  createdAt    DateTime         @default(now()) @map("created_at") @db.Timestamptz
-  updatedAt    DateTime         @updatedAt @map("updated_at") @db.Timestamptz
+  id          String           @id @default(uuid())
+  reporterId  String           @map("reporter_id")
+  targetType  ReportTargetType @map("target_type")
+  targetId    String           @map("target_id")
+  reason      ReportReason
+  description String?          @db.VarChar(500)
+  status      ReportStatus     @default(OPEN)
+  actionedBy  String?          @map("actioned_by")
+  resolution  String?          @db.VarChar(500)
+  createdAt   DateTime         @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime         @updatedAt @map("updated_at") @db.Timestamptz
 
-  reporter     User             @relation("ReporterReports", fields: [reporterId], references: [id])
-  actionedByUser User?          @relation("ActionedByReports", fields: [actionedBy], references: [id])
+  reporter       User  @relation("ReporterReports", fields: [reporterId], references: [id])
+  actionedByUser User? @relation("ActionedByReports", fields: [actionedBy], references: [id])
 
   @@index([status, createdAt(sort: Desc)])
   @@index([reporterId])
@@ -446,7 +505,7 @@ model Notification {
   updatedAt DateTime         @updatedAt @map("updated_at") @db.Timestamptz
   deletedAt DateTime?        @map("deleted_at") @db.Timestamptz
 
-  user      User             @relation(fields: [userId], references: [id])
+  user User @relation(fields: [userId], references: [id])
 
   @@index([userId, createdAt(sort: Desc)])
   @@index([userId, isRead])

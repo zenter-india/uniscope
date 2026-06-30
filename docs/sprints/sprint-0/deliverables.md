@@ -3,7 +3,7 @@
 ## Repository
 
 ```
-uniscope/
+medconnect/
 ├── mobile/                 # Expo (TypeScript) placeholder
 ├── backend/                # NestJS + Prisma placeholder
 ├── admin/                  # Next.js placeholder

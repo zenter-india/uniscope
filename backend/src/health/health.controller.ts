@@ -6,7 +6,7 @@ export class HealthController {
   check() {
     return {
       status: 'ok',
-      service: 'uniscope-api',
+      service: 'medconnect-api',
       timestamp: new Date().toISOString(),
     };
   }
