@@ -12,12 +12,14 @@ export class TwilioOtpProvider implements OtpProvider {
   private readonly accountSid: string;
   private readonly authToken: string;
   private readonly verifyServiceSid: string;
+  private readonly channel: 'sms' | 'whatsapp';
 
   constructor(private readonly config: ConfigService) {
     const cfg = this.config.get<TwilioConfig>('twilio')!;
     this.accountSid = cfg.accountSid;
     this.authToken = cfg.authToken;
     this.verifyServiceSid = cfg.verifyServiceSid;
+    this.channel = cfg.channel;
   }
 
   private get basicAuth(): string {
@@ -33,7 +35,9 @@ export class TwilioOtpProvider implements OtpProvider {
         Authorization: `Basic ${this.basicAuth}`,
         'Content-Type': 'application/x-www-form-urlencoded',
       },
-      body: new URLSearchParams({ To: phone, Channel: 'sms' }),
+      // Twilio Verify's To is always plain E.164 — the channel handles
+      // routing (no 'whatsapp:' prefix needed, unlike raw Messaging API).
+      body: new URLSearchParams({ To: phone, Channel: this.channel }),
     });
 
     if (!response.ok) {
@@ -48,7 +52,7 @@ export class TwilioOtpProvider implements OtpProvider {
   }
 
   async verifyOtp(phone: string, code: string, serviceId: string): Promise<boolean> {
-    const url = `https://verify.twilio.com/v2/Services/${serviceId}/VerificationChecks`;
+    const url = `https://verify.twilio.com/v2/Services/${serviceId}/VerificationCheck`;
 
     const response = await fetch(url, {
       method: 'POST',
