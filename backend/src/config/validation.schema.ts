@@ -57,4 +57,7 @@ export const validationSchema = Joi.object({
     then: Joi.required(),
     otherwise: Joi.optional(),
   }),
+  // Delivery channel for Twilio Verify OTPs ('whatsapp' requires the
+  // Verify service to have a WhatsApp sender/sandbox configured).
+  OTP_CHANNEL: Joi.string().valid('sms', 'whatsapp').default('sms'),
 }).options({ allowUnknown: true });

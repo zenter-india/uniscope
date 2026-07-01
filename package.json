@@ -4,12 +4,10 @@
   "private": true,
   "description": "Uniscope monorepo — connecting prospective medical students with verified mentors",
   "workspaces": [
-    "mobile",
     "backend",
     "admin"
   ],
   "scripts": {
-    "dev:mobile": "npm run start --workspace=mobile",
     "dev:backend": "npm run start:dev --workspace=backend",
     "dev:admin": "npm run dev --workspace=admin",
     "build": "npm run build --workspaces --if-present",
