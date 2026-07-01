@@ -97,7 +97,8 @@ class _UniversityListScreenState extends State<UniversityListScreen> {
                 ],
               ),
             ),
-            Padding(
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
               padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
               child: Row(
                 children: [
