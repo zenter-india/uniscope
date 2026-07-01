@@ -73,7 +73,7 @@ final routerProvider = Provider<GoRouter>((ref) {
           final args = state.extra as Map<String, dynamic>? ?? const {};
           return OtpScreen(
             phone: args['phone'] as String? ?? '',
-            requestId: args['requestId'] as String? ?? '',
+            serviceId: args['serviceId'] as String? ?? '',
           );
         },
       ),

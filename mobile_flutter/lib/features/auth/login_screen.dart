@@ -38,9 +38,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
     try {
       final fullPhone = '+91${_phone.replaceAll(RegExp(r'\D'), '')}';
-      final requestId = await ref.read(authApiProvider).requestOtp(fullPhone);
+      final serviceId = await ref.read(authApiProvider).requestOtp(fullPhone);
       if (!mounted) return;
-      context.push('/otp', extra: {'phone': fullPhone, 'requestId': requestId});
+      context.push('/otp', extra: {'phone': fullPhone, 'serviceId': serviceId});
     } on DioException catch (err) {
       final msg = (err.response?.data is Map)
           ? (err.response?.data as Map)['message']

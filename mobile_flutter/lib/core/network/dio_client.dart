@@ -4,10 +4,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../state/auth_controller.dart';
 
 /// Base URL — override at build time with:
-///   flutter run --dart-define=API_URL=http://localhost:3000
+///   flutter run --dart-define=API_URL=http://localhost:3001
+/// Default targets the local NestJS backend (see backend/src/main.ts: port 3001,
+/// no global prefix). Note: Android emulators must use 10.0.2.2 instead of
+/// localhost, and physical devices need the host machine's LAN IP.
 const String kApiBaseUrl = String.fromEnvironment(
   'API_URL',
-  defaultValue: 'https://medconnect-api.onrender.com',
+  defaultValue: 'http://localhost:3001',
 );
 
 /// Dio instance with the same behaviour as the RN axios `apiClient`:

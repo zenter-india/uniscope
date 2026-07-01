@@ -14,10 +14,10 @@ const _resendCooldown = 60;
 
 /// Port of RN `auth/OTPScreen.tsx`.
 class OtpScreen extends ConsumerStatefulWidget {
-  const OtpScreen({super.key, required this.phone, required this.requestId});
+  const OtpScreen({super.key, required this.phone, required this.serviceId});
 
   final String phone;
-  final String requestId;
+  final String serviceId;
 
   @override
   ConsumerState<OtpScreen> createState() => _OtpScreenState();
@@ -26,7 +26,7 @@ class OtpScreen extends ConsumerStatefulWidget {
 class _OtpScreenState extends ConsumerState<OtpScreen> {
   final _controller = TextEditingController();
   final _focus = FocusNode();
-  late String _requestId = widget.requestId;
+  late String _serviceId = widget.serviceId;
   String _otp = '';
   int _countdown = _resendCooldown;
   String _error = '';
@@ -78,7 +78,9 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
     });
 
     try {
-      final result = await ref.read(authApiProvider).verifyOtp(_requestId, code);
+      final result = await ref
+          .read(authApiProvider)
+          .verifyOtp(_serviceId, widget.phone, code);
       ref.read(authControllerProvider.notifier).setAuth(
             result.accessToken,
             result.refreshToken,
@@ -112,7 +114,7 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
     try {
       final id = await ref.read(authApiProvider).requestOtp(widget.phone);
       setState(() {
-        _requestId = id;
+        _serviceId = id;
         _countdown = _resendCooldown;
       });
       _startTimer();

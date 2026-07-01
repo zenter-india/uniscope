@@ -24,18 +24,25 @@ class AuthApi {
 
   final Dio _dio;
 
+  /// Requests an OTP for [phone]; the backend returns a `serviceId` that must
+  /// be echoed back on verify (see backend AuthController).
   Future<String> requestOtp(String phone) async {
     final res = await _dio.post<Map<String, dynamic>>(
       '/auth/otp/request',
       data: {'phone': phone},
     );
-    return res.data!['requestId'] as String;
+    return res.data!['serviceId'] as String;
   }
 
-  Future<VerifyOtpResult> verifyOtp(String requestId, String otp) async {
+  /// Verifies [code] for [phone] against the [serviceId] from [requestOtp].
+  Future<VerifyOtpResult> verifyOtp(
+    String serviceId,
+    String phone,
+    String code,
+  ) async {
     final res = await _dio.post<Map<String, dynamic>>(
       '/auth/otp/verify',
-      data: {'requestId': requestId, 'otp': otp},
+      data: {'serviceId': serviceId, 'phone': phone, 'code': code},
     );
     final data = res.data!;
     final user = data['user'] as Map<String, dynamic>;

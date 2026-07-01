@@ -15,7 +15,8 @@ class _FakeAuthApi extends AuthApi {
   @override
   Future<String> requestOtp(String phone) async => 'req_test';
   @override
-  Future<VerifyOtpResult> verifyOtp(String requestId, String otp) async =>
+  Future<VerifyOtpResult> verifyOtp(
+          String serviceId, String phone, String code) async =>
       VerifyOtpResult(
         accessToken: 'access',
         refreshToken: 'refresh',
