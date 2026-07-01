@@ -1,4 +1,4 @@
-# MedConnect Admin
+# Uniscope Admin
 
 Next.js admin portal for internal operations and moderation (business features in future sprints).
 

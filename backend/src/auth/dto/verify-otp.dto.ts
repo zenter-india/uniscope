@@ -1,10 +1,14 @@
-import { IsString, Length } from 'class-validator';
+import { IsPhoneNumber, IsString, Length } from 'class-validator';
 
 export class VerifyOtpDto {
   @IsString()
-  requestId!: string;
+  @IsPhoneNumber('IN')
+  phone!: string;
 
   @IsString()
   @Length(6, 6)
-  otp!: string;
+  code!: string;
+
+  @IsString()
+  serviceId!: string;
 }

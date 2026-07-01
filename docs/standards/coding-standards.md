@@ -1,6 +1,6 @@
 # Coding standards
 
-MedConnect engineering standards for the monorepo. Apply consistently across `mobile`, `backend`, and `admin`.
+Uniscope engineering standards for the monorepo. Apply consistently across `mobile`, `backend`, and `admin`.
 
 ## General
 

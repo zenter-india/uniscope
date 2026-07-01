@@ -1,6 +1,6 @@
 # Product documentation
 
-MedConnect helps prospective medical students discover universities through verified peer perspectives.
+Uniscope helps prospective medical students discover universities through verified peer perspectives.
 
 ## Vision
 

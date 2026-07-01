@@ -13,6 +13,9 @@ import {
   firebaseConfig,
   jwtConfig,
   redisConfig,
+  twilioConfig,
+  streamConfig,
+  razorpayConfig,
   validationSchema,
 } from './config/index.js';
 
@@ -39,7 +42,7 @@ import { NotificationsModule } from './modules/notifications/notifications.modul
     // Global config — must come first so other modules can inject ConfigService
     ConfigModule.forRoot({
       isGlobal: true,
-      load: [appConfig, databaseConfig, supabaseConfig, firebaseConfig, jwtConfig, redisConfig],
+      load: [appConfig, databaseConfig, supabaseConfig, firebaseConfig, jwtConfig, redisConfig, twilioConfig, streamConfig, razorpayConfig],
       validationSchema,
       validationOptions: { abortEarly: true },
     }),

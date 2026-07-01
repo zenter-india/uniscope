@@ -1,6 +1,6 @@
 # Branch strategy
 
-MedConnect uses a simplified Git Flow adapted for a startup monorepo.
+Uniscope uses a simplified Git Flow adapted for a startup monorepo.
 
 ## Branches
 

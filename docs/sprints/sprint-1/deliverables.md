@@ -1,4 +1,4 @@
-# MedConnect — Sprint 1 Deliverables
+# Uniscope — Sprint 1 Deliverables
 
 **Sprint:** 1  
 **Status:** Not started
