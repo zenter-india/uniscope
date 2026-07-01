@@ -14,6 +14,9 @@ async function bootstrap() {
   // `health` is excluded so infra liveness checks can hit /health at the root.
   app.setGlobalPrefix(apiPrefix, { exclude: ['health'] });
 
+  // Allow the mobile web preview / admin to call the API from the browser.
+  app.enableCors({ origin: true, credentials: true });
+
   // Validate and transform all incoming payloads against their DTOs.
   app.useGlobalPipes(
     new ValidationPipe({

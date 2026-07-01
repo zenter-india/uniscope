@@ -1,7 +1,5 @@
 import { Module } from '@nestjs/common';
 import { PrismaModule } from '../../database/prisma/prisma.module.js';
-import { UniversitiesController } from './universities.controller.js';
-import { UniversitiesService } from './universities.service.js';
 
 /**
  * UniversitiesModule owns all university and program data:
@@ -10,8 +8,8 @@ import { UniversitiesService } from './universities.service.js';
  */
 @Module({
   imports: [PrismaModule],
-  controllers: [UniversitiesController],
-  providers: [UniversitiesService],
-  exports: [UniversitiesService],
+  controllers: [], // Sprint 1: add UniversitiesController
+  providers: [], // Sprint 1: add UniversitiesService
+  exports: [],
 })
 export class UniversitiesModule {}
