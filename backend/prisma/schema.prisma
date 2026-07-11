@@ -9,9 +9,13 @@
 //   • searchVector (tsvector) fields are marked Unsupported — a raw SQL migration
 //     creates the GENERATED ALWAYS AS STORED column and GIN indexes.
 //   • All table/column names follow snake_case PostgreSQL convention via @@map / @map.
+//   • Money is always stored as integer minor units (paise) — never floats.
+//   • LedgerEntry is append-only: never UPDATE/DELETE a row. Corrections are new
+//     compensating entries. Wallet.balanceMinor is a cache, always written in the
+//     same DB transaction as the ledger insert that produced it.
 
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
   previewFeatures = ["driverAdapters"]
 }
 
@@ -53,12 +57,6 @@ enum DocumentType {
   NMC_REGISTRATION
 }
 
-enum QuestionStatus {
-  ACTIVE
-  CLOSED
-  ARCHIVED
-}
-
 enum ReviewStatus {
   ACTIVE
   HIDDEN
@@ -88,15 +86,20 @@ enum MediaType {
 
 enum NotificationType {
   MESSAGE
-  ANSWER
+  SESSION_REQUEST
+  SESSION_ACCEPTED
+  SESSION_REJECTED
+  SESSION_STARTING
+  SESSION_ENDED
+  LOW_BALANCE
+  PAYMENT
   REVIEW
   VERIFICATION
   SYSTEM
 }
 
 enum ReportTargetType {
-  QUESTION
-  ANSWER
+  SESSION
   REVIEW
   MESSAGE
   USER
@@ -118,6 +121,50 @@ enum ReportStatus {
   DISMISSED
 }
 
+/// Chat = Stream Chat text session. AudioCall = Agora voice session.
+/// Video is out of scope by deliberate product decision (anonymity model).
+enum SessionType {
+  CHAT
+  AUDIO_CALL
+}
+
+/// Full booking + call lifecycle. Billing only ever runs while IN_PROGRESS,
+/// and only the backend (never the client) may transition into/out of it.
+enum SessionStatus {
+  PENDING // booking created, awaiting mentor response
+  ACCEPTED // mentor accepted; audio calls move to RINGING, chat moves to IN_PROGRESS
+  REJECTED // mentor declined
+  RINGING // audio call only: callee is being rung (FCM data push sent)
+  IN_PROGRESS // active — chat ongoing, or call connected (server-confirmed via Agora webhook)
+  COMPLETED // ended normally, final billing true-up applied
+  CANCELLED // aspirant cancelled before mentor responded / before start
+  EXPIRED // mentor never responded within the response window
+  FAILED // no-answer or connection failure before a billable connection occurred
+}
+
+enum LedgerEntryType {
+  TOPUP // aspirant purchased Uniminutes (via Razorpay)
+  SESSION_DEBIT // aspirant charged for session minutes (provisional or true-up)
+  SESSION_CREDIT // mentor earned from session minutes
+  REFUND // reversal to aspirant
+  HOLD_RELEASE // unused hold amount returned to spendable balance
+  ADJUSTMENT // manual admin correction — always paired with an audit note
+}
+
+enum HoldStatus {
+  ACTIVE // funds reserved, session in progress
+  CONSUMED // fully absorbed into SESSION_DEBIT entries at session end
+  RELEASED // unused portion returned to the wallet (session ended under estimate)
+  EXPIRED // swept by a background job (session never properly closed)
+}
+
+enum PayoutStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Models
 // ─────────────────────────────────────────────────────────────────────────────
@@ -125,33 +172,35 @@ enum ReportStatus {
 /// Central identity record. One record per phone number.
 /// Phone stored as bcrypt hash — never plaintext.
 model User {
-  id                   String             @id @default(uuid())
-  phoneHash            String             @unique @db.VarChar(128) @map("phone_hash")
-  displayName          String             @db.VarChar(60) @map("display_name")
-  role                 UserRole
-  verificationStatus   VerificationStatus @default(DRAFT) @map("verification_status")
-  isActive             Boolean            @default(true) @map("is_active")
-  isBanned             Boolean            @default(false) @map("is_banned")
-  refreshTokenHash     String?            @db.VarChar(256) @map("refresh_token_hash")
-  lastActiveAt         DateTime?          @map("last_active_at") @db.Timestamptz
-  createdAt            DateTime           @default(now()) @map("created_at") @db.Timestamptz
-  updatedAt            DateTime           @updatedAt @map("updated_at") @db.Timestamptz
-  deletedAt            DateTime?          @map("deleted_at") @db.Timestamptz
+  id                 String             @id @default(uuid())
+  phoneHash          String             @unique @map("phone_hash") @db.VarChar(128)
+  displayName        String             @map("display_name") @db.VarChar(60)
+  role               UserRole
+  verificationStatus VerificationStatus @default(DRAFT) @map("verification_status")
+  isActive           Boolean            @default(true) @map("is_active")
+  isBanned           Boolean            @default(false) @map("is_banned")
+  refreshTokenHash   String?            @map("refresh_token_hash") @db.VarChar(256)
+  lastActiveAt       DateTime?          @map("last_active_at") @db.Timestamptz
+  createdAt          DateTime           @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt          DateTime           @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt          DateTime?          @map("deleted_at") @db.Timestamptz
 
   // Relations
-  profile                   UserProfile?
-  verificationRequests      VerificationRequest[]  @relation("UserVerificationRequests")
-  reviewedRequests          VerificationRequest[]  @relation("ReviewerVerificationRequests")
-  questions                 Question[]
-  answers                   Answer[]
-  answerVotes               AnswerVote[]
-  reviews                   Review[]
-  initiatedChatRooms        ChatRoom[]             @relation("InitiatorChatRooms")
-  mentorChatRooms           ChatRoom[]             @relation("MentorChatRooms")
-  messages                  Message[]
-  sentReports               Report[]               @relation("ReporterReports")
-  actionedReports           Report[]               @relation("ActionedByReports")
-  notifications             Notification[]
+  profile              UserProfile?
+  verificationRequests VerificationRequest[] @relation("UserVerificationRequests")
+  reviewedRequests     VerificationRequest[] @relation("ReviewerVerificationRequests")
+  reviews              Review[]
+  initiatedChatRooms   ChatRoom[]            @relation("InitiatorChatRooms")
+  mentorChatRooms      ChatRoom[]            @relation("MentorChatRooms")
+  messages             Message[]
+  sentReports          Report[]              @relation("ReporterReports")
+  actionedReports      Report[]              @relation("ActionedByReports")
+  notifications        Notification[]
+  wallet               Wallet?
+  aspirantSessions     Session[]             @relation("AspirantSessions")
+  mentorSessions       Session[]             @relation("MentorSessions")
+  payoutRequests       PayoutRequest[]       @relation("MentorPayouts")
+  processedPayouts     PayoutRequest[]       @relation("ProcessedPayouts")
 
   @@index([role])
   @@index([verificationStatus])
@@ -161,22 +210,29 @@ model User {
 
 /// Extended profile data — one-to-one with User.
 /// Sensitive fields (real name) stored AES-256-GCM encrypted.
+/// Mentor-facing fields (pricePerMinuteMinor, languages) are null/empty for
+/// aspirants; set once a CURRENT_STUDENT/ALUMNI opts into mentoring.
 model UserProfile {
-  id                String      @id @default(uuid())
-  userId            String      @unique @map("user_id")
-  realNameEncrypted String?     @db.Text @map("real_name_encrypted")
-  universityId      String?     @map("university_id")
-  graduationYear    Int?        @db.SmallInt @map("graduation_year")
-  yearOfStudy       Int?        @db.SmallInt @map("year_of_study")
-  specialty         String?     @db.VarChar(100)
-  bio               String?     @db.VarChar(500)
-  avatarKey         String?     @db.VarChar(500) @map("avatar_key")
-  isMentorAvailable Boolean     @default(false) @map("is_mentor_available")
-  createdAt         DateTime    @default(now()) @map("created_at") @db.Timestamptz
-  updatedAt         DateTime    @updatedAt @map("updated_at") @db.Timestamptz
+  id                  String   @id @default(uuid())
+  userId              String   @unique @map("user_id")
+  realNameEncrypted   String?  @map("real_name_encrypted") @db.Text
+  universityId        String?  @map("university_id")
+  graduationYear      Int?     @map("graduation_year") @db.SmallInt
+  yearOfStudy         Int?     @map("year_of_study") @db.SmallInt
+  specialty           String?  @db.VarChar(100)
+  bio                 String?  @db.VarChar(500)
+  avatarKey           String?  @map("avatar_key") @db.VarChar(500)
+  isMentorAvailable   Boolean  @default(false) @map("is_mentor_available")
+  /// Rate charged per minute of session time, in minor units (paise). Null until
+  /// the mentor sets a rate; enforced non-null at the service layer before a
+  /// mentor can accept bookings.
+  pricePerMinuteMinor Int?     @map("price_per_minute_minor")
+  languages           String[] @default([])
+  createdAt           DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt           DateTime @updatedAt @map("updated_at") @db.Timestamptz
 
-  user              User        @relation(fields: [userId], references: [id])
-  university        University? @relation(fields: [universityId], references: [id])
+  user       User        @relation(fields: [userId], references: [id])
+  university University? @relation(fields: [universityId], references: [id])
 
   @@index([universityId])
   @@index([isMentorAvailable, universityId])
@@ -185,27 +241,26 @@ model UserProfile {
 
 /// Master data for medical institutions. Admin-managed.
 model University {
-  id              String         @id @default(uuid())
-  name            String         @db.VarChar(200)
-  slug            String         @unique @db.VarChar(200)
+  id              String                   @id @default(uuid())
+  name            String                   @db.VarChar(200)
+  slug            String                   @unique @db.VarChar(200)
   type            UniversityType
-  state           String         @db.VarChar(100)
-  city            String         @db.VarChar(100)
-  nirfRank        Int?           @db.SmallInt @map("nirf_rank")
-  mbbsSeats       Int?           @db.SmallInt @map("mbbs_seats")
-  establishedYear Int?           @db.SmallInt @map("established_year")
-  website         String?        @db.VarChar(300)
-  description     String?        @db.Text
-  isActive        Boolean        @default(true) @map("is_active")
+  state           String                   @db.VarChar(100)
+  city            String                   @db.VarChar(100)
+  nirfRank        Int?                     @map("nirf_rank") @db.SmallInt
+  mbbsSeats       Int?                     @map("mbbs_seats") @db.SmallInt
+  establishedYear Int?                     @map("established_year") @db.SmallInt
+  website         String?                  @db.VarChar(300)
+  description     String?                  @db.Text
+  isActive        Boolean                  @default(true) @map("is_active")
   /// Full-text search vector — populated via SQL migration trigger on name/state/city
   searchVector    Unsupported("tsvector")? @map("search_vector")
-  createdAt       DateTime       @default(now()) @map("created_at") @db.Timestamptz
-  updatedAt       DateTime       @updatedAt @map("updated_at") @db.Timestamptz
+  createdAt       DateTime                 @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt       DateTime                 @updatedAt @map("updated_at") @db.Timestamptz
 
   profiles             UserProfile[]
   programs             Program[]
   verificationRequests VerificationRequest[]
-  questions            Question[]
   reviews              Review[]
   chatRooms            ChatRoom[]
 
@@ -217,17 +272,17 @@ model University {
 
 /// Degree programs offered at a university (e.g. MBBS, MD, MS, DNB).
 model Program {
-  id            String     @id @default(uuid())
-  universityId  String     @map("university_id")
-  name          String     @db.VarChar(100)
-  description   String?    @db.Text
-  durationYears Int?       @db.SmallInt @map("duration_years")
-  totalSeats    Int?       @db.SmallInt @map("total_seats")
-  isActive      Boolean    @default(true) @map("is_active")
-  createdAt     DateTime   @default(now()) @map("created_at") @db.Timestamptz
-  updatedAt     DateTime   @updatedAt @map("updated_at") @db.Timestamptz
+  id            String   @id @default(uuid())
+  universityId  String   @map("university_id")
+  name          String   @db.VarChar(100)
+  description   String?  @db.Text
+  durationYears Int?     @map("duration_years") @db.SmallInt
+  totalSeats    Int?     @map("total_seats") @db.SmallInt
+  isActive      Boolean  @default(true) @map("is_active")
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt     DateTime @updatedAt @map("updated_at") @db.Timestamptz
 
-  university    University @relation(fields: [universityId], references: [id])
+  university University @relation(fields: [universityId], references: [id])
 
   @@unique([universityId, name])
   @@index([universityId])
@@ -241,19 +296,19 @@ model VerificationRequest {
   userId       String             @map("user_id")
   universityId String             @map("university_id")
   documentType DocumentType       @map("document_type")
-  documentKey  String             @db.VarChar(500) @map("document_key")
+  documentKey  String             @map("document_key") @db.VarChar(500)
   status       VerificationStatus @default(DRAFT)
   reviewedBy   String?            @map("reviewed_by")
-  reviewNote   String?            @db.VarChar(500) @map("review_note")
+  reviewNote   String?            @map("review_note") @db.VarChar(500)
   submittedAt  DateTime?          @map("submitted_at") @db.Timestamptz
   reviewedAt   DateTime?          @map("reviewed_at") @db.Timestamptz
   createdAt    DateTime           @default(now()) @map("created_at") @db.Timestamptz
   updatedAt    DateTime           @updatedAt @map("updated_at") @db.Timestamptz
   deletedAt    DateTime?          @map("deleted_at") @db.Timestamptz
 
-  user         User               @relation("UserVerificationRequests", fields: [userId], references: [id])
-  university   University         @relation(fields: [universityId], references: [id])
-  reviewer     User?              @relation("ReviewerVerificationRequests", fields: [reviewedBy], references: [id])
+  user       User       @relation("UserVerificationRequests", fields: [userId], references: [id])
+  university University @relation(fields: [universityId], references: [id])
+  reviewer   User?      @relation("ReviewerVerificationRequests", fields: [reviewedBy], references: [id])
 
   @@index([userId])
   @@index([status, submittedAt])
@@ -261,98 +316,30 @@ model VerificationRequest {
   @@map("verification_requests")
 }
 
-/// Question posted by a prospective student, tagged to a university.
-model Question {
-  id           String         @id @default(uuid())
-  authorId     String         @map("author_id")
-  universityId String         @map("university_id")
-  title        String         @db.VarChar(300)
-  body         String?        @db.Text
-  tags         String[]       @default([])
-  status       QuestionStatus @default(ACTIVE)
-  viewCount    Int            @default(0) @map("view_count")
-  answerCount  Int            @default(0) @map("answer_count")
-  isPinned     Boolean        @default(false) @map("is_pinned")
-  isLocked     Boolean        @default(false) @map("is_locked")
-  /// Full-text search vector — populated via SQL migration trigger on title/body
-  searchVector Unsupported("tsvector")? @map("search_vector")
-  createdAt    DateTime       @default(now()) @map("created_at") @db.Timestamptz
-  updatedAt    DateTime       @updatedAt @map("updated_at") @db.Timestamptz
-  deletedAt    DateTime?      @map("deleted_at") @db.Timestamptz
-
-  author       User           @relation(fields: [authorId], references: [id])
-  university   University     @relation(fields: [universityId], references: [id])
-  answers      Answer[]
-
-  @@index([universityId, createdAt(sort: Desc)])
-  @@index([authorId])
-  @@map("questions")
-}
-
-/// Response to a Question by a verified student or alumni.
-model Answer {
-  id           String    @id @default(uuid())
-  questionId   String    @map("question_id")
-  authorId     String    @map("author_id")
-  body         String    @db.Text
-  upvoteCount  Int       @default(0) @map("upvote_count")
-  isAccepted   Boolean   @default(false) @map("is_accepted")
-  /// Full-text search vector — populated via SQL migration trigger on body
-  searchVector Unsupported("tsvector")? @map("search_vector")
-  createdAt    DateTime  @default(now()) @map("created_at") @db.Timestamptz
-  updatedAt    DateTime  @updatedAt @map("updated_at") @db.Timestamptz
-  deletedAt    DateTime? @map("deleted_at") @db.Timestamptz
-
-  question     Question    @relation(fields: [questionId], references: [id])
-  author       User        @relation(fields: [authorId], references: [id])
-  votes        AnswerVote[]
-
-  @@unique([questionId, authorId])
-  @@index([questionId, upvoteCount(sort: Desc)])
-  @@index([questionId, createdAt(sort: Asc)])
-  @@index([authorId])
-  @@map("answers")
-}
-
-/// Upvote on an Answer. One vote per user per answer; no soft delete.
-model AnswerVote {
-  id        String   @id @default(uuid())
-  answerId  String   @map("answer_id")
-  userId    String   @map("user_id")
-  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
-
-  answer    Answer   @relation(fields: [answerId], references: [id])
-  user      User     @relation(fields: [userId], references: [id])
-
-  @@unique([answerId, userId])
-  @@index([userId])
-  @@map("answer_votes")
-}
-
 /// Multi-dimensional university review by a verified student or alumni.
 model Review {
-  id                     String       @id @default(uuid())
-  authorId               String       @map("author_id")
-  universityId           String       @map("university_id")
-  status                 ReviewStatus @default(ACTIVE)
-  overallRating          Int          @db.SmallInt @map("overall_rating")
-  facultyRating          Int?         @db.SmallInt @map("faculty_rating")
-  infrastructureRating   Int?         @db.SmallInt @map("infrastructure_rating")
-  clinicalExposureRating Int?         @db.SmallInt @map("clinical_exposure_rating")
-  campusLifeRating       Int?         @db.SmallInt @map("campus_life_rating")
-  placementsRating       Int?         @db.SmallInt @map("placements_rating")
-  pros                   String?      @db.Text
-  cons                   String?      @db.Text
-  body                   String?      @db.Text
-  helpfulCount           Int          @default(0) @map("helpful_count")
+  id                     String                   @id @default(uuid())
+  authorId               String                   @map("author_id")
+  universityId           String                   @map("university_id")
+  status                 ReviewStatus             @default(ACTIVE)
+  overallRating          Int                      @map("overall_rating") @db.SmallInt
+  facultyRating          Int?                     @map("faculty_rating") @db.SmallInt
+  infrastructureRating   Int?                     @map("infrastructure_rating") @db.SmallInt
+  clinicalExposureRating Int?                     @map("clinical_exposure_rating") @db.SmallInt
+  campusLifeRating       Int?                     @map("campus_life_rating") @db.SmallInt
+  placementsRating       Int?                     @map("placements_rating") @db.SmallInt
+  pros                   String?                  @db.Text
+  cons                   String?                  @db.Text
+  body                   String?                  @db.Text
+  helpfulCount           Int                      @default(0) @map("helpful_count")
   /// Full-text search vector — populated via SQL migration trigger on pros/cons/body
   searchVector           Unsupported("tsvector")? @map("search_vector")
-  createdAt              DateTime     @default(now()) @map("created_at") @db.Timestamptz
-  updatedAt              DateTime     @updatedAt @map("updated_at") @db.Timestamptz
-  deletedAt              DateTime?    @map("deleted_at") @db.Timestamptz
+  createdAt              DateTime                 @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt              DateTime                 @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt              DateTime?                @map("deleted_at") @db.Timestamptz
 
-  author                 User         @relation(fields: [authorId], references: [id])
-  university             University   @relation(fields: [universityId], references: [id])
+  author     User       @relation(fields: [authorId], references: [id])
+  university University @relation(fields: [universityId], references: [id])
 
   @@unique([authorId, universityId])
   @@index([universityId, createdAt(sort: Desc)])
@@ -362,21 +349,24 @@ model Review {
 }
 
 /// 1:1 conversation between a prospective student and a verified mentor.
+/// Backed by Stream Chat — this table is the authorization/index record;
+/// Stream owns message delivery, history, read receipts, and offline sync.
 model ChatRoom {
-  id            String         @id @default(uuid())
-  initiatorId   String         @map("initiator_id")
-  mentorId      String         @map("mentor_id")
-  universityId  String?        @map("university_id")
-  type          ChatRoomType   @default(DIRECT)
-  status        ChatRoomStatus @default(ACTIVE)
-  lastMessageAt DateTime?      @map("last_message_at") @db.Timestamptz
-  createdAt     DateTime       @default(now()) @map("created_at") @db.Timestamptz
-  updatedAt     DateTime       @updatedAt @map("updated_at") @db.Timestamptz
+  id              String         @id @default(uuid())
+  initiatorId     String         @map("initiator_id")
+  mentorId        String         @map("mentor_id")
+  universityId    String?        @map("university_id")
+  type            ChatRoomType   @default(DIRECT)
+  status          ChatRoomStatus @default(ACTIVE)
+  streamChannelId String?        @map("stream_channel_id") @db.VarChar(100)
+  lastMessageAt   DateTime?      @map("last_message_at") @db.Timestamptz
+  createdAt       DateTime       @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt       DateTime       @updatedAt @map("updated_at") @db.Timestamptz
 
-  initiator     User           @relation("InitiatorChatRooms", fields: [initiatorId], references: [id])
-  mentor        User           @relation("MentorChatRooms", fields: [mentorId], references: [id])
-  university    University?    @relation(fields: [universityId], references: [id])
-  messages      Message[]
+  initiator  User        @relation("InitiatorChatRooms", fields: [initiatorId], references: [id])
+  mentor     User        @relation("MentorChatRooms", fields: [mentorId], references: [id])
+  university University? @relation(fields: [universityId], references: [id])
+  messages   Message[]
 
   @@unique([initiatorId, mentorId])
   @@index([initiatorId, lastMessageAt(sort: Desc)])
@@ -386,13 +376,15 @@ model ChatRoom {
 }
 
 /// Individual message within a ChatRoom. Soft-deleted for "unsend" feature.
+/// Mirrors Stream Chat events for local indexing/search — Stream remains the
+/// source of truth for delivery guarantees.
 model Message {
   id        String      @id @default(uuid())
   roomId    String      @map("room_id")
   senderId  String      @map("sender_id")
   type      MessageType @default(TEXT)
   body      String?     @db.Text
-  mediaKey  String?     @db.VarChar(500) @map("media_key")
+  mediaKey  String?     @map("media_key") @db.VarChar(500)
   mediaType MediaType?  @map("media_type")
   isRead    Boolean     @default(false) @map("is_read")
   readAt    DateTime?   @map("read_at") @db.Timestamptz
@@ -400,30 +392,164 @@ model Message {
   updatedAt DateTime    @updatedAt @map("updated_at") @db.Timestamptz
   deletedAt DateTime?   @map("deleted_at") @db.Timestamptz
 
-  room      ChatRoom    @relation(fields: [roomId], references: [id])
-  sender    User        @relation(fields: [senderId], references: [id])
+  room   ChatRoom @relation(fields: [roomId], references: [id])
+  sender User     @relation(fields: [senderId], references: [id])
 
   @@index([roomId, createdAt(sort: Asc)])
   @@index([senderId])
   @@map("messages")
 }
 
+/// A single booking + its full lifecycle: request → accept/reject → (ring →)
+/// connect → bill → end. One Session row per attempt — a re-request after a
+/// FAILED/EXPIRED/REJECTED session creates a NEW row, never reuses one.
+///
+/// Billing invariant: only a server-observed connection event (Agora webhook
+/// for AUDIO_CALL; explicit start-ack for CHAT) may transition status into
+/// IN_PROGRESS, and only that transition starts the BullMQ billing clock.
+/// Never trust a client-reported "call connected" message for billing.
+model Session {
+  id                 String        @id @default(uuid())
+  aspirantId         String        @map("aspirant_id")
+  mentorId           String        @map("mentor_id")
+  type               SessionType
+  status             SessionStatus @default(PENDING)
+  /// Snapshot of the mentor's rate at booking time — later rate changes must
+  /// never retroactively affect an in-flight or completed session.
+  ratePerMinuteMinor Int           @map("rate_per_minute_minor")
+  requestedAt        DateTime      @default(now()) @map("requested_at") @db.Timestamptz
+  respondedAt        DateTime?     @map("responded_at") @db.Timestamptz
+  /// Set only on a server-confirmed connection event — never client-reported.
+  startedAt          DateTime?     @map("started_at") @db.Timestamptz
+  endedAt            DateTime?     @map("ended_at") @db.Timestamptz
+  billedMinutes      Int           @default(0) @map("billed_minutes")
+  totalCostMinor     Int           @default(0) @map("total_cost_minor")
+  agoraChannelName   String?       @map("agora_channel_name") @db.VarChar(100)
+  streamChannelId    String?       @map("stream_channel_id") @db.VarChar(100)
+  /// NORMAL | NO_ANSWER | DROPPED | BALANCE_EXHAUSTED | CANCELLED | REJECTED
+  endReason          String?       @map("end_reason") @db.VarChar(30)
+  createdAt          DateTime      @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt          DateTime      @updatedAt @map("updated_at") @db.Timestamptz
+
+  aspirant      User          @relation("AspirantSessions", fields: [aspirantId], references: [id])
+  mentor        User          @relation("MentorSessions", fields: [mentorId], references: [id])
+  holds         WalletHold[]
+  ledgerEntries LedgerEntry[]
+
+  @@index([aspirantId, status])
+  @@index([mentorId, status])
+  @@index([status, requestedAt])
+  @@map("sessions")
+}
+
+/// One wallet per user. balanceMinor is a CACHE derived from LedgerEntry rows —
+/// it must only ever be written in the same DB transaction as the ledger insert
+/// that produced it. A nightly reconciliation job recomputes balance from the
+/// ledger and alerts on drift.
+model Wallet {
+  id           String   @id @default(uuid())
+  userId       String   @unique @map("user_id")
+  balanceMinor Int      @default(0) @map("balance_minor")
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt    DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  user          User          @relation(fields: [userId], references: [id])
+  ledgerEntries LedgerEntry[]
+  holds         WalletHold[]
+
+  @@map("wallets")
+}
+
+/// Append-only transaction log — the source of truth for wallet balance.
+/// NEVER UPDATE or DELETE a row; corrections are new compensating entries.
+/// idempotencyKey is unique and required on every insert: Razorpay webhooks
+/// retry, and BullMQ billing ticks retry, so every credit/debit must be safe
+/// to attempt more than once without double-applying.
+model LedgerEntry {
+  id                String          @id @default(uuid())
+  walletId          String          @map("wallet_id")
+  type              LedgerEntryType
+  /// Positive = credit, negative = debit. Minor units (paise / Uniminutes).
+  amountMinor       Int             @map("amount_minor")
+  balanceAfterMinor Int             @map("balance_after_minor")
+  sessionId         String?         @map("session_id")
+  idempotencyKey    String          @unique @map("idempotency_key")
+  note              String?         @db.VarChar(300)
+  createdAt         DateTime        @default(now()) @map("created_at") @db.Timestamptz
+
+  wallet  Wallet   @relation(fields: [walletId], references: [id])
+  session Session? @relation(fields: [sessionId], references: [id])
+
+  @@index([walletId, createdAt])
+  @@index([sessionId])
+  @@map("ledger_entries")
+}
+
+/// Authorization hold placed at session start so a user can't double-spend the
+/// same balance across concurrent sessions. Placed for the aspirant's full
+/// spendable balance (or an estimated session cost, whichever is smaller);
+/// consumed via provisional per-minute SESSION_DEBIT entries as the call
+/// progresses; the backend force-ends the session when the hold is exhausted.
+/// Expired (never-closed) holds are swept by a BullMQ job.
+model WalletHold {
+  id          String     @id @default(uuid())
+  walletId    String     @map("wallet_id")
+  sessionId   String     @map("session_id")
+  amountMinor Int        @map("amount_minor")
+  status      HoldStatus @default(ACTIVE)
+  expiresAt   DateTime   @map("expires_at") @db.Timestamptz
+  createdAt   DateTime   @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime   @updatedAt @map("updated_at") @db.Timestamptz
+
+  wallet  Wallet  @relation(fields: [walletId], references: [id])
+  session Session @relation(fields: [sessionId], references: [id])
+
+  @@index([walletId, status])
+  @@index([status, expiresAt])
+  @@map("wallet_holds")
+}
+
+/// Manual, admin-triggered mentor payout. Disbursement automation is
+/// deliberately deferred (architecture review) — a human reviews and
+/// approves every payout before funds move. amountMinor is derived from
+/// SESSION_CREDIT ledger entries for the given period at request time.
+model PayoutRequest {
+  id            String       @id @default(uuid())
+  mentorId      String       @map("mentor_id")
+  amountMinor   Int          @map("amount_minor")
+  status        PayoutStatus @default(PENDING)
+  periodStart   DateTime     @map("period_start") @db.Timestamptz
+  periodEnd     DateTime     @map("period_end") @db.Timestamptz
+  bankReference String?      @map("bank_reference") @db.VarChar(200)
+  processedBy   String?      @map("processed_by")
+  processedAt   DateTime?    @map("processed_at") @db.Timestamptz
+  createdAt     DateTime     @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt     DateTime     @updatedAt @map("updated_at") @db.Timestamptz
+
+  mentor    User  @relation("MentorPayouts", fields: [mentorId], references: [id])
+  processor User? @relation("ProcessedPayouts", fields: [processedBy], references: [id])
+
+  @@index([mentorId, status])
+  @@index([status, createdAt])
+  @@map("payout_requests")
+}
+
 /// User-submitted flag on any content. Polymorphic via targetType + targetId.
 model Report {
-  id           String           @id @default(uuid())
-  reporterId   String           @map("reporter_id")
-  targetType   ReportTargetType @map("target_type")
-  targetId     String           @map("target_id")
-  reason       ReportReason
-  description  String?          @db.VarChar(500)
-  status       ReportStatus     @default(OPEN)
-  actionedBy   String?          @map("actioned_by")
-  resolution   String?          @db.VarChar(500)
-  createdAt    DateTime         @default(now()) @map("created_at") @db.Timestamptz
-  updatedAt    DateTime         @updatedAt @map("updated_at") @db.Timestamptz
+  id          String           @id @default(uuid())
+  reporterId  String           @map("reporter_id")
+  targetType  ReportTargetType @map("target_type")
+  targetId    String           @map("target_id")
+  reason      ReportReason
+  description String?          @db.VarChar(500)
+  status      ReportStatus     @default(OPEN)
+  actionedBy  String?          @map("actioned_by")
+  resolution  String?          @db.VarChar(500)
+  createdAt   DateTime         @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime         @updatedAt @map("updated_at") @db.Timestamptz
 
-  reporter     User             @relation("ReporterReports", fields: [reporterId], references: [id])
-  actionedByUser User?          @relation("ActionedByReports", fields: [actionedBy], references: [id])
+  reporter       User  @relation("ReporterReports", fields: [reporterId], references: [id])
+  actionedByUser User? @relation("ActionedByReports", fields: [actionedBy], references: [id])
 
   @@index([status, createdAt(sort: Desc)])
   @@index([reporterId])
@@ -446,7 +572,7 @@ model Notification {
   updatedAt DateTime         @updatedAt @map("updated_at") @db.Timestamptz
   deletedAt DateTime?        @map("deleted_at") @db.Timestamptz
 
-  user      User             @relation(fields: [userId], references: [id])
+  user User @relation(fields: [userId], references: [id])
 
   @@index([userId, createdAt(sort: Desc)])
   @@index([userId, isRead])
