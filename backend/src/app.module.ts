@@ -28,6 +28,7 @@ import { AuthModule } from './auth/auth.module.js';
 // Domain modules
 import { UsersModule } from './modules/users/users.module.js';
 import { UniversitiesModule } from './modules/universities/universities.module.js';
+import { MentorsModule } from './modules/mentors/mentors.module.js';
 import { VerificationModule } from './modules/verification/verification.module.js';
 import { ReviewsModule } from './modules/reviews/reviews.module.js';
 import { ChatModule } from './modules/chat/chat.module.js';
@@ -57,6 +58,7 @@ import { NotificationsModule } from './modules/notifications/notifications.modul
     HealthModule,
     UsersModule,
     UniversitiesModule,
+    MentorsModule,
     VerificationModule,
     ReviewsModule,
     ChatModule,
