@@ -18,6 +18,7 @@ import type { JwtPayload } from '../../auth/decorators/current-user.decorator.js
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard.js';
 import { CreateTopupDto } from './dto/create-topup.dto.js';
 import { ListLedgerDto } from './dto/list-ledger.dto.js';
+import { VerifyTopupDto } from './dto/verify-topup.dto.js';
 import { WalletService } from './wallet.service.js';
 
 @Controller('wallet')
@@ -40,6 +41,16 @@ export class WalletController {
   @Post('topup')
   createTopup(@CurrentUser() user: JwtPayload, @Body() dto: CreateTopupDto) {
     return this.walletService.createTopupOrder(user.sub, dto);
+  }
+
+  /**
+   * Direct client-confirmation path used when the webhook URL isn't
+   * publicly reachable (e.g. local dev) — see WalletService.verifyAndCreditTopup.
+   */
+  @UseGuards(JwtAuthGuard)
+  @Post('topup/verify')
+  verifyTopup(@CurrentUser() user: JwtPayload, @Body() dto: VerifyTopupDto) {
+    return this.walletService.verifyAndCreditTopup(user.sub, dto);
   }
 
   /**

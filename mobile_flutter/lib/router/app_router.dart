@@ -11,13 +11,15 @@ import '../features/auth/role_selection_screen.dart';
 import '../features/auth/welcome_screen.dart';
 import '../features/common/placeholder_screen.dart';
 import '../features/home/home_screen.dart';
-import '../features/messages/chat_room_screen.dart';
-import '../features/messages/conversation_list_screen.dart';
+import '../features/mentors/mentor_list_screen.dart';
 import '../features/profile/profile_home_screen.dart';
+import '../features/sessions/session_chat_screen.dart';
+import '../features/sessions/session_list_screen.dart';
 import '../features/shell/main_shell.dart';
 import '../features/universities/university_detail_screen.dart';
 import '../features/universities/university_list_screen.dart';
 import '../features/verification/verification_screen.dart';
+import '../features/wallet/wallet_screen.dart';
 import '../state/auth_controller.dart';
 
 const _preAuthRoutes = {'/welcome', '/login', '/otp'};
@@ -136,14 +138,7 @@ final routerProvider = Provider<GoRouter>((ref) {
             routes: [
               GoRoute(
                 path: '/mentors',
-                builder: (_, __) => const PlaceholderScreen(title: 'Mentors'),
-                routes: [
-                  GoRoute(
-                    path: 'profile',
-                    builder: (_, __) =>
-                        const PlaceholderScreen(title: 'Mentor Profile'),
-                  ),
-                ],
+                builder: (_, __) => const MentorListScreen(),
               ),
             ],
           ),
@@ -151,15 +146,14 @@ final routerProvider = Provider<GoRouter>((ref) {
             routes: [
               GoRoute(
                 path: '/chats',
-                builder: (_, __) => const ConversationListScreen(),
+                builder: (_, __) => const SessionListScreen(),
                 routes: [
                   GoRoute(
                     path: 'room',
                     builder: (_, state) {
                       final a = state.extra as Map<String, dynamic>? ?? const {};
-                      return ChatRoomScreen(
-                        roomId: a['roomId'] as String? ?? '',
-                        participantName: a['participantName'] as String? ?? '',
+                      return SessionChatScreen(
+                        sessionId: a['sessionId'] as String? ?? '',
                       );
                     },
                   ),
@@ -173,6 +167,10 @@ final routerProvider = Provider<GoRouter>((ref) {
                 path: '/profile',
                 builder: (_, __) => const ProfileHomeScreen(),
                 routes: [
+                  GoRoute(
+                    path: 'wallet',
+                    builder: (_, __) => const WalletScreen(),
+                  ),
                   GoRoute(
                     path: 'verification',
                     builder: (_, __) => const VerificationScreen(),

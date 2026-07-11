@@ -133,6 +133,11 @@ class ProfileHomeScreen extends ConsumerWidget {
                 child: Column(
                   children: [
                     _MenuRow(
+                      icon: '💰',
+                      label: 'Wallet',
+                      onTap: () => context.push('/profile/wallet'),
+                    ),
+                    _MenuRow(
                       icon: '✏️',
                       label: 'Edit Profile',
                       onTap: () => context.go('/profile/edit'),

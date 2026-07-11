@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ForbiddenException,
   Injectable,
   Logger,
   NotFoundException,
@@ -12,6 +13,7 @@ import type { RazorpayConfig } from '../../config/index.js';
 import { PrismaService } from '../../database/prisma/prisma.service.js';
 import { CreateTopupDto } from './dto/create-topup.dto.js';
 import { ListLedgerDto } from './dto/list-ledger.dto.js';
+import { VerifyTopupDto } from './dto/verify-topup.dto.js';
 import {
   LedgerEntryResponse,
   WalletResponse,
@@ -106,6 +108,44 @@ export class WalletService {
       currency: CURRENCY,
       keyId: this.cfg.keyId,
     };
+  }
+
+  /**
+   * Direct client-confirmation path (Razorpay Checkout's success callback),
+   * for environments where the webhook URL isn't publicly reachable (e.g.
+   * local dev). Verifies the order_id|payment_id signature against
+   * key_secret — the standard Razorpay direct-integration pattern — then
+   * credits via the SAME idempotencyKey the webhook handler would use, so
+   * whichever path fires first wins and the other is a safe no-op.
+   */
+  async verifyAndCreditTopup(userId: string, dto: VerifyTopupDto): Promise<WalletResponse> {
+    const expectedSignature = createHmac('sha256', this.cfg.keySecret)
+      .update(`${dto.razorpayOrderId}|${dto.razorpayPaymentId}`)
+      .digest('hex');
+    const expectedBuf = Buffer.from(expectedSignature, 'utf8');
+    const actualBuf = Buffer.from(dto.razorpaySignature, 'utf8');
+    const validSignature =
+      expectedBuf.length === actualBuf.length && timingSafeEqual(expectedBuf, actualBuf);
+    if (!validSignature) {
+      throw new BadRequestException('Invalid payment signature');
+    }
+
+    const order = await this.razorpay.orders.fetch(dto.razorpayOrderId);
+    const orderUserId = (order.notes as Record<string, string> | undefined)?.['userId'];
+    if (orderUserId !== userId) {
+      throw new ForbiddenException('This order does not belong to the current user');
+    }
+
+    const wallet = await this.requireWallet(userId);
+    await this.applyLedgerEntry({
+      walletId: wallet.id,
+      type: LedgerEntryType.TOPUP,
+      amountMinor: Number(order.amount),
+      idempotencyKey: `razorpay:${dto.razorpayPaymentId}`,
+      note: `Razorpay order ${dto.razorpayOrderId}`,
+    });
+
+    return toWalletResponse(await this.requireWallet(userId));
   }
 
   /**
