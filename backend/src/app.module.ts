@@ -29,6 +29,7 @@ import { AuthModule } from './auth/auth.module.js';
 import { UsersModule } from './modules/users/users.module.js';
 import { UniversitiesModule } from './modules/universities/universities.module.js';
 import { MentorsModule } from './modules/mentors/mentors.module.js';
+import { SessionsModule } from './modules/sessions/sessions.module.js';
 import { VerificationModule } from './modules/verification/verification.module.js';
 import { ReviewsModule } from './modules/reviews/reviews.module.js';
 import { ChatModule } from './modules/chat/chat.module.js';
@@ -59,6 +60,7 @@ import { NotificationsModule } from './modules/notifications/notifications.modul
     UsersModule,
     UniversitiesModule,
     MentorsModule,
+    SessionsModule,
     VerificationModule,
     ReviewsModule,
     ChatModule,
