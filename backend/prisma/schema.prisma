@@ -63,27 +63,6 @@ enum ReviewStatus {
   REMOVED
 }
 
-enum ChatRoomStatus {
-  ACTIVE
-  CLOSED
-  BLOCKED
-}
-
-enum ChatRoomType {
-  DIRECT
-  UNIVERSITY
-}
-
-enum MessageType {
-  TEXT
-  SYSTEM
-}
-
-enum MediaType {
-  IMAGE
-  FILE
-}
-
 enum NotificationType {
   MESSAGE
   SESSION_REQUEST
@@ -190,9 +169,6 @@ model User {
   verificationRequests VerificationRequest[] @relation("UserVerificationRequests")
   reviewedRequests     VerificationRequest[] @relation("ReviewerVerificationRequests")
   reviews              Review[]
-  initiatedChatRooms   ChatRoom[]            @relation("InitiatorChatRooms")
-  mentorChatRooms      ChatRoom[]            @relation("MentorChatRooms")
-  messages             Message[]
   sentReports          Report[]              @relation("ReporterReports")
   actionedReports      Report[]              @relation("ActionedByReports")
   notifications        Notification[]
@@ -262,7 +238,6 @@ model University {
   programs             Program[]
   verificationRequests VerificationRequest[]
   reviews              Review[]
-  chatRooms            ChatRoom[]
 
   @@index([state])
   @@index([type])
@@ -346,58 +321,6 @@ model Review {
   @@index([universityId, overallRating(sort: Desc)])
   @@index([authorId])
   @@map("reviews")
-}
-
-/// 1:1 conversation between a prospective student and a verified mentor.
-/// Backed by Stream Chat — this table is the authorization/index record;
-/// Stream owns message delivery, history, read receipts, and offline sync.
-model ChatRoom {
-  id              String         @id @default(uuid())
-  initiatorId     String         @map("initiator_id")
-  mentorId        String         @map("mentor_id")
-  universityId    String?        @map("university_id")
-  type            ChatRoomType   @default(DIRECT)
-  status          ChatRoomStatus @default(ACTIVE)
-  streamChannelId String?        @map("stream_channel_id") @db.VarChar(100)
-  lastMessageAt   DateTime?      @map("last_message_at") @db.Timestamptz
-  createdAt       DateTime       @default(now()) @map("created_at") @db.Timestamptz
-  updatedAt       DateTime       @updatedAt @map("updated_at") @db.Timestamptz
-
-  initiator  User        @relation("InitiatorChatRooms", fields: [initiatorId], references: [id])
-  mentor     User        @relation("MentorChatRooms", fields: [mentorId], references: [id])
-  university University? @relation(fields: [universityId], references: [id])
-  messages   Message[]
-
-  @@unique([initiatorId, mentorId])
-  @@index([initiatorId, lastMessageAt(sort: Desc)])
-  @@index([mentorId, lastMessageAt(sort: Desc)])
-  @@index([status])
-  @@map("chat_rooms")
-}
-
-/// Individual message within a ChatRoom. Soft-deleted for "unsend" feature.
-/// Mirrors Stream Chat events for local indexing/search — Stream remains the
-/// source of truth for delivery guarantees.
-model Message {
-  id        String      @id @default(uuid())
-  roomId    String      @map("room_id")
-  senderId  String      @map("sender_id")
-  type      MessageType @default(TEXT)
-  body      String?     @db.Text
-  mediaKey  String?     @map("media_key") @db.VarChar(500)
-  mediaType MediaType?  @map("media_type")
-  isRead    Boolean     @default(false) @map("is_read")
-  readAt    DateTime?   @map("read_at") @db.Timestamptz
-  createdAt DateTime    @default(now()) @map("created_at") @db.Timestamptz
-  updatedAt DateTime    @updatedAt @map("updated_at") @db.Timestamptz
-  deletedAt DateTime?   @map("deleted_at") @db.Timestamptz
-
-  room   ChatRoom @relation(fields: [roomId], references: [id])
-  sender User     @relation(fields: [senderId], references: [id])
-
-  @@index([roomId, createdAt(sort: Asc)])
-  @@index([senderId])
-  @@map("messages")
 }
 
 /// A single booking + its full lifecycle: request → accept/reject → (ring →)

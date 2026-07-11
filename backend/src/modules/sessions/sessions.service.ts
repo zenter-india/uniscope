@@ -4,8 +4,9 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { Prisma, Session, SessionStatus } from '@prisma/client';
+import { Prisma, Session, SessionStatus, SessionType } from '@prisma/client';
 import { PrismaService } from '../../database/prisma/prisma.service.js';
+import { ChatService } from '../chat/chat.service.js';
 import { MentorsService } from '../mentors/mentors.service.js';
 import { CreateSessionDto } from './dto/create-session.dto.js';
 import { ListSessionsDto } from './dto/list-sessions.dto.js';
@@ -39,6 +40,7 @@ export class SessionsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly mentorsService: MentorsService,
+    private readonly chatService: ChatService,
   ) {}
 
   /**
@@ -94,9 +96,25 @@ export class SessionsService {
       );
     }
 
+    // For CHAT sessions the Stream channel is the messaging surface itself,
+    // so it's provisioned right on accept (AUDIO_CALL sessions provision
+    // their Agora channel later, at the connect leg).
+    const streamChannelId =
+      session.type === SessionType.CHAT
+        ? await this.chatService.ensureChannelForSession({
+            sessionId: session.id,
+            aspirantId: session.aspirantId,
+            mentorId: session.mentorId,
+          })
+        : undefined;
+
     const updated = await this.prisma.session.update({
       where: { id: sessionId },
-      data: { status: SessionStatus.ACCEPTED, respondedAt: new Date() },
+      data: {
+        status: SessionStatus.ACCEPTED,
+        respondedAt: new Date(),
+        ...(streamChannelId && { streamChannelId }),
+      },
     });
 
     return toSessionResponse(updated);

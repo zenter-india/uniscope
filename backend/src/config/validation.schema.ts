@@ -60,4 +60,13 @@ export const validationSchema = Joi.object({
   // Delivery channel for Twilio Verify OTPs ('whatsapp' requires the
   // Verify service to have a WhatsApp sender/sandbox configured).
   OTP_CHANNEL: Joi.string().valid('sms', 'whatsapp').default('sms'),
+
+  // Razorpay — wallet topups
+  RAZORPAY_KEY_ID: Joi.string().default(''),
+  RAZORPAY_KEY_SECRET: Joi.string().default(''),
+  RAZORPAY_WEBHOOK_SECRET: Joi.string().default(''),
+
+  // Stream Chat — session messaging
+  STREAM_API_KEY: Joi.string().default(''),
+  STREAM_API_SECRET: Joi.string().default(''),
 }).options({ allowUnknown: true });

@@ -4,7 +4,11 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module.js';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  // rawBody:true exposes request.rawBody — needed to verify the Razorpay
+  // webhook's HMAC signature against the exact bytes Razorpay signed,
+  // before the global body parser JSON-decodes (and potentially
+  // re-serializes differently from) the payload.
+  const app = await NestFactory.create(AppModule, { rawBody: true });
 
   const config = app.get(ConfigService);
   const port = config.get<number>('app.port', 3000);

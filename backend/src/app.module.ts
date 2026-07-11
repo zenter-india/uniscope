@@ -14,6 +14,8 @@ import {
   jwtConfig,
   redisConfig,
   twilioConfig,
+  razorpayConfig,
+  streamConfig,
   validationSchema,
 } from './config/index.js';
 
@@ -30,6 +32,7 @@ import { UsersModule } from './modules/users/users.module.js';
 import { UniversitiesModule } from './modules/universities/universities.module.js';
 import { MentorsModule } from './modules/mentors/mentors.module.js';
 import { SessionsModule } from './modules/sessions/sessions.module.js';
+import { WalletModule } from './modules/wallet/wallet.module.js';
 import { VerificationModule } from './modules/verification/verification.module.js';
 import { ReviewsModule } from './modules/reviews/reviews.module.js';
 import { ChatModule } from './modules/chat/chat.module.js';
@@ -41,7 +44,17 @@ import { NotificationsModule } from './modules/notifications/notifications.modul
     // Global config — must come first so other modules can inject ConfigService
     ConfigModule.forRoot({
       isGlobal: true,
-      load: [appConfig, databaseConfig, supabaseConfig, firebaseConfig, jwtConfig, redisConfig, twilioConfig],
+      load: [
+        appConfig,
+        databaseConfig,
+        supabaseConfig,
+        firebaseConfig,
+        jwtConfig,
+        redisConfig,
+        twilioConfig,
+        razorpayConfig,
+        streamConfig,
+      ],
       validationSchema,
       validationOptions: { abortEarly: true },
     }),
@@ -61,6 +74,7 @@ import { NotificationsModule } from './modules/notifications/notifications.modul
     UniversitiesModule,
     MentorsModule,
     SessionsModule,
+    WalletModule,
     VerificationModule,
     ReviewsModule,
     ChatModule,
