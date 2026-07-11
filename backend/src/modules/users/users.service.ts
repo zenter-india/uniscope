@@ -40,6 +40,9 @@ export class UsersService {
         profile: {
           create: {},
         },
+        wallet: {
+          create: {},
+        },
       },
     });
 
