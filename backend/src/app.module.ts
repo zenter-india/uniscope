@@ -16,6 +16,7 @@ import {
   twilioConfig,
   razorpayConfig,
   streamConfig,
+  agoraConfig,
   validationSchema,
 } from './config/index.js';
 
@@ -38,6 +39,7 @@ import { ReviewsModule } from './modules/reviews/reviews.module.js';
 import { ChatModule } from './modules/chat/chat.module.js';
 import { ReportsModule } from './modules/reports/reports.module.js';
 import { NotificationsModule } from './modules/notifications/notifications.module.js';
+import { AgoraModule } from './modules/agora/agora.module.js';
 
 @Module({
   imports: [
@@ -54,6 +56,7 @@ import { NotificationsModule } from './modules/notifications/notifications.modul
         twilioConfig,
         razorpayConfig,
         streamConfig,
+        agoraConfig,
       ],
       validationSchema,
       validationOptions: { abortEarly: true },
@@ -80,6 +83,7 @@ import { NotificationsModule } from './modules/notifications/notifications.modul
     ChatModule,
     ReportsModule,
     NotificationsModule,
+    AgoraModule,
   ],
   controllers: [AppController],
   providers: [AppService],

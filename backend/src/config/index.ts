@@ -25,4 +25,7 @@ export type { RazorpayConfig } from './razorpay.config.js';
 export { streamConfig } from './stream.config.js';
 export type { StreamConfig } from './stream.config.js';
 
+export { agoraConfig } from './agora.config.js';
+export type { AgoraConfig } from './agora.config.js';
+
 export { validationSchema } from './validation.schema.js';

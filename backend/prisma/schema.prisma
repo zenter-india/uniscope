@@ -352,11 +352,21 @@ model Session {
   /// Snapshot of the mentor's rate at booking time — later rate changes must
   /// never retroactively affect an in-flight or completed session.
   ratePerMinuteMinor Int           @map("rate_per_minute_minor")
+  /// AUDIO_CALL only: the slot chosen at booking (5/10/20) — preserved
+  /// regardless of whether it was free-tier or wallet-held, so the connect
+  /// handler always knows how much to bill/decrement.
+  callSlotMinutes    Int?          @map("call_slot_minutes")
   requestedAt        DateTime      @default(now()) @map("requested_at") @db.Timestamptz
   respondedAt        DateTime?     @map("responded_at") @db.Timestamptz
   /// Set only on a server-confirmed connection event — never client-reported.
   startedAt          DateTime?     @map("started_at") @db.Timestamptz
   endedAt            DateTime?     @map("ended_at") @db.Timestamptz
+  /// Dual-client connect confirmation (interim measure until a real Agora
+  /// server-side "user joined channel" webhook is configured — see
+  /// SessionsService.confirmJoined). Billing only fires once BOTH are set,
+  /// so neither party alone can trigger a charge.
+  aspirantJoinedAt   DateTime?     @map("aspirant_joined_at") @db.Timestamptz
+  mentorJoinedAt     DateTime?     @map("mentor_joined_at") @db.Timestamptz
   /// AUDIO_CALL: sum of committed/paid slot minutes (5/10/20, plus any +5
   /// "continue" extensions) — this is what was CHARGED, not necessarily the
   /// actual connected duration (a student-initiated early hangup or a

@@ -1,20 +1,32 @@
 import {
+  BadRequestException,
   ConflictException,
   ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { HoldStatus, Prisma, Session, SessionStatus, SessionType } from '@prisma/client';
+import {
+  HoldStatus,
+  LedgerEntryType,
+  Prisma,
+  Session,
+  SessionStatus,
+  SessionType,
+} from '@prisma/client';
 import { PrismaService } from '../../database/prisma/prisma.service.js';
+import { AgoraService } from '../agora/agora.service.js';
 import { ChatService } from '../chat/chat.service.js';
 import { MentorsService } from '../mentors/mentors.service.js';
 import { MENTOR_RATE_PER_MINUTE_MINOR, WalletService } from '../wallet/wallet.service.js';
-import { CreateSessionDto } from './dto/create-session.dto.js';
+import { CALL_SLOT_MINUTES, CreateSessionDto } from './dto/create-session.dto.js';
 import { ListSessionsDto } from './dto/list-sessions.dto.js';
 import { SessionResponse, toSessionResponse } from './session-response.js';
 
 const DEFAULT_LIMIT = 20;
 const MAX_LIMIT = 50;
+
+/** Statuses a call may be joined/connected from. */
+const JOINABLE_STATUSES: SessionStatus[] = [SessionStatus.ACCEPTED, SessionStatus.RINGING];
 
 /** Statuses that represent an unresolved, still-live booking against a given
  * mentor — used to block an aspirant from spamming a second request at the
@@ -43,6 +55,7 @@ export class SessionsService {
     private readonly mentorsService: MentorsService,
     private readonly chatService: ChatService,
     private readonly walletService: WalletService,
+    private readonly agoraService: AgoraService,
   ) {}
 
   /**
@@ -101,6 +114,7 @@ export class SessionsService {
         mentorId: dto.mentorId,
         type: dto.type,
         ratePerMinuteMinor: isAudioCall ? MENTOR_RATE_PER_MINUTE_MINOR : mentor.pricePerMinuteMinor,
+        ...(isAudioCall && { callSlotMinutes: slotMinutes }),
       },
     });
 
@@ -216,6 +230,221 @@ export class SessionsService {
     return toSessionResponse(updated);
   }
 
+  /**
+   * Issues an Agora RTC token for an AUDIO_CALL session. Lazily provisions
+   * agoraChannelName on first request (mirrors ChatService's
+   * ensureChannelForSession pattern) — a party can call this repeatedly to
+   * refresh their token.
+   */
+  async getCallCredentials(
+    sessionId: string,
+    userId: string,
+  ): Promise<{ appId: string; channelName: string; token: string; uid: string }> {
+    const session = await this.requireSessionForParty(sessionId, userId);
+
+    if (session.type !== SessionType.AUDIO_CALL) {
+      throw new ForbiddenException('This session is not an audio call session');
+    }
+    if (!JOINABLE_STATUSES.includes(session.status) && session.status !== SessionStatus.IN_PROGRESS) {
+      throw new ConflictException(`Cannot join a call in status ${session.status}`);
+    }
+
+    let channelName = session.agoraChannelName;
+    if (!channelName) {
+      channelName = `call-${session.id}`;
+      await this.prisma.session.update({
+        where: { id: sessionId },
+        data: { agoraChannelName: channelName },
+      });
+    }
+
+    return {
+      appId: this.agoraService.getAppId(),
+      channelName,
+      token: this.agoraService.generateRtcToken(channelName, userId),
+      uid: userId,
+    };
+  }
+
+  /**
+   * Dual-client connect confirmation (interim measure — see the
+   * aspirantJoinedAt/mentorJoinedAt schema comment for why this isn't a
+   * real server-side signal yet). Records the CALLING party's own join;
+   * once BOTH parties have confirmed, transitions the session to
+   * IN_PROGRESS and settles billing exactly once — consuming the booking
+   * hold if this was a paid slot, or decrementing the free-call-minutes
+   * tier if it wasn't.
+   */
+  async confirmJoined(sessionId: string, userId: string): Promise<SessionResponse> {
+    const session = await this.requireSessionForParty(sessionId, userId);
+
+    if (session.type !== SessionType.AUDIO_CALL) {
+      throw new ForbiddenException('This session is not an audio call session');
+    }
+    if (!JOINABLE_STATUSES.includes(session.status)) {
+      throw new ConflictException(`Cannot confirm join for a call in status ${session.status}`);
+    }
+
+    const isAspirant = session.aspirantId === userId;
+    const now = new Date();
+    const updated = await this.prisma.session.update({
+      where: { id: sessionId },
+      data: isAspirant ? { aspirantJoinedAt: now } : { mentorJoinedAt: now },
+    });
+
+    const bothJoined = updated.aspirantJoinedAt && updated.mentorJoinedAt;
+    if (!bothJoined) {
+      return toSessionResponse(updated);
+    }
+
+    // Both sides confirmed — settle billing for the originally booked slot
+    // exactly once. Guard on status still being pre-IN_PROGRESS in the same
+    // update to make the transition itself idempotent against a race
+    // between the two confirmJoined calls.
+    const settled = await this.prisma.session.updateMany({
+      where: { id: sessionId, status: { in: JOINABLE_STATUSES } },
+      data: {
+        status: SessionStatus.IN_PROGRESS,
+        startedAt: now,
+        billedMinutes: updated.callSlotMinutes ?? 0,
+      },
+    });
+
+    if (settled.count === 0) {
+      // Another concurrent call already made this transition — no-op.
+      return toSessionResponse(await this.requireSession(sessionId));
+    }
+
+    const slotMinutes = updated.callSlotMinutes ?? 0;
+    const slotCostMinor = slotMinutes * MENTOR_RATE_PER_MINUTE_MINOR;
+    const hold = await this.prisma.walletHold.findFirst({
+      where: { sessionId, status: HoldStatus.ACTIVE },
+    });
+
+    if (hold) {
+      const mentorWallet = await this.prisma.wallet.findUniqueOrThrow({
+        where: { userId: session.mentorId },
+      });
+      await this.walletService.consumeHoldAndBill({
+        holdId: hold.id,
+        mentorWalletId: mentorWallet.id,
+        sessionId,
+        note: `AUDIO_CALL ${slotMinutes}-min slot`,
+      });
+      await this.prisma.session.update({
+        where: { id: sessionId },
+        data: { totalCostMinor: slotCostMinor },
+      });
+    } else {
+      // Free-tier slot — decrement the aspirant's remaining free minutes,
+      // never below 0.
+      await this.prisma.userProfile.updateMany({
+        where: { userId: session.aspirantId },
+        data: { freeCallSecondsRemaining: { decrement: slotMinutes * 60 } },
+      });
+      await this.prisma.userProfile.updateMany({
+        where: { userId: session.aspirantId, freeCallSecondsRemaining: { lt: 0 } },
+        data: { freeCallSecondsRemaining: 0 },
+      });
+    }
+
+    return toSessionResponse(await this.requireSession(sessionId));
+  }
+
+  /**
+   * "Continue for another 5 min" — same debit/credit mechanism as the
+   * original booking, but billed immediately (no hold step) since the call
+   * is already IN_PROGRESS and both parties are already present. Only the
+   * aspirant can trigger this (it costs them Uniminutes).
+   */
+  async extendCall(sessionId: string, aspirantUserId: string): Promise<SessionResponse> {
+    const session = await this.requireSession(sessionId);
+    this.requireParty(session, aspirantUserId, 'aspirant');
+
+    if (session.type !== SessionType.AUDIO_CALL) {
+      throw new ForbiddenException('This session is not an audio call session');
+    }
+    if (session.status !== SessionStatus.IN_PROGRESS) {
+      throw new ConflictException(`Cannot extend a call in status ${session.status}`);
+    }
+
+    const extensionMinutes = CALL_SLOT_MINUTES[0]; // fixed +5 min, see product decision
+    const extensionCostMinor = extensionMinutes * MENTOR_RATE_PER_MINUTE_MINOR;
+
+    const [aspirantWallet, mentorWallet] = await Promise.all([
+      this.prisma.wallet.findUniqueOrThrow({ where: { userId: session.aspirantId } }),
+      this.prisma.wallet.findUniqueOrThrow({ where: { userId: session.mentorId } }),
+    ]);
+
+    const available = await this.walletService.getAvailableBalanceMinor(aspirantWallet.id);
+    if (available < extensionCostMinor) {
+      throw new BadRequestException('Insufficient balance — top up to continue the call');
+    }
+
+    // Direct debit/credit (no hold): the call is already connected, so
+    // there's nothing to reserve against — this is the same idempotent
+    // ledger write applyLedgerEntry always uses, keyed per-extension.
+    const extensionKey = `${sessionId}:${session.billedMinutes + extensionMinutes}`;
+    await this.walletService.applyLedgerEntry({
+      walletId: aspirantWallet.id,
+      type: LedgerEntryType.SESSION_DEBIT,
+      amountMinor: -extensionCostMinor,
+      idempotencyKey: `call-extend-debit:${extensionKey}`,
+      sessionId,
+      note: `AUDIO_CALL +${extensionMinutes}-min extension`,
+    });
+    await this.walletService.applyLedgerEntry({
+      walletId: mentorWallet.id,
+      type: LedgerEntryType.SESSION_CREDIT,
+      amountMinor: extensionCostMinor,
+      idempotencyKey: `call-extend-credit:${extensionKey}`,
+      sessionId,
+      note: `AUDIO_CALL +${extensionMinutes}-min extension`,
+    });
+
+    const updated = await this.prisma.session.update({
+      where: { id: sessionId },
+      data: {
+        billedMinutes: { increment: extensionMinutes },
+        totalCostMinor: { increment: extensionCostMinor },
+      },
+    });
+
+    return toSessionResponse(updated);
+  }
+
+  /** Either party can end an in-progress call. Billing was already settled
+   * at connect/extend time — this only finalizes status. Defensively
+   * releases any hold that's somehow still ACTIVE (e.g. the call never
+   * actually connected). */
+  async endCall(
+    sessionId: string,
+    userId: string,
+    endReason: string = 'NORMAL',
+  ): Promise<SessionResponse> {
+    const session = await this.requireSessionForParty(sessionId, userId);
+
+    if (session.type !== SessionType.AUDIO_CALL) {
+      throw new ForbiddenException('This session is not an audio call session');
+    }
+    if (session.status !== SessionStatus.IN_PROGRESS && !JOINABLE_STATUSES.includes(session.status)) {
+      throw new ConflictException(`Cannot end a call in status ${session.status}`);
+    }
+
+    const updated = await this.prisma.session.update({
+      where: { id: sessionId },
+      data: {
+        status: SessionStatus.COMPLETED,
+        endedAt: new Date(),
+        endReason,
+      },
+    });
+
+    await this.releaseHoldsForSession(sessionId);
+
+    return toSessionResponse(updated);
+  }
+
   /** Lists sessions where the current user is a party — as aspirant,
    * mentor, or both (default), optionally filtered by status. */
   async findAll(
@@ -289,6 +518,22 @@ export class SessionsService {
         `Only the session's ${party} may perform this action`,
       );
     }
+  }
+
+  /** 404 (not 403) for a session the caller isn't a party to — same privacy
+   * pattern as findById. Used by the call endpoints, which either party
+   * (aspirant or mentor) may call. */
+  private async requireSessionForParty(sessionId: string, userId: string): Promise<Session> {
+    const session = await this.prisma.session.findFirst({
+      where: {
+        id: sessionId,
+        OR: [{ aspirantId: userId }, { mentorId: userId }],
+      },
+    });
+    if (!session) {
+      throw new NotFoundException(`Session '${sessionId}' not found`);
+    }
+    return session;
   }
 
   private async releaseHoldsForSession(sessionId: string): Promise<void> {

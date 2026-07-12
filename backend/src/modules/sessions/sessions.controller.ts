@@ -58,4 +58,38 @@ export class SessionsController {
   cancel(@CurrentUser() user: JwtPayload, @Param('id') id: string) {
     return this.sessionsService.cancel(id, user.sub);
   }
+
+  /** Agora RTC token for an AUDIO_CALL session — either party, once
+   * ACCEPTED (or already IN_PROGRESS, for a token refresh mid-call). */
+  @Get(':id/call/token')
+  getCallToken(@CurrentUser() user: JwtPayload, @Param('id') id: string) {
+    return this.sessionsService.getCallCredentials(id, user.sub);
+  }
+
+  /** Dual-client connect confirmation — see SessionsService.confirmJoined.
+   * Billing settles once BOTH parties have called this. */
+  @Post(':id/call/joined')
+  @HttpCode(HttpStatus.OK)
+  confirmJoined(@CurrentUser() user: JwtPayload, @Param('id') id: string) {
+    return this.sessionsService.confirmJoined(id, user.sub);
+  }
+
+  /** Aspirant-only: bill +5 min and keep the call going. */
+  @Post(':id/call/extend')
+  @HttpCode(HttpStatus.OK)
+  extendCall(@CurrentUser() user: JwtPayload, @Param('id') id: string) {
+    return this.sessionsService.extendCall(id, user.sub);
+  }
+
+  /** Either party ends the call. No additional billing — see
+   * SessionsService.endCall. */
+  @Post(':id/call/end')
+  @HttpCode(HttpStatus.OK)
+  endCall(
+    @CurrentUser() user: JwtPayload,
+    @Param('id') id: string,
+    @Body('endReason') endReason?: string,
+  ) {
+    return this.sessionsService.endCall(id, user.sub, endReason);
+  }
 }
