@@ -89,6 +89,12 @@ enum ReportReason {
   HARASSMENT
   IMPERSONATION
   INAPPROPRIATE
+  ABUSIVE_LANGUAGE
+  /// Counterparty asked to be paid/contacted outside the platform.
+  OFF_PLATFORM_PAYMENT_REQUEST
+  /// Mentor/aspirant-side disconnect mid-AUDIO_CALL — surfaces reports for
+  /// the manual admin refund review described on Session.endReason.
+  CALL_DROPPED
   OTHER
 }
 

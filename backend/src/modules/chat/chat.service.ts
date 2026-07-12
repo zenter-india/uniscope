@@ -2,12 +2,25 @@ import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { StreamChat } from 'stream-chat';
 
+/** Fixed Stream identity for the "chat with UniScope" side of every support
+ * channel — not a real User row, just a Stream user every support channel
+ * shares as its other member. Whoever staffs support logs into Stream (or
+ * the future admin panel) as this identity to reply. */
+export const SUPPORT_ACCOUNT_ID = 'uniscope-support';
+const SUPPORT_ACCOUNT_NAME = 'UniScope Support';
+
 /**
  * Owns the Stream Chat server-side client. A Stream channel is created only
  * once a CHAT-type Session is ACCEPTED (see SessionsService.accept), keyed
  * by the session id — Stream is the source of truth for message delivery,
  * history, and offline sync; we only persist the channel id on the Session
  * row for authorization/lookup.
+ *
+ * Support channels (ensureSupportChannel) are a separate, session-
+ * independent concept: every user gets exactly one persistent channel with
+ * SUPPORT_ACCOUNT_ID, available any time regardless of session state — this
+ * is what the "Need Help? Chat with our support team anytime" banner in the
+ * app points at.
  */
 @Injectable()
 export class ChatService {
@@ -26,6 +39,25 @@ export class ChatService {
 
   generateUserToken(userId: string): string {
     return this.client.createToken(userId);
+  }
+
+  /** Idempotent, same pattern as ensureChannelForSession — safe to call on
+   * every "open support chat" tap. */
+  async ensureSupportChannel(userId: string): Promise<string> {
+    const channelId = `support-${userId}`;
+
+    await this.client.upsertUsers([
+      { id: userId },
+      { id: SUPPORT_ACCOUNT_ID, name: SUPPORT_ACCOUNT_NAME },
+    ]);
+
+    const channel = this.client.channel('messaging', channelId, {
+      members: [userId, SUPPORT_ACCOUNT_ID],
+      created_by_id: SUPPORT_ACCOUNT_ID,
+    });
+    await channel.create();
+
+    return channelId;
   }
 
   /**

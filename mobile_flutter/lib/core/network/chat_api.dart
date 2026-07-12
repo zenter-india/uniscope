@@ -26,6 +26,12 @@ class ChatApi {
     final res = await _dio.get<Map<String, dynamic>>('/sessions/$sessionId/chat/token');
     return ChatToken.fromJson(res.data!);
   }
+
+  /// Persistent per-user support channel, independent of any session.
+  Future<ChatToken> getSupportToken() async {
+    final res = await _dio.get<Map<String, dynamic>>('/chat/support/token');
+    return ChatToken.fromJson(res.data!);
+  }
 }
 
 final chatApiProvider = Provider<ChatApi>(

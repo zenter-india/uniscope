@@ -15,6 +15,7 @@ import '../features/mentors/mentor_list_screen.dart';
 import '../features/profile/profile_home_screen.dart';
 import '../features/sessions/session_chat_screen.dart';
 import '../features/sessions/session_list_screen.dart';
+import '../features/sessions/support_chat_screen.dart';
 import '../features/shell/main_shell.dart';
 import '../features/universities/university_detail_screen.dart';
 import '../features/universities/university_list_screen.dart';
@@ -156,6 +157,10 @@ final routerProvider = Provider<GoRouter>((ref) {
                         sessionId: a['sessionId'] as String? ?? '',
                       );
                     },
+                  ),
+                  GoRoute(
+                    path: 'support',
+                    builder: (_, __) => const SupportChatScreen(),
                   ),
                 ],
               ),

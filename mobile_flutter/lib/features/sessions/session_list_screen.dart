@@ -32,40 +32,87 @@ class SessionListScreen extends ConsumerWidget {
       ),
       body: SafeArea(
         bottom: false,
-        child: RefreshIndicator(
-          onRefresh: () => ref.refresh(sessionsListProvider.future),
-          child: sessionsAsync.when(
-            loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primary)),
-            error: (err, _) => ListView(
-              children: [
-                Padding(
-                  padding: const EdgeInsets.all(AppSpacing.xl),
-                  child: Text('Failed to load sessions: $err',
-                      style: const TextStyle(color: AppColors.error)),
-                ),
-              ],
-            ),
-            data: (sessions) => sessions.isEmpty
-                ? ListView(
-                    children: const [
+        child: Column(
+          children: [
+            _SupportChatEntry(onTap: () => context.push('/chats/support')),
+            Expanded(
+              child: RefreshIndicator(
+                onRefresh: () => ref.refresh(sessionsListProvider.future),
+                child: sessionsAsync.when(
+                  loading: () => const Center(
+                      child: CircularProgressIndicator(color: AppColors.primary)),
+                  error: (err, _) => ListView(
+                    children: [
                       Padding(
-                        padding: EdgeInsets.all(AppSpacing.xl),
-                        child: Text(
-                          'No sessions yet — book one from the Mentors tab.',
-                          style: TextStyle(color: AppColors.textSecondary),
-                        ),
+                        padding: const EdgeInsets.all(AppSpacing.xl),
+                        child: Text('Failed to load sessions: $err',
+                            style: const TextStyle(color: AppColors.error)),
                       ),
                     ],
-                  )
-                : ListView.builder(
-                    padding: const EdgeInsets.all(AppSpacing.md),
-                    itemCount: sessions.length,
-                    itemBuilder: (_, i) => _SessionCard(
-                      session: sessions[i],
-                      isMentor: sessions[i].mentorId == myUserId,
-                    ),
                   ),
-          ),
+                  data: (sessions) => sessions.isEmpty
+                      ? ListView(
+                          children: const [
+                            Padding(
+                              padding: EdgeInsets.all(AppSpacing.xl),
+                              child: Text(
+                                'No sessions yet — book one from the Mentors tab.',
+                                style: TextStyle(color: AppColors.textSecondary),
+                              ),
+                            ),
+                          ],
+                        )
+                      : ListView.builder(
+                          padding: const EdgeInsets.all(AppSpacing.md),
+                          itemCount: sessions.length,
+                          itemBuilder: (_, i) => _SessionCard(
+                            session: sessions[i],
+                            isMentor: sessions[i].mentorId == myUserId,
+                          ),
+                        ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _SupportChatEntry extends StatelessWidget {
+  const _SupportChatEntry({required this.onTap});
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      child: Container(
+        width: double.infinity,
+        margin: const EdgeInsets.fromLTRB(AppSpacing.md, AppSpacing.md, AppSpacing.md, 0),
+        padding: const EdgeInsets.all(AppSpacing.md),
+        decoration: BoxDecoration(
+          color: AppColors.primaryLight,
+          borderRadius: BorderRadius.circular(AppRadius.md),
+          border: Border.all(color: AppColors.primary.withValues(alpha: 0.2)),
+        ),
+        child: Row(
+          children: [
+            const Text('💬', style: TextStyle(fontSize: 20)),
+            const SizedBox(width: AppSpacing.sm),
+            const Expanded(
+              child: Text(
+                'Need Help? Chat with our support team anytime.',
+                style: TextStyle(
+                  fontSize: AppFont.sm,
+                  fontWeight: AppFont.medium,
+                  color: AppColors.primaryDark,
+                ),
+              ),
+            ),
+            const Text('›', style: TextStyle(fontSize: 18, color: AppColors.primary)),
+          ],
         ),
       ),
     );
