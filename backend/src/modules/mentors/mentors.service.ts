@@ -7,10 +7,10 @@ import { MentorResponse, toMentorResponse } from './mentor-response.js';
 const DEFAULT_LIMIT = 20;
 const MAX_LIMIT = 50;
 
-/** A "mentor" is any VERIFIED CURRENT_STUDENT/ALUMNI who has opted into
+/** A "mentor" is any VERIFIED user with role MENTOR who has opted into
  * mentoring and set a per-minute rate. All three conditions are required —
  * an unrated or unverified profile is never bookable or discoverable. */
-const MENTOR_ROLES: UserRole[] = [UserRole.CURRENT_STUDENT, UserRole.ALUMNI];
+const MENTOR_ROLES: UserRole[] = [UserRole.MENTOR];
 
 @Injectable()
 export class MentorsService {

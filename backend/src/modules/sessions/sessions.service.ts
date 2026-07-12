@@ -4,10 +4,11 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { Prisma, Session, SessionStatus, SessionType } from '@prisma/client';
+import { HoldStatus, Prisma, Session, SessionStatus, SessionType } from '@prisma/client';
 import { PrismaService } from '../../database/prisma/prisma.service.js';
 import { ChatService } from '../chat/chat.service.js';
 import { MentorsService } from '../mentors/mentors.service.js';
+import { MENTOR_RATE_PER_MINUTE_MINOR, WalletService } from '../wallet/wallet.service.js';
 import { CreateSessionDto } from './dto/create-session.dto.js';
 import { ListSessionsDto } from './dto/list-sessions.dto.js';
 import { SessionResponse, toSessionResponse } from './session-response.js';
@@ -41,12 +42,20 @@ export class SessionsService {
     private readonly prisma: PrismaService,
     private readonly mentorsService: MentorsService,
     private readonly chatService: ChatService,
+    private readonly walletService: WalletService,
   ) {}
 
   /**
    * Creates a PENDING booking request. The mentor's current rate is
    * snapshotted onto the session at creation time — later rate changes must
    * never retroactively affect this session.
+   *
+   * AUDIO_CALL is a fixed pre-paid slot (5/10/20 min, see CreateSessionDto):
+   * covered by the aspirant's free-call-minutes tier if there's enough left,
+   * otherwise a WalletHold for the slot cost is placed here at BOOKING time
+   * (so the mentor never accepts a request the aspirant can't afford) — the
+   * hold is only converted into an actual debit once the call server-
+   * confirms a connection (Agora webhook, not implemented here yet).
    */
   async create(
     aspirantId: string,
@@ -73,14 +82,45 @@ export class SessionsService {
       );
     }
 
+    const isAudioCall = dto.type === SessionType.AUDIO_CALL;
+    const slotMinutes = dto.slotMinutes ?? 0;
+    const slotSeconds = slotMinutes * 60;
+    const slotCostMinor = slotMinutes * MENTOR_RATE_PER_MINUTE_MINOR;
+
+    let isFreeSlot = false;
+    if (isAudioCall) {
+      const profile = await this.prisma.userProfile.findUniqueOrThrow({
+        where: { userId: aspirantId },
+      });
+      isFreeSlot = profile.freeCallSecondsRemaining >= slotSeconds;
+    }
+
     const session = await this.prisma.session.create({
       data: {
         aspirantId,
         mentorId: dto.mentorId,
         type: dto.type,
-        ratePerMinuteMinor: mentor.pricePerMinuteMinor,
+        ratePerMinuteMinor: isAudioCall ? MENTOR_RATE_PER_MINUTE_MINOR : mentor.pricePerMinuteMinor,
       },
     });
+
+    if (isAudioCall && !isFreeSlot) {
+      const aspirantWallet = await this.prisma.wallet.findUniqueOrThrow({
+        where: { userId: aspirantId },
+      });
+      try {
+        await this.walletService.placeHold({
+          walletId: aspirantWallet.id,
+          sessionId: session.id,
+          amountMinor: slotCostMinor,
+        });
+      } catch (err) {
+        // Insufficient balance — undo the session row rather than leaving an
+        // orphaned PENDING request the mentor could still see and accept.
+        await this.prisma.session.delete({ where: { id: session.id } });
+        throw err;
+      }
+    }
 
     return toSessionResponse(session);
   }
@@ -142,6 +182,8 @@ export class SessionsService {
       },
     });
 
+    await this.releaseHoldsForSession(sessionId);
+
     return toSessionResponse(updated);
   }
 
@@ -168,6 +210,8 @@ export class SessionsService {
         endReason: 'CANCELLED',
       },
     });
+
+    await this.releaseHoldsForSession(sessionId);
 
     return toSessionResponse(updated);
   }
@@ -245,5 +289,12 @@ export class SessionsService {
         `Only the session's ${party} may perform this action`,
       );
     }
+  }
+
+  private async releaseHoldsForSession(sessionId: string): Promise<void> {
+    const holds = await this.prisma.walletHold.findMany({
+      where: { sessionId, status: HoldStatus.ACTIVE },
+    });
+    await Promise.all(holds.map((hold) => this.walletService.releaseHold(hold.id)));
   }
 }

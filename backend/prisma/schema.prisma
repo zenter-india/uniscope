@@ -28,9 +28,8 @@ datasource db {
 // ─────────────────────────────────────────────────────────────────────────────
 
 enum UserRole {
-  PROSPECTIVE_STUDENT
-  CURRENT_STUDENT
-  ALUMNI
+  ASPIRANT
+  MENTOR
   ADMIN
 }
 
@@ -187,25 +186,32 @@ model User {
 /// Extended profile data — one-to-one with User.
 /// Sensitive fields (real name) stored AES-256-GCM encrypted.
 /// Mentor-facing fields (pricePerMinuteMinor, languages) are null/empty for
-/// aspirants; set once a CURRENT_STUDENT/ALUMNI opts into mentoring.
+/// aspirants; set once a user opts into mentoring as role MENTOR.
 model UserProfile {
-  id                  String   @id @default(uuid())
-  userId              String   @unique @map("user_id")
-  realNameEncrypted   String?  @map("real_name_encrypted") @db.Text
-  universityId        String?  @map("university_id")
-  graduationYear      Int?     @map("graduation_year") @db.SmallInt
-  yearOfStudy         Int?     @map("year_of_study") @db.SmallInt
-  specialty           String?  @db.VarChar(100)
-  bio                 String?  @db.VarChar(500)
-  avatarKey           String?  @map("avatar_key") @db.VarChar(500)
-  isMentorAvailable   Boolean  @default(false) @map("is_mentor_available")
+  id                       String   @id @default(uuid())
+  userId                   String   @unique @map("user_id")
+  realNameEncrypted        String?  @map("real_name_encrypted") @db.Text
+  universityId             String?  @map("university_id")
+  graduationYear           Int?     @map("graduation_year") @db.SmallInt
+  yearOfStudy              Int?     @map("year_of_study") @db.SmallInt
+  specialty                String?  @db.VarChar(100)
+  bio                      String?  @db.VarChar(500)
+  avatarKey                String?  @map("avatar_key") @db.VarChar(500)
+  isMentorAvailable        Boolean  @default(false) @map("is_mentor_available")
   /// Rate charged per minute of session time, in minor units (paise). Null until
   /// the mentor sets a rate; enforced non-null at the service layer before a
   /// mentor can accept bookings.
-  pricePerMinuteMinor Int?     @map("price_per_minute_minor")
-  languages           String[] @default([])
-  createdAt           DateTime @default(now()) @map("created_at") @db.Timestamptz
-  updatedAt           DateTime @updatedAt @map("updated_at") @db.Timestamptz
+  pricePerMinuteMinor      Int?     @map("price_per_minute_minor")
+  languages                String[] @default([])
+  /// Aspirant-only free tier: 2 free CHAT sessions before Uniminutes are
+  /// required. Decremented on session accept, never goes below 0.
+  freeChatsRemaining       Int      @default(2) @map("free_chats_remaining")
+  /// Aspirant-only free tier: 10 free minutes of AUDIO_CALL time (stored in
+  /// seconds for precise decrementing). Consumed before paid slot billing
+  /// starts on a call.
+  freeCallSecondsRemaining Int      @default(600) @map("free_call_seconds_remaining")
+  createdAt                DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt                DateTime @updatedAt @map("updated_at") @db.Timestamptz
 
   user       User        @relation(fields: [userId], references: [id])
   university University? @relation(fields: [universityId], references: [id])
@@ -345,11 +351,18 @@ model Session {
   /// Set only on a server-confirmed connection event — never client-reported.
   startedAt          DateTime?     @map("started_at") @db.Timestamptz
   endedAt            DateTime?     @map("ended_at") @db.Timestamptz
+  /// AUDIO_CALL: sum of committed/paid slot minutes (5/10/20, plus any +5
+  /// "continue" extensions) — this is what was CHARGED, not necessarily the
+  /// actual connected duration (a student-initiated early hangup or a
+  /// mid-call cutoff still bills the full committed slot).
   billedMinutes      Int           @default(0) @map("billed_minutes")
   totalCostMinor     Int           @default(0) @map("total_cost_minor")
   agoraChannelName   String?       @map("agora_channel_name") @db.VarChar(100)
   streamChannelId    String?       @map("stream_channel_id") @db.VarChar(100)
-  /// NORMAL | NO_ANSWER | DROPPED | BALANCE_EXHAUSTED | CANCELLED | REJECTED
+  /// NORMAL | NO_ANSWER | DROPPED | MENTOR_DROPPED | BALANCE_EXHAUSTED |
+  /// CANCELLED | REJECTED. MENTOR_DROPPED still bills the full slot per
+  /// product decision — the aspirant gets a Report action, and any refund is
+  /// manual/admin-issued (LedgerEntryType.REFUND), never automatic.
   endReason          String?       @map("end_reason") @db.VarChar(30)
   createdAt          DateTime      @default(now()) @map("created_at") @db.Timestamptz
   updatedAt          DateTime      @updatedAt @map("updated_at") @db.Timestamptz

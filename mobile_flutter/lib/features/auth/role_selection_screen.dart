@@ -26,22 +26,16 @@ class _RoleOption {
 
 const _roles = <_RoleOption>[
   _RoleOption(
-    UserRole.prospectiveStudent,
-    '📚',
-    'Prospective Student',
-    "I'm researching medical colleges and want to connect with students and alumni.",
-  ),
-  _RoleOption(
-    UserRole.currentStudent,
-    '🩺',
-    'Current Student',
-    "I'm enrolled in an MBBS or MD program and want to help others.",
-  ),
-  _RoleOption(
-    UserRole.alumni,
+    UserRole.aspirant,
     '🎓',
-    'Alumni / Doctor',
-    "I've completed my degree and want to share my experience.",
+    'Aspirant',
+    'Find the right college and get guidance from real mentors.',
+  ),
+  _RoleOption(
+    UserRole.mentor,
+    '🧑‍⚕️',
+    'Mentor',
+    "Share your story. Shape someone's future.",
   ),
 ];
 

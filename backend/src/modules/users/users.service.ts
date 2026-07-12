@@ -6,9 +6,8 @@ import { UpdateProfileDto } from './dto/update-profile.dto.js';
 import { UpdateRoleDto } from './dto/update-role.dto.js';
 
 const ALLOWED_ROLE_TRANSITIONS: Record<UserRole, UserRole[]> = {
-  [UserRole.PROSPECTIVE_STUDENT]: [UserRole.CURRENT_STUDENT, UserRole.ALUMNI],
-  [UserRole.CURRENT_STUDENT]: [],
-  [UserRole.ALUMNI]: [],
+  [UserRole.ASPIRANT]: [UserRole.MENTOR],
+  [UserRole.MENTOR]: [],
   [UserRole.ADMIN]: [],
 };
 
@@ -35,7 +34,7 @@ export class UsersService {
       data: {
         phoneHash,
         displayName: generatePseudonym(),
-        role: UserRole.PROSPECTIVE_STUDENT,
+        role: UserRole.ASPIRANT,
         lastActiveAt: new Date(),
         profile: {
           create: {},

@@ -116,7 +116,7 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
             const SizedBox(height: AppSpacing.md),
             Wrap(
               spacing: AppSpacing.sm,
-              children: [100, 500, 1000].map((rupees) {
+              children: [250, 500, 1000].map((rupees) {
                 return OutlinedButton(
                   onPressed: () {
                     Navigator.of(sheetContext).pop();

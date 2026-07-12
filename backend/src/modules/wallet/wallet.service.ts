@@ -1,12 +1,13 @@
 import {
   BadRequestException,
+  ConflictException,
   ForbiddenException,
   Injectable,
   Logger,
   NotFoundException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { LedgerEntryType, Prisma } from '@prisma/client';
+import { HoldStatus, LedgerEntryType, Prisma } from '@prisma/client';
 import { createHmac, timingSafeEqual } from 'crypto';
 import Razorpay from 'razorpay';
 import type { RazorpayConfig } from '../../config/index.js';
@@ -24,6 +25,32 @@ import {
 const DEFAULT_LIMIT = 20;
 const MAX_LIMIT = 50;
 const CURRENCY = 'INR';
+
+/**
+ * Uniminute economics (product decision, see docs/decisions):
+ *   - 1 Uniminute = 1000 minor units (₹10) — matches the flat mentor call
+ *     payout rate exactly, so a session debit of N Uniminutes always pays
+ *     the mentor N * MENTOR_RATE_PER_MINUTE_MINOR with zero per-session
+ *     platform cut.
+ *   - The platform margin lives ONLY in the recharge conversion: a ₹250
+ *     (25,000 minor) topup credits 20 Uniminutes (20,000 minor) — a fixed
+ *     1250-minor-paid-per-Uniminute-credited rate, i.e. 20% margin. This is
+ *     never shown to the user as a "commission" line; the wallet is simply
+ *     denominated in Uniminutes, not rupees, so there's no rupee-for-rupee
+ *     promise being broken. The raw paid amount is preserved in the ledger
+ *     entry's `note` for internal audit/revenue reporting.
+ */
+export const UNIMINUTE_VALUE_MINOR = 1000;
+const PAID_MINOR_PER_UNIMINUTE_CREDITED = 1250;
+export const MENTOR_RATE_PER_MINUTE_MINOR = UNIMINUTE_VALUE_MINOR;
+
+function computeTopupCredit(paidAmountMinor: number): {
+  uniminutes: number;
+  creditedAmountMinor: number;
+} {
+  const uniminutes = Math.floor(paidAmountMinor / PAID_MINOR_PER_UNIMINUTE_CREDITED);
+  return { uniminutes, creditedAmountMinor: uniminutes * UNIMINUTE_VALUE_MINOR };
+}
 
 /**
  * WalletService is the ONLY place that writes to the ledger. Every write
@@ -137,12 +164,14 @@ export class WalletService {
     }
 
     const wallet = await this.requireWallet(userId);
+    const paidAmountMinor = Number(order.amount);
+    const { uniminutes, creditedAmountMinor } = computeTopupCredit(paidAmountMinor);
     await this.applyLedgerEntry({
       walletId: wallet.id,
       type: LedgerEntryType.TOPUP,
-      amountMinor: Number(order.amount),
+      amountMinor: creditedAmountMinor,
       idempotencyKey: `razorpay:${dto.razorpayPaymentId}`,
-      note: `Razorpay order ${dto.razorpayOrderId}`,
+      note: `Razorpay order ${dto.razorpayOrderId} — paid ${paidAmountMinor} minor, credited ${uniminutes} Uniminutes`,
     });
 
     return toWalletResponse(await this.requireWallet(userId));
@@ -193,12 +222,13 @@ export class WalletService {
       return;
     }
 
+    const { uniminutes, creditedAmountMinor } = computeTopupCredit(payment.amount);
     const applied = await this.applyLedgerEntry({
       walletId: wallet.id,
       type: LedgerEntryType.TOPUP,
-      amountMinor: payment.amount,
+      amountMinor: creditedAmountMinor,
       idempotencyKey: `razorpay:${payment.id}`,
-      note: `Razorpay order ${payment.order_id}`,
+      note: `Razorpay order ${payment.order_id} — paid ${payment.amount} minor, credited ${uniminutes} Uniminutes`,
     });
 
     if (!applied) {
@@ -248,6 +278,105 @@ export class WalletService {
       }
       throw err;
     }
+  }
+
+  /**
+   * Spendable balance minus every currently ACTIVE hold — this, not raw
+   * balanceMinor, is what booking a new slot must be checked against, so a
+   * user can't double-spend the same balance across concurrent call
+   * bookings.
+   */
+  async getAvailableBalanceMinor(walletId: string): Promise<number> {
+    const wallet = await this.prisma.wallet.findUniqueOrThrow({ where: { id: walletId } });
+    const activeHolds = await this.prisma.walletHold.aggregate({
+      where: { walletId, status: HoldStatus.ACTIVE },
+      _sum: { amountMinor: true },
+    });
+    return wallet.balanceMinor - (activeHolds._sum.amountMinor ?? 0);
+  }
+
+  /**
+   * Reserves `amountMinor` against a session so it can't be spent twice
+   * while a call is pending/in-progress. Throws ConflictException if the
+   * available balance (balance minus other active holds) can't cover it —
+   * callers should surface this as "top up to book this slot."
+   */
+  async placeHold(params: {
+    walletId: string;
+    sessionId: string;
+    amountMinor: number;
+    expiresInMs?: number;
+  }) {
+    const available = await this.getAvailableBalanceMinor(params.walletId);
+    if (available < params.amountMinor) {
+      throw new ConflictException('Insufficient balance — top up to book this slot');
+    }
+
+    return this.prisma.walletHold.create({
+      data: {
+        walletId: params.walletId,
+        sessionId: params.sessionId,
+        amountMinor: params.amountMinor,
+        status: HoldStatus.ACTIVE,
+        expiresAt: new Date(Date.now() + (params.expiresInMs ?? 60 * 60 * 1000)),
+      },
+    });
+  }
+
+  /**
+   * Converts an ACTIVE hold into the real ledger entries: a SESSION_DEBIT
+   * against the aspirant's wallet and a SESSION_CREDIT of the SAME amount
+   * to the mentor's wallet (flat rate, zero per-session platform cut — the
+   * margin lives only in the topup conversion, see computeTopupCredit).
+   * idempotencyKey is derived from the hold id, so retries are safe no-ops.
+   */
+  async consumeHoldAndBill(params: {
+    holdId: string;
+    mentorWalletId: string;
+    sessionId: string;
+    note?: string;
+  }): Promise<boolean> {
+    const hold = await this.prisma.walletHold.findUniqueOrThrow({
+      where: { id: params.holdId },
+    });
+    if (hold.status !== HoldStatus.ACTIVE) {
+      return false; // already consumed/released — safe no-op
+    }
+
+    await this.prisma.walletHold.update({
+      where: { id: params.holdId },
+      data: { status: HoldStatus.CONSUMED },
+    });
+
+    const applied = await this.applyLedgerEntry({
+      walletId: hold.walletId,
+      type: LedgerEntryType.SESSION_DEBIT,
+      amountMinor: -hold.amountMinor,
+      idempotencyKey: `hold-debit:${hold.id}`,
+      sessionId: params.sessionId,
+      note: params.note,
+    });
+
+    await this.applyLedgerEntry({
+      walletId: params.mentorWalletId,
+      type: LedgerEntryType.SESSION_CREDIT,
+      amountMinor: hold.amountMinor,
+      idempotencyKey: `hold-credit:${hold.id}`,
+      sessionId: params.sessionId,
+      note: params.note,
+    });
+
+    return applied;
+  }
+
+  /** Returns an unused hold to the spendable balance — e.g. a booking that
+   * was cancelled or rejected before the call connected. No ledger entries:
+   * the hold never decremented balanceMinor in the first place. */
+  async releaseHold(holdId: string): Promise<void> {
+    await this.prisma.walletHold.updateMany({
+      where: { id: holdId, status: HoldStatus.ACTIVE },
+      data: { status: HoldStatus.RELEASED },
+    });
   }
 
   private async requireWallet(userId: string) {

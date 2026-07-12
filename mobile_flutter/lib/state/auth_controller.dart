@@ -3,11 +3,10 @@ import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
-/// Roles mirror the backend enum (see RN `useAuthStore.ts`).
+/// Roles mirror the backend enum.
 enum UserRole {
-  prospectiveStudent('PROSPECTIVE_STUDENT'),
-  currentStudent('CURRENT_STUDENT'),
-  alumni('ALUMNI'),
+  aspirant('ASPIRANT'),
+  mentor('MENTOR'),
   admin('ADMIN');
 
   const UserRole(this.wire);
@@ -18,7 +17,7 @@ enum UserRole {
   static UserRole fromWire(String value) {
     return UserRole.values.firstWhere(
       (r) => r.wire == value,
-      orElse: () => UserRole.prospectiveStudent,
+      orElse: () => UserRole.aspirant,
     );
   }
 }
