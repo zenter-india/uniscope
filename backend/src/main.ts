@@ -1,6 +1,7 @@
 import { Logger, ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
+import { NestExpressApplication } from '@nestjs/platform-express';
 import { AppModule } from './app.module.js';
 
 async function bootstrap() {
@@ -8,7 +9,12 @@ async function bootstrap() {
   // webhook's HMAC signature against the exact bytes Razorpay signed,
   // before the global body parser JSON-decodes (and potentially
   // re-serializes differently from) the payload.
-  const app = await NestFactory.create(AppModule, { rawBody: true });
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, { rawBody: true });
+
+  // Verification document submission sends a base64-encoded photo in the
+  // JSON body (simpler than multipart for the mobile Dio client) — bump
+  // past Express's 100kb default so a ~5MB image (≈6.7MB base64) fits.
+  app.useBodyParser('json', { limit: '10mb' });
 
   const config = app.get(ConfigService);
   const port = config.get<number>('app.port', 3000);

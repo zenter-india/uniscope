@@ -8,7 +8,8 @@
         "-lc",
         "cd /Users/kiranrajr/uniscope && PORT=3001 NODE_ENV=development exec /opt/homebrew/bin/npm run dev:backend"
       ],
-      "port": 3001
+      "port": 3001,
+      "autoPort": false
     },
     {
       "name": "Admin Portal (Next.js)",
@@ -24,9 +25,10 @@
       "runtimeExecutable": "bash",
       "runtimeArgs": [
         "-lc",
-        "cd /Users/kiranrajr/uniscope/mobile_flutter && exec /opt/homebrew/bin/flutter run -d web-server --web-hostname 127.0.0.1 --web-port 8080 --dart-define=API_URL=http://localhost:3001/api/v1"
+        "cd /Users/kiranrajr/uniscope/mobile_flutter/build/web && exec python3 ../../scripts/no_cache_server.py 8080"
       ],
-      "port": 8080
+      "port": 8080,
+      "autoPort": false
     }
   ]
 }

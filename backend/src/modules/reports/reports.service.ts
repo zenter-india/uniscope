@@ -49,6 +49,7 @@ export class ReportsService {
       where: query.status ? { status: query.status } : undefined,
       orderBy: [{ createdAt: 'desc' }, { id: 'asc' }],
       take: take + 1,
+      include: { reporter: { select: { displayName: true } } },
       ...(query.cursor && { cursor: { id: query.cursor }, skip: 1 }),
     });
 

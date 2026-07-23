@@ -5,31 +5,34 @@ import {
   HttpCode,
   HttpStatus,
   NotFoundException,
+  Param,
   Patch,
   Post,
+  Query,
   UseGuards,
 } from '@nestjs/common';
-import { IsEnum, IsString } from 'class-validator';
+import { UserRole } from '@prisma/client';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard.js';
 import { CurrentUser } from '../../auth/decorators/current-user.decorator.js';
 import type { JwtPayload } from '../../auth/decorators/current-user.decorator.js';
+import { Roles } from '../../auth/decorators/roles.decorator.js';
+import { RolesGuard } from '../../auth/guards/roles.guard.js';
+import { StorePushTokenDto } from '../notifications/dto/list-notifications.dto.js';
+import { NotificationsService } from '../notifications/notifications.service.js';
+import { ListUsersDto } from './dto/list-users.dto.js';
+import { SetBannedDto } from './dto/set-banned.dto.js';
 import { UpdateProfileDto } from './dto/update-profile.dto.js';
 import { UpdateRoleDto } from './dto/update-role.dto.js';
 import { toPublicUser } from './user-response.js';
 import { UsersService } from './users.service.js';
 
-class StorePushTokenDto {
-  @IsString()
-  token!: string;
-
-  @IsEnum(['ios', 'android'])
-  platform!: 'ios' | 'android';
-}
-
 @UseGuards(JwtAuthGuard)
 @Controller('users')
 export class UsersController {
-  constructor(private readonly usersService: UsersService) {}
+  constructor(
+    private readonly usersService: UsersService,
+    private readonly notificationsService: NotificationsService,
+  ) {}
 
   @Get('me')
   async getMe(@CurrentUser() user: JwtPayload) {
@@ -64,6 +67,22 @@ export class UsersController {
     @CurrentUser() user: JwtPayload,
     @Body() dto: StorePushTokenDto,
   ) {
-    await this.usersService.storePushToken(user.sub, dto.token, dto.platform);
+    await this.notificationsService.registerPushToken(user.sub, dto.token, dto.platform);
+  }
+
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @Get()
+  async findAll(@Query() query: ListUsersDto) {
+    const { data, nextCursor } = await this.usersService.findAllAdmin(query);
+    return { data: data.map(toPublicUser), nextCursor };
+  }
+
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @Patch(':id/ban')
+  @HttpCode(HttpStatus.OK)
+  async setBanned(@Param('id') id: string, @Body() dto: SetBannedDto) {
+    return toPublicUser(await this.usersService.setBanned(id, dto));
   }
 }

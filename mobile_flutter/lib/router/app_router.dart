@@ -4,19 +4,27 @@ import 'package:go_router/go_router.dart';
 
 import '../core/theme/app_theme.dart';
 import '../features/admin/admin_dashboard_screen.dart';
+import '../features/auth/aspirant_onboarding_screen.dart';
 import '../features/auth/login_screen.dart';
+import '../features/auth/mentor_onboarding_screen.dart';
 import '../features/auth/otp_screen.dart';
 import '../features/auth/profile_setup_screen.dart';
 import '../features/auth/role_selection_screen.dart';
 import '../features/auth/welcome_screen.dart';
+import '../features/calls/call_screen.dart';
 import '../features/common/placeholder_screen.dart';
 import '../features/home/home_screen.dart';
+import '../features/mentors/mentor_detail_screen.dart';
 import '../features/mentors/mentor_list_screen.dart';
+import '../features/mentors/saved_mentors_screen.dart';
+import '../features/notifications/notifications_screen.dart';
+import '../features/profile/edit_profile_screen.dart';
 import '../features/profile/profile_home_screen.dart';
 import '../features/sessions/session_chat_screen.dart';
 import '../features/sessions/session_list_screen.dart';
 import '../features/sessions/support_chat_screen.dart';
 import '../features/shell/main_shell.dart';
+import '../features/universities/saved_colleges_screen.dart';
 import '../features/universities/university_detail_screen.dart';
 import '../features/universities/university_list_screen.dart';
 import '../features/verification/verification_screen.dart';
@@ -88,6 +96,26 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/profile-setup',
         builder: (_, __) => const ProfileSetupScreen(),
       ),
+      GoRoute(
+        path: '/aspirant-onboarding',
+        builder: (_, __) => const AspirantOnboardingScreen(),
+      ),
+      GoRoute(
+        path: '/mentor-onboarding',
+        builder: (_, __) => const MentorOnboardingScreen(),
+      ),
+
+      // ─── Audio call (full-screen, outside the bottom-nav shell) ──
+      GoRoute(
+        path: '/call/:sessionId',
+        builder: (_, state) => CallScreen(sessionId: state.pathParameters['sessionId']!),
+      ),
+
+      // ─── Notifications (pushed from the bell icon anywhere) ──────
+      GoRoute(
+        path: '/notifications',
+        builder: (_, __) => const NotificationsScreen(),
+      ),
 
       // ─── Main tabs (StatefulShellRoute keeps the bottom bar) ─────
       StatefulShellRoute.indexedStack(
@@ -109,7 +137,7 @@ final routerProvider = Provider<GoRouter>((ref) {
                     builder: (_, state) {
                       final a = state.extra as Map<String, dynamic>? ?? const {};
                       return UniversityDetailScreen(
-                        universityId: a['universityId'] as String? ?? '',
+                        universitySlug: a['universitySlug'] as String? ?? '',
                         universityName: a['universityName'] as String? ?? '',
                       );
                     },
@@ -131,6 +159,10 @@ final routerProvider = Provider<GoRouter>((ref) {
                     path: 'alumni',
                     builder: (_, __) => const PlaceholderScreen(title: 'Alumni'),
                   ),
+                  GoRoute(
+                    path: 'saved',
+                    builder: (_, __) => const SavedCollegesScreen(),
+                  ),
                 ],
               ),
             ],
@@ -140,6 +172,18 @@ final routerProvider = Provider<GoRouter>((ref) {
               GoRoute(
                 path: '/mentors',
                 builder: (_, __) => const MentorListScreen(),
+                routes: [
+                  GoRoute(
+                    path: 'saved',
+                    builder: (_, __) => const SavedMentorsScreen(),
+                  ),
+                  GoRoute(
+                    path: ':id',
+                    builder: (_, state) => MentorDetailScreen(
+                      mentorId: state.pathParameters['id']!,
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
@@ -182,8 +226,7 @@ final routerProvider = Provider<GoRouter>((ref) {
                   ),
                   GoRoute(
                     path: 'edit',
-                    builder: (_, __) =>
-                        const PlaceholderScreen(title: 'Edit Profile'),
+                    builder: (_, __) => const EditProfileScreen(),
                   ),
                   GoRoute(
                     path: 'settings',

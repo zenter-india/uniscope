@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma, UserRole, VerificationStatus } from '@prisma/client';
 import { PrismaService } from '../../database/prisma/prisma.service.js';
+import { ReviewsService } from '../reviews/reviews.service.js';
 import { ListMentorsDto } from './dto/list-mentors.dto.js';
 import { MentorResponse, toMentorResponse } from './mentor-response.js';
 
@@ -8,18 +9,24 @@ const DEFAULT_LIMIT = 20;
 const MAX_LIMIT = 50;
 
 /** A "mentor" is any VERIFIED user with role MENTOR who has opted into
- * mentoring and set a per-minute rate. All three conditions are required —
- * an unrated or unverified profile is never bookable or discoverable. */
+ * mentoring. Both conditions are required — an unverified or opted-out
+ * profile is never bookable or discoverable. A per-minute rate is no longer
+ * a requirement: chat is free with every mentor and audio calls are always
+ * billed at the flat platform rate (MENTOR_RATE_PER_MINUTE_MINOR), never a
+ * mentor-set price — see product decision. */
 const MENTOR_ROLES: UserRole[] = [UserRole.MENTOR];
 
 @Injectable()
 export class MentorsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly reviewsService: ReviewsService,
+  ) {}
 
   /**
    * Cursor-paginated mentor discovery list. Ordered by createdAt desc with
    * id as a stable tiebreaker — replace with a rating-based sort once
-   * mentor-level reviews exist (Review today is university-scoped only).
+   * mentor review volume is high enough to be meaningful.
    */
   async findAll(
     query: ListMentorsDto,
@@ -34,24 +41,11 @@ export class MentorsService {
       deletedAt: null,
       profile: {
         isMentorAvailable: true,
-        pricePerMinuteMinor: { not: null },
         ...(query.universityId && { universityId: query.universityId }),
         ...(query.specialty && {
           specialty: { contains: query.specialty, mode: 'insensitive' },
         }),
         ...(query.language && { languages: { has: query.language } }),
-        ...((query.minPriceMinor !== undefined ||
-          query.maxPriceMinor !== undefined) && {
-          pricePerMinuteMinor: {
-            not: null,
-            ...(query.minPriceMinor !== undefined && {
-              gte: query.minPriceMinor,
-            }),
-            ...(query.maxPriceMinor !== undefined && {
-              lte: query.maxPriceMinor,
-            }),
-          },
-        }),
       },
       ...(query.search && {
         OR: [
@@ -75,7 +69,8 @@ export class MentorsService {
 
     const hasMore = rows.length > take;
     const rowsPage = hasMore ? rows.slice(0, take) : rows;
-    const data = rowsPage.map(toMentorResponse);
+    const ratings = await this.reviewsService.ratingSummaries(rowsPage.map((r) => r.id));
+    const data = rowsPage.map((row) => toMentorResponse(row, ratings.get(row.id)));
     const nextCursor = hasMore ? rowsPage[rowsPage.length - 1].id : null;
 
     return { data, nextCursor };
@@ -90,7 +85,7 @@ export class MentorsService {
         isActive: true,
         isBanned: false,
         deletedAt: null,
-        profile: { isMentorAvailable: true, pricePerMinuteMinor: { not: null } },
+        profile: { isMentorAvailable: true },
       },
       include: { profile: { include: { university: true } } },
     });
@@ -99,6 +94,7 @@ export class MentorsService {
       throw new NotFoundException(`Mentor '${id}' not found`);
     }
 
-    return toMentorResponse(user);
+    const rating = await this.reviewsService.ratingSummary(id);
+    return toMentorResponse(user, rating);
   }
 }

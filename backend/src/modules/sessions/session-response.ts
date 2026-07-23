@@ -17,6 +17,9 @@ export interface SessionResponse {
   billedMinutes: number;
   totalCostMinor: number;
   endReason: string | null;
+  callSlotMinutes: number | null;
+  aspirantJoinedAt: Date | null;
+  mentorJoinedAt: Date | null;
   createdAt: Date;
 }
 
@@ -35,6 +38,9 @@ export function toSessionResponse(session: Session): SessionResponse {
     billedMinutes: session.billedMinutes,
     totalCostMinor: session.totalCostMinor,
     endReason: session.endReason,
+    callSlotMinutes: session.callSlotMinutes,
+    aspirantJoinedAt: session.aspirantJoinedAt,
+    mentorJoinedAt: session.mentorJoinedAt,
     createdAt: session.createdAt,
   };
 }

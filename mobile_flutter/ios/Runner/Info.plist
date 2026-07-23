@@ -26,6 +26,10 @@
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Uniscope needs microphone access for audio calls with mentors.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Uniscope needs photo access to upload your verification document.</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

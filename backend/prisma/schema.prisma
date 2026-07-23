@@ -133,6 +133,7 @@ enum LedgerEntryType {
   REFUND // reversal to aspirant
   HOLD_RELEASE // unused hold amount returned to spendable balance
   ADJUSTMENT // manual admin correction — always paired with an audit note
+  PAYOUT // mentor earnings debited on a COMPLETED PayoutRequest (bank transfer sent)
 }
 
 enum HoldStatus {
@@ -170,18 +171,24 @@ model User {
   deletedAt          DateTime?          @map("deleted_at") @db.Timestamptz
 
   // Relations
-  profile              UserProfile?
-  verificationRequests VerificationRequest[] @relation("UserVerificationRequests")
-  reviewedRequests     VerificationRequest[] @relation("ReviewerVerificationRequests")
-  reviews              Review[]
-  sentReports          Report[]              @relation("ReporterReports")
-  actionedReports      Report[]              @relation("ActionedByReports")
-  notifications        Notification[]
-  wallet               Wallet?
-  aspirantSessions     Session[]             @relation("AspirantSessions")
-  mentorSessions       Session[]             @relation("MentorSessions")
-  payoutRequests       PayoutRequest[]       @relation("MentorPayouts")
-  processedPayouts     PayoutRequest[]       @relation("ProcessedPayouts")
+  profile               UserProfile?
+  verificationRequests  VerificationRequest[] @relation("UserVerificationRequests")
+  reviewedRequests      VerificationRequest[] @relation("ReviewerVerificationRequests")
+  reviews               Review[]
+  sentReports           Report[]              @relation("ReporterReports")
+  actionedReports       Report[]              @relation("ActionedByReports")
+  notifications         Notification[]
+  pushTokens            PushToken[]
+  mentorReviewsReceived MentorReview[]        @relation("MentorReviewsReceived")
+  mentorReviewsAuthored MentorReview[]        @relation("MentorReviewsAuthored")
+  wallet                Wallet?
+  aspirantSessions      Session[]             @relation("AspirantSessions")
+  mentorSessions        Session[]             @relation("MentorSessions")
+  payoutRequests        PayoutRequest[]       @relation("MentorPayouts")
+  processedPayouts      PayoutRequest[]       @relation("ProcessedPayouts")
+  savedByAspirants      SavedMentor[]         @relation("SavedMentorTarget")
+  savedMentors          SavedMentor[]         @relation("SavedMentorAspirant")
+  savedUniversities     SavedUniversity[]
 
   @@index([role])
   @@index([verificationStatus])
@@ -203,12 +210,38 @@ model UserProfile {
   specialty                String?  @db.VarChar(100)
   bio                      String?  @db.VarChar(500)
   avatarKey                String?  @map("avatar_key") @db.VarChar(500)
+  /// Aspirant-only onboarding fields — null/unused for mentors. Free text
+  /// (not enums) since the exact option set is still being finalized with
+  /// the product design; the mobile client renders them as dropdowns for
+  /// UX but the backend doesn't constrain the value set yet.
+  gender                   String?  @db.VarChar(30)
+  state                    String?  @db.VarChar(100)
+  city                     String?  @db.VarChar(100)
+  qualification            String?  @db.VarChar(50)
+  stream                   String?  @db.VarChar(20)
+  dateOfBirth              DateTime? @map("date_of_birth") @db.Date
+  /// Course the aspirant is pursuing/aiming for, e.g. "MBBS", "BDS" — distinct
+  /// from `stream` (PCB/PCM at the school level).
+  courseInterested         String?  @db.VarChar(50) @map("course_interested")
+  /// Aspirant's preferred language for mentor communication — distinct from
+  /// a mentor's own `languages` list (which is multi-select).
+  preferredLanguage        String?  @db.VarChar(30) @map("preferred_language")
+  preferredMentorshipTiming String? @db.VarChar(50) @map("preferred_mentorship_timing")
+  /// Target exams/colleges, e.g. ["NEET", "AIIMS Delhi"] — free-form tags,
+  /// not FK'd to the University table (an aspirant's goal college may not
+  /// exist in that table yet, or may be a general aspiration like "Any
+  /// government college").
+  goals                    String[] @default([])
   isMentorAvailable        Boolean  @default(false) @map("is_mentor_available")
   /// Rate charged per minute of session time, in minor units (paise). Null until
   /// the mentor sets a rate; enforced non-null at the service layer before a
   /// mentor can accept bookings.
   pricePerMinuteMinor      Int?     @map("price_per_minute_minor")
   languages                String[] @default([])
+  /// Mentor-only — days of the week the mentor is generally available for
+  /// sessions, e.g. ["Monday", "Wednesday"]. Advisory only — not enforced
+  /// at booking time (a booking can still be requested any day).
+  availableDays            String[] @default([]) @map("available_days")
   /// Aspirant-only free tier: 2 free CHAT sessions before Uniminutes are
   /// required. Decremented on session accept, never goes below 0.
   freeChatsRemaining       Int      @default(2) @map("free_chats_remaining")
@@ -250,6 +283,7 @@ model University {
   programs             Program[]
   verificationRequests VerificationRequest[]
   reviews              Review[]
+  savedByAspirants     SavedUniversity[]
 
   @@index([state])
   @@index([type])
@@ -335,6 +369,62 @@ model Review {
   @@map("reviews")
 }
 
+/// A rating + optional comment an aspirant leaves for a mentor after a
+/// COMPLETED session. Distinct from `Review` (university-scoped, unrelated
+/// to mentors). One review per session — enforced by the unique sessionId,
+/// which also doubles as "have I already reviewed this session" for the
+/// mobile client's prompt-once-per-session UI.
+model MentorReview {
+  id         String   @id @default(uuid())
+  sessionId  String   @unique @map("session_id")
+  mentorId   String   @map("mentor_id")
+  aspirantId String   @map("aspirant_id")
+  rating     Int      @db.SmallInt
+  comment    String?  @db.VarChar(500)
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt  DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  session  Session @relation(fields: [sessionId], references: [id])
+  mentor   User    @relation("MentorReviewsReceived", fields: [mentorId], references: [id])
+  aspirant User    @relation("MentorReviewsAuthored", fields: [aspirantId], references: [id])
+
+  @@index([mentorId, createdAt(sort: Desc)])
+  @@map("mentor_reviews")
+}
+
+/// An aspirant's saved/wishlisted mentor — pure bookmark, no booking
+/// relationship implied. One row per (aspirantId, mentorId) pair.
+model SavedMentor {
+  id         String   @id @default(uuid())
+  aspirantId String   @map("aspirant_id")
+  mentorId   String   @map("mentor_id")
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  aspirant User @relation("SavedMentorAspirant", fields: [aspirantId], references: [id])
+  mentor   User @relation("SavedMentorTarget", fields: [mentorId], references: [id])
+
+  @@unique([aspirantId, mentorId])
+  @@index([mentorId])
+  @@map("saved_mentors")
+}
+
+/// An aspirant's saved/wishlisted university — pure bookmark, no
+/// verification relationship implied. One row per (aspirantId,
+/// universityId) pair.
+model SavedUniversity {
+  id           String   @id @default(uuid())
+  aspirantId   String   @map("aspirant_id")
+  universityId String   @map("university_id")
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  aspirant   User       @relation(fields: [aspirantId], references: [id])
+  university University @relation(fields: [universityId], references: [id])
+
+  @@unique([aspirantId, universityId])
+  @@index([universityId])
+  @@map("saved_universities")
+}
+
 /// A single booking + its full lifecycle: request → accept/reject → (ring →)
 /// connect → bill → end. One Session row per attempt — a re-request after a
 /// FAILED/EXPIRED/REJECTED session creates a NEW row, never reuses one.
@@ -387,6 +477,7 @@ model Session {
   mentor        User          @relation("MentorSessions", fields: [mentorId], references: [id])
   holds         WalletHold[]
   ledgerEntries LedgerEntry[]
+  mentorReview  MentorReview?
 
   @@index([aspirantId, status])
   @@index([mentorId, status])
@@ -529,4 +620,20 @@ model Notification {
   @@index([userId, createdAt(sort: Desc)])
   @@index([userId, isRead])
   @@map("notifications")
+}
+
+/// FCM device token — a user can have several (multiple devices). Tokens are
+/// pruned automatically when Firebase reports them as no-longer-registered.
+model PushToken {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  token     String   @unique @db.VarChar(400)
+  platform  String   @db.VarChar(20)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@map("push_tokens")
 }

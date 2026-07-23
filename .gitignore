@@ -45,3 +45,7 @@ backend/prisma/generated/
 .turbo/
 .vercel/
 *.pem
+
+# Secrets
+backend/firebase-service-account.json
+google-services.json

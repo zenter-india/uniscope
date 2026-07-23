@@ -1,45 +1,56 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/network/college_wishlist_api.dart';
+import '../../core/network/universities_api.dart';
 import '../../core/theme/app_theme.dart';
+import '../../widgets/app_widgets.dart';
 
-class _University {
-  const _University(this.id, this.name, this.state, this.type, this.rank, this.seats);
-  final String id;
-  final String name;
-  final String state;
-  final String type;
-  final int rank;
-  final int seats;
+const _typeFilters = ['All', 'GOVERNMENT', 'PRIVATE', 'DEEMED', 'CENTRAL'];
+
+String _typeLabel(String type) {
+  switch (type) {
+    case 'GOVERNMENT':
+      return 'Government';
+    case 'PRIVATE':
+      return 'Private';
+    case 'DEEMED':
+      return 'Deemed';
+    case 'CENTRAL':
+      return 'Central';
+    default:
+      return type;
+  }
 }
 
-const _placeholderData = <_University>[
-  _University('1', 'AIIMS New Delhi', 'Delhi', 'Government', 1, 107),
-  _University('2', 'CMC Vellore', 'Tamil Nadu', 'Private', 2, 100),
-  _University('3', 'JIPMER Puducherry', 'Puducherry', 'Government', 3, 150),
-  _University('4', 'AIIMS Jodhpur', 'Rajasthan', 'Government', 8, 125),
-  _University('5', 'Kasturba Medical College', 'Karnataka', 'Deemed', 5, 250),
-];
-
-/// Port of RN `universities/UniversityListScreen.tsx`.
-class UniversityListScreen extends StatefulWidget {
+class UniversityListScreen extends ConsumerStatefulWidget {
   const UniversityListScreen({super.key});
 
   @override
-  State<UniversityListScreen> createState() => _UniversityListScreenState();
+  ConsumerState<UniversityListScreen> createState() => _UniversityListScreenState();
 }
 
-class _UniversityListScreenState extends State<UniversityListScreen> {
+class _UniversityListScreenState extends ConsumerState<UniversityListScreen> {
   String _query = '';
+  String _typeFilter = 'All';
 
   @override
   Widget build(BuildContext context) {
-    final filtered = _placeholderData
-        .where((u) => u.name.toLowerCase().contains(_query.toLowerCase()))
-        .toList();
+    final universitiesAsync = ref.watch(universitiesListProvider);
 
     return Scaffold(
       backgroundColor: AppColors.background,
+      appBar: AppBar(
+        title: const Text('Colleges'),
+        actions: [
+          IconButton(
+            onPressed: () => context.push('/colleges/saved'),
+            icon: const Icon(Icons.favorite_rounded, color: AppColors.error),
+            tooltip: 'Saved colleges',
+          ),
+        ],
+      ),
       body: SafeArea(
         bottom: false,
         child: Column(
@@ -47,88 +58,41 @@ class _UniversityListScreenState extends State<UniversityListScreen> {
             Padding(
               padding: const EdgeInsets.symmetric(
                   horizontal: AppSpacing.md, vertical: AppSpacing.sm),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: AppColors.surface,
-                        border: Border.all(color: AppColors.border),
-                        borderRadius: BorderRadius.circular(AppRadius.md),
-                      ),
-                      padding:
-                          const EdgeInsets.symmetric(horizontal: AppSpacing.md),
-                      child: Row(
-                        children: [
-                          const Text('🔍', style: TextStyle(fontSize: 16)),
-                          const SizedBox(width: AppSpacing.sm),
-                          Expanded(
-                            child: TextField(
-                              onChanged: (t) => setState(() => _query = t),
-                              style: const TextStyle(
-                                  fontSize: AppFont.md,
-                                  color: AppColors.textPrimary),
-                              decoration: const InputDecoration(
-                                isDense: true,
-                                border: InputBorder.none,
-                                hintText: 'Search universities...',
-                                hintStyle: TextStyle(color: AppColors.textMuted),
-                                contentPadding: EdgeInsets.symmetric(
-                                    vertical: AppSpacing.md),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: AppSpacing.sm),
-                  Container(
-                    width: 44,
-                    height: 44,
-                    decoration: BoxDecoration(
-                      color: AppColors.surface,
-                      border: Border.all(color: AppColors.border),
-                      borderRadius: BorderRadius.circular(AppRadius.md),
-                    ),
-                    alignment: Alignment.center,
-                    child: const Text('⚙️', style: TextStyle(fontSize: 18)),
-                  ),
-                ],
+              child: TextField(
+                onChanged: (t) => setState(() => _query = t),
+                decoration: const InputDecoration(
+                  isDense: true,
+                  prefixIcon: Icon(Icons.search_rounded, size: 20),
+                  hintText: 'Search universities...',
+                ),
               ),
             ),
-            SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
-              child: Row(
+            SizedBox(
+              height: 40,
+              child: ListView(
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
                 children: [
-                  for (final f in const ['All', 'Government', 'Private', 'Deemed'])
+                  for (final f in _typeFilters)
                     Padding(
                       padding: const EdgeInsets.only(right: AppSpacing.sm),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: AppSpacing.md, vertical: AppSpacing.xs),
-                        decoration: BoxDecoration(
-                          color: f == 'All'
-                              ? AppColors.primary
-                              : AppColors.surface,
-                          border: Border.all(
-                            color: f == 'All'
-                                ? AppColors.primary
-                                : AppColors.border,
-                          ),
-                          borderRadius: BorderRadius.circular(AppRadius.full),
+                      child: ChoiceChip(
+                        label: Text(_typeLabel(f)),
+                        selected: _typeFilter == f,
+                        onSelected: (_) => setState(() => _typeFilter = f),
+                        selectedColor: AppColors.primary,
+                        labelStyle: TextStyle(
+                          fontSize: AppFont.sm,
+                          fontWeight: AppFont.semibold,
+                          color: _typeFilter == f
+                              ? AppColors.textInverse
+                              : AppColors.textSecondary,
                         ),
-                        child: Text(
-                          f,
-                          style: TextStyle(
-                            fontSize: AppFont.sm,
-                            color: f == 'All'
-                                ? AppColors.textInverse
-                                : AppColors.textSecondary,
-                            fontWeight:
-                                f == 'All' ? AppFont.medium : AppFont.regular,
-                          ),
+                        backgroundColor: AppColors.surface,
+                        side: BorderSide(
+                          color: _typeFilter == f
+                              ? AppColors.primary
+                              : AppColors.border,
                         ),
                       ),
                     ),
@@ -137,21 +101,63 @@ class _UniversityListScreenState extends State<UniversityListScreen> {
             ),
             const SizedBox(height: AppSpacing.sm),
             Expanded(
-              child: ListView.separated(
-                padding: const EdgeInsets.fromLTRB(
-                    AppSpacing.md, 0, AppSpacing.md, AppSpacing.xl),
-                itemCount: filtered.length,
-                separatorBuilder: (_, __) =>
-                    const SizedBox(height: AppSpacing.sm),
-                itemBuilder: (_, i) => _UniversityCard(
-                  university: filtered[i],
-                  onTap: () => context.go(
-                    '/colleges/detail',
-                    extra: {
-                      'universityId': filtered[i].id,
-                      'universityName': filtered[i].name,
-                    },
+              child: RefreshIndicator(
+                color: AppColors.primary,
+                onRefresh: () => ref.refresh(universitiesListProvider.future),
+                child: universitiesAsync.when(
+                  loading: () => ListView(
+                    padding: const EdgeInsets.all(AppSpacing.md),
+                    children: const [SkeletonCard(), SkeletonCard(), SkeletonCard()],
                   ),
+                  error: (err, _) => ListView(
+                    children: [
+                      EmptyState(
+                        icon: Icons.wifi_off_rounded,
+                        title: 'Could not load colleges',
+                        message: 'Check your connection and pull to refresh.',
+                        actionLabel: 'Retry',
+                        onAction: () => ref.invalidate(universitiesListProvider),
+                      ),
+                    ],
+                  ),
+                  data: (universities) {
+                    final filtered = universities.where((u) {
+                      final matchesQuery =
+                          u.name.toLowerCase().contains(_query.toLowerCase());
+                      final matchesType =
+                          _typeFilter == 'All' || u.type == _typeFilter;
+                      return matchesQuery && matchesType;
+                    }).toList();
+
+                    if (filtered.isEmpty) {
+                      return ListView(
+                        children: const [
+                          SizedBox(height: 80),
+                          EmptyState(
+                            icon: Icons.school_rounded,
+                            title: 'No colleges found',
+                            message: 'Try a different search or filter.',
+                          ),
+                        ],
+                      );
+                    }
+
+                    return ListView.builder(
+                      padding: const EdgeInsets.fromLTRB(
+                          AppSpacing.md, 0, AppSpacing.md, AppSpacing.xl),
+                      itemCount: filtered.length,
+                      itemBuilder: (_, i) => UniversityCard(
+                        university: filtered[i],
+                        onTap: () => context.push(
+                          '/colleges/detail',
+                          extra: {
+                            'universitySlug': filtered[i].slug,
+                            'universityName': filtered[i].name,
+                          },
+                        ),
+                      ),
+                    );
+                  },
                 ),
               ),
             ),
@@ -162,89 +168,93 @@ class _UniversityListScreenState extends State<UniversityListScreen> {
   }
 }
 
-class _UniversityCard extends StatelessWidget {
-  const _UniversityCard({required this.university, required this.onTap});
+class UniversityCard extends ConsumerWidget {
+  const UniversityCard({super.key, required this.university, required this.onTap});
 
-  final _University university;
+  final University university;
   final VoidCallback onTap;
 
   @override
-  Widget build(BuildContext context) {
-    final isGov = university.type == 'Government';
-    return InkWell(
+  Widget build(BuildContext context, WidgetRef ref) {
+    final isGov = university.type == 'GOVERNMENT' || university.type == 'CENTRAL';
+    return AppCard(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(AppRadius.md),
-      child: Container(
-        padding: const EdgeInsets.all(AppSpacing.md),
-        decoration: BoxDecoration(
-          color: AppColors.surface,
-          border: Border.all(color: AppColors.border),
-          borderRadius: BorderRadius.circular(AppRadius.md),
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                color: AppColors.primaryLight,
-                borderRadius: BorderRadius.circular(AppRadius.md),
-              ),
-              alignment: Alignment.center,
-              child: Text(
-                '#${university.rank}',
-                style: const TextStyle(
-                  fontSize: AppFont.sm,
-                  fontWeight: AppFont.bold,
-                  color: AppColors.primary,
-                ),
+      margin: const EdgeInsets.only(bottom: AppSpacing.sm),
+      child: Row(
+        children: [
+          Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              color: AppColors.primaryLight,
+              borderRadius: BorderRadius.circular(AppRadius.sm),
+            ),
+            alignment: Alignment.center,
+            child: Text(
+              university.nirfRank != null ? '#${university.nirfRank}' : '—',
+              style: const TextStyle(
+                fontSize: AppFont.sm,
+                fontWeight: AppFont.extraBold,
+                color: AppColors.primary,
               ),
             ),
-            const SizedBox(width: AppSpacing.md),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    university.name,
-                    style: const TextStyle(
-                      fontSize: AppFont.md,
-                      fontWeight: AppFont.semibold,
-                      color: AppColors.textPrimary,
-                    ),
+          ),
+          const SizedBox(width: AppSpacing.md),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  university.name,
+                  style: const TextStyle(
+                    fontSize: AppFont.md,
+                    fontWeight: AppFont.bold,
+                    color: AppColors.textPrimary,
                   ),
-                  const SizedBox(height: AppSpacing.xs),
-                  Text(
-                    '${university.state} · ${university.seats} seats',
-                    style: const TextStyle(
-                      fontSize: AppFont.sm,
-                      color: AppColors.textSecondary,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(width: AppSpacing.md),
-            Container(
-              padding: const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.sm, vertical: AppSpacing.xs),
-              decoration: BoxDecoration(
-                color: isGov ? AppColors.primaryLight : AppColors.background,
-                border: Border.all(
-                    color: isGov ? AppColors.primary : AppColors.border),
-                borderRadius: BorderRadius.circular(AppRadius.full),
-              ),
-              child: Text(
-                university.type,
-                style: const TextStyle(
-                  fontSize: AppFont.xs,
-                  color: AppColors.textSecondary,
                 ),
-              ),
+                const SizedBox(height: 2),
+                Text(
+                  [
+                    university.state,
+                    if (university.mbbsSeats != null) '${university.mbbsSeats} seats',
+                  ].join(' · '),
+                  style: const TextStyle(
+                    fontSize: AppFont.xs,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+              ],
             ),
-          ],
-        ),
+          ),
+          const SizedBox(width: AppSpacing.xs),
+          StatusChip(
+            label: _typeLabel(university.type),
+            color: isGov ? AppColors.primary : AppColors.info,
+          ),
+          _CollegeSaveButton(universityId: university.id),
+        ],
       ),
+    );
+  }
+}
+
+class _CollegeSaveButton extends ConsumerWidget {
+  const _CollegeSaveButton({required this.universityId});
+  final String universityId;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final savedIdsAsync = ref.watch(savedCollegeIdsProvider);
+    final isSaved = savedIdsAsync.value?.contains(universityId) ?? false;
+
+    return IconButton(
+      onPressed: () =>
+          ref.read(savedCollegeIdsProvider.notifier).toggle(universityId),
+      icon: Icon(
+        isSaved ? Icons.favorite_rounded : Icons.favorite_border_rounded,
+        color: isSaved ? AppColors.error : AppColors.textMuted,
+      ),
+      visualDensity: VisualDensity.compact,
     );
   }
 }

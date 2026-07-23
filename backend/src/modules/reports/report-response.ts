@@ -11,9 +11,14 @@ export interface ReportResponse {
   actionedBy: string | null;
   resolution: string | null;
   createdAt: Date;
+  /** Admin-list-only convenience field — populated when the row was fetched
+   * with the reporter relation included (see ReportsService.findAll). */
+  reporterDisplayName?: string;
 }
 
-export function toReportResponse(report: Report): ReportResponse {
+export function toReportResponse(
+  report: Report & { reporter?: { displayName: string } },
+): ReportResponse {
   return {
     id: report.id,
     reporterId: report.reporterId,
@@ -25,5 +30,6 @@ export function toReportResponse(report: Report): ReportResponse {
     actionedBy: report.actionedBy,
     resolution: report.resolution,
     createdAt: report.createdAt,
+    ...(report.reporter && { reporterDisplayName: report.reporter.displayName }),
   };
 }

@@ -57,7 +57,11 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
             );
       }
       if (!mounted) return;
-      context.go('/home');
+      if (updated.role == UserRole.aspirant) {
+        context.go('/aspirant-onboarding');
+      } else {
+        context.go('/mentor-onboarding');
+      }
     } catch (_) {
       setState(() {
         _error = 'Failed to save profile. Please try again.';

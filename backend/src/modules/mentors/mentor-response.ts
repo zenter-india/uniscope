@@ -17,6 +17,9 @@ export interface MentorResponse {
   graduationYear: number | null;
   pricePerMinuteMinor: number;
   university: { id: string; name: string; slug: string } | null;
+  /** null until the mentor has at least one review. */
+  rating: number | null;
+  reviewCount: number;
   createdAt: Date;
 }
 
@@ -29,7 +32,10 @@ type MentorRow = User & {
 /** Throws if called on a row whose mentor invariants aren't satisfied —
  * callers must filter (isMentorAvailable, pricePerMinuteMinor != null,
  * VERIFIED) at the query level; this is a projection, not a guard. */
-export function toMentorResponse(user: MentorRow): MentorResponse {
+export function toMentorResponse(
+  user: MentorRow,
+  rating?: { average: number | null; count: number },
+): MentorResponse {
   const profile = user.profile;
   return {
     id: user.id,
@@ -49,6 +55,8 @@ export function toMentorResponse(user: MentorRow): MentorResponse {
           slug: profile.university.slug,
         }
       : null,
+    rating: rating?.average ?? null,
+    reviewCount: rating?.count ?? 0,
     createdAt: user.createdAt,
   };
 }

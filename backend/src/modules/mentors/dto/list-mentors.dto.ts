@@ -25,18 +25,6 @@ export class ListMentorsDto {
   language?: string;
 
   @IsOptional()
-  @Type(() => Number)
-  @IsInt()
-  @Min(0)
-  minPriceMinor?: number;
-
-  @IsOptional()
-  @Type(() => Number)
-  @IsInt()
-  @Min(0)
-  maxPriceMinor?: number;
-
-  @IsOptional()
   @IsString()
   search?: string;
 

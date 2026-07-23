@@ -4,6 +4,7 @@ import 'package:razorpay_flutter/razorpay_flutter.dart';
 
 import '../../core/network/wallet_api.dart';
 import '../../core/theme/app_theme.dart';
+import '../../widgets/app_widgets.dart';
 
 final walletBalanceProvider = FutureProvider.autoDispose<Wallet>(
   (ref) => ref.watch(walletApiProvider).getBalance(),
@@ -105,6 +106,9 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
     showModalBottomSheet<void>(
       context: context,
       backgroundColor: AppColors.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.xl)),
+      ),
       builder: (sheetContext) => Padding(
         padding: const EdgeInsets.all(AppSpacing.lg),
         child: Column(
@@ -112,20 +116,32 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text('Top up wallet',
-                style: TextStyle(fontSize: AppFont.lg, fontWeight: AppFont.bold)),
+                style: TextStyle(
+                    fontSize: AppFont.lg, fontWeight: AppFont.extraBold)),
+            const SizedBox(height: AppSpacing.xs),
+            const Text(
+              '₹250 credits 20 minutes of call time.',
+              style: TextStyle(
+                  fontSize: AppFont.xs, color: AppColors.textSecondary),
+            ),
             const SizedBox(height: AppSpacing.md),
-            Wrap(
-              spacing: AppSpacing.sm,
+            Row(
               children: [250, 500, 1000].map((rupees) {
-                return OutlinedButton(
-                  onPressed: () {
-                    Navigator.of(sheetContext).pop();
-                    _startTopup(rupees * 100);
-                  },
-                  child: Text('₹$rupees'),
+                return Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.only(right: AppSpacing.sm),
+                    child: OutlinedButton(
+                      onPressed: () {
+                        Navigator.of(sheetContext).pop();
+                        _startTopup(rupees * 100);
+                      },
+                      child: Text('₹$rupees'),
+                    ),
+                  ),
                 );
               }).toList(),
             ),
+            const SizedBox(height: AppSpacing.sm),
           ],
         ),
       ),
@@ -139,15 +155,11 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
 
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: AppBar(
-        title: const Text('Wallet'),
-        backgroundColor: AppColors.surface,
-        foregroundColor: AppColors.textPrimary,
-        elevation: 0,
-      ),
+      appBar: AppBar(title: const Text('Wallet')),
       body: SafeArea(
         bottom: false,
         child: RefreshIndicator(
+          color: AppColors.primary,
           onRefresh: () async {
             ref.invalidate(walletBalanceProvider);
             ref.invalidate(walletLedgerProvider);
@@ -159,72 +171,94 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
                 width: double.infinity,
                 padding: const EdgeInsets.all(AppSpacing.lg),
                 decoration: BoxDecoration(
-                  color: AppColors.primary,
+                  gradient: AppGradients.brand,
                   borderRadius: BorderRadius.circular(AppRadius.lg),
+                  boxShadow: AppShadows.raised,
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text('Balance',
-                        style: TextStyle(color: Colors.white70, fontSize: AppFont.sm)),
+                    Row(
+                      children: [
+                        const Text('Balance',
+                            style: TextStyle(
+                                color: Colors.white70, fontSize: AppFont.sm)),
+                        const Spacer(),
+                        Icon(Icons.account_balance_wallet_rounded,
+                            color: Colors.white.withValues(alpha: 0.5),
+                            size: 20),
+                      ],
+                    ),
                     const SizedBox(height: AppSpacing.xs),
                     balanceAsync.when(
                       loading: () => const SizedBox(
                         height: 28,
                         width: 28,
-                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                        child: CircularProgressIndicator(
+                            strokeWidth: 2, color: Colors.white),
                       ),
                       error: (e, _) => const Text('—',
                           style: TextStyle(
-                              color: Colors.white, fontSize: AppFont.xxl, fontWeight: AppFont.bold)),
+                              color: Colors.white,
+                              fontSize: AppFont.display,
+                              fontWeight: AppFont.extraBold)),
                       data: (wallet) => Text(
                         '₹${wallet.balanceRupees.toStringAsFixed(2)}',
                         style: const TextStyle(
-                            color: Colors.white, fontSize: AppFont.xxl, fontWeight: AppFont.bold),
+                            color: Colors.white,
+                            fontSize: AppFont.display,
+                            fontWeight: AppFont.extraBold),
                       ),
                     ),
                     const SizedBox(height: AppSpacing.md),
                     SizedBox(
                       width: double.infinity,
-                      child: FilledButton(
+                      child: FilledButton.icon(
                         style: FilledButton.styleFrom(
                           backgroundColor: Colors.white,
-                          foregroundColor: AppColors.primary,
+                          foregroundColor: AppColors.primaryDark,
                         ),
                         onPressed: _toppingUp ? null : _showTopupSheet,
-                        child: _toppingUp
+                        icon: _toppingUp
                             ? const SizedBox(
                                 height: 18,
                                 width: 18,
-                                child: CircularProgressIndicator(strokeWidth: 2))
-                            : const Text('Top Up'),
+                                child:
+                                    CircularProgressIndicator(strokeWidth: 2))
+                            : const Icon(Icons.add_rounded, size: 20),
+                        label: const Text('Top Up'),
                       ),
                     ),
                   ],
                 ),
               ),
               const SizedBox(height: AppSpacing.lg),
-              const Text('Recent activity',
-                  style: TextStyle(fontSize: AppFont.md, fontWeight: AppFont.semibold)),
+              const SectionHeader(title: 'Recent activity'),
               const SizedBox(height: AppSpacing.sm),
               ledgerAsync.when(
-                loading: () => const Padding(
+                loading: () =>
+                    const Column(children: [SkeletonCard(), SkeletonCard()]),
+                error: (e, _) => const Padding(
                   padding: EdgeInsets.all(AppSpacing.lg),
-                  child: Center(child: CircularProgressIndicator(color: AppColors.primary)),
-                ),
-                error: (e, _) => Padding(
-                  padding: const EdgeInsets.all(AppSpacing.lg),
-                  child: Text('Failed to load ledger: $e',
-                      style: const TextStyle(color: AppColors.error)),
+                  child: EmptyState(
+                    icon: Icons.wifi_off_rounded,
+                    title: 'Could not load activity',
+                    message: 'Pull to refresh to try again.',
+                  ),
                 ),
                 data: (entries) => entries.isEmpty
                     ? const Padding(
-                        padding: EdgeInsets.all(AppSpacing.lg),
-                        child: Text('No activity yet.',
-                            style: TextStyle(color: AppColors.textSecondary)),
+                        padding: EdgeInsets.only(top: AppSpacing.lg),
+                        child: EmptyState(
+                          icon: Icons.receipt_long_rounded,
+                          title: 'No activity yet',
+                          message:
+                              'Top-ups and session payments will show up here.',
+                        ),
                       )
                     : Column(
-                        children: entries.map((e) => _LedgerRow(entry: e)).toList(),
+                        children:
+                            entries.map((e) => _LedgerRow(entry: e)).toList(),
                       ),
               ),
             ],
@@ -239,36 +273,67 @@ class _LedgerRow extends StatelessWidget {
   const _LedgerRow({required this.entry});
   final LedgerEntry entry;
 
+  String get _label {
+    switch (entry.type) {
+      case 'TOPUP':
+        return 'Wallet top-up';
+      case 'SESSION_DEBIT':
+        return 'Session payment';
+      case 'SESSION_CREDIT':
+        return 'Session earnings';
+      case 'REFUND':
+        return 'Refund';
+      default:
+        return entry.type;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final isCredit = entry.amountMinor >= 0;
-    return Container(
+    return AppCard(
       margin: const EdgeInsets.only(bottom: AppSpacing.sm),
-      padding: const EdgeInsets.all(AppSpacing.md),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        border: Border.all(color: AppColors.border),
-        borderRadius: BorderRadius.circular(AppRadius.md),
-      ),
       child: Row(
         children: [
+          Container(
+            width: 38,
+            height: 38,
+            decoration: BoxDecoration(
+              color: (isCredit ? AppColors.success : AppColors.error)
+                  .withValues(alpha: 0.1),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              isCredit
+                  ? Icons.arrow_downward_rounded
+                  : Icons.arrow_upward_rounded,
+              size: 18,
+              color: isCredit ? AppColors.success : AppColors.error,
+            ),
+          ),
+          const SizedBox(width: AppSpacing.sm),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(entry.type,
-                    style: const TextStyle(fontWeight: AppFont.semibold, fontSize: AppFont.sm)),
+                Text(_label,
+                    style: const TextStyle(
+                        fontWeight: AppFont.bold, fontSize: AppFont.sm)),
                 if (entry.note != null)
                   Text(entry.note!,
-                      style: const TextStyle(fontSize: AppFont.xs, color: AppColors.textSecondary)),
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                          fontSize: AppFont.xs,
+                          color: AppColors.textSecondary)),
               ],
             ),
           ),
           Text(
             '${isCredit ? '+' : ''}₹${entry.amountRupees.toStringAsFixed(2)}',
             style: TextStyle(
-              fontWeight: AppFont.semibold,
-              color: isCredit ? AppColors.success : AppColors.error,
+              fontWeight: AppFont.extraBold,
+              fontSize: AppFont.sm,
+              color: isCredit ? AppColors.success : AppColors.textPrimary,
             ),
           ),
         ],

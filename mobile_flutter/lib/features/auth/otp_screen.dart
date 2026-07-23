@@ -206,7 +206,13 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
                       style: const TextStyle(color: Colors.transparent),
                       decoration: const InputDecoration(
                         counterText: '',
+                        filled: false,
                         border: InputBorder.none,
+                        enabledBorder: InputBorder.none,
+                        focusedBorder: InputBorder.none,
+                        disabledBorder: InputBorder.none,
+                        errorBorder: InputBorder.none,
+                        focusedErrorBorder: InputBorder.none,
                       ),
                     ),
                   ),

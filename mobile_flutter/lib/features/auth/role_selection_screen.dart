@@ -53,9 +53,9 @@ class _RoleSelectionScreenState extends ConsumerState<RoleSelectionScreen> {
     });
 
     try {
-      final updated = await ref.read(usersApiProvider).updateRole(selected);
       final current = ref.read(authControllerProvider).user;
-      if (current != null) {
+      if (current != null && current.role != selected) {
+        final updated = await ref.read(usersApiProvider).updateRole(selected);
         ref
             .read(authControllerProvider.notifier)
             .setUser(current.copyWith(role: updated.role));

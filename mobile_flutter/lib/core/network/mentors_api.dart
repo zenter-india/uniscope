@@ -27,6 +27,8 @@ class Mentor {
     required this.languages,
     required this.pricePerMinuteMinor,
     required this.university,
+    this.rating,
+    this.reviewCount = 0,
   });
 
   final String id;
@@ -37,6 +39,8 @@ class Mentor {
   final List<String> languages;
   final int pricePerMinuteMinor;
   final MentorUniversity? university;
+  final double? rating;
+  final int reviewCount;
 
   double get pricePerMinuteRupees => pricePerMinuteMinor / 100;
 
@@ -53,6 +57,8 @@ class Mentor {
         university: json['university'] != null
             ? MentorUniversity.fromJson(json['university'] as Map<String, dynamic>)
             : null,
+        rating: (json['rating'] as num?)?.toDouble(),
+        reviewCount: (json['reviewCount'] as num?)?.toInt() ?? 0,
       );
 }
 
@@ -61,10 +67,18 @@ class MentorsApi {
 
   final Dio _dio;
 
-  Future<List<Mentor>> list() async {
-    final res = await _dio.get<Map<String, dynamic>>('/mentors');
+  Future<List<Mentor>> list({String? universityId}) async {
+    final res = await _dio.get<Map<String, dynamic>>(
+      '/mentors',
+      queryParameters: {if (universityId != null) 'universityId': universityId},
+    );
     final data = res.data!['data'] as List<dynamic>;
     return data.map((e) => Mentor.fromJson(e as Map<String, dynamic>)).toList();
+  }
+
+  Future<Mentor> getById(String id) async {
+    final res = await _dio.get<Map<String, dynamic>>('/mentors/$id');
+    return Mentor.fromJson(res.data!);
   }
 }
 

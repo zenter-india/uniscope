@@ -1,16 +1,23 @@
 import { Module } from '@nestjs/common';
 import { PrismaModule } from '../../database/prisma/prisma.module.js';
+import { NotificationsModule } from '../notifications/notifications.module.js';
+import { ReviewsController } from './reviews.controller.js';
+import { ReviewsService } from './reviews.service.js';
 
 /**
- * ReviewsModule owns the university review feature domain:
- * review submission (one per user per university), multi-dimensional
- * rating aggregation, helpful-vote tracking, full-text search,
- * and admin hide/remove moderation actions.
+ * ReviewsModule owns MENTOR reviews (MentorReview: one rating+comment per
+ * completed session, distinct from the university-scoped `Review` model).
+ * Exported so MentorsService can attach {rating, reviewCount} summaries onto
+ * mentor discovery/detail responses.
+ *
+ * University reviews (the `Review` model — multi-dimensional ratings on a
+ * college, not a mentor) are a separate, still-unbuilt feature; this module
+ * intentionally does not cover them.
  */
 @Module({
-  imports: [PrismaModule],
-  controllers: [], // Sprint 2: add ReviewsController
-  providers: [], // Sprint 2: add ReviewsService
-  exports: [],
+  imports: [PrismaModule, NotificationsModule],
+  controllers: [ReviewsController],
+  providers: [ReviewsService],
+  exports: [ReviewsService],
 })
 export class ReviewsModule {}

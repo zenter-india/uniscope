@@ -16,6 +16,11 @@ import type { OtpProvider } from './otp-provider.interface.js';
 const OTP_RATE_LIMIT = 5;
 const RATE_LIMIT_WINDOW = 3600; // 1 hour in seconds
 
+/** Fixed dev-only code — mock mode never sends a real SMS, so a stable code
+ * lets you log in on any device without asking someone else to read it out
+ * of the server logs each time. Never used when OTP_PROVIDER_TYPE=twilio. */
+export const MOCK_OTP_FIXED_CODE = '111111';
+
 @Injectable()
 export class MockOtpProvider implements OtpProvider {
   private readonly otpTtl: number;
@@ -53,7 +58,7 @@ export class MockOtpProvider implements OtpProvider {
       );
     }
 
-    const otp = String(Math.floor(100000 + Math.random() * 900000));
+    const otp = MOCK_OTP_FIXED_CODE;
     const serviceId = uuidv4();
 
     await this.redis.set(

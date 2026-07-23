@@ -8,6 +8,7 @@ import {
 import {
   HoldStatus,
   LedgerEntryType,
+  NotificationType,
   Prisma,
   Session,
   SessionStatus,
@@ -17,6 +18,7 @@ import { PrismaService } from '../../database/prisma/prisma.service.js';
 import { AgoraService } from '../agora/agora.service.js';
 import { ChatService } from '../chat/chat.service.js';
 import { MentorsService } from '../mentors/mentors.service.js';
+import { NotificationsService } from '../notifications/notifications.service.js';
 import { MENTOR_RATE_PER_MINUTE_MINOR, WalletService } from '../wallet/wallet.service.js';
 import { CALL_SLOT_MINUTES, CreateSessionDto } from './dto/create-session.dto.js';
 import { ListSessionsDto } from './dto/list-sessions.dto.js';
@@ -56,6 +58,7 @@ export class SessionsService {
     private readonly chatService: ChatService,
     private readonly walletService: WalletService,
     private readonly agoraService: AgoraService,
+    private readonly notificationsService: NotificationsService,
   ) {}
 
   /**
@@ -82,16 +85,23 @@ export class SessionsService {
     // unavailable, or no rate set) — same check GET /mentors/:id uses.
     const mentor = await this.mentorsService.findById(dto.mentorId);
 
+    // Scoped by type as well as mentor — an aspirant can have an active
+    // CHAT and an active AUDIO_CALL with the same mentor at once (e.g.
+    // requesting a call from inside an already-open chat). Only a second
+    // request of the SAME type is a duplicate.
     const existingActive = await this.prisma.session.findFirst({
       where: {
         aspirantId,
         mentorId: dto.mentorId,
+        type: dto.type,
         status: { in: ACTIVE_STATUSES },
       },
     });
     if (existingActive) {
       throw new ConflictException(
-        'You already have an active session request with this mentor',
+        dto.type === SessionType.AUDIO_CALL
+          ? 'You already have an active call request with this mentor'
+          : 'You already have an active chat with this mentor',
       );
     }
 
@@ -113,7 +123,10 @@ export class SessionsService {
         aspirantId,
         mentorId: dto.mentorId,
         type: dto.type,
-        ratePerMinuteMinor: isAudioCall ? MENTOR_RATE_PER_MINUTE_MINOR : mentor.pricePerMinuteMinor,
+        // CHAT is always free — only AUDIO_CALL is billed, and always at the
+        // flat platform rate, never a mentor-set price (see product
+        // decision: chat with any mentor costs nothing, no per-mentor rate).
+        ratePerMinuteMinor: isAudioCall ? MENTOR_RATE_PER_MINUTE_MINOR : 0,
         ...(isAudioCall && { callSlotMinutes: slotMinutes }),
       },
     });
@@ -135,6 +148,16 @@ export class SessionsService {
         throw err;
       }
     }
+
+    await this.notificationsService.send({
+      userId: dto.mentorId,
+      type: NotificationType.SESSION_REQUEST,
+      title: isAudioCall ? 'New audio call request' : 'New chat request',
+      body: isAudioCall
+        ? `A student booked a ${slotMinutes}-min audio call with you.`
+        : 'A student wants to chat with you.',
+      metadata: { sessionId: session.id },
+    });
 
     return toSessionResponse(session);
   }
@@ -171,6 +194,17 @@ export class SessionsService {
       },
     });
 
+    await this.notificationsService.send({
+      userId: session.aspirantId,
+      type: NotificationType.SESSION_ACCEPTED,
+      title: 'Request accepted',
+      body:
+        session.type === SessionType.AUDIO_CALL
+          ? 'Your mentor accepted — join the call when ready.'
+          : 'Your mentor accepted — start chatting now.',
+      metadata: { sessionId: session.id },
+    });
+
     return toSessionResponse(updated);
   }
 
@@ -197,6 +231,14 @@ export class SessionsService {
     });
 
     await this.releaseHoldsForSession(sessionId);
+
+    await this.notificationsService.send({
+      userId: session.aspirantId,
+      type: NotificationType.SESSION_REJECTED,
+      title: 'Request declined',
+      body: 'Your mentor is unavailable for this request.',
+      metadata: { sessionId: session.id },
+    });
 
     return toSessionResponse(updated);
   }
@@ -441,6 +483,16 @@ export class SessionsService {
     });
 
     await this.releaseHoldsForSession(sessionId);
+
+    const otherPartyId =
+      userId === session.aspirantId ? session.mentorId : session.aspirantId;
+    await this.notificationsService.send({
+      userId: otherPartyId,
+      type: NotificationType.SESSION_ENDED,
+      title: 'Call ended',
+      body: endReason === 'SLOT_EXPIRED' ? 'The paid slot ended.' : 'The call has ended.',
+      metadata: { sessionId: session.id },
+    });
 
     return toSessionResponse(updated);
   }

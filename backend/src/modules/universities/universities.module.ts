@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { PrismaModule } from '../../database/prisma/prisma.module.js';
+import { UniversityReviewsModule } from '../university-reviews/university-reviews.module.js';
 import { UniversitiesController } from './universities.controller.js';
 import { UniversitiesService } from './universities.service.js';
 
@@ -9,7 +10,7 @@ import { UniversitiesService } from './universities.service.js';
  * program management, and admin CRUD operations.
  */
 @Module({
-  imports: [PrismaModule],
+  imports: [PrismaModule, UniversityReviewsModule],
   controllers: [UniversitiesController],
   providers: [UniversitiesService],
   exports: [UniversitiesService],

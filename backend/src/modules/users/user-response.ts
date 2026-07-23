@@ -1,4 +1,4 @@
-import { User } from '@prisma/client';
+import { University, User, UserProfile } from '@prisma/client';
 
 /**
  * Client-safe view of a User. Built with an explicit allowlist so that
@@ -16,9 +16,31 @@ export interface PublicUser {
   lastActiveAt: Date | null;
   createdAt: Date;
   updatedAt: Date;
+  /** Populated only when the caller loaded the profile relation (self
+   * lookups) — undefined elsewhere. */
+  bio?: string | null;
+  specialty?: string | null;
+  languages?: string[];
+  availableDays?: string[];
+  isMentorAvailable?: boolean;
+  university?: { id: string; name: string; slug: string } | null;
+  gender?: string | null;
+  state?: string | null;
+  city?: string | null;
+  qualification?: string | null;
+  stream?: string | null;
+  goals?: string[];
+  dateOfBirth?: string | null;
+  courseInterested?: string | null;
+  preferredLanguage?: string | null;
+  preferredMentorshipTiming?: string | null;
 }
 
-export function toPublicUser(user: User): PublicUser {
+type UserWithProfile = User & {
+  profile?: (UserProfile & { university?: University | null }) | null;
+};
+
+export function toPublicUser(user: UserWithProfile): PublicUser {
   return {
     id: user.id,
     displayName: user.displayName,
@@ -29,5 +51,29 @@ export function toPublicUser(user: User): PublicUser {
     lastActiveAt: user.lastActiveAt,
     createdAt: user.createdAt,
     updatedAt: user.updatedAt,
+    ...(user.profile !== undefined && {
+      bio: user.profile?.bio ?? null,
+      specialty: user.profile?.specialty ?? null,
+      languages: user.profile?.languages ?? [],
+      availableDays: user.profile?.availableDays ?? [],
+      isMentorAvailable: user.profile?.isMentorAvailable ?? false,
+      university: user.profile?.university
+        ? {
+            id: user.profile.university.id,
+            name: user.profile.university.name,
+            slug: user.profile.university.slug,
+          }
+        : null,
+      gender: user.profile?.gender ?? null,
+      state: user.profile?.state ?? null,
+      city: user.profile?.city ?? null,
+      qualification: user.profile?.qualification ?? null,
+      stream: user.profile?.stream ?? null,
+      goals: user.profile?.goals ?? [],
+      dateOfBirth: user.profile?.dateOfBirth?.toISOString().slice(0, 10) ?? null,
+      courseInterested: user.profile?.courseInterested ?? null,
+      preferredLanguage: user.profile?.preferredLanguage ?? null,
+      preferredMentorshipTiming: user.profile?.preferredMentorshipTiming ?? null,
+    }),
   };
 }

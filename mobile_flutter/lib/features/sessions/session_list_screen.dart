@@ -2,18 +2,24 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/network/reviews_api.dart';
 import '../../core/network/sessions_api.dart';
 import '../../core/theme/app_theme.dart';
 import '../../state/auth_controller.dart';
+import '../../widgets/app_widgets.dart';
 
 final sessionsListProvider = FutureProvider.autoDispose<List<Session>>(
   (ref) => ref.watch(sessionsApiProvider).list(),
 );
 
-/// Replaces the old placeholder chat-room list. Backed by the real
-/// marketplace booking API (`GET /sessions`) — shows sessions where the
-/// current user is either the aspirant or the mentor, with role-appropriate
-/// actions (mentor: accept/reject a PENDING request; aspirant: cancel).
+final hasReviewedProvider =
+    FutureProvider.autoDispose.family<bool, String>(
+  (ref, sessionId) => ref.watch(reviewsApiProvider).hasReviewed(sessionId),
+);
+
+/// Sessions tab: every booking the current user is a party to — as aspirant
+/// or mentor — with role-appropriate actions (mentor: accept/reject; aspirant:
+/// cancel / join call / open chat).
 class SessionListScreen extends ConsumerWidget {
   const SessionListScreen({super.key});
 
@@ -26,9 +32,7 @@ class SessionListScreen extends ConsumerWidget {
       backgroundColor: AppColors.background,
       appBar: AppBar(
         title: const Text('Sessions'),
-        backgroundColor: AppColors.surface,
-        foregroundColor: AppColors.textPrimary,
-        elevation: 0,
+        actions: const [NotificationBell()],
       ),
       body: SafeArea(
         bottom: false,
@@ -37,28 +41,35 @@ class SessionListScreen extends ConsumerWidget {
             _SupportChatEntry(onTap: () => context.push('/chats/support')),
             Expanded(
               child: RefreshIndicator(
+                color: AppColors.primary,
                 onRefresh: () => ref.refresh(sessionsListProvider.future),
                 child: sessionsAsync.when(
-                  loading: () => const Center(
-                      child: CircularProgressIndicator(color: AppColors.primary)),
+                  loading: () => ListView(
+                    padding: const EdgeInsets.all(AppSpacing.md),
+                    children: const [SkeletonCard(), SkeletonCard()],
+                  ),
                   error: (err, _) => ListView(
                     children: [
-                      Padding(
-                        padding: const EdgeInsets.all(AppSpacing.xl),
-                        child: Text('Failed to load sessions: $err',
-                            style: const TextStyle(color: AppColors.error)),
+                      EmptyState(
+                        icon: Icons.wifi_off_rounded,
+                        title: 'Could not load sessions',
+                        message: 'Check your connection and pull to refresh.',
+                        actionLabel: 'Retry',
+                        onAction: () => ref.invalidate(sessionsListProvider),
                       ),
                     ],
                   ),
                   data: (sessions) => sessions.isEmpty
                       ? ListView(
-                          children: const [
-                            Padding(
-                              padding: EdgeInsets.all(AppSpacing.xl),
-                              child: Text(
-                                'No sessions yet — book one from the Mentors tab.',
-                                style: TextStyle(color: AppColors.textSecondary),
-                              ),
+                          children: [
+                            const SizedBox(height: 80),
+                            EmptyState(
+                              icon: Icons.forum_rounded,
+                              title: 'No sessions yet',
+                              message:
+                                  'Book a chat or audio call with a mentor to get started.',
+                              actionLabel: 'Find a Mentor',
+                              onAction: () => context.go('/mentors'),
                             ),
                           ],
                         )
@@ -86,32 +97,39 @@ class _SupportChatEntry extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      child: Container(
-        width: double.infinity,
-        margin: const EdgeInsets.fromLTRB(AppSpacing.md, AppSpacing.md, AppSpacing.md, 0),
-        padding: const EdgeInsets.all(AppSpacing.md),
-        decoration: BoxDecoration(
-          color: AppColors.primaryLight,
-          borderRadius: BorderRadius.circular(AppRadius.md),
-          border: Border.all(color: AppColors.primary.withValues(alpha: 0.2)),
-        ),
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+          AppSpacing.md, AppSpacing.sm, AppSpacing.md, 0),
+      child: AppCard(
+        onTap: onTap,
+        gradient: AppGradients.brand,
+        padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.md, vertical: 14),
         child: Row(
           children: [
-            const Text('💬', style: TextStyle(fontSize: 20)),
+            Container(
+              width: 34,
+              height: 34,
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.16),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.support_agent_rounded,
+                  color: Colors.white, size: 19),
+            ),
             const SizedBox(width: AppSpacing.sm),
             const Expanded(
               child: Text(
-                'Need Help? Chat with our support team anytime.',
+                'Need help? Chat with our support team.',
                 style: TextStyle(
                   fontSize: AppFont.sm,
-                  fontWeight: AppFont.medium,
-                  color: AppColors.primaryDark,
+                  fontWeight: AppFont.bold,
+                  color: Colors.white,
                 ),
               ),
             ),
-            const Text('›', style: TextStyle(fontSize: 18, color: AppColors.primary)),
+            const Icon(Icons.chevron_right_rounded,
+                color: Colors.white70, size: 22),
           ],
         ),
       ),
@@ -138,7 +156,8 @@ class _SessionCardState extends ConsumerState<_SessionCard> {
       ref.invalidate(sessionsListProvider);
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed: $e')));
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('Failed: $e')));
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -167,54 +186,71 @@ class _SessionCardState extends ConsumerState<_SessionCard> {
   Widget build(BuildContext context) {
     final session = widget.session;
     final api = ref.read(sessionsApiProvider);
+    final isCall = session.type == 'AUDIO_CALL';
     final canOpenChat = session.type == 'CHAT' &&
         (session.status == SessionStatus.accepted ||
             session.status == SessionStatus.inProgress ||
             session.status == SessionStatus.completed);
+    final canJoinCall = isCall &&
+        (session.status == SessionStatus.accepted ||
+            session.status == SessionStatus.ringing ||
+            session.status == SessionStatus.inProgress);
+    final canReview =
+        !widget.isMentor && session.status == SessionStatus.completed;
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: AppSpacing.md),
-      padding: const EdgeInsets.all(AppSpacing.md),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        border: Border.all(color: AppColors.border),
-        borderRadius: BorderRadius.circular(AppRadius.md),
-      ),
+    return AppCard(
+      margin: const EdgeInsets.only(bottom: AppSpacing.sm),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Expanded(
-                child: Text(
-                  widget.isMentor ? 'Aspirant request' : 'Your request',
-                  style: const TextStyle(fontWeight: AppFont.semibold, fontSize: AppFont.md),
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: AppColors.primaryLight,
+                  borderRadius: BorderRadius.circular(AppRadius.sm),
+                ),
+                child: Icon(
+                  isCall ? Icons.call_rounded : Icons.forum_rounded,
+                  size: 19,
+                  color: AppColors.primary,
                 ),
               ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: 2),
-                decoration: BoxDecoration(
-                  color: _statusColor(session.status).withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(AppRadius.full),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      widget.isMentor ? 'Aspirant request' : 'Your request',
+                      style: const TextStyle(
+                          fontWeight: AppFont.bold, fontSize: AppFont.md),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      isCall && session.callSlotMinutes != null
+                          ? 'Audio Call · ${session.callSlotMinutes} min slot · ₹${(session.callSlotMinutes! * session.ratePerMinuteMinor / 100).toStringAsFixed(0)}'
+                          : 'Chat · Free',
+                      style: const TextStyle(
+                          fontSize: AppFont.xs,
+                          color: AppColors.textSecondary),
+                    ),
+                  ],
                 ),
-                child: Text(
-                  session.status.wire,
-                  style: TextStyle(
-                    fontSize: AppFont.xs,
-                    fontWeight: AppFont.medium,
-                    color: _statusColor(session.status),
-                  ),
-                ),
+              ),
+              StatusChip(
+                label: session.status.wire,
+                color: _statusColor(session.status),
               ),
             ],
           ),
-          const SizedBox(height: AppSpacing.xs),
-          Text('${session.type} · ₹${(session.ratePerMinuteMinor / 100).toStringAsFixed(2)}/min',
-              style: const TextStyle(fontSize: AppFont.sm, color: AppColors.textSecondary)),
-          const SizedBox(height: AppSpacing.sm),
+          const SizedBox(height: AppSpacing.md),
           Row(
             children: [
-              if (widget.isMentor && session.status == SessionStatus.pending) ...[
+              if (widget.isMentor &&
+                  session.status == SessionStatus.pending) ...[
                 Expanded(
                   child: OutlinedButton(
                     onPressed: _busy ? null : () => _act(api.reject),
@@ -224,13 +260,13 @@ class _SessionCardState extends ConsumerState<_SessionCard> {
                 const SizedBox(width: AppSpacing.sm),
                 Expanded(
                   child: FilledButton(
-                    style: FilledButton.styleFrom(backgroundColor: AppColors.primary),
                     onPressed: _busy ? null : () => _act(api.accept),
                     child: _busy
                         ? const SizedBox(
                             width: 16,
                             height: 16,
-                            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                            child: CircularProgressIndicator(
+                                strokeWidth: 2, color: Colors.white),
                           )
                         : const Text('Accept'),
                   ),
@@ -245,15 +281,183 @@ class _SessionCardState extends ConsumerState<_SessionCard> {
                   ),
                 ),
               ],
-              if (canOpenChat)
+              if (canOpenChat) ...[
+                const SizedBox(width: AppSpacing.sm),
                 Expanded(
-                  child: FilledButton(
-                    style: FilledButton.styleFrom(backgroundColor: AppColors.primaryDark),
-                    onPressed: () => context.push('/chats/room', extra: {'sessionId': session.id}),
-                    child: const Text('Open Chat'),
+                  child: FilledButton.icon(
+                    onPressed: () => context
+                        .push('/chats/room', extra: {'sessionId': session.id}),
+                    icon: const Icon(Icons.forum_rounded, size: 17),
+                    label: const Text('Open Chat'),
                   ),
                 ),
+              ],
+              if (canJoinCall) ...[
+                const SizedBox(width: AppSpacing.sm),
+                Expanded(
+                  child: FilledButton.icon(
+                    style:
+                        FilledButton.styleFrom(backgroundColor: AppColors.success),
+                    onPressed: () => context.push('/call/${session.id}'),
+                    icon: const Icon(Icons.call_rounded, size: 17),
+                    label: const Text('Join Call'),
+                  ),
+                ),
+              ],
             ],
+          ),
+          if (canReview) _ReviewPrompt(session: session),
+        ],
+      ),
+    );
+  }
+}
+
+class _ReviewPrompt extends ConsumerWidget {
+  const _ReviewPrompt({required this.session});
+  final Session session;
+
+  Future<void> _openReviewSheet(BuildContext context, WidgetRef ref) async {
+    final submitted = await showModalBottomSheet<bool>(
+      context: context,
+      backgroundColor: AppColors.surface,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.xl)),
+      ),
+      builder: (_) => _RateMentorSheet(sessionId: session.id),
+    );
+    if (submitted == true) {
+      ref.invalidate(hasReviewedProvider(session.id));
+    }
+  }
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final reviewedAsync = ref.watch(hasReviewedProvider(session.id));
+
+    return reviewedAsync.when(
+      loading: () => const SizedBox.shrink(),
+      error: (_, __) => const SizedBox.shrink(),
+      data: (reviewed) {
+        if (reviewed) {
+          return const Padding(
+            padding: EdgeInsets.only(top: AppSpacing.sm),
+            child: Row(
+              children: [
+                Icon(Icons.check_circle_rounded, size: 15, color: AppColors.success),
+                SizedBox(width: 4),
+                Text('You reviewed this session',
+                    style: TextStyle(fontSize: AppFont.xs, color: AppColors.textSecondary)),
+              ],
+            ),
+          );
+        }
+        return Padding(
+          padding: const EdgeInsets.only(top: AppSpacing.sm),
+          child: SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: () => _openReviewSheet(context, ref),
+              icon: const Icon(Icons.star_outline_rounded, size: 17),
+              label: const Text('Leave a review'),
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _RateMentorSheet extends ConsumerStatefulWidget {
+  const _RateMentorSheet({required this.sessionId});
+  final String sessionId;
+
+  @override
+  ConsumerState<_RateMentorSheet> createState() => _RateMentorSheetState();
+}
+
+class _RateMentorSheetState extends ConsumerState<_RateMentorSheet> {
+  int _rating = 5;
+  final _commentController = TextEditingController();
+  bool _submitting = false;
+
+  @override
+  void dispose() {
+    _commentController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submit() async {
+    setState(() => _submitting = true);
+    try {
+      await ref.read(reviewsApiProvider).create(
+            sessionId: widget.sessionId,
+            rating: _rating,
+            comment: _commentController.text.trim(),
+          );
+      if (!mounted) return;
+      Navigator.of(context).pop(true);
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('Could not submit review: $e')));
+      setState(() => _submitting = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.fromLTRB(
+        AppSpacing.lg,
+        AppSpacing.lg,
+        AppSpacing.lg,
+        AppSpacing.lg + MediaQuery.of(context).viewInsets.bottom,
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text('Rate your mentor',
+              style: TextStyle(fontSize: AppFont.lg, fontWeight: AppFont.extraBold)),
+          const SizedBox(height: AppSpacing.lg),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: List.generate(5, (i) {
+              final starIndex = i + 1;
+              return IconButton(
+                onPressed: () => setState(() => _rating = starIndex),
+                icon: Icon(
+                  starIndex <= _rating ? Icons.star_rounded : Icons.star_outline_rounded,
+                  color: AppColors.warning,
+                  size: 34,
+                ),
+              );
+            }),
+          ),
+          const SizedBox(height: AppSpacing.md),
+          TextField(
+            controller: _commentController,
+            maxLines: 3,
+            maxLength: 500,
+            decoration: const InputDecoration(
+              hintText: 'Share how the session went (optional)',
+            ),
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton(
+              onPressed: _submitting ? null : _submit,
+              child: _submitting
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                    )
+                  : const Text('Submit Review'),
+            ),
           ),
         ],
       ),

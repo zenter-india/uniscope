@@ -40,6 +40,10 @@ import { ChatModule } from './modules/chat/chat.module.js';
 import { ReportsModule } from './modules/reports/reports.module.js';
 import { NotificationsModule } from './modules/notifications/notifications.module.js';
 import { AgoraModule } from './modules/agora/agora.module.js';
+import { PayoutsModule } from './modules/payouts/payouts.module.js';
+import { WishlistModule } from './modules/wishlist/wishlist.module.js';
+import { UniversityReviewsModule } from './modules/university-reviews/university-reviews.module.js';
+import { UniversityWishlistModule } from './modules/university-wishlist/university-wishlist.module.js';
 
 @Module({
   imports: [
@@ -84,6 +88,10 @@ import { AgoraModule } from './modules/agora/agora.module.js';
     ReportsModule,
     NotificationsModule,
     AgoraModule,
+    PayoutsModule,
+    WishlistModule,
+    UniversityReviewsModule,
+    UniversityWishlistModule,
   ],
   controllers: [AppController],
   providers: [AppService],
