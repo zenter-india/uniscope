@@ -28,20 +28,35 @@ export const firebaseProvider: Provider = {
     }
 
     const projectId = configService.getOrThrow<string>('firebase.projectId');
-    const keyPath = configService.getOrThrow<string>('firebase.serviceAccountKeyPath');
-    const resolvedPath = path.isAbsolute(keyPath) ? keyPath : path.resolve(process.cwd(), keyPath);
 
-    if (!fs.existsSync(resolvedPath)) {
-      logger.warn(
-        `Firebase service account not found at ${resolvedPath}. Push notifications unavailable.`,
-      );
-      return null;
+    // Prefer an inline base64 key (works on hosts with no "secret files"
+    // feature, e.g. Railway) over the mounted-file path (Render, local dev).
+    const keyBase64 = configService.get<string>('firebase.serviceAccountKeyBase64');
+    let serviceAccountJson: Record<string, unknown>;
+
+    if (keyBase64) {
+      serviceAccountJson = JSON.parse(Buffer.from(keyBase64, 'base64').toString('utf-8')) as Record<
+        string,
+        unknown
+      >;
+    } else {
+      const keyPath = configService.getOrThrow<string>('firebase.serviceAccountKeyPath');
+      const resolvedPath = path.isAbsolute(keyPath)
+        ? keyPath
+        : path.resolve(process.cwd(), keyPath);
+
+      if (!fs.existsSync(resolvedPath)) {
+        logger.warn(
+          `Firebase service account not found at ${resolvedPath}. Push notifications unavailable.`,
+        );
+        return null;
+      }
+
+      serviceAccountJson = JSON.parse(fs.readFileSync(resolvedPath, 'utf-8')) as Record<
+        string,
+        unknown
+      >;
     }
-
-    const serviceAccountJson = JSON.parse(fs.readFileSync(resolvedPath, 'utf-8')) as Record<
-      string,
-      unknown
-    >;
 
     return initializeApp({
       credential: cert(serviceAccountJson as Parameters<typeof cert>[0]),

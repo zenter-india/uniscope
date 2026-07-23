@@ -23,6 +23,9 @@ export const validationSchema = Joi.object({
   // Firebase (optional in local dev — set FIREBASE_DISABLED=true to skip)
   FIREBASE_PROJECT_ID: Joi.string().default('uniscope-local'),
   FIREBASE_SERVICE_ACCOUNT_KEY_PATH: Joi.string().default('./firebase-service-account.json'),
+  // Alternative to the file path above — base64-encoded key JSON, for hosts
+  // with no mounted-secret-file feature (e.g. Railway).
+  FIREBASE_SERVICE_ACCOUNT_KEY_BASE64: Joi.string().optional(),
   FIREBASE_DISABLED: Joi.string().valid('true', 'false').default('false'),
 
   // JWT (Sprint 1)
