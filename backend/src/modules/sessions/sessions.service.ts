@@ -22,7 +22,11 @@ import { NotificationsService } from '../notifications/notifications.service.js'
 import { MENTOR_RATE_PER_MINUTE_MINOR, WalletService } from '../wallet/wallet.service.js';
 import { CALL_SLOT_MINUTES, CreateSessionDto } from './dto/create-session.dto.js';
 import { ListSessionsDto } from './dto/list-sessions.dto.js';
-import { SessionResponse, toSessionResponse } from './session-response.js';
+import {
+  SESSION_WITH_NAMES_INCLUDE,
+  SessionResponse,
+  toSessionResponse,
+} from './session-response.js';
 
 const DEFAULT_LIMIT = 20;
 const MAX_LIMIT = 50;
@@ -149,17 +153,43 @@ export class SessionsService {
       }
     }
 
+    // CHAT sessions open immediately — no mentor accept step. Only
+    // AUDIO_CALL still goes through the request/accept state machine (it
+    // involves a wallet hold and the mentor's scheduling availability, so a
+    // deliberate accept still makes sense there).
+    if (!isAudioCall) {
+      const aspirant = await this.prisma.user.findUniqueOrThrow({
+        where: { id: aspirantId },
+        select: { displayName: true },
+      });
+      const streamChannelId = await this.chatService.ensureChannelForSession({
+        sessionId: session.id,
+        aspirantId,
+        aspirantName: aspirant.displayName,
+        mentorId: dto.mentorId,
+        mentorName: mentor.displayName,
+      });
+      await this.prisma.session.update({
+        where: { id: session.id },
+        data: {
+          status: SessionStatus.ACCEPTED,
+          respondedAt: new Date(),
+          streamChannelId,
+        },
+      });
+    }
+
     await this.notificationsService.send({
       userId: dto.mentorId,
-      type: NotificationType.SESSION_REQUEST,
-      title: isAudioCall ? 'New audio call request' : 'New chat request',
+      type: isAudioCall ? NotificationType.SESSION_REQUEST : NotificationType.MESSAGE,
+      title: isAudioCall ? 'New audio call request' : 'New chat',
       body: isAudioCall
         ? `A student booked a ${slotMinutes}-min audio call with you.`
-        : 'A student wants to chat with you.',
+        : 'A student started a chat with you.',
       metadata: { sessionId: session.id },
     });
 
-    return toSessionResponse(session);
+    return this.toResponseById(session.id);
   }
 
   /** Only the booked mentor may accept, and only while PENDING. */
@@ -175,17 +205,32 @@ export class SessionsService {
 
     // For CHAT sessions the Stream channel is the messaging surface itself,
     // so it's provisioned right on accept (AUDIO_CALL sessions provision
-    // their Agora channel later, at the connect leg).
-    const streamChannelId =
-      session.type === SessionType.CHAT
-        ? await this.chatService.ensureChannelForSession({
-            sessionId: session.id,
-            aspirantId: session.aspirantId,
-            mentorId: session.mentorId,
-          })
-        : undefined;
+    // their Agora channel later, at the connect leg). In practice CHAT
+    // sessions no longer pass through PENDING at all (see create() — they
+    // open immediately), so this branch is dead for CHAT today; kept for
+    // type-correctness and as a defensive fallback if that ever changes.
+    let streamChannelId: string | undefined;
+    if (session.type === SessionType.CHAT) {
+      const [aspirant, mentor] = await Promise.all([
+        this.prisma.user.findUniqueOrThrow({
+          where: { id: session.aspirantId },
+          select: { displayName: true },
+        }),
+        this.prisma.user.findUniqueOrThrow({
+          where: { id: session.mentorId },
+          select: { displayName: true },
+        }),
+      ]);
+      streamChannelId = await this.chatService.ensureChannelForSession({
+        sessionId: session.id,
+        aspirantId: session.aspirantId,
+        aspirantName: aspirant.displayName,
+        mentorId: session.mentorId,
+        mentorName: mentor.displayName,
+      });
+    }
 
-    const updated = await this.prisma.session.update({
+    await this.prisma.session.update({
       where: { id: sessionId },
       data: {
         status: SessionStatus.ACCEPTED,
@@ -205,7 +250,7 @@ export class SessionsService {
       metadata: { sessionId: session.id },
     });
 
-    return toSessionResponse(updated);
+    return this.toResponseById(sessionId);
   }
 
   /** Only the booked mentor may reject, and only while PENDING. */
@@ -220,7 +265,7 @@ export class SessionsService {
     }
 
     const now = new Date();
-    const updated = await this.prisma.session.update({
+    await this.prisma.session.update({
       where: { id: sessionId },
       data: {
         status: SessionStatus.REJECTED,
@@ -240,7 +285,7 @@ export class SessionsService {
       metadata: { sessionId: session.id },
     });
 
-    return toSessionResponse(updated);
+    return this.toResponseById(sessionId);
   }
 
   /** Only the requesting aspirant may cancel, and only before the session
@@ -258,7 +303,7 @@ export class SessionsService {
       );
     }
 
-    const updated = await this.prisma.session.update({
+    await this.prisma.session.update({
       where: { id: sessionId },
       data: {
         status: SessionStatus.CANCELLED,
@@ -269,7 +314,7 @@ export class SessionsService {
 
     await this.releaseHoldsForSession(sessionId);
 
-    return toSessionResponse(updated);
+    return this.toResponseById(sessionId);
   }
 
   /**
@@ -336,7 +381,7 @@ export class SessionsService {
 
     const bothJoined = updated.aspirantJoinedAt && updated.mentorJoinedAt;
     if (!bothJoined) {
-      return toSessionResponse(updated);
+      return this.toResponseById(sessionId);
     }
 
     // Both sides confirmed — settle billing for the originally booked slot
@@ -354,7 +399,7 @@ export class SessionsService {
 
     if (settled.count === 0) {
       // Another concurrent call already made this transition — no-op.
-      return toSessionResponse(await this.requireSession(sessionId));
+      return this.toResponseById(sessionId);
     }
 
     const slotMinutes = updated.callSlotMinutes ?? 0;
@@ -390,7 +435,7 @@ export class SessionsService {
       });
     }
 
-    return toSessionResponse(await this.requireSession(sessionId));
+    return this.toResponseById(sessionId);
   }
 
   /**
@@ -444,7 +489,7 @@ export class SessionsService {
       note: `AUDIO_CALL +${extensionMinutes}-min extension`,
     });
 
-    const updated = await this.prisma.session.update({
+    await this.prisma.session.update({
       where: { id: sessionId },
       data: {
         billedMinutes: { increment: extensionMinutes },
@@ -452,7 +497,7 @@ export class SessionsService {
       },
     });
 
-    return toSessionResponse(updated);
+    return this.toResponseById(sessionId);
   }
 
   /** Either party can end an in-progress call. Billing was already settled
@@ -473,7 +518,7 @@ export class SessionsService {
       throw new ConflictException(`Cannot end a call in status ${session.status}`);
     }
 
-    const updated = await this.prisma.session.update({
+    await this.prisma.session.update({
       where: { id: sessionId },
       data: {
         status: SessionStatus.COMPLETED,
@@ -494,7 +539,7 @@ export class SessionsService {
       metadata: { sessionId: session.id },
     });
 
-    return toSessionResponse(updated);
+    return this.toResponseById(sessionId);
   }
 
   /** Lists sessions where the current user is a party — as aspirant,
@@ -519,6 +564,7 @@ export class SessionsService {
 
     const rows = await this.prisma.session.findMany({
       where,
+      include: SESSION_WITH_NAMES_INCLUDE,
       orderBy: [{ requestedAt: 'desc' }, { id: 'asc' }],
       take: take + 1,
       ...(query.cursor && { cursor: { id: query.cursor }, skip: 1 }),
@@ -540,12 +586,24 @@ export class SessionsService {
         id: sessionId,
         OR: [{ aspirantId: userId }, { mentorId: userId }],
       },
+      include: SESSION_WITH_NAMES_INCLUDE,
     });
 
     if (!session) {
       throw new NotFoundException(`Session '${sessionId}' not found`);
     }
 
+    return toSessionResponse(session);
+  }
+
+  /** Re-fetches a session with the aspirant/mentor names included — used
+   * after every mutation instead of threading `include` through each
+   * individual update() call. */
+  private async toResponseById(sessionId: string): Promise<SessionResponse> {
+    const session = await this.prisma.session.findUniqueOrThrow({
+      where: { id: sessionId },
+      include: SESSION_WITH_NAMES_INCLUDE,
+    });
     return toSessionResponse(session);
   }
 

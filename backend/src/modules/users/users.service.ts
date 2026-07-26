@@ -1,7 +1,14 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
 import { Prisma, User, UserRole } from '@prisma/client';
 import { generatePseudonym } from '../../common/helpers/pseudonym.helper.js';
 import { PrismaService } from '../../database/prisma/prisma.service.js';
+import { AvatarConfig } from '../avatar/avatar.constants.js';
+import { AvatarService } from '../avatar/avatar.service.js';
 import { ListUsersDto } from './dto/list-users.dto.js';
 import { SetBannedDto } from './dto/set-banned.dto.js';
 import { UpdateProfileDto } from './dto/update-profile.dto.js';
@@ -18,7 +25,12 @@ const ADMIN_MAX_LIMIT = 50;
 
 @Injectable()
 export class UsersService {
-  constructor(private readonly prisma: PrismaService) {}
+  private readonly logger = new Logger(UsersService.name);
+
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly avatarService: AvatarService,
+  ) {}
 
   async findOrCreateByPhoneHash(
     phoneHash: string,
@@ -50,6 +62,27 @@ export class UsersService {
       },
     });
 
+    // Give every new user an illustrated avatar immediately, so nobody
+    // ever sees a blank or initials placeholder. Deliberately non-fatal:
+    // avatar rendering hits Supabase Storage, and a storage blip must
+    // never block someone from signing in. They just get no avatar until
+    // they open the customiser.
+    try {
+      const config = this.avatarService.randomConfig();
+      await this.avatarService.renderAndStore(user.id, config);
+      await this.prisma.userProfile.update({
+        where: { userId: user.id },
+        data: { avatarKey: JSON.stringify(config) },
+      });
+    } catch (err) {
+      // Non-fatal, but must not be invisible: a persistently failing
+      // renderer would silently leave every new user without an avatar.
+      this.logger.error(
+        `Failed to generate avatar for new user ${user.id}`,
+        err instanceof Error ? err.stack : String(err),
+      );
+    }
+
     return { user, isNewUser: true };
   }
 
@@ -58,6 +91,51 @@ export class UsersService {
       where: { id: userId },
       include: { profile: { include: { university: true } } },
     });
+  }
+
+  /** Derives the public avatar URL from a loaded user+profile row.
+   * Public so controllers can decorate their response projections. */
+  avatarUrlFor(row: {
+    id: string;
+    profile?: { avatarKey: string | null; updatedAt: Date } | null;
+  }): string | null {
+    if (!row.profile) return null;
+    return this.avatarService.publicUrl(
+      row.id,
+      row.profile.avatarKey,
+      row.profile.updatedAt,
+    );
+  }
+
+  /** Current avatar config, or a fresh random one if the user has none
+   * (e.g. signup-time rendering failed) so the customiser always opens
+   * with something valid selected. */
+  async getAvatarConfig(userId: string): Promise<AvatarConfig> {
+    const profile = await this.prisma.userProfile.findUniqueOrThrow({
+      where: { userId },
+      select: { avatarKey: true },
+    });
+    if (!profile.avatarKey) return this.avatarService.randomConfig();
+    try {
+      return this.avatarService.validateConfig(JSON.parse(profile.avatarKey));
+    } catch {
+      // Stored config predates a catalogue change, or is corrupt — fall
+      // back rather than 500 on the customiser.
+      return this.avatarService.randomConfig();
+    }
+  }
+
+  /** Re-renders and re-uploads, then persists the config. The stored SVG
+   * path is stable per user, so the client busts its cache via the `v`
+   * query param on avatarUrl (derived from profile.updatedAt). */
+  async updateAvatar(userId: string, rawConfig: unknown): Promise<AvatarConfig> {
+    const config = this.avatarService.validateConfig(rawConfig);
+    await this.avatarService.renderAndStore(userId, config);
+    await this.prisma.userProfile.update({
+      where: { userId },
+      data: { avatarKey: JSON.stringify(config) },
+    });
+    return config;
   }
 
   async updateRole(userId: string, dto: UpdateRoleDto): Promise<User> {

@@ -6,6 +6,7 @@ import { RolesGuard } from '../../auth/guards/roles.guard.js';
 import { CreateUniversityDto } from './dto/create-university.dto.js';
 import { ListUniversitiesDto } from './dto/list-universities.dto.js';
 import { UpdateUniversityDto } from './dto/update-university.dto.js';
+import { UploadUniversityPhotoDto } from './dto/upload-university-photo.dto.js';
 import { UniversitiesService } from './universities.service.js';
 
 /**
@@ -40,6 +41,13 @@ export class UniversitiesController {
   @Patch(':id')
   update(@Param('id') id: string, @Body() dto: UpdateUniversityDto) {
     return this.universitiesService.update(id, dto);
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @Post(':id/photo')
+  uploadPhoto(@Param('id') id: string, @Body() dto: UploadUniversityPhotoDto) {
+    return this.universitiesService.uploadPhoto(id, dto);
   }
 
   @Get(':slug')

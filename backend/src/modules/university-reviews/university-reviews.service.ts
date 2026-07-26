@@ -52,7 +52,7 @@ export class UniversityReviewsService {
     try {
       const review = await this.prisma.review.create({
         data: { authorId, universityId, ...dto },
-        include: { author: { select: { displayName: true } } },
+        include: { author: { select: { role: true } } },
       });
       return toUniversityReviewResponse(review);
     } catch (err) {
@@ -71,7 +71,7 @@ export class UniversityReviewsService {
 
     const rows = await this.prisma.review.findMany({
       where: { universityId, status: ReviewStatus.ACTIVE, deletedAt: null },
-      include: { author: { select: { displayName: true } } },
+      include: { author: { select: { role: true } } },
       orderBy: [{ createdAt: 'desc' }, { id: 'asc' }],
       take: take + 1,
       ...(query.cursor && { cursor: { id: query.cursor }, skip: 1 }),

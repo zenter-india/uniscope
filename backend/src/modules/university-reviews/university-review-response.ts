@@ -1,4 +1,4 @@
-import { Review } from '@prisma/client';
+import { Review, UserRole } from '@prisma/client';
 
 export interface UniversityReviewResponse {
   id: string;
@@ -14,13 +14,13 @@ export interface UniversityReviewResponse {
   body: string | null;
   helpfulCount: number;
   createdAt: Date;
-  /** Pseudonym only — never the real identity, same anonymity model as
-   * every other user-facing surface in this app. */
-  authorDisplayName: string;
+  /** Never a name or handle — only the author's role, so a review reads as
+   * "from a Mentor" / "from a Student" with no identity attached. */
+  authorRole: UserRole;
 }
 
 export function toUniversityReviewResponse(
-  review: Review & { author: { displayName: string } },
+  review: Review & { author: { role: UserRole } },
 ): UniversityReviewResponse {
   return {
     id: review.id,
@@ -36,6 +36,6 @@ export function toUniversityReviewResponse(
     body: review.body,
     helpfulCount: review.helpfulCount,
     createdAt: review.createdAt,
-    authorDisplayName: review.author.displayName,
+    authorRole: review.author.role,
   };
 }

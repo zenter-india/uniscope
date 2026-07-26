@@ -1,10 +1,14 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { randomUUID } from 'node:crypto';
+import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma, University } from '@prisma/client';
+import type { SupabaseClient } from '@supabase/supabase-js';
 import { PrismaService } from '../../database/prisma/prisma.service.js';
+import { SUPABASE_BUCKETS, SUPABASE_CLIENT } from '../../supabase/index.js';
 import { UniversityReviewsService } from '../university-reviews/university-reviews.service.js';
 import { CreateUniversityDto } from './dto/create-university.dto.js';
 import { ListUniversitiesDto } from './dto/list-universities.dto.js';
 import { UpdateUniversityDto } from './dto/update-university.dto.js';
+import { UploadUniversityPhotoDto } from './dto/upload-university-photo.dto.js';
 
 const DEFAULT_LIMIT = 20;
 const MAX_LIMIT = 50;
@@ -22,6 +26,7 @@ export class UniversitiesService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly universityReviewsService: UniversityReviewsService,
+    @Inject(SUPABASE_CLIENT) private readonly supabase: SupabaseClient,
   ) {}
 
   /**
@@ -134,5 +139,46 @@ export class UniversitiesService {
       throw new NotFoundException(`University '${id}' not found`);
     }
     return this.prisma.university.update({ where: { id }, data: dto });
+  }
+
+  /** Admin-only cover photo upload — unlike verification docs, this bucket is
+   * public (the image is shown to every visitor of the college detail
+   * screen), so we store the public URL directly rather than signing it
+   * per-request. Bucket is created on first use since it isn't pre-provisioned. */
+  async uploadPhoto(id: string, dto: UploadUniversityPhotoDto): Promise<University> {
+    const existing = await this.prisma.university.findUnique({ where: { id } });
+    if (!existing) {
+      throw new NotFoundException(`University '${id}' not found`);
+    }
+
+    const buffer = Buffer.from(dto.imageBase64, 'base64');
+    if (buffer.length === 0) {
+      throw new BadRequestException('imageBase64 did not decode to any bytes');
+    }
+
+    const { error: createBucketError } = await this.supabase.storage.createBucket(
+      SUPABASE_BUCKETS.UNIVERSITY_IMAGES,
+      { public: true },
+    );
+    if (createBucketError && !/already exists/i.test(createBucketError.message)) {
+      throw new BadRequestException(`Failed to prepare storage bucket: ${createBucketError.message}`);
+    }
+
+    const imageKey = `${id}/${randomUUID()}.jpg`;
+    const { error: uploadError } = await this.supabase.storage
+      .from(SUPABASE_BUCKETS.UNIVERSITY_IMAGES)
+      .upload(imageKey, buffer, { contentType: 'image/jpeg', upsert: true });
+    if (uploadError) {
+      throw new BadRequestException(`Failed to upload image: ${uploadError.message}`);
+    }
+
+    const { data } = this.supabase.storage
+      .from(SUPABASE_BUCKETS.UNIVERSITY_IMAGES)
+      .getPublicUrl(imageKey);
+
+    return this.prisma.university.update({
+      where: { id },
+      data: { imageUrl: data.publicUrl },
+    });
   }
 }

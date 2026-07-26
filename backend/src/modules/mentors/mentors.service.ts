@@ -1,9 +1,24 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { Prisma, UserRole, VerificationStatus } from '@prisma/client';
+import {
+  LedgerEntryType,
+  Prisma,
+  SessionStatus,
+  UserRole,
+  VerificationStatus,
+} from '@prisma/client';
 import { PrismaService } from '../../database/prisma/prisma.service.js';
+import { AvatarService } from '../avatar/avatar.service.js';
 import { ReviewsService } from '../reviews/reviews.service.js';
 import { ListMentorsDto } from './dto/list-mentors.dto.js';
-import { MentorResponse, toMentorResponse } from './mentor-response.js';
+import {
+  MentorDashboardStatsResponse,
+  toMentorDashboardStatsResponse,
+} from './mentor-dashboard-response.js';
+import {
+  MentorResponse,
+  MentorTrackRecord,
+  toMentorResponse,
+} from './mentor-response.js';
 
 const DEFAULT_LIMIT = 20;
 const MAX_LIMIT = 50;
@@ -21,7 +36,22 @@ export class MentorsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly reviewsService: ReviewsService,
+    private readonly avatarService: AvatarService,
   ) {}
+
+  /** Avatar URLs are derived, not stored — the SVG path is fixed per
+   * user and the profile's updatedAt supplies the cache-buster. */
+  private avatarUrlFor(row: {
+    id: string;
+    profile?: { avatarKey: string | null; updatedAt: Date } | null;
+  }): string | null {
+    if (!row.profile) return null;
+    return this.avatarService.publicUrl(
+      row.id,
+      row.profile.avatarKey,
+      row.profile.updatedAt,
+    );
+  }
 
   /**
    * Cursor-paginated mentor discovery list. Ordered by createdAt desc with
@@ -70,7 +100,9 @@ export class MentorsService {
     const hasMore = rows.length > take;
     const rowsPage = hasMore ? rows.slice(0, take) : rows;
     const ratings = await this.reviewsService.ratingSummaries(rowsPage.map((r) => r.id));
-    const data = rowsPage.map((row) => toMentorResponse(row, ratings.get(row.id)));
+    const data = rowsPage.map((row) =>
+      toMentorResponse(row, ratings.get(row.id), undefined, this.avatarUrlFor(row)),
+    );
     const nextCursor = hasMore ? rowsPage[rowsPage.length - 1].id : null;
 
     return { data, nextCursor };
@@ -94,7 +126,121 @@ export class MentorsService {
       throw new NotFoundException(`Mentor '${id}' not found`);
     }
 
-    const rating = await this.reviewsService.ratingSummary(id);
-    return toMentorResponse(user, rating);
+    const [rating, trackRecord] = await Promise.all([
+      this.reviewsService.ratingSummary(id),
+      this.trackRecord(id),
+    ]);
+    return toMentorResponse(user, rating, trackRecord, this.avatarUrlFor(user));
+  }
+
+  /** Public track record, derived entirely from COMPLETED sessions:
+   * distinct aspirants served and total minutes actually billed. Both are
+   * real aggregates — there is no response-rate or response-time stat
+   * because nothing in the schema timestamps individual messages. */
+  private async trackRecord(mentorId: string): Promise<MentorTrackRecord> {
+    const where = {
+      mentorId,
+      status: SessionStatus.COMPLETED,
+    } satisfies Prisma.SessionWhereInput;
+
+    const [distinctAspirants, minutes] = await Promise.all([
+      this.prisma.session.findMany({
+        where,
+        distinct: ['aspirantId'],
+        select: { aspirantId: true },
+      }),
+      this.prisma.session.aggregate({
+        where,
+        _sum: { billedMinutes: true },
+      }),
+    ]);
+
+    return {
+      studentsHelped: distinctAspirants.length,
+      minutesMentored: minutes._sum.billedMinutes ?? 0,
+    };
+  }
+
+  /** Dashboard stats for the logged-in mentor — see mentor-dashboard-response.ts. */
+  async getDashboardStats(mentorId: string): Promise<MentorDashboardStatsResponse> {
+    const startOfToday = new Date();
+    startOfToday.setHours(0, 0, 0, 0);
+
+    const startOfWeek = new Date();
+    startOfWeek.setDate(startOfWeek.getDate() - startOfWeek.getDay());
+    startOfWeek.setHours(0, 0, 0, 0);
+
+    const startOfMonth = new Date();
+    startOfMonth.setDate(1);
+    startOfMonth.setHours(0, 0, 0, 0);
+
+    const [
+      todaysSessions,
+      weeklyEarnings,
+      monthlyEarnings,
+      totalStats,
+      rating,
+      recentSessionRows,
+    ] = await Promise.all([
+      this.prisma.session.findMany({
+        where: {
+          mentorId,
+          status: SessionStatus.COMPLETED,
+          startedAt: { gte: startOfToday },
+        },
+        select: { billedMinutes: true },
+      }),
+      this.prisma.ledgerEntry.aggregate({
+        where: {
+          type: LedgerEntryType.SESSION_CREDIT,
+          createdAt: { gte: startOfWeek },
+          wallet: { userId: mentorId },
+        },
+        _sum: { amountMinor: true },
+      }),
+      this.prisma.ledgerEntry.aggregate({
+        where: {
+          type: LedgerEntryType.SESSION_CREDIT,
+          createdAt: { gte: startOfMonth },
+          wallet: { userId: mentorId },
+        },
+        _sum: { amountMinor: true },
+      }),
+      this.prisma.session.aggregate({
+        where: { mentorId, status: SessionStatus.COMPLETED },
+        _count: true,
+        _sum: { billedMinutes: true },
+      }),
+      this.reviewsService.ratingSummary(mentorId),
+      this.prisma.session.findMany({
+        where: { mentorId, status: SessionStatus.COMPLETED },
+        orderBy: { endedAt: 'desc' },
+        take: 5,
+        include: {
+          aspirant: { select: { displayName: true } },
+          ledgerEntries: {
+            where: { type: LedgerEntryType.SESSION_CREDIT },
+            select: { amountMinor: true },
+          },
+        },
+      }),
+    ]);
+
+    return toMentorDashboardStatsResponse({
+      todaysSessionsCount: todaysSessions.length,
+      monthlyEarningsMinor: monthlyEarnings._sum.amountMinor ?? 0,
+      totalSessionsCount: totalStats._count,
+      totalMinutesConsulted: totalStats._sum.billedMinutes ?? 0,
+      minutesConsultedToday: todaysSessions.reduce((sum, s) => sum + s.billedMinutes, 0),
+      weeklyEarningsMinor: weeklyEarnings._sum.amountMinor ?? 0,
+      rating,
+      recentSessions: recentSessionRows.map((row) => ({
+        id: row.id,
+        aspirantDisplayName: row.aspirant.displayName,
+        endedAt: row.endedAt,
+        billedMinutes: row.billedMinutes,
+        earnedMinor: row.ledgerEntries.reduce((sum, e) => sum + e.amountMinor, 0),
+      })),
+    });
   }
 }

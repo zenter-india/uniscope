@@ -34,13 +34,20 @@ export interface PublicUser {
   courseInterested?: string | null;
   preferredLanguage?: string | null;
   preferredMentorshipTiming?: string | null;
+  /** Public URL of the rendered avatar SVG, or null if the user has
+   * none yet. Carries a cache-busting `v` param derived from the
+   * profile's updatedAt. */
+  avatarUrl?: string | null;
 }
 
 type UserWithProfile = User & {
   profile?: (UserProfile & { university?: University | null }) | null;
 };
 
-export function toPublicUser(user: UserWithProfile): PublicUser {
+export function toPublicUser(
+  user: UserWithProfile,
+  avatarUrl?: string | null,
+): PublicUser {
   return {
     id: user.id,
     displayName: user.displayName,
@@ -52,6 +59,7 @@ export function toPublicUser(user: UserWithProfile): PublicUser {
     createdAt: user.createdAt,
     updatedAt: user.updatedAt,
     ...(user.profile !== undefined && {
+      avatarUrl: avatarUrl ?? null,
       bio: user.profile?.bio ?? null,
       specialty: user.profile?.specialty ?? null,
       languages: user.profile?.languages ?? [],

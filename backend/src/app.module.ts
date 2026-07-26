@@ -29,6 +29,7 @@ import { RedisModule } from './redis/index.js';
 import { AuthModule } from './auth/auth.module.js';
 
 // Domain modules
+import { AvatarModule } from './modules/avatar/avatar.module.js';
 import { UsersModule } from './modules/users/users.module.js';
 import { UniversitiesModule } from './modules/universities/universities.module.js';
 import { MentorsModule } from './modules/mentors/mentors.module.js';
@@ -77,6 +78,7 @@ import { UniversityWishlistModule } from './modules/university-wishlist/universi
 
     // Feature modules
     HealthModule,
+    AvatarModule,
     UsersModule,
     UniversitiesModule,
     MentorsModule,

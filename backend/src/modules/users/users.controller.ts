@@ -17,6 +17,7 @@ import { CurrentUser } from '../../auth/decorators/current-user.decorator.js';
 import type { JwtPayload } from '../../auth/decorators/current-user.decorator.js';
 import { Roles } from '../../auth/decorators/roles.decorator.js';
 import { RolesGuard } from '../../auth/guards/roles.guard.js';
+import { AVATAR_OPTION_CATALOG } from '../avatar/avatar.constants.js';
 import { StorePushTokenDto } from '../notifications/dto/list-notifications.dto.js';
 import { NotificationsService } from '../notifications/notifications.service.js';
 import { ListUsersDto } from './dto/list-users.dto.js';
@@ -40,7 +41,7 @@ export class UsersController {
     if (!found) {
       throw new NotFoundException('User not found');
     }
-    return toPublicUser(found);
+    return toPublicUser(found, this.usersService.avatarUrlFor(found));
   }
 
   @Patch('me')
@@ -49,7 +50,36 @@ export class UsersController {
     @CurrentUser() user: JwtPayload,
     @Body() dto: UpdateProfileDto,
   ) {
-    return toPublicUser(await this.usersService.updateProfile(user.sub, dto));
+    const updated = await this.usersService.updateProfile(user.sub, dto);
+    return toPublicUser(updated, this.usersService.avatarUrlFor(updated));
+  }
+
+  /** The catalogue the mobile customiser renders its pickers from —
+   * served rather than hardcoded client-side so the two can't drift. */
+  @Get('me/avatar/options')
+  avatarOptions() {
+    return AVATAR_OPTION_CATALOG;
+  }
+
+  @Get('me/avatar')
+  async getAvatar(@CurrentUser() user: JwtPayload) {
+    return this.usersService.getAvatarConfig(user.sub);
+  }
+
+  /** Body is the raw config object; every field is validated against the
+   * catalogue in AvatarService before anything is rendered or stored. */
+  @Patch('me/avatar')
+  @HttpCode(HttpStatus.OK)
+  async updateAvatar(
+    @CurrentUser() user: JwtPayload,
+    @Body() body: unknown,
+  ) {
+    const config = await this.usersService.updateAvatar(user.sub, body);
+    const found = await this.usersService.findById(user.sub);
+    return {
+      config,
+      user: found ? toPublicUser(found, this.usersService.avatarUrlFor(found)) : null,
+    };
   }
 
   @Patch('me/role')
@@ -75,7 +105,7 @@ export class UsersController {
   @Get()
   async findAll(@Query() query: ListUsersDto) {
     const { data, nextCursor } = await this.usersService.findAllAdmin(query);
-    return { data: data.map(toPublicUser), nextCursor };
+    return { data: data.map((u) => toPublicUser(u)), nextCursor };
   }
 
   @UseGuards(RolesGuard)
