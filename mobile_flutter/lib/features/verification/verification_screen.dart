@@ -1,5 +1,5 @@
 import 'dart:convert';
-import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -90,7 +90,7 @@ class VerificationScreen extends ConsumerWidget {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     const Icon(Icons.check_circle_rounded,
-                                        size: 16, color: AppColors.success),
+                                        size: 16, color: AppColors.primary),
                                     const SizedBox(width: AppSpacing.sm),
                                     Expanded(
                                       child: Text(item,
@@ -126,7 +126,7 @@ class _StatusCard extends StatelessWidget {
   (IconData, Color, String) get _presentation {
     switch (request.status) {
       case 'VERIFIED':
-        return (Icons.verified_rounded, AppColors.success, "You're verified!");
+        return (Icons.verified_rounded, AppColors.primary, "You're verified!");
       case 'REJECTED':
         return (Icons.cancel_rounded, AppColors.error, 'Verification declined');
       case 'UNDER_REVIEW':
@@ -170,7 +170,7 @@ class _SubmissionForm extends ConsumerStatefulWidget {
 class _SubmissionFormState extends ConsumerState<_SubmissionForm> {
   University? _university;
   DocumentType _docType = DocumentType.studentId;
-  File? _image;
+  Uint8List? _imageBytes;
   bool _submitting = false;
 
   Future<void> _pickImage() async {
@@ -180,17 +180,20 @@ class _SubmissionFormState extends ConsumerState<_SubmissionForm> {
       imageQuality: 70,
       maxWidth: 1600,
     );
+    // Read via XFile.readAsBytes (works on web, iOS, Android) rather than
+    // wrapping in dart:io's File — that stub throws "Unsupported operation:
+    // _Namespace" the moment anything tries to read it on Flutter web.
     if (picked != null) {
-      setState(() => _image = File(picked.path));
+      final bytes = await picked.readAsBytes();
+      setState(() => _imageBytes = bytes);
     }
   }
 
   Future<void> _submit() async {
-    if (_university == null || _image == null) return;
+    if (_university == null || _imageBytes == null) return;
     setState(() => _submitting = true);
     try {
-      final bytes = await _image!.readAsBytes();
-      final base64Image = base64Encode(bytes);
+      final base64Image = base64Encode(_imageBytes!);
       await ref.read(verificationApiProvider).submit(
             universityId: _university!.id,
             documentType: _docType,
@@ -264,7 +267,7 @@ class _SubmissionFormState extends ConsumerState<_SubmissionForm> {
                 border: Border.all(color: AppColors.border, style: BorderStyle.solid),
                 borderRadius: BorderRadius.circular(AppRadius.md),
               ),
-              child: _image == null
+              child: _imageBytes == null
                   ? const Center(
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
@@ -281,7 +284,7 @@ class _SubmissionFormState extends ConsumerState<_SubmissionForm> {
                     )
                   : ClipRRect(
                       borderRadius: BorderRadius.circular(AppRadius.md),
-                      child: Image.file(_image!, fit: BoxFit.cover, width: double.infinity),
+                      child: Image.memory(_imageBytes!, fit: BoxFit.cover, width: double.infinity),
                     ),
             ),
           ),
@@ -311,7 +314,7 @@ class _SubmissionFormState extends ConsumerState<_SubmissionForm> {
           SizedBox(
             width: double.infinity,
             child: FilledButton(
-              onPressed: (_university != null && _image != null && !_submitting)
+              onPressed: (_university != null && _imageBytes != null && !_submitting)
                   ? _submit
                   : null,
               child: _submitting

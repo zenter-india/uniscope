@@ -18,7 +18,7 @@ class UniversityReview {
     this.body,
     required this.helpfulCount,
     required this.createdAt,
-    required this.authorDisplayName,
+    required this.authorRole,
   });
 
   final String id;
@@ -34,7 +34,9 @@ class UniversityReview {
   final String? body;
   final int helpfulCount;
   final String createdAt;
-  final String authorDisplayName;
+  final String authorRole;
+
+  bool get authorIsMentor => authorRole == 'MENTOR';
 
   factory UniversityReview.fromJson(Map<String, dynamic> json) => UniversityReview(
         id: json['id'] as String,
@@ -50,7 +52,7 @@ class UniversityReview {
         body: json['body'] as String?,
         helpfulCount: (json['helpfulCount'] as num).toInt(),
         createdAt: json['createdAt'] as String,
-        authorDisplayName: json['authorDisplayName'] as String,
+        authorRole: json['authorRole'] as String,
       );
 }
 

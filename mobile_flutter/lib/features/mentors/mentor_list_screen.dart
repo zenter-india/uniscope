@@ -7,7 +7,9 @@ import '../../core/network/mentors_api.dart';
 import '../../core/network/sessions_api.dart';
 import '../../core/network/wishlist_api.dart';
 import '../../core/theme/app_theme.dart';
+import '../../state/auth_controller.dart';
 import '../../widgets/app_widgets.dart';
+import '../sessions/session_list_screen.dart' show sessionsListProvider;
 
 final mentorsListProvider = FutureProvider.autoDispose<List<Mentor>>(
   (ref) => ref.watch(mentorsApiProvider).list(),
@@ -29,6 +31,50 @@ const _activeStatuses = {
   SessionStatus.inProgress,
 };
 
+/// Opens a free chat with [mentorId] and navigates into it. Shared by the
+/// mentor card and the mentor profile screen. If an active chat with this
+/// mentor already exists the backend 409s, and we reuse that session
+/// instead of surfacing an error.
+Future<void> startChatWithMentor(
+  BuildContext context,
+  WidgetRef ref,
+  String mentorId,
+) async {
+  final api = ref.read(sessionsApiProvider);
+  try {
+    Session session;
+    try {
+      session = await api.create(mentorId, SessionKind.chat);
+    } on DioException catch (e) {
+      // 409 = "you already have an active session with this mentor" —
+      // recoverable by finding that session. Anything else is a real
+      // error and must not be masked by a confusing "no element" below.
+      if (e.response?.statusCode != 409) rethrow;
+
+      final existing = await api.list();
+      final match = existing.where(
+        (s) => s.mentorId == mentorId &&
+            s.type == 'CHAT' &&
+            _activeStatuses.contains(s.status),
+      );
+      if (match.isEmpty) rethrow;
+      session = match.first;
+    }
+    // The Messages tab's session list lives in a bottom-nav branch that
+    // StatefulShellRoute keeps alive in the background (IndexedStack) rather
+    // than rebuilding — its FutureProvider.autoDispose never re-fires just
+    // from switching tabs, so a chat started here wouldn't appear there
+    // without an explicit invalidate.
+    ref.invalidate(sessionsListProvider);
+    if (!context.mounted) return;
+    context.push('/chats/room', extra: {'sessionId': session.id});
+  } catch (e) {
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text('Could not start chat: $e')));
+  }
+}
+
 /// Mentor discovery backed by `GET /mentors`. Tapping a mentor goes straight
 /// into a free chat with them — no pricing or slot picker up front. A call
 /// can be requested from inside the chat screen instead (see
@@ -44,11 +90,19 @@ class MentorListScreen extends ConsumerWidget {
       backgroundColor: AppColors.background,
       appBar: AppBar(
         title: const Text('Mentors'),
+        // Saved sits before Wallet so Wallet keeps its established
+        // far-right position — deliberately not relocated.
         actions: [
           IconButton(
             onPressed: () => context.push('/mentors/saved'),
             icon: const Icon(Icons.favorite_rounded, color: AppColors.error),
             tooltip: 'Saved mentors',
+          ),
+          IconButton(
+            onPressed: () => context.push('/wallet'),
+            icon: const Icon(Icons.account_balance_wallet_rounded,
+                color: AppColors.primary),
+            tooltip: 'Wallet',
           ),
         ],
       ),
@@ -102,89 +156,53 @@ class MentorListScreen extends ConsumerWidget {
   }
 }
 
-/// Flat per-minute rate for AUDIO_CALL sessions — matches the backend's
-/// MENTOR_RATE_PER_MINUTE_MINOR (₹10/min, same for every mentor), which is
-/// independent of the mentor's own listed CHAT rate.
-const int _kCallRatePerMinuteMinor = 1000;
-
 class MentorCard extends ConsumerWidget {
   const MentorCard({super.key, required this.mentor});
   final Mentor mentor;
 
-  /// Straight into a free chat — no pricing, no kind picker. If one's
-  /// already outstanding with this mentor, reuse it instead of erroring.
-  Future<void> _startChat(BuildContext context, WidgetRef ref) async {
-    final api = ref.read(sessionsApiProvider);
-    try {
-      Session session;
-      try {
-        session = await api.create(mentor.id, SessionKind.chat);
-      } on DioException catch (e) {
-        // 409 = "you already have an active session with this mentor" —
-        // recoverable by finding that session. Anything else is a real
-        // error and must not be masked by a confusing "no element" below.
-        if (e.response?.statusCode != 409) rethrow;
-
-        final existing = await api.list();
-        final match = existing.where(
-          (s) => s.mentorId == mentor.id &&
-              s.type == 'CHAT' &&
-              _activeStatuses.contains(s.status),
-        );
-        if (match.isEmpty) rethrow;
-        session = match.first;
-      }
-      if (!context.mounted) return;
-      context.push('/chats/room', extra: {'sessionId': session.id});
-    } catch (e) {
-      if (!context.mounted) return;
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text('Could not start chat: $e')));
-    }
-  }
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final isMentor =
+        ref.watch(authControllerProvider).user?.role == UserRole.mentor;
+
     return AppCard(
       margin: const EdgeInsets.only(bottom: AppSpacing.sm),
-      onTap: () => _startChat(context, ref),
+      // The whole card always opens the mentor's profile — it used to open
+      // a chat unless you tapped precisely on the avatar/name, which meant
+      // the same tap looked like it did different things depending on where
+      // on the card you landed. Starting a chat is still one tap away, from
+      // the profile screen's action bar.
+      onTap: () => context.push('/mentors/${mentor.id}'),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          GestureDetector(
-            behavior: HitTestBehavior.opaque,
-            onTap: () => context.push('/mentors/${mentor.id}'),
-            child: AppAvatar(name: mentor.displayName, size: 52),
-          ),
+          AppAvatar(
+              name: mentor.displayName, size: 52, avatarUrl: mentor.avatarUrl),
           const SizedBox(width: AppSpacing.md),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                GestureDetector(
-                  behavior: HitTestBehavior.opaque,
-                  onTap: () => context.push('/mentors/${mentor.id}'),
-                  child: Row(
-                    children: [
-                      Flexible(
-                        child: Text(
-                          mentor.displayName,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            fontSize: AppFont.md,
-                            fontWeight: AppFont.bold,
-                            color: AppColors.textPrimary,
-                          ),
+                Row(
+                  children: [
+                    Flexible(
+                      child: Text(
+                        mentor.displayName,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: AppFont.md,
+                          fontWeight: AppFont.bold,
+                          color: AppColors.textPrimary,
                         ),
                       ),
-                      const SizedBox(width: 4),
-                      const Icon(Icons.verified_rounded,
-                          size: 16, color: AppColors.verified),
-                      const SizedBox(width: 4),
-                      const Icon(Icons.chevron_right_rounded,
-                          size: 16, color: AppColors.textMuted),
-                    ],
-                  ),
+                    ),
+                    const SizedBox(width: 4),
+                    const Icon(Icons.verified_rounded,
+                        size: 16, color: AppColors.verified),
+                    const SizedBox(width: 4),
+                    const Icon(Icons.chevron_right_rounded,
+                        size: 16, color: AppColors.textMuted),
+                  ],
                 ),
                 if (mentor.university != null)
                   Padding(
@@ -198,11 +216,14 @@ class MentorCard extends ConsumerWidget {
                       ),
                     ),
                   ),
-                if (mentor.rating != null)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 2),
-                    child: Row(
-                      children: [
+                Padding(
+                  padding: const EdgeInsets.only(top: 4),
+                  child: Row(
+                    children: [
+                      CallAvailabilityChip(
+                          isAvailable: mentor.isAvailable, compact: true),
+                      if (mentor.rating != null) ...[
+                        const SizedBox(width: 6),
                         const Icon(Icons.star_rounded,
                             size: 14, color: AppColors.warning),
                         const SizedBox(width: 2),
@@ -215,61 +236,42 @@ class MentorCard extends ConsumerWidget {
                           ),
                         ),
                       ],
-                    ),
+                    ],
                   ),
-                const SizedBox(height: 6),
-                Row(
-                  children: [
-                    const StatusChip(
-                      label: 'Free chat',
-                      color: AppColors.primary,
-                    ),
-                    const SizedBox(width: 6),
-                    StatusChip(
-                      label: '₹${_kCallRatePerMinuteMinor ~/ 100}/min call',
-                      color: AppColors.info,
-                    ),
-                  ],
                 ),
               ],
             ),
           ),
           const SizedBox(width: AppSpacing.xs),
-          _SaveButton(mentorId: mentor.id),
-          const SizedBox(width: AppSpacing.xs),
-          Container(
-            width: 40,
-            height: 40,
-            decoration: const BoxDecoration(
-              gradient: AppGradients.brand,
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(Icons.add_rounded,
-                color: Colors.white, size: 22),
-          ),
+          // Aspirant-only: POST/DELETE /wishlist are @Roles(ASPIRANT), so a
+          // mentor tapping this would just get a 403.
+          if (!isMentor) _SaveMentorButton(mentorId: mentor.id),
         ],
       ),
     );
   }
 }
 
-class _SaveButton extends ConsumerWidget {
-  const _SaveButton({required this.mentorId});
+/// Heart toggle that saves/unsaves a mentor. Optimistic — the shared
+/// savedMentorIdsProvider flips immediately and reverts itself if the request
+/// fails, so the icon never lags behind the tap.
+class _SaveMentorButton extends ConsumerWidget {
+  const _SaveMentorButton({required this.mentorId});
   final String mentorId;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final savedIdsAsync = ref.watch(savedMentorIdsProvider);
-    final isSaved = savedIdsAsync.value?.contains(mentorId) ?? false;
+    final saved =
+        ref.watch(savedMentorIdsProvider).value?.contains(mentorId) ?? false;
 
     return IconButton(
       onPressed: () =>
           ref.read(savedMentorIdsProvider.notifier).toggle(mentorId),
       icon: Icon(
-        isSaved ? Icons.favorite_rounded : Icons.favorite_border_rounded,
-        color: isSaved ? AppColors.error : AppColors.textMuted,
+        saved ? Icons.favorite_rounded : Icons.favorite_border_rounded,
+        color: saved ? AppColors.error : AppColors.textMuted,
       ),
-      visualDensity: VisualDensity.compact,
+      tooltip: saved ? 'Remove from saved' : 'Save mentor',
     );
   }
 }

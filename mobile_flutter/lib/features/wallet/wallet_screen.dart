@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:razorpay_flutter/razorpay_flutter.dart';
 
+import '../../core/network/payouts_api.dart';
 import '../../core/network/wallet_api.dart';
 import '../../core/theme/app_theme.dart';
+import '../../state/auth_controller.dart';
 import '../../widgets/app_widgets.dart';
 
 final walletBalanceProvider = FutureProvider.autoDispose<Wallet>(
@@ -14,11 +16,18 @@ final walletLedgerProvider = FutureProvider.autoDispose<List<LedgerEntry>>(
   (ref) => ref.watch(walletApiProvider).getLedger(),
 );
 
-/// Real wallet screen: balance + ledger from the backend, and a Top Up flow
-/// that opens Razorpay's actual Checkout UI (test mode). On success we
-/// verify the returned signature server-side and credit the wallet — see
+final mentorPayoutsProvider = FutureProvider.autoDispose<List<PayoutRequest>>(
+  (ref) => ref.watch(payoutsApiProvider).listMine(),
+);
+
+/// Real wallet screen: balance + ledger from the backend. Aspirants get a
+/// Top Up flow (Razorpay Checkout, test mode) — on success we verify the
+/// returned signature server-side and credit the wallet, see
 /// WalletService.verifyAndCreditTopup for why (webhook URL isn't publicly
-/// reachable from local dev).
+/// reachable from local dev). Mentors never top up their own wallet — they
+/// only ever earn into it — so they get a Withdraw flow instead, requesting
+/// a payout of their unpaid session earnings (amount is always
+/// server-derived, never mentor-chosen — see PayoutsService).
 class WalletScreen extends ConsumerStatefulWidget {
   const WalletScreen({super.key});
 
@@ -30,6 +39,7 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
   late final Razorpay _razorpay;
   String? _pendingOrderId;
   bool _toppingUp = false;
+  bool _withdrawing = false;
 
   @override
   void initState() {
@@ -102,6 +112,47 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
     setState(() => _toppingUp = false);
   }
 
+  Future<void> _requestWithdrawal() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Request payout'),
+        content: const Text(
+          "We'll transfer your full unpaid session earnings to your bank "
+          'account (minimum ₹200). This can take up to 48 hours.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: const Text('Request'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+
+    setState(() => _withdrawing = true);
+    try {
+      await ref.read(payoutsApiProvider).requestPayout();
+      ref.invalidate(walletBalanceProvider);
+      ref.invalidate(walletLedgerProvider);
+      ref.invalidate(mentorPayoutsProvider);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context)
+          .showSnackBar(const SnackBar(content: Text('Payout requested')));
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('Could not request payout: $e')));
+    } finally {
+      if (mounted) setState(() => _withdrawing = false);
+    }
+  }
+
   void _showTopupSheet() {
     showModalBottomSheet<void>(
       context: context,
@@ -120,7 +171,8 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
                     fontSize: AppFont.lg, fontWeight: AppFont.extraBold)),
             const SizedBox(height: AppSpacing.xs),
             const Text(
-              '₹250 credits 20 minutes of call time.',
+              'Uniminutes are your talk time — 1 Uniminute is 1 minute on a '
+              'call. ₹250 gets you 20 Uniminutes.',
               style: TextStyle(
                   fontSize: AppFont.xs, color: AppColors.textSecondary),
             ),
@@ -150,8 +202,11 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isMentor =
+        ref.watch(authControllerProvider).user?.role == UserRole.mentor;
     final balanceAsync = ref.watch(walletBalanceProvider);
     final ledgerAsync = ref.watch(walletLedgerProvider);
+    final payoutsAsync = isMentor ? ref.watch(mentorPayoutsProvider) : null;
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -163,6 +218,7 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
           onRefresh: () async {
             ref.invalidate(walletBalanceProvider);
             ref.invalidate(walletLedgerProvider);
+            if (isMentor) ref.invalidate(mentorPayoutsProvider);
           },
           child: ListView(
             padding: const EdgeInsets.all(AppSpacing.md),
@@ -202,36 +258,99 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
                               color: Colors.white,
                               fontSize: AppFont.display,
                               fontWeight: AppFont.extraBold)),
-                      data: (wallet) => Text(
-                        '₹${wallet.balanceRupees.toStringAsFixed(2)}',
-                        style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: AppFont.display,
-                            fontWeight: AppFont.extraBold),
+                      // Aspirants think in Uniminutes; only mentors, who
+                      // withdraw to a real bank account, ever see rupees.
+                      data: (wallet) => Row(
+                        crossAxisAlignment: CrossAxisAlignment.baseline,
+                        textBaseline: TextBaseline.alphabetic,
+                        children: [
+                          Text(
+                            isMentor
+                                ? '₹${wallet.balanceRupees.toStringAsFixed(2)}'
+                                : '${wallet.balanceUniminutes}',
+                            style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: AppFont.display,
+                                fontWeight: AppFont.extraBold),
+                          ),
+                          if (!isMentor) ...[
+                            const SizedBox(width: 6),
+                            const Text(
+                              'Uniminutes',
+                              style: TextStyle(
+                                  color: Colors.white70,
+                                  fontSize: AppFont.md,
+                                  fontWeight: AppFont.semibold),
+                            ),
+                          ],
+                        ],
                       ),
                     ),
                     const SizedBox(height: AppSpacing.md),
                     SizedBox(
                       width: double.infinity,
-                      child: FilledButton.icon(
-                        style: FilledButton.styleFrom(
-                          backgroundColor: Colors.white,
-                          foregroundColor: AppColors.primaryDark,
-                        ),
-                        onPressed: _toppingUp ? null : _showTopupSheet,
-                        icon: _toppingUp
-                            ? const SizedBox(
-                                height: 18,
-                                width: 18,
-                                child:
-                                    CircularProgressIndicator(strokeWidth: 2))
-                            : const Icon(Icons.add_rounded, size: 20),
-                        label: const Text('Top Up'),
-                      ),
+                      child: isMentor
+                          ? FilledButton.icon(
+                              style: FilledButton.styleFrom(
+                                backgroundColor: Colors.white,
+                                foregroundColor: AppColors.primaryDark,
+                              ),
+                              onPressed:
+                                  _withdrawing ? null : _requestWithdrawal,
+                              icon: _withdrawing
+                                  ? const SizedBox(
+                                      height: 18,
+                                      width: 18,
+                                      child: CircularProgressIndicator(
+                                          strokeWidth: 2))
+                                  : const Icon(
+                                      Icons.account_balance_rounded,
+                                      size: 20),
+                              label: const Text('Withdraw'),
+                            )
+                          : FilledButton.icon(
+                              style: FilledButton.styleFrom(
+                                backgroundColor: Colors.white,
+                                foregroundColor: AppColors.primaryDark,
+                              ),
+                              onPressed: _toppingUp ? null : _showTopupSheet,
+                              icon: _toppingUp
+                                  ? const SizedBox(
+                                      height: 18,
+                                      width: 18,
+                                      child: CircularProgressIndicator(
+                                          strokeWidth: 2))
+                                  : const Icon(Icons.add_rounded, size: 20),
+                              label: const Text('Top Up'),
+                            ),
                     ),
                   ],
                 ),
               ),
+              if (isMentor && payoutsAsync != null) ...[
+                const SizedBox(height: AppSpacing.lg),
+                const SectionHeader(title: 'Payout requests'),
+                const SizedBox(height: AppSpacing.sm),
+                payoutsAsync.when(
+                  loading: () => const SkeletonCard(),
+                  error: (_, __) => const SizedBox.shrink(),
+                  data: (payouts) => payouts.isEmpty
+                      ? const Padding(
+                          padding: EdgeInsets.only(bottom: AppSpacing.sm),
+                          child: EmptyState(
+                            icon: Icons.account_balance_rounded,
+                            title: 'No payouts yet',
+                            message:
+                                'Request a withdrawal once you have earnings.',
+                          ),
+                        )
+                      : Column(
+                          children: payouts
+                              .map((p) => _PayoutRow(payout: p))
+                              .toList(),
+                        ),
+                ),
+              ],
               const SizedBox(height: AppSpacing.lg),
               const SectionHeader(title: 'Recent activity'),
               const SizedBox(height: AppSpacing.sm),
@@ -258,7 +377,10 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
                       )
                     : Column(
                         children:
-                            entries.map((e) => _LedgerRow(entry: e)).toList(),
+                            entries
+                                .map((e) =>
+                                    _LedgerRow(entry: e, asRupees: isMentor))
+                                .toList(),
                       ),
               ),
             ],
@@ -270,7 +392,11 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
 }
 
 class _LedgerRow extends StatelessWidget {
-  const _LedgerRow({required this.entry});
+  const _LedgerRow({required this.entry, required this.asRupees});
+
+  /// Mentor ledgers are real money owed to them; aspirant ledgers are
+  /// Uniminutes spent and topped up.
+  final bool asRupees;
   final LedgerEntry entry;
 
   String get _label {
@@ -329,13 +455,67 @@ class _LedgerRow extends StatelessWidget {
             ),
           ),
           Text(
-            '${isCredit ? '+' : ''}₹${entry.amountRupees.toStringAsFixed(2)}',
+            asRupees
+                ? '${isCredit ? '+' : ''}₹${entry.amountRupees.toStringAsFixed(2)}'
+                : '${isCredit ? '+' : '-'}'
+                    '${uniminutesLabel(minorToUniminutes(entry.amountMinor.abs()))}',
             style: TextStyle(
               fontWeight: AppFont.extraBold,
               fontSize: AppFont.sm,
               color: isCredit ? AppColors.success : AppColors.textPrimary,
             ),
           ),
+        ],
+      ),
+    );
+  }
+}
+
+class _PayoutRow extends StatelessWidget {
+  const _PayoutRow({required this.payout});
+  final PayoutRequest payout;
+
+  Color get _statusColor {
+    switch (payout.status) {
+      case 'COMPLETED':
+        return AppColors.success;
+      case 'FAILED':
+        return AppColors.error;
+      default:
+        return AppColors.warning;
+    }
+  }
+
+  String get _statusLabel {
+    if (payout.isOverdue) return '${payout.status} (overdue)';
+    return payout.status;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AppCard(
+      margin: const EdgeInsets.only(bottom: AppSpacing.sm),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '₹${payout.amountRupees.toStringAsFixed(2)}',
+                  style: const TextStyle(
+                      fontWeight: AppFont.extraBold, fontSize: AppFont.sm),
+                ),
+                if (payout.bankReference != null)
+                  Text(
+                    'Ref: ${payout.bankReference}',
+                    style: const TextStyle(
+                        fontSize: AppFont.xs, color: AppColors.textSecondary),
+                  ),
+              ],
+            ),
+          ),
+          StatusChip(label: _statusLabel, color: _statusColor),
         ],
       ),
     );

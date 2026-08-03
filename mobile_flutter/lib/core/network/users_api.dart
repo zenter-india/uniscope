@@ -28,6 +28,9 @@ class UserProfile {
     this.preferredLanguage,
     this.preferredMentorshipTiming,
     this.availableDays = const [],
+    this.yearOfStudy,
+    this.graduationYear,
+    this.avatarUrl,
   });
 
   final String id;
@@ -36,6 +39,7 @@ class UserProfile {
   final String verificationStatus;
   final bool isActive;
   final String createdAt;
+  final String? avatarUrl;
   final String? bio;
   final String? specialty;
   final List<String> languages;
@@ -52,6 +56,8 @@ class UserProfile {
   final String? preferredLanguage;
   final String? preferredMentorshipTiming;
   final List<String> availableDays;
+  final int? yearOfStudy;
+  final int? graduationYear;
 
   factory UserProfile.fromJson(Map<String, dynamic> json) => UserProfile(
         id: json['id'] as String,
@@ -83,6 +89,9 @@ class UserProfile {
         availableDays: (json['availableDays'] as List<dynamic>? ?? [])
             .map((e) => e as String)
             .toList(),
+        yearOfStudy: json['yearOfStudy'] as int?,
+        graduationYear: json['graduationYear'] as int?,
+        avatarUrl: json['avatarUrl'] as String?,
       );
 
   AuthUser toAuthUser() =>
@@ -125,6 +134,9 @@ class UsersApi {
     String? preferredLanguage,
     String? preferredMentorshipTiming,
     List<String>? availableDays,
+    String? realName,
+    int? yearOfStudy,
+    int? graduationYear,
   }) async {
     final res = await _dio.patch<Map<String, dynamic>>(
       '/users/me',
@@ -146,9 +158,29 @@ class UsersApi {
         if (preferredMentorshipTiming != null)
           'preferredMentorshipTiming': preferredMentorshipTiming,
         if (availableDays != null) 'availableDays': availableDays,
+        if (realName != null) 'realName': realName,
+        if (yearOfStudy != null) 'yearOfStudy': yearOfStudy,
+        if (graduationYear != null) 'graduationYear': graduationYear,
       },
     );
     return UserProfile.fromJson(res.data!);
+  }
+
+  /// Live check for the mentor wizard's Alias field.
+  Future<bool> isDisplayNameAvailable(String name) async {
+    final res = await _dio.get<Map<String, dynamic>>(
+      '/users/check-display-name',
+      queryParameters: {'name': name},
+    );
+    return (res.data?['available'] as bool?) ?? false;
+  }
+
+  /// Self-service account deletion — soft delete server-side. Caller must
+  /// log out locally immediately after (the access token still validates
+  /// signature-wise but the next request will 401 once the JWT strategy's
+  /// per-request DB lookup sees deletedAt).
+  Future<void> deleteMe() async {
+    await _dio.delete<void>('/users/me');
   }
 
   Future<void> storePushToken(String token, String platform) async {
@@ -156,6 +188,38 @@ class UsersApi {
       '/users/me/push-token',
       data: {'token': token, 'platform': platform},
     );
+  }
+
+  /// The catalogue the customizer renders its pickers from — served rather
+  /// than hardcoded so it can never drift from what the server will accept.
+  Future<Map<String, dynamic>> getAvatarOptions() async {
+    final res =
+        await _dio.get<Map<String, dynamic>>('/users/me/avatar/options');
+    return res.data!;
+  }
+
+  /// Null if the user has never had one rendered (e.g. pre-avatar signup).
+  Future<Map<String, dynamic>?> getAvatarConfig() async {
+    final res = await _dio.get<Map<String, dynamic>>('/users/me/avatar');
+    return res.data;
+  }
+
+  /// Returns the fresh avatarUrl (cache-busted) after the new config
+  /// renders and uploads server-side.
+  Future<String?> updateAvatarConfig(Map<String, dynamic> config) async {
+    final res =
+        await _dio.patch<Map<String, dynamic>>('/users/me/avatar', data: config);
+    return (res.data?['user'] as Map<String, dynamic>?)?['avatarUrl'] as String?;
+  }
+
+  /// Renders [config] to SVG without persisting anything — used for the
+  /// customizer's live preview as the user taps through options.
+  Future<String> previewAvatarConfig(Map<String, dynamic> config) async {
+    final res = await _dio.post<Map<String, dynamic>>(
+      '/users/me/avatar/preview',
+      data: config,
+    );
+    return res.data!['svg'] as String;
   }
 }
 

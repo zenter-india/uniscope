@@ -17,6 +17,12 @@ export class CreateUniversityDto {
   @MaxLength(100)
   city!: string;
 
+  /** Academic field (Medical/Engineering/Law/etc) — see University.stream. */
+  @IsOptional()
+  @IsString()
+  @MaxLength(50)
+  stream?: string;
+
   @IsOptional()
   @IsInt()
   @Min(1)

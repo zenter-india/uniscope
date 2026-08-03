@@ -26,10 +26,28 @@
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>Uniscope needs microphone access for audio calls with mentors.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Uniscope needs photo access to upload your verification document.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Uniscope needs camera access to take a photo of your ID for mentor verification.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Uniscope does not use your location. This permission is only requested by the photo picker used for uploading verification documents.</string>
+	<!-- DEV ONLY: the app talks to the backend over plain http:// at a LAN
+	     IP (e.g. --dart-define=API_URL=http://192.168.x.x:3001/api/v1) while
+	     testing on a physical device. iOS blocks cleartext HTTP by default
+	     (App Transport Security), which silently breaks every network call
+	     including OTP request/verify — no error shown, requests just never
+	     complete. Remove this before any real release build; production
+	     always uses the https:// Railway URL, which needs no exception. -->
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<key>NSAllowsArbitraryLoads</key>
+		<true/>
+	</dict>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

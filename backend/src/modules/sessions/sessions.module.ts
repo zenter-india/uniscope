@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { PrismaModule } from '../../database/prisma/prisma.module.js';
 import { AgoraModule } from '../agora/agora.module.js';
+import { BlocksModule } from '../blocks/blocks.module.js';
 import { ChatModule } from '../chat/chat.module.js';
 import { MentorsModule } from '../mentors/mentors.module.js';
 import { NotificationsModule } from '../notifications/notifications.module.js';
@@ -26,6 +27,7 @@ import { SessionsService } from './sessions.service.js';
     WalletModule,
     AgoraModule,
     NotificationsModule,
+    BlocksModule,
   ],
   controllers: [SessionsController],
   providers: [SessionsService],

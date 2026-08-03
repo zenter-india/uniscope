@@ -12,8 +12,14 @@ import 'state/auth_controller.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   if (!kIsWeb) {
-    await Firebase.initializeApp();
-    FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
+    try {
+      await Firebase.initializeApp();
+      FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
+    } catch (_) {
+      // No native Firebase config on this platform yet (e.g. iOS has no
+      // GoogleService-Info.plist) — push notifications just won't work,
+      // but the rest of the app must not be blocked by this.
+    }
   }
   runApp(const ProviderScope(child: UniscopeApp()));
 }
@@ -47,6 +53,16 @@ class _UniscopeAppState extends ConsumerState<UniscopeApp> {
       debugShowCheckedModeBanner: false,
       theme: buildAppTheme(),
       routerConfig: router,
+      // Some OEM skins (Samsung OneUI in particular) apply more aggressive
+      // system font-scale/bold-text settings than stock Android, which can
+      // overlap or misalign this app's fixed-height layouts. Clamp instead
+      // of ignoring entirely, so accessibility scaling still applies within
+      // a range the UI was actually designed for.
+      builder: (context, child) => MediaQuery.withClampedTextScaling(
+        minScaleFactor: 0.9,
+        maxScaleFactor: 1.2,
+        child: child!,
+      ),
     );
   }
 }

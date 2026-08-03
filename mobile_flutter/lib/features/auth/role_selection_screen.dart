@@ -61,6 +61,10 @@ class _RoleSelectionScreenState extends ConsumerState<RoleSelectionScreen> {
             .setUser(current.copyWith(role: updated.role));
       }
       if (!mounted) return;
+      // Both roles pick their public display name first (ProfileSetupScreen)
+      // before their role-specific wizard — same screen, same anonymity
+      // messaging, for both. ProfileSetupScreen._finish() routes onward to
+      // '/aspirant-onboarding' or '/mentor-onboarding' based on the saved role.
       context.go('/profile-setup');
     } catch (_) {
       setState(() => _error = 'Failed to save your role. Please try again.');

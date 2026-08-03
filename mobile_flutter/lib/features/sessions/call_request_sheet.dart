@@ -1,16 +1,14 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/network/sessions_api.dart';
+import '../../core/network/wallet_api.dart';
 import '../../core/theme/app_theme.dart';
 
-/// Flat per-minute rate for AUDIO_CALL sessions — matches the backend's
-/// MENTOR_RATE_PER_MINUTE_MINOR (₹10/min, same for every mentor).
-const int kCallRatePerMinuteMinor = 1000;
-
-/// Opens the slot-picker sheet and requests an AUDIO_CALL with [mentorId] if
-/// the aspirant confirms. Chat has no pricing UI at all — this is the only
-/// place a cost is ever shown, since only calls are billed.
+/// Opens the slot-picker sheet and requests an AUDIO_CALL with [mentorId]
+/// if the aspirant confirms. Cost is expressed in Uniminutes only —
+/// rupees never appear outside the wallet top-up sheet.
 Future<void> showCallRequestSheet(
   BuildContext context,
   WidgetRef ref, {
@@ -41,8 +39,9 @@ Future<void> showCallRequestSheet(
     );
   } catch (e) {
     if (!context.mounted) return;
+    final message = e is DioException ? (e.message ?? '$e') : '$e';
     ScaffoldMessenger.of(context)
-        .showSnackBar(SnackBar(content: Text('Could not request call: $e')));
+        .showSnackBar(SnackBar(content: Text(message)));
   }
 }
 
@@ -59,7 +58,7 @@ class _CallRequestSheetState extends State<_CallRequestSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final slotCostRupees = _slotMinutes * kCallRatePerMinuteMinor / 100;
+    final cost = slotUniminutes(_slotMinutes);
 
     return Padding(
       padding: EdgeInsets.fromLTRB(
@@ -119,8 +118,7 @@ class _CallRequestSheetState extends State<_CallRequestSheet> {
           ),
           const SizedBox(height: AppSpacing.sm),
           Text(
-            'Full slot cost of ₹${slotCostRupees.toStringAsFixed(0)} is charged once the call '
-            'connects — even if it ends early.',
+            '${uniminutesLabel(cost)} are deducted once the call connects.',
             style: const TextStyle(
                 fontSize: AppFont.xs, color: AppColors.textSecondary),
           ),

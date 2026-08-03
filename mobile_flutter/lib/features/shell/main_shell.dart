@@ -3,19 +3,13 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/theme/app_theme.dart';
 
-/// Bottom navigation shell: 5 tabs, active tab gets a soft pill highlight.
+/// Bottom navigation shell — tab set is role-dependent (see app_router.dart),
+/// active tab gets a soft pill highlight.
 class MainShell extends StatelessWidget {
-  const MainShell({super.key, required this.navigationShell});
+  const MainShell({super.key, required this.navigationShell, required this.tabs});
 
   final StatefulNavigationShell navigationShell;
-
-  static const _tabs = <_TabItem>[
-    _TabItem('Home', Icons.home_outlined, Icons.home_rounded),
-    _TabItem('Colleges', Icons.school_outlined, Icons.school_rounded),
-    _TabItem('Mentors', Icons.people_alt_outlined, Icons.people_alt_rounded),
-    _TabItem('Chats', Icons.forum_outlined, Icons.forum_rounded),
-    _TabItem('Profile', Icons.person_outline_rounded, Icons.person_rounded),
-  ];
+  final List<TabItem> tabs;
 
   void _onTap(int index) {
     navigationShell.goBranch(
@@ -48,10 +42,10 @@ class MainShell extends StatelessWidget {
             ),
             child: Row(
               children: [
-                for (var i = 0; i < _tabs.length; i++)
+                for (var i = 0; i < tabs.length; i++)
                   Expanded(
                     child: _TabButton(
-                      item: _tabs[i],
+                      item: tabs[i],
                       focused: i == navigationShell.currentIndex,
                       onTap: () => _onTap(i),
                     ),
@@ -65,8 +59,8 @@ class MainShell extends StatelessWidget {
   }
 }
 
-class _TabItem {
-  const _TabItem(this.label, this.icon, this.activeIcon);
+class TabItem {
+  const TabItem(this.label, this.icon, this.activeIcon);
   final String label;
   final IconData icon;
   final IconData activeIcon;
@@ -79,7 +73,7 @@ class _TabButton extends StatelessWidget {
     required this.onTap,
   });
 
-  final _TabItem item;
+  final TabItem item;
   final bool focused;
   final VoidCallback onTap;
 

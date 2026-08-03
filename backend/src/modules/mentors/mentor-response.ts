@@ -1,4 +1,5 @@
 import { University, User, UserProfile } from '@prisma/client';
+import { isCallAvailable } from './availability.js';
 
 /**
  * Public-safe mentor projection. Deliberately excludes phoneHash,
@@ -13,7 +14,20 @@ export interface MentorResponse {
    * config) is deliberately NOT exposed — it's private styling state,
    * not something other users need. */
   avatarUrl: string | null;
+  /** Whether this mentor is currently accepting call bookings — their own
+   * stated intent, auto-expired after 24h (see isCallAvailable). This is NOT
+   * real-time presence and must never be labelled "online" in the UI. Does
+   * not affect discoverability: an unavailable mentor is still listed and
+   * still reachable by chat. */
+  isAvailable: boolean;
+  /** Days the mentor says they're generally free, e.g. ["Monday","Thursday"].
+   * Purely advisory — booking is never blocked by it. */
+  availableDays: string[];
   specialty: string | null;
+  /** Mentor's college field of study (Medical/Engineering/Law/etc) — the
+   * primary attribute aspirants filter/search mentors by, now that the
+   * separate guidance-area step is gone from the mentor wizard. */
+  stream: string | null;
   bio: string | null;
   languages: string[];
   yearOfStudy: number | null;
@@ -45,8 +59,8 @@ type MentorRow = User & {
 };
 
 /** Throws if called on a row whose mentor invariants aren't satisfied —
- * callers must filter (isMentorAvailable, pricePerMinuteMinor != null,
- * VERIFIED) at the query level; this is a projection, not a guard. */
+ * callers must filter (VERIFIED, active, not banned) at the query level;
+ * this is a projection, not a guard. */
 export function toMentorResponse(
   user: MentorRow,
   rating?: { average: number | null; count: number },
@@ -59,7 +73,10 @@ export function toMentorResponse(
     displayName: user.displayName,
     role: user.role,
     avatarUrl: avatarUrl ?? null,
+    isAvailable: isCallAvailable(profile),
+    availableDays: profile?.availableDays ?? [],
     specialty: profile?.specialty ?? null,
+    stream: profile?.stream ?? null,
     bio: profile?.bio ?? null,
     languages: profile?.languages ?? [],
     yearOfStudy: profile?.yearOfStudy ?? null,

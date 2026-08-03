@@ -8,6 +8,13 @@
         android:label="uniscope_mobile"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
+        <!-- Testing whether Impeller (Flutter's default Android renderer) is
+             causing custom-font glyph distortion reported on a Samsung
+             device — Skia is the older, more broadly-tested backend. Remove
+             this override if Impeller turns out not to be the cause. -->
+        <meta-data
+            android:name="io.flutter.embedding.android.EnableImpeller"
+            android:value="false" />
         <activity
             android:name=".MainActivity"
             android:exported="true"

@@ -8,10 +8,18 @@ import 'package:flutter/material.dart';
 /// mass rename. New concepts (shadows, gradients, text styles) get their
 /// own token classes below.
 class AppColors {
-  // Brand — deep emerald with a slightly warmer light tint.
-  static const Color primary = Color(0xFF0E7A52);
-  static const Color primaryLight = Color(0xFFE7F5EE);
-  static const Color primaryDark = Color(0xFF073B2A);
+  // Brand — teal, with blue as its partner at the dark end. These are the
+  // same two endpoints as AppGradients.canopy, so a flat brand surface and
+  // a gradient one always read as the same family. (Superseded the earlier
+  // emerald green — nothing in the app should be green except the semantic
+  // `success` token below.)
+  static const Color primary = Color(0xFF12A9A3);
+  static const Color primaryLight = Color(0xFFE3F5F4);
+  static const Color primaryDark = Color(0xFF0C7A76);
+
+  /// The blue foot of the brand gradient, usable as a flat colour.
+  static const Color brandBlue = Color(0xFF2A72DC);
+
   static const Color accent = Color(0xFFF4A261);
 
   // Neutrals — slate scale (cooler and richer than plain grays).
@@ -24,12 +32,16 @@ class AppColors {
   static const Color textMuted = Color(0xFF97A59E);
   static const Color textInverse = Color(0xFFFFFFFF);
 
+  /// Semantic status colours. `success` stays green on purpose — it marks
+  /// wallet credits, completed sessions, and confirmation ticks, and those
+  /// have to stay visually distinct from the teal brand (a credit rendered
+  /// in brand teal would read as a button, not as money in).
   static const Color success = Color(0xFF12A150);
   static const Color error = Color(0xFFE5484D);
   static const Color warning = Color(0xFFF5A524);
-  static const Color info = Color(0xFF0072F5);
+  static const Color info = Color(0xFF2A72DC);
 
-  static const Color verified = Color(0xFF0E7A52);
+  static const Color verified = primary;
   static const Color unverified = Color(0xFF97A59E);
 }
 
@@ -84,7 +96,7 @@ class AppShadows {
 
   static const List<BoxShadow> raised = [
     BoxShadow(
-      color: Color(0x140E7A52),
+      color: Color(0x1412A9A3),
       blurRadius: 24,
       offset: Offset(0, 8),
     ),
@@ -92,16 +104,39 @@ class AppShadows {
 }
 
 class AppGradients {
+  /// Compact brand fill for buttons, FABs, and banner cards. Same two
+  /// endpoints as [canopy] but run corner-to-corner, so small surfaces
+  /// still show the teal→blue travel.
   static const LinearGradient brand = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    colors: [Color(0xFF11875B), Color(0xFF0A5C3E)],
+    colors: [Color(0xFF12A9A3), Color(0xFF2A72DC)],
   );
 
+  /// Barely-there teal wash for full-screen backgrounds behind cards.
   static const LinearGradient hero = LinearGradient(
     begin: Alignment.topCenter,
     end: Alignment.bottomCenter,
-    colors: [Color(0xFFE7F5EE), Color(0xFFF6F8F9)],
+    colors: [Color(0xFFE3F5F4), Color(0xFFF6F8F9)],
+  );
+
+  /// Teal-dominant brand gradient. Deliberately weighted so the teal holds
+  /// most of the run and the blue only lands at the very foot — the blue
+  /// reads as a shadow under the teal rather than an equal partner.
+  ///
+  /// Apply this to the canopy container itself, never to a full-screen
+  /// background: stretched over a whole screen the blue stop falls below
+  /// the fold and only flat teal is visible.
+  static const LinearGradient canopy = LinearGradient(
+    begin: Alignment.topCenter,
+    end: Alignment.bottomCenter,
+    colors: [
+      Color(0xFF12A9A3),
+      Color(0xFF15A2A9),
+      Color(0xFF1B8BC7),
+      Color(0xFF2A72DC),
+    ],
+    stops: [0.0, 0.46, 0.80, 1.0],
   );
 }
 

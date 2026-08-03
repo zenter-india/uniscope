@@ -61,6 +61,7 @@ class AuthState {
     this.user,
     this.isAuthenticated = false,
     this.isHydrated = false,
+    this.needsOnboarding = false,
   });
 
   final String? accessToken;
@@ -68,6 +69,14 @@ class AuthState {
   final AuthUser? user;
   final bool isAuthenticated;
   final bool isHydrated;
+
+  /// True from the moment a brand-new user verifies OTP until they complete
+  /// (or explicitly skip) the role-selection → profile-setup → onboarding
+  /// wizard chain. The router's redirect is the single source of truth for
+  /// where this sends someone — screens no longer race it with their own
+  /// context.go calls (see app_router.dart), which is what let earlier
+  /// signups fall through to Home mid-onboarding as bare pseudonyms.
+  final bool needsOnboarding;
 
   bool get isAdmin => user?.role == UserRole.admin;
 
@@ -77,6 +86,7 @@ class AuthState {
     AuthUser? user,
     bool? isAuthenticated,
     bool? isHydrated,
+    bool? needsOnboarding,
   }) {
     return AuthState(
       accessToken: accessToken ?? this.accessToken,
@@ -84,6 +94,7 @@ class AuthState {
       user: user ?? this.user,
       isAuthenticated: isAuthenticated ?? this.isAuthenticated,
       isHydrated: isHydrated ?? this.isHydrated,
+      needsOnboarding: needsOnboarding ?? this.needsOnboarding,
     );
   }
 
@@ -114,6 +125,7 @@ class AuthController extends Notifier<AuthState> {
           refreshToken: data['refreshToken'] as String?,
           user: userJson != null ? AuthUser.fromJson(userJson) : null,
           isAuthenticated: (data['isAuthenticated'] as bool?) ?? false,
+          needsOnboarding: (data['needsOnboarding'] as bool?) ?? false,
         );
       }
     } catch (_) {
@@ -130,6 +142,7 @@ class AuthController extends Notifier<AuthState> {
         'refreshToken': state.refreshToken,
         'user': state.user?.toJson(),
         'isAuthenticated': state.isAuthenticated,
+        'needsOnboarding': state.needsOnboarding,
       });
       await _storage.write(key: _key, value: payload);
     } catch (_) {
@@ -148,13 +161,26 @@ class AuthController extends Notifier<AuthState> {
     _persist();
   }
 
-  void setAuth(String accessToken, String refreshToken, AuthUser user) {
+  void setAuth(
+    String accessToken,
+    String refreshToken,
+    AuthUser user, {
+    bool? needsOnboarding,
+  }) {
     state = state.copyWith(
       accessToken: accessToken,
       refreshToken: refreshToken,
       user: user,
       isAuthenticated: true,
+      needsOnboarding: needsOnboarding ?? state.needsOnboarding,
     );
+    _persist();
+  }
+
+  /// Called once a new user completes (or explicitly skips) the onboarding
+  /// chain, so the router stops redirecting them back into it.
+  void clearNeedsOnboarding() {
+    state = state.copyWith(needsOnboarding: false);
     _persist();
   }
 

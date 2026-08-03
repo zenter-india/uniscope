@@ -22,7 +22,6 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   String? _qualification;
   String? _stream;
   String? _state;
-  String? _specialty;
   final Set<String> _goals = {};
   final Set<String> _languages = {};
   bool _loaded = false;
@@ -38,7 +37,6 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     _qualification = profile.qualification;
     _stream = profile.stream;
     _state = profile.state;
-    _specialty = profile.specialty;
     _goals.addAll(profile.goals);
     _languages.addAll(profile.languages);
   }
@@ -61,7 +59,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
         await ref.read(usersApiProvider).updateProfile(
               displayName: displayName,
               bio: _bioController.text.trim(),
-              specialty: _specialty,
+              stream: _stream,
               languages: _languages.toList(),
             );
       } else {
@@ -119,17 +117,22 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                 TextField(controller: _displayNameController),
                 const SizedBox(height: AppSpacing.md),
                 if (isMentor) ...[
-                  const Text('Area of guidance',
+                  const Text('Stream / Field',
                       style: TextStyle(fontSize: AppFont.sm, fontWeight: AppFont.semibold)),
                   const SizedBox(height: AppSpacing.xs),
                   DropdownButtonFormField<String>(
-                    initialValue: _specialty,
+                    // A value predating this fix (e.g. an old kGuidanceAreas
+                    // entry stuck in `specialty`, or nothing at all) won't
+                    // match kStreamOptions' exact strings — fall back to
+                    // null rather than assert-crash on an unknown value.
+                    initialValue:
+                        kStreamOptions.contains(_stream) ? _stream : null,
                     isExpanded: true,
                     hint: const Text('What can you help aspirants with?'),
-                    items: kGuidanceAreas
+                    items: kStreamOptions
                         .map((s) => DropdownMenuItem(value: s, child: Text(s)))
                         .toList(),
-                    onChanged: (v) => setState(() => _specialty = v),
+                    onChanged: (v) => setState(() => _stream = v),
                   ),
                   const SizedBox(height: AppSpacing.md),
                   const Text('Bio',
@@ -195,14 +198,19 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                     onChanged: (v) => setState(() => _qualification = v),
                   ),
                   const SizedBox(height: AppSpacing.md),
-                  const Text('Stream',
+                  const Text('Stream / Field of Interest',
                       style: TextStyle(fontSize: AppFont.sm, fontWeight: AppFont.semibold)),
                   const SizedBox(height: AppSpacing.xs),
                   DropdownButtonFormField<String>(
-                    initialValue: _stream,
+                    // A value saved via the onboarding wizard (e.g. "Engineering")
+                    // won't match if it's not one of kStreamOptions' exact
+                    // strings — fall back to null rather than let
+                    // DropdownButtonFormField assert-crash on an unknown value.
+                    initialValue:
+                        kStreamOptions.contains(_stream) ? _stream : null,
                     isExpanded: true,
-                    hint: const Text('Select stream'),
-                    items: kStreams
+                    hint: const Text('Select stream / field'),
+                    items: kStreamOptions
                         .map((s) => DropdownMenuItem(value: s, child: Text(s)))
                         .toList(),
                     onChanged: (v) => setState(() => _stream = v),

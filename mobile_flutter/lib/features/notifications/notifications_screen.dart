@@ -93,7 +93,7 @@ class _NotificationTile extends ConsumerWidget {
       case 'SESSION_REQUEST':
         return (Icons.forum_rounded, AppColors.info);
       case 'SESSION_ACCEPTED':
-        return (Icons.check_circle_rounded, AppColors.success);
+        return (Icons.check_circle_rounded, AppColors.primary);
       case 'SESSION_REJECTED':
         return (Icons.cancel_rounded, AppColors.error);
       case 'SESSION_STARTING':

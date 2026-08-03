@@ -189,3 +189,41 @@ class OnboardingChipGroup extends StatelessWidget {
     );
   }
 }
+
+/// Single-select variant of [OnboardingChipGroup] — for fields like Gender,
+/// Degree, or Stream/Field where exactly one choice makes sense, rather than
+/// a multi-select set (languages, goals).
+class OnboardingSingleChipGroup extends StatelessWidget {
+  const OnboardingSingleChipGroup({
+    super.key,
+    required this.options,
+    required this.selected,
+    required this.onSelect,
+  });
+  final List<String> options;
+  final String? selected;
+  final ValueChanged<String> onSelect;
+
+  @override
+  Widget build(BuildContext context) {
+    return Wrap(
+      spacing: AppSpacing.sm,
+      runSpacing: AppSpacing.sm,
+      children: options.map((option) {
+        final isSelected = selected == option;
+        return ChoiceChip(
+          label: Text(option),
+          selected: isSelected,
+          onSelected: (_) => onSelect(option),
+          selectedColor: AppColors.primaryLight,
+          labelStyle: TextStyle(
+            fontSize: AppFont.sm,
+            color: isSelected ? AppColors.primaryDark : AppColors.textSecondary,
+            fontWeight: isSelected ? AppFont.semibold : AppFont.medium,
+          ),
+          side: BorderSide(color: isSelected ? AppColors.primary : AppColors.border),
+        );
+      }).toList(),
+    );
+  }
+}

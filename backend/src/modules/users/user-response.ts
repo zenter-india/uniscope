@@ -1,4 +1,5 @@
 import { University, User, UserProfile } from '@prisma/client';
+import { isCallAvailable } from '../mentors/availability.js';
 
 /**
  * Client-safe view of a User. Built with an explicit allowlist so that
@@ -29,6 +30,8 @@ export interface PublicUser {
   city?: string | null;
   qualification?: string | null;
   stream?: string | null;
+  yearOfStudy?: number | null;
+  graduationYear?: number | null;
   goals?: string[];
   dateOfBirth?: string | null;
   courseInterested?: string | null;
@@ -64,7 +67,10 @@ export function toPublicUser(
       specialty: user.profile?.specialty ?? null,
       languages: user.profile?.languages ?? [],
       availableDays: user.profile?.availableDays ?? [],
-      isMentorAvailable: user.profile?.isMentorAvailable ?? false,
+      // Deliberately the expiry-aware value, not the raw column: the mentor's
+      // own switch must read the same as what students see, or they'd believe
+      // they're bookable while the listing says otherwise.
+      isMentorAvailable: isCallAvailable(user.profile),
       university: user.profile?.university
         ? {
             id: user.profile.university.id,
@@ -77,6 +83,8 @@ export function toPublicUser(
       city: user.profile?.city ?? null,
       qualification: user.profile?.qualification ?? null,
       stream: user.profile?.stream ?? null,
+      yearOfStudy: user.profile?.yearOfStudy ?? null,
+      graduationYear: user.profile?.graduationYear ?? null,
       goals: user.profile?.goals ?? [],
       dateOfBirth: user.profile?.dateOfBirth?.toISOString().slice(0, 10) ?? null,
       courseInterested: user.profile?.courseInterested ?? null,

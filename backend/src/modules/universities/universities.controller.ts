@@ -4,6 +4,7 @@ import { Roles } from '../../auth/decorators/roles.decorator.js';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard.js';
 import { RolesGuard } from '../../auth/guards/roles.guard.js';
 import { CreateUniversityDto } from './dto/create-university.dto.js';
+import { FindOrCreateUniversityDto } from './dto/find-or-create-university.dto.js';
 import { ListUniversitiesDto } from './dto/list-universities.dto.js';
 import { UpdateUniversityDto } from './dto/update-university.dto.js';
 import { UploadUniversityPhotoDto } from './dto/upload-university-photo.dto.js';
@@ -34,6 +35,14 @@ export class UniversitiesController {
   @Post()
   create(@Body() dto: CreateUniversityDto) {
     return this.universitiesService.create(dto);
+  }
+
+  /** Any authenticated user (mentor onboarding, non-Medical streams) — see
+   * UniversitiesService.findOrCreateByName for why this isn't admin-only. */
+  @UseGuards(JwtAuthGuard)
+  @Post('find-or-create')
+  findOrCreate(@Body() dto: FindOrCreateUniversityDto) {
+    return this.universitiesService.findOrCreateByName(dto);
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)

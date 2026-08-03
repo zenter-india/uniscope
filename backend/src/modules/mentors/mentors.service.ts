@@ -23,12 +23,15 @@ import {
 const DEFAULT_LIMIT = 20;
 const MAX_LIMIT = 50;
 
-/** A "mentor" is any VERIFIED user with role MENTOR who has opted into
- * mentoring. Both conditions are required — an unverified or opted-out
- * profile is never bookable or discoverable. A per-minute rate is no longer
- * a requirement: chat is free with every mentor and audio calls are always
- * billed at the flat platform rate (MENTOR_RATE_PER_MINUTE_MINOR), never a
- * mentor-set price — see product decision. */
+/** A "mentor" is any VERIFIED user with role MENTOR — verification is what
+ * gates discovery/bookability. `isMentorAvailable` ("available for
+ * mentoring") no longer hides a mentor from discovery; it only controls
+ * whether they can be booked for an AUDIO_CALL (see SessionsService.create).
+ * An unavailable mentor still shows up everywhere, still accepts CHAT, and
+ * mobile renders their status as an online/offline dot. A per-minute rate is
+ * no longer a requirement: chat is free with every mentor and audio calls
+ * are always billed at the flat platform rate (MENTOR_RATE_PER_MINUTE_MINOR),
+ * never a mentor-set price — see product decision. */
 const MENTOR_ROLES: UserRole[] = [UserRole.MENTOR];
 
 @Injectable()
@@ -70,10 +73,16 @@ export class MentorsService {
       isBanned: false,
       deletedAt: null,
       profile: {
-        isMentorAvailable: true,
+        // isMentorAvailable is NOT filtered here — unavailable mentors stay
+        // listed (with a status dot mobile-side); only call bookings are
+        // gated on it (see SessionsService.create). Verification below is
+        // what actually controls whether a mentor is listed at all.
         ...(query.universityId && { universityId: query.universityId }),
         ...(query.specialty && {
           specialty: { contains: query.specialty, mode: 'insensitive' },
+        }),
+        ...(query.stream && {
+          stream: { equals: query.stream, mode: 'insensitive' },
         }),
         ...(query.language && { languages: { has: query.language } }),
       },
@@ -117,7 +126,6 @@ export class MentorsService {
         isActive: true,
         isBanned: false,
         deletedAt: null,
-        profile: { isMentorAvailable: true },
       },
       include: { profile: { include: { university: true } } },
     });

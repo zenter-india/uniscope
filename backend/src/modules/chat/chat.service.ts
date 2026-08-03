@@ -64,24 +64,34 @@ export class ChatService {
    * Idempotent — safe to call more than once for the same session (Stream's
    * channel.create is a create-or-return-existing by channel id).
    *
-   * Passing each party's display name means Stream's own channel header
-   * (StreamChannelHeader on the client) shows "who this chat is with"
-   * instead of falling back to the raw user id — upsertUsers overwrites the
-   * Stream-side user record's name every time, so a later display-name
-   * change is picked up on the next chat open too.
+   * Passing each party's display name (and avatar) means Stream's own
+   * channel header (StreamChannelHeader on the client) shows "who this chat
+   * is with" instead of falling back to the raw user id — upsertUsers
+   * overwrites the Stream-side user record every time, so a later
+   * display-name or avatar change is picked up on the next chat open too.
    */
   async ensureChannelForSession(params: {
     sessionId: string;
     aspirantId: string;
     aspirantName: string;
+    aspirantAvatarUrl?: string | null;
     mentorId: string;
     mentorName: string;
+    mentorAvatarUrl?: string | null;
   }): Promise<string> {
     const channelId = `session-${params.sessionId}`;
 
     await this.client.upsertUsers([
-      { id: params.aspirantId, name: params.aspirantName },
-      { id: params.mentorId, name: params.mentorName },
+      {
+        id: params.aspirantId,
+        name: params.aspirantName,
+        image: params.aspirantAvatarUrl ?? undefined,
+      },
+      {
+        id: params.mentorId,
+        name: params.mentorName,
+        image: params.mentorAvatarUrl ?? undefined,
+      },
     ]);
 
     const channel = this.client.channel('messaging', channelId, {

@@ -4,10 +4,35 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/network/college_wishlist_api.dart';
 import '../../core/network/universities_api.dart';
+import '../../core/network/users_api.dart';
 import '../../core/theme/app_theme.dart';
 import '../../widgets/app_widgets.dart';
+import '../profile/profile_options.dart';
 
 const _typeFilters = ['All', 'GOVERNMENT', 'PRIVATE', 'DEEMED', 'CENTRAL'];
+// 'All' plus the same academic-field picklist mentors/aspirants use, so
+// Discover can narrow a mixed-stream list down to e.g. "just Engineering".
+const _streamFilters = ['All', ...kStreamOptions];
+
+/// Whether the college list is currently narrowed to the aspirant's own
+/// state. Lives outside the screen so Home's `Colleges in <state>` card can
+/// switch it on before navigating to the Discover tab. The chip stays
+/// visible while it's active, so this never silently filters the list.
+///
+/// State — not GPS distance — is the right lens here: 85% of government
+/// MBBS seats are state-quota and tied to domicile, so a college 40km away
+/// across a state border is far less relevant than one 400km away in-state.
+class CollegeStateFilterNotifier extends Notifier<bool> {
+  @override
+  bool build() => false;
+
+  void set(bool value) => state = value;
+}
+
+final collegeStateFilterProvider =
+    NotifierProvider<CollegeStateFilterNotifier, bool>(
+  CollegeStateFilterNotifier.new,
+);
 
 String _typeLabel(String type) {
   switch (type) {
@@ -34,10 +59,60 @@ class UniversityListScreen extends ConsumerStatefulWidget {
 class _UniversityListScreenState extends ConsumerState<UniversityListScreen> {
   String _query = '';
   String _typeFilter = 'All';
+  String _streamFilter = 'All';
+
+  /// Bottom sheet used by both the Type and Stream pills — single-select
+  /// list of the given options, closes itself on tap.
+  Future<void> _pickOption({
+    required String title,
+    required List<String> options,
+    required String Function(String) optionLabel,
+    required String selected,
+    required ValueChanged<String> onSelected,
+  }) {
+    return showModalBottomSheet(
+      context: context,
+      showDragHandle: true,
+      builder: (sheetContext) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.lg, 0, AppSpacing.lg, AppSpacing.sm),
+              child: Text(
+                title,
+                style: const TextStyle(
+                  fontSize: AppFont.lg,
+                  fontWeight: AppFont.bold,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+            ),
+            for (final option in options)
+              ListTile(
+                title: Text(optionLabel(option)),
+                trailing: option == selected
+                    ? const Icon(Icons.check_rounded, color: AppColors.primary)
+                    : null,
+                onTap: () {
+                  onSelected(option);
+                  Navigator.of(sheetContext).pop();
+                },
+              ),
+            const SizedBox(height: AppSpacing.sm),
+          ],
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     final universitiesAsync = ref.watch(universitiesListProvider);
+    final myState = ref.watch(myProfileProvider).asData?.value.state;
+    final stateOnly = ref.watch(collegeStateFilterProvider);
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -73,29 +148,52 @@ class _UniversityListScreenState extends ConsumerState<UniversityListScreen> {
                 scrollDirection: Axis.horizontal,
                 padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
                 children: [
-                  for (final f in _typeFilters)
+                  // Only offered once we actually know the aspirant's
+                  // state — otherwise the chip would be a dead control.
+                  if (myState != null && myState.isNotEmpty)
                     Padding(
                       padding: const EdgeInsets.only(right: AppSpacing.sm),
-                      child: ChoiceChip(
-                        label: Text(_typeLabel(f)),
-                        selected: _typeFilter == f,
-                        onSelected: (_) => setState(() => _typeFilter = f),
-                        selectedColor: AppColors.primary,
-                        labelStyle: TextStyle(
-                          fontSize: AppFont.sm,
-                          fontWeight: AppFont.semibold,
-                          color: _typeFilter == f
-                              ? AppColors.textInverse
-                              : AppColors.textSecondary,
-                        ),
-                        backgroundColor: AppColors.surface,
-                        side: BorderSide(
-                          color: _typeFilter == f
-                              ? AppColors.primary
-                              : AppColors.border,
-                        ),
+                      child: _FilterPill(
+                        icon: Icons.place_rounded,
+                        label: myState,
+                        active: stateOnly,
+                        onTap: () => ref
+                            .read(collegeStateFilterProvider.notifier)
+                            .set(!stateOnly),
                       ),
                     ),
+                  Padding(
+                    padding: const EdgeInsets.only(right: AppSpacing.sm),
+                    child: _FilterPill(
+                      label: _typeFilter == 'All'
+                          ? 'Type'
+                          : _typeLabel(_typeFilter),
+                      active: _typeFilter != 'All',
+                      trailing: Icons.keyboard_arrow_down_rounded,
+                      onTap: () => _pickOption(
+                        title: 'College type',
+                        options: _typeFilters,
+                        optionLabel: _typeLabel,
+                        selected: _typeFilter,
+                        onSelected: (v) => setState(() => _typeFilter = v),
+                      ),
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.only(right: AppSpacing.sm),
+                    child: _FilterPill(
+                      label: _streamFilter == 'All' ? 'Stream' : _streamFilter,
+                      active: _streamFilter != 'All',
+                      trailing: Icons.keyboard_arrow_down_rounded,
+                      onTap: () => _pickOption(
+                        title: 'Stream / field',
+                        options: _streamFilters,
+                        optionLabel: (v) => v,
+                        selected: _streamFilter,
+                        onSelected: (v) => setState(() => _streamFilter = v),
+                      ),
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -126,17 +224,27 @@ class _UniversityListScreenState extends ConsumerState<UniversityListScreen> {
                           u.name.toLowerCase().contains(_query.toLowerCase());
                       final matchesType =
                           _typeFilter == 'All' || u.type == _typeFilter;
-                      return matchesQuery && matchesType;
+                      final matchesStream = _streamFilter == 'All' ||
+                          u.stream == _streamFilter;
+                      final matchesState = !stateOnly ||
+                          myState == null ||
+                          u.state.toLowerCase() == myState.toLowerCase();
+                      return matchesQuery &&
+                          matchesType &&
+                          matchesStream &&
+                          matchesState;
                     }).toList();
 
                     if (filtered.isEmpty) {
                       return ListView(
-                        children: const [
-                          SizedBox(height: 80),
+                        children: [
+                          const SizedBox(height: 80),
                           EmptyState(
                             icon: Icons.school_rounded,
                             title: 'No colleges found',
-                            message: 'Try a different search or filter.',
+                            message: stateOnly && myState != null
+                                ? 'No colleges listed in $myState yet. Turn off the $myState filter to see all colleges.'
+                                : 'Try a different search or filter.',
                           ),
                         ],
                       );
@@ -215,6 +323,7 @@ class UniversityCard extends ConsumerWidget {
                 const SizedBox(height: 2),
                 Text(
                   [
+                    if (university.stream != null) university.stream!,
                     university.state,
                     if (university.mbbsSeats != null) '${university.mbbsSeats} seats',
                   ].join(' · '),
@@ -255,6 +364,76 @@ class _CollegeSaveButton extends ConsumerWidget {
         color: isSaved ? AppColors.error : AppColors.textMuted,
       ),
       visualDensity: VisualDensity.compact,
+    );
+  }
+}
+
+/// One filter control in the Discover top bar — either a plain toggle
+/// (the state pill) or a sheet trigger (Type/Stream, `trailing` set to a
+/// chevron). Active state uses the same filled-primary look either way,
+/// so a glance at the bar tells you what's currently narrowing the list.
+class _FilterPill extends StatelessWidget {
+  const _FilterPill({
+    this.icon,
+    required this.label,
+    required this.active,
+    required this.onTap,
+    this.trailing,
+  });
+
+  final IconData? icon;
+  final String label;
+  final bool active;
+  final VoidCallback onTap;
+  final IconData? trailing;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: active ? AppColors.primary : AppColors.surface,
+      borderRadius: BorderRadius.circular(AppRadius.full),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(AppRadius.full),
+        child: Container(
+          padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.sm, vertical: 6),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(AppRadius.full),
+            border: Border.all(
+              color: active ? AppColors.primary : AppColors.border,
+            ),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (icon != null) ...[
+                Icon(icon,
+                    size: 14,
+                    color:
+                        active ? AppColors.textInverse : AppColors.primary),
+                const SizedBox(width: 4),
+              ],
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: AppFont.sm,
+                  fontWeight: AppFont.semibold,
+                  color: active ? AppColors.textInverse : AppColors.textSecondary,
+                ),
+              ),
+              if (trailing != null) ...[
+                const SizedBox(width: 2),
+                Icon(trailing,
+                    size: 16,
+                    color: active
+                        ? AppColors.textInverse
+                        : AppColors.textMuted),
+              ],
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

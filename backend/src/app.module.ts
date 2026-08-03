@@ -1,5 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { APP_GUARD } from '@nestjs/core';
+import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { AppController } from './app.controller.js';
 import { AppService } from './app.service.js';
 import { PrismaModule } from './database/prisma/prisma.module.js';
@@ -30,6 +32,7 @@ import { AuthModule } from './auth/auth.module.js';
 
 // Domain modules
 import { AvatarModule } from './modules/avatar/avatar.module.js';
+import { BlocksModule } from './modules/blocks/blocks.module.js';
 import { UsersModule } from './modules/users/users.module.js';
 import { UniversitiesModule } from './modules/universities/universities.module.js';
 import { MentorsModule } from './modules/mentors/mentors.module.js';
@@ -67,6 +70,18 @@ import { UniversityWishlistModule } from './modules/university-wishlist/universi
       validationOptions: { abortEarly: true },
     }),
 
+    // Global rate limiting — per-IP default. Stricter, purpose-specific
+    // limits (e.g. OTP send, 5/hr) already exist inside their own modules
+    // via Redis and are unaffected by this; this is the general-abuse
+    // backstop for every other endpoint (report creation, login-verify,
+    // block/unblock, etc.) that previously had no throttling at all.
+    ThrottlerModule.forRoot([
+      {
+        ttl: 60_000,
+        limit: 120,
+      },
+    ]),
+
     // Core infrastructure
     PrismaModule,
     SupabaseModule,
@@ -79,6 +94,7 @@ import { UniversityWishlistModule } from './modules/university-wishlist/universi
     // Feature modules
     HealthModule,
     AvatarModule,
+    BlocksModule,
     UsersModule,
     UniversitiesModule,
     MentorsModule,
@@ -96,6 +112,12 @@ import { UniversityWishlistModule } from './modules/university-wishlist/universi
     UniversityWishlistModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [
+    AppService,
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
+    },
+  ],
 })
 export class AppModule {}

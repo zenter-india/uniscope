@@ -39,6 +39,10 @@ class Session {
     required this.id,
     required this.aspirantId,
     required this.mentorId,
+    required this.aspirantName,
+    required this.mentorName,
+    this.aspirantAvatarUrl,
+    this.mentorAvatarUrl,
     required this.type,
     required this.status,
     required this.ratePerMinuteMinor,
@@ -56,6 +60,10 @@ class Session {
   final String id;
   final String aspirantId;
   final String mentorId;
+  final String aspirantName;
+  final String mentorName;
+  final String? aspirantAvatarUrl;
+  final String? mentorAvatarUrl;
   final String type;
   final SessionStatus status;
   final int ratePerMinuteMinor;
@@ -73,6 +81,10 @@ class Session {
         id: json['id'] as String,
         aspirantId: json['aspirantId'] as String,
         mentorId: json['mentorId'] as String,
+        aspirantName: json['aspirantName'] as String? ?? 'Aspirant',
+        mentorName: json['mentorName'] as String? ?? 'Mentor',
+        aspirantAvatarUrl: json['aspirantAvatarUrl'] as String?,
+        mentorAvatarUrl: json['mentorAvatarUrl'] as String?,
         type: json['type'] as String,
         status: SessionStatus.fromWire(json['status'] as String),
         ratePerMinuteMinor: (json['ratePerMinuteMinor'] as num).toInt(),
@@ -115,15 +127,34 @@ class SessionsApi {
   final Dio _dio;
 
   Future<Session> create(String mentorId, SessionKind type, {int? slotMinutes}) async {
-    final res = await _dio.post<Map<String, dynamic>>(
-      '/sessions',
-      data: {
-        'mentorId': mentorId,
-        'type': type.wire,
-        if (slotMinutes != null) 'slotMinutes': slotMinutes,
-      },
-    );
-    return Session.fromJson(res.data!);
+    try {
+      final res = await _dio.post<Map<String, dynamic>>(
+        '/sessions',
+        data: {
+          'mentorId': mentorId,
+          'type': type.wire,
+          if (slotMinutes != null) 'slotMinutes': slotMinutes,
+        },
+      );
+      return Session.fromJson(res.data!);
+    } on DioException catch (e) {
+      // Surface the backend's own message (e.g. "mentor is offline for
+      // calls") instead of a raw DioException string — but preserve the
+      // status code so callers can still branch on 409 (see
+      // startChatWithMentor's active-session recovery).
+      final message = e.response?.data is Map
+          ? (e.response?.data as Map)['message']
+          : null;
+      if (message is String) {
+        throw DioException(
+          requestOptions: e.requestOptions,
+          response: e.response,
+          type: e.type,
+          message: message,
+        );
+      }
+      rethrow;
+    }
   }
 
   Future<List<Session>> list() async {

@@ -4,8 +4,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/network/college_wishlist_api.dart';
 import '../../core/network/universities_api.dart';
 import '../../core/network/university_reviews_api.dart';
+import '../../core/network/users_api.dart';
 import '../../core/theme/app_theme.dart';
+import '../../state/auth_controller.dart' show UserRole;
 import '../../widgets/app_widgets.dart';
+import '../auth/auth_background.dart' show authBrandTeal, authBrandNavy, authBrandBlue;
 import '../mentors/mentor_list_screen.dart';
 
 final universityDetailProvider =
@@ -28,6 +31,12 @@ String _typeLabel(String type) {
   }
 }
 
+/// Restyled to match the provided reference: full-bleed hero image (a
+/// gradient placeholder for now — swap to Image.network(uni.imageUrl) once
+/// the backend/admin support uploading real photos, which doesn't exist
+/// yet), 3 tabs (Overview / Reviews / Mentors — the old Q&A/Students/
+/// Alumni tabs are dropped since they were unbuilt placeholders anyway),
+/// and a persistent "See mentors from this college" CTA.
 class UniversityDetailScreen extends ConsumerStatefulWidget {
   const UniversityDetailScreen({
     super.key,
@@ -45,11 +54,8 @@ class UniversityDetailScreen extends ConsumerStatefulWidget {
 class _UniversityDetailScreenState extends ConsumerState<UniversityDetailScreen> {
   static const _tabs = <(String, String)>[
     ('overview', 'Overview'),
-    ('mentors', 'Mentors'),
     ('reviews', 'Reviews'),
-    ('questions', 'Q&A'),
-    ('students', 'Students'),
-    ('alumni', 'Alumni'),
+    ('mentors', 'Mentors'),
   ];
 
   String _active = 'overview';
@@ -60,53 +66,58 @@ class _UniversityDetailScreenState extends ConsumerState<UniversityDetailScreen>
 
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: AppBar(
-        title: Text(widget.universityName),
-        actions: [
-          Consumer(
-            builder: (context, ref, _) {
-              final savedIds = ref.watch(savedCollegeIdsProvider).value;
-              return detailAsync.maybeWhen(
-                data: (uni) {
-                  final saved = savedIds?.contains(uni.id) ?? false;
-                  return IconButton(
-                    onPressed: () => ref
-                        .read(savedCollegeIdsProvider.notifier)
-                        .toggle(uni.id),
-                    icon: Icon(
-                      saved ? Icons.favorite_rounded : Icons.favorite_border_rounded,
-                      color: saved ? AppColors.error : AppColors.textInverse,
-                    ),
-                    tooltip: 'Save college',
-                  );
-                },
-                orElse: () => const SizedBox.shrink(),
-              );
-            },
-          ),
-        ],
-      ),
       body: detailAsync.when(
         loading: () => const Center(
             child: CircularProgressIndicator(color: AppColors.primary)),
-        error: (err, _) => EmptyState(
-          icon: Icons.wifi_off_rounded,
-          title: 'Could not load this college',
-          message: 'Check your connection and try again.',
-          actionLabel: 'Retry',
-          onAction: () => ref.invalidate(universityDetailProvider(widget.universitySlug)),
+        error: (err, _) => SafeArea(
+          child: EmptyState(
+            icon: Icons.wifi_off_rounded,
+            title: 'Could not load this college',
+            message: 'Check your connection and try again.',
+            actionLabel: 'Retry',
+            onAction: () => ref.invalidate(universityDetailProvider(widget.universitySlug)),
+          ),
         ),
         data: (uni) => Column(
           children: [
             _Hero(university: uni),
-            _TabBar(
-              tabs: _tabs,
-              active: _active,
-              onSelect: (id) => setState(() => _active = id),
+            Padding(
+              padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.md, vertical: AppSpacing.sm),
+              child: _TabBar(
+                tabs: _tabs,
+                active: _active,
+                onSelect: (id) => setState(() => _active = id),
+              ),
             ),
             Expanded(
               child: SingleChildScrollView(
                 child: _buildContent(context, uni),
+              ),
+            ),
+            SafeArea(
+              top: false,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(
+                    AppSpacing.md, 0, AppSpacing.md, AppSpacing.md),
+                child: SizedBox(
+                  width: double.infinity,
+                  child: FilledButton.icon(
+                    style: FilledButton.styleFrom(
+                      backgroundColor: authBrandTeal,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(AppRadius.md),
+                      ),
+                    ),
+                    onPressed: () => setState(() => _active = 'mentors'),
+                    icon: const Icon(Icons.people_alt_rounded, size: 20),
+                    label: const Text(
+                      'See mentors from this college',
+                      style: TextStyle(fontWeight: AppFont.bold),
+                    ),
+                  ),
+                ),
               ),
             ),
           ],
@@ -117,28 +128,10 @@ class _UniversityDetailScreenState extends ConsumerState<UniversityDetailScreen>
 
   Widget _buildContent(BuildContext context, University uni) {
     switch (_active) {
-      case 'mentors':
-        return _MentorsTab(university: uni);
       case 'reviews':
         return _ReviewsTab(university: uni);
-      case 'questions':
-        return const _PlaceholderTab(
-          icon: Icons.help_rounded,
-          title: 'Questions & Answers',
-          description: 'Questions about this university from prospective students.',
-        );
-      case 'students':
-        return const _PlaceholderTab(
-          icon: Icons.medical_services_rounded,
-          title: 'Verified Students',
-          description: 'Current students available for questions and chat.',
-        );
-      case 'alumni':
-        return const _PlaceholderTab(
-          icon: Icons.school_rounded,
-          title: 'Alumni',
-          description: 'Graduates and doctors from this institution.',
-        );
+      case 'mentors':
+        return _MentorsTab(university: uni);
       default:
         return _OverviewTab(university: uni);
     }
@@ -151,65 +144,114 @@ class _Hero extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(AppSpacing.lg),
-      decoration: const BoxDecoration(
-        color: AppColors.surface,
-        border: Border(bottom: BorderSide(color: AppColors.border)),
-      ),
-      child: Column(
+    return SizedBox(
+      height: 300,
+      child: Stack(
+        fit: StackFit.expand,
         children: [
+          if (university.imageUrl != null)
+            Image.network(
+              university.imageUrl!,
+              fit: BoxFit.cover,
+              errorBuilder: (_, __, ___) => const _HeroPlaceholder(),
+              loadingBuilder: (context, child, progress) =>
+                  progress == null ? child : const _HeroPlaceholder(),
+            )
+          else
+            const _HeroPlaceholder(),
+          // Bottom gradient so overlaid text stays legible regardless of
+          // the eventual photo's brightness.
           Container(
-            width: 64,
-            height: 64,
             decoration: BoxDecoration(
-              color: AppColors.primaryLight,
-              borderRadius: BorderRadius.circular(AppRadius.md),
-            ),
-            alignment: Alignment.center,
-            child: const Icon(Icons.local_hospital_rounded,
-                size: 28, color: AppColors.primary),
-          ),
-          const SizedBox(height: AppSpacing.sm),
-          Text(
-            university.name,
-            textAlign: TextAlign.center,
-            style: const TextStyle(
-              fontSize: AppFont.xl,
-              fontWeight: AppFont.extraBold,
-              color: AppColors.textPrimary,
-            ),
-          ),
-          const SizedBox(height: AppSpacing.sm),
-          Text(
-            [
-              _typeLabel(university.type),
-              university.city,
-              if (university.nirfRank != null) 'Rank #${university.nirfRank}',
-            ].join(' · '),
-            style: const TextStyle(fontSize: AppFont.sm, color: AppColors.textSecondary),
-          ),
-          const SizedBox(height: AppSpacing.md),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              _HeroStat(value: '${university.mbbsSeats ?? "—"}', label: 'Seats'),
-              const SizedBox(width: AppSpacing.xl),
-              _HeroStat(value: '${university.establishedYear ?? "—"}', label: 'Est.'),
-              const SizedBox(width: AppSpacing.xl),
-              _HeroStat(
-                value: (university.programs?.length ?? 0).toString(),
-                label: 'Programs',
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [Colors.transparent, Colors.black.withValues(alpha: 0.75)],
+                stops: const [0.4, 1.0],
               ),
-              if (university.rating != null) ...[
-                const SizedBox(width: AppSpacing.xl),
-                _HeroStat(
-                  value: '${university.rating!.toStringAsFixed(1)} ★',
-                  label: '${university.reviewCount} reviews',
+            ),
+          ),
+          SafeArea(
+            bottom: false,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+              child: Row(
+                children: [
+                  _CircleIconButton(
+                    icon: Icons.arrow_back_rounded,
+                    onTap: () => Navigator.of(context).maybePop(),
+                  ),
+                  const Spacer(),
+                  Consumer(
+                    builder: (context, ref, _) {
+                      final savedIds = ref.watch(savedCollegeIdsProvider).value;
+                      final saved = savedIds?.contains(university.id) ?? false;
+                      return _CircleIconButton(
+                        icon: saved ? Icons.favorite_rounded : Icons.favorite_border_rounded,
+                        iconColor: saved ? AppColors.error : Colors.white,
+                        onTap: () => ref
+                            .read(savedCollegeIdsProvider.notifier)
+                            .toggle(university.id),
+                      );
+                    },
+                  ),
+                ],
+              ),
+            ),
+          ),
+          Positioned(
+            left: AppSpacing.md,
+            right: AppSpacing.md,
+            bottom: AppSpacing.md,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  university.name,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: AppFont.xxl,
+                    fontWeight: AppFont.extraBold,
+                    height: 1.15,
+                  ),
                 ),
+                const SizedBox(height: AppSpacing.xs),
+                Row(
+                  children: [
+                    const Icon(Icons.location_on_rounded, size: 15, color: Colors.white70),
+                    const SizedBox(width: 3),
+                    Expanded(
+                      child: Text(
+                        '${university.city}, ${university.state}',
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(color: Colors.white70, fontSize: AppFont.sm),
+                      ),
+                    ),
+                  ],
+                ),
+                if (university.rating != null) ...[
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      const Icon(Icons.star_rounded, size: 18, color: Color(0xFFF5A524)),
+                      const SizedBox(width: 3),
+                      Text(
+                        university.rating!.toStringAsFixed(1),
+                        style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: AppFont.bold,
+                            fontSize: AppFont.sm),
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        '(${university.reviewCount} reviews)',
+                        style: const TextStyle(color: Colors.white70, fontSize: AppFont.sm),
+                      ),
+                    ],
+                  ),
+                ],
               ],
-            ],
+            ),
           ),
         ],
       ),
@@ -217,28 +259,53 @@ class _Hero extends StatelessWidget {
   }
 }
 
-class _HeroStat extends StatelessWidget {
-  const _HeroStat({required this.value, required this.label});
-  final String value;
-  final String label;
+/// Gradient placeholder shown when a university has no uploaded cover
+/// photo yet, or while one is loading / failed to load.
+class _HeroPlaceholder extends StatelessWidget {
+  const _HeroPlaceholder();
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Text(
-          value,
-          style: const TextStyle(
-            fontSize: AppFont.lg,
-            fontWeight: AppFont.extraBold,
-            color: AppColors.textPrimary,
-          ),
+    return Container(
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [authBrandTeal, authBrandNavy],
         ),
-        const SizedBox(height: AppSpacing.xs),
-        Text(label,
-            style: const TextStyle(
-                fontSize: AppFont.xs, color: AppColors.textSecondary)),
-      ],
+      ),
+      child: Center(
+        child: Icon(Icons.account_balance_rounded,
+            size: 72, color: Colors.white.withValues(alpha: 0.25)),
+      ),
+    );
+  }
+}
+
+class _CircleIconButton extends StatelessWidget {
+  const _CircleIconButton({
+    required this.icon,
+    required this.onTap,
+    this.iconColor = Colors.white,
+  });
+
+  final IconData icon;
+  final Color iconColor;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.black.withValues(alpha: 0.25),
+      shape: const CircleBorder(),
+      child: InkWell(
+        onTap: onTap,
+        customBorder: const CircleBorder(),
+        child: Padding(
+          padding: const EdgeInsets.all(8),
+          child: Icon(icon, size: 20, color: iconColor),
+        ),
+      ),
     );
   }
 }
@@ -256,66 +323,55 @@ class _TabBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: const BoxDecoration(
-        color: AppColors.surface,
-        border: Border(bottom: BorderSide(color: AppColors.border)),
-      ),
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
-        child: Row(
-          children: [
-            for (final (id, label) in tabs)
-              GestureDetector(
-                onTap: () => onSelect(id),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: AppSpacing.md, vertical: AppSpacing.sm),
-                  decoration: BoxDecoration(
-                    border: Border(
-                      bottom: BorderSide(
-                        color: active == id
-                            ? AppColors.primary
-                            : Colors.transparent,
-                        width: 2,
-                      ),
-                    ),
+    return Row(
+      children: [
+        for (final (id, label) in tabs)
+          Expanded(
+            child: GestureDetector(
+              onTap: () => onSelect(id),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 150),
+                margin: const EdgeInsets.symmetric(horizontal: 3),
+                padding: const EdgeInsets.symmetric(vertical: 10),
+                decoration: BoxDecoration(
+                  color: active == id ? authBrandTeal : AppColors.surface,
+                  borderRadius: BorderRadius.circular(AppRadius.full),
+                  border: Border.all(
+                    color: active == id ? authBrandTeal : AppColors.border,
                   ),
-                  child: Text(
-                    label,
-                    style: TextStyle(
-                      fontSize: AppFont.sm,
-                      color: active == id
-                          ? AppColors.primary
-                          : AppColors.textSecondary,
-                      fontWeight:
-                          active == id ? AppFont.bold : AppFont.medium,
-                    ),
+                ),
+                alignment: Alignment.center,
+                child: Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: AppFont.sm,
+                    fontWeight: AppFont.bold,
+                    color: active == id ? Colors.white : AppColors.textSecondary,
                   ),
                 ),
               ),
-          ],
-        ),
-      ),
+            ),
+          ),
+      ],
     );
   }
 }
 
-class _OverviewTab extends StatelessWidget {
+class _OverviewTab extends ConsumerWidget {
   const _OverviewTab({required this.university});
   final University university;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final rows = <(String, String)>[
       ('Type', _typeLabel(university.type)),
-      ('Location', '${university.city}, ${university.state}'),
       if (university.nirfRank != null) ('NIRF Rank', '#${university.nirfRank}'),
-      if (university.mbbsSeats != null) ('MBBS Seats', '${university.mbbsSeats}'),
+      // Field name is still mbbsSeats in the schema (pre-dates the
+      // multi-stream pivot), but the label shown here is stream-neutral —
+      // this same count backs seat totals for any institution type now.
+      if (university.mbbsSeats != null) ('Seats', '${university.mbbsSeats}'),
       if (university.establishedYear != null)
         ('Established', '${university.establishedYear}'),
-      if (university.website != null) ('Website', university.website!),
     ];
 
     return Padding(
@@ -389,32 +445,102 @@ class _OverviewTab extends StatelessWidget {
   }
 }
 
-class _MentorsTab extends ConsumerWidget {
-  const _MentorsTab({required this.university});
-  final University university;
+/// A single review, its author shown only as a role — never a name or
+/// handle — per the app's anonymity model.
+class _ReviewCard extends StatelessWidget {
+  const _ReviewCard({required this.review});
+  final UniversityReview review;
+
+  String get _dateLabel {
+    final d = DateTime.tryParse(review.createdAt);
+    if (d == null) return '';
+    const months = [
+      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+    ];
+    return '${months[d.month - 1]} ${d.day}, ${d.year}';
+  }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final mentorsAsync = ref.watch(mentorsByUniversityProvider(university.id));
-
-    return Padding(
-      padding: const EdgeInsets.all(AppSpacing.md),
-      child: mentorsAsync.when(
-        loading: () => const Column(children: [SkeletonCard(), SkeletonCard()]),
-        error: (err, _) => const EmptyState(
-          icon: Icons.wifi_off_rounded,
-          title: 'Could not load mentors',
-          message: 'Pull to refresh to try again.',
-        ),
-        data: (mentors) => mentors.isEmpty
-            ? const EmptyState(
-                icon: Icons.people_alt_rounded,
-                title: 'No mentors yet',
-                message: 'Verified mentors from this college will appear here.',
-              )
-            : Column(
-                children: [for (final m in mentors) MentorCard(mentor: m)],
+  Widget build(BuildContext context) {
+    return AppCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              StatusChip(
+                label: review.authorIsMentor ? 'Mentor' : 'Student',
+                color: review.authorIsMentor ? authBrandBlue : AppColors.primary,
               ),
+              const Spacer(),
+              Row(
+                children: [
+                  for (var i = 1; i <= 5; i++)
+                    Icon(
+                      i <= review.overallRating
+                          ? Icons.star_rounded
+                          : Icons.star_border_rounded,
+                      size: 16,
+                      color: const Color(0xFFF5A524),
+                    ),
+                ],
+              ),
+            ],
+          ),
+          if (_dateLabel.isNotEmpty) ...[
+            const SizedBox(height: 4),
+            Text(_dateLabel,
+                style: const TextStyle(fontSize: AppFont.xs, color: AppColors.textMuted)),
+          ],
+          if (review.body != null && review.body!.trim().isNotEmpty) ...[
+            const SizedBox(height: AppSpacing.sm),
+            Text(review.body!,
+                style: const TextStyle(
+                    fontSize: AppFont.sm, color: AppColors.textPrimary, height: 1.4)),
+          ],
+          if ((review.pros != null && review.pros!.trim().isNotEmpty) ||
+              (review.cons != null && review.cons!.trim().isNotEmpty)) ...[
+            const SizedBox(height: AppSpacing.sm),
+            if (review.pros != null && review.pros!.trim().isNotEmpty)
+              _ProsConsLine(
+                icon: Icons.thumb_up_rounded,
+                color: AppColors.primary,
+                text: review.pros!,
+              ),
+            if (review.cons != null && review.cons!.trim().isNotEmpty)
+              _ProsConsLine(
+                icon: Icons.thumb_down_rounded,
+                color: const Color(0xFFE08E45),
+                text: review.cons!,
+              ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _ProsConsLine extends StatelessWidget {
+  const _ProsConsLine({required this.icon, required this.color, required this.text});
+  final IconData icon;
+  final Color color;
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 4),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, size: 14, color: color),
+          const SizedBox(width: AppSpacing.xs),
+          Expanded(
+            child: Text(text,
+                style: const TextStyle(fontSize: AppFont.sm, color: AppColors.textPrimary)),
+          ),
+        ],
       ),
     );
   }
@@ -428,13 +554,20 @@ class _ReviewsTab extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final reviewsAsync = ref.watch(universityReviewsListProvider(university.id));
     final hasReviewedAsync = ref.watch(hasReviewedUniversityProvider(university.id));
+    final myProfile = ref.watch(myProfileProvider).asData?.value;
+    // Only verified mentors can post — the backend enforces this too, but
+    // showing the button to everyone else just leads to a 403 after they've
+    // already filled out the whole form. "Verified students and alumni"
+    // means mentors here: aspirants are prospective, not yet attending.
+    final canReview = myProfile?.role == UserRole.mentor &&
+        myProfile?.verificationStatus == 'VERIFIED';
 
     return Padding(
       padding: const EdgeInsets.all(AppSpacing.md),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          if (hasReviewedAsync.value == false)
+          if (hasReviewedAsync.value == false && canReview)
             SizedBox(
               width: double.infinity,
               child: OutlinedButton.icon(
@@ -475,15 +608,23 @@ class _ReviewsTab extends ConsumerWidget {
               title: 'Could not load reviews',
               message: 'Pull to refresh to try again.',
             ),
-            data: (reviews) => reviews.isEmpty
-                ? const EmptyState(
-                    icon: Icons.star_rounded,
-                    title: 'No reviews yet',
-                    message: 'Be the first verified student or alumni to review.',
-                  )
-                : Column(
-                    children: [for (final r in reviews) _ReviewCard(review: r)],
-                  ),
+            data: (reviews) {
+              if (reviews.isEmpty) {
+                return const EmptyState(
+                  icon: Icons.rate_review_rounded,
+                  title: 'No reviews yet',
+                  message: 'Be the first verified student or mentor to review.',
+                );
+              }
+              return Column(
+                children: [
+                  for (final review in reviews) ...[
+                    _ReviewCard(review: review),
+                    const SizedBox(height: AppSpacing.md),
+                  ],
+                ],
+              );
+            },
           ),
         ],
       ),
@@ -491,54 +632,32 @@ class _ReviewsTab extends ConsumerWidget {
   }
 }
 
-class _ReviewCard extends StatelessWidget {
-  const _ReviewCard({required this.review});
-  final UniversityReview review;
+class _MentorsTab extends ConsumerWidget {
+  const _MentorsTab({required this.university});
+  final University university;
 
   @override
-  Widget build(BuildContext context) {
-    return AppCard(
-      margin: const EdgeInsets.only(bottom: AppSpacing.sm),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              AppAvatar(name: review.authorDisplayName, size: 32),
-              const SizedBox(width: AppSpacing.sm),
-              Expanded(
-                child: Text(review.authorDisplayName,
-                    style: const TextStyle(
-                        fontWeight: AppFont.bold, fontSize: AppFont.sm)),
+  Widget build(BuildContext context, WidgetRef ref) {
+    final mentorsAsync = ref.watch(mentorsByUniversityProvider(university.id));
+
+    return Padding(
+      padding: const EdgeInsets.all(AppSpacing.md),
+      child: mentorsAsync.when(
+        loading: () => const Column(children: [SkeletonCard(), SkeletonCard()]),
+        error: (err, _) => const EmptyState(
+          icon: Icons.wifi_off_rounded,
+          title: 'Could not load mentors',
+          message: 'Pull to refresh to try again.',
+        ),
+        data: (mentors) => mentors.isEmpty
+            ? const EmptyState(
+                icon: Icons.people_alt_rounded,
+                title: 'No mentors yet',
+                message: 'Verified mentors from this college will appear here.',
+              )
+            : Column(
+                children: [for (final m in mentors) MentorCard(mentor: m)],
               ),
-              Row(
-                children: [
-                  const Icon(Icons.star_rounded, size: 16, color: AppColors.warning),
-                  const SizedBox(width: 2),
-                  Text('${review.overallRating}',
-                      style: const TextStyle(
-                          fontWeight: AppFont.bold, fontSize: AppFont.sm)),
-                ],
-              ),
-            ],
-          ),
-          if (review.body != null && review.body!.isNotEmpty) ...[
-            const SizedBox(height: AppSpacing.sm),
-            Text(review.body!,
-                style: const TextStyle(fontSize: AppFont.sm, height: 1.4)),
-          ],
-          if (review.pros != null && review.pros!.isNotEmpty) ...[
-            const SizedBox(height: AppSpacing.sm),
-            Text('👍 ${review.pros}',
-                style: const TextStyle(
-                    fontSize: AppFont.xs, color: AppColors.success)),
-          ],
-          if (review.cons != null && review.cons!.isNotEmpty) ...[
-            const SizedBox(height: 4),
-            Text('👎 ${review.cons}',
-                style: const TextStyle(fontSize: AppFont.xs, color: AppColors.error)),
-          ],
-        ],
       ),
     );
   }
@@ -648,7 +767,7 @@ class _WriteReviewSheetState extends ConsumerState<_WriteReviewSheet> {
               controller: _prosController,
               maxLength: 1000,
               decoration: const InputDecoration(
-                labelText: 'Pros (optional)',
+                labelText: 'Pros (optional) — e.g. "Great faculty"',
                 border: OutlineInputBorder(),
               ),
             ),
@@ -656,7 +775,7 @@ class _WriteReviewSheetState extends ConsumerState<_WriteReviewSheet> {
               controller: _consController,
               maxLength: 1000,
               decoration: const InputDecoration(
-                labelText: 'Cons (optional)',
+                labelText: 'Cons (optional) — e.g. "Crowded labs"',
                 border: OutlineInputBorder(),
               ),
             ),
@@ -682,26 +801,6 @@ class _WriteReviewSheetState extends ConsumerState<_WriteReviewSheet> {
           ],
         ),
       ),
-    );
-  }
-}
-
-class _PlaceholderTab extends StatelessWidget {
-  const _PlaceholderTab({
-    required this.icon,
-    required this.title,
-    required this.description,
-  });
-
-  final IconData icon;
-  final String title;
-  final String description;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(AppSpacing.xl).copyWith(top: AppSpacing.xxl),
-      child: EmptyState(icon: icon, title: title, message: description),
     );
   }
 }

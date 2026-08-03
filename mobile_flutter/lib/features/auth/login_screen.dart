@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/network/auth_api.dart';
 import '../../core/theme/app_theme.dart';
+import 'auth_background.dart';
 
 /// Port of RN `auth/LoginScreen.tsx`.
 class LoginScreen extends ConsumerStatefulWidget {
@@ -57,166 +58,187 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.surface,
-      appBar: AppBar(title: const Text('Sign In')),
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(
-              AppSpacing.xl, AppSpacing.xxl, AppSpacing.xl, AppSpacing.xl),
+      body: AuthBackground(
+        child: SafeArea(
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                'Enter your mobile number',
-                style: TextStyle(
-                  fontSize: AppFont.xxl,
-                  fontWeight: AppFont.bold,
-                  color: AppColors.textPrimary,
-                ),
-              ),
-              const SizedBox(height: AppSpacing.sm),
-              const Text(
-                "We'll send a one-time code to verify your number.",
-                style: TextStyle(
-                  fontSize: AppFont.md,
-                  color: AppColors.textSecondary,
-                  height: 1.5,
-                ),
-              ),
-              const SizedBox(height: AppSpacing.lg),
-              Container(
-                decoration: BoxDecoration(
-                  border: Border.all(
-                    color: _error.isNotEmpty
-                        ? AppColors.error
-                        : AppColors.border,
-                    width: 1.5,
-                  ),
-                  borderRadius: BorderRadius.circular(AppRadius.md),
-                ),
-                clipBehavior: Clip.antiAlias,
+              Padding(
+                padding: const EdgeInsets.fromLTRB(
+                    AppSpacing.md, AppSpacing.sm, AppSpacing.md, 0),
                 child: Row(
                   children: [
-                    Container(
-                      padding: const EdgeInsets.all(AppSpacing.md),
-                      decoration: const BoxDecoration(
-                        color: AppColors.background,
-                        border: Border(
-                          right: BorderSide(color: AppColors.border, width: 1.5),
-                        ),
-                      ),
-                      child: const Text(
-                        '🇮🇳 +91',
-                        style: TextStyle(
-                          fontSize: AppFont.md,
-                          color: AppColors.textPrimary,
-                          fontWeight: AppFont.medium,
-                        ),
-                      ),
-                    ),
-                    Expanded(
-                      child: TextField(
-                        controller: _controller,
-                        autofocus: true,
-                        enabled: !_loading,
-                        keyboardType: TextInputType.phone,
-                        maxLength: 10,
-                        inputFormatters: [
-                          FilteringTextInputFormatter.digitsOnly,
-                        ],
-                        onChanged: (t) => setState(() {
-                          _phone = t;
-                          if (_error.isNotEmpty) _error = '';
-                        }),
-                        style: const TextStyle(
-                          fontSize: AppFont.md,
-                          color: AppColors.textPrimary,
-                          letterSpacing: 1,
-                        ),
-                        decoration: const InputDecoration(
-                          counterText: '',
-                          border: InputBorder.none,
-                          contentPadding: EdgeInsets.symmetric(
-                              horizontal: AppSpacing.md, vertical: AppSpacing.md),
-                          hintText: '10-digit mobile number',
-                          hintStyle: TextStyle(color: AppColors.textMuted),
-                        ),
-                      ),
+                    IconButton(
+                      onPressed: () => context.pop(),
+                      icon: const Icon(Icons.arrow_back_rounded,
+                          color: authBrandNavy),
                     ),
                   ],
                 ),
               ),
-              if (_error.isNotEmpty) ...[
-                const SizedBox(height: AppSpacing.sm),
-                Text(_error,
-                    style: const TextStyle(
-                        fontSize: AppFont.sm, color: AppColors.error)),
-              ],
-              const SizedBox(height: AppSpacing.md),
-              const Text(
-                'Standard SMS rates may apply. OTP expires in 10 minutes.',
-                style: TextStyle(
-                  fontSize: AppFont.sm,
-                  color: AppColors.textMuted,
-                  height: 1.4,
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xl),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const SizedBox(height: AppSpacing.lg),
+                      Row(
+                        children: [
+                          const AuthLogoMark(size: 44),
+                          const SizedBox(width: AppSpacing.sm),
+                          const Text(
+                            'Uniscope',
+                            style: TextStyle(
+                              fontSize: AppFont.lg,
+                              fontWeight: AppFont.extraBold,
+                              color: authBrandNavy,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: AppSpacing.xl),
+                      const Text(
+                        'Welcome',
+                        style: TextStyle(
+                          fontSize: 32,
+                          fontWeight: AppFont.extraBold,
+                          color: authBrandNavy,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      const Text(
+                        'Login or create your account',
+                        style: TextStyle(
+                          fontSize: AppFont.md,
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                      const SizedBox(height: AppSpacing.xl),
+                      Container(
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          border: Border.all(
+                            color: _error.isNotEmpty
+                                ? AppColors.error
+                                : AppColors.border,
+                            width: 1.5,
+                          ),
+                          borderRadius: BorderRadius.circular(AppRadius.full),
+                        ),
+                        clipBehavior: Clip.antiAlias,
+                        child: Row(
+                          children: [
+                            const Padding(
+                              padding: EdgeInsets.symmetric(
+                                  horizontal: AppSpacing.md, vertical: AppSpacing.md),
+                              child: Text(
+                                '🇮🇳 +91',
+                                style: TextStyle(
+                                  fontSize: AppFont.md,
+                                  color: authBrandNavy,
+                                  fontWeight: AppFont.medium,
+                                ),
+                              ),
+                            ),
+                            Container(width: 1, height: 24, color: AppColors.border),
+                            Expanded(
+                              child: TextField(
+                                controller: _controller,
+                                autofocus: true,
+                                enabled: !_loading,
+                                keyboardType: TextInputType.phone,
+                                maxLength: 10,
+                                inputFormatters: [
+                                  FilteringTextInputFormatter.digitsOnly,
+                                ],
+                                onChanged: (t) => setState(() {
+                                  _phone = t;
+                                  if (_error.isNotEmpty) _error = '';
+                                }),
+                                style: const TextStyle(
+                                  fontSize: AppFont.md,
+                                  color: authBrandNavy,
+                                  letterSpacing: 1,
+                                ),
+                                decoration: const InputDecoration(
+                                  counterText: '',
+                                  border: InputBorder.none,
+                                  contentPadding: EdgeInsets.symmetric(
+                                      horizontal: AppSpacing.md,
+                                      vertical: AppSpacing.md),
+                                  hintText: 'Enter your phone number',
+                                  hintStyle: TextStyle(color: AppColors.textMuted),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      if (_error.isNotEmpty) ...[
+                        const SizedBox(height: AppSpacing.sm),
+                        Text(_error,
+                            style: const TextStyle(
+                                fontSize: AppFont.sm, color: AppColors.error)),
+                      ],
+                      const SizedBox(height: AppSpacing.lg),
+                      SizedBox(
+                        width: double.infinity,
+                        child: FilledButton(
+                          style: FilledButton.styleFrom(
+                            backgroundColor: authBrandTeal,
+                            disabledBackgroundColor: AppColors.border,
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(AppRadius.md),
+                            ),
+                          ),
+                          onPressed: (!_isValid || _loading) ? null : _sendOtp,
+                          child: _loading
+                              ? const SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    valueColor:
+                                        AlwaysStoppedAnimation(Colors.white),
+                                  ),
+                                )
+                              : const Text(
+                                  'Continue',
+                                  style: TextStyle(
+                                    fontSize: AppFont.md,
+                                    fontWeight: AppFont.bold,
+                                  ),
+                                ),
+                        ),
+                      ),
+                      const SizedBox(height: AppSpacing.lg),
+                      const Padding(
+                        padding: EdgeInsets.only(bottom: AppSpacing.lg),
+                        child: Text.rich(
+                          TextSpan(
+                            text: 'By continuing you agree to ',
+                            style: TextStyle(
+                              fontSize: AppFont.xs,
+                              color: AppColors.textMuted,
+                            ),
+                            children: [
+                              TextSpan(
+                                text: 'Terms & Privacy',
+                                style: TextStyle(
+                                  color: authBrandTeal,
+                                  fontWeight: AppFont.semibold,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
-              const SizedBox(height: AppSpacing.lg),
-              _SendButton(
-                enabled: _isValid,
-                loading: _loading,
-                onPressed: _sendOtp,
-              ),
             ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _SendButton extends StatelessWidget {
-  const _SendButton({
-    required this.enabled,
-    required this.loading,
-    required this.onPressed,
-  });
-
-  final bool enabled;
-  final bool loading;
-  final VoidCallback onPressed;
-
-  @override
-  Widget build(BuildContext context) {
-    final disabled = !enabled || loading;
-    return SizedBox(
-      width: double.infinity,
-      child: Material(
-        color: disabled ? AppColors.border : AppColors.primary,
-        borderRadius: BorderRadius.circular(AppRadius.md),
-        child: InkWell(
-          onTap: disabled ? null : onPressed,
-          borderRadius: BorderRadius.circular(AppRadius.md),
-          child: Container(
-            height: 50,
-            alignment: Alignment.center,
-            child: loading
-                ? const SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      valueColor: AlwaysStoppedAnimation(AppColors.textInverse),
-                    ),
-                  )
-                : const Text(
-                    'Send OTP',
-                    style: TextStyle(
-                      color: AppColors.textInverse,
-                      fontSize: AppFont.md,
-                      fontWeight: AppFont.semibold,
-                    ),
-                  ),
           ),
         ),
       ),

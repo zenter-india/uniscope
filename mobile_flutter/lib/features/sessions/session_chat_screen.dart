@@ -8,7 +8,17 @@ import '../../core/network/chat_api.dart';
 import '../../core/network/sessions_api.dart';
 import '../../core/theme/app_theme.dart';
 import '../../state/auth_controller.dart';
+import '../../widgets/app_widgets.dart';
+import '../reports/safety_menu_sheet.dart';
+import '../wallet/low_balance_sheet.dart';
+import '../wallet/wallet_screen.dart' show walletBalanceProvider;
 import 'call_request_sheet.dart';
+
+/// Shortest bookable call slot, in Uniminutes — mirrors the backend's
+/// CreateSessionDto.CALL_SLOT_MINUTES. Below this balance, booking any
+/// slot is impossible, so the call-request action is gated here instead
+/// of letting the sheet open and fail at submit time.
+const _minCallSlotUniminutes = 5;
 
 /// Real Stream Chat UI for a CHAT session. Chat is free and has no pricing
 /// or timing shown anywhere in this screen — the only place a cost ever
@@ -152,15 +162,69 @@ class _SessionChatScreenState extends ConsumerState<SessionChatScreen> {
         channel: _channel!,
         child: Scaffold(
           appBar: StreamChannelHeader(
+            // Stream's default header avatar comes from its own
+            // StreamChannelAvatar in the `actions` slot — but we replace
+            // `actions` below (call + report/block buttons), which drops
+            // it. It also can't render our SVG avatars anyway, so this
+            // title override uses the app's own AppAvatar (same widget
+            // used everywhere else a mentor/aspirant is shown) instead.
+            title: Builder(
+              builder: (context) {
+                final currentUserId = ref.read(authControllerProvider).user!.id;
+                final isAspirant = currentUserId == _session!.aspirantId;
+                final otherName =
+                    isAspirant ? _session!.mentorName : _session!.aspirantName;
+                final otherAvatarUrl = isAspirant
+                    ? _session!.mentorAvatarUrl
+                    : _session!.aspirantAvatarUrl;
+                return Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    AppAvatar(name: otherName, avatarUrl: otherAvatarUrl, size: 32),
+                    const SizedBox(width: AppSpacing.sm),
+                    Expanded(child: StreamChannelName(channel: _channel!)),
+                  ],
+                );
+              },
+            ),
             actions: [
               IconButton(
                 icon: const Icon(Icons.call_rounded, color: AppColors.primary),
                 tooltip: 'Request a call',
-                onPressed: () => showCallRequestSheet(
-                  context,
-                  ref,
-                  mentorId: _session!.mentorId,
-                ),
+                onPressed: () async {
+                  final wallet =
+                      await ref.read(walletBalanceProvider.future);
+                  if (!context.mounted) return;
+                  if (wallet.balanceUniminutes < _minCallSlotUniminutes) {
+                    await showLowBalanceSheet(context,
+                        balanceUniminutes: wallet.balanceUniminutes);
+                    return;
+                  }
+                  if (!context.mounted) return;
+                  await showCallRequestSheet(
+                    context,
+                    ref,
+                    mentorId: _session!.mentorId,
+                  );
+                },
+              ),
+              Builder(
+                builder: (context) {
+                  final currentUserId = ref.read(authControllerProvider).user!.id;
+                  final otherUserId = currentUserId == _session!.aspirantId
+                      ? _session!.mentorId
+                      : _session!.aspirantId;
+                  return IconButton(
+                    icon: const Icon(Icons.more_vert_rounded, color: AppColors.textSecondary),
+                    tooltip: 'Report or block',
+                    onPressed: () => showSafetyMenuSheet(
+                      context,
+                      ref,
+                      userId: otherUserId,
+                      userLabel: 'this user',
+                    ),
+                  );
+                },
               ),
             ],
           ),

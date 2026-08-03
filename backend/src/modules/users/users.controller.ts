@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   HttpCode,
   HttpStatus,
@@ -18,6 +19,7 @@ import type { JwtPayload } from '../../auth/decorators/current-user.decorator.js
 import { Roles } from '../../auth/decorators/roles.decorator.js';
 import { RolesGuard } from '../../auth/guards/roles.guard.js';
 import { AVATAR_OPTION_CATALOG } from '../avatar/avatar.constants.js';
+import { AvatarService } from '../avatar/avatar.service.js';
 import { StorePushTokenDto } from '../notifications/dto/list-notifications.dto.js';
 import { NotificationsService } from '../notifications/notifications.service.js';
 import { ListUsersDto } from './dto/list-users.dto.js';
@@ -33,7 +35,23 @@ export class UsersController {
   constructor(
     private readonly usersService: UsersService,
     private readonly notificationsService: NotificationsService,
+    private readonly avatarService: AvatarService,
   ) {}
+
+  /** Live availability check for the mentor wizard's Alias field. */
+  @Get('check-display-name')
+  async checkDisplayName(
+    @CurrentUser() user: JwtPayload,
+    @Query('name') name: string,
+  ) {
+    const trimmed = (name ?? '').trim();
+    if (trimmed.length < 2) {
+      return { available: false };
+    }
+    return {
+      available: await this.usersService.isDisplayNameAvailable(trimmed, user.sub),
+    };
+  }
 
   @Get('me')
   async getMe(@CurrentUser() user: JwtPayload) {
@@ -66,6 +84,16 @@ export class UsersController {
     return this.usersService.getAvatarConfig(user.sub);
   }
 
+  /** Renders the given config to SVG without touching storage or the DB —
+   * lets the customiser show a live preview on every option tap instead of
+   * only after Save. */
+  @Post('me/avatar/preview')
+  @HttpCode(HttpStatus.OK)
+  async previewAvatar(@Body() body: unknown) {
+    const config = this.avatarService.validateConfig(body);
+    return { svg: await this.avatarService.renderSvg(config) };
+  }
+
   /** Body is the raw config object; every field is validated against the
    * catalogue in AvatarService before anything is rendered or stored. */
   @Patch('me/avatar')
@@ -89,6 +117,13 @@ export class UsersController {
     @Body() dto: UpdateRoleDto,
   ) {
     return toPublicUser(await this.usersService.updateRole(user.sub, dto));
+  }
+
+  /** Self-service account deletion — soft delete, see UsersService.deleteMe. */
+  @Delete('me')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async deleteMe(@CurrentUser() user: JwtPayload) {
+    await this.usersService.deleteMe(user.sub);
   }
 
   @Post('me/push-token')

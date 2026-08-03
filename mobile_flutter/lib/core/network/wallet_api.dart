@@ -3,12 +3,36 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'dio_client.dart';
 
+/// Minor units in one Uniminute — mirrors the backend's Uniminute
+/// conversion. 1 Uniminute = 1000 minor units = one minute of mentor call
+/// time, so a balance in Uniminutes reads directly as "minutes I can talk".
+const int kMinorUnitsPerUniminute = 1000;
+
+/// Uniminutes are the ONLY unit shown to students outside the top-up sheet.
+/// Rupees appear at top-up and nowhere else — see the pricing decision in
+/// CLAUDE.md. Floor rather than round: never tell someone they have a
+/// minute they can't actually spend.
+int minorToUniminutes(int minor) => minor ~/ kMinorUnitsPerUniminute;
+
+/// Uniminutes a fixed call slot costs. Slots are priced at exactly one
+/// Uniminute per minute, so this is the identity — it exists so the
+/// relationship is stated once instead of assumed at each call site.
+int slotUniminutes(int slotMinutes) => slotMinutes;
+
+String uniminutesLabel(int count) =>
+    count == 1 ? '1 Uniminute' : '$count Uniminutes';
+
 class Wallet {
   const Wallet({required this.id, required this.balanceMinor});
 
   final String id;
   final int balanceMinor;
 
+  /// Student-facing balance. This is what the wallet screen shows.
+  int get balanceUniminutes => minorToUniminutes(balanceMinor);
+
+  /// Rupee value — mentor earnings and payouts only. Never render this on
+  /// an aspirant surface outside the top-up sheet.
   double get balanceRupees => balanceMinor / 100;
 
   factory Wallet.fromJson(Map<String, dynamic> json) => Wallet(

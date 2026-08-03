@@ -188,6 +188,8 @@ model User {
   processedPayouts      PayoutRequest[]       @relation("ProcessedPayouts")
   savedByAspirants      SavedMentor[]         @relation("SavedMentorTarget")
   savedMentors          SavedMentor[]         @relation("SavedMentorAspirant")
+  blockedUsers          BlockedUser[]         @relation("BlockerRelation")
+  blockedByUsers        BlockedUser[]         @relation("BlockedRelation")
   savedUniversities     SavedUniversity[]
 
   @@index([role])
@@ -218,7 +220,12 @@ model UserProfile {
   state                    String?  @db.VarChar(100)
   city                     String?  @db.VarChar(100)
   qualification            String?  @db.VarChar(50)
-  stream                   String?  @db.VarChar(20)
+  /// Dual-purpose by role, same pattern as `specialty`: for an ASPIRANT this
+  /// is their school-level stream (PCB/PCM/PCMB/Other); for a MENTOR it's
+  /// their college field of study (Medical/Engineering/Law/etc — see
+  /// kMentorStreams mobile-side). Widened from VARCHAR(20) since mentor
+  /// values like "Commerce & Business" don't fit the aspirant-only length.
+  stream                   String?  @db.VarChar(50)
   dateOfBirth              DateTime? @map("date_of_birth") @db.Date
   /// Course the aspirant is pursuing/aiming for, e.g. "MBBS", "BDS" — distinct
   /// from `stream` (PCB/PCM at the school level).
@@ -233,6 +240,12 @@ model UserProfile {
   /// government college").
   goals                    String[] @default([])
   isMentorAvailable        Boolean  @default(false) @map("is_mentor_available")
+  /// When isMentorAvailable was last set to true. Availability auto-expires
+  /// after AVAILABILITY_TTL_HOURS so a mentor who toggles on and forgets
+  /// doesn't advertise call availability indefinitely — the stored boolean
+  /// stays true, but every read path treats it as false once stale (see
+  /// isCallAvailable in availability.ts). Null means never toggled on.
+  availabilitySetAt        DateTime? @map("availability_set_at") @db.Timestamptz
   /// Rate charged per minute of session time, in minor units (paise). Null until
   /// the mentor sets a rate; enforced non-null at the service layer before a
   /// mentor can accept bookings.
@@ -268,6 +281,11 @@ model University {
   type            UniversityType
   state           String                   @db.VarChar(100)
   city            String                   @db.VarChar(100)
+  /// Primary academic field (Medical/Engineering/Law/etc — same picklist as
+  /// UserProfile.stream, see kStreamOptions mobile-side). Null for older
+  /// rows seeded before the multi-stream pivot; the Discover filter treats
+  /// null as unfiltered/uncategorized rather than defaulting to Medical.
+  stream          String?                  @db.VarChar(50)
   nirfRank        Int?                     @map("nirf_rank") @db.SmallInt
   mbbsSeats       Int?                     @map("mbbs_seats") @db.SmallInt
   establishedYear Int?                     @map("established_year") @db.SmallInt
@@ -288,6 +306,7 @@ model University {
 
   @@index([state])
   @@index([type])
+  @@index([stream])
   @@index([nirfRank])
   @@map("universities")
 }
@@ -407,6 +426,25 @@ model SavedMentor {
   @@unique([aspirantId, mentorId])
   @@index([mentorId])
   @@map("saved_mentors")
+}
+
+/// A user blocking another user — one-directional (blocker → blocked).
+/// Enforced at session creation (SessionsService.create): neither party can
+/// start a new chat/call session with someone who blocked them or whom they
+/// blocked. Does not retroactively affect already-open sessions/chat
+/// history — blocking only prevents new contact going forward.
+model BlockedUser {
+  id        String   @id @default(uuid())
+  blockerId String   @map("blocker_id")
+  blockedId String   @map("blocked_id")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  blocker User @relation("BlockerRelation", fields: [blockerId], references: [id])
+  blocked User @relation("BlockedRelation", fields: [blockedId], references: [id])
+
+  @@unique([blockerId, blockedId])
+  @@index([blockedId])
+  @@map("blocked_users")
 }
 
 /// An aspirant's saved/wishlisted university — pure bookmark, no

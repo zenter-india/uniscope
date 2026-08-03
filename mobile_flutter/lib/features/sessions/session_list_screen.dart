@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/network/reviews_api.dart';
 import '../../core/network/sessions_api.dart';
+import '../../core/network/wallet_api.dart';
 import '../../core/theme/app_theme.dart';
 import '../../state/auth_controller.dart';
 import '../../widgets/app_widgets.dart';
@@ -27,6 +28,7 @@ class SessionListScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final sessionsAsync = ref.watch(sessionsListProvider);
     final myUserId = ref.watch(authControllerProvider).user?.id;
+    final isMentorAccount = ref.watch(authControllerProvider).user?.role == UserRole.mentor;
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -63,14 +65,21 @@ class SessionListScreen extends ConsumerWidget {
                       ? ListView(
                           children: [
                             const SizedBox(height: 80),
-                            EmptyState(
-                              icon: Icons.forum_rounded,
-                              title: 'No sessions yet',
-                              message:
-                                  'Book a chat or audio call with a mentor to get started.',
-                              actionLabel: 'Find a Mentor',
-                              onAction: () => context.go('/mentors'),
-                            ),
+                            isMentorAccount
+                                ? const EmptyState(
+                                    icon: Icons.forum_rounded,
+                                    title: 'No sessions yet',
+                                    message:
+                                        'Sessions will show up here once an aspirant books a chat or call with you.',
+                                  )
+                                : EmptyState(
+                                    icon: Icons.forum_rounded,
+                                    title: 'No sessions yet',
+                                    message:
+                                        'Book a chat or audio call with a mentor to get started.',
+                                    actionLabel: 'Find a Mentor',
+                                    onAction: () => context.go('/mentors'),
+                                  ),
                           ],
                         )
                       : ListView.builder(
@@ -169,7 +178,7 @@ class _SessionCardState extends ConsumerState<_SessionCard> {
         return AppColors.warning;
       case SessionStatus.accepted:
       case SessionStatus.inProgress:
-        return AppColors.success;
+        return AppColors.primary;
       case SessionStatus.completed:
         return AppColors.info;
       case SessionStatus.rejected:
@@ -205,18 +214,12 @@ class _SessionCardState extends ConsumerState<_SessionCard> {
         children: [
           Row(
             children: [
-              Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: AppColors.primaryLight,
-                  borderRadius: BorderRadius.circular(AppRadius.sm),
-                ),
-                child: Icon(
-                  isCall ? Icons.call_rounded : Icons.forum_rounded,
-                  size: 19,
-                  color: AppColors.primary,
-                ),
+              AppAvatar(
+                name: widget.isMentor ? session.aspirantName : session.mentorName,
+                avatarUrl: widget.isMentor
+                    ? session.aspirantAvatarUrl
+                    : session.mentorAvatarUrl,
+                size: 40,
               ),
               const SizedBox(width: AppSpacing.sm),
               Expanded(
@@ -224,15 +227,15 @@ class _SessionCardState extends ConsumerState<_SessionCard> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      widget.isMentor ? 'Aspirant request' : 'Your request',
+                      widget.isMentor ? session.aspirantName : session.mentorName,
                       style: const TextStyle(
                           fontWeight: AppFont.bold, fontSize: AppFont.md),
                     ),
                     const SizedBox(height: 2),
                     Text(
                       isCall && session.callSlotMinutes != null
-                          ? 'Audio Call · ${session.callSlotMinutes} min slot · ₹${(session.callSlotMinutes! * session.ratePerMinuteMinor / 100).toStringAsFixed(0)}'
-                          : 'Chat · Free',
+                          ? 'Audio call · ${uniminutesLabel(slotUniminutes(session.callSlotMinutes!))}'
+                          : 'Chat',
                       style: const TextStyle(
                           fontSize: AppFont.xs,
                           color: AppColors.textSecondary),
@@ -272,6 +275,11 @@ class _SessionCardState extends ConsumerState<_SessionCard> {
                   ),
                 ),
               ] else if (!widget.isMentor &&
+                  // Only AUDIO_CALL still has a "withdraw my request" phase —
+                  // CHAT sessions open immediately and skip PENDING/ACCEPTED
+                  // entirely, so there's never an outstanding chat request to
+                  // cancel.
+                  isCall &&
                   (session.status == SessionStatus.pending ||
                       session.status == SessionStatus.accepted)) ...[
                 Expanded(
@@ -297,7 +305,7 @@ class _SessionCardState extends ConsumerState<_SessionCard> {
                 Expanded(
                   child: FilledButton.icon(
                     style:
-                        FilledButton.styleFrom(backgroundColor: AppColors.success),
+                        FilledButton.styleFrom(backgroundColor: AppColors.primary),
                     onPressed: () => context.push('/call/${session.id}'),
                     icon: const Icon(Icons.call_rounded, size: 17),
                     label: const Text('Join Call'),
@@ -345,7 +353,7 @@ class _ReviewPrompt extends ConsumerWidget {
             padding: EdgeInsets.only(top: AppSpacing.sm),
             child: Row(
               children: [
-                Icon(Icons.check_circle_rounded, size: 15, color: AppColors.success),
+                Icon(Icons.check_circle_rounded, size: 15, color: AppColors.primary),
                 SizedBox(width: 4),
                 Text('You reviewed this session',
                     style: TextStyle(fontSize: AppFont.xs, color: AppColors.textSecondary)),

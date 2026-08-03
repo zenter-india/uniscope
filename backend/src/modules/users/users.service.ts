@@ -1,11 +1,13 @@
 import {
   BadRequestException,
+  ForbiddenException,
   Injectable,
   Logger,
   NotFoundException,
 } from '@nestjs/common';
 import { Prisma, User, UserRole } from '@prisma/client';
 import { generatePseudonym } from '../../common/helpers/pseudonym.helper.js';
+import { encryptRealName } from '../../common/helpers/profile-encryption.helper.js';
 import { PrismaService } from '../../database/prisma/prisma.service.js';
 import { AvatarConfig } from '../avatar/avatar.constants.js';
 import { AvatarService } from '../avatar/avatar.service.js';
@@ -23,6 +25,11 @@ const ALLOWED_ROLE_TRANSITIONS: Record<UserRole, UserRole[]> = {
 const ADMIN_DEFAULT_LIMIT = 20;
 const ADMIN_MAX_LIMIT = 50;
 
+/** Self-deleted accounts can be reactivated by simply logging back in, but
+ * only within this window of the deletion — matches the mobile delete
+ * dialog's copy. Past this, findOrCreateByPhoneHash refuses to reactivate. */
+const ACCOUNT_REACTIVATION_WINDOW_DAYS = 60;
+
 @Injectable()
 export class UsersService {
   private readonly logger = new Logger(UsersService.name);
@@ -39,12 +46,34 @@ export class UsersService {
       where: { phoneHash },
     });
 
+    if (existing?.deletedAt) {
+      const daysSinceDeletion =
+        (Date.now() - existing.deletedAt.getTime()) / (1000 * 60 * 60 * 24);
+      if (daysSinceDeletion > ACCOUNT_REACTIVATION_WINDOW_DAYS) {
+        throw new ForbiddenException(
+          `This account was deleted more than ${ACCOUNT_REACTIVATION_WINDOW_DAYS} days ago and can no longer be reactivated. Contact support if you need help.`,
+        );
+      }
+    }
+
     if (existing) {
-      await this.prisma.user.update({
+      // A soft-deleted account (see deleteMe) is reactivated by its owner
+      // simply proving phone ownership again via OTP, within
+      // ACCOUNT_REACTIVATION_WINDOW_DAYS of deletion — matches the app's
+      // existing non-destructive data model (ban/unban) rather than
+      // permanently burning the phone number. Does NOT touch isBanned:
+      // a banned user re-verifying OTP still gets a token here, but
+      // JwtStrategy's per-request check keeps rejecting them until an
+      // admin unbans, same as today.
+      const reactivating = existing.deletedAt !== null;
+      const updated = await this.prisma.user.update({
         where: { id: existing.id },
-        data: { lastActiveAt: new Date() },
+        data: {
+          lastActiveAt: new Date(),
+          ...(reactivating && { deletedAt: null, isActive: true }),
+        },
       });
-      return { user: existing, isNewUser: false };
+      return { user: updated, isNewUser: false };
     }
 
     const user = await this.prisma.user.create({
@@ -156,6 +185,22 @@ export class UsersService {
     });
   }
 
+  /** Live check for the mentor wizard's "Alias" field — not a DB-level
+   * unique constraint (displayName has none, and pseudonym generation
+   * already has no collisions in practice), just a courtesy check so a
+   * mentor doesn't pick a handle someone else already has. Case-insensitive
+   * so "Riya_NIT" and "riya_nit" collide as expected. */
+  async isDisplayNameAvailable(displayName: string, excludingUserId?: string): Promise<boolean> {
+    const existing = await this.prisma.user.findFirst({
+      where: {
+        displayName: { equals: displayName, mode: 'insensitive' },
+        ...(excludingUserId && { id: { not: excludingUserId } }),
+      },
+      select: { id: true },
+    });
+    return existing === null;
+  }
+
   async updateProfile(userId: string, dto: UpdateProfileDto) {
     if (dto.isMentorAvailable !== undefined) {
       const user = await this.prisma.user.findUniqueOrThrow({ where: { id: userId } });
@@ -169,8 +214,12 @@ export class UsersService {
       ...(dto.specialty !== undefined && { specialty: dto.specialty }),
       ...(dto.languages !== undefined && { languages: dto.languages }),
       ...(dto.availableDays !== undefined && { availableDays: dto.availableDays }),
+      // Re-stamp on every toggle so switching back on restarts the 24h
+      // window (see isCallAvailable). Stamped on the off-flip too, purely so
+      // the column always reflects the last deliberate change.
       ...(dto.isMentorAvailable !== undefined && {
         isMentorAvailable: dto.isMentorAvailable,
+        availabilitySetAt: new Date(),
       }),
       ...(dto.gender !== undefined && { gender: dto.gender }),
       ...(dto.state !== undefined && { state: dto.state }),
@@ -184,6 +233,11 @@ export class UsersService {
       ...(dto.preferredMentorshipTiming !== undefined && {
         preferredMentorshipTiming: dto.preferredMentorshipTiming,
       }),
+      ...(dto.realName !== undefined && {
+        realNameEncrypted: encryptRealName(dto.realName),
+      }),
+      ...(dto.yearOfStudy !== undefined && { yearOfStudy: dto.yearOfStudy }),
+      ...(dto.graduationYear !== undefined && { graduationYear: dto.graduationYear }),
     };
 
     return this.prisma.user.update({
@@ -228,6 +282,26 @@ export class UsersService {
     const nextCursor = hasMore ? data[data.length - 1].id : null;
 
     return { data, nextCursor };
+  }
+
+  /**
+   * Self-service account deletion. Soft-delete only, matching the rest of
+   * the app's non-destructive data model (see ban/deactivate patterns) —
+   * sets deletedAt + isActive false and clears the refresh token so the
+   * next `/auth/token/refresh` fails immediately; JwtStrategy.validate
+   * already rejects any still-live access token for a deletedAt user on
+   * its next request. Historical session/ledger rows are intentionally
+   * kept for accounting/legal retention, per the privacy policy.
+   */
+  async deleteMe(userId: string): Promise<void> {
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: {
+        isActive: false,
+        deletedAt: new Date(),
+        refreshTokenHash: null,
+      },
+    });
   }
 
   async setBanned(userId: string, dto: SetBannedDto): Promise<User> {

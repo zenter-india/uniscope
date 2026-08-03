@@ -3,7 +3,7 @@
 /// kept in one place so the two flows never drift apart.
 library;
 
-const kGenders = ['Male', 'Female', 'Other', 'Prefer not to say'];
+const kGenders = ['Male', 'Female', 'Other'];
 
 // Mentors are current medical students or alumni — never practicing doctors
 // — so these are guidance topics an aspirant would ask about, not clinical
@@ -34,31 +34,10 @@ const kLanguageOptions = [
 ];
 
 const kQualifications = [
-  'Class 11',
-  'Class 12',
-  'Dropper / Repeater',
+  'Higher Secondary (11th/12th)',
   'Undergraduate',
-  'Graduate',
-  'Other',
-];
-
-const kCurrentStatuses = [
-  'Currently Studying',
-  'Dropper / Repeater',
-  'Working Professional',
-  'Other',
-];
-
-const kStreams = ['PCB', 'PCM', 'PCMB', 'Other'];
-
-const kCoursesInterested = [
-  'MBBS',
-  'BDS',
-  'BAMS',
-  'BHMS',
-  'BPT',
-  'Nursing',
-  'Other',
+  'Postgraduate',
+  'Doctorate',
 ];
 
 const kIndianStates = [
@@ -92,3 +71,24 @@ const kWeekdays = [
   'Saturday',
   'Sunday',
 ];
+
+// UserProfile.stream — a mentor's college field of study, or an aspirant's
+// field of interest ("used for mentor matching"). Same list either way since
+// Uniscope spans every academic field now, not just medical; "Others" pairs
+// with a free-text field in the UI.
+const kStreamOptions = [
+  'Medical',
+  'Dental',
+  'Engineering',
+  'Arts & Humanities',
+  'Commerce & Business',
+  'Law',
+  'Design',
+  'Others',
+];
+
+const kDegrees = ['UG', 'PG', 'Doctorate'];
+
+const kCurrentStatuses = ['Currently Studying', 'Graduated'];
+
+const kYearsOfStudy = ['1st Year', '2nd Year', '3rd Year', '4th Year', '5th Year+'];

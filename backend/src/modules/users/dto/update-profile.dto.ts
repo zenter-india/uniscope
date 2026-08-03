@@ -1,4 +1,14 @@
-import { IsArray, IsBoolean, IsDateString, IsOptional, IsString, MaxLength } from 'class-validator';
+import {
+  IsArray,
+  IsBoolean,
+  IsDateString,
+  IsInt,
+  IsOptional,
+  IsString,
+  Max,
+  MaxLength,
+  Min,
+} from 'class-validator';
 
 export class UpdateProfileDto {
   @IsOptional()
@@ -53,9 +63,11 @@ export class UpdateProfileDto {
   @MaxLength(50)
   qualification?: string;
 
+  // Dual-purpose (see UserProfile.stream): aspirant school-stream OR mentor
+  // college field-of-study — widened to fit values like "Commerce & Business".
   @IsOptional()
   @IsString()
-  @MaxLength(20)
+  @MaxLength(50)
   stream?: string;
 
   @IsOptional()
@@ -81,4 +93,24 @@ export class UpdateProfileDto {
   @IsString()
   @MaxLength(50)
   preferredMentorshipTiming?: string;
+
+  /** MENTOR onboarding — the mentor's actual legal name. Stored AES-256-GCM
+   * encrypted (see profile-encryption.helper.ts), never returned in any
+   * response projection; only ever used for admin identity review. */
+  @IsOptional()
+  @IsString()
+  @MaxLength(120)
+  realName?: string;
+
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  @Max(6)
+  yearOfStudy?: number;
+
+  @IsOptional()
+  @IsInt()
+  @Min(1950)
+  @Max(2100)
+  graduationYear?: number;
 }

@@ -20,6 +20,12 @@ export class ListUniversitiesDto {
   @IsEnum(UniversityType)
   type?: UniversityType;
 
+  /** Academic field filter (Medical/Engineering/Law/etc) — see
+   * University.stream. */
+  @IsOptional()
+  @IsString()
+  stream?: string;
+
   @IsOptional()
   @IsString()
   search?: string;

@@ -19,6 +19,13 @@ export class ListMentorsDto {
   @IsString()
   specialty?: string;
 
+  /** Mentor's college field of study (Medical/Engineering/Law/etc) — the
+   * primary discovery filter now that mentors span all streams, not just
+   * medical. See UserProfile.stream. */
+  @IsOptional()
+  @IsString()
+  stream?: string;
+
   /** Matches mentors whose `languages` array contains this value. */
   @IsOptional()
   @IsString()

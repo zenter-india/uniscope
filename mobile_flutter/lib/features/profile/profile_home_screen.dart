@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/network/college_wishlist_api.dart';
 import '../../core/network/users_api.dart';
+import '../../core/network/wishlist_api.dart';
 import '../../core/theme/app_theme.dart';
 import '../../state/auth_controller.dart';
 import '../../widgets/app_widgets.dart';
@@ -28,17 +30,34 @@ class ProfileHomeScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final user = ref.watch(authControllerProvider).user;
     final myProfileAsync = ref.watch(myProfileProvider);
-    final displayName =
-        (user?.displayName.isNotEmpty ?? false) ? user!.displayName : 'Student';
-    final roleLabel =
-        user?.role == UserRole.mentor ? 'Mentor' : 'Aspirant';
+    final displayName = (user?.displayName.isNotEmpty ?? false)
+        ? user!.displayName
+        : 'Student';
+    final isMentor = user?.role == UserRole.mentor;
+    final roleLabel = isMentor ? 'Mentor' : 'Aspirant';
+    final savedColleges = ref.watch(savedCollegeIdsProvider).value?.length ?? 0;
+    final savedMentors = ref.watch(savedMentorIdsProvider).value?.length ?? 0;
+    // Verification proves a mentor's college identity to aspirants booking
+    // them — aspirants aren't vetted for anything, so this whole section
+    // (status chip + Get Verified prompt) only applies to mentors.
     final verificationStatus = myProfileAsync.asData?.value.verificationStatus;
-    final (statusLabel, statusColor) = _verificationPresentation(verificationStatus);
+    final (statusLabel, statusColor) = _verificationPresentation(
+      verificationStatus,
+    );
     final isVerified = verificationStatus == 'VERIFIED';
 
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: AppBar(title: const Text('Profile')),
+      appBar: AppBar(
+        leading: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Image.asset(
+            'assets/logo/uniscope_icon.png',
+            fit: BoxFit.contain,
+          ),
+        ),
+        title: const Text('Profile'),
+      ),
       body: SafeArea(
         bottom: false,
         child: SingleChildScrollView(
@@ -49,7 +68,33 @@ class ProfileHomeScreen extends ConsumerWidget {
                 padding: const EdgeInsets.all(AppSpacing.lg),
                 child: Column(
                   children: [
-                    AppAvatar(name: displayName, size: 72),
+                    Stack(
+                      clipBehavior: Clip.none,
+                      children: [
+                        AppAvatar(
+                          name: displayName,
+                          size: 72,
+                          avatarUrl: myProfileAsync.asData?.value.avatarUrl,
+                        ),
+                        Positioned(
+                          bottom: -2,
+                          right: -2,
+                          child: Material(
+                            color: AppColors.primary,
+                            shape: const CircleBorder(),
+                            child: InkWell(
+                              customBorder: const CircleBorder(),
+                              onTap: () => context.push('/profile/avatar'),
+                              child: const Padding(
+                                padding: EdgeInsets.all(6),
+                                child: Icon(Icons.edit_rounded,
+                                    size: 14, color: Colors.white),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                     const SizedBox(height: AppSpacing.sm),
                     Text(
                       displayName,
@@ -64,11 +109,13 @@ class ProfileHomeScreen extends ConsumerWidget {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         StatusChip(label: roleLabel, color: AppColors.primary),
-                        const SizedBox(width: AppSpacing.xs),
-                        StatusChip(label: statusLabel, color: statusColor),
+                        if (isMentor) ...[
+                          const SizedBox(width: AppSpacing.xs),
+                          StatusChip(label: statusLabel, color: statusColor),
+                        ],
                       ],
                     ),
-                    if (!isVerified) ...[
+                    if (isMentor && !isVerified) ...[
                       const SizedBox(height: AppSpacing.md),
                       SizedBox(
                         width: double.infinity,
@@ -82,43 +129,47 @@ class ProfileHomeScreen extends ConsumerWidget {
                   ],
                 ),
               ),
-              if (user?.role == UserRole.mentor) ...[
+              if (isMentor) ...[
                 const SizedBox(height: AppSpacing.md),
-                const _MentorAvailabilityCard(),
-              ],
-              const SizedBox(height: AppSpacing.md),
-              AppCard(
-                padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
-                child: Row(
-                  children: const [
-                    _Stat(value: '3', label: 'Questions'),
-                    _StatDivider(),
-                    _Stat(value: '0', label: 'Answers'),
-                    _StatDivider(),
-                    _Stat(value: '0', label: 'Reviews'),
-                  ],
+                const MentorAvailabilityCard(),
+              ] else ...[
+                const SizedBox(height: AppSpacing.md),
+                AppCard(
+                  padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
+                  child: Row(
+                    children: [
+                      _Stat(value: '$savedColleges', label: 'Saved Colleges'),
+                      const _StatDivider(),
+                      _Stat(value: '$savedMentors', label: 'Saved Mentors'),
+                    ],
+                  ),
                 ),
-              ),
+              ],
               const SizedBox(height: AppSpacing.md),
               AppCard(
                 padding: EdgeInsets.zero,
                 child: Column(
                   children: [
                     _MenuRow(
-                      icon: Icons.account_balance_wallet_rounded,
-                      label: 'Wallet',
-                      onTap: () => context.push('/profile/wallet'),
-                    ),
-                    _MenuRow(
                       icon: Icons.edit_rounded,
                       label: 'Edit Profile',
                       onTap: () => context.go('/profile/edit'),
                     ),
-                    _MenuRow(
-                      icon: Icons.verified_user_rounded,
-                      label: 'Verification',
-                      onTap: () => context.go('/profile/verification'),
-                    ),
+                    if (isMentor)
+                      _MenuRow(
+                        icon: Icons.verified_user_rounded,
+                        label: 'Verification',
+                        onTap: () => context.go('/profile/verification'),
+                      ),
+                    // Mentors already have Wallet as the top-level "Earnings"
+                    // tab — this row is aspirant-only, since the Mentors tab
+                    // took over that slot in the aspirant bottom nav.
+                    if (user?.role != UserRole.mentor)
+                      _MenuRow(
+                        icon: Icons.account_balance_wallet_rounded,
+                        label: 'Wallet',
+                        onTap: () => context.push('/wallet'),
+                      ),
                     _MenuRow(
                       icon: Icons.settings_rounded,
                       label: 'Settings',
@@ -131,14 +182,16 @@ class ProfileHomeScreen extends ConsumerWidget {
               const SizedBox(height: AppSpacing.md),
               AppCard(
                 padding: EdgeInsets.zero,
-                onTap: () =>
-                    ref.read(authControllerProvider.notifier).logout(),
+                onTap: () => ref.read(authControllerProvider.notifier).logout(),
                 child: const Padding(
                   padding: EdgeInsets.all(AppSpacing.md),
                   child: Row(
                     children: [
-                      Icon(Icons.logout_rounded,
-                          size: 20, color: AppColors.error),
+                      Icon(
+                        Icons.logout_rounded,
+                        size: 20,
+                        color: AppColors.error,
+                      ),
                       SizedBox(width: AppSpacing.md),
                       Text(
                         'Log Out',
@@ -165,29 +218,30 @@ class ProfileHomeScreen extends ConsumerWidget {
 /// script needed. Shown for MENTOR-role users regardless of verification
 /// status, but a note clarifies they won't actually be discoverable until
 /// verified (see MentorsService eligibility filter).
-class _MentorAvailabilityCard extends ConsumerStatefulWidget {
-  const _MentorAvailabilityCard();
+/// Shared between the Profile screen and the Mentor Dashboard — same
+/// toggle, same state, wherever it's placed.
+class MentorAvailabilityCard extends ConsumerStatefulWidget {
+  const MentorAvailabilityCard({super.key});
 
   @override
-  ConsumerState<_MentorAvailabilityCard> createState() =>
+  ConsumerState<MentorAvailabilityCard> createState() =>
       _MentorAvailabilityCardState();
 }
 
 class _MentorAvailabilityCardState
-    extends ConsumerState<_MentorAvailabilityCard> {
+    extends ConsumerState<MentorAvailabilityCard> {
   bool _saving = false;
 
   Future<void> _toggle(bool value) async {
     setState(() => _saving = true);
     try {
-      await ref
-          .read(usersApiProvider)
-          .updateProfile(isMentorAvailable: value);
+      await ref.read(usersApiProvider).updateProfile(isMentorAvailable: value);
       ref.invalidate(myProfileProvider);
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text('Could not update: $e')));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Could not update: $e')));
     } finally {
       if (mounted) setState(() => _saving = false);
     }
@@ -208,8 +262,11 @@ class _MentorAvailabilityCardState
             children: [
               const Expanded(
                 child: Text(
-                  'Available for mentoring',
-                  style: TextStyle(fontWeight: AppFont.bold, fontSize: AppFont.md),
+                  'Accepting call bookings',
+                  style: TextStyle(
+                    fontWeight: AppFont.bold,
+                    fontSize: AppFont.md,
+                  ),
                 ),
               ),
               if (_saving)
@@ -229,10 +286,14 @@ class _MentorAvailabilityCardState
           const SizedBox(height: AppSpacing.xs),
           Text(
             isVerified
-                ? 'Toggle off any time to stop receiving new chat and call requests.'
+                ? 'Students can always message you. This only controls whether '
+                    'they can book a paid call. It switches itself off after 24 '
+                    'hours so your profile never promises a call you forgot about.'
                 : 'You still need to get verified before aspirants can find you.',
             style: const TextStyle(
-                fontSize: AppFont.xs, color: AppColors.textSecondary),
+              fontSize: AppFont.xs,
+              color: AppColors.textSecondary,
+            ),
           ),
         ],
       ),
@@ -252,15 +313,22 @@ class _Stat extends StatelessWidget {
         padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
         child: Column(
           children: [
-            Text(value,
-                style: const TextStyle(
-                    fontSize: AppFont.xl,
-                    fontWeight: AppFont.extraBold,
-                    color: AppColors.textPrimary)),
+            Text(
+              value,
+              style: const TextStyle(
+                fontSize: AppFont.xl,
+                fontWeight: AppFont.extraBold,
+                color: AppColors.textPrimary,
+              ),
+            ),
             const SizedBox(height: 2),
-            Text(label,
-                style: const TextStyle(
-                    fontSize: AppFont.xs, color: AppColors.textSecondary)),
+            Text(
+              label,
+              style: const TextStyle(
+                fontSize: AppFont.xs,
+                color: AppColors.textSecondary,
+              ),
+            ),
           ],
         ),
       ),
@@ -296,7 +364,9 @@ class _MenuRow extends StatelessWidget {
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.md, vertical: 14),
+          horizontal: AppSpacing.md,
+          vertical: 14,
+        ),
         decoration: BoxDecoration(
           border: isLast
               ? null
@@ -315,14 +385,20 @@ class _MenuRow extends StatelessWidget {
             ),
             const SizedBox(width: AppSpacing.md),
             Expanded(
-              child: Text(label,
-                  style: const TextStyle(
-                      fontSize: AppFont.md,
-                      fontWeight: AppFont.medium,
-                      color: AppColors.textPrimary)),
+              child: Text(
+                label,
+                style: const TextStyle(
+                  fontSize: AppFont.md,
+                  fontWeight: AppFont.medium,
+                  color: AppColors.textPrimary,
+                ),
+              ),
             ),
-            const Icon(Icons.chevron_right_rounded,
-                size: 22, color: AppColors.textMuted),
+            const Icon(
+              Icons.chevron_right_rounded,
+              size: 22,
+              color: AppColors.textMuted,
+            ),
           ],
         ),
       ),

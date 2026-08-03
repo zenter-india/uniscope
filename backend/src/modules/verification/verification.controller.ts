@@ -14,11 +14,15 @@ import { VerificationService } from './verification.service.js';
 export class VerificationController {
   constructor(private readonly verificationService: VerificationService) {}
 
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.MENTOR)
   @Post()
   submit(@CurrentUser() user: JwtPayload, @Body() dto: SubmitVerificationDto) {
     return this.verificationService.submit(user.sub, dto);
   }
 
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.MENTOR)
   @Get('mine')
   findMine(@CurrentUser() user: JwtPayload) {
     return this.verificationService.findMine(user.sub);

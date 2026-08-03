@@ -16,6 +16,8 @@ import {
 } from '@prisma/client';
 import { PrismaService } from '../../database/prisma/prisma.service.js';
 import { AgoraService } from '../agora/agora.service.js';
+import { AvatarService } from '../avatar/avatar.service.js';
+import { BlocksService } from '../blocks/blocks.service.js';
 import { ChatService } from '../chat/chat.service.js';
 import { MentorsService } from '../mentors/mentors.service.js';
 import { NotificationsService } from '../notifications/notifications.service.js';
@@ -23,6 +25,7 @@ import { MENTOR_RATE_PER_MINUTE_MINOR, WalletService } from '../wallet/wallet.se
 import { CALL_SLOT_MINUTES, CreateSessionDto } from './dto/create-session.dto.js';
 import { ListSessionsDto } from './dto/list-sessions.dto.js';
 import {
+  AvatarUrlResolver,
   SESSION_WITH_NAMES_INCLUDE,
   SessionResponse,
   toSessionResponse,
@@ -63,7 +66,13 @@ export class SessionsService {
     private readonly walletService: WalletService,
     private readonly agoraService: AgoraService,
     private readonly notificationsService: NotificationsService,
+    private readonly blocksService: BlocksService,
+    private readonly avatarService: AvatarService,
   ) {}
+
+  /** Passed to toSessionResponse at every call site — keeps that file DI-free. */
+  private resolveAvatarUrl: AvatarUrlResolver = (userId, avatarKey, updatedAt) =>
+    this.avatarService.publicUrl(userId, avatarKey, updatedAt);
 
   /**
    * Creates a PENDING booking request. The mentor's current rate is
@@ -85,9 +94,27 @@ export class SessionsService {
       throw new ConflictException('You cannot book a session with yourself');
     }
 
+    // Blocking is checked in either direction — same 404 the mentor-not-
+    // found path uses, so a blocked party can't tell whether they were
+    // blocked or the mentor just doesn't exist (avoids leaking block state).
+    if (await this.blocksService.isBlockedEitherDirection(aspirantId, dto.mentorId)) {
+      throw new NotFoundException(`Mentor '${dto.mentorId}' not found`);
+    }
+
     // Throws NotFoundException if the mentor isn't eligible (unverified,
-    // unavailable, or no rate set) — same check GET /mentors/:id uses.
+    // inactive, banned) — same check GET /mentors/:id uses. Being
+    // unavailable no longer disqualifies a mentor here; it only blocks
+    // AUDIO_CALL specifically, checked just below.
     const mentor = await this.mentorsService.findById(dto.mentorId);
+
+    // mentor.isAvailable is already expiry-aware (see isCallAvailable) — a
+    // stale opt-in reads as false here, so nobody can book against a mentor
+    // who switched on days ago and forgot.
+    if (dto.type === SessionType.AUDIO_CALL && !mentor.isAvailable) {
+      throw new ConflictException(
+        'This mentor is not accepting call bookings right now — you can still start a chat with them.',
+      );
+    }
 
     // Scoped by type as well as mentor — an aspirant can have an active
     // CHAT and an active AUDIO_CALL with the same mentor at once (e.g.
@@ -160,14 +187,22 @@ export class SessionsService {
     if (!isAudioCall) {
       const aspirant = await this.prisma.user.findUniqueOrThrow({
         where: { id: aspirantId },
-        select: { displayName: true },
+        select: { displayName: true, profile: { select: { avatarKey: true, updatedAt: true } } },
       });
       const streamChannelId = await this.chatService.ensureChannelForSession({
         sessionId: session.id,
         aspirantId,
         aspirantName: aspirant.displayName,
+        aspirantAvatarUrl: aspirant.profile
+          ? this.avatarService.publicUrl(
+              aspirantId,
+              aspirant.profile.avatarKey,
+              aspirant.profile.updatedAt,
+            )
+          : null,
         mentorId: dto.mentorId,
         mentorName: mentor.displayName,
+        mentorAvatarUrl: mentor.avatarUrl,
       });
       await this.prisma.session.update({
         where: { id: session.id },
@@ -214,19 +249,33 @@ export class SessionsService {
       const [aspirant, mentor] = await Promise.all([
         this.prisma.user.findUniqueOrThrow({
           where: { id: session.aspirantId },
-          select: { displayName: true },
+          select: { displayName: true, profile: { select: { avatarKey: true, updatedAt: true } } },
         }),
         this.prisma.user.findUniqueOrThrow({
           where: { id: session.mentorId },
-          select: { displayName: true },
+          select: { displayName: true, profile: { select: { avatarKey: true, updatedAt: true } } },
         }),
       ]);
       streamChannelId = await this.chatService.ensureChannelForSession({
         sessionId: session.id,
         aspirantId: session.aspirantId,
         aspirantName: aspirant.displayName,
+        aspirantAvatarUrl: aspirant.profile
+          ? this.avatarService.publicUrl(
+              session.aspirantId,
+              aspirant.profile.avatarKey,
+              aspirant.profile.updatedAt,
+            )
+          : null,
         mentorId: session.mentorId,
         mentorName: mentor.displayName,
+        mentorAvatarUrl: mentor.profile
+          ? this.avatarService.publicUrl(
+              session.mentorId,
+              mentor.profile.avatarKey,
+              mentor.profile.updatedAt,
+            )
+          : null,
       });
     }
 
@@ -572,7 +621,7 @@ export class SessionsService {
 
     const hasMore = rows.length > take;
     const rowsPage = hasMore ? rows.slice(0, take) : rows;
-    const data = rowsPage.map(toSessionResponse);
+    const data = rowsPage.map((row) => toSessionResponse(row, this.resolveAvatarUrl));
     const nextCursor = hasMore ? rowsPage[rowsPage.length - 1].id : null;
 
     return { data, nextCursor };
@@ -593,7 +642,7 @@ export class SessionsService {
       throw new NotFoundException(`Session '${sessionId}' not found`);
     }
 
-    return toSessionResponse(session);
+    return toSessionResponse(session, this.resolveAvatarUrl);
   }
 
   /** Re-fetches a session with the aspirant/mentor names included — used
@@ -604,7 +653,7 @@ export class SessionsService {
       where: { id: sessionId },
       include: SESSION_WITH_NAMES_INCLUDE,
     });
-    return toSessionResponse(session);
+    return toSessionResponse(session, this.resolveAvatarUrl);
   }
 
   private async requireSession(sessionId: string): Promise<Session> {

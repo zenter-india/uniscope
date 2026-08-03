@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/network/sessions_api.dart';
+import '../../core/network/wallet_api.dart';
 import '../../core/theme/app_theme.dart';
 import '../../state/auth_controller.dart';
 
@@ -202,9 +203,9 @@ class _CallScreenState extends ConsumerState<CallScreen> {
       barrierDismissible: false,
       builder: (dialogContext) => AlertDialog(
         title: const Text('Time\'s up'),
-        content: const Text(
-          'Your paid slot has ended. Continue for another 5 minutes '
-          '(₹50 will be deducted from your wallet)?',
+        content: Text(
+          'Your slot has ended. Continue for another 5 minutes? '
+          '${uniminutesLabel(slotUniminutes(5))} will be deducted.',
         ),
         actions: [
           TextButton(
@@ -490,7 +491,7 @@ class _EndedView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final minutes = session?.billedMinutes ?? 0;
-    final costRupees = (session?.totalCostMinor ?? 0) / 100;
+    final spent = minorToUniminutes(session?.totalCostMinor ?? 0);
 
     return Center(
       child: Padding(
@@ -506,7 +507,7 @@ class _EndedView extends StatelessWidget {
             const SizedBox(height: AppSpacing.lg),
             _SummaryRow(label: 'Duration', value: '$minutes min'),
             const SizedBox(height: AppSpacing.sm),
-            _SummaryRow(label: 'Cost', value: '₹${costRupees.toStringAsFixed(0)}'),
+            _SummaryRow(label: 'Used', value: uniminutesLabel(spent)),
             const SizedBox(height: AppSpacing.xxl),
             SizedBox(
               width: double.infinity,

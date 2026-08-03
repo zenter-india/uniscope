@@ -70,18 +70,6 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
     }
   }
 
-  void _skip() {
-    final auth = ref.read(authControllerProvider);
-    if (auth.user != null &&
-        auth.accessToken != null &&
-        auth.refreshToken != null) {
-      ref
-          .read(authControllerProvider.notifier)
-          .setAuth(auth.accessToken!, auth.refreshToken!, auth.user!);
-    }
-    context.go('/home');
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -104,38 +92,12 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
               ),
               const SizedBox(height: AppSpacing.sm),
               const Text(
-                'Your display name is shown publicly instead of your real name.',
+                'This is your display name — it keeps you anonymous. '
+                'We never show your real name to anyone.',
                 style: TextStyle(
                   fontSize: AppFont.md,
                   color: AppColors.textSecondary,
                   height: 1.5,
-                ),
-              ),
-              const SizedBox(height: AppSpacing.xl),
-              Center(
-                child: Container(
-                  width: 88,
-                  height: 88,
-                  decoration: BoxDecoration(
-                    color: AppColors.primaryLight,
-                    shape: BoxShape.circle,
-                    border: Border.all(color: AppColors.primary, width: 2),
-                  ),
-                  child: const Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text('📷', style: TextStyle(fontSize: 24)),
-                      SizedBox(height: AppSpacing.xs),
-                      Text(
-                        'Add photo',
-                        style: TextStyle(
-                          fontSize: AppFont.xs,
-                          color: AppColors.primary,
-                          fontWeight: AppFont.medium,
-                        ),
-                      ),
-                    ],
-                  ),
                 ),
               ),
               const SizedBox(height: AppSpacing.xl),
@@ -213,7 +175,7 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
                     SizedBox(width: AppSpacing.sm),
                     Expanded(
                       child: Text(
-                        'Your real identity is never shared publicly. Verify your student status to unlock all features.',
+                        'Your real identity is never shared publicly.',
                         style: TextStyle(
                           fontSize: AppFont.sm,
                           color: AppColors.primaryDark,
@@ -226,21 +188,16 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
               ),
               const SizedBox(height: AppSpacing.xl),
               PrimaryButton(
-                label: 'Finish Setup',
+                // "Finish Setup" was misleading here — for aspirants (the
+                // only role that actually reaches this screen; mentors go
+                // straight to their own wizard from RoleSelectionScreen)
+                // this is step 0 of 5, with the mandatory profile wizard
+                // and the avatar step still ahead. "Finish" belongs on the
+                // wizard's actual last step (see AspirantOnboardingScreen).
+                label: 'Continue',
                 enabled: _isValid,
                 loading: _loading,
                 onPressed: _finish,
-              ),
-              const SizedBox(height: AppSpacing.sm),
-              Center(
-                child: TextButton(
-                  onPressed: _loading ? null : _skip,
-                  child: const Text(
-                    'Skip for now',
-                    style: TextStyle(
-                        fontSize: AppFont.sm, color: AppColors.textMuted),
-                  ),
-                ),
               ),
             ],
           ),

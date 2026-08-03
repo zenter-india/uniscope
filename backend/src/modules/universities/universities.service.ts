@@ -1,11 +1,12 @@
 import { randomUUID } from 'node:crypto';
 import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
-import { Prisma, University } from '@prisma/client';
+import { Prisma, University, UniversityType } from '@prisma/client';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { PrismaService } from '../../database/prisma/prisma.service.js';
 import { SUPABASE_BUCKETS, SUPABASE_CLIENT } from '../../supabase/index.js';
 import { UniversityReviewsService } from '../university-reviews/university-reviews.service.js';
 import { CreateUniversityDto } from './dto/create-university.dto.js';
+import { FindOrCreateUniversityDto } from './dto/find-or-create-university.dto.js';
 import { ListUniversitiesDto } from './dto/list-universities.dto.js';
 import { UpdateUniversityDto } from './dto/update-university.dto.js';
 import { UploadUniversityPhotoDto } from './dto/upload-university-photo.dto.js';
@@ -44,6 +45,7 @@ export class UniversitiesService {
       isActive: true,
       ...(query.state && { state: query.state }),
       ...(query.type && { type: query.type }),
+      ...(query.stream && { stream: query.stream }),
       ...(query.search && {
         OR: [
           { name: { contains: query.search, mode: 'insensitive' } },
@@ -95,6 +97,7 @@ export class UniversitiesService {
     const where: Prisma.UniversityWhereInput = {
       ...(query.state && { state: query.state }),
       ...(query.type && { type: query.type }),
+      ...(query.stream && { stream: query.stream }),
       ...(query.search && {
         OR: [
           { name: { contains: query.search, mode: 'insensitive' } },
@@ -121,16 +124,62 @@ export class UniversitiesService {
   /** Slug is derived once at creation and never changes afterward — stable
    * URLs matter more than keeping the slug in sync with a later name edit.
    * Collisions get a numeric suffix. */
-  async create(dto: CreateUniversityDto): Promise<University> {
-    const base = slugify(dto.name) || 'university';
+  private async uniqueSlugFor(name: string): Promise<string> {
+    const base = slugify(name) || 'university';
     let slug = base;
     let suffix = 1;
     while (await this.prisma.university.findUnique({ where: { slug } })) {
       suffix += 1;
       slug = `${base}-${suffix}`;
     }
+    return slug;
+  }
 
+  async create(dto: CreateUniversityDto): Promise<University> {
+    const slug = await this.uniqueSlugFor(dto.name);
     return this.prisma.university.create({ data: { ...dto, slug } });
+  }
+
+  /**
+   * Used by the mentor onboarding wizard's College field for non-Medical
+   * streams: rather than a curated dropdown (which today is really only
+   * populated with medical institutions), a mentor types their college name
+   * and this either matches an existing row (case-insensitive name+state)
+   * or creates a new one. Verification (VerificationRequest.universityId)
+   * requires a real university row, so this can't be a purely free-text
+   * profile field — every mentor needs *some* University row to verify
+   * against.
+   *
+   * New rows default to type PRIVATE (unknown at self-report time — an
+   * admin can correct it later) and isActive: false, so a typo'd or
+   * duplicate entry doesn't immediately pollute the public Discover
+   * listing; it's still fully usable for this mentor's own verification
+   * and shows up in the admin panel's university list for cleanup.
+   */
+  async findOrCreateByName(dto: FindOrCreateUniversityDto): Promise<University> {
+    const name = dto.name.trim();
+    const state = dto.state.trim();
+
+    const existing = await this.prisma.university.findFirst({
+      where: {
+        name: { equals: name, mode: 'insensitive' },
+        state: { equals: state, mode: 'insensitive' },
+      },
+    });
+    if (existing) return existing;
+
+    const slug = await this.uniqueSlugFor(name);
+    return this.prisma.university.create({
+      data: {
+        name,
+        slug,
+        type: UniversityType.PRIVATE,
+        state,
+        city: dto.city.trim(),
+        stream: dto.stream,
+        isActive: false,
+      },
+    });
   }
 
   async update(id: string, dto: UpdateUniversityDto): Promise<University> {
