@@ -231,7 +231,7 @@ class _SessionChatScreenState extends ConsumerState<SessionChatScreen> {
           body: const Column(
             children: [
               Expanded(child: StreamMessageListView()),
-              StreamMessageInput(),
+              StreamMessageInput(showCommandsButton: false, disableAttachments: true),
             ],
           ),
         ),

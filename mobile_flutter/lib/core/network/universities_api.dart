@@ -22,8 +22,9 @@ class University {
     required this.slug,
     required this.type,
     required this.state,
-    required this.city,
+    this.city,
     this.stream,
+    this.levels = const ['UG'],
     required this.nirfRank,
     required this.mbbsSeats,
     required this.establishedYear,
@@ -40,10 +41,16 @@ class University {
   final String slug;
   final String type;
   final String state;
-  final String city;
+  /// Nullable: the NMC seat matrix the medical colleges were seeded from
+  /// has no city column, so bulk-loaded rows may have only a state.
+  final String? city;
   /// Academic field (Medical/Engineering/Law/etc) — null for older rows
   /// seeded before the multi-stream pivot.
   final String? stream;
+  /// Degree levels offered — "UG" and/or "PG". Every college in the app
+  /// today is UG-only: the imported source (NMC's MBBS seat matrix) only
+  /// covers undergraduate intake, no PG data has been imported yet.
+  final List<String> levels;
   final int? nirfRank;
   final int? mbbsSeats;
   final int? establishedYear;
@@ -60,8 +67,10 @@ class University {
         slug: json['slug'] as String,
         type: json['type'] as String,
         state: json['state'] as String,
-        city: json['city'] as String,
+        city: json['city'] as String?,
         stream: json['stream'] as String?,
+        levels: (json['levels'] as List<dynamic>?)?.map((e) => e as String).toList() ??
+            const ['UG'],
         nirfRank: (json['nirfRank'] as num?)?.toInt(),
         mbbsSeats: (json['mbbsSeats'] as num?)?.toInt(),
         establishedYear: (json['establishedYear'] as num?)?.toInt(),
@@ -81,16 +90,33 @@ class UniversitiesApi {
 
   final Dio _dio;
 
+  /// Discover applies Type/Stream/State/search filters client-side over
+  /// whatever this returns (see UniversityListScreen), so a single
+  /// server-paginated page (default 20, max 50 — see ListUniversitiesDto)
+  /// would silently filter against a random slice of the catalogue instead
+  /// of the whole thing. Follows `nextCursor` until exhausted. ~830 medical
+  /// colleges is ~17 requests, acceptable for a screen loaded once and
+  /// cached by the autoDispose provider; the 40-page cap is a runaway guard,
+  /// not an expected ceiling.
   Future<List<University>> list({String? search, String? stream}) async {
-    final res = await _dio.get<Map<String, dynamic>>(
-      '/universities',
-      queryParameters: {
-        if (search != null && search.isNotEmpty) 'search': search,
-        if (stream != null) 'stream': stream,
-      },
-    );
-    final data = res.data!['data'] as List<dynamic>;
-    return data.map((e) => University.fromJson(e as Map<String, dynamic>)).toList();
+    final results = <University>[];
+    String? cursor;
+    for (var page = 0; page < 40; page++) {
+      final res = await _dio.get<Map<String, dynamic>>(
+        '/universities',
+        queryParameters: {
+          if (search != null && search.isNotEmpty) 'search': search,
+          if (stream != null) 'stream': stream,
+          'limit': 50,
+          if (cursor != null) 'cursor': cursor,
+        },
+      );
+      final data = res.data!['data'] as List<dynamic>;
+      results.addAll(data.map((e) => University.fromJson(e as Map<String, dynamic>)));
+      cursor = res.data!['nextCursor'] as String?;
+      if (cursor == null) break;
+    }
+    return results;
   }
 
   Future<University> getBySlug(String slug) async {

@@ -57,7 +57,10 @@ export class UniversitiesService {
 
     const rows = await this.prisma.university.findMany({
       where,
-      orderBy: [{ nirfRank: 'asc' }, { id: 'asc' }],
+      // Plain alphabetical — NIRF rank isn't shown in the UI anymore
+      // (it only covers the top 50 medical colleges nationally, so ~94%
+      // of rows had no rank anyway), id as a stable tiebreaker for the cursor.
+      orderBy: [{ name: 'asc' }, { id: 'asc' }],
       take: take + 1,
       ...(query.cursor && { cursor: { id: query.cursor }, skip: 1 }),
     });

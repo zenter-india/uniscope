@@ -143,6 +143,18 @@ enum HoldStatus {
   EXPIRED // swept by a background job (session never properly closed)
 }
 
+enum DataImportType {
+  UG
+  PG
+}
+
+enum DataImportStatus {
+  RUNNING
+  COMPLETED
+  FAILED
+  APPLIED
+}
+
 enum PayoutStatus {
   PENDING
   PROCESSING
@@ -280,12 +292,23 @@ model University {
   slug            String                   @unique @db.VarChar(200)
   type            UniversityType
   state           String                   @db.VarChar(100)
-  city            String                   @db.VarChar(100)
+  /// Nullable because the authoritative NMC seat matrix has no city column —
+  /// it is only derivable from the college name for ~69% of rows. Better an
+  /// absent city than the state name masquerading as one; the mobile card
+  /// already falls back to showing `state`.
+  city            String?                  @db.VarChar(100)
   /// Primary academic field (Medical/Engineering/Law/etc — same picklist as
   /// UserProfile.stream, see kStreamOptions mobile-side). Null for older
   /// rows seeded before the multi-stream pivot; the Discover filter treats
   /// null as unfiltered/uncategorized rather than defaulting to Medical.
   stream          String?                  @db.VarChar(50)
+  /// Degree levels offered — "UG" and/or "PG". Every college currently
+  /// seeded is UG-only: the imported data source (NMC's MBBS seat matrix)
+  /// covers undergraduate intake exclusively, no PG seat matrix has been
+  /// imported yet. Modeled as an array (not a single value) because most
+  /// real medical colleges offer both once PG data is added — a string
+  /// field would need a breaking migration to add a second value later.
+  levels          String[]                 @default(["UG"])
   nirfRank        Int?                     @map("nirf_rank") @db.SmallInt
   mbbsSeats       Int?                     @map("mbbs_seats") @db.SmallInt
   establishedYear Int?                     @map("established_year") @db.SmallInt
@@ -659,6 +682,33 @@ model Notification {
   @@index([userId, createdAt(sort: Desc)])
   @@index([userId, isRead])
   @@map("notifications")
+}
+
+/// One run of the "refresh college data" admin tool (see universities/data-import
+/// module). Re-runs the same capture pipeline used to originally seed the
+/// dataset — NMC's MBBS seat-matrix PDF for UG, MCC's PG institute list for
+/// PG — and stores a diff against the live DB rather than writing directly:
+/// an admin reviews `diffJson` and only committed rows via the apply
+/// endpoint actually reach University, so a source-site change or a stale
+/// admin edit never gets silently overwritten.
+model DataImportJob {
+  id          String            @id @default(uuid())
+  type        DataImportType
+  status      DataImportStatus  @default(RUNNING)
+  /// { added: [...], changed: [...], unchanged: number, sourceCount: number }
+  /// — populated once capture completes; null while RUNNING.
+  diffJson    Json?
+  /// Populated only after /apply — which of diffJson's rows the admin
+  /// actually approved, so a second apply call can't silently redo it.
+  appliedJson Json?
+  error       String?           @db.Text
+  startedAt   DateTime          @default(now()) @map("started_at") @db.Timestamptz
+  completedAt DateTime?         @map("completed_at") @db.Timestamptz
+  appliedAt   DateTime?         @map("applied_at") @db.Timestamptz
+  appliedBy   String?           @map("applied_by")
+
+  @@index([type, startedAt(sort: Desc)])
+  @@map("data_import_jobs")
 }
 
 /// FCM device token — a user can have several (multiple devices). Tokens are

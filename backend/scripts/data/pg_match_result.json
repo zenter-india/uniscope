@@ -1,0 +1,566 @@
+{
+ "65": {
+  "pgName": "Indira Gandhi Institute of Medical Sciences, Patna, Indira Gandhi Institute of Medical Sciences, Patna, Bihar, 800014",
+  "pgCode": "700111",
+  "ourName": "Indira Gandhi Institute of Medical Sciences,Sheikhpura, Patna",
+  "score": 1.0
+ },
+ "67": {
+  "pgName": "JAWAHARLAL NEHRU MEDICAL COLLEGE, BHAGALPUR, JAWAHARLAL NEHRU MEDICAL COLLEGE, BHAGALPUR, Bihar, 812001",
+  "pgCode": "700112",
+  "ourName": "Jawaharlal Nehru Medical College, Bhagalpur",
+  "score": 1.0
+ },
+ "105": {
+  "pgName": "Lady Hardinge Medical College, Lady Hardinge Medical College, Delhi (NCT), 110001",
+  "pgCode": "700118",
+  "ourName": "Lady Hardinge Medical College, New Delhi",
+  "score": 1.0
+ },
+ "106": {
+  "pgName": "Maulana Azad Medical College, Maulana Azad Medical College, Delhi (NCT), 110002",
+  "pgCode": "700119",
+  "ourName": "Maulana Azad Medical College, New Delhi",
+  "score": 1.0
+ },
+ "58": {
+  "pgName": "ANUGRAH NARAYAN MAGADH MEDICAL COLLEGE, ANUGRAH NARAYAN MAGADH MEDICAL COLLEGE, Bihar, 823001",
+  "pgCode": "700272",
+  "ourName": "Anugrah Narayan Magadh Medical College, Gaya",
+  "score": 1.0
+ },
+ "316": {
+  "pgName": "GAJRA RAJA MEDICAL COLLEGE GWALIOR, GAJRA RAJA MEDICAL COLLEGE GWALIOR, Madhya Pradesh, 474009",
+  "pgCode": "700297",
+  "ourName": "Gajra Raja Medical College, Gwalior",
+  "score": 1.0
+ },
+ "332": {
+  "pgName": "NETAJI SUBHASH CHANDRA BOSE MEDICAL COLLEGE, JABALPUR , NETAJI SUBHASH CHANDRA BOSE MEDICAL COLLEGE, NAGPUR ROAD JABALPUR, Madhya Pradesh, 482003",
+  "pgCode": "700299",
+  "ourName": "Netaji Subhash Chandra Bose Medical College, Jabalpur",
+  "score": 1.0
+ },
+ "338": {
+  "pgName": "SHYAM SHAH MEDICAL COLLEGE, deanmcrewa@rediffmail.com, Madhya Pradesh, 486001",
+  "pgCode": "700300",
+  "ourName": "Shyam Shah Medical College, Rewa",
+  "score": 1.0
+ },
+ "395": {
+  "pgName": "INDIRA GANDHI GOVT.MEDICAL COLLEGE NAGPUR, INDIRA GANDHI GOVT.MEDICAL COLLEGE NAGPUR, Maharashtra, 440018",
+  "pgCode": "700306",
+  "ourName": "Indira Gandhi Medical College & Hospital, Nagpur",
+  "score": 1.0
+ },
+ "399": {
+  "pgName": "LOKMANYA TILAK MEDICAL COLLEGE MUMBAI, LOKMANYA TILAK MEDICAL COLLEGE MUMBAI, Maharashtra, 400022",
+  "pgCode": "700307",
+  "ourName": "Lokmanya Tilak Municipal Medical College, Sion, Mumbai",
+  "score": 1.0
+ },
+ "362": {
+  "pgName": "DR. SHANKARRAO CHAVAN GOVERNMENT MEDICAL COLLEGE, NANDED, DR. SHANKARRAO CHAVAN GOVERNMENT MEDICAL COLLEGE, VISHNUPURI, NANDED, Maharashtra, 431606",
+  "pgCode": "700314",
+  "ourName": "Dr. Shankarrao Chavan Govt. Medical College, Nanded",
+  "score": 1.0
+ },
+ "417": {
+  "pgName": "Shri Vasant Rao Naik Govt. Medical College,Maharashtra, Civil Lines, yavatmal, Maharashtra, 445001",
+  "pgCode": "902719",
+  "ourName": "Shri Vasant Rao Naik Govt. Medical College, Yavatmal",
+  "score": 1.0
+ },
+ "523": {
+  "pgName": "Sardar Patel Medical College, Bikaner, Sardar Patel Medical College, Bikaner, Rajasthan, 334003",
+  "pgCode": "700317",
+  "ourName": "Sardar Patel Medical College, Bikaner",
+  "score": 1.0
+ },
+ "836": {
+  "pgName": "Sawai Man Singh Medical College, JAIPUR, Sawai Man Singh Medical College, JLN Marg, Jaipur-302004, Rajasthan, 302004",
+  "pgCode": "700327",
+  "ourName": "Sawai Man Singh Medical College",
+  "score": 1.0
+ },
+ "568": {
+  "pgName": "Government Mohan Kumaramangalam Medical College, Salem, Government Mohan Kumaramangalam Medical College, Majeera Kollappatti, Steel Plant Road, Salem., Tamil Nadu, 636030",
+  "pgCode": "700350",
+  "ourName": "Govt. Mohan Kumaramangalam Medical College, Salem- 30",
+  "score": 1.0
+ },
+ "725": {
+  "pgName": "JAWAHARLAL NEHRU MEDICAL COLLEGE, ALIGARH MUSLIM UNIVERSITY STATE UTTAR, JAWAHARLAL NEHRU MEDICAL COLLEGE, ALIGARH MUSLIM UNIVERSITY STATE UTTAR, Uttar Pradesh, 202002",
+  "pgCode": "700362",
+  "ourName": "Jawaharlal Nehru Medical College, Aligarh",
+  "score": 1.0
+ },
+ "733": {
+  "pgName": "MAHARANI LAXMI BAI MEDICAL COLLEGE JHANSI, MAHARANI LAXMI BAI MEDICAL COLLEGE JHANSI, Uttar Pradesh, 284128",
+  "pgCode": "700372",
+  "ourName": "Maharani Laxmi Bai Medical College, Jhansi",
+  "score": 1.0
+ },
+ "737": {
+  "pgName": "Moti Lal Nehru Medical College, Moti Lal Nehru Medical College, Uttar Pradesh, 211001",
+  "pgCode": "700373",
+  "ourName": "Moti Lal Nehru Medical College, Allahabad",
+  "score": 1.0
+ },
+ "820": {
+  "pgName": "Sanjay Gandhi Postgarduate Institute of Medical Sciences, Sanjay Gandhi Postgarduate Institute of Medical Sciences, Uttar Pradesh, 226014",
+  "pgCode": "700376",
+  "ourName": "Sanjay Gandhi Postgraduate Institute of Medical Sciences",
+  "score": 1.0
+ },
+ "158": {
+  "pgName": "BPS Govt. Medical College for Women, Khanpur Kalan Sonepat, BPS Govt. Medical College for Women, Khanpur Kalan Sonepat, Haryana, 131305",
+  "pgCode": "700378",
+  "ourName": "BPS Government Medical College for Women, Sonepat",
+  "score": 1.0
+ },
+ "176": {
+  "pgName": "Indira Gandhi Medical College Shimla, Indira Gandhi Medical College Shimla, Himachal Pradesh, 171001",
+  "pgCode": "700379",
+  "ourName": "Indira Gandhi Medical College, Shimla",
+  "score": 1.0
+ },
+ "705": {
+  "pgName": "Dr Ram Manohar Lohia Institute of Medical Sciences, Lucknow, Dr Ram Manohar Lohia Institute of Medical Sciences, Lucknow, Uttar Pradesh, 226010",
+  "pgCode": "700385",
+  "ourName": "Dr. Ram Manohar Lohia Institute of Medical Sciences,Lucknow",
+  "score": 1.0
+ },
+ "807": {
+  "pgName": "North Bengal Medical College, North Bengal Medical College, West Bengal, 734012",
+  "pgCode": "700393",
+  "ourName": "North Bengal Medical College, Darjeeling",
+  "score": 1.0
+ },
+ "779": {
+  "pgName": "Bankura Sammilani Medical College, Bankura Sammilani Medical College, West Bengal, 722102",
+  "pgCode": "700402",
+  "ourName": "Bankura Sammilani Medical College, Bankura",
+  "score": 1.0
+ },
+ "237": {
+  "pgName": "Kasturba Medical College Manipal, Manipal Academy Of Higher Education, Manipal, Kasturba Medical College Manipal, Manipal Academy Of Higher Education, Manipal, Karnataka, 576104",
+  "pgCode": "700424",
+  "ourName": "Kasturba Medical College, Manipal",
+  "score": 1.0
+ },
+ "236": {
+  "pgName": "Kasturba Medical College Mangalore, Manipal Academy of Higher Education, Mangalore, Kasturba Medical College Mangalore, Manipal Academy of Higher Education, Mangalore, Karnataka, 575001",
+  "pgCode": "700425",
+  "ourName": "KASTURBA MEDICAL COLLEGE MANGALORE",
+  "score": 1.0
+ },
+ "228": {
+  "pgName": "Jawaharlal Nehru Medical College, Belagavi, Jawaharlal Nehru Medical College, Belagavi, Karnataka, 590010",
+  "pgCode": "700427",
+  "ourName": "Jawaharlal Nehru Medical College, Belgaum",
+  "score": 1.0
+ },
+ "232": {
+  "pgName": "K S Hegde Medical Academy, Mangaluru, K S Hegde Medical Academy, Nithyanandanagar, Deralakatte, Mangaluru, Karnataka, 575018",
+  "pgCode": "700429",
+  "ourName": "K.S.HEGDE MEDICAL ACADEMY",
+  "score": 1.0
+ },
+ "258": {
+  "pgName": "SHRI. B. M. PATIL MEDICAL COLLEGE HOSPITAL AND RESEARCH CENTRE, SHRI. B. M. PATIL MEDICAL COLLEGE HOSPITAL AND RESEARCH CENTRE, SOLAPUR ROAD, VIJAYAPURA, Karnataka, 586103",
+  "pgCode": "700432",
+  "ourName": "Shri B M Patil Medical College, Hospital & Research Centre, Vijayapura(Bijapur",
+  "score": 1.0
+ },
+ "277": {
+  "pgName": "AMRITA SCHOOL OF MEDICINE,Kochi, Amrita School of Medicine, Amrita Institute of Medical Sciences,AIMS Ponekkara P.O, Kochi, Kerala, 682041",
+  "pgCode": "700433",
+  "ourName": "Amrita School of Medicine, Elamkara, Kochi",
+  "score": 1.0
+ },
+ "352": {
+  "pgName": "Bharati Vidyapeeth Deemed to be University Medical College,Pune, Bharati Vidyapeeth Deemed to be University Medical College, Dhankawadi, Pune Satara Road, Pune, Maharashtra, 411043",
+  "pgCode": "700435",
+  "ourName": "Bharati Vidyapeeth Deemed University Medical College & Hospital, Sangli",
+  "score": 1.0
+ },
+ "396": {
+  "pgName": "Jawaharlal Nehru Medical College, Sawangi (Meghe), Wardha-, Jawaharlal Nehru Medical College, Sawangi Meghe Wardha - 442107, Maharashtra State, Maharashtra, 442107",
+  "pgCode": "700437",
+  "ourName": "Jawaharlal Nehru Medical College, Sawangi (Meghe), Wardha",
+  "score": 1.0
+ },
+ "464": {
+  "pgName": "Mahatma Gandhi Medical College and Research Institute, Pondicherry, SBV Pondicherry Campus, Pillaiyarkuppam, Pondicherry, Puducherry, 607402",
+  "pgCode": "700448",
+  "ourName": "Mahatma Gandhi Medical College & Research Institute, Pondicherry",
+  "score": 1.0
+ },
+ "593": {
+  "pgName": "Sri Ramachandra Medical College and Research Institute, Sri Ramachandra Medical College and Research Institute, Tamil Nadu, 600116",
+  "pgCode": "700453",
+  "ourName": "Sri Ramachandra Medical College & Research Institute, Chennai",
+  "score": 1.0
+ },
+ "610": {
+  "pgName": "Vinayaka Missions Kirupananda Variyar Medical College and Hospital, Salem, Sankari Main Road, NH-47, Seeragapadi, Salem, Tamil Nadu, 636308",
+  "pgCode": "700454",
+  "ourName": "Vinayaka Missions Kirupananda Variyar Medical College, Salem",
+  "score": 1.0
+ },
+ "589": {
+  "pgName": "Shri Sathya Sai Medical College and Research Institute,Kancheepuram, SBV Chennai Campus, Shri Sathya Sai Nagar, Ammapettai, Chennai, Tamil Nadu, 603108",
+  "pgCode": "700455",
+  "ourName": "Shri Sathya Sai Medical College and Research Institute, Kancheepuram",
+  "score": 1.0
+ },
+ "590": {
+  "pgName": "SREE BALAJI MEDICAL COLLEGE AND HOSPITAL, CHENNAI, NO,7 WORKS ROAD,CHROMEPET,CHENNAI, Tamil Nadu, 600044",
+  "pgCode": "700456",
+  "ourName": "Sree Balaji Medical College and Hospital, Chennai",
+  "score": 1.0
+ },
+ "469": {
+  "pgName": "VINAYAKA MISSIONS MEDICAL COLLEGE AND HOSPITAL, KARAIKAL, KEEZHAKASAKUDIMEDU, KOTTUCHERRY (POST), KARAIKAL, UT of PUDUCHERRY, Puducherry, 609609",
+  "pgCode": "700458",
+  "ourName": "Vinayaka Missions Medical College, Karaikal, Pondicherry",
+  "score": 1.0
+ },
+ "461": {
+  "pgName": "AARUPADAI VEEDU MEDICAL COLLEGE AND HOSPITAL, PONDY - CUDDALORE MAIN ROAD, KIRUMAMPAKKAM, BAHOUR COMMUNE PANCHAYAT, PUDUCHERRY, Puducherry, 607402",
+  "pgCode": "700459",
+  "ourName": "Aarupadai Veedu Medical College, Pondicherry",
+  "score": 1.0
+ },
+ "466": {
+  "pgName": "Sri Lakshmi narayana institute of medical sciences,puducherry, Sri Lakshmi narayana institute of medical sciences,puducherry, Puducherry, 605502",
+  "pgCode": "700460",
+  "ourName": "Sri Lakshmi Narayana Institute of Medical Sciences, Pondicherry",
+  "score": 1.0
+ },
+ "462": {
+  "pgName": "INDIRA GANDHI MEDICAL COLLEGE AND RESEARCH INSTITUTE, PUDUCHERRY, INDIRA GANDHI MEDICAL COLLEGE AND RESEARCH INSTITUTE, PUDUCHERRY, Puducherry, 605009",
+  "pgCode": "700490",
+  "ourName": "Indira Gandhi Medical College & Research Institute, Puducherry",
+  "score": 1.0
+ },
+ "167": {
+  "pgName": "Shaheed Hasan Khan Mewati Government Medical College, Shaheed Hasan Khan Mewati Government Medical College, Haryana, 122107",
+  "pgCode": "700491",
+  "ourName": "Shaheed Hasan Khan Mewati Government Medical College, Nalhar",
+  "score": 1.0
+ },
+ "777": {
+  "pgName": "Veer Chandra Singh Garhwali Govt. Institute of Medical Science & Research, Veer Chandra Singh Garhwali Govt. Institute of Medical Science and Research, Srinagar Garhwal, Uttarakhand, 246174",
+  "pgCode": "700502",
+  "ourName": "Veer Chandra Singh Garhwali Govt. Medical Sc. & Research Instt, Srinagar, Pauri",
+  "score": 1.0
+ },
+ "414": {
+  "pgName": "Rajiv Gandhi Medical College and Chhatrapati Shivaji Maharaj Hospital, , RAJIV GANDHI MEDICAL COLLEGE,THANE BELAPUR ROAD, KALWA, THANE, Maharashtra, 400605",
+  "pgCode": "700983",
+  "ourName": "Rajiv Gandhi Medical College and Chhatrapati Shivaji Maharaj Hospital, Thane",
+  "score": 1.0
+ },
+ "313": {
+  "pgName": "Govt. Bundelkhand Medical College Sagar M.P., Govt. Bundelkhand Medical College Sagar M.P., Madhya Pradesh, 470001",
+  "pgCode": "700520",
+  "ourName": "Bundelkhand Medical College, Sagar",
+  "score": 1.0
+ },
+ "784": {
+  "pgName": "College of Medicine & Sagore Dutta Hospital, College of Medicine & Sagore Dutta Hospital, West Bengal, 700058",
+  "pgCode": "700521",
+  "ourName": "College of Medicine and Sagore Dutta Hospital, Kolkata",
+  "score": 1.0
+ },
+ "46": {
+  "pgName": "Fakhruddin Ali Ahmed Medical College, Fakhruddin Ali Ahmed Medical College, Assam, 781301",
+  "pgCode": "700522",
+  "ourName": "Fakhruddin Ali Ahmed Medical College",
+  "score": 1.0
+ },
+ "435": {
+  "pgName": "North Eastern Indira Gandhi Regional Institute of Health & Medical Sciences, Shillong, North Eastern Indira Gandhi Regional Institute of Health & Medical Sciences, Shillong, Meghalaya, 793018",
+  "pgCode": "700531",
+  "ourName": "North Eastern Indira Gandhi Regional Instt. of Health and Medical Sciences, Shil",
+  "score": 1.0
+ },
+ "421": {
+  "pgName": "Sri Bhausaheb Hire Government Medical College, Sri Bhausaheb Hire Government Medical College,Dhule, Maharashtra, 424311",
+  "pgCode": "700532",
+  "ourName": "Sri Bhausaheb Hire Government Medical College, Dhule",
+  "score": 1.0
+ },
+ "92": {
+  "pgName": "LATE SHRI LAKHI RAM AGRAWAL MEMORIAL GOVT.MEDICAL COLLEGE, LATE SHRI LAKHI RAM AGRAWAL MEMORIAL GOVT.MEDICAL COLLEGE, Chhattisgarh, 496001",
+  "pgCode": "700534",
+  "ourName": "Late Shri Lakhi Ram Agrawal Memorial Govt. Medical College, Raigarh",
+  "score": 1.0
+ },
+ "671": {
+  "pgName": "RAJIV GANDHI INSTITUTE OF MEDICAL SCIENCES, RAJIV GANDHI INSTITUTE OF MEDICAL SCIENCES ADILABAD -504001 TELANGANA STATE, Telangana, 504001",
+  "pgCode": "700535",
+  "ourName": "Rajiv Gandhi Institute of Medical Sciences, adilabad",
+  "score": 1.0
+ },
+ "91": {
+  "pgName": "Late Baliram Kashyap Memorial Govt Medical Dimrapal, Late Baliram Kashyap Memorial Govt Medical Dimrapal, Chhattisgarh, 494001",
+  "pgCode": "700538",
+  "ourName": "Late Shri Baliram Kashyap Memorial NDMC Govt. Medical College, Jagdalpur",
+  "score": 0.8
+ },
+ "40": {
+  "pgName": "Tomo Riba Institute of Health and Medical Sciences,, TRIHMS. Old Assembly Block. Near Rajiv Gandhi Stadium. Naharlagun-791110. Arunachal Pradesh, Arunachal Pradesh, 791110",
+  "pgCode": "700588",
+  "ourName": "Tomo Riba Institute of Health & Medical Sciences, Naharlagun",
+  "score": 1.0
+ },
+ "85": {
+  "pgName": "Chandulal Chandrakar Memorial Hospital, , chandulalchandrakarhospital@gmail.com, Chhattisgarh, 490020",
+  "pgCode": "700606",
+  "ourName": "Chandulal Chandrakar Memorial Medical College, Durg",
+  "score": 1.0
+ },
+ "96": {
+  "pgName": "Shri Balaji Institute of Medical Sceince,, MOWA, RAIPUR, Chhattisgarh, 492001",
+  "pgCode": "700611",
+  "ourName": "Shri Balaji Institute of Medical Science",
+  "score": 1.0
+ },
+ "103": {
+  "pgName": "Dr. Baba Saheb Ambedkar Hospital, , SEC 6 ROHINI DELHI, Delhi (NCT), 110085",
+  "pgCode": "700628",
+  "ourName": "Dr. Baba Saheb Ambedkar Medical College, Rohini, Delhi",
+  "score": 1.0
+ },
+ "163": {
+  "pgName": "Maharaja Agrasen Medical College,, NH- 9, VPO - Agroha, District Hisar, Haryana, 125047",
+  "pgCode": "700734",
+  "ourName": "Maharaja Agrasen Medical College, Agroha",
+  "score": 1.0
+ },
+ "179": {
+  "pgName": "Shri Lal Bahadur Shastri Government Medical College and Hospital , , VPO- Bhangrotu, MC- Ner Chowk, District- Mandi, Himachal Pradesh, 175021",
+  "pgCode": "700748",
+  "ourName": "Shri Lal Bahadur Shastri Government Medical College, Mandi, HP",
+  "score": 1.0
+ },
+ "210": {
+  "pgName": "BGS Global Hospital, , Gleneagles BGS Hospital,(Change in Hospital name) Uttarahalli Road, Kengeri Bangalore, Karnataka, 560060",
+  "pgCode": "700778",
+  "ourName": "BGS Global Institute of Medical Sciences, Bangalore",
+  "score": 1.0
+ },
+ "292": {
+  "pgName": "Jubilee Mission Hospital, , Bishop Alappatt Road, Jubilee Mission P.O. Thrissur, Kerala, 680005",
+  "pgCode": "700859",
+  "ourName": "Jubilee Mission Medical College & Research Institute, Thrissur",
+  "score": 1.0
+ },
+ "297": {
+  "pgName": "Malankara Orthodox Syrian Church Medical College Hospital, MOSC Medical College Hospital, Kolenchery, Kochi, Ernakulam District, Kerala, 682311, Kerala, 682311",
+  "pgCode": "700867",
+  "ourName": "Malankara Orthodox Syrian Church Medical College",
+  "score": 1.0
+ },
+ "303": {
+  "pgName": "Sree Gokulam Medical College Research Foundation, , Venjaramoodu. P.O Thiruvananthapuram, Kerala, 695607",
+  "pgCode": "700874",
+  "ourName": "Sree Gokulam Medical College Trust & Research Foundation, Trivandrum",
+  "score": 1.0
+ },
+ "360": {
+  "pgName": "Dr. Panjabrao Alias Bhausaheb Deshmukh Memorial Medical College, , Shivaji Nagar Near Panchawati Square Amravati, Maharashtra, 444603",
+  "pgCode": "700929",
+  "ourName": "Dr. Panjabrao Alias Bhausaheb Deshmukh Memorial Medical College, Amravati",
+  "score": 1.0
+ },
+ "393": {
+  "pgName": "Dr. R N Cooper Municipal General Hospital, (Associated with H B T (Hinduhridayasamrat Balasaheb Thackeray) medical College) , HBTMC AND DR.R.N.COOPER HOSPITAL U 15 BHAKTI VEDANTA ROAD JVPD SCHEME VILE PARLE WEST MUMBAI, Maharashtra, 400056",
+  "pgCode": "700930",
+  "ourName": "H.B.T. Medical College & Dr. R.N. Cooper Municipal General Hospital, Juhu, Mumba",
+  "score": 1.0
+ },
+ "517": {
+  "pgName": "Mahatma Gandhi Hospital, Bhilwara Swami Ram Charan Marg, Bhopal Ganj, Bhilwara, Rajasthan Rajasthan , Rajasthan-311001, Mahatma Gandhi Hospital, Bhilwara Swami Ram Charan Marg, Bhopal Ganj, Bhilwara, Rajasthan Rajasthan, Rajasthan, 311001",
+  "pgCode": "701065",
+  "ourName": "Mahatma Gandhi Medical College, Jaipur",
+  "score": 1.0
+ },
+ "532": {
+  "pgName": "Sikkim-Manipal Institute of Medical Sciences, , 5TH MILE , TADONG , GANGTOK, Sikkim, 737102",
+  "pgCode": "701082",
+  "ourName": "Sikkim Manipal Institute of Medical Sciences, Gangtok",
+  "score": 1.0
+ },
+ "587": {
+  "pgName": "Rajah Muthiah Medical College, , Rajah Muthiah Medical College, Annamalainagar, Tamil Nadu, 608002",
+  "pgCode": "701136",
+  "ourName": "Rajah Muthiah Medical College, Annamalainagar",
+  "score": 1.0
+ },
+ "783": {
+  "pgName": "College of Medicine and JNM Hospital,, Kalyani, Silpanchal, West Bengal, 741235",
+  "pgCode": "701283",
+  "ourName": "College of Medicine and JNM Hospital,Kalyani,Nadia",
+  "score": 1.0
+ },
+ "786": {
+  "pgName": "Diamond Harbour Government Medical College And Hospital, , Harindanga, New Town, Word No- 4, P.O and P.S- Diamond Harbour, Dist- South 24 Parganas, West Bengal, West Bengal, 743331",
+  "pgCode": "701289",
+  "ourName": "Diamond Harbour Government Medical College and Hospital, West Bengal",
+  "score": 1.0
+ },
+ "808": {
+  "pgName": "Prafulla Chandra Sen Government Medical College and Hospital,West Bengal, Arambagh, Hooghly , Pin - 712601, West Bengal, 712601",
+  "pgCode": "701297",
+  "ourName": "Prafulla Chandra Sen Government Medical College and Hospital",
+  "score": 1.0
+ },
+ "262": {
+  "pgName": "SRI DEVARAJ URS MEDICAL COLLEGE, TAMAKA, Tamaka, Kolar, Karnataka, 563103",
+  "pgCode": "701349",
+  "ourName": "Sri Devaraj Urs Medical College",
+  "score": 1.0
+ },
+ "442": {
+  "pgName": "Bhima Bhoi Medical College and Hospital, Balangir, At-Laltikra Po-Rajendra College, Balangir, Odisha, 767002",
+  "pgCode": "701428",
+  "ourName": "Government Medical College & Hospital (Renamed as Bhima Bhoi Medical College & H",
+  "score": 1.0
+ },
+ "191": {
+  "pgName": "Sher-I-Kashmir Institute of Medical Sciences, Jammu and Kashmir, SKIMS SOURA SRINAGAR JAMMU & KASHMIR, Jammu And Kashmir, 190011",
+  "pgCode": "701479",
+  "ourName": "Sher-I-Kashmir Instt. Of Medical Sciences, Srinagar",
+  "score": 1.0
+ },
+ "87": {
+  "pgName": "GMC Bharat Ratna Late Shri Atal Bihari Vajpayee Memorial Medical College, Chhattisgarh , BHARAT RATNA LATE SHRI ATAL BIHARI VAJPAYEE MEMORIAL MEDICAL COLLEGE, PENDRI, RAJNANDGAON, CHHATTIS, Chhattisgarh, 491441",
+  "pgCode": "701498",
+  "ourName": "Government Medical College (Bharat Ratna Shri Atal Bihari Vajpyee Memorial Med.",
+  "score": 0.75
+ },
+ "548": {
+  "pgName": "Government Erode Medical College- Formerly IRT-Perundurai Medical College, GOVERNMENT ERODE MEDICAL COLLEGE AND HOSPITAL PERUNDURAI SANATORIUM POST ERODE DISTRICT, Tamil Nadu, 638053",
+  "pgCode": "701499",
+  "ourName": "Government Erode Medical College & Hospital, Perundurai (Formerly IRT Perundurai",
+  "score": 1.0
+ },
+ "754": {
+  "pgName": "Shaikh-Ul-Hind Maulana Mahmood Hasan Medical College, Saharanpur, Pilkhani Ambala Road, Uttar Pradesh, 247232",
+  "pgCode": "701503",
+  "ourName": "Shaikh-UL-Hind Maulana Mahmood Hasan Medical College, Saharanpur",
+  "score": 1.0
+ },
+ "443": {
+  "pgName": "FAKIR MOHAN MEDICAL COLLEGE AND HOSPITAL , Orissa, AT-Remuna Post-Remuna Dist-Balasore, Odisha, 756019",
+  "pgCode": "701576",
+  "ourName": "Government Medical College & Hospital (Renamed as Fakir Mohan Medical College &",
+  "score": 1.0
+ },
+ "712": {
+  "pgName": "Government Medical College and Super Facility Hospital, Distt.-Azamgarh, Uttar Pradesh, Chakrapanpur, Kanaila, Azamgarh, Uttar Pradesh, 276128",
+  "pgCode": "701587",
+  "ourName": "Government Medical College & Super facility Hospital, Azamgarh",
+  "score": 1.0
+ },
+ "573": {
+  "pgName": "Kanyakumari Medical Mission, Tamil Nadu, CSI Hospital Neyyoor Kanyakumari Dist, Tamil Nadu, 629802",
+  "pgCode": "701602",
+  "ourName": "KANYAKUMARI MEDICAL MISSION RESEARCH CENTRE",
+  "score": 1.0
+ },
+ "454": {
+  "pgName": "Saheed Laxman Nayak Medical College and Hospital,Orissa, SAHEED LAXMAN NAYAK MEDICAL COLLEGE AND HOSPITAL KORAPUT, JANIGUDA ODISHA KORAPUT 764020, Odisha, 764020",
+  "pgCode": "701648",
+  "ourName": "Saheed Laxman Nayak Medical College & Hospital, Koraput",
+  "score": 1.0
+ },
+ "257": {
+  "pgName": "Shri Atal Bihari Vajpayee Medical College & Research Institute, Bengaluru, Opposite to Shivajinagar Bus stop, Shivajinagar, Bengaluru., Karnataka, 560001",
+  "pgCode": "701724",
+  "ourName": "Shri Atal Bihari Vajapayee Medical College and Research Institute, Bengaluru,",
+  "score": 0.75
+ },
+ "361": {
+  "pgName": "Dr. Rajendra Gode Medical College and Hospital,Maharashtra, University Mardi Road Ghatkheda, Amravati, Maharashtra, 444602",
+  "pgCode": "902730",
+  "ourName": "Dr. Rajendra Gode Medical College, Amravati, Maharashtra",
+  "score": 1.0
+ },
+ "734": {
+  "pgName": "Maharshi Devraha Baba Autonomous State Medical College, Deoria, Uttar Pradesh, Hospital Road, Saket Nagar, Deoria-274001, Uttar Pradesh, 274001",
+  "pgCode": "902831",
+  "ourName": "Maharshi Devraha Baba Autonomous State Medical College, Deoria",
+  "score": 1.0
+ },
+ "732": {
+  "pgName": "MahaMaya Rajkiya Allopathic Medical College , Saddarpur, AmbedkarNagar, Uttar Pradesh, 224227",
+  "pgCode": "902833",
+  "ourName": "Mahamaya Rajkiya Allopathic Medical College, Ambedkarnagar",
+  "score": 1.0
+ },
+ "659": {
+  "pgName": "Malla Reddy Institute of Medical Sciences, Suraram X Roads, Jeedimetla, Hyderabad, Telangana, 500055",
+  "pgCode": "902857",
+  "ourName": "Malla Reddy Institute of Medical Sciences, Hyderabad",
+  "score": 1.0
+ },
+ "348": {
+  "pgName": "Armed Forces Medical College, SOLAPUR ROAD NEAR RACE COURSE OPPOSITE OLD COMMAND HOSPITAL, WANOWARI PUNE, Maharashtra, 411040",
+  "pgCode": "902867",
+  "ourName": "Armed Forces Medical College, Pune",
+  "score": 1.0
+ },
+ "59": {
+  "pgName": "BHAGWAN MAHAVIR INSTITUTE OF MEDICAL SCIENCES, PAWAPURI, NALANDA, Bihar-803115, BMIMS CAMPUS, PAWAPURI, NALANDA",
+  "pgCode": "904214",
+  "ourName": "Bhagwan Mahavir Institute of Medical Sciences, Pawapuri, Nalanda",
+  "score": 1.0
+ },
+ "66": {
+  "pgName": "Jannyak Karpoori Thakur Medical College and Hospital Madhepura, At- Jajhat sabaila Singheswar road NH106 Madhepura, Bihar-852128, AT-JAJHAT SABAILA, SINGHESHWAR ROAD, NH-106, MADHEPURA BIHAR",
+  "pgCode": "904262",
+  "ourName": "JANNAYAK KARPOORI THAKUR MEDICAL COLLEGE AND HOSPITAL, MADHEPURA, BIHAR",
+  "score": 0.75
+ },
+ "727": {
+  "pgName": "KALYAN SINGH GOVERNMENT MEDICAL COLLEGE, BULANDSHAHR, Chandpur Road, Near Tehsil Sadar, Bulandshahr, Uttar Pradesh-203001, Kalyan Singh Government Medical College, 339 Chandpur Road, Near Sadar Tehsil, Bulandshahr 203001",
+  "pgCode": "904538",
+  "ourName": "Kalyan Singh Government medical college, Bulandshahr, UP",
+  "score": 1.0
+ },
+ "157": {
+  "pgName": "Amrita School of Medicine,Faridabad, Amrita School of Medicine, Mata Amritanandmayi Marg, Sec-88, Faridabad, Haryana",
+  "pgCode": "904574",
+  "ourName": "AMRITA SCHOOL OF MEDICINE, FARIDABAD",
+  "score": 1.0
+ },
+ "424": {
+  "pgName": "Symbiosis Medical College for Women, Lavale, Mulshi, Pune - 412115, Maharashtra, India",
+  "pgCode": "904576",
+  "ourName": "Symbiosis Medical College for Women, Pune",
+  "score": 1.0
+ },
+ "453": {
+  "pgName": "Pt. Raghunath Murmu Medical College & Hospital, Baripada Government, At- Rangamatia, Po- Laxmiposi, PS- Baripada Sadar, Via- Shankhabhanga, Dist- Mayurbhanj, Odisha",
+  "pgCode": "904582",
+  "ourName": "Pt. Raghunath Murmu Medical College and Hospital, Baripada, Odisha",
+  "score": 1.0
+ },
+ "831": {
+  "pgName": "Institute of Liver and Biliary Sciences, D-1 Vasant Kunj, Delhi-110070, Institute of Liver and Biliary Sciences, D-1, Vasant Kunj",
+  "pgCode": "904610",
+  "ourName": "Institute of Liver and Biliary Sciences",
+  "score": 1.0
+ },
+ "735": {
+  "pgName": "MAHATMA VIDUR AUTONOMOUS STATE MEDICAL COLLEGE, Vill Madhusudanpur Devidas, Post Kiratpur, Teh Najibabad, Distt Bijnor, Uttar Pradesh-246731, Village Madhusudanpur devidas, Post- Kiratpur, Tehsil- Najibabad, District- Bijnor, UP (246731)",
+  "pgCode": "904614",
+  "ourName": "MAHATMA VIDUR AUTONOMOUS STATE MEDICAL COLLEGE BIJNOR UP",
+  "score": 1.0
+ }
+}

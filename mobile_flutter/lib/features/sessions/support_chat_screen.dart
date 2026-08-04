@@ -87,7 +87,7 @@ class _SupportChatScreenState extends ConsumerState<SupportChatScreen> {
           body: const Column(
             children: [
               Expanded(child: StreamMessageListView()),
-              StreamMessageInput(),
+              StreamMessageInput(showCommandsButton: false, disableAttachments: true),
             ],
           ),
         ),

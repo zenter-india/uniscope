@@ -153,12 +153,12 @@ class _Hero extends StatelessWidget {
             Image.network(
               university.imageUrl!,
               fit: BoxFit.cover,
-              errorBuilder: (_, __, ___) => const _HeroPlaceholder(),
+              errorBuilder: (_, __, ___) => _HeroPlaceholder(name: university.name),
               loadingBuilder: (context, child, progress) =>
-                  progress == null ? child : const _HeroPlaceholder(),
+                  progress == null ? child : _HeroPlaceholder(name: university.name),
             )
           else
-            const _HeroPlaceholder(),
+            _HeroPlaceholder(name: university.name),
           // Bottom gradient so overlaid text stays legible regardless of
           // the eventual photo's brightness.
           Container(
@@ -222,7 +222,9 @@ class _Hero extends StatelessWidget {
                     const SizedBox(width: 3),
                     Expanded(
                       child: Text(
-                        '${university.city}, ${university.state}',
+                        [university.city, university.state]
+                            .where((p) => p != null && p.isNotEmpty)
+                            .join(', '),
                         overflow: TextOverflow.ellipsis,
                         style: const TextStyle(color: Colors.white70, fontSize: AppFont.sm),
                       ),
@@ -261,22 +263,88 @@ class _Hero extends StatelessWidget {
 
 /// Gradient placeholder shown when a university has no uploaded cover
 /// photo yet, or while one is loading / failed to load.
+/// Branded stand-in for colleges with no freely-licensed campus photo.
+///
+/// Most of the ~840 seeded medical colleges have no CC-licensed image on
+/// Wikimedia, and using a stock photo of some other campus would misrepresent
+/// them. Instead each college gets a deterministic hue derived from its name
+/// plus its initials, so the cards look intentional and distinguishable
+/// rather than identical — and it costs no storage and no network round-trip,
+/// unlike uploading a generated image per college.
 class _HeroPlaceholder extends StatelessWidget {
-  const _HeroPlaceholder();
+  const _HeroPlaceholder({this.name});
+
+  final String? name;
+
+  /// Initials from the significant words of the college name (skipping the
+  /// filler words nearly every Indian medical college shares).
+  static String _initials(String value) {
+    const skip = {
+      'of', 'and', 'the', 'for', 'institute', 'institution', 'college',
+      'medical', 'sciences', 'science', 'hospital', 'research', 'centre',
+      'center', 'school', 'university', 'academy',
+    };
+    final words = value
+        .split(RegExp(r'[\s,&\-]+'))
+        .where((w) => w.isNotEmpty && !skip.contains(w.toLowerCase()))
+        .toList();
+    final source = words.isNotEmpty ? words : value.split(RegExp(r'\s+'));
+    return source
+        .take(3)
+        .map((w) => w[0].toUpperCase())
+        .join();
+  }
 
   @override
   Widget build(BuildContext context) {
+    final label = name;
+    if (label == null || label.trim().isEmpty) {
+      return Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [authBrandTeal, authBrandNavy],
+          ),
+        ),
+        child: Center(
+          child: Icon(Icons.account_balance_rounded,
+              size: 72, color: Colors.white.withValues(alpha: 0.25)),
+        ),
+      );
+    }
+
+    final hue = (label.hashCode.abs() % 360).toDouble();
+    final top = HSLColor.fromAHSL(1, hue, 0.42, 0.34).toColor();
+    final bottom = HSLColor.fromAHSL(1, (hue + 28) % 360, 0.48, 0.18).toColor();
+
     return Container(
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [authBrandTeal, authBrandNavy],
+          colors: [top, bottom],
         ),
       ),
-      child: Center(
-        child: Icon(Icons.account_balance_rounded,
-            size: 72, color: Colors.white.withValues(alpha: 0.25)),
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          Positioned(
+            right: -20,
+            bottom: -10,
+            child: Icon(Icons.account_balance_rounded,
+                size: 190, color: Colors.white.withValues(alpha: 0.07)),
+          ),
+          Text(
+            _initials(label),
+            style: TextStyle(
+              fontSize: 56,
+              fontWeight: AppFont.extraBold,
+              letterSpacing: 2,
+              color: Colors.white.withValues(alpha: 0.85),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -365,7 +433,6 @@ class _OverviewTab extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final rows = <(String, String)>[
       ('Type', _typeLabel(university.type)),
-      if (university.nirfRank != null) ('NIRF Rank', '#${university.nirfRank}'),
       // Field name is still mbbsSeats in the schema (pre-dates the
       // multi-stream pivot), but the label shown here is stream-neutral —
       // this same count backs seat totals for any institution type now.

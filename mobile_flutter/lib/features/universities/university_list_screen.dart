@@ -13,6 +13,14 @@ const _typeFilters = ['All', 'GOVERNMENT', 'PRIVATE', 'DEEMED', 'CENTRAL'];
 // 'All' plus the same academic-field picklist mentors/aspirants use, so
 // Discover can narrow a mixed-stream list down to e.g. "just Engineering".
 const _streamFilters = ['All', ...kStreamOptions];
+// Every college today is UG-only (see University.levels doc comment) —
+// selecting 'PG' correctly returns zero results rather than showing
+// anything invented, until real PG data is imported.
+const _levelFilters = ['All', 'UG', 'PG'];
+// 'All' plus every state the onboarding state picker offers, so Discover can
+// narrow to any state — not just the aspirant's own (see the quick "my
+// state" toggle pill below for that shortcut).
+const _stateFilters = ['All', ...kIndianStates];
 
 /// Whether the college list is currently narrowed to the aspirant's own
 /// state. Lives outside the screen so Home's `Colleges in <state>` card can
@@ -49,6 +57,32 @@ String _typeLabel(String type) {
   }
 }
 
+/// One distinct colour per UniversityType — previously GOVERNMENT/CENTRAL
+/// shared teal and PRIVATE/DEEMED shared blue, which visually erased the
+/// real distinction between (e.g.) a state government college and a
+/// central Institute of National Importance. All four pulled from the
+/// existing palette rather than new ad-hoc hex values:
+///   GOVERNMENT — success green (state-run, public)
+///   CENTRAL    — brand teal (national-importance institutes: AIIMS, BHU…)
+///   PRIVATE    — info blue
+///   DEEMED     — accent amber (quasi-autonomous; not currently populated
+///                by the NMC import — see colleges.json's README — but a
+///                real enum value admins can set by hand)
+Color _typeColor(String type) {
+  switch (type) {
+    case 'GOVERNMENT':
+      return AppColors.success;
+    case 'CENTRAL':
+      return AppColors.primary;
+    case 'PRIVATE':
+      return AppColors.info;
+    case 'DEEMED':
+      return AppColors.accent;
+    default:
+      return AppColors.textMuted;
+  }
+}
+
 class UniversityListScreen extends ConsumerStatefulWidget {
   const UniversityListScreen({super.key});
 
@@ -60,6 +94,12 @@ class _UniversityListScreenState extends ConsumerState<UniversityListScreen> {
   String _query = '';
   String _typeFilter = 'All';
   String _streamFilter = 'All';
+  String _levelFilter = 'All';
+  // null until the aspirant explicitly picks a state from the sheet —
+  // until then, the pill defers to the ambient collegeStateFilterProvider
+  // toggle (Home's "Colleges in <state>" quick action) so the two controls
+  // stay merged into one pill instead of fighting each other.
+  String? _explicitStateFilter;
 
   /// Bottom sheet used by both the Type and Stream pills — single-select
   /// list of the given options, closes itself on tap.
@@ -113,6 +153,12 @@ class _UniversityListScreenState extends ConsumerState<UniversityListScreen> {
     final universitiesAsync = ref.watch(universitiesListProvider);
     final myState = ref.watch(myProfileProvider).asData?.value.state;
     final stateOnly = ref.watch(collegeStateFilterProvider);
+    // Explicit sheet pick wins; otherwise fall back to the ambient "my
+    // state" toggle (only meaningful once the profile's state is known).
+    final explicit = _explicitStateFilter;
+    final effectiveState = explicit != null
+        ? (explicit == 'All' ? null : explicit)
+        : (stateOnly && myState != null && myState.isNotEmpty ? myState : null);
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -148,23 +194,32 @@ class _UniversityListScreenState extends ConsumerState<UniversityListScreen> {
                 scrollDirection: Axis.horizontal,
                 padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
                 children: [
-                  // Only offered once we actually know the aspirant's
-                  // state — otherwise the chip would be a dead control.
-                  if (myState != null && myState.isNotEmpty)
-                    Padding(
-                      padding: const EdgeInsets.only(right: AppSpacing.sm),
-                      child: _FilterPill(
-                        icon: Icons.place_rounded,
-                        label: myState,
-                        active: stateOnly,
-                        onTap: () => ref
-                            .read(collegeStateFilterProvider.notifier)
-                            .set(!stateOnly),
-                      ),
-                    ),
                   Padding(
                     padding: const EdgeInsets.only(right: AppSpacing.sm),
                     child: _FilterPill(
+                      icon: Icons.place_rounded,
+                      label: effectiveState ?? 'State',
+                      active: effectiveState != null,
+                      trailing: Icons.keyboard_arrow_down_rounded,
+                      onTap: () => _pickOption(
+                        title: 'State',
+                        options: _stateFilters,
+                        optionLabel: (v) => v,
+                        selected: effectiveState ?? 'All',
+                        onSelected: (v) {
+                          // Picking anything here always wins from now on —
+                          // clear the ambient toggle so it can't silently
+                          // fight the explicit choice on the next rebuild.
+                          ref.read(collegeStateFilterProvider.notifier).set(false);
+                          setState(() => _explicitStateFilter = v == 'All' ? 'All' : v);
+                        },
+                      ),
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.only(right: AppSpacing.sm),
+                    child: _FilterPill(
+                      icon: Icons.account_balance_rounded,
                       label: _typeFilter == 'All'
                           ? 'Type'
                           : _typeLabel(_typeFilter),
@@ -182,11 +237,12 @@ class _UniversityListScreenState extends ConsumerState<UniversityListScreen> {
                   Padding(
                     padding: const EdgeInsets.only(right: AppSpacing.sm),
                     child: _FilterPill(
+                      icon: Icons.menu_book_rounded,
                       label: _streamFilter == 'All' ? 'Stream' : _streamFilter,
                       active: _streamFilter != 'All',
                       trailing: Icons.keyboard_arrow_down_rounded,
                       onTap: () => _pickOption(
-                        title: 'Stream / field',
+                        title: 'Stream',
                         options: _streamFilters,
                         optionLabel: (v) => v,
                         selected: _streamFilter,
@@ -194,6 +250,23 @@ class _UniversityListScreenState extends ConsumerState<UniversityListScreen> {
                       ),
                     ),
                   ),
+                  Padding(
+                    padding: const EdgeInsets.only(right: AppSpacing.sm),
+                    child: _FilterPill(
+                      icon: Icons.school_rounded,
+                      label: _levelFilter == 'All' ? 'Degree' : _levelFilter,
+                      active: _levelFilter != 'All',
+                      trailing: Icons.keyboard_arrow_down_rounded,
+                      onTap: () => _pickOption(
+                        title: 'Degree',
+                        options: _levelFilters,
+                        optionLabel: (v) => v,
+                        selected: _levelFilter,
+                        onSelected: (v) => setState(() => _levelFilter = v),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.md),
                 ],
               ),
             ),
@@ -226,13 +299,15 @@ class _UniversityListScreenState extends ConsumerState<UniversityListScreen> {
                           _typeFilter == 'All' || u.type == _typeFilter;
                       final matchesStream = _streamFilter == 'All' ||
                           u.stream == _streamFilter;
-                      final matchesState = !stateOnly ||
-                          myState == null ||
-                          u.state.toLowerCase() == myState.toLowerCase();
+                      final matchesState = effectiveState == null ||
+                          u.state.toLowerCase() == effectiveState.toLowerCase();
+                      final matchesLevel = _levelFilter == 'All' ||
+                          u.levels.contains(_levelFilter);
                       return matchesQuery &&
                           matchesType &&
                           matchesStream &&
-                          matchesState;
+                          matchesState &&
+                          matchesLevel;
                     }).toList();
 
                     if (filtered.isEmpty) {
@@ -242,8 +317,8 @@ class _UniversityListScreenState extends ConsumerState<UniversityListScreen> {
                           EmptyState(
                             icon: Icons.school_rounded,
                             title: 'No colleges found',
-                            message: stateOnly && myState != null
-                                ? 'No colleges listed in $myState yet. Turn off the $myState filter to see all colleges.'
+                            message: effectiveState != null
+                                ? 'No colleges listed in $effectiveState yet. Clear the state filter to see all colleges.'
                                 : 'Try a different search or filter.',
                           ),
                         ],
@@ -284,7 +359,6 @@ class UniversityCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final isGov = university.type == 'GOVERNMENT' || university.type == 'CENTRAL';
     return AppCard(
       onTap: onTap,
       margin: const EdgeInsets.only(bottom: AppSpacing.sm),
@@ -294,17 +368,14 @@ class UniversityCard extends ConsumerWidget {
             width: 44,
             height: 44,
             decoration: BoxDecoration(
-              color: AppColors.primaryLight,
+              color: AppColors.background,
               borderRadius: BorderRadius.circular(AppRadius.sm),
             ),
             alignment: Alignment.center,
-            child: Text(
-              university.nirfRank != null ? '#${university.nirfRank}' : '—',
-              style: const TextStyle(
-                fontSize: AppFont.sm,
-                fontWeight: AppFont.extraBold,
-                color: AppColors.primary,
-              ),
+            child: Icon(
+              Icons.account_balance_rounded,
+              size: 20,
+              color: AppColors.textMuted.withValues(alpha: 0.6),
             ),
           ),
           const SizedBox(width: AppSpacing.md),
@@ -338,7 +409,7 @@ class UniversityCard extends ConsumerWidget {
           const SizedBox(width: AppSpacing.xs),
           StatusChip(
             label: _typeLabel(university.type),
-            color: isGov ? AppColors.primary : AppColors.info,
+            color: _typeColor(university.type),
           ),
           _CollegeSaveButton(universityId: university.id),
         ],

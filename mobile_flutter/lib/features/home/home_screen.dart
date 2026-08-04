@@ -298,8 +298,15 @@ class HomeScreen extends ConsumerWidget {
                           return _CollegeCard(
                             name: u.name,
                             sub: [
-                              u.type == 'GOVERNMENT' ? 'Government' : 'Private',
-                              if (u.nirfRank != null) 'Rank #${u.nirfRank}',
+                              // Was a binary Government/Private ternary that
+                              // mislabelled CENTRAL colleges (e.g. NIFT
+                              // Delhi) and DEEMED ones as "Private".
+                              switch (u.type) {
+                                'GOVERNMENT' => 'Government',
+                                'CENTRAL' => 'Central',
+                                'DEEMED' => 'Deemed',
+                                _ => 'Private',
+                              },
                               if (u.mbbsSeats != null) '${u.mbbsSeats} seats',
                             ].join(' · '),
                             onTap: () => context.push(
