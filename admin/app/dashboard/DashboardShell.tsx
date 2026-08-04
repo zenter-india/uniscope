@@ -10,6 +10,7 @@ const NAV_ITEMS = [
   { label: 'Moderation', href: '/dashboard/moderation' },
   { label: 'Users', href: '/dashboard/users' },
   { label: 'Universities', href: '/dashboard/universities' },
+  { label: 'Data Import', href: '/dashboard/data-import' },
 ];
 
 export function DashboardShell({

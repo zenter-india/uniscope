@@ -1,6 +1,13 @@
 [build]
 builder = "NIXPACKS"
-buildCommand = "npm install --include=dev && npx prisma generate && npm run build"
+# Python step powers the admin panel's "Refresh college data" tool
+# (DataImportService shells out to scripts/data/refresh_*.py) — see
+# nixpacks.toml for where python3/pip come from, and
+# scripts/data/README.md for what these scripts do. `--break-system-packages`
+# is needed because Nixpacks' Python isn't in a venv; `playwright install
+# --with-deps chromium` pulls a headless browser (~300MB) purely for
+# refresh_pg.py, since MCC's PG source has no static file to download.
+buildCommand = "npm install --include=dev && npx prisma generate && npm run build && pip install --break-system-packages -r scripts/data/requirements.txt && python3 -m playwright install --with-deps chromium"
 
 [deploy]
 startCommand = "npx prisma migrate deploy && node dist/main.js"

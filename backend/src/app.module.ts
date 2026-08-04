@@ -48,6 +48,7 @@ import { PayoutsModule } from './modules/payouts/payouts.module.js';
 import { WishlistModule } from './modules/wishlist/wishlist.module.js';
 import { UniversityReviewsModule } from './modules/university-reviews/university-reviews.module.js';
 import { UniversityWishlistModule } from './modules/university-wishlist/university-wishlist.module.js';
+import { DataImportModule } from './modules/data-import/data-import.module.js';
 
 @Module({
   imports: [
@@ -110,6 +111,7 @@ import { UniversityWishlistModule } from './modules/university-wishlist/universi
     WishlistModule,
     UniversityReviewsModule,
     UniversityWishlistModule,
+    DataImportModule,
   ],
   controllers: [AppController],
   providers: [

@@ -1,0 +1,14 @@
+# Extends Nixpacks' auto-detected Node setup with Python + a headless
+# Chromium — required at runtime by DataImportService, which shells out to
+# backend/scripts/data/refresh_ug.py (pdfplumber) and refresh_pg.py
+# (Playwright) to power the admin panel's "Refresh college data" tool. See
+# that module's docstring and scripts/data/README.md.
+#
+# `nixPkgs` here ADDS to (doesn't replace) whatever Nixpacks auto-detects
+# for the Node app from package.json. The actual pip/playwright install
+# commands live in railway.toml's buildCommand instead of a [phases.install]
+# block here, since railway.toml's buildCommand takes precedence over (and
+# would otherwise conflict with) a nixpacks-defined install phase — this
+# file's only job is making `python3`/`pip` exist for that command to use.
+[phases.setup]
+nixPkgs = ["python311", "python311Packages.pip"]
