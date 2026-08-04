@@ -49,3 +49,8 @@ backend/prisma/generated/
 # Secrets
 backend/firebase-service-account.json
 google-services.json
+
+# Android release signing (generated locally, never committed)
+mobile_flutter/android/key.properties
+mobile_flutter/android/app/upload-keystore.jks
+mobile_flutter/android/app/*.jks
