@@ -9,6 +9,7 @@ interface UserRowData {
   role: string;
   verificationStatus: string;
   isBanned: boolean;
+  isActive: boolean;
   createdAt: string;
 }
 
@@ -53,6 +54,14 @@ export function UserRow({ user }: { user: UserRowData }) {
           {user.isBanned && (
             <span className="rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-700">
               Banned
+            </span>
+          )}
+          {!user.isActive && !user.isBanned && (
+            <span
+              className="rounded-full bg-zinc-200 px-2 py-0.5 text-xs font-medium text-zinc-600"
+              title="Self-deleted their account — reactivates automatically if they log in again"
+            >
+              Deleted
             </span>
           )}
         </div>

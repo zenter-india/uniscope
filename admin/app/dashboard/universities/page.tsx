@@ -17,6 +17,7 @@ interface UniversityRowData {
   establishedYear: number | null;
   website: string | null;
   description: string | null;
+  imageUrl: string | null;
   isActive: boolean;
 }
 

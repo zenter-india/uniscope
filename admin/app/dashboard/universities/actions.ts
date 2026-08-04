@@ -7,7 +7,7 @@ export interface UniversityInput {
   name: string;
   type: string;
   state: string;
-  city: string;
+  city: string | null;
   nirfRank?: number;
   mbbsSeats?: number;
   establishedYear?: number;
@@ -30,6 +30,14 @@ export async function updateUniversity(
   await backendFetch(`/universities/${id}`, {
     method: 'PATCH',
     body: JSON.stringify(input),
+  });
+  revalidatePath('/dashboard/universities');
+}
+
+export async function uploadUniversityPhoto(id: string, imageBase64: string): Promise<void> {
+  await backendFetch(`/universities/${id}/photo`, {
+    method: 'POST',
+    body: JSON.stringify({ imageBase64 }),
   });
   revalidatePath('/dashboard/universities');
 }

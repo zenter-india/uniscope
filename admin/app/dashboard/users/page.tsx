@@ -10,6 +10,7 @@ interface UserRowData {
   role: string;
   verificationStatus: string;
   isBanned: boolean;
+  isActive: boolean;
   createdAt: string;
 }
 
