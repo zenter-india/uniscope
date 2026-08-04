@@ -4,11 +4,15 @@
 # (Playwright) to power the admin panel's "Refresh college data" tool. See
 # that module's docstring and scripts/data/README.md.
 #
-# `nixPkgs` here ADDS to (doesn't replace) whatever Nixpacks auto-detects
-# for the Node app from package.json. The actual pip/playwright install
-# commands live in railway.toml's buildCommand instead of a [phases.install]
-# block here, since railway.toml's buildCommand takes precedence over (and
-# would otherwise conflict with) a nixpacks-defined install phase — this
-# file's only job is making `python3`/`pip` exist for that command to use.
+# Setting `nixPkgs` here REPLACES Nixpacks' auto-detected setup phase
+# entirely rather than adding to it (learned the hard way: an earlier
+# version of this file that listed only python packages produced a build
+# with no `npm` at all — "npm: command not found"). nodejs must be listed
+# explicitly alongside python, matching the >=20.11 engines constraint in
+# package.json. The actual pip/playwright install commands live in
+# railway.toml's buildCommand instead of a [phases.install] block here,
+# since railway.toml's buildCommand takes precedence over (and would
+# otherwise conflict with) a nixpacks-defined install phase — this file's
+# only job is making `node`/`npm`/`python3`/`pip` exist for that command.
 [phases.setup]
-nixPkgs = ["python311", "python311Packages.pip"]
+nixPkgs = ["nodejs_20", "python311", "python311Packages.pip"]
