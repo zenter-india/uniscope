@@ -172,6 +172,31 @@ class _SessionCardState extends ConsumerState<_SessionCard> {
     }
   }
 
+  /// A mentor accepting an audio call is already in the app right now — no
+  /// need to wait on a push round-trip to get THEM onto the call screen
+  /// (the aspirant still needs the push deep-link in push_service.dart,
+  /// since they're not the one who just tapped Accept). Without this, both
+  /// sides only reach /call/:sessionId by each separately remembering to
+  /// tap "Join Call" later, which is why calls were getting stuck on the
+  /// ringing screen for both parties — see CallScreen's dual-confirm join.
+  Future<void> _acceptAndMaybeJoin(SessionsApi api) async {
+    setState(() => _busy = true);
+    try {
+      final updated = await api.accept(widget.session.id);
+      ref.invalidate(sessionsListProvider);
+      if (!mounted) return;
+      if (updated.type == 'AUDIO_CALL') {
+        context.push('/call/${updated.id}');
+      }
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('Failed: $e')));
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
   Color _statusColor(SessionStatus status) {
     switch (status) {
       case SessionStatus.pending:
@@ -263,7 +288,7 @@ class _SessionCardState extends ConsumerState<_SessionCard> {
                 const SizedBox(width: AppSpacing.sm),
                 Expanded(
                   child: FilledButton(
-                    onPressed: _busy ? null : () => _act(api.accept),
+                    onPressed: _busy ? null : () => _acceptAndMaybeJoin(api),
                     child: _busy
                         ? const SizedBox(
                             width: 16,

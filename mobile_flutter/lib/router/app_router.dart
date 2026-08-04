@@ -36,6 +36,12 @@ import '../features/verification/verification_screen.dart';
 import '../features/wallet/wallet_screen.dart';
 import '../state/auth_controller.dart';
 
+/// Lets code with no BuildContext (the FCM push handlers in
+/// core/push/push_service.dart, which fire from a background isolate or
+/// before any screen has built) navigate anyway — e.g. deep-linking straight
+/// into '/call/:sessionId' when a "mentor accepted" push arrives.
+final rootNavigatorKey = GlobalKey<NavigatorState>();
+
 const _preAuthRoutes = {'/welcome', '/login', '/otp'};
 
 // Role-selection through the role-specific wizard. While AuthState.
@@ -201,6 +207,7 @@ final routerProvider = Provider<GoRouter>((ref) {
   final isMentor = role == UserRole.mentor;
 
   return GoRouter(
+    navigatorKey: rootNavigatorKey,
     initialLocation: '/',
     refreshListenable: refresh,
     redirect: (context, state) {

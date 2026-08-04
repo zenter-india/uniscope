@@ -3,7 +3,9 @@ import 'dart:io';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
+import '../../router/app_router.dart';
 import '../network/users_api.dart';
 
 /// Must be a top-level (or static) function — the Firebase plugin invokes
@@ -39,6 +41,32 @@ class PushService {
     if (token != null) await _upload(token);
 
     messaging.onTokenRefresh.listen(_upload);
+
+    // Deep-link on every path a push can reach the user through: tapped
+    // while backgrounded, tapped from a cold start (terminated), or
+    // received while the app is already open. Without this, a push arrives
+    // but nothing happens with it — which is exactly why "mentor accepted"
+    // never got either party onto the call screen (see CallScreen's
+    // _WaitingView: it only clears once BOTH sides' clients confirm they
+    // joined, so if the aspirant never learns the mentor accepted, they
+    // never open the call and the mentor's own screen just rings forever).
+    FirebaseMessaging.onMessageOpenedApp.listen(_handleDeepLink);
+    FirebaseMessaging.onMessage.listen(_handleDeepLink);
+    final initialMessage = await messaging.getInitialMessage();
+    if (initialMessage != null) _handleDeepLink(initialMessage);
+  }
+
+  void _handleDeepLink(RemoteMessage message) {
+    final sessionId = message.data['sessionId'];
+    if (sessionId == null) return;
+
+    final isAudioCallAccept = message.data['type'] == 'SESSION_ACCEPTED' &&
+        message.data['sessionType'] == 'AUDIO_CALL';
+    if (!isAudioCallAccept) return;
+
+    final context = rootNavigatorKey.currentContext;
+    if (context == null) return;
+    GoRouter.of(context).push('/call/$sessionId');
   }
 
   Future<void> _upload(String token) async {

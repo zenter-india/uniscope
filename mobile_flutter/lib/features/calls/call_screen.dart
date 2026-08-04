@@ -44,6 +44,7 @@ class _CallScreenState extends ConsumerState<CallScreen> {
   bool _remoteJoinedChannel = false;
   bool _extendDialogShowing = false;
   DateTime? _slotExpiredAt;
+  Timer? _noAnswerTimer;
 
   bool get _isAspirant =>
       _session != null && ref.read(authControllerProvider).user?.id == _session!.aspirantId;
@@ -58,6 +59,7 @@ class _CallScreenState extends ConsumerState<CallScreen> {
   void dispose() {
     _pollTimer?.cancel();
     _tickTimer?.cancel();
+    _noAnswerTimer?.cancel();
     _engine?.leaveChannel();
     _engine?.release();
     super.dispose();
@@ -84,7 +86,18 @@ class _CallScreenState extends ConsumerState<CallScreen> {
       });
 
       final creds = await api.getCallToken(widget.sessionId);
-      await _joinAgoraChannel(creds);
+      // Agora's native join has a documented-but-unconfirmed hang risk on
+      // some Android builds (see CLAUDE.md's Agora native-call note) — an
+      // uncaught native-layer stall here would otherwise leave this screen
+      // spinning on _Phase.connecting forever with no error, which looks
+      // identical to the "stuck ringing" symptom from the other party's
+      // side. A bounded timeout turns a silent hang into a visible error.
+      await _joinAgoraChannel(creds).timeout(
+        const Duration(seconds: 20),
+        onTimeout: () => throw Exception(
+          'Could not connect to the call — check your connection and try again.',
+        ),
+      );
 
       final confirmed = await api.confirmJoined(widget.sessionId);
       if (!mounted) return;
@@ -154,6 +167,8 @@ class _CallScreenState extends ConsumerState<CallScreen> {
     }
 
     if (session.status == SessionStatus.inProgress) {
+      _noAnswerTimer?.cancel();
+      _noAnswerTimer = null;
       if (_phase != _Phase.active) {
         setState(() => _phase = _Phase.active);
         _tickTimer ??= Timer.periodic(const Duration(seconds: 1), (_) => _tick());
@@ -161,7 +176,18 @@ class _CallScreenState extends ConsumerState<CallScreen> {
       _checkSlotCutoff(session);
     } else {
       setState(() => _phase = _Phase.waiting);
+      // A push failing to deliver (stale token, device offline, permission
+      // denied) is exactly the "stuck ringing forever" failure mode the
+      // deep-link fix targets on the happy path — this is the fallback for
+      // when it still doesn't reach the other party. Only ever started
+      // once per call (not per poll tick).
+      _noAnswerTimer ??= Timer(const Duration(seconds: 45), _noAnswer);
     }
+  }
+
+  void _noAnswer() {
+    if (!mounted || _phase != _Phase.waiting) return;
+    _endCall(reason: 'NO_ANSWER');
   }
 
   void _tick() {
@@ -483,6 +509,8 @@ class _EndedView extends StatelessWidget {
         return 'Cancelled';
       case 'REJECTED':
         return 'Declined';
+      case 'NO_ANSWER':
+        return 'No answer';
       default:
         return 'Call ended';
     }

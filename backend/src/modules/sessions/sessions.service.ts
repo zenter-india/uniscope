@@ -296,7 +296,10 @@ export class SessionsService {
         session.type === SessionType.AUDIO_CALL
           ? 'Your mentor accepted — join the call when ready.'
           : 'Your mentor accepted — start chatting now.',
-      metadata: { sessionId: session.id },
+      // sessionType lets the mobile push handler deep-link straight into
+      // the call screen for AUDIO_CALL (vs the chat screen) without an
+      // extra round-trip — see mobile_flutter/lib/core/push/push_service.dart.
+      metadata: { sessionId: session.id, sessionType: session.type },
     });
 
     return this.toResponseById(sessionId);
