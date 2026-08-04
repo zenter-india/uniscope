@@ -8,11 +8,16 @@
 # entirely rather than adding to it (learned the hard way: an earlier
 # version of this file that listed only python packages produced a build
 # with no `npm` at all — "npm: command not found"). nodejs must be listed
-# explicitly alongside python, matching the >=20.11 engines constraint in
-# package.json. The actual pip/playwright install commands live in
-# railway.toml's buildCommand instead of a [phases.install] block here,
-# since railway.toml's buildCommand takes precedence over (and would
-# otherwise conflict with) a nixpacks-defined install phase — this file's
-# only job is making `node`/`npm`/`python3`/`pip` exist for that command.
+# explicitly alongside python. Use nodejs_22, not nodejs_20 — also learned
+# the hard way: @supabase/supabase-js's realtime-js client requires
+# Node's *native* WebSocket support (added in Node 22) and throws
+# "Node.js 20 detected without native WebSocket support" on startup
+# otherwise, crash-looping the whole app even though package.json's
+# engines field only requires >=20.11. The actual pip/playwright install
+# commands live in railway.toml's buildCommand instead of a
+# [phases.install] block here, since railway.toml's buildCommand takes
+# precedence over (and would otherwise conflict with) a nixpacks-defined
+# install phase — this file's only job is making
+# `node`/`npm`/`python3`/`pip` exist for that command.
 [phases.setup]
-nixPkgs = ["nodejs_20", "python311", "python311Packages.pip"]
+nixPkgs = ["nodejs_22", "python311", "python311Packages.pip"]
