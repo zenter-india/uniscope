@@ -5,7 +5,7 @@ import {
   Logger,
   NotFoundException,
 } from '@nestjs/common';
-import { Prisma, User, UserRole } from '@prisma/client';
+import { Prisma, User, UserRole, VerificationStatus } from '@prisma/client';
 import { generatePseudonym } from '../../common/helpers/pseudonym.helper.js';
 import { encryptRealName } from '../../common/helpers/profile-encryption.helper.js';
 import { PrismaService } from '../../database/prisma/prisma.service.js';
@@ -206,6 +206,16 @@ export class UsersService {
       const user = await this.prisma.user.findUniqueOrThrow({ where: { id: userId } });
       if (user.role !== UserRole.MENTOR) {
         throw new BadRequestException('Only mentors can set mentoring availability');
+      }
+      // Identity verification is optional and never blocks a mentor from
+      // being discoverable or chatted with (see MentorsService) — but
+      // turning ON call bookability specifically requires it, since that's
+      // the monetized, harder-to-reverse surface. Turning it off is always
+      // allowed regardless of verification state.
+      if (dto.isMentorAvailable && user.verificationStatus !== VerificationStatus.VERIFIED) {
+        throw new BadRequestException(
+          'Complete identity verification before accepting call bookings — you can still chat with aspirants in the meantime.',
+        );
       }
     }
 

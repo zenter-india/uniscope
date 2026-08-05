@@ -1,11 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import {
-  LedgerEntryType,
-  Prisma,
-  SessionStatus,
-  UserRole,
-  VerificationStatus,
-} from '@prisma/client';
+import { LedgerEntryType, Prisma, SessionStatus, UserRole } from '@prisma/client';
 import { PrismaService } from '../../database/prisma/prisma.service.js';
 import { AvatarService } from '../avatar/avatar.service.js';
 import { ReviewsService } from '../reviews/reviews.service.js';
@@ -23,9 +17,13 @@ import {
 const DEFAULT_LIMIT = 20;
 const MAX_LIMIT = 50;
 
-/** A "mentor" is any VERIFIED user with role MENTOR — verification is what
- * gates discovery/bookability. `isMentorAvailable` ("available for
- * mentoring") no longer hides a mentor from discovery; it only controls
+/** A "mentor" is any user with role MENTOR — identity verification is
+ * deliberately NOT a discovery gate. A mentor is visible and chat-reachable
+ * the moment they sign up; verification only unlocks the "accepting calls"
+ * toggle (UsersService.updateProfile refuses to flip isMentorAvailable to
+ * true for an unverified mentor), so calls/monetization stay gated on it
+ * without blocking the free, low-friction chat path. `isMentorAvailable`
+ * itself never hides a mentor from discovery either — it only controls
  * whether they can be booked for an AUDIO_CALL (see SessionsService.create).
  * An unavailable mentor still shows up everywhere, still accepts CHAT, and
  * mobile renders their status as an online/offline dot. A per-minute rate is
@@ -68,15 +66,14 @@ export class MentorsService {
 
     const where: Prisma.UserWhereInput = {
       role: { in: MENTOR_ROLES },
-      verificationStatus: VerificationStatus.VERIFIED,
       isActive: true,
       isBanned: false,
       deletedAt: null,
       profile: {
-        // isMentorAvailable is NOT filtered here — unavailable mentors stay
-        // listed (with a status dot mobile-side); only call bookings are
-        // gated on it (see SessionsService.create). Verification below is
-        // what actually controls whether a mentor is listed at all.
+        // Neither isMentorAvailable nor verificationStatus are filtered
+        // here — an unverified/unavailable mentor still stays listed
+        // (chat-only); only call bookings are gated on verification +
+        // availability (see SessionsService.create).
         ...(query.universityId && { universityId: query.universityId }),
         ...(query.specialty && {
           specialty: { contains: query.specialty, mode: 'insensitive' },
@@ -122,7 +119,6 @@ export class MentorsService {
       where: {
         id,
         role: { in: MENTOR_ROLES },
-        verificationStatus: VerificationStatus.VERIFIED,
         isActive: true,
         isBanned: false,
         deletedAt: null,

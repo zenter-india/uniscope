@@ -279,7 +279,12 @@ class _MentorAvailabilityCardState
                 Switch(
                   value: isAvailable,
                   activeThumbColor: AppColors.primary,
-                  onChanged: _toggle,
+                  // Unverified mentors are still discoverable and
+                  // chat-reachable (see MentorsService) — verification only
+                  // gates this specific toggle, since paid calls are the
+                  // monetized surface. Disabled rather than left tappable
+                  // into a backend 400, matching UsersService.updateProfile.
+                  onChanged: isVerified ? _toggle : null,
                 ),
             ],
           ),
@@ -289,7 +294,8 @@ class _MentorAvailabilityCardState
                 ? 'Students can always message you. This only controls whether '
                     'they can book a paid call. It switches itself off after 24 '
                     'hours so your profile never promises a call you forgot about.'
-                : 'You still need to get verified before aspirants can find you.',
+                : 'Students can already find and message you. Complete identity '
+                    'verification to start accepting paid calls too.',
             style: const TextStyle(
               fontSize: AppFont.xs,
               color: AppColors.textSecondary,
