@@ -5,7 +5,8 @@
   "description": "Uniscope monorepo — connecting prospective medical students with verified mentors",
   "workspaces": [
     "backend",
-    "admin"
+    "admin",
+    "web"
   ],
   "scripts": {
     "dev:backend": "npm run start:dev --workspace=backend",
@@ -13,7 +14,8 @@
     "build": "npm run build --workspaces --if-present",
     "lint": "npm run lint --workspaces --if-present",
     "test": "npm run test --workspaces --if-present",
-    "format": "prettier --write \"**/*.{ts,tsx,js,json,md}\" --ignore-path .gitignore"
+    "format": "prettier --write \"**/*.{ts,tsx,js,json,md}\" --ignore-path .gitignore",
+    "dev:web": "npm run dev --workspace=web"
   },
   "engines": {
     "node": ">=20.0.0",

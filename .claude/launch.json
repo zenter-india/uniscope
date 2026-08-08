@@ -21,6 +21,15 @@
       "port": 3000
     },
     {
+      "name": "Web (Enrollment site)",
+      "runtimeExecutable": "bash",
+      "runtimeArgs": [
+        "-lc",
+        "cd /Users/kiranrajr/uniscope && NODE_ENV=development exec /opt/homebrew/bin/npm run dev:web"
+      ],
+      "port": 3002
+    },
+    {
       "name": "Mobile (Flutter Web)",
       "runtimeExecutable": "bash",
       "runtimeArgs": [
