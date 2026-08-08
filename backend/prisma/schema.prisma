@@ -162,6 +162,21 @@ enum PayoutStatus {
   FAILED
 }
 
+/// Which side of the marketplace an EnrollmentLead signed up for. Deliberately
+/// its own enum rather than reusing UserRole — a lead is not a user, has no
+/// ADMIN case, and shouldn't silently gain new members if UserRole grows.
+enum EnrollmentLeadRole {
+  ASPIRANT
+  MENTOR
+}
+
+enum EnrollmentLeadStatus {
+  NEW
+  CONTACTED
+  CONVERTED
+  REJECTED
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Models
 // ─────────────────────────────────────────────────────────────────────────────
@@ -326,6 +341,7 @@ model University {
   verificationRequests VerificationRequest[]
   reviews              Review[]
   savedByAspirants     SavedUniversity[]
+  enrollmentLeads      EnrollmentLead[]
 
   @@index([state])
   @@index([type])
@@ -725,4 +741,88 @@ model PushToken {
 
   @@index([userId])
   @@map("push_tokens")
+}
+
+/// A pre-registration captured from the public marketing website, before the
+/// person has any account at all. Deliberately standalone — NO relation to
+/// User — because the whole point is collecting interest from people who
+/// haven't signed up and may never do so. An admin later converts a lead into
+/// a real ASPIRANT/MENTOR account, at which point `convertedUserId` is set and
+/// the lead is kept as a historical record rather than deleted.
+///
+/// Field names intentionally mirror `UserProfile` one-for-one (gender, state,
+/// city, stream, qualification, courseInterested, preferredLanguage,
+/// preferredMentorshipTiming, goals, languages, availableDays, yearOfStudy,
+/// graduationYear) so that conversion is a straight column copy instead of a
+/// re-parsing exercise. Values are unconstrained free text for the same reason
+/// UserProfile's are: the web form renders them as dropdowns for UX, but the
+/// picklists are still being finalised and a lead must never be rejected
+/// because a marketing page drifted ahead of the enum.
+///
+/// NOTE on `phone`: every other table stores phones as a bcrypt hash
+/// (`User.phoneHash`) and never in plaintext. Leads are the deliberate
+/// exception — an unconverted lead exists precisely so someone can be called
+/// or messaged back, which a hash makes impossible. Treat this table as
+/// contact data: it is ADMIN-read-only over the API, never included in any
+/// public or user-facing response projection.
+model EnrollmentLead {
+  id     String               @id @default(uuid())
+  role   EnrollmentLeadRole
+  status EnrollmentLeadStatus @default(NEW)
+
+  /// Contact details — the only fields required of both roles.
+  fullName String  @map("full_name") @db.VarChar(120)
+  phone    String  @db.VarChar(20)
+  email    String? @db.VarChar(200)
+
+  /// Shared profile fields (both roles).
+  dateOfBirth DateTime? @map("date_of_birth") @db.Date
+  gender      String?   @db.VarChar(30)
+  state       String?   @db.VarChar(100)
+  city        String?   @db.VarChar(100)
+  stream      String?   @db.VarChar(50)
+
+  /// Aspirant-only.
+  qualification             String?  @db.VarChar(50)
+  courseInterested          String?  @map("course_interested") @db.VarChar(50)
+  preferredLanguage         String?  @map("preferred_language") @db.VarChar(30)
+  preferredMentorshipTiming String?  @map("preferred_mentorship_timing") @db.VarChar(50)
+  goals                     String[] @default([])
+
+  /// Mentor-only. `universityId` is set when the person picked an existing
+  /// college from the dropdown; `collegeName` always holds the raw text so a
+  /// college missing from the University table doesn't lose the answer.
+  alias          String?  @db.VarChar(60)
+  universityId   String?  @map("university_id")
+  collegeName    String?  @map("college_name") @db.VarChar(200)
+  degree         String?  @db.VarChar(20)
+  currentStatus  String?  @map("current_status") @db.VarChar(30)
+  yearOfStudy    Int?     @map("year_of_study") @db.SmallInt
+  graduationYear Int?     @map("graduation_year") @db.SmallInt
+  languages      String[] @default([])
+  availableDays  String[] @default([]) @map("available_days")
+
+  /// Mentor college-ID upload — same Supabase bucket and signed-URL read path
+  /// as VerificationRequest, but stored here so it survives independently of
+  /// whether the lead is ever converted.
+  documentType DocumentType? @map("document_type")
+  documentKey  String?       @map("document_key") @db.VarChar(500)
+
+  /// Ops/CRM fields — admin-only, never accepted from the public endpoint.
+  convertedUserId String? @unique @map("converted_user_id")
+  adminNote       String? @map("admin_note") @db.Text
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  university University? @relation(fields: [universityId], references: [id])
+
+  /// One submission per phone per side of the marketplace: re-submitting the
+  /// same form updates the existing lead rather than creating a duplicate,
+  /// but the same person may legitimately register as both an aspirant and a
+  /// mentor.
+  @@unique([role, phone])
+  @@index([status, createdAt(sort: Desc)])
+  @@index([role, createdAt(sort: Desc)])
+  @@map("enrollment_leads")
 }

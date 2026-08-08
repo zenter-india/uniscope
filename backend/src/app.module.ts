@@ -49,6 +49,7 @@ import { WishlistModule } from './modules/wishlist/wishlist.module.js';
 import { UniversityReviewsModule } from './modules/university-reviews/university-reviews.module.js';
 import { UniversityWishlistModule } from './modules/university-wishlist/university-wishlist.module.js';
 import { DataImportModule } from './modules/data-import/data-import.module.js';
+import { EnrollmentsModule } from './modules/enrollments/enrollments.module.js';
 
 @Module({
   imports: [
@@ -112,6 +113,7 @@ import { DataImportModule } from './modules/data-import/data-import.module.js';
     UniversityReviewsModule,
     UniversityWishlistModule,
     DataImportModule,
+    EnrollmentsModule,
   ],
   controllers: [AppController],
   providers: [

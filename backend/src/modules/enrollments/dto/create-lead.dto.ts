@@ -1,0 +1,176 @@
+import { DocumentType } from '@prisma/client';
+import {
+  ArrayMaxSize,
+  IsArray,
+  IsDateString,
+  IsEmail,
+  IsEnum,
+  IsInt,
+  IsOptional,
+  IsPhoneNumber,
+  IsString,
+  Max,
+  MaxLength,
+  Min,
+  MinLength,
+} from 'class-validator';
+
+/**
+ * Fields common to both enrollment forms. Everything except name and phone is
+ * optional on purpose: this is a public marketing form, and a half-filled lead
+ * with a working phone number is far more valuable than a validation error
+ * that makes someone abandon the page. The stricter, complete field set is
+ * enforced later — in the real onboarding wizard, once they have an account.
+ */
+export abstract class BaseLeadDto {
+  @IsString()
+  @MinLength(2)
+  @MaxLength(120)
+  fullName!: string;
+
+  @IsString()
+  @IsPhoneNumber('IN')
+  phone!: string;
+
+  @IsOptional()
+  @IsEmail()
+  @MaxLength(200)
+  email?: string;
+
+  @IsOptional()
+  @IsDateString()
+  dateOfBirth?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(30)
+  gender?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  state?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  city?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(50)
+  stream?: string;
+
+  /**
+   * Honeypot. Rendered hidden (and never labelled "website") on the form, so a
+   * real person can't see or fill it — anything non-empty here is a bot. The
+   * request is accepted and silently discarded rather than rejected, so a
+   * scripted submitter gets no signal that it was caught and no reason to
+   * adapt. Deliberately not a captcha: this costs nothing and catches the
+   * commodity form-spam that makes up nearly all of it.
+   */
+  @IsOptional()
+  @IsString()
+  @MaxLength(200)
+  website?: string;
+}
+
+export class CreateAspirantLeadDto extends BaseLeadDto {
+  @IsOptional()
+  @IsString()
+  @MaxLength(50)
+  qualification?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(50)
+  courseInterested?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(30)
+  preferredLanguage?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(50)
+  preferredMentorshipTiming?: string;
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  @ArrayMaxSize(20)
+  @MaxLength(100, { each: true })
+  goals?: string[];
+}
+
+export class CreateMentorLeadDto extends BaseLeadDto {
+  /** Public-facing pseudonym, mirroring the mobile mentor wizard's alias step.
+   * Not checked for availability here — a lead isn't a `User` yet, so there's
+   * no `displayName` to collide with until conversion. */
+  @IsOptional()
+  @IsString()
+  @MaxLength(60)
+  alias?: string;
+
+  /** Set when the college was picked from the GET /universities dropdown. */
+  @IsOptional()
+  @IsString()
+  universityId?: string;
+
+  /** Always sent — the raw text of whatever they chose or typed, so a college
+   * that isn't in the University table yet doesn't lose the answer. */
+  @IsOptional()
+  @IsString()
+  @MaxLength(200)
+  collegeName?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(20)
+  degree?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(30)
+  currentStatus?: string;
+
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  @Max(10)
+  yearOfStudy?: number;
+
+  @IsOptional()
+  @IsInt()
+  @Min(1950)
+  @Max(2100)
+  graduationYear?: number;
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  @ArrayMaxSize(20)
+  @MaxLength(50, { each: true })
+  languages?: string[];
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  @ArrayMaxSize(7)
+  @MaxLength(20, { each: true })
+  availableDays?: string[];
+
+  @IsOptional()
+  @IsEnum(DocumentType)
+  documentType?: DocumentType;
+
+  /** Raw base64 image data (no `data:` URI prefix), same contract as
+   * SubmitVerificationDto. Optional — a mentor can enrol without it and
+   * upload the real document during verification after conversion. */
+  @IsOptional()
+  @IsString()
+  @MinLength(100)
+  @MaxLength(14_000_000)
+  documentBase64?: string;
+}
