@@ -89,6 +89,24 @@ html {
   scroll-behavior: smooth;
 }
 
+/* The one moment in each form worth a flourish: the success checkmark,
+   after a real submission actually lands. Overshoots slightly (1.15 before
+   settling at 1) rather than easing straight to 1 — a plain fade reads as
+   "form closed"; the small overshoot reads as "done!". */
+@keyframes success-pop {
+  0% {
+    opacity: 0;
+    transform: scale(0.5);
+  }
+  60% {
+    opacity: 1;
+    transform: scale(1.15);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
 body {
   background: var(--page);
   color: var(--ink);

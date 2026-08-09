@@ -76,12 +76,12 @@ export function ChipGroup({
             type="button"
             onClick={() => onToggle(opt)}
             aria-pressed={isSelected}
-            className={`px-3.5 py-2 rounded-full border-[1.5px] text-[13px] font-bold transition-colors ${
+            className={`px-3.5 py-2 rounded-full border-[1.5px] text-[13px] font-bold transition-all active:scale-[0.94] ${
               isSelected
                 ? gold
-                  ? "bg-gold-500 border-gold-500 text-white"
-                  : "bg-blue-600 border-blue-600 text-white"
-                : "bg-white border-border text-slate-600"
+                  ? "bg-gold-500 border-gold-500 text-white scale-[1.03]"
+                  : "bg-blue-600 border-blue-600 text-white scale-[1.03]"
+                : "bg-white border-border text-slate-600 hover:border-slate-400"
             }`}
           >
             {opt}

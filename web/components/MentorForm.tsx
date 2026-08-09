@@ -212,7 +212,7 @@ export function MentorForm({ onExit }: { onExit: () => void }) {
 
   if (done) {
     return (
-      <div className="max-w-[620px] mx-auto mt-8 bg-surface border border-border rounded-[22px] p-8 text-center shadow-[0_30px_60px_-34px_rgba(16,27,59,.3)]">
+      <div className="max-w-[620px] mx-auto mt-8 bg-surface border border-border rounded-[22px] p-8 text-center shadow-[0_30px_60px_-34px_rgba(16,27,59,.3)] motion-safe:animate-[success-pop_0.5s_ease-out]">
         <div className="w-15 h-15 mx-auto mb-4 rounded-full bg-[#e9f9ee] text-[#1f9d55] flex items-center justify-center text-2xl">
           ✓
         </div>
@@ -223,7 +223,7 @@ export function MentorForm({ onExit }: { onExit: () => void }) {
         <button
           type="button"
           onClick={exit}
-          className="mt-4 inline-flex items-center rounded-[9px] border-[1.5px] border-gold-500 text-gold-600 font-bold text-[13.5px] px-3.5 py-2"
+          className="mt-4 inline-flex items-center rounded-[9px] border-[1.5px] border-gold-500 text-gold-600 font-bold text-[13.5px] px-3.5 py-2 hover:bg-[#fbf1de] active:scale-[0.96] transition-all"
         >
           Back to top
         </button>
@@ -446,7 +446,7 @@ export function MentorForm({ onExit }: { onExit: () => void }) {
         <button
           type="button"
           onClick={wizard.back}
-          className={`flex-1 rounded-[11px] border-[1.5px] border-gold-500 text-gold-600 font-bold text-[14.5px] py-3 ${
+          className={`flex-1 rounded-[11px] border-[1.5px] border-gold-500 text-gold-600 font-bold text-[14.5px] py-3 hover:bg-[#fbf1de] active:scale-[0.97] transition-all ${
             wizard.isFirst ? "invisible" : ""
           }`}
         >
@@ -456,7 +456,7 @@ export function MentorForm({ onExit }: { onExit: () => void }) {
           type="button"
           onClick={handleNext}
           disabled={submitting}
-          className="flex-1 rounded-[11px] bg-gold-500 text-white font-bold text-[14.5px] py-3 disabled:opacity-60 shadow-[0_8px_20px_-8px_rgba(201,150,47,.55)]"
+          className="flex-1 rounded-[11px] bg-gold-500 text-white font-bold text-[14.5px] py-3 disabled:opacity-60 shadow-[0_8px_20px_-8px_rgba(201,150,47,.55)] hover:bg-gold-400 active:scale-[0.97] transition-all disabled:active:scale-100"
         >
           {submitting ? "Submitting…" : wizard.isLast ? "Submit application" : "Continue"}
         </button>
