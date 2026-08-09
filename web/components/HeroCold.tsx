@@ -12,6 +12,12 @@ import Image from "next/image";
 export function HeroCold() {
   return (
     <section className="bg-navy-deep">
+      {/* Real HTML, not baked into the photo — the photo can't be edited
+          pixel-by-pixel, and this line is the kind of copy that's likely to
+          be revised again, so it needs to stay editable text. */}
+      <p className="max-w-xl mx-auto text-center px-6 pt-10 pb-5 text-[15px] md:text-[17px] font-semibold italic text-sky-300">
+        &ldquo;The best people to help you choose a college are the people who are already studying there.&rdquo;
+      </p>
       <Image
         src="/hero/hero-cold.png"
         alt="Too many questions before the right decision? You're not alone. A worried aspirant sits in an empty classroom surrounded by the questions on their mind: is there any toxicity, how's the curriculum, how's the climate, how's the placement support, how's the hands-on experience, how's life outside college, will I fit in there."
