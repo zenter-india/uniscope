@@ -1,11 +1,12 @@
 import Image from "next/image";
+import { MessageCircle, ShieldCheck, CircleHelp, Compass } from "lucide-react";
 import { Reveal } from "./Reveal";
 
 const FEATURES = [
-  { icon: "💬", title: "Real Conversations", body: "Talk to students & alumni anonymously." },
-  { icon: "🛡️", title: "Verified & Safe", body: "Every mentor is verified for your safety." },
-  { icon: "❓", title: "Ask Anything", body: "Get answers to the questions that matter to you." },
-  { icon: "🧭", title: "Make Confident Choices", body: "Choose the right college for your future." },
+  { Icon: MessageCircle, title: "Real Conversations", body: "Talk to students & alumni anonymously." },
+  { Icon: ShieldCheck, title: "Verified & Safe", body: "Every mentor is verified for your safety." },
+  { Icon: CircleHelp, title: "Ask Anything", body: "Get answers to the questions that matter to you." },
+  { Icon: Compass, title: "Make Confident Choices", body: "Choose the right college for your future." },
 ];
 
 /** The "smiling mentor" hero (headline, subtext, and all six mentor quote
@@ -27,8 +28,8 @@ export function HeroWarm() {
         {FEATURES.map((f, i) => (
           <Reveal key={f.title} delay={i * 90}>
             <div className="group text-center px-2.5 py-3.5 rounded-2xl motion-safe:transition-transform motion-safe:duration-200 hover:-translate-y-1">
-              <div className="w-11.5 h-11.5 mx-auto mb-3 rounded-[13px] bg-[#eef3ff] text-blue-600 flex items-center justify-center text-xl motion-safe:transition-transform motion-safe:duration-200 group-hover:scale-110 group-hover:bg-blue-600 group-hover:text-white">
-                {f.icon}
+              <div className="w-11.5 h-11.5 mx-auto mb-3 rounded-[13px] bg-[#eef3ff] text-blue-600 flex items-center justify-center motion-safe:transition-transform motion-safe:duration-200 group-hover:scale-110 group-hover:bg-blue-600 group-hover:text-white">
+                <f.Icon size={22} strokeWidth={2.25} />
               </div>
               <h4 className="text-[14.5px] font-extrabold">{f.title}</h4>
               <p className="mt-1 text-[12.5px] font-semibold text-slate-600 leading-snug">{f.body}</p>

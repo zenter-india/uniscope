@@ -58,22 +58,11 @@ export const GOALS = [
   "Study Abroad",
 ] as const;
 
-export const MENTORSHIP_TIMINGS = [
-  "Weekday mornings",
-  "Weekday evenings",
-  "Weekends",
-  "Flexible / Anytime",
-] as const;
+export const MENTORSHIP_TIMINGS = ["Weekdays", "Weekend", "Anytime"] as const;
 
-export const WEEKDAYS = [
-  "Monday",
-  "Tuesday",
-  "Wednesday",
-  "Thursday",
-  "Friday",
-  "Saturday",
-  "Sunday",
-] as const;
+/** Mentor's "days you're generally free" — collapsed to two selectable
+ * windows rather than picking individual weekdays; both may be selected. */
+export const AVAILABILITY_WINDOWS = ["Weekdays (Mon-Fri)", "Weekends"] as const;
 
 /** UserProfile.stream — a mentor's field of study, or an aspirant's field of
  * interest. Uniscope covers every academic field, not just medical. */

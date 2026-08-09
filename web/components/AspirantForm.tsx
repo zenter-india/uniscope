@@ -17,7 +17,6 @@ import { Field, TextInput, Select, ChipGroup, toggleInArray, ProgressBar, ErrorT
 type FormState = {
   fullName: string;
   phone: string;
-  dateOfBirth: string;
   gender: string;
   state: string;
   city: string;
@@ -33,7 +32,6 @@ type FormState = {
 const EMPTY: FormState = {
   fullName: "",
   phone: "",
-  dateOfBirth: "",
   gender: "",
   state: "",
   city: "",
@@ -59,7 +57,8 @@ export function AspirantForm({ onExit }: { onExit: () => void }) {
   function validateStep(): string | null {
     if (wizard.step === 1) {
       if (!form.fullName.trim()) return "Enter your full name.";
-      if (!form.phone.trim()) return "Enter your phone number.";
+      if (form.phone.trim().length !== 10) return "Enter a valid 10-digit phone number.";
+      if (!form.gender) return "Select a gender.";
     }
     return null;
   }
@@ -81,7 +80,6 @@ export function AspirantForm({ onExit }: { onExit: () => void }) {
       await submitAspirantLead({
         fullName: form.fullName.trim(),
         phone: form.phone.trim(),
-        dateOfBirth: form.dateOfBirth || undefined,
         gender: form.gender || undefined,
         state: form.state || undefined,
         city: form.city.trim() || undefined,
@@ -171,25 +169,18 @@ export function AspirantForm({ onExit }: { onExit: () => void }) {
               onChange={(e) => set("fullName", e.target.value)}
             />
           </Field>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
-            <Field label="Phone number">
-              <TextInput
-                type="tel"
-                required
-                placeholder="98765 43210"
-                value={form.phone}
-                onChange={(e) => set("phone", e.target.value)}
-              />
-            </Field>
-            <Field label="Date of birth" hint="(optional)">
-              <TextInput
-                type="date"
-                value={form.dateOfBirth}
-                onChange={(e) => set("dateOfBirth", e.target.value)}
-              />
-            </Field>
-          </div>
-          <Field label="Gender" hint="(optional)">
+          <Field label="Phone number">
+            <TextInput
+              type="tel"
+              inputMode="numeric"
+              required
+              maxLength={10}
+              placeholder="9876543210"
+              value={form.phone}
+              onChange={(e) => set("phone", e.target.value.replace(/\D/g, "").slice(0, 10))}
+            />
+          </Field>
+          <Field label="Gender">
             <ChipGroup
               options={GENDERS}
               selected={form.gender ? [form.gender] : []}

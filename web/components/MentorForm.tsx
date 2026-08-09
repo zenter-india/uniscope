@@ -9,7 +9,7 @@ import {
   DEGREES,
   CURRENT_STATUSES,
   LANGUAGES,
-  WEEKDAYS,
+  AVAILABILITY_WINDOWS,
   DOCUMENT_TYPES,
 } from "../lib/options";
 import { useMultiStep } from "../lib/useMultiStep";
@@ -17,9 +17,7 @@ import { Field, TextInput, Select, ChipGroup, toggleInArray, ProgressBar, ErrorT
 
 type FormState = {
   fullName: string;
-  alias: string;
   phone: string;
-  dateOfBirth: string;
   gender: string;
   state: string;
   city: string;
@@ -37,9 +35,7 @@ type FormState = {
 
 const EMPTY: FormState = {
   fullName: "",
-  alias: "",
   phone: "",
-  dateOfBirth: "",
   gender: "",
   state: "",
   city: "",
@@ -153,8 +149,8 @@ export function MentorForm({ onExit }: { onExit: () => void }) {
   function validateStep(): string | null {
     if (wizard.step === 1) {
       if (!form.fullName.trim()) return "Enter your full name.";
-      if (!form.alias.trim()) return "Pick a public alias.";
-      if (!form.phone.trim()) return "Enter your phone number.";
+      if (form.phone.trim().length !== 10) return "Enter a valid 10-digit phone number.";
+      if (!form.gender) return "Select a gender.";
     }
     if (wizard.step === 3 && !form.collegeName.trim()) return "Enter your college.";
     return null;
@@ -177,9 +173,7 @@ export function MentorForm({ onExit }: { onExit: () => void }) {
       const documentBase64 = form.documentFile ? await fileToBase64(form.documentFile) : undefined;
       await submitMentorLead({
         fullName: form.fullName.trim(),
-        alias: form.alias.trim(),
         phone: form.phone.trim(),
-        dateOfBirth: form.dateOfBirth || undefined,
         gender: form.gender || undefined,
         state: form.state || undefined,
         city: form.city.trim() || undefined,
@@ -260,49 +254,30 @@ export function MentorForm({ onExit }: { onExit: () => void }) {
         <div>
           <h3 className="text-[19px] font-extrabold mb-1">The basics</h3>
           <p className="text-[13.5px] font-semibold text-slate-600 mb-5">
-            Your real name stays private — students only see your alias.
+            Your real name stays private — never shown to students.
           </p>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
-            <Field label="Full name">
-              <TextInput
-                gold
-                required
-                placeholder="e.g. Priya Menon"
-                value={form.fullName}
-                onChange={(e) => set("fullName", e.target.value)}
-              />
-            </Field>
-            <Field label="Public alias">
-              <TextInput
-                gold
-                required
-                placeholder="e.g. DrPriya_M"
-                value={form.alias}
-                onChange={(e) => set("alias", e.target.value)}
-              />
-            </Field>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
-            <Field label="Phone number">
-              <TextInput
-                gold
-                type="tel"
-                required
-                placeholder="98765 43210"
-                value={form.phone}
-                onChange={(e) => set("phone", e.target.value)}
-              />
-            </Field>
-            <Field label="Date of birth" hint="(optional)">
-              <TextInput
-                gold
-                type="date"
-                value={form.dateOfBirth}
-                onChange={(e) => set("dateOfBirth", e.target.value)}
-              />
-            </Field>
-          </div>
-          <Field label="Gender" hint="(optional)">
+          <Field label="Full name">
+            <TextInput
+              gold
+              required
+              placeholder="e.g. Priya Menon"
+              value={form.fullName}
+              onChange={(e) => set("fullName", e.target.value)}
+            />
+          </Field>
+          <Field label="Phone number">
+            <TextInput
+              gold
+              type="tel"
+              inputMode="numeric"
+              required
+              maxLength={10}
+              placeholder="9876543210"
+              value={form.phone}
+              onChange={(e) => set("phone", e.target.value.replace(/\D/g, "").slice(0, 10))}
+            />
+          </Field>
+          <Field label="Gender">
             <ChipGroup
               gold
               options={GENDERS}
@@ -394,10 +369,10 @@ export function MentorForm({ onExit }: { onExit: () => void }) {
               onToggle={(v) => set("languages", toggleInArray(form.languages, v))}
             />
           </Field>
-          <Field label="Days you're generally free" hint="(optional)">
+          <Field label="Days you're generally free" hint="(optional, pick either or both)">
             <ChipGroup
               gold
-              options={WEEKDAYS}
+              options={AVAILABILITY_WINDOWS}
               selected={form.availableDays}
               onToggle={(v) => set("availableDays", toggleInArray(form.availableDays, v))}
             />
