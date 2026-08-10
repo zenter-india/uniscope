@@ -19,7 +19,7 @@ export function GetStarted() {
   }, []);
 
   return (
-    <section id="get-started" className="px-6 pt-22 pb-27 bg-[linear-gradient(180deg,var(--page),#eceef3)]">
+    <section id="get-started" className="px-6 pt-10 pb-24 bg-[linear-gradient(180deg,var(--page),#eceef3)]">
       <div className="max-w-[1180px] mx-auto">
         <Reveal className="text-center max-w-[560px] mx-auto mb-11">
           <div className="text-[12.5px] font-extrabold uppercase tracking-wide text-blue-600">

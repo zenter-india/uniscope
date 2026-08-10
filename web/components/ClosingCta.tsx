@@ -7,7 +7,7 @@ import { Reveal } from "./Reveal";
  * once there are genuine figures worth showing. */
 export function ClosingCta() {
   return (
-    <section className="px-6 pt-24 pb-16 text-center">
+    <section className="px-6 pt-12 pb-8 text-center">
       <Reveal>
         <h2 className="text-[clamp(24px,3.4vw,34px)] font-extrabold leading-tight">
           Your future is too important to guess.
