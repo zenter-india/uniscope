@@ -38,28 +38,16 @@ export function SiteNav() {
         </div>
 
         <div className="hidden md:flex gap-7 text-[14.5px] font-semibold text-slate-600">
-          <RoleTrigger role="student" className="hover:text-ink transition-colors">
-            Explore
-          </RoleTrigger>
-          <RoleTrigger role="mentor" className="hover:text-ink transition-colors">
-            Mentors
-          </RoleTrigger>
-          <RoleTrigger role="student" className="hover:text-ink transition-colors">
-            Colleges
-          </RoleTrigger>
+          <RoleTrigger className="hover:text-ink transition-colors">Explore</RoleTrigger>
+          <RoleTrigger className="hover:text-ink transition-colors">Mentors</RoleTrigger>
+          <RoleTrigger className="hover:text-ink transition-colors">Colleges</RoleTrigger>
         </div>
 
         <div className="flex gap-2.5 items-center">
-          <RoleTrigger
-            role="student"
-            className="inline-flex items-center rounded-[9px] border-[1.5px] border-blue-600 text-blue-600 text-[13.5px] font-bold px-3.5 py-2 hover:bg-[#eef3ff] active:scale-[0.96] transition-all"
-          >
+          <RoleTrigger className="inline-flex items-center rounded-[9px] border-[1.5px] border-blue-600 text-blue-600 text-[13.5px] font-bold px-3.5 py-2 hover:bg-[#eef3ff] active:scale-[0.96] transition-all">
             Log in
           </RoleTrigger>
-          <RoleTrigger
-            role="mentor"
-            className="inline-flex items-center rounded-[9px] bg-blue-600 text-white text-[13.5px] font-bold px-3.5 py-2 shadow-[0_8px_20px_-8px_rgba(33,72,201,0.55)] hover:bg-blue-500 active:scale-[0.96] transition-all"
-          >
+          <RoleTrigger className="inline-flex items-center rounded-[9px] bg-blue-600 text-white text-[13.5px] font-bold px-3.5 py-2 shadow-[0_8px_20px_-8px_rgba(33,72,201,0.55)] hover:bg-blue-500 active:scale-[0.96] transition-all">
             Sign up
           </RoleTrigger>
         </div>

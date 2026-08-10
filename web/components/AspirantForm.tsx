@@ -24,7 +24,7 @@ type FormState = {
   stream: string;
   courseInterested: string;
   preferredLanguage: string;
-  preferredMentorshipTiming: string;
+  preferredMentorshipTimings: string[];
   goals: string[];
   website: string; // honeypot — never rendered visibly, see MentorForm for the full note
 };
@@ -39,7 +39,7 @@ const EMPTY: FormState = {
   stream: "",
   courseInterested: "",
   preferredLanguage: "",
-  preferredMentorshipTiming: "",
+  preferredMentorshipTimings: [],
   goals: [],
   website: "",
 };
@@ -87,7 +87,12 @@ export function AspirantForm({ onExit }: { onExit: () => void }) {
         stream: form.stream || undefined,
         courseInterested: form.courseInterested.trim() || undefined,
         preferredLanguage: form.preferredLanguage || undefined,
-        preferredMentorshipTiming: form.preferredMentorshipTiming || undefined,
+        // Backend column is a single free-text string (see CreateAspirantLeadDto)
+        // — multiple picks join into one readable value rather than needing a
+        // schema change for what's an optional, low-stakes preference field.
+        preferredMentorshipTiming: form.preferredMentorshipTimings.length
+          ? form.preferredMentorshipTimings.join(", ")
+          : undefined,
         goals: form.goals,
         website: form.website || undefined,
       });
@@ -275,17 +280,11 @@ export function AspirantForm({ onExit }: { onExit: () => void }) {
               }
             />
           </Field>
-          <Field label="Preferred mentorship timing" hint="(optional)">
+          <Field label="Preferred mentorship timing" hint="(optional, pick any)">
             <ChipGroup
               options={MENTORSHIP_TIMINGS}
-              selected={form.preferredMentorshipTiming ? [form.preferredMentorshipTiming] : []}
-              onToggle={(v) =>
-                set(
-                  "preferredMentorshipTiming",
-                  toggleInArray(form.preferredMentorshipTiming ? [form.preferredMentorshipTiming] : [], v, false)[0] ??
-                    "",
-                )
-              }
+              selected={form.preferredMentorshipTimings}
+              onToggle={(v) => set("preferredMentorshipTimings", toggleInArray(form.preferredMentorshipTimings, v))}
             />
           </Field>
         </div>
