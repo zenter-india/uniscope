@@ -16,10 +16,10 @@ export function HeroWarm() {
   return (
     <section className="bg-[#2a1f10]">
       <Image
-        src="/hero/hero-warm.png"
+        src="https://kfxxsqxynofjywywygza.supabase.co/storage/v1/object/public/web-assets/hero-warm.jpg"
         alt="Get real answers from real people. Connect with verified students and alumni, make confident choices. A smiling mentor sits in a sunlit classroom surrounded by six mentor quote cards about curriculum, campus culture, placements, hands-on learning, and campus life, each with a five-star-range rating."
-        width={3940}
-        height={3268}
+        width={1600}
+        height={1067}
         className="w-full h-auto"
         sizes="100vw"
       />

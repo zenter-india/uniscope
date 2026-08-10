@@ -23,7 +23,7 @@ export function SiteNav() {
       <div className="max-w-[1180px] mx-auto px-6 py-3.5 flex items-center justify-between gap-4">
         <div className="flex items-center gap-2.5">
           <Image
-            src="/logo/uniscope_icon.png"
+            src="https://kfxxsqxynofjywywygza.supabase.co/storage/v1/object/public/web-assets/uniscope-icon.png"
             alt=""
             width={34}
             height={34}

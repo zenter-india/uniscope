@@ -1,39 +1,10 @@
 @import "tailwindcss";
 
 /* Manrope is the mobile app's brand face (see mobile_flutter/pubspec.yaml) —
-   the same five weights are vendored here so the site and the app read as one
-   product. Self-hosted rather than pulled from a font CDN so the page renders
-   identically offline and on a cold cache, with no third-party request. */
-@font-face {
-  font-family: "Manrope";
-  src: url("/fonts/Manrope-Regular.ttf") format("truetype");
-  font-weight: 400;
-  font-display: swap;
-}
-@font-face {
-  font-family: "Manrope";
-  src: url("/fonts/Manrope-Medium.ttf") format("truetype");
-  font-weight: 500;
-  font-display: swap;
-}
-@font-face {
-  font-family: "Manrope";
-  src: url("/fonts/Manrope-SemiBold.ttf") format("truetype");
-  font-weight: 600;
-  font-display: swap;
-}
-@font-face {
-  font-family: "Manrope";
-  src: url("/fonts/Manrope-Bold.ttf") format("truetype");
-  font-weight: 700;
-  font-display: swap;
-}
-@font-face {
-  font-family: "Manrope";
-  src: url("/fonts/Manrope-ExtraBold.ttf") format("truetype");
-  font-weight: 800;
-  font-display: swap;
-}
+   loaded via next/font/google in app/layout.tsx, which fetches and
+   self-hosts it at build time (no runtime request to Google, same offline
+   guarantee as vendoring the files, without carrying the binary TTFs in
+   the repo). --font-manrope is the CSS variable that font loader sets. */
 
 /* Palette sampled from the approved design.
    The site deliberately commits to a single light identity rather than
@@ -82,7 +53,7 @@
   --color-surface: var(--surface);
   --color-page: var(--page);
 
-  --font-sans: "Manrope", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--font-manrope), ui-sans-serif, system-ui, sans-serif;
 }
 
 html {

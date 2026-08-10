@@ -19,10 +19,10 @@ export function HeroCold() {
         &ldquo;The best people to help you choose a college are the people who are already studying there.&rdquo;
       </p>
       <Image
-        src="/hero/hero-cold.png"
+        src="https://kfxxsqxynofjywywygza.supabase.co/storage/v1/object/public/web-assets/hero-cold.jpg"
         alt="Too many questions before the right decision? You're not alone. A worried aspirant sits in an empty classroom surrounded by the questions on their mind: is there any toxicity, how's the curriculum, how's the climate, how's the placement support, how's the hands-on experience, how's life outside college, will I fit in there."
-        width={3940}
-        height={2627}
+        width={1600}
+        height={1326}
         className="w-full h-auto"
         priority
         sizes="100vw"

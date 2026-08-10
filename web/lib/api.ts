@@ -5,7 +5,13 @@
  * unauthenticated by design — see backend/src/modules/enrollments.
  */
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001/api/v1";
+// Falls back to the real production backend, not localhost — this value
+// gets inlined into the client bundle at build time, and the Vercel deploy
+// path here doesn't set NEXT_PUBLIC_API_URL, so a fallback of "localhost"
+// would silently ship a broken production build. Local dev overrides this
+// via web/.env.local (see .env.example), which still points at localhost.
+const API_URL =
+  process.env.NEXT_PUBLIC_API_URL ?? "https://uniscope-production.up.railway.app/api/v1";
 
 export class ApiError extends Error {
   constructor(
