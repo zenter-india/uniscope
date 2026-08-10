@@ -254,7 +254,7 @@ export function AspirantForm({ onExit }: { onExit: () => void }) {
         <div>
           <h3 className="text-[19px] font-extrabold mb-1">Preferences</h3>
           <p className="text-[13.5px] font-semibold text-slate-600 mb-5">
-            Last step — help us match the right mentors.
+            Last step — this helps us find the right mentors for you.
           </p>
           <Field label="Goals" hint="(pick any)">
             <ChipGroup

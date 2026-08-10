@@ -27,7 +27,7 @@ export function GetStarted() {
           </div>
           <h2 className="mt-2 text-[clamp(24px,3.2vw,32px)] font-extrabold">Join Uniscope</h2>
           <p className="mt-2.5 text-[15px] font-semibold text-slate-600">
-            Tell us a bit about yourself — no account needed yet. We&apos;ll reach out once you&apos;re matched.
+            Tell us a bit about yourself — no account needed yet. We&apos;ll be in touch once your account is ready to go.
           </p>
         </Reveal>
 
@@ -43,7 +43,7 @@ export function GetStarted() {
                 </div>
                 <h3 className="text-[18px] font-extrabold">I&apos;m a Student</h3>
                 <p className="mt-1.5 text-[13.5px] font-semibold text-slate-600 leading-relaxed">
-                  Get matched with verified mentors who&apos;ve been exactly where you&apos;re headed.
+                  Talk to verified mentors who&apos;ve been exactly where you&apos;re headed.
                 </p>
                 <div className="mt-4.5 text-[13.5px] font-extrabold text-blue-600 flex items-center gap-1.5">
                   Continue as a student
