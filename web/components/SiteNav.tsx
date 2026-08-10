@@ -31,8 +31,8 @@ export function SiteNav() {
           />
           <div className="leading-tight">
             <span className="block font-extrabold text-[19px] text-navy-deep">Uniscope</span>
-            <span className="block text-[10px] font-bold text-slate-400 tracking-wide">
-              SEE IT. HEAR IT. LIVE IT.
+            <span className="hidden sm:block text-[10px] font-bold text-slate-400 whitespace-nowrap">
+              Real Insights. Real Mentors. Real Guidance.
             </span>
           </div>
         </div>

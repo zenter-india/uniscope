@@ -20,13 +20,13 @@ export function ClosingCta() {
             role="student"
             className="inline-flex items-center rounded-[11px] bg-blue-600 text-white font-bold text-[15px] px-6.5 py-3.5 shadow-[0_8px_20px_-8px_rgba(33,72,201,.55)] hover:bg-blue-500 hover:shadow-[0_12px_28px_-8px_rgba(33,72,201,.65)] hover:-translate-y-0.5 active:scale-[0.97] active:translate-y-0 transition-all"
           >
-            Explore Colleges
+            Explore Mentors
           </RoleTrigger>
           <RoleTrigger
             role="mentor"
             className="inline-flex items-center rounded-[11px] bg-white text-blue-600 border-[1.5px] border-blue-600 font-bold text-[15px] px-6.5 py-3.5 hover:bg-[#eef3ff] hover:-translate-y-0.5 active:scale-[0.97] active:translate-y-0 transition-all"
           >
-            Talk to Mentors
+            Begin your Mentorship
           </RoleTrigger>
         </div>
       </Reveal>
