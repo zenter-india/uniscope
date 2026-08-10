@@ -14,15 +14,18 @@ const FEATURES = [
  * four-feature strip beneath it. */
 export function HeroWarm() {
   return (
-    <section className="bg-[#2a1f10]">
-      <Image
-        src="https://kfxxsqxynofjywywygza.supabase.co/storage/v1/object/public/web-assets/hero-warm.jpg"
-        alt="Get real answers from real people. Connect with verified students and alumni, make confident choices. A smiling mentor sits in a sunlit classroom surrounded by six mentor quote cards about curriculum, campus culture, placements, hands-on learning, and campus life, each with a five-star-range rating."
-        width={1600}
-        height={1067}
-        className="w-full h-auto"
-        sizes="100vw"
-      />
+    <section className="bg-[#2a1f10] pt-10">
+      {/* Same contained treatment as HeroCold — see that component's comment. */}
+      <div className="max-w-[1180px] mx-auto px-6">
+        <Image
+          src="https://kfxxsqxynofjywywygza.supabase.co/storage/v1/object/public/web-assets/hero-warm.jpg"
+          alt="Get real answers from real people. Connect with verified students and alumni, make confident choices. A smiling mentor sits in a sunlit classroom surrounded by six mentor quote cards about curriculum, campus culture, placements, hands-on learning, and campus life, each with a five-star-range rating."
+          width={1600}
+          height={1067}
+          className="w-full h-auto rounded-[20px]"
+          sizes="(min-width: 1180px) 1180px, 100vw"
+        />
+      </div>
 
       <div className="relative max-w-[1000px] mx-auto mt-10 md:mt-12 px-4 py-7 md:p-7 bg-surface border border-border rounded-[22px] shadow-[0_20px_40px_-24px_rgba(16,27,59,.2)] grid grid-cols-2 md:grid-cols-4 gap-2 text-ink">
         {FEATURES.map((f, i) => (
