@@ -43,7 +43,7 @@ export function GetStarted() {
                 </div>
                 <h3 className="text-[18px] font-extrabold">I&apos;m a Student</h3>
                 <p className="mt-1.5 text-[13.5px] font-semibold text-slate-600 leading-relaxed">
-                  Talk to verified mentors who&apos;ve been exactly where you&apos;re headed.
+                  Get guidance from verified mentors, learn from their real experiences. Make confident choices.
                 </p>
                 <div className="mt-4.5 text-[13.5px] font-extrabold text-blue-600 flex items-center gap-1.5">
                   Continue as a student
@@ -62,7 +62,7 @@ export function GetStarted() {
                 </div>
                 <h3 className="text-[18px] font-extrabold">I&apos;m a Mentor</h3>
                 <p className="mt-1.5 text-[13.5px] font-semibold text-slate-600 leading-relaxed">
-                  Current student or alum? Guide aspirants and get paid for your time.
+                  Current students or alumni, guide aspirants and get paid for your time.
                 </p>
                 <div className="mt-4.5 text-[13.5px] font-extrabold text-gold-600 flex items-center gap-1.5">
                   Continue as a mentor
