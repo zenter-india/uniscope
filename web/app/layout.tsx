@@ -25,7 +25,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: TITLE,
     description: DESCRIPTION,
-    url: "https://uniscope-uniscope2.vercel.app",
+    url: "https://uniscope.in",
     siteName: "Uniscope",
     images: [
       {
