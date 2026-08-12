@@ -27,7 +27,6 @@ export interface EnrollmentLeadResponse {
   courseInterested: string | null;
   preferredLanguage: string | null;
   preferredMentorshipTiming: string | null;
-  goals: string[];
 
   alias: string | null;
   universityId: string | null;
@@ -75,7 +74,6 @@ export function toEnrollmentLeadResponse(
     courseInterested: lead.courseInterested,
     preferredLanguage: lead.preferredLanguage,
     preferredMentorshipTiming: lead.preferredMentorshipTiming,
-    goals: lead.goals,
 
     alias: lead.alias,
     universityId: lead.universityId,

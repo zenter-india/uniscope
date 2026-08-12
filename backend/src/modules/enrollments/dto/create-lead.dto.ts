@@ -86,22 +86,17 @@ export class CreateAspirantLeadDto extends BaseLeadDto {
   @MaxLength(50)
   courseInterested?: string;
 
+  /** Multi-select on the web form — multiple picks are joined into one
+   * readable string client-side, same pattern as preferredMentorshipTiming. */
   @IsOptional()
   @IsString()
-  @MaxLength(30)
+  @MaxLength(150)
   preferredLanguage?: string;
 
   @IsOptional()
   @IsString()
-  @MaxLength(50)
+  @MaxLength(150)
   preferredMentorshipTiming?: string;
-
-  @IsOptional()
-  @IsArray()
-  @IsString({ each: true })
-  @ArrayMaxSize(20)
-  @MaxLength(100, { each: true })
-  goals?: string[];
 }
 
 export class CreateMentorLeadDto extends BaseLeadDto {
@@ -158,7 +153,7 @@ export class CreateMentorLeadDto extends BaseLeadDto {
   @IsArray()
   @IsString({ each: true })
   @ArrayMaxSize(7)
-  @MaxLength(20, { each: true })
+  @MaxLength(40, { each: true })
   availableDays?: string[];
 
   @IsOptional()

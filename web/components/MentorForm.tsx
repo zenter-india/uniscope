@@ -17,13 +17,16 @@ import { Field, TextInput, Select, ChipGroup, toggleInArray, ProgressBar, ErrorT
 
 type FormState = {
   fullName: string;
+  alias: string;
   phone: string;
   gender: string;
   state: string;
+  stateOther: string;
   city: string;
   collegeName: string;
   universityId: string;
   stream: string;
+  streamOther: string;
   degree: string;
   currentStatus: string;
   languages: string[];
@@ -35,13 +38,16 @@ type FormState = {
 
 const EMPTY: FormState = {
   fullName: "",
+  alias: "",
   phone: "",
   gender: "",
   state: "",
+  stateOther: "",
   city: "",
   collegeName: "",
   universityId: "",
   stream: "",
+  streamOther: "",
   degree: "",
   currentStatus: "",
   languages: [],
@@ -152,7 +158,15 @@ export function MentorForm({ onExit }: { onExit: () => void }) {
       if (form.phone.trim().length !== 10) return "Enter a valid 10-digit phone number.";
       if (!form.gender) return "Select a gender.";
     }
-    if (wizard.step === 3 && !form.collegeName.trim()) return "Enter your college.";
+    if (wizard.step === 2) {
+      if (!form.state) return "Select your state.";
+      if (form.state === "Other" && !form.stateOther.trim()) return "Enter your state.";
+      if (!form.city.trim()) return "Enter your city.";
+    }
+    if (wizard.step === 3) {
+      if (!form.collegeName.trim()) return "Enter your college.";
+      if (form.stream === "Others" && !form.streamOther.trim()) return "Enter your stream.";
+    }
     return null;
   }
 
@@ -173,13 +187,14 @@ export function MentorForm({ onExit }: { onExit: () => void }) {
       const documentBase64 = form.documentFile ? await fileToBase64(form.documentFile) : undefined;
       await submitMentorLead({
         fullName: form.fullName.trim(),
+        alias: form.alias.trim() || undefined,
         phone: form.phone.trim(),
         gender: form.gender || undefined,
-        state: form.state || undefined,
+        state: (form.state === "Other" ? form.stateOther.trim() : form.state) || undefined,
         city: form.city.trim() || undefined,
         collegeName: form.collegeName.trim() || undefined,
         universityId: form.universityId || undefined,
-        stream: form.stream || undefined,
+        stream: (form.stream === "Others" ? form.streamOther.trim() : form.stream) || undefined,
         degree: form.degree || undefined,
         currentStatus: form.currentStatus || undefined,
         languages: form.languages,
@@ -265,6 +280,14 @@ export function MentorForm({ onExit }: { onExit: () => void }) {
               onChange={(e) => set("fullName", e.target.value)}
             />
           </Field>
+          <Field label="Alias / Display name" hint="(optional)">
+            <TextInput
+              gold
+              placeholder="e.g. John Snow"
+              value={form.alias}
+              onChange={(e) => set("alias", e.target.value)}
+            />
+          </Field>
           <Field label="Phone number">
             <TextInput
               gold
@@ -301,15 +324,27 @@ export function MentorForm({ onExit }: { onExit: () => void }) {
                 ))}
               </Select>
             </Field>
-            <Field label="City" hint="(optional)">
+            <Field label="City">
               <TextInput
                 gold
+                required
                 placeholder="e.g. Bengaluru"
                 value={form.city}
                 onChange={(e) => set("city", e.target.value)}
               />
             </Field>
           </div>
+          {form.state === "Other" && (
+            <Field label="Your state">
+              <TextInput
+                gold
+                required
+                placeholder="Enter your state"
+                value={form.stateOther}
+                onChange={(e) => set("stateOther", e.target.value)}
+              />
+            </Field>
+          )}
         </div>
       )}
 
@@ -335,6 +370,19 @@ export function MentorForm({ onExit }: { onExit: () => void }) {
                 ))}
               </Select>
             </Field>
+            {form.stream === "Others" && (
+              <div className="md:col-span-2">
+                <Field label="Your stream">
+                  <TextInput
+                    gold
+                    required
+                    placeholder="Enter your stream"
+                    value={form.streamOther}
+                    onChange={(e) => set("streamOther", e.target.value)}
+                  />
+                </Field>
+              </div>
+            )}
             <Field label="Degree">
               <Select gold value={form.degree} onChange={(e) => set("degree", e.target.value)}>
                 <option value="">Select</option>
@@ -369,7 +417,7 @@ export function MentorForm({ onExit }: { onExit: () => void }) {
               onToggle={(v) => set("languages", toggleInArray(form.languages, v))}
             />
           </Field>
-          <Field label="Days you're generally free" hint="(optional, pick either or both)">
+          <Field label="Times you're generally free" hint="(optional, pick any)">
             <ChipGroup
               gold
               options={AVAILABILITY_WINDOWS}

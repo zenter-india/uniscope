@@ -25,44 +25,69 @@ export const LANGUAGES = [
 ] as const;
 
 export const QUALIFICATIONS = [
-  "Higher Secondary (11th/12th)",
+  "Higher Secondary (12th)",
   "Undergraduate",
   "Postgraduate",
   "Doctorate",
+  "Others",
 ] as const;
 
+/** All 28 states + 8 union territories. "Other" reveals a free-text field on
+ * both forms rather than losing the answer for anyone outside this list. */
 export const INDIAN_STATES = [
   "Andhra Pradesh",
+  "Arunachal Pradesh",
+  "Assam",
   "Bihar",
-  "Delhi",
+  "Chhattisgarh",
+  "Goa",
   "Gujarat",
+  "Haryana",
+  "Himachal Pradesh",
+  "Jharkhand",
   "Karnataka",
   "Kerala",
   "Madhya Pradesh",
   "Maharashtra",
+  "Manipur",
+  "Meghalaya",
+  "Mizoram",
+  "Nagaland",
+  "Odisha",
   "Punjab",
   "Rajasthan",
+  "Sikkim",
   "Tamil Nadu",
   "Telangana",
+  "Tripura",
   "Uttar Pradesh",
+  "Uttarakhand",
   "West Bengal",
+  "Andaman and Nicobar Islands",
+  "Chandigarh",
+  "Dadra and Nagar Haveli and Daman and Diu",
+  "Delhi",
+  "Jammu and Kashmir",
+  "Ladakh",
+  "Lakshadweep",
+  "Puducherry",
   "Other",
 ] as const;
 
-export const GOALS = [
-  "NEET",
-  "AIIMS",
-  "JIPMER",
-  "Government College",
-  "Private College",
-  "Study Abroad",
+/** Time-of-day slots — shared shape for both the aspirant's "when do you
+ * want to talk" preference and the mentor's "when am I generally free"
+ * availability, so the two sides of a booking speak the same vocabulary. */
+export const TIME_SLOTS = [
+  "Morning (6 AM - 12 PM)",
+  "Afternoon (12 PM - 5 PM)",
+  "Evening (5 PM - 9 PM)",
+  "Night (9 PM onwards)",
 ] as const;
 
-export const MENTORSHIP_TIMINGS = ["Weekdays", "Weekend", "Anytime"] as const;
+export const MENTORSHIP_TIMINGS = TIME_SLOTS;
 
-/** Mentor's "days you're generally free" — collapsed to two selectable
- * windows rather than picking individual weekdays; both may be selected. */
-export const AVAILABILITY_WINDOWS = ["Weekdays (Mon-Fri)", "Weekends"] as const;
+/** Mentor's "days you're generally free". */
+export const AVAILABILITY_WINDOWS = TIME_SLOTS;
 
 /** UserProfile.stream — a mentor's field of study, or an aspirant's field of
  * interest. Uniscope covers every academic field, not just medical. */
@@ -77,7 +102,7 @@ export const STREAMS = [
   "Others",
 ] as const;
 
-export const DEGREES = ["UG", "PG", "Doctorate"] as const;
+export const DEGREES = ["UG", "PG", "MD/MS", "DNB", "Diploma", "Doctorate", "DM/MCh", "Others"] as const;
 
 export const CURRENT_STATUSES = ["Currently Studying", "Graduated"] as const;
 

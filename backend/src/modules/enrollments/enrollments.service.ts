@@ -133,7 +133,6 @@ export class EnrollmentsService {
       courseInterested: dto.courseInterested,
       preferredLanguage: dto.preferredLanguage,
       preferredMentorshipTiming: dto.preferredMentorshipTiming,
-      goals: dto.goals,
     });
   }
 
@@ -324,7 +323,6 @@ export class EnrollmentsService {
       ['Course interested', (l) => l.courseInterested],
       ['Preferred language', (l) => l.preferredLanguage],
       ['Preferred timing', (l) => l.preferredMentorshipTiming],
-      ['Goals', (l) => l.goals.join('; ')],
       ['Alias', (l) => l.alias],
       ['College', (l) => l.universityName ?? l.collegeName],
       ['Degree', (l) => l.degree],

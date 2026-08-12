@@ -7,7 +7,6 @@ import {
   INDIAN_STATES,
   QUALIFICATIONS,
   STREAMS,
-  GOALS,
   MENTORSHIP_TIMINGS,
   LANGUAGES,
 } from "../lib/options";
@@ -19,13 +18,15 @@ type FormState = {
   phone: string;
   gender: string;
   state: string;
+  stateOther: string;
   city: string;
   qualification: string;
+  qualificationOther: string;
   stream: string;
+  streamOther: string;
   courseInterested: string;
-  preferredLanguage: string;
+  preferredLanguages: string[];
   preferredMentorshipTimings: string[];
-  goals: string[];
   website: string; // honeypot — never rendered visibly, see MentorForm for the full note
 };
 
@@ -34,13 +35,15 @@ const EMPTY: FormState = {
   phone: "",
   gender: "",
   state: "",
+  stateOther: "",
   city: "",
   qualification: "",
+  qualificationOther: "",
   stream: "",
+  streamOther: "",
   courseInterested: "",
-  preferredLanguage: "",
+  preferredLanguages: [],
   preferredMentorshipTimings: [],
-  goals: [],
   website: "",
 };
 
@@ -59,6 +62,11 @@ export function AspirantForm({ onExit }: { onExit: () => void }) {
       if (!form.fullName.trim()) return "Enter your full name.";
       if (form.phone.trim().length !== 10) return "Enter a valid 10-digit phone number.";
       if (!form.gender) return "Select a gender.";
+    }
+    if (wizard.step === 2) {
+      if (!form.state) return "Select your state.";
+      if (form.state === "Other" && !form.stateOther.trim()) return "Enter your state.";
+      if (!form.city.trim()) return "Enter your city.";
     }
     return null;
   }
@@ -81,19 +89,19 @@ export function AspirantForm({ onExit }: { onExit: () => void }) {
         fullName: form.fullName.trim(),
         phone: form.phone.trim(),
         gender: form.gender || undefined,
-        state: form.state || undefined,
+        state: (form.state === "Other" ? form.stateOther.trim() : form.state) || undefined,
         city: form.city.trim() || undefined,
-        qualification: form.qualification || undefined,
-        stream: form.stream || undefined,
+        qualification:
+          (form.qualification === "Others" ? form.qualificationOther.trim() : form.qualification) || undefined,
+        stream: (form.stream === "Others" ? form.streamOther.trim() : form.stream) || undefined,
         courseInterested: form.courseInterested.trim() || undefined,
-        preferredLanguage: form.preferredLanguage || undefined,
-        // Backend column is a single free-text string (see CreateAspirantLeadDto)
+        // Backend columns are single free-text strings (see CreateAspirantLeadDto)
         // — multiple picks join into one readable value rather than needing a
-        // schema change for what's an optional, low-stakes preference field.
+        // schema change for what are optional, low-stakes preference fields.
+        preferredLanguage: form.preferredLanguages.length ? form.preferredLanguages.join(", ") : undefined,
         preferredMentorshipTiming: form.preferredMentorshipTimings.length
           ? form.preferredMentorshipTimings.join(", ")
           : undefined,
-        goals: form.goals,
         website: form.website || undefined,
       });
       setDone(true);
@@ -210,14 +218,25 @@ export function AspirantForm({ onExit }: { onExit: () => void }) {
                 ))}
               </Select>
             </Field>
-            <Field label="City" hint="(optional)">
+            <Field label="City">
               <TextInput
+                required
                 placeholder="e.g. Chennai"
                 value={form.city}
                 onChange={(e) => set("city", e.target.value)}
               />
             </Field>
           </div>
+          {form.state === "Other" && (
+            <Field label="Your state">
+              <TextInput
+                required
+                placeholder="Enter your state"
+                value={form.stateOther}
+                onChange={(e) => set("stateOther", e.target.value)}
+              />
+            </Field>
+          )}
         </div>
       )}
 
@@ -245,6 +264,26 @@ export function AspirantForm({ onExit }: { onExit: () => void }) {
               </Select>
             </Field>
           </div>
+          {form.qualification === "Others" && (
+            <Field label="Your qualification">
+              <TextInput
+                required
+                placeholder="Enter your qualification"
+                value={form.qualificationOther}
+                onChange={(e) => set("qualificationOther", e.target.value)}
+              />
+            </Field>
+          )}
+          {form.stream === "Others" && (
+            <Field label="Your field of interest">
+              <TextInput
+                required
+                placeholder="Enter your field of interest"
+                value={form.streamOther}
+                onChange={(e) => set("streamOther", e.target.value)}
+              />
+            </Field>
+          )}
           <Field label="Course you're aiming for" hint="(optional)">
             <TextInput
               placeholder="e.g. MBBS"
@@ -261,23 +300,11 @@ export function AspirantForm({ onExit }: { onExit: () => void }) {
           <p className="text-[13.5px] font-semibold text-slate-600 mb-5">
             Last step — this helps us find the right mentors for you.
           </p>
-          <Field label="Goals" hint="(pick any)">
-            <ChipGroup
-              options={GOALS}
-              selected={form.goals}
-              onToggle={(v) => set("goals", toggleInArray(form.goals, v))}
-            />
-          </Field>
-          <Field label="Preferred language" hint="(optional)">
+          <Field label="Preferred language" hint="(optional, pick any)">
             <ChipGroup
               options={LANGUAGES.slice(0, 6)}
-              selected={form.preferredLanguage ? [form.preferredLanguage] : []}
-              onToggle={(v) =>
-                set(
-                  "preferredLanguage",
-                  toggleInArray(form.preferredLanguage ? [form.preferredLanguage] : [], v, false)[0] ?? "",
-                )
-              }
+              selected={form.preferredLanguages}
+              onToggle={(v) => set("preferredLanguages", toggleInArray(form.preferredLanguages, v))}
             />
           </Field>
           <Field label="Preferred mentorship timing" hint="(optional, pick any)">

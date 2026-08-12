@@ -785,9 +785,11 @@ model EnrollmentLead {
   /// Aspirant-only.
   qualification             String?  @db.VarChar(50)
   courseInterested          String?  @map("course_interested") @db.VarChar(50)
-  preferredLanguage         String?  @map("preferred_language") @db.VarChar(30)
-  preferredMentorshipTiming String?  @map("preferred_mentorship_timing") @db.VarChar(50)
-  goals                     String[] @default([])
+  /// Widened from VARCHAR(30)/(50) to fit multiple comma-joined picks — the
+  /// web form allows multi-select on both, same "join into one string"
+  /// pattern as the mobile-facing UserProfile columns of the same name.
+  preferredLanguage         String?  @map("preferred_language") @db.VarChar(150)
+  preferredMentorshipTiming String?  @map("preferred_mentorship_timing") @db.VarChar(150)
 
   /// Mentor-only. `universityId` is set when the person picked an existing
   /// college from the dropdown; `collegeName` always holds the raw text so a

@@ -1,11 +1,13 @@
 import 'dart:io';
 
+import 'package:dio/dio.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../router/app_router.dart';
+import '../network/dio_client.dart';
 import '../network/users_api.dart';
 
 /// Must be a top-level (or static) function — the Firebase plugin invokes
@@ -37,7 +39,10 @@ class PushService {
     final messaging = FirebaseMessaging.instance;
     await messaging.requestPermission(alert: true, badge: true, sound: true);
 
+    // TEMP DIAGNOSTIC — remove after push registration is confirmed working.
+    debugPrint('[push] FCM initialization started');
     final token = await messaging.getToken();
+    debugPrint(token != null ? '[push] FCM token obtained' : '[push] FCM token was null');
     if (token != null) await _upload(token);
 
     messaging.onTokenRefresh.listen(_upload);
@@ -70,13 +75,27 @@ class PushService {
   }
 
   Future<void> _upload(String token) async {
+    // TEMP DIAGNOSTIC — remove after push registration is confirmed working.
+    debugPrint('[push] Push-token upload started ($kApiBaseUrl/users/me/push-token)');
     try {
       await _ref
           .read(usersApiProvider)
           .storePushToken(token, Platform.isIOS ? 'ios' : 'android');
-    } catch (_) {
-      // Best-effort — a failed upload just means this device won't get
-      // pushes until the next successful registration; never block the app.
+      // TEMP DIAGNOSTIC — remove after push registration is confirmed working.
+      debugPrint('[push] Push-token upload succeeded');
+    } catch (e) {
+      // TEMP DIAGNOSTIC — logs safely (no token/headers/secrets), then falls
+      // through to the same silent-swallow behavior as before: a failed
+      // upload just means this device won't get pushes until the next
+      // successful registration; never block the app.
+      if (e is DioException) {
+        debugPrint(
+          '[push] Push-token upload FAILED — DioException: '
+          'type=${e.type} statusCode=${e.response?.statusCode} message=${e.message}',
+        );
+      } else {
+        debugPrint('[push] Push-token upload FAILED — ${e.runtimeType}: $e');
+      }
     }
   }
 }
