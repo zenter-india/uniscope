@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { RoleTrigger } from "./RoleTrigger";
 
 export function SiteNav() {
@@ -21,7 +22,7 @@ export function SiteNav() {
       }`}
     >
       <div className="max-w-[1180px] mx-auto px-6 py-3.5 flex items-center justify-between gap-4">
-        <div className="flex items-center gap-2.5">
+        <Link href="/" className="flex items-center gap-2.5">
           <Image
             src="https://kfxxsqxynofjywywygza.supabase.co/storage/v1/object/public/web-assets/uniscope-icon.png"
             alt=""
@@ -35,7 +36,7 @@ export function SiteNav() {
               Real Insights. Real Mentors. Real Guidance.
             </span>
           </div>
-        </div>
+        </Link>
 
         <div className="hidden md:flex gap-7 text-[14.5px] font-semibold text-slate-600">
           <RoleTrigger className="hover:text-ink transition-colors">Explore</RoleTrigger>
