@@ -59,6 +59,9 @@ export class NotificationsService {
         metadata: params.metadata as Prisma.InputJsonValue | undefined,
       },
     });
+    this.logger.log(
+      `[notify] created id=${notification.id} type=${params.type} userId=${params.userId}`,
+    );
 
     await this.pushToDevices(params).catch((err) => {
       this.logger.warn(`Push delivery failed for user ${params.userId}: ${err}`);
@@ -68,20 +71,42 @@ export class NotificationsService {
   }
 
   private async pushToDevices(params: SendNotificationParams): Promise<void> {
-    if (!this.firebaseApp) return;
+    if (!this.firebaseApp) {
+      this.logger.log(
+        `[notify] push SKIPPED (Firebase not configured) type=${params.type} userId=${params.userId}`,
+      );
+      return;
+    }
 
     const tokens = await this.prisma.pushToken.findMany({
       where: { userId: params.userId },
       select: { id: true, token: true },
     });
-    if (tokens.length === 0) return;
+    if (tokens.length === 0) {
+      this.logger.log(
+        `[notify] push SKIPPED (no registered devices) type=${params.type} userId=${params.userId}`,
+      );
+      return;
+    }
 
     const messaging = getMessaging(this.firebaseApp);
+    // data payload is what mobile's push_service.dart _handleDeepLink reads —
+    // logging its keys (never token values) is the fastest way to confirm
+    // whether e.g. sessionType actually made it into a given push.
+    const dataPayload = { type: params.type, ...(params.metadata ?? {}) };
+    this.logger.log(
+      `[notify] push dispatch type=${params.type} userId=${params.userId} ` +
+        `devices=${tokens.length} dataKeys=[${Object.keys(dataPayload).join(',')}]`,
+    );
     const response = await messaging.sendEachForMulticast({
       tokens: tokens.map((t) => t.token),
       notification: { title: params.title, body: params.body },
-      data: { type: params.type, ...(params.metadata ?? {}) },
+      data: dataPayload,
     });
+    this.logger.log(
+      `[notify] push result type=${params.type} userId=${params.userId} ` +
+        `success=${response.successCount} failure=${response.failureCount}`,
+    );
 
     const staleTokenIds = response.responses
       .map((r, i) => ({ r, id: tokens[i].id }))

@@ -181,14 +181,24 @@ class _SessionCardState extends ConsumerState<_SessionCard> {
   /// ringing screen for both parties — see CallScreen's dual-confirm join.
   Future<void> _acceptAndMaybeJoin(SessionsApi api) async {
     setState(() => _busy = true);
+    // TEMP DIAGNOSTIC — remove once real-device call testing is confirmed
+    // working. This is the mentor's own local navigation into the call
+    // screen on accept — separate from the aspirant's push deep-link path.
+    debugPrint('[session] accept tapped sessionId=${widget.session.id}');
     try {
       final updated = await api.accept(widget.session.id);
+      debugPrint(
+        '[session] accept succeeded sessionId=${updated.id} type=${updated.type} '
+        'status=${updated.status.wire}',
+      );
       ref.invalidate(sessionsListProvider);
       if (!mounted) return;
       if (updated.type == 'AUDIO_CALL') {
+        debugPrint('[session] navigating mentor to /call/${updated.id}');
         context.push('/call/${updated.id}');
       }
     } catch (e) {
+      debugPrint('[session] accept FAILED sessionId=${widget.session.id} — $e');
       if (!mounted) return;
       ScaffoldMessenger.of(context)
           .showSnackBar(SnackBar(content: Text('Failed: $e')));

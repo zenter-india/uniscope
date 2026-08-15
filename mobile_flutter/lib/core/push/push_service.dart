@@ -62,15 +62,32 @@ class PushService {
   }
 
   void _handleDeepLink(RemoteMessage message) {
+    // TEMP DIAGNOSTIC — remove after push registration is confirmed working.
+    // sessionId/type/sessionType are opaque routing data, not secrets or PII.
+    debugPrint(
+      '[push] message received type=${message.data['type']} '
+      'sessionId=${message.data['sessionId']} sessionType=${message.data['sessionType']}',
+    );
+
     final sessionId = message.data['sessionId'];
-    if (sessionId == null) return;
+    if (sessionId == null) {
+      debugPrint('[push] deep-link SKIPPED — no sessionId in payload');
+      return;
+    }
 
     final isAudioCallAccept = message.data['type'] == 'SESSION_ACCEPTED' &&
         message.data['sessionType'] == 'AUDIO_CALL';
-    if (!isAudioCallAccept) return;
+    if (!isAudioCallAccept) {
+      debugPrint('[push] deep-link SKIPPED — not a SESSION_ACCEPTED/AUDIO_CALL push');
+      return;
+    }
 
     final context = rootNavigatorKey.currentContext;
-    if (context == null) return;
+    if (context == null) {
+      debugPrint('[push] deep-link SKIPPED — no navigator context available yet');
+      return;
+    }
+    debugPrint('[push] deep-linking to /call/$sessionId');
     GoRouter.of(context).push('/call/$sessionId');
   }
 

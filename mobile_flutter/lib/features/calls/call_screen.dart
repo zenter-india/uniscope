@@ -45,6 +45,10 @@ class _CallScreenState extends ConsumerState<CallScreen> {
   bool _extendDialogShowing = false;
   DateTime? _slotExpiredAt;
   Timer? _noAnswerTimer;
+  // TEMP DIAGNOSTIC — remove once real-device call testing is confirmed
+  // working. Tracks the last status we logged so _poll doesn't spam a line
+  // every 2s; only transitions are logged.
+  SessionStatus? _lastLoggedStatus;
 
   bool get _isAspirant =>
       _session != null && ref.read(authControllerProvider).user?.id == _session!.aspirantId;
@@ -66,8 +70,13 @@ class _CallScreenState extends ConsumerState<CallScreen> {
   }
 
   Future<void> _start() async {
+    // TEMP DIAGNOSTIC — remove once real-device call testing is confirmed
+    // working. sessionId is an opaque id, never a secret/PII.
+    debugPrint('[call] CallScreen started sessionId=${widget.sessionId}');
+
     final granted =
         await _permissionsChannel.invokeMethod<bool>('requestMicrophone') ?? false;
+    debugPrint('[call] microphone permission granted=$granted');
     if (!granted) {
       if (!mounted) return;
       setState(() => _phase = _Phase.permissionDenied);
@@ -77,6 +86,10 @@ class _CallScreenState extends ConsumerState<CallScreen> {
     try {
       final api = ref.read(sessionsApiProvider);
       final session = await api.findById(widget.sessionId);
+      debugPrint(
+        '[call] session fetched sessionId=${widget.sessionId} '
+        'type=${session.type} status=${session.status.wire}',
+      );
       if (session.type != 'AUDIO_CALL') {
         throw Exception('Not an audio call session');
       }
@@ -86,6 +99,10 @@ class _CallScreenState extends ConsumerState<CallScreen> {
       });
 
       final creds = await api.getCallToken(widget.sessionId);
+      debugPrint(
+        '[call] token acquired sessionId=${widget.sessionId} '
+        'channel=${creds.channelName} uid=${creds.uid}',
+      );
       // Agora's native join has a documented-but-unconfirmed hang risk on
       // some Android builds (see CLAUDE.md's Agora native-call note) — an
       // uncaught native-layer stall here would otherwise leave this screen
@@ -94,18 +111,27 @@ class _CallScreenState extends ConsumerState<CallScreen> {
       // side. A bounded timeout turns a silent hang into a visible error.
       await _joinAgoraChannel(creds).timeout(
         const Duration(seconds: 20),
-        onTimeout: () => throw Exception(
-          'Could not connect to the call — check your connection and try again.',
-        ),
+        onTimeout: () {
+          debugPrint('[call] Agora join TIMED OUT after 20s sessionId=${widget.sessionId}');
+          throw Exception(
+            'Could not connect to the call — check your connection and try again.',
+          );
+        },
       );
+      debugPrint('[call] Agora join completed sessionId=${widget.sessionId}');
 
       final confirmed = await api.confirmJoined(widget.sessionId);
+      debugPrint(
+        '[call] confirmJoined sent — server status=${confirmed.status.wire} '
+        'sessionId=${widget.sessionId}',
+      );
       if (!mounted) return;
       setState(() => _session = confirmed);
       _applySessionUpdate(confirmed);
 
       _pollTimer = Timer.periodic(const Duration(seconds: 2), (_) => _poll());
     } catch (e) {
+      debugPrint('[call] _start FAILED sessionId=${widget.sessionId} — $e');
       if (!mounted) return;
       setState(() {
         _phase = _Phase.error;
@@ -115,6 +141,7 @@ class _CallScreenState extends ConsumerState<CallScreen> {
   }
 
   Future<void> _joinAgoraChannel(CallCredentials creds) async {
+    debugPrint('[call] Agora engine initializing channel=${creds.channelName}');
     final engine = createAgoraRtcEngine();
     await engine.initialize(RtcEngineContext(appId: creds.appId));
     await engine.enableAudio();
@@ -122,13 +149,21 @@ class _CallScreenState extends ConsumerState<CallScreen> {
     engine.registerEventHandler(
       RtcEngineEventHandler(
         onUserJoined: (connection, remoteUid, elapsed) {
+          debugPrint('[call] Agora onUserJoined channel=${creds.channelName} remoteUid=$remoteUid');
           if (mounted) setState(() => _remoteJoinedChannel = true);
         },
         onUserOffline: (connection, remoteUid, reason) {
+          debugPrint(
+            '[call] Agora onUserOffline channel=${creds.channelName} remoteUid=$remoteUid reason=$reason',
+          );
           if (mounted) setState(() => _remoteJoinedChannel = false);
+        },
+        onError: (err, msg) {
+          debugPrint('[call] Agora onError channel=${creds.channelName} err=$err msg=$msg');
         },
       ),
     );
+    debugPrint('[call] Agora joinChannelWithUserAccount channel=${creds.channelName} uid=${creds.uid}');
     await engine.joinChannelWithUserAccount(
       token: creds.token,
       channelId: creds.channelName,
@@ -154,6 +189,16 @@ class _CallScreenState extends ConsumerState<CallScreen> {
   }
 
   void _applySessionUpdate(Session session) {
+    // TEMP DIAGNOSTIC — remove once real-device call testing is confirmed
+    // working. Only logs on an actual status transition, not every poll tick.
+    if (session.status != _lastLoggedStatus) {
+      debugPrint(
+        '[call] status changed ${_lastLoggedStatus?.wire ?? '(none)'} -> '
+        '${session.status.wire} sessionId=${widget.sessionId}',
+      );
+      _lastLoggedStatus = session.status;
+    }
+
     const terminal = {
       SessionStatus.completed,
       SessionStatus.rejected,
@@ -162,6 +207,10 @@ class _CallScreenState extends ConsumerState<CallScreen> {
       SessionStatus.failed,
     };
     if (terminal.contains(session.status)) {
+      debugPrint(
+        '[call] terminal status=${session.status.wire} endReason=${session.endReason} '
+        'sessionId=${widget.sessionId}',
+      );
       _endLocally();
       return;
     }
@@ -187,6 +236,7 @@ class _CallScreenState extends ConsumerState<CallScreen> {
 
   void _noAnswer() {
     if (!mounted || _phase != _Phase.waiting) return;
+    debugPrint('[call] no-answer timeout (45s) sessionId=${widget.sessionId}');
     _endCall(reason: 'NO_ANSWER');
   }
 
@@ -267,15 +317,21 @@ class _CallScreenState extends ConsumerState<CallScreen> {
   }
 
   Future<void> _endCall({String reason = 'NORMAL'}) async {
+    debugPrint('[call] endCall requested reason=$reason sessionId=${widget.sessionId}');
     try {
       await ref.read(sessionsApiProvider).endCall(widget.sessionId, endReason: reason);
-    } catch (_) {
+    } catch (e) {
       // Other party may have already ended it — fall through to local end.
+      debugPrint(
+        '[call] endCall API call failed (other party may have already ended it) — $e '
+        'sessionId=${widget.sessionId}',
+      );
     }
     _endLocally();
   }
 
   void _endLocally() {
+    debugPrint('[call] ending locally sessionId=${widget.sessionId}');
     _pollTimer?.cancel();
     _tickTimer?.cancel();
     _engine?.leaveChannel();
