@@ -57,13 +57,11 @@ export function ChipGroup({
   options,
   selected,
   onToggle,
-  multi = true,
   gold,
 }: {
   options: readonly string[];
   selected: string[];
   onToggle: (value: string) => void;
-  multi?: boolean;
   gold?: boolean;
 }) {
   return (

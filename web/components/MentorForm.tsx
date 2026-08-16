@@ -90,10 +90,12 @@ function CollegeSearch({
   // the very next render — a naive "skip if unchanged" guard would fire after
   // every single keystroke and wipe the results that keystroke just fetched.
   useEffect(() => {
-    if (query.trim().length < 2) {
-      setResults([]);
-      return;
-    }
+    // Below the 2-char threshold, just skip scheduling a search — the render
+    // guard below (`query.trim().length >= 2`) hides any stale `results`
+    // rather than this effect clearing them, since a synchronous setState
+    // right in the effect body (not inside the async .then()/.catch() below)
+    // is exactly the pattern React's set-state-in-effect rule flags.
+    if (query.trim().length < 2) return;
     const thisRequest = ++requestId.current;
     const handle = setTimeout(() => {
       searchUniversities(query)
@@ -125,7 +127,7 @@ function CollegeSearch({
         onFocus={() => setOpen(true)}
         onBlur={() => setTimeout(() => setOpen(false), 150)}
       />
-      {open && results.length > 0 && (
+      {open && query.trim().length >= 2 && results.length > 0 && (
         <ul className="absolute z-10 mt-1 w-full bg-white border border-border rounded-[11px] shadow-lg max-h-56 overflow-auto">
           {results.map((u) => (
             <li key={u.id}>
