@@ -30,8 +30,9 @@ void main() {
       await tester.pump(const Duration(milliseconds: 100));
     }
 
-    // Anonymous user → Welcome screen.
-    expect(find.text('Get Started'), findsOneWidget);
+    // Anonymous user → Welcome screen (a 4-slide carousel — "Skip" only
+    // shows on the first slide, so its presence proves we're on slide one).
+    expect(find.text('Skip'), findsOneWidget);
     expect(find.text('Uniscope'), findsOneWidget);
   });
 }

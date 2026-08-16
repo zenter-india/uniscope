@@ -72,24 +72,31 @@ class HomeScreen extends ConsumerWidget {
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Row(
-                            children: [
-                              Image.asset(
-                                'assets/logo/uniscope_icon.png',
-                                width: 44,
-                                height: 44,
-                                fit: BoxFit.contain,
-                              ),
-                              const SizedBox(width: AppSpacing.xs),
-                              Text(
-                                'Uniscope',
-                                style: TextStyle(
-                                  fontSize: AppFont.display,
-                                  fontWeight: AppFont.extraBold,
-                                  color: Colors.white.withValues(alpha: 0.95),
+                          Flexible(
+                            child: Row(
+                              children: [
+                                Image.asset(
+                                  'assets/logo/uniscope_icon.png',
+                                  width: 44,
+                                  height: 44,
+                                  fit: BoxFit.contain,
                                 ),
-                              ),
-                            ],
+                                const SizedBox(width: AppSpacing.xs),
+                                Flexible(
+                                  child: Text(
+                                    'Uniscope',
+                                    overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(
+                                      fontSize: AppFont.display,
+                                      fontWeight: AppFont.extraBold,
+                                      color: Colors.white.withValues(
+                                        alpha: 0.95,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
                           if (displayName != null)
                             Material(
@@ -103,15 +110,18 @@ class HomeScreen extends ConsumerWidget {
                                   decoration: BoxDecoration(
                                     shape: BoxShape.circle,
                                     border: Border.all(
-                                      color: Colors.white.withValues(alpha: 0.85),
+                                      color: Colors.white.withValues(
+                                        alpha: 0.85,
+                                      ),
                                       width: 2,
                                     ),
                                   ),
                                   child: AppAvatar(
-                                      name: displayName,
-                                      size: 40,
-                                      solid: true,
-                                      avatarUrl: myAvatarUrl),
+                                    name: displayName,
+                                    size: 40,
+                                    solid: true,
+                                    avatarUrl: myAvatarUrl,
+                                  ),
                                 ),
                               ),
                             ),
@@ -179,11 +189,14 @@ class HomeScreen extends ConsumerWidget {
                                 color: authBrandTeal,
                               ),
                               const SizedBox(width: AppSpacing.sm),
-                              const Text(
-                                'Search colleges, courses, or mentors...',
-                                style: TextStyle(
-                                  fontSize: AppFont.sm,
-                                  color: AppColors.textMuted,
+                              const Expanded(
+                                child: Text(
+                                  'Search colleges, courses, or mentors...',
+                                  style: TextStyle(
+                                    fontSize: AppFont.sm,
+                                    color: AppColors.textMuted,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
                                 ),
                               ),
                             ],
@@ -490,7 +503,10 @@ class _MentorTeaser extends StatelessWidget {
       child: Row(
         children: [
           AppAvatar(
-              name: mentor.displayName, size: 44, avatarUrl: mentor.avatarUrl),
+            name: mentor.displayName,
+            size: 44,
+            avatarUrl: mentor.avatarUrl,
+          ),
           const SizedBox(width: AppSpacing.md),
           Expanded(
             child: Column(

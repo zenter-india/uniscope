@@ -89,7 +89,9 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
       // this goes next (see app_router.dart). A screen-level context.go
       // racing that redirect is what previously let new users fall through
       // to Home before ever reaching role-selection.
-      ref.read(authControllerProvider.notifier).setAuth(
+      ref
+          .read(authControllerProvider.notifier)
+          .setAuth(
             result.accessToken,
             result.refreshToken,
             result.user,
@@ -104,7 +106,9 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
           ? (err.response?.data as Map)['message']
           : null;
       setState(() {
-        _error = msg is String ? msg : 'Incorrect or expired code. Please try again.';
+        _error = msg is String
+            ? msg
+            : 'Incorrect or expired code. Please try again.';
         _otp = '';
         _controller.clear();
       });
@@ -144,9 +148,9 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
   }
 
   String get _maskedPhone => widget.phone.replaceAllMapped(
-        RegExp(r'(\+91)(\d{3})(\d{3})(\d{4})'),
-        (m) => '${m[1]} ${m[2]} *** ${m[4]}',
-      );
+    RegExp(r'(\+91)(\d{3})(\d{3})(\d{4})'),
+    (m) => '${m[1]} ${m[2]} *** ${m[4]}',
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -157,20 +161,28 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
             children: [
               Padding(
                 padding: const EdgeInsets.fromLTRB(
-                    AppSpacing.md, AppSpacing.sm, AppSpacing.md, 0),
+                  AppSpacing.md,
+                  AppSpacing.sm,
+                  AppSpacing.md,
+                  0,
+                ),
                 child: Row(
                   children: [
                     IconButton(
                       onPressed: _loading ? null : () => context.pop(),
-                      icon: const Icon(Icons.arrow_back_rounded,
-                          color: authBrandNavy),
+                      icon: const Icon(
+                        Icons.arrow_back_rounded,
+                        color: authBrandNavy,
+                      ),
                     ),
                   ],
                 ),
               ),
               Expanded(
                 child: SingleChildScrollView(
-                  padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xl),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.xl,
+                  ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
@@ -190,7 +202,9 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
                         ],
                       ),
                       const SizedBox(height: AppSpacing.xl),
-                      _OtpIllustration(masked: _otp.padRight(_otpLength).substring(0, 6)),
+                      _OtpIllustration(
+                        masked: _otp.padRight(_otpLength).substring(0, 6),
+                      ),
                       const SizedBox(height: AppSpacing.lg),
                       const Text(
                         'Verify your number',
@@ -231,7 +245,10 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
                               for (var i = 0; i < _otpLength; i++)
                                 Padding(
                                   padding: EdgeInsets.only(
-                                      right: i == _otpLength - 1 ? 0 : AppSpacing.sm),
+                                    right: i == _otpLength - 1
+                                        ? 0
+                                        : AppSpacing.sm,
+                                  ),
                                   child: _OtpCell(
                                     digit: i < _otp.length ? _otp[i] : '',
                                     active: _otp.length == i && !_loading,
@@ -251,7 +268,7 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
                               showCursor: false,
                               enableInteractiveSelection: false,
                               inputFormatters: [
-                                FilteringTextInputFormatter.digitsOnly
+                                FilteringTextInputFormatter.digitsOnly,
                               ],
                               onChanged: _onChanged,
                               style: const TextStyle(color: Colors.transparent),
@@ -271,33 +288,44 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
                       ),
                       const SizedBox(height: AppSpacing.lg),
                       if (_error.isNotEmpty) ...[
-                        Text(_error,
-                            textAlign: TextAlign.center,
-                            style: const TextStyle(
-                                fontSize: AppFont.sm, color: AppColors.error)),
+                        Text(
+                          _error,
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                            fontSize: AppFont.sm,
+                            color: AppColors.error,
+                          ),
+                        ),
                         const SizedBox(height: AppSpacing.sm),
                       ],
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.access_time_rounded,
-                              size: 16,
-                              color: (_countdown > 0 || _loading)
-                                  ? AppColors.textMuted
-                                  : authBrandTeal),
+                          Icon(
+                            Icons.access_time_rounded,
+                            size: 16,
+                            color: (_countdown > 0 || _loading)
+                                ? AppColors.textMuted
+                                : authBrandTeal,
+                          ),
                           const SizedBox(width: 4),
-                          TextButton(
-                            onPressed: (_countdown > 0 || _loading) ? null : _resend,
-                            child: Text(
-                              _countdown > 0
-                                  ? 'Resend code in ${_countdown}s'
-                                  : 'Resend code',
-                              style: TextStyle(
-                                fontSize: AppFont.md,
-                                fontWeight: AppFont.medium,
-                                color: (_countdown > 0 || _loading)
-                                    ? AppColors.textMuted
-                                    : authBrandTeal,
+                          Flexible(
+                            child: TextButton(
+                              onPressed: (_countdown > 0 || _loading)
+                                  ? null
+                                  : _resend,
+                              child: Text(
+                                _countdown > 0
+                                    ? 'Resend code in ${_countdown}s'
+                                    : 'Resend code',
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  fontSize: AppFont.md,
+                                  fontWeight: AppFont.medium,
+                                  color: (_countdown > 0 || _loading)
+                                      ? AppColors.textMuted
+                                      : authBrandTeal,
+                                ),
                               ),
                             ),
                           ),
@@ -324,8 +352,9 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
                                   height: 20,
                                   child: CircularProgressIndicator(
                                     strokeWidth: 2,
-                                    valueColor:
-                                        AlwaysStoppedAnimation(Colors.white),
+                                    valueColor: AlwaysStoppedAnimation(
+                                      Colors.white,
+                                    ),
                                   ),
                                 )
                               : const Text(
@@ -343,7 +372,9 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
                         child: const Text(
                           'Change number',
                           style: TextStyle(
-                              fontSize: AppFont.sm, color: AppColors.textSecondary),
+                            fontSize: AppFont.sm,
+                            color: AppColors.textSecondary,
+                          ),
                         ),
                       ),
                       const SizedBox(height: AppSpacing.lg),
@@ -375,7 +406,10 @@ class _OtpIllustration extends StatelessWidget {
             width: 90,
             height: 110,
             decoration: BoxDecoration(
-              border: Border.all(color: authBrandTeal.withValues(alpha: 0.35), width: 2),
+              border: Border.all(
+                color: authBrandTeal.withValues(alpha: 0.35),
+                width: 2,
+              ),
               borderRadius: BorderRadius.circular(AppRadius.lg),
             ),
           ),
@@ -387,8 +421,10 @@ class _OtpIllustration extends StatelessWidget {
                 color: AppColors.background,
                 borderRadius: BorderRadius.circular(AppRadius.sm),
               ),
-              child: const Text('* * * * * *',
-                  style: TextStyle(letterSpacing: 2, color: AppColors.textMuted)),
+              child: const Text(
+                '* * * * * *',
+                style: TextStyle(letterSpacing: 2, color: AppColors.textMuted),
+              ),
             ),
           ),
           Positioned(
@@ -401,7 +437,11 @@ class _OtpIllustration extends StatelessWidget {
                 color: authBrandTeal,
                 shape: BoxShape.circle,
               ),
-              child: const Icon(Icons.lock_rounded, size: 16, color: Colors.white),
+              child: const Icon(
+                Icons.lock_rounded,
+                size: 16,
+                color: Colors.white,
+              ),
             ),
           ),
         ],
