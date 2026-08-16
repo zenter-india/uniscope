@@ -9,6 +9,16 @@
 # packages, and plugins designed to encourage good coding practices.
 include: package:flutter_lints/flutter.yaml
 
+analyzer:
+  # build/ is a local build-cache artifact (not part of the source tree, and
+  # gitignored) that can contain a vendored package's own test fixtures —
+  # e.g. firebase_messaging ships a test/mock.dart that doesn't even compile
+  # against this project's Mockito version. It has nothing to do with this
+  # app's code and was making `flutter analyze` fail on ~150 unrelated
+  # errors on any machine that had already run a local build.
+  exclude:
+    - build/**
+
 linter:
   # The lint rules applied to this project can be customized in the
   # section below to disable rules from the `package:flutter_lints/flutter.yaml`
