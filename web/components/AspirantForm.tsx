@@ -5,6 +5,7 @@ import { submitAspirantLead, ApiError } from "../lib/api";
 import {
   GENDERS,
   INDIAN_STATES,
+  CITIES,
   QUALIFICATIONS,
   STREAMS,
   MENTORSHIP_TIMINGS,
@@ -20,6 +21,7 @@ type FormState = {
   state: string;
   stateOther: string;
   city: string;
+  cityOther: string;
   qualification: string;
   qualificationOther: string;
   stream: string;
@@ -37,6 +39,7 @@ const EMPTY: FormState = {
   state: "",
   stateOther: "",
   city: "",
+  cityOther: "",
   qualification: "",
   qualificationOther: "",
   stream: "",
@@ -66,7 +69,8 @@ export function AspirantForm({ onExit }: { onExit: () => void }) {
     if (wizard.step === 2) {
       if (!form.state) return "Select your state.";
       if (form.state === "Other" && !form.stateOther.trim()) return "Enter your state.";
-      if (!form.city.trim()) return "Enter your city.";
+      if (!form.city) return "Select your city.";
+      if (form.city === "Other" && !form.cityOther.trim()) return "Enter your city.";
     }
     return null;
   }
@@ -90,7 +94,7 @@ export function AspirantForm({ onExit }: { onExit: () => void }) {
         phone: form.phone.trim(),
         gender: form.gender || undefined,
         state: (form.state === "Other" ? form.stateOther.trim() : form.state) || undefined,
-        city: form.city.trim() || undefined,
+        city: (form.city === "Other" ? form.cityOther.trim() : form.city) || undefined,
         qualification:
           (form.qualification === "Others" ? form.qualificationOther.trim() : form.qualification) || undefined,
         stream: (form.stream === "Others" ? form.streamOther.trim() : form.stream) || undefined,
@@ -171,13 +175,11 @@ export function AspirantForm({ onExit }: { onExit: () => void }) {
       {wizard.step === 1 && (
         <div>
           <h3 className="text-[19px] font-extrabold mb-1">The basics</h3>
-          <p className="text-[13.5px] font-semibold text-slate-600 mb-5">
-            So mentors know who they&apos;re talking to.
-          </p>
+          <p className="text-[13.5px] font-semibold text-slate-600 mb-5">Core identity details</p>
           <Field label="Full name">
             <TextInput
               required
-              placeholder="e.g. Aarav Sharma"
+              placeholder="Enter your full name"
               value={form.fullName}
               onChange={(e) => set("fullName", e.target.value)}
             />
@@ -218,13 +220,13 @@ export function AspirantForm({ onExit }: { onExit: () => void }) {
                 ))}
               </Select>
             </Field>
-            <Field label="City">
-              <TextInput
-                required
-                placeholder="e.g. Chennai"
-                value={form.city}
-                onChange={(e) => set("city", e.target.value)}
-              />
+            <Field label="City" hint="(required)">
+              <Select value={form.city} onChange={(e) => set("city", e.target.value)}>
+                <option value="">Select city</option>
+                {CITIES.map((c) => (
+                  <option key={c}>{c}</option>
+                ))}
+              </Select>
             </Field>
           </div>
           {form.state === "Other" && (
@@ -234,6 +236,16 @@ export function AspirantForm({ onExit }: { onExit: () => void }) {
                 placeholder="Enter your state"
                 value={form.stateOther}
                 onChange={(e) => set("stateOther", e.target.value)}
+              />
+            </Field>
+          )}
+          {form.city === "Other" && (
+            <Field label="Your city">
+              <TextInput
+                required
+                placeholder="Enter your city"
+                value={form.cityOther}
+                onChange={(e) => set("cityOther", e.target.value)}
               />
             </Field>
           )}
@@ -307,7 +319,7 @@ export function AspirantForm({ onExit }: { onExit: () => void }) {
               onToggle={(v) => set("preferredLanguages", toggleInArray(form.preferredLanguages, v))}
             />
           </Field>
-          <Field label="Preferred mentorship timing" hint="(optional, pick any)">
+          <Field label="Preferred Timing" hint="(optional, pick any)">
             <ChipGroup
               options={MENTORSHIP_TIMINGS}
               selected={form.preferredMentorshipTimings}

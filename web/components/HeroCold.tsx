@@ -16,7 +16,7 @@ export function HeroCold() {
       {/* Real HTML, not baked into the photo — the photo can't be edited
           pixel-by-pixel, and this line is the kind of copy that's likely to
           be revised again, so it needs to stay editable text. */}
-      <p className="max-w-xl mx-auto text-center px-6 pt-10 pb-5 text-[15px] md:text-[17px] font-semibold italic text-sky-300">
+      <p className="max-w-xl md:max-w-none mx-auto text-center px-6 pt-10 pb-5 text-[15px] md:text-[17px] font-semibold italic text-sky-300 md:whitespace-nowrap">
         &ldquo;The best people to help you choose a college are the people who are already studying there.&rdquo;
       </p>
       <Image
