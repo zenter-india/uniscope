@@ -3,7 +3,7 @@ import { mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
-import { DataImportStatus, DataImportType } from '@prisma/client';
+import { DataImportStatus, DataImportType, Prisma } from '@prisma/client';
 import { PrismaService } from '../../database/prisma/prisma.service.js';
 import { ApplyDataImportDto } from './dto/apply-data-import.dto.js';
 
@@ -145,7 +145,7 @@ export class DataImportService {
         where: { id: jobId },
         data: {
           status: DataImportStatus.COMPLETED,
-          diffJson: diff as unknown as object,
+          diffJson: diff as unknown as Prisma.InputJsonValue,
           completedAt: new Date(),
         },
       });
@@ -346,7 +346,7 @@ function runPython<T>(script: string, args: string[]): Promise<T> {
         return;
       }
       try {
-        resolve(JSON.parse(stdout));
+        resolve(JSON.parse(stdout) as T);
       } catch (e) {
         reject(new Error(`${script} did not print valid JSON: ${(e as Error).message}`));
       }

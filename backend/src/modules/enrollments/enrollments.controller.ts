@@ -41,7 +41,7 @@ export class EnrollmentsController {
   createAspirant(
     @Body() dto: CreateAspirantLeadDto,
   ): Promise<EnrollmentLeadAcknowledgement> {
-    if (dto.website) return this.silentlyAccept(EnrollmentLeadRole.ASPIRANT);
+    if (dto.website) return Promise.resolve(this.silentlyAccept(EnrollmentLeadRole.ASPIRANT));
     return this.enrollmentsService.createAspirantLead(dto);
   }
 
@@ -50,16 +50,14 @@ export class EnrollmentsController {
   createMentor(
     @Body() dto: CreateMentorLeadDto,
   ): Promise<EnrollmentLeadAcknowledgement> {
-    if (dto.website) return this.silentlyAccept(EnrollmentLeadRole.MENTOR);
+    if (dto.website) return Promise.resolve(this.silentlyAccept(EnrollmentLeadRole.MENTOR));
     return this.enrollmentsService.createMentorLead(dto);
   }
 
   /** Honeypot tripped — hand back a response indistinguishable from success so
    * the bot has nothing to learn from, while storing nothing. The id is random
    * and references no row. */
-  private async silentlyAccept(
-    role: EnrollmentLeadRole,
-  ): Promise<EnrollmentLeadAcknowledgement> {
+  private silentlyAccept(role: EnrollmentLeadRole): EnrollmentLeadAcknowledgement {
     return {
       id: crypto.randomUUID(),
       role,

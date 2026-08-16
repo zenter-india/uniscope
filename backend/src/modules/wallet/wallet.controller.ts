@@ -73,7 +73,10 @@ export class WalletController {
       throw new BadRequestException('Invalid webhook signature');
     }
 
-    const event = JSON.parse(req.rawBody.toString('utf8'));
+    const event = JSON.parse(req.rawBody.toString('utf8')) as {
+      event: string;
+      payload: { payment: { entity: { id: string; order_id: string; amount: number } } };
+    };
 
     if (event.event === 'payment.captured') {
       await this.walletService.handleTopupCaptured(event);
