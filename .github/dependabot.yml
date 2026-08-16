@@ -1,0 +1,28 @@
+version: 2
+updates:
+  # Root npm workspace — covers backend, admin, and web via npm workspaces.
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 10
+    groups:
+      # Batch same-ecosystem patch/minor bumps into one PR instead of one
+      # PR per package — a dozen individual Next.js/ESLint bumps a week
+      # would just be noise nobody reviews individually.
+      npm-minor-patch:
+        update-types: ["minor", "patch"]
+
+  - package-ecosystem: "pub"
+    directory: "/mobile_flutter"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 10
+    groups:
+      pub-minor-patch:
+        update-types: ["minor", "patch"]
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
