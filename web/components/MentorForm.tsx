@@ -155,6 +155,7 @@ export function MentorForm({ onExit }: { onExit: () => void }) {
   function validateStep(): string | null {
     if (wizard.step === 1) {
       if (!form.fullName.trim()) return "Enter your full name.";
+      if (!form.alias.trim()) return "Enter an alias / display name.";
       if (form.phone.trim().length !== 10) return "Enter a valid 10-digit phone number.";
       if (!form.gender) return "Select a gender.";
     }
@@ -275,14 +276,15 @@ export function MentorForm({ onExit }: { onExit: () => void }) {
             <TextInput
               gold
               required
-              placeholder="e.g. Priya Menon"
+              placeholder="Enter your full name"
               value={form.fullName}
               onChange={(e) => set("fullName", e.target.value)}
             />
           </Field>
-          <Field label="Alias / Display name" hint="(optional)">
+          <Field label="Alias / Display name" hint="Real name stays private. Aspirant only sees your alias.">
             <TextInput
               gold
+              required
               placeholder="e.g. John Snow"
               value={form.alias}
               onChange={(e) => set("alias", e.target.value)}
