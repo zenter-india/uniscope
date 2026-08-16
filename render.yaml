@@ -54,6 +54,10 @@ services:
         sync: false
       - key: AGORA_APP_CERTIFICATE
         sync: false
+      # Optional — unset means new-lead/daily-digest Slack alerts are
+      # silently skipped rather than the app failing to start.
+      - key: SLACK_WEBHOOK_URL
+        sync: false
       - key: FIREBASE_PROJECT_ID
         value: uniscope-83eeb
       - key: FIREBASE_DISABLED

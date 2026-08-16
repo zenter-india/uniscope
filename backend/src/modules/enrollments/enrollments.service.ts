@@ -1,8 +1,10 @@
 import { randomUUID } from 'node:crypto';
 import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { Cron, CronExpression } from '@nestjs/schedule';
 import { EnrollmentLeadRole, EnrollmentLeadStatus, Prisma } from '@prisma/client';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { parsePhoneNumberFromString } from 'libphonenumber-js';
+import { SlackNotifierService } from '../../common/slack/slack-notifier.service.js';
 import { PrismaService } from '../../database/prisma/prisma.service.js';
 import { SUPABASE_BUCKETS, SUPABASE_CLIENT } from '../../supabase/index.js';
 import {
@@ -31,6 +33,7 @@ export class EnrollmentsService {
   constructor(
     private readonly prisma: PrismaService,
     @Inject(SUPABASE_CLIENT) private readonly supabase: SupabaseClient,
+    private readonly slack: SlackNotifierService,
   ) {}
 
   /** E.164 so the (role, phone) uniqueness actually holds — otherwise the same
@@ -116,11 +119,26 @@ export class EnrollmentsService {
       ...roleSpecific,
     };
 
+    // Checked ahead of the upsert (rather than inferred from the result)
+    // because upsert's return value doesn't say which branch it took, and
+    // the alert below should only fire for a genuinely new lead, not every
+    // resubmission-as-correction this upsert also handles.
+    const existed = await this.prisma.enrollmentLead.findUnique({
+      where: { role_phone: { role, phone } },
+      select: { id: true },
+    });
+
     const lead = await this.prisma.enrollmentLead.upsert({
       where: { role_phone: { role, phone } },
       create: { role, phone, ...shared },
       update: shared,
     });
+
+    if (!existed) {
+      await this.slack.send(
+        `:wave: New ${role.toLowerCase()} lead — ${shared.fullName} (${phone})`,
+      );
+    }
 
     return { id: lead.id, role: lead.role, status: lead.status };
   }
@@ -227,6 +245,31 @@ export class EnrollmentsService {
     };
   }
 
+  /**
+   * A same summary every morning instead of someone having to open the
+   * admin panel to notice new signups. Scoped to enrollment leads only for
+   * now — pending verifications and open reports live in other modules and
+   * are a natural next addition, not pulled in here yet to keep this
+   * change self-contained to the enrollments domain.
+   */
+  @Cron(CronExpression.EVERY_DAY_AT_8AM)
+  async sendDailyDigest(): Promise<void> {
+    const since = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    const [newLeads, newByRole] = await Promise.all([
+      this.prisma.enrollmentLead.count({ where: { createdAt: { gt: since } } }),
+      this.prisma.enrollmentLead.groupBy({
+        by: ['role'],
+        where: { createdAt: { gt: since } },
+        _count: true,
+      }),
+    ]);
+
+    if (newLeads === 0) return;
+
+    const byRoleLine = newByRole.map((r) => `${r._count} ${r.role.toLowerCase()}`).join(', ');
+    await this.slack.send(`:sunrise: ${newLeads} new enrollment lead(s) in the last 24h (${byRoleLine})`);
+  }
+
   async findById(id: string): Promise<EnrollmentLeadResponse> {
     const lead = await this.prisma.enrollmentLead.findUnique({
       where: { id },
@@ -307,7 +350,7 @@ export class EnrollmentsService {
       orderBy: { createdAt: 'desc' },
     });
 
-    const columns: [string, (l: EnrollmentLeadResponse) => unknown][] = [
+    const columns: [string, (l: EnrollmentLeadResponse) => string | number | null | undefined][] = [
       ['Submitted', (l) => l.createdAt.toISOString()],
       ['Role', (l) => l.role],
       ['Status', (l) => l.status],
@@ -346,7 +389,7 @@ export class EnrollmentsService {
     // "+" followed by digits and nothing else.
     const isNormalizedPhone = (str: string): boolean => /^\+\d{6,15}$/.test(str);
 
-    const escape = (value: unknown): string => {
+    const escape = (value: string | number | null | undefined): string => {
       if (value === null || value === undefined) return '';
       const str = String(value);
       const safe =

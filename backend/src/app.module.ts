@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { APP_GUARD } from '@nestjs/core';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
+import { ScheduleModule } from '@nestjs/schedule';
 import { AppController } from './app.controller.js';
 import { AppService } from './app.service.js';
 import { PrismaModule } from './database/prisma/prisma.module.js';
@@ -83,6 +84,10 @@ import { EnrollmentsModule } from './modules/enrollments/enrollments.module.js';
         limit: 120,
       },
     ]),
+
+    // Enables @Cron()/@Interval() decorators anywhere in the app — see
+    // PayoutsService.remindEligibleMentors for the first user of it.
+    ScheduleModule.forRoot(),
 
     // Core infrastructure
     PrismaModule,
