@@ -86,9 +86,16 @@ function JobCard({ job: initialJob }: { job: DataImportJob }) {
   const [isPending, startTransition] = useTransition();
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  useEffect(() => {
+  // `job` also gets locally mutated by polling below, so it can't just be
+  // derived from `initialJob` every render — it needs to re-sync only when
+  // the parent actually hands us a different job. Doing that during render
+  // (rather than in an effect) is React's own recommended replacement for
+  // "adjust state when a prop changes": https://react.dev/learn/you-might-not-need-an-effect
+  const [prevInitialJob, setPrevInitialJob] = useState(initialJob);
+  if (initialJob !== prevInitialJob) {
+    setPrevInitialJob(initialJob);
     setJob(initialJob);
-  }, [initialJob]);
+  }
 
   useEffect(() => {
     if (job.status !== 'RUNNING') {
@@ -108,17 +115,17 @@ function JobCard({ job: initialJob }: { job: DataImportJob }) {
   // row, but only high-confidence PG matches — a medium-confidence PG match
   // needs a human to actually read the MCC name before it's trusted (see
   // match_pg.py's docstring for why token-overlap alone isn't enough).
-  useEffect(() => {
-    if (job.diffJson && !seeded) {
-      const keys = new Set<string>();
-      for (const item of job.diffJson.added) {
-        if (item.confidence === undefined || item.confidence === 'high') keys.add(item.key);
-      }
-      for (const item of job.diffJson.changed) keys.add(item.key);
-      setSelected(keys);
-      setSeeded(true);
+  // Same during-render pattern as above — this only ever needs to run once,
+  // guarded by `seeded`, not on every render diffJson happens to be present.
+  if (job.diffJson && !seeded) {
+    const keys = new Set<string>();
+    for (const item of job.diffJson.added) {
+      if (item.confidence === undefined || item.confidence === 'high') keys.add(item.key);
     }
-  }, [job.diffJson, seeded]);
+    for (const item of job.diffJson.changed) keys.add(item.key);
+    setSelected(keys);
+    setSeeded(true);
+  }
 
   const toggle = (key: string) => {
     setSelected((prev) => {
