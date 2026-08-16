@@ -326,7 +326,7 @@ export function MentorForm({ onExit }: { onExit: () => void }) {
                 ))}
               </Select>
             </Field>
-            <Field label="City">
+            <Field label="City" hint="(required)">
               <TextInput
                 gold
                 required
