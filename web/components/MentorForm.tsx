@@ -5,10 +5,12 @@ import { submitMentorLead, searchUniversities, fileToBase64, ApiError, Universit
 import {
   GENDERS,
   INDIAN_STATES,
+  CITIES,
   STREAMS,
   DEGREES,
   CURRENT_STATUSES,
   LANGUAGES,
+  YEARS_OF_STUDY,
   AVAILABILITY_WINDOWS,
   DOCUMENT_TYPES,
 } from "../lib/options";
@@ -23,13 +25,17 @@ type FormState = {
   state: string;
   stateOther: string;
   city: string;
+  cityOther: string;
   collegeName: string;
   universityId: string;
   stream: string;
   streamOther: string;
   degree: string;
   currentStatus: string;
+  yearOfStudy: string;
+  graduationYear: string;
   languages: string[];
+  languagesOther: string;
   availableDays: string[];
   documentType: string;
   documentFile: File | null;
@@ -44,13 +50,17 @@ const EMPTY: FormState = {
   state: "",
   stateOther: "",
   city: "",
+  cityOther: "",
   collegeName: "",
   universityId: "",
   stream: "",
   streamOther: "",
   degree: "",
   currentStatus: "",
+  yearOfStudy: "",
+  graduationYear: "",
   languages: [],
+  languagesOther: "",
   availableDays: [],
   documentType: "STUDENT_ID",
   documentFile: null,
@@ -162,7 +172,8 @@ export function MentorForm({ onExit }: { onExit: () => void }) {
     if (wizard.step === 2) {
       if (!form.state) return "Select your state.";
       if (form.state === "Other" && !form.stateOther.trim()) return "Enter your state.";
-      if (!form.city.trim()) return "Enter your city.";
+      if (!form.city) return "Select your city.";
+      if (form.city === "Other" && !form.cityOther.trim()) return "Enter your city.";
     }
     if (wizard.step === 3) {
       if (!form.collegeName.trim()) return "Enter your college.";
@@ -192,13 +203,19 @@ export function MentorForm({ onExit }: { onExit: () => void }) {
         phone: form.phone.trim(),
         gender: form.gender || undefined,
         state: (form.state === "Other" ? form.stateOther.trim() : form.state) || undefined,
-        city: form.city.trim() || undefined,
+        city: (form.city === "Other" ? form.cityOther.trim() : form.city) || undefined,
         collegeName: form.collegeName.trim() || undefined,
         universityId: form.universityId || undefined,
         stream: (form.stream === "Others" ? form.streamOther.trim() : form.stream) || undefined,
         degree: form.degree || undefined,
         currentStatus: form.currentStatus || undefined,
-        languages: form.languages,
+        yearOfStudy:
+          form.currentStatus === "Currently Studying" && form.yearOfStudy
+            ? YEARS_OF_STUDY.indexOf(form.yearOfStudy as (typeof YEARS_OF_STUDY)[number]) + 1
+            : undefined,
+        graduationYear:
+          form.currentStatus === "Graduated" && form.graduationYear ? parseInt(form.graduationYear, 10) : undefined,
+        languages: form.languages.map((l) => (l === "Others" ? form.languagesOther.trim() : l)).filter(Boolean),
         availableDays: form.availableDays,
         documentType: documentBase64 ? form.documentType : undefined,
         documentBase64,
@@ -327,13 +344,12 @@ export function MentorForm({ onExit }: { onExit: () => void }) {
               </Select>
             </Field>
             <Field label="City" hint="(required)">
-              <TextInput
-                gold
-                required
-                placeholder="e.g. Bengaluru"
-                value={form.city}
-                onChange={(e) => set("city", e.target.value)}
-              />
+              <Select gold value={form.city} onChange={(e) => set("city", e.target.value)}>
+                <option value="">Select city</option>
+                {CITIES.map((c) => (
+                  <option key={c}>{c}</option>
+                ))}
+              </Select>
             </Field>
           </div>
           {form.state === "Other" && (
@@ -344,6 +360,17 @@ export function MentorForm({ onExit }: { onExit: () => void }) {
                 placeholder="Enter your state"
                 value={form.stateOther}
                 onChange={(e) => set("stateOther", e.target.value)}
+              />
+            </Field>
+          )}
+          {form.city === "Other" && (
+            <Field label="Your city">
+              <TextInput
+                gold
+                required
+                placeholder="Enter your city"
+                value={form.cityOther}
+                onChange={(e) => set("cityOther", e.target.value)}
               />
             </Field>
           )}
@@ -411,7 +438,29 @@ export function MentorForm({ onExit }: { onExit: () => void }) {
               }
             />
           </Field>
-          <Field label="Languages you mentor in">
+          {form.currentStatus === "Currently Studying" && (
+            <Field label="Year of study">
+              <Select gold value={form.yearOfStudy} onChange={(e) => set("yearOfStudy", e.target.value)}>
+                <option value="">Select</option>
+                {YEARS_OF_STUDY.map((y) => (
+                  <option key={y}>{y}</option>
+                ))}
+              </Select>
+            </Field>
+          )}
+          {form.currentStatus === "Graduated" && (
+            <Field label="Year of graduation">
+              <TextInput
+                gold
+                inputMode="numeric"
+                maxLength={4}
+                placeholder="e.g. 2023"
+                value={form.graduationYear}
+                onChange={(e) => set("graduationYear", e.target.value.replace(/\D/g, "").slice(0, 4))}
+              />
+            </Field>
+          )}
+          <Field label="Preferred Languages">
             <ChipGroup
               gold
               options={LANGUAGES}
@@ -419,7 +468,18 @@ export function MentorForm({ onExit }: { onExit: () => void }) {
               onToggle={(v) => set("languages", toggleInArray(form.languages, v))}
             />
           </Field>
-          <Field label="Times you're generally free" hint="(optional, pick any)">
+          {form.languages.includes("Others") && (
+            <Field label="Other language">
+              <TextInput
+                gold
+                required
+                placeholder="Enter language"
+                value={form.languagesOther}
+                onChange={(e) => set("languagesOther", e.target.value)}
+              />
+            </Field>
+          )}
+          <Field label="Preferred Timing" hint="(optional, pick any)">
             <ChipGroup
               gold
               options={AVAILABILITY_WINDOWS}
