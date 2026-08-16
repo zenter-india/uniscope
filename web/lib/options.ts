@@ -32,21 +32,29 @@ export const QUALIFICATIONS = [
   "Others",
 ] as const;
 
-/** All 28 states + 8 union territories. "Other" reveals a free-text field on
- * both forms rather than losing the answer for anyone outside this list. */
+/** All 28 states + 8 union territories, alphabetical (with "Other" kept last
+ * as the natural fall-through). "Other" reveals a free-text field on both
+ * forms rather than losing the answer for anyone outside this list. */
 export const INDIAN_STATES = [
+  "Andaman and Nicobar Islands",
   "Andhra Pradesh",
   "Arunachal Pradesh",
   "Assam",
   "Bihar",
+  "Chandigarh",
   "Chhattisgarh",
+  "Dadra and Nagar Haveli and Daman and Diu",
+  "Delhi",
   "Goa",
   "Gujarat",
   "Haryana",
   "Himachal Pradesh",
+  "Jammu and Kashmir",
   "Jharkhand",
   "Karnataka",
   "Kerala",
+  "Ladakh",
+  "Lakshadweep",
   "Madhya Pradesh",
   "Maharashtra",
   "Manipur",
@@ -54,6 +62,7 @@ export const INDIAN_STATES = [
   "Mizoram",
   "Nagaland",
   "Odisha",
+  "Puducherry",
   "Punjab",
   "Rajasthan",
   "Sikkim",
@@ -63,14 +72,6 @@ export const INDIAN_STATES = [
   "Uttar Pradesh",
   "Uttarakhand",
   "West Bengal",
-  "Andaman and Nicobar Islands",
-  "Chandigarh",
-  "Dadra and Nagar Haveli and Daman and Diu",
-  "Delhi",
-  "Jammu and Kashmir",
-  "Ladakh",
-  "Lakshadweep",
-  "Puducherry",
   "Other",
 ] as const;
 
