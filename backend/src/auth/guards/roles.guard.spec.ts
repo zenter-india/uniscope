@@ -1,6 +1,6 @@
 import { ExecutionContext } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { RolesGuard } from './roles.guard.js';
+import { RolesGuard } from './roles.guard';
 
 // TEST_MATRIX.md AUTHZ-002 — a non-admin caller must be blocked from
 // admin-only routes (403). RolesGuard is the single enforcement point every

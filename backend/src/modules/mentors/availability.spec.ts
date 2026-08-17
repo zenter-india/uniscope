@@ -1,4 +1,4 @@
-import { AVAILABILITY_TTL_HOURS, isCallAvailable } from './availability.js';
+import { AVAILABILITY_TTL_HOURS, isCallAvailable } from './availability';
 
 // TEST_MATRIX.md MENTOR-002 — availability auto-expires after TTL. Every
 // read path (mentor list, mentor detail, the booking gate, the mentor's own

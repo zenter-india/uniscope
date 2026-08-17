@@ -1,5 +1,5 @@
 import { User, UserProfile } from '@prisma/client';
-import { toMentorResponse } from './mentor-response.js';
+import { toMentorResponse } from './mentor-response';
 
 // TEST_MATRIX.md AUTH-007 — no phone number (or other identity secret) in
 // any response, applied to the mentor-facing projection specifically:

@@ -1,5 +1,5 @@
 import { User, UserProfile } from '@prisma/client';
-import { toPublicUser } from './user-response.js';
+import { toPublicUser } from './user-response';
 
 // TEST_MATRIX.md AUTH-007 — no phone number (or other identity secret) in
 // any response. toPublicUser is the allowlist boundary GET /users/me and
