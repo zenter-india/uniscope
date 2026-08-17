@@ -5,7 +5,7 @@ import { submitMentorLead, searchUniversities, fileToBase64, ApiError, Universit
 import {
   GENDERS,
   INDIAN_STATES,
-  CITIES,
+  STATE_DISTRICTS,
   STREAMS,
   DEGREES,
   CURRENT_STATUSES,
@@ -338,7 +338,19 @@ export function MentorForm({ onExit }: { onExit: () => void }) {
           <p className="text-[13.5px] font-semibold text-slate-600 mb-5">&nbsp;</p>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
             <Field label="State">
-              <Select gold value={form.state} onChange={(e) => set("state", e.target.value)}>
+              <Select
+                gold
+                value={form.state}
+                onChange={(e) => {
+                  // The district list depends entirely on which state this
+                  // is, so a city picked under the old state almost never
+                  // makes sense under the new one — clear both rather than
+                  // silently keep a mismatched pair.
+                  set("state", e.target.value);
+                  set("city", "");
+                  set("cityOther", "");
+                }}
+              >
                 <option value="">Select state</option>
                 {INDIAN_STATES.map((s) => (
                   <option key={s}>{s}</option>
@@ -346,11 +358,17 @@ export function MentorForm({ onExit }: { onExit: () => void }) {
               </Select>
             </Field>
             <Field label="City" hint="(required)">
-              <Select gold value={form.city} onChange={(e) => set("city", e.target.value)}>
-                <option value="">Select city</option>
-                {CITIES.map((c) => (
+              <Select
+                gold
+                value={form.city}
+                onChange={(e) => set("city", e.target.value)}
+                disabled={!form.state}
+              >
+                <option value="">{form.state ? "Select city" : "Select a state first"}</option>
+                {(STATE_DISTRICTS[form.state] ?? []).map((c) => (
                   <option key={c}>{c}</option>
                 ))}
+                <option value="Other">Other</option>
               </Select>
             </Field>
           </div>

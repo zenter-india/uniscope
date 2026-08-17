@@ -5,7 +5,7 @@ import { submitAspirantLead, ApiError } from "../lib/api";
 import {
   GENDERS,
   INDIAN_STATES,
-  CITIES,
+  STATE_DISTRICTS,
   QUALIFICATIONS,
   STREAMS,
   MENTORSHIP_TIMINGS,
@@ -213,7 +213,18 @@ export function AspirantForm({ onExit }: { onExit: () => void }) {
           </p>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
             <Field label="State">
-              <Select value={form.state} onChange={(e) => set("state", e.target.value)}>
+              <Select
+                value={form.state}
+                onChange={(e) => {
+                  // The district list depends entirely on which state this
+                  // is, so a city picked under the old state almost never
+                  // makes sense under the new one — clear both rather than
+                  // silently keep a mismatched pair.
+                  set("state", e.target.value);
+                  set("city", "");
+                  set("cityOther", "");
+                }}
+              >
                 <option value="">Select state</option>
                 {INDIAN_STATES.map((s) => (
                   <option key={s}>{s}</option>
@@ -221,11 +232,12 @@ export function AspirantForm({ onExit }: { onExit: () => void }) {
               </Select>
             </Field>
             <Field label="City" hint="(required)">
-              <Select value={form.city} onChange={(e) => set("city", e.target.value)}>
-                <option value="">Select city</option>
-                {CITIES.map((c) => (
+              <Select value={form.city} onChange={(e) => set("city", e.target.value)} disabled={!form.state}>
+                <option value="">{form.state ? "Select city" : "Select a state first"}</option>
+                {(STATE_DISTRICTS[form.state] ?? []).map((c) => (
                   <option key={c}>{c}</option>
                 ))}
+                <option value="Other">Other</option>
               </Select>
             </Field>
           </div>
