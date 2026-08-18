@@ -410,6 +410,21 @@ export function MentorForm({ onExit }: { onExit: () => void }) {
         <div>
           <h3 className="text-[19px] font-extrabold mb-1">College details</h3>
           <p className="text-[13.5px] font-semibold text-slate-600 mb-5">&nbsp;</p>
+          <Field label="Stream">
+            <Select
+              gold
+              value={form.stream}
+              onChange={(e) => {
+                set("stream", e.target.value);
+                set("specialization", "");
+              }}
+            >
+              <option value="">Select</option>
+              {STREAMS.map((s) => (
+                <option key={s}>{s}</option>
+              ))}
+            </Select>
+          </Field>
           <Field label="College / university">
             <CollegeSearch
               value={form.collegeName}
@@ -420,21 +435,6 @@ export function MentorForm({ onExit }: { onExit: () => void }) {
             />
           </Field>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
-            <Field label="Stream">
-              <Select
-                gold
-                value={form.stream}
-                onChange={(e) => {
-                  set("stream", e.target.value);
-                  set("specialization", "");
-                }}
-              >
-                <option value="">Select</option>
-                {STREAMS.map((s) => (
-                  <option key={s}>{s}</option>
-                ))}
-              </Select>
-            </Field>
             <Field label="Degree">
               <Select
                 gold
