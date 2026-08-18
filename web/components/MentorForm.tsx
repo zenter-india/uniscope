@@ -13,9 +13,10 @@ import {
   YEARS_OF_STUDY,
   AVAILABILITY_WINDOWS,
   DOCUMENT_TYPES,
+  recentYears,
 } from "../lib/options";
 import { useMultiStep } from "../lib/useMultiStep";
-import { Field, TextInput, Select, ChipGroup, toggleInArray, ProgressBar, ErrorText } from "./form-bits";
+import { Field, TextInput, Select, ChipGroup, Toggle, toggleInArray, ProgressBar, ErrorText } from "./form-bits";
 
 type FormState = {
   fullName: string;
@@ -36,6 +37,7 @@ type FormState = {
   currentStatus: string;
   yearOfStudy: string;
   graduationYear: string;
+  yearInfoPrivate: boolean;
   languages: string[];
   languagesOther: string;
   availableDays: string[];
@@ -63,6 +65,7 @@ const EMPTY: FormState = {
   currentStatus: "",
   yearOfStudy: "",
   graduationYear: "",
+  yearInfoPrivate: false,
   languages: [],
   languagesOther: "",
   availableDays: [],
@@ -226,6 +229,10 @@ export function MentorForm({ onExit }: { onExit: () => void }) {
             : undefined,
         graduationYear:
           form.currentStatus === "Graduated" && form.graduationYear ? parseInt(form.graduationYear, 10) : undefined,
+        yearInfoPrivate:
+          form.currentStatus === "Currently Studying" || form.currentStatus === "Graduated"
+            ? form.yearInfoPrivate
+            : undefined,
         languages: form.languages.map((l) => (l === "Others" ? form.languagesOther.trim() : l)).filter(Boolean),
         availableDays: form.availableDays,
         documentType: documentBase64 ? form.documentType : undefined,
@@ -501,26 +508,44 @@ export function MentorForm({ onExit }: { onExit: () => void }) {
             />
           </Field>
           {form.currentStatus === "Currently Studying" && (
-            <Field label="Year of study">
-              <Select gold value={form.yearOfStudy} onChange={(e) => set("yearOfStudy", e.target.value)}>
-                <option value="">Select</option>
-                {YEARS_OF_STUDY.map((y) => (
-                  <option key={y}>{y}</option>
-                ))}
-              </Select>
-            </Field>
+            <>
+              <Field label="Year of study">
+                <Select gold value={form.yearOfStudy} onChange={(e) => set("yearOfStudy", e.target.value)}>
+                  <option value="">Select</option>
+                  {YEARS_OF_STUDY.map((y) => (
+                    <option key={y}>{y}</option>
+                  ))}
+                </Select>
+              </Field>
+              <Toggle
+                gold
+                checked={form.yearInfoPrivate}
+                onChange={(v) => set("yearInfoPrivate", v)}
+                label="Keep my year of study private"
+                hint="When on, this stays anonymous and isn't shown publicly on your profile."
+              />
+            </>
           )}
           {form.currentStatus === "Graduated" && (
-            <Field label="Year of graduation">
-              <TextInput
+            <>
+              <Field label="Year of graduation">
+                <Select gold value={form.graduationYear} onChange={(e) => set("graduationYear", e.target.value)}>
+                  <option value="">Select</option>
+                  {recentYears().map((y) => (
+                    <option key={y} value={y}>
+                      {y}
+                    </option>
+                  ))}
+                </Select>
+              </Field>
+              <Toggle
                 gold
-                inputMode="numeric"
-                maxLength={4}
-                placeholder="e.g. 2023"
-                value={form.graduationYear}
-                onChange={(e) => set("graduationYear", e.target.value.replace(/\D/g, "").slice(0, 4))}
+                checked={form.yearInfoPrivate}
+                onChange={(v) => set("yearInfoPrivate", v)}
+                label="Keep my graduation year private"
+                hint="When on, this stays anonymous and isn't shown publicly on your profile."
               />
-            </Field>
+            </>
           )}
           <Field label="Preferred Languages">
             <ChipGroup

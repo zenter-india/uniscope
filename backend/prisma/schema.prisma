@@ -810,6 +810,10 @@ model EnrollmentLead {
   currentStatus  String?  @map("current_status") @db.VarChar(30)
   yearOfStudy    Int?     @map("year_of_study") @db.SmallInt
   graduationYear Int?     @map("graduation_year") @db.SmallInt
+  /// Mentor's own choice to keep yearOfStudy/graduationYear off their public
+  /// profile once converted — only one of the two is ever set at a time
+  /// (driven by currentStatus), so a single flag covers both.
+  yearInfoPrivate Boolean @default(false) @map("year_info_private")
   languages      String[] @default([])
   availableDays  String[] @default([]) @map("available_days")
 

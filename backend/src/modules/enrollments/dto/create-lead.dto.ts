@@ -2,6 +2,7 @@ import { DocumentType } from '@prisma/client';
 import {
   ArrayMaxSize,
   IsArray,
+  IsBoolean,
   IsDateString,
   IsEmail,
   IsEnum,
@@ -149,6 +150,12 @@ export class CreateMentorLeadDto extends BaseLeadDto {
   @Min(1950)
   @Max(2100)
   graduationYear?: number;
+
+  /** Only one of yearOfStudy/graduationYear is ever set at a time (driven by
+   * currentStatus), so a single flag covers keeping either private. */
+  @IsOptional()
+  @IsBoolean()
+  yearInfoPrivate?: boolean;
 
   @IsOptional()
   @IsArray()

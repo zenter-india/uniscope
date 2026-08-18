@@ -339,7 +339,10 @@ export const DEGREES = ["UG", "PG", "MD/MS", "DNB", "Diploma", "Doctorate", "DM/
 export const CURRENT_STATUSES = ["Currently Studying", "Graduated"] as const;
 
 /** Some medical/dental degrees run 6 years, so this goes to 6th rather than
- * capping at "5th Year+" the way a typical 4-year UG picklist would. */
+ * capping at "5th Year+" the way a typical 4-year UG picklist would. "Intern"
+ * covers the compulsory rotatory internship year that follows final-year
+ * MBBS/BDS before graduation — not a numbered academic year, but still part
+ * of "Currently Studying". */
 export const YEARS_OF_STUDY = [
   "1st Year",
   "2nd Year",
@@ -347,7 +350,16 @@ export const YEARS_OF_STUDY = [
   "4th Year",
   "5th Year",
   "6th Year",
+  "Intern",
 ] as const;
+
+/** Past `count` years including the current one, newest first — used for the
+ * mentor form's graduation-year picker instead of free-text entry. Computed
+ * at render time so it never needs a yearly update. */
+export function recentYears(count = 10): number[] {
+  const current = new Date().getFullYear();
+  return Array.from({ length: count }, (_, i) => current - i);
+}
 
 /** Matches the backend's DocumentType enum (`CreateMentorLeadDto.documentType`)
  * — only the display labels below are free to change, the `value`s must stay

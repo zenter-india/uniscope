@@ -36,6 +36,7 @@ export interface EnrollmentLeadResponse {
   currentStatus: string | null;
   yearOfStudy: number | null;
   graduationYear: number | null;
+  yearInfoPrivate: boolean;
   languages: string[];
   availableDays: string[];
 
@@ -84,6 +85,7 @@ export function toEnrollmentLeadResponse(
     currentStatus: lead.currentStatus,
     yearOfStudy: lead.yearOfStudy,
     graduationYear: lead.graduationYear,
+    yearInfoPrivate: lead.yearInfoPrivate,
     languages: lead.languages,
     availableDays: lead.availableDays,
 
