@@ -31,6 +31,8 @@ type FormState = {
   stream: string;
   streamOther: string;
   degree: string;
+  degreeOther: string;
+  specialization: string;
   currentStatus: string;
   yearOfStudy: string;
   graduationYear: string;
@@ -56,6 +58,8 @@ const EMPTY: FormState = {
   stream: "",
   streamOther: "",
   degree: "",
+  degreeOther: "",
+  specialization: "",
   currentStatus: "",
   yearOfStudy: "",
   graduationYear: "",
@@ -180,6 +184,7 @@ export function MentorForm({ onExit }: { onExit: () => void }) {
     if (wizard.step === 3) {
       if (!form.collegeName.trim()) return "Enter your college.";
       if (form.stream === "Others" && !form.streamOther.trim()) return "Enter your stream.";
+      if (form.degree === "Others" && !form.degreeOther.trim()) return "Enter your degree.";
     }
     return null;
   }
@@ -209,7 +214,11 @@ export function MentorForm({ onExit }: { onExit: () => void }) {
         collegeName: form.collegeName.trim() || undefined,
         universityId: form.universityId || undefined,
         stream: (form.stream === "Others" ? form.streamOther.trim() : form.stream) || undefined,
-        degree: form.degree || undefined,
+        degree: (form.degree === "Others" ? form.degreeOther.trim() : form.degree) || undefined,
+        specialization:
+          form.stream === "Medical" && form.degree && form.degree !== "UG"
+            ? form.specialization.trim() || undefined
+            : undefined,
         currentStatus: form.currentStatus || undefined,
         yearOfStudy:
           form.currentStatus === "Currently Studying" && form.yearOfStudy
@@ -412,28 +421,29 @@ export function MentorForm({ onExit }: { onExit: () => void }) {
           </Field>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
             <Field label="Stream">
-              <Select gold value={form.stream} onChange={(e) => set("stream", e.target.value)}>
+              <Select
+                gold
+                value={form.stream}
+                onChange={(e) => {
+                  set("stream", e.target.value);
+                  set("specialization", "");
+                }}
+              >
                 <option value="">Select</option>
                 {STREAMS.map((s) => (
                   <option key={s}>{s}</option>
                 ))}
               </Select>
             </Field>
-            {form.stream === "Others" && (
-              <div className="md:col-span-2">
-                <Field label="Your stream">
-                  <TextInput
-                    gold
-                    required
-                    placeholder="Enter your stream"
-                    value={form.streamOther}
-                    onChange={(e) => set("streamOther", e.target.value)}
-                  />
-                </Field>
-              </div>
-            )}
             <Field label="Degree">
-              <Select gold value={form.degree} onChange={(e) => set("degree", e.target.value)}>
+              <Select
+                gold
+                value={form.degree}
+                onChange={(e) => {
+                  set("degree", e.target.value);
+                  set("specialization", "");
+                }}
+              >
                 <option value="">Select</option>
                 {DEGREES.map((d) => (
                   <option key={d}>{d}</option>
@@ -441,6 +451,38 @@ export function MentorForm({ onExit }: { onExit: () => void }) {
               </Select>
             </Field>
           </div>
+          {form.stream === "Others" && (
+            <Field label="Your stream">
+              <TextInput
+                gold
+                required
+                placeholder="Enter your stream"
+                value={form.streamOther}
+                onChange={(e) => set("streamOther", e.target.value)}
+              />
+            </Field>
+          )}
+          {form.degree === "Others" && (
+            <Field label="Your degree">
+              <TextInput
+                gold
+                required
+                placeholder="Enter your degree"
+                value={form.degreeOther}
+                onChange={(e) => set("degreeOther", e.target.value)}
+              />
+            </Field>
+          )}
+          {form.stream === "Medical" && form.degree && form.degree !== "UG" && (
+            <Field label="Specialization" hint="(optional)">
+              <TextInput
+                gold
+                placeholder="e.g. Paediatrics"
+                value={form.specialization}
+                onChange={(e) => set("specialization", e.target.value)}
+              />
+            </Field>
+          )}
         </div>
       )}
 

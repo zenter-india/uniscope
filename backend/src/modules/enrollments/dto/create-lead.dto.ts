@@ -122,8 +122,16 @@ export class CreateMentorLeadDto extends BaseLeadDto {
 
   @IsOptional()
   @IsString()
-  @MaxLength(20)
+  @MaxLength(50)
   degree?: string;
+
+  /** Free text — only meaningful (and only shown on the form) for a
+   * Medical-stream mentor whose degree isn't UG, e.g. "Paediatrics" for an
+   * MD/MS. Not FK'd to any picklist. */
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  specialization?: string;
 
   @IsOptional()
   @IsString()
