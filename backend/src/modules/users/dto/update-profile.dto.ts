@@ -99,7 +99,7 @@ export class UpdateProfileDto {
 
   @IsOptional()
   @IsString()
-  @MaxLength(50)
+  @MaxLength(150)
   preferredMentorshipTiming?: string;
 
   /** Only one of yearOfStudy/graduationYear is ever set at a time (driven by
