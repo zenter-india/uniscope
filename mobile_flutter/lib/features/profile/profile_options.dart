@@ -31,13 +31,22 @@ const kLanguageOptions = [
   'Marathi',
   'Gujarati',
   'Punjabi',
+  'Others',
 ];
 
+// Merged with the degree-stage picklist (also used as-is for a mentor's
+// "Degree" field) so "what stage are you at" is answered by one list,
+// matching the web enrollment form's Current qualification field.
 const kQualifications = [
-  'Higher Secondary (11th/12th)',
-  'Undergraduate',
-  'Postgraduate',
+  'Higher Secondary (12th)',
+  'UG',
+  'PG',
+  'MD/MS',
+  'DNB',
+  'Diploma',
   'Doctorate',
+  'DM/MCh',
+  'Others',
 ];
 
 const kIndianStates = [
@@ -87,8 +96,22 @@ const kStreamOptions = [
   'Others',
 ];
 
-const kDegrees = ['UG', 'PG', 'Doctorate'];
+// Mentor's "Degree" field reuses the same merged list as kQualifications —
+// kept as a separate name since the two screens label the field differently
+// (aspirant: "Current qualification", mentor: "Degree").
+const kDegrees = kQualifications;
 
 const kCurrentStatuses = ['Currently Studying', 'Graduated'];
 
-const kYearsOfStudy = ['1st Year', '2nd Year', '3rd Year', '4th Year', '5th Year+'];
+// "Intern" covers the compulsory rotatory internship year that follows
+// final-year MBBS/BDS before graduation — not a numbered academic year, but
+// still part of "Currently Studying".
+const kYearsOfStudy = [
+  '1st Year',
+  '2nd Year',
+  '3rd Year',
+  '4th Year',
+  '5th Year',
+  '6th Year',
+  'Intern',
+];

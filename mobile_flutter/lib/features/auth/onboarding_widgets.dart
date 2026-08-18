@@ -227,3 +227,55 @@ class OnboardingSingleChipGroup extends StatelessWidget {
     );
   }
 }
+
+/// On/off switch with a label and optional hint below it — used for the
+/// "keep this private" choice on year-of-study / graduation year.
+class OnboardingToggle extends StatelessWidget {
+  const OnboardingToggle({
+    super.key,
+    required this.value,
+    required this.onChanged,
+    required this.label,
+    this.hint,
+  });
+  final bool value;
+  final ValueChanged<bool> onChanged;
+  final String label;
+  final String? hint;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Switch(value: value, onChanged: onChanged, activeThumbColor: AppColors.primary),
+        const SizedBox(width: AppSpacing.xs),
+        Expanded(
+          child: Padding(
+            padding: const EdgeInsets.only(top: AppSpacing.sm),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: const TextStyle(
+                    fontSize: AppFont.sm,
+                    fontWeight: AppFont.semibold,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                if (hint != null) ...[
+                  const SizedBox(height: 2),
+                  Text(
+                    hint!,
+                    style: const TextStyle(fontSize: AppFont.xs, color: AppColors.textMuted),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
