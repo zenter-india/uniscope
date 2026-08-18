@@ -25,11 +25,17 @@ export const LANGUAGES = [
   "Others",
 ] as const;
 
+/** Merged with the degree-stage picklist (was a separate "Degree" field on
+ * the aspirant form) so "what stage are you at" is answered in one field. */
 export const QUALIFICATIONS = [
   "Higher Secondary (12th)",
-  "Undergraduate",
-  "Postgraduate",
+  "UG",
+  "PG",
+  "MD/MS",
+  "DNB",
+  "Diploma",
   "Doctorate",
+  "DM/MCh",
   "Others",
 ] as const;
 

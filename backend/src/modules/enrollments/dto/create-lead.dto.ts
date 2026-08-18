@@ -77,15 +77,22 @@ export abstract class BaseLeadDto {
 }
 
 export class CreateAspirantLeadDto extends BaseLeadDto {
+  /** Widened to also carry the degree-stage picklist (UG, PG, MD/MS, etc.) —
+   * the form merged its separate Degree field into this one rather than
+   * keeping two fields for the same "what stage" question. */
   @IsOptional()
   @IsString()
   @MaxLength(50)
   qualification?: string;
 
+  /** Free text — only meaningful (and only shown on the form) for a
+   * Medical-stream aspirant whose qualification is past 12th/UG, e.g.
+   * "Cardiology". Not FK'd to any picklist, same pattern as the mentor
+   * lead's field. */
   @IsOptional()
   @IsString()
-  @MaxLength(50)
-  degree?: string;
+  @MaxLength(100)
+  specialization?: string;
 
   @IsOptional()
   @IsString()
