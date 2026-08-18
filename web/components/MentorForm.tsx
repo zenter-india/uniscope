@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { submitMentorLead, searchUniversities, fileToBase64, ApiError, University } from "../lib/api";
+import { useState } from "react";
+import { submitMentorLead, fileToBase64, ApiError } from "../lib/api";
+import { CollegeSearch } from "./CollegeSearch";
 import {
   GENDERS,
   INDIAN_STATES,
-  CITIES,
+  STATE_DISTRICTS,
   STREAMS,
   DEGREES,
   CURRENT_STATUSES,
@@ -13,9 +14,10 @@ import {
   YEARS_OF_STUDY,
   AVAILABILITY_WINDOWS,
   DOCUMENT_TYPES,
+  recentYears,
 } from "../lib/options";
 import { useMultiStep } from "../lib/useMultiStep";
-import { Field, TextInput, Select, ChipGroup, toggleInArray, ProgressBar, ErrorText } from "./form-bits";
+import { Field, TextInput, Select, ChipGroup, Toggle, toggleInArray, ProgressBar, ErrorText } from "./form-bits";
 
 type FormState = {
   fullName: string;
@@ -31,9 +33,12 @@ type FormState = {
   stream: string;
   streamOther: string;
   degree: string;
+  degreeOther: string;
+  specialization: string;
   currentStatus: string;
   yearOfStudy: string;
   graduationYear: string;
+  yearInfoPrivate: boolean;
   languages: string[];
   languagesOther: string;
   availableDays: string[];
@@ -56,9 +61,12 @@ const EMPTY: FormState = {
   stream: "",
   streamOther: "",
   degree: "",
+  degreeOther: "",
+  specialization: "",
   currentStatus: "",
   yearOfStudy: "",
   graduationYear: "",
+  yearInfoPrivate: false,
   languages: [],
   languagesOther: "",
   availableDays: [],
@@ -66,91 +74,6 @@ const EMPTY: FormState = {
   documentFile: null,
   website: "",
 };
-
-function CollegeSearch({
-  value,
-  onPick,
-}: {
-  value: string;
-  onPick: (name: string, id: string | null) => void;
-}) {
-  const [query, setQuery] = useState(value);
-  const [results, setResults] = useState<University[]>([]);
-  const [open, setOpen] = useState(false);
-  const requestId = useRef(0);
-
-  // Debounced live search against the public GET /universities — same
-  // endpoint the mobile mentor wizard's college picker uses. A college not
-  // in this list is still accepted: onPick(query, null) below keeps the raw
-  // text so the lead never loses the answer, matching CreateMentorLeadDto.
-  //
-  // Deliberately does NOT compare `query` against the `value` prop to decide
-  // whether to search: onPick fires on every keystroke to keep the parent's
-  // collegeName in sync as free text, which lands `value` back at `query` on
-  // the very next render — a naive "skip if unchanged" guard would fire after
-  // every single keystroke and wipe the results that keystroke just fetched.
-  useEffect(() => {
-    if (query.trim().length < 2) {
-      setResults([]);
-      return;
-    }
-    const thisRequest = ++requestId.current;
-    const handle = setTimeout(() => {
-      searchUniversities(query)
-        .then((res) => {
-          // Ignore if a newer keystroke has already started a later request
-          // — otherwise a slow response for "A" can land after a fast one
-          // for "A J" and stomp the more specific results back to noise.
-          if (thisRequest === requestId.current) setResults(res.data);
-        })
-        .catch(() => {
-          if (thisRequest === requestId.current) setResults([]);
-        });
-    }, 250);
-    return () => clearTimeout(handle);
-  }, [query]);
-
-  return (
-    <div className="relative">
-      <TextInput
-        gold
-        required
-        placeholder="Start typing to search…"
-        value={query}
-        onChange={(e) => {
-          setQuery(e.target.value);
-          setOpen(true);
-          onPick(e.target.value, null);
-        }}
-        onFocus={() => setOpen(true)}
-        onBlur={() => setTimeout(() => setOpen(false), 150)}
-      />
-      {open && results.length > 0 && (
-        <ul className="absolute z-10 mt-1 w-full bg-white border border-border rounded-[11px] shadow-lg max-h-56 overflow-auto">
-          {results.map((u) => (
-            <li key={u.id}>
-              <button
-                type="button"
-                onClick={() => {
-                  setQuery(u.name);
-                  onPick(u.name, u.id);
-                  setOpen(false);
-                }}
-                className="w-full text-left px-3.5 py-2.5 text-[13.5px] font-semibold hover:bg-[#fbf1de]"
-              >
-                {u.name}
-                <span className="block text-[11.5px] font-medium text-slate-400">
-                  {u.city ? `${u.city}, ` : ""}
-                  {u.state}
-                </span>
-              </button>
-            </li>
-          ))}
-        </ul>
-      )}
-    </div>
-  );
-}
 
 export function MentorForm({ onExit }: { onExit: () => void }) {
   const wizard = useMultiStep(5);
@@ -176,8 +99,25 @@ export function MentorForm({ onExit }: { onExit: () => void }) {
       if (form.city === "Other" && !form.cityOther.trim()) return "Enter your city.";
     }
     if (wizard.step === 3) {
-      if (!form.collegeName.trim()) return "Enter your college.";
+      if (!form.stream) return "Select your stream.";
       if (form.stream === "Others" && !form.streamOther.trim()) return "Enter your stream.";
+      if (!form.degree) return "Select your degree.";
+      if (form.degree === "Others" && !form.degreeOther.trim()) return "Enter your degree.";
+      if (!form.collegeName.trim()) return "Enter your college.";
+      if (form.stream === "Medical" && form.degree && form.degree !== "UG" && !form.specialization.trim()) {
+        return "Enter your specialization.";
+      }
+    }
+    if (wizard.step === 4) {
+      if (!form.currentStatus) return "Select your current status.";
+      if (form.currentStatus === "Currently Studying" && !form.yearOfStudy) return "Select your year of study.";
+      if (form.currentStatus === "Graduated" && !form.graduationYear) return "Select your graduation year.";
+      if (form.languages.length === 0) return "Select at least one language.";
+      if (form.languages.includes("Others") && !form.languagesOther.trim()) return "Enter your language.";
+      if (form.availableDays.length === 0) return "Select at least one preferred timing.";
+    }
+    if (wizard.step === 5) {
+      if (!form.documentFile) return "Upload your college ID / student portal screenshot.";
     }
     return null;
   }
@@ -207,7 +147,11 @@ export function MentorForm({ onExit }: { onExit: () => void }) {
         collegeName: form.collegeName.trim() || undefined,
         universityId: form.universityId || undefined,
         stream: (form.stream === "Others" ? form.streamOther.trim() : form.stream) || undefined,
-        degree: form.degree || undefined,
+        degree: (form.degree === "Others" ? form.degreeOther.trim() : form.degree) || undefined,
+        specialization:
+          form.stream === "Medical" && form.degree && form.degree !== "UG"
+            ? form.specialization.trim() || undefined
+            : undefined,
         currentStatus: form.currentStatus || undefined,
         yearOfStudy:
           form.currentStatus === "Currently Studying" && form.yearOfStudy
@@ -215,6 +159,10 @@ export function MentorForm({ onExit }: { onExit: () => void }) {
             : undefined,
         graduationYear:
           form.currentStatus === "Graduated" && form.graduationYear ? parseInt(form.graduationYear, 10) : undefined,
+        yearInfoPrivate:
+          form.currentStatus === "Currently Studying" || form.currentStatus === "Graduated"
+            ? form.yearInfoPrivate
+            : undefined,
         languages: form.languages.map((l) => (l === "Others" ? form.languagesOther.trim() : l)).filter(Boolean),
         availableDays: form.availableDays,
         documentType: documentBase64 ? form.documentType : undefined,
@@ -336,19 +284,37 @@ export function MentorForm({ onExit }: { onExit: () => void }) {
           <p className="text-[13.5px] font-semibold text-slate-600 mb-5">&nbsp;</p>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
             <Field label="State">
-              <Select gold value={form.state} onChange={(e) => set("state", e.target.value)}>
+              <Select
+                gold
+                value={form.state}
+                onChange={(e) => {
+                  // The district list depends entirely on which state this
+                  // is, so a city picked under the old state almost never
+                  // makes sense under the new one — clear both rather than
+                  // silently keep a mismatched pair.
+                  set("state", e.target.value);
+                  set("city", "");
+                  set("cityOther", "");
+                }}
+              >
                 <option value="">Select state</option>
                 {INDIAN_STATES.map((s) => (
                   <option key={s}>{s}</option>
                 ))}
               </Select>
             </Field>
-            <Field label="City" hint="(required)">
-              <Select gold value={form.city} onChange={(e) => set("city", e.target.value)}>
-                <option value="">Select city</option>
-                {CITIES.map((c) => (
+            <Field label="City">
+              <Select
+                gold
+                value={form.city}
+                onChange={(e) => set("city", e.target.value)}
+                disabled={!form.state}
+              >
+                <option value="">{form.state ? "Select city" : "Select a state first"}</option>
+                {(STATE_DISTRICTS[form.state] ?? []).map((c) => (
                   <option key={c}>{c}</option>
                 ))}
+                <option value="Other">Other</option>
               </Select>
             </Field>
           </div>
@@ -381,39 +347,31 @@ export function MentorForm({ onExit }: { onExit: () => void }) {
         <div>
           <h3 className="text-[19px] font-extrabold mb-1">College details</h3>
           <p className="text-[13.5px] font-semibold text-slate-600 mb-5">&nbsp;</p>
-          <Field label="College / university">
-            <CollegeSearch
-              value={form.collegeName}
-              onPick={(name, id) => {
-                set("collegeName", name);
-                set("universityId", id ?? "");
-              }}
-            />
-          </Field>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
             <Field label="Stream">
-              <Select gold value={form.stream} onChange={(e) => set("stream", e.target.value)}>
+              <Select
+                gold
+                value={form.stream}
+                onChange={(e) => {
+                  set("stream", e.target.value);
+                  set("specialization", "");
+                }}
+              >
                 <option value="">Select</option>
                 {STREAMS.map((s) => (
                   <option key={s}>{s}</option>
                 ))}
               </Select>
             </Field>
-            {form.stream === "Others" && (
-              <div className="md:col-span-2">
-                <Field label="Your stream">
-                  <TextInput
-                    gold
-                    required
-                    placeholder="Enter your stream"
-                    value={form.streamOther}
-                    onChange={(e) => set("streamOther", e.target.value)}
-                  />
-                </Field>
-              </div>
-            )}
             <Field label="Degree">
-              <Select gold value={form.degree} onChange={(e) => set("degree", e.target.value)}>
+              <Select
+                gold
+                value={form.degree}
+                onChange={(e) => {
+                  set("degree", e.target.value);
+                  set("specialization", "");
+                }}
+              >
                 <option value="">Select</option>
                 {DEGREES.map((d) => (
                   <option key={d}>{d}</option>
@@ -421,6 +379,48 @@ export function MentorForm({ onExit }: { onExit: () => void }) {
               </Select>
             </Field>
           </div>
+          <Field label="College / university">
+            <CollegeSearch
+              gold
+              value={form.collegeName}
+              onPick={(name, id) => {
+                set("collegeName", name);
+                set("universityId", id ?? "");
+              }}
+            />
+          </Field>
+          {form.stream === "Others" && (
+            <Field label="Your stream">
+              <TextInput
+                gold
+                required
+                placeholder="Enter your stream"
+                value={form.streamOther}
+                onChange={(e) => set("streamOther", e.target.value)}
+              />
+            </Field>
+          )}
+          {form.degree === "Others" && (
+            <Field label="Your degree">
+              <TextInput
+                gold
+                required
+                placeholder="Enter your degree"
+                value={form.degreeOther}
+                onChange={(e) => set("degreeOther", e.target.value)}
+              />
+            </Field>
+          )}
+          {form.stream === "Medical" && form.degree && form.degree !== "UG" && (
+            <Field label="Specialization">
+              <TextInput
+                gold
+                placeholder="e.g. Paediatrics"
+                value={form.specialization}
+                onChange={(e) => set("specialization", e.target.value)}
+              />
+            </Field>
+          )}
         </div>
       )}
 
@@ -439,26 +439,44 @@ export function MentorForm({ onExit }: { onExit: () => void }) {
             />
           </Field>
           {form.currentStatus === "Currently Studying" && (
-            <Field label="Year of study">
-              <Select gold value={form.yearOfStudy} onChange={(e) => set("yearOfStudy", e.target.value)}>
-                <option value="">Select</option>
-                {YEARS_OF_STUDY.map((y) => (
-                  <option key={y}>{y}</option>
-                ))}
-              </Select>
-            </Field>
+            <>
+              <Field label="Year of study">
+                <Select gold value={form.yearOfStudy} onChange={(e) => set("yearOfStudy", e.target.value)}>
+                  <option value="">Select</option>
+                  {YEARS_OF_STUDY.map((y) => (
+                    <option key={y}>{y}</option>
+                  ))}
+                </Select>
+              </Field>
+              <Toggle
+                gold
+                checked={form.yearInfoPrivate}
+                onChange={(v) => set("yearInfoPrivate", v)}
+                label="Keep my year of study private"
+                hint="When on, this stays anonymous and isn't shown publicly on your profile."
+              />
+            </>
           )}
           {form.currentStatus === "Graduated" && (
-            <Field label="Year of graduation">
-              <TextInput
+            <>
+              <Field label="Year of graduation">
+                <Select gold value={form.graduationYear} onChange={(e) => set("graduationYear", e.target.value)}>
+                  <option value="">Select</option>
+                  {recentYears().map((y) => (
+                    <option key={y} value={y}>
+                      {y}
+                    </option>
+                  ))}
+                </Select>
+              </Field>
+              <Toggle
                 gold
-                inputMode="numeric"
-                maxLength={4}
-                placeholder="e.g. 2023"
-                value={form.graduationYear}
-                onChange={(e) => set("graduationYear", e.target.value.replace(/\D/g, "").slice(0, 4))}
+                checked={form.yearInfoPrivate}
+                onChange={(v) => set("yearInfoPrivate", v)}
+                label="Keep my graduation year private"
+                hint="When on, this stays anonymous and isn't shown publicly on your profile."
               />
-            </Field>
+            </>
           )}
           <Field label="Preferred Languages">
             <ChipGroup
@@ -479,7 +497,7 @@ export function MentorForm({ onExit }: { onExit: () => void }) {
               />
             </Field>
           )}
-          <Field label="Preferred Timing" hint="(optional, pick any)">
+          <Field label="Preferred Timing" hint="(pick any)">
             <ChipGroup
               gold
               options={AVAILABILITY_WINDOWS}
@@ -493,9 +511,7 @@ export function MentorForm({ onExit }: { onExit: () => void }) {
       {wizard.step === 5 && (
         <div>
           <h3 className="text-[19px] font-extrabold mb-1">Verify your identity</h3>
-          <p className="text-[13.5px] font-semibold text-slate-600 mb-5">
-            Optional now — you can chat right away either way. Verifying unlocks paid calls.
-          </p>
+          <p className="text-[13.5px] font-semibold text-slate-600 mb-5">Get verified and start earning</p>
           <Field label="Document type">
             <Select
               gold
@@ -512,9 +528,6 @@ export function MentorForm({ onExit }: { onExit: () => void }) {
           <label className="block border-[1.5px] border-dashed border-border rounded-2xl p-6 text-center text-slate-600 text-[13px] font-bold cursor-pointer hover:border-gold-500 transition-colors">
             <div className="text-2xl mb-1.5">📎</div>
             {form.documentFile ? form.documentFile.name : "Upload college ID / student portal screenshot"}
-            <span className="block mt-1.5 font-semibold text-slate-400 text-[11.5px]">
-              Skip for now — add this later from your profile
-            </span>
             <input
               type="file"
               accept="image/*"

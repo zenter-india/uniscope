@@ -1,6 +1,6 @@
 import { Provider } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { createClient } from '@supabase/supabase-js';
 import { SUPABASE_CLIENT } from './supabase.constants.js';
 
 /**
@@ -11,7 +11,7 @@ import { SUPABASE_CLIENT } from './supabase.constants.js';
 export const supabaseProvider: Provider = {
   provide: SUPABASE_CLIENT,
   inject: [ConfigService],
-  useFactory: (configService: ConfigService): SupabaseClient => {
+  useFactory: (configService: ConfigService) => {
     const url = configService.getOrThrow<string>('supabase.url');
     const serviceRoleKey = configService.getOrThrow<string>('supabase.serviceRoleKey');
 

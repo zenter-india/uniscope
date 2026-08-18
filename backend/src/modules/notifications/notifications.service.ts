@@ -1,5 +1,5 @@
 import { Inject, Injectable, Logger, Optional } from '@nestjs/common';
-import { NotificationType, Prisma } from '@prisma/client';
+import { NotificationType } from '@prisma/client';
 import type { App } from 'firebase-admin/app';
 import { getMessaging } from 'firebase-admin/messaging';
 import { PrismaService } from '../../database/prisma/prisma.service.js';
@@ -56,7 +56,7 @@ export class NotificationsService {
         type: params.type,
         title: params.title,
         body: params.body,
-        metadata: params.metadata as Prisma.InputJsonValue | undefined,
+        metadata: params.metadata,
       },
     });
     this.logger.log(

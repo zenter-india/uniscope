@@ -57,13 +57,11 @@ export function ChipGroup({
   options,
   selected,
   onToggle,
-  multi = true,
   gold,
 }: {
   options: readonly string[];
   selected: string[];
   onToggle: (value: string) => void;
-  multi?: boolean;
   gold?: boolean;
 }) {
   return (
@@ -110,6 +108,44 @@ export function ProgressBar({ pct, gold }: { pct: number; gold?: boolean }) {
         }`}
         style={{ width: `${pct}%` }}
       />
+    </div>
+  );
+}
+
+export function Toggle({
+  checked,
+  onChange,
+  label,
+  hint,
+  gold,
+}: {
+  checked: boolean;
+  onChange: (checked: boolean) => void;
+  label: string;
+  hint?: string;
+  gold?: boolean;
+}) {
+  return (
+    <div className="flex items-start gap-2.5 mb-4">
+      <button
+        type="button"
+        role="switch"
+        aria-checked={checked}
+        onClick={() => onChange(!checked)}
+        className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full mt-0.5 transition-colors ${
+          checked ? (gold ? "bg-gold-500" : "bg-blue-600") : "bg-border"
+        }`}
+      >
+        <span
+          className={`inline-block h-4.5 w-4.5 transform rounded-full bg-white transition-transform ${
+            checked ? "translate-x-[22px]" : "translate-x-[3px]"
+          }`}
+        />
+      </button>
+      <span className="text-[13px] font-bold text-ink">
+        {label}
+        {hint && <span className="block font-semibold text-slate-400 mt-0.5">{hint}</span>}
+      </span>
     </div>
   );
 }

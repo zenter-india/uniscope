@@ -72,6 +72,31 @@ kotlin {
     }
 }
 
+// The debug-signing fallback above is deliberate (keeps `flutter run
+// --release` working on a machine without the keystore), but it was
+// previously silent — a real upload build (`flutter build appbundle
+// --release` / `flutter build apk --release`) run without key.properties
+// would produce a debug-signed artifact with no visible signal that it
+// isn't upload-ready. Loud, not fatal: still doesn't break the local
+// convenience the fallback exists for.
+if (!hasReleaseSigning) {
+    gradle.taskGraph.whenReady {
+        val runningReleaseBuildTask = allTasks.any {
+            it.path.contains(":app:") &&
+                (it.name.startsWith("assembleRelease") || it.name.startsWith("bundleRelease"))
+        }
+        if (runningReleaseBuildTask) {
+            logger.warn(
+                "\n" + "!".repeat(70) + "\n" +
+                    "! key.properties not found — this release build is DEBUG-SIGNED.\n" +
+                    "! It will be rejected by Play Console / TestFlight if uploaded.\n" +
+                    "! See android/key.properties.example to set up real release signing.\n" +
+                    "!".repeat(70) + "\n"
+            )
+        }
+    }
+}
+
 flutter {
     source = "../.."
 }

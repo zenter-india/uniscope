@@ -2,6 +2,7 @@ import { DocumentType } from '@prisma/client';
 import {
   ArrayMaxSize,
   IsArray,
+  IsBoolean,
   IsDateString,
   IsEmail,
   IsEnum,
@@ -84,6 +85,11 @@ export class CreateAspirantLeadDto extends BaseLeadDto {
   @IsOptional()
   @IsString()
   @MaxLength(50)
+  degree?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(50)
   courseInterested?: string;
 
   /** Multi-select on the web form — multiple picks are joined into one
@@ -122,8 +128,16 @@ export class CreateMentorLeadDto extends BaseLeadDto {
 
   @IsOptional()
   @IsString()
-  @MaxLength(20)
+  @MaxLength(50)
   degree?: string;
+
+  /** Free text — only meaningful (and only shown on the form) for a
+   * Medical-stream mentor whose degree isn't UG, e.g. "Paediatrics" for an
+   * MD/MS. Not FK'd to any picklist. */
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  specialization?: string;
 
   @IsOptional()
   @IsString()
@@ -141,6 +155,12 @@ export class CreateMentorLeadDto extends BaseLeadDto {
   @Min(1950)
   @Max(2100)
   graduationYear?: number;
+
+  /** Only one of yearOfStudy/graduationYear is ever set at a time (driven by
+   * currentStatus), so a single flag covers keeping either private. */
+  @IsOptional()
+  @IsBoolean()
+  yearInfoPrivate?: boolean;
 
   @IsOptional()
   @IsArray()

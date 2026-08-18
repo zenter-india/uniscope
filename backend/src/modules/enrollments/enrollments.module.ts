@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { SlackNotifierModule } from '../../common/slack/slack-notifier.module.js';
 import { PrismaModule } from '../../database/prisma/prisma.module.js';
 import { EnrollmentsController } from './enrollments.controller.js';
 import { EnrollmentsService } from './enrollments.service.js';
@@ -11,7 +12,7 @@ import { EnrollmentsService } from './enrollments.service.js';
  * the college-ID upload path needs no explicit import here.
  */
 @Module({
-  imports: [PrismaModule],
+  imports: [PrismaModule, SlackNotifierModule],
   controllers: [EnrollmentsController],
   providers: [EnrollmentsService],
   exports: [EnrollmentsService],

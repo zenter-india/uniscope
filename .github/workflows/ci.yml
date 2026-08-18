@@ -1,0 +1,76 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main, stage/web-enrollment-site, prod/web-enrollment-site]
+
+jobs:
+  engineering-rules:
+    name: engineering rules (RISK_RULES.md, ENGINEERING_RULES.md)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: bash scripts/check-engineering-rules.sh
+
+  backend:
+    name: backend (lint, build, test)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - run: npm ci
+      # Generates PrismaClient types from schema.prisma only — no DATABASE_URL
+      # needed, this doesn't connect to a database.
+      - run: npx prisma generate --schema=backend/prisma/schema.prisma
+      - run: npm run lint --workspace=backend -- --max-warnings=0
+      - run: npm run build --workspace=backend
+      - run: npm test --workspace=backend
+
+  admin:
+    name: admin (build)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - run: npm ci
+      - run: npm run lint --workspace=admin
+      - run: npm run build --workspace=admin
+
+  web:
+    name: web (build)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - run: npm ci
+      - run: npm run lint --workspace=web
+      - run: npm run build --workspace=web
+
+  mobile:
+    name: mobile (analyze, test)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+      - run: flutter pub get
+        working-directory: mobile_flutter
+      # --no-fatal-infos: ~32 pre-existing info-level style lints (deprecated
+      # RadioGroup API, null-aware-marker suggestions) are unrelated to CI
+      # setup and left for a follow-up rather than bundled into this change.
+      # Real errors/warnings still fail the build.
+      - run: flutter analyze --no-fatal-infos
+        working-directory: mobile_flutter
+      - run: flutter test
+        working-directory: mobile_flutter

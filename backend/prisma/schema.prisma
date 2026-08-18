@@ -797,10 +797,23 @@ model EnrollmentLead {
   alias          String?  @db.VarChar(60)
   universityId   String?  @map("university_id")
   collegeName    String?  @map("college_name") @db.VarChar(200)
-  degree         String?  @db.VarChar(20)
+  /// Widened from VARCHAR(20): a picklist value fits easily, but "Others"
+  /// reveals a free-text field on the form (same pattern as `stream`), and
+  /// a typed degree name can run well past 20 characters.
+  degree         String?  @db.VarChar(50)
+  /// Free text, not FK'd to any picklist — only meaningful (and only shown
+  /// on the form) for a Medical-stream mentor whose degree isn't UG, e.g.
+  /// "Paediatrics" for an MD/MS. Building a real specialization-per-degree
+  /// taxonomy was deliberately deferred (see the automation-roadmap
+  /// discussion); this captures the answer either way.
+  specialization String?  @db.VarChar(100)
   currentStatus  String?  @map("current_status") @db.VarChar(30)
   yearOfStudy    Int?     @map("year_of_study") @db.SmallInt
   graduationYear Int?     @map("graduation_year") @db.SmallInt
+  /// Mentor's own choice to keep yearOfStudy/graduationYear off their public
+  /// profile once converted — only one of the two is ever set at a time
+  /// (driven by currentStatus), so a single flag covers both.
+  yearInfoPrivate Boolean @default(false) @map("year_info_private")
   languages      String[] @default([])
   availableDays  String[] @default([]) @map("available_days")
 
