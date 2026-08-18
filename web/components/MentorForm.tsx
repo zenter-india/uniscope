@@ -580,9 +580,7 @@ export function MentorForm({ onExit }: { onExit: () => void }) {
       {wizard.step === 5 && (
         <div>
           <h3 className="text-[19px] font-extrabold mb-1">Verify your identity</h3>
-          <p className="text-[13.5px] font-semibold text-slate-600 mb-5">
-            Optional now — you can chat right away either way. Verifying unlocks paid calls.
-          </p>
+          <p className="text-[13.5px] font-semibold text-slate-600 mb-5">Get verified and start earning</p>
           <Field label="Document type">
             <Select
               gold
@@ -599,9 +597,6 @@ export function MentorForm({ onExit }: { onExit: () => void }) {
           <label className="block border-[1.5px] border-dashed border-border rounded-2xl p-6 text-center text-slate-600 text-[13px] font-bold cursor-pointer hover:border-gold-500 transition-colors">
             <div className="text-2xl mb-1.5">📎</div>
             {form.documentFile ? form.documentFile.name : "Upload college ID / student portal screenshot"}
-            <span className="block mt-1.5 font-semibold text-slate-400 text-[11.5px]">
-              Skip for now — add this later from your profile
-            </span>
             <input
               type="file"
               accept="image/*"
