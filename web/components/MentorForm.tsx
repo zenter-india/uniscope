@@ -566,7 +566,7 @@ export function MentorForm({ onExit }: { onExit: () => void }) {
               />
             </Field>
           )}
-          <Field label="Preferred Timing" hint="(optional, pick any)">
+          <Field label="Preferred Timing" hint="(pick any)">
             <ChipGroup
               gold
               options={AVAILABILITY_WINDOWS}
