@@ -82,15 +82,6 @@ export class CreateAspirantLeadDto extends BaseLeadDto {
   @MaxLength(50)
   qualification?: string;
 
-  /** Free text — only meaningful (and only shown on the form) for a
-   * Medical-stream aspirant whose qualification is past 12th/UG, e.g.
-   * "Cardiology" for a PG aspirant. Not FK'd to any picklist, same pattern
-   * as the mentor lead's specialization field. */
-  @IsOptional()
-  @IsString()
-  @MaxLength(100)
-  specialization?: string;
-
   @IsOptional()
   @IsString()
   @MaxLength(50)
