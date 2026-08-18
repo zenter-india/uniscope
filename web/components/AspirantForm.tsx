@@ -31,6 +31,7 @@ type FormState = {
   streamOther: string;
   courseInterested: string;
   preferredLanguages: string[];
+  preferredLanguagesOther: string;
   preferredMentorshipTimings: string[];
   website: string; // honeypot — never rendered visibly, see MentorForm for the full note
 };
@@ -51,6 +52,7 @@ const EMPTY: FormState = {
   streamOther: "",
   courseInterested: "",
   preferredLanguages: [],
+  preferredLanguagesOther: "",
   preferredMentorshipTimings: [],
   website: "",
 };
@@ -88,6 +90,9 @@ export function AspirantForm({ onExit }: { onExit: () => void }) {
     }
     if (wizard.step === 4) {
       if (form.preferredLanguages.length === 0) return "Select at least one preferred language.";
+      if (form.preferredLanguages.includes("Others") && !form.preferredLanguagesOther.trim()) {
+        return "Enter your language.";
+      }
       if (form.preferredMentorshipTimings.length === 0) return "Select at least one preferred timing.";
     }
     return null;
@@ -121,7 +126,12 @@ export function AspirantForm({ onExit }: { onExit: () => void }) {
         // Backend columns are single free-text strings (see CreateAspirantLeadDto)
         // — multiple picks join into one readable value rather than needing a
         // schema change for what are optional, low-stakes preference fields.
-        preferredLanguage: form.preferredLanguages.length ? form.preferredLanguages.join(", ") : undefined,
+        preferredLanguage: form.preferredLanguages.length
+          ? form.preferredLanguages
+              .map((l) => (l === "Others" ? form.preferredLanguagesOther.trim() : l))
+              .filter(Boolean)
+              .join(", ")
+          : undefined,
         preferredMentorshipTiming: form.preferredMentorshipTimings.length
           ? form.preferredMentorshipTimings.join(", ")
           : undefined,
@@ -363,11 +373,21 @@ export function AspirantForm({ onExit }: { onExit: () => void }) {
           </p>
           <Field label="Preferred language" hint="(pick any)">
             <ChipGroup
-              options={LANGUAGES.slice(0, 6)}
+              options={LANGUAGES}
               selected={form.preferredLanguages}
               onToggle={(v) => set("preferredLanguages", toggleInArray(form.preferredLanguages, v))}
             />
           </Field>
+          {form.preferredLanguages.includes("Others") && (
+            <Field label="Other language">
+              <TextInput
+                required
+                placeholder="Enter language"
+                value={form.preferredLanguagesOther}
+                onChange={(e) => set("preferredLanguagesOther", e.target.value)}
+              />
+            </Field>
+          )}
           <Field label="Preferred Timing" hint="(pick any)">
             <ChipGroup
               options={MENTORSHIP_TIMINGS}
