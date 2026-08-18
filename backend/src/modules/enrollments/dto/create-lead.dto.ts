@@ -85,6 +85,19 @@ export class CreateAspirantLeadDto extends BaseLeadDto {
   @IsOptional()
   @IsString()
   @MaxLength(50)
+  degree?: string;
+
+  /** Free text — only meaningful (and only shown on the form) for a
+   * Medical-stream aspirant whose degree isn't UG, e.g. "Paediatrics". Not
+   * FK'd to any picklist, same pattern as the mentor lead's field. */
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  specialization?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(50)
   courseInterested?: string;
 
   /** Multi-select on the web form — multiple picks are joined into one

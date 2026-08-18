@@ -148,6 +148,8 @@ export class EnrollmentsService {
   ): Promise<EnrollmentLeadAcknowledgement> {
     return this.upsertLead(EnrollmentLeadRole.ASPIRANT, dto, {
       qualification: dto.qualification,
+      degree: dto.degree,
+      specialization: dto.specialization,
       courseInterested: dto.courseInterested,
       preferredLanguage: dto.preferredLanguage,
       preferredMentorshipTiming: dto.preferredMentorshipTiming,

@@ -8,6 +8,7 @@ import {
   STATE_DISTRICTS,
   QUALIFICATIONS,
   STREAMS,
+  DEGREES,
   MENTORSHIP_TIMINGS,
   LANGUAGES,
 } from "../lib/options";
@@ -26,6 +27,9 @@ type FormState = {
   qualificationOther: string;
   stream: string;
   streamOther: string;
+  degree: string;
+  degreeOther: string;
+  specialization: string;
   courseInterested: string;
   preferredLanguages: string[];
   preferredMentorshipTimings: string[];
@@ -44,6 +48,9 @@ const EMPTY: FormState = {
   qualificationOther: "",
   stream: "",
   streamOther: "",
+  degree: "",
+  degreeOther: "",
+  specialization: "",
   courseInterested: "",
   preferredLanguages: [],
   preferredMentorshipTimings: [],
@@ -72,6 +79,9 @@ export function AspirantForm({ onExit }: { onExit: () => void }) {
       if (!form.city) return "Select your city.";
       if (form.city === "Other" && !form.cityOther.trim()) return "Enter your city.";
     }
+    if (wizard.step === 3) {
+      if (form.degree === "Others" && !form.degreeOther.trim()) return "Enter your degree.";
+    }
     return null;
   }
 
@@ -98,6 +108,11 @@ export function AspirantForm({ onExit }: { onExit: () => void }) {
         qualification:
           (form.qualification === "Others" ? form.qualificationOther.trim() : form.qualification) || undefined,
         stream: (form.stream === "Others" ? form.streamOther.trim() : form.stream) || undefined,
+        degree: (form.degree === "Others" ? form.degreeOther.trim() : form.degree) || undefined,
+        specialization:
+          form.stream === "Medical" && form.degree && form.degree !== "UG"
+            ? form.specialization.trim() || undefined
+            : undefined,
         courseInterested: form.courseInterested.trim() || undefined,
         // Backend columns are single free-text strings (see CreateAspirantLeadDto)
         // — multiple picks join into one readable value rather than needing a
@@ -280,7 +295,13 @@ export function AspirantForm({ onExit }: { onExit: () => void }) {
               </Select>
             </Field>
             <Field label="Field of interest">
-              <Select value={form.stream} onChange={(e) => set("stream", e.target.value)}>
+              <Select
+                value={form.stream}
+                onChange={(e) => {
+                  set("stream", e.target.value);
+                  set("specialization", "");
+                }}
+              >
                 <option value="">Select</option>
                 {STREAMS.map((s) => (
                   <option key={s}>{s}</option>
@@ -288,6 +309,20 @@ export function AspirantForm({ onExit }: { onExit: () => void }) {
               </Select>
             </Field>
           </div>
+          <Field label="Degree">
+            <Select
+              value={form.degree}
+              onChange={(e) => {
+                set("degree", e.target.value);
+                set("specialization", "");
+              }}
+            >
+              <option value="">Select</option>
+              {DEGREES.map((d) => (
+                <option key={d}>{d}</option>
+              ))}
+            </Select>
+          </Field>
           {form.qualification === "Others" && (
             <Field label="Your qualification">
               <TextInput
@@ -305,6 +340,25 @@ export function AspirantForm({ onExit }: { onExit: () => void }) {
                 placeholder="Enter your field of interest"
                 value={form.streamOther}
                 onChange={(e) => set("streamOther", e.target.value)}
+              />
+            </Field>
+          )}
+          {form.degree === "Others" && (
+            <Field label="Your degree">
+              <TextInput
+                required
+                placeholder="Enter your degree"
+                value={form.degreeOther}
+                onChange={(e) => set("degreeOther", e.target.value)}
+              />
+            </Field>
+          )}
+          {form.stream === "Medical" && form.degree && form.degree !== "UG" && (
+            <Field label="Specialization" hint="(optional)">
+              <TextInput
+                placeholder="e.g. Paediatrics"
+                value={form.specialization}
+                onChange={(e) => set("specialization", e.target.value)}
               />
             </Field>
           )}
