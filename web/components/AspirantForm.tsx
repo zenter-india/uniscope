@@ -338,15 +338,9 @@ export function AspirantForm({ onExit }: { onExit: () => void }) {
           <Field label="Course you're aiming for" hint="(optional)">
             <TextInput
               placeholder="e.g. MBBS, B.Tech, BL"
-              list="course-interested-options"
               value={form.courseInterested}
               onChange={(e) => set("courseInterested", e.target.value)}
             />
-            <datalist id="course-interested-options">
-              <option value="MBBS" />
-              <option value="B.Tech" />
-              <option value="BL" />
-            </datalist>
           </Field>
         </div>
       )}
