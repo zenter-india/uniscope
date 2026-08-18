@@ -99,9 +99,25 @@ export function MentorForm({ onExit }: { onExit: () => void }) {
       if (form.city === "Other" && !form.cityOther.trim()) return "Enter your city.";
     }
     if (wizard.step === 3) {
-      if (!form.collegeName.trim()) return "Enter your college.";
+      if (!form.stream) return "Select your stream.";
       if (form.stream === "Others" && !form.streamOther.trim()) return "Enter your stream.";
+      if (!form.degree) return "Select your degree.";
       if (form.degree === "Others" && !form.degreeOther.trim()) return "Enter your degree.";
+      if (!form.collegeName.trim()) return "Enter your college.";
+      if (form.stream === "Medical" && form.degree && form.degree !== "UG" && !form.specialization.trim()) {
+        return "Enter your specialization.";
+      }
+    }
+    if (wizard.step === 4) {
+      if (!form.currentStatus) return "Select your current status.";
+      if (form.currentStatus === "Currently Studying" && !form.yearOfStudy) return "Select your year of study.";
+      if (form.currentStatus === "Graduated" && !form.graduationYear) return "Select your graduation year.";
+      if (form.languages.length === 0) return "Select at least one language.";
+      if (form.languages.includes("Others") && !form.languagesOther.trim()) return "Enter your language.";
+      if (form.availableDays.length === 0) return "Select at least one preferred timing.";
+    }
+    if (wizard.step === 5) {
+      if (!form.documentFile) return "Upload your college ID / student portal screenshot.";
     }
     return null;
   }
@@ -287,7 +303,7 @@ export function MentorForm({ onExit }: { onExit: () => void }) {
                 ))}
               </Select>
             </Field>
-            <Field label="City" hint="(required)">
+            <Field label="City">
               <Select
                 gold
                 value={form.city}

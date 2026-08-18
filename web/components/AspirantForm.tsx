@@ -78,7 +78,17 @@ export function AspirantForm({ onExit }: { onExit: () => void }) {
       if (form.city === "Other" && !form.cityOther.trim()) return "Enter your city.";
     }
     if (wizard.step === 3) {
+      if (!form.qualification) return "Select your current qualification.";
+      if (form.qualification === "Others" && !form.qualificationOther.trim()) return "Enter your qualification.";
+      if (!form.degree) return "Select your degree.";
       if (form.degree === "Others" && !form.degreeOther.trim()) return "Enter your degree.";
+      if (!form.stream) return "Select your field of interest.";
+      if (form.stream === "Others" && !form.streamOther.trim()) return "Enter your field of interest.";
+      if (!form.courseInterested.trim()) return "Enter the course you're aiming for.";
+    }
+    if (wizard.step === 4) {
+      if (form.preferredLanguages.length === 0) return "Select at least one preferred language.";
+      if (form.preferredMentorshipTimings.length === 0) return "Select at least one preferred timing.";
     }
     return null;
   }
@@ -240,7 +250,7 @@ export function AspirantForm({ onExit }: { onExit: () => void }) {
                 ))}
               </Select>
             </Field>
-            <Field label="City" hint="(required)">
+            <Field label="City">
               <Select value={form.city} onChange={(e) => set("city", e.target.value)} disabled={!form.state}>
                 <option value="">{form.state ? "Select city" : "Select a state first"}</option>
                 {(STATE_DISTRICTS[form.state] ?? []).map((c) => (
