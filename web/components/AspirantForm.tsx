@@ -13,7 +13,6 @@ import {
   LANGUAGES,
 } from "../lib/options";
 import { useMultiStep } from "../lib/useMultiStep";
-import { CollegeSearch } from "./CollegeSearch";
 import { Field, TextInput, Select, ChipGroup, toggleInArray, ProgressBar, ErrorText } from "./form-bits";
 
 type FormState = {
@@ -30,9 +29,6 @@ type FormState = {
   degreeOther: string;
   stream: string;
   streamOther: string;
-  collegeName: string;
-  universityId: string;
-  specialization: string;
   courseInterested: string;
   preferredLanguages: string[];
   preferredMentorshipTimings: string[];
@@ -53,9 +49,6 @@ const EMPTY: FormState = {
   degreeOther: "",
   stream: "",
   streamOther: "",
-  collegeName: "",
-  universityId: "",
-  specialization: "",
   courseInterested: "",
   preferredLanguages: [],
   preferredMentorshipTimings: [],
@@ -114,12 +107,6 @@ export function AspirantForm({ onExit }: { onExit: () => void }) {
           (form.qualification === "Others" ? form.qualificationOther.trim() : form.qualification) || undefined,
         degree: (form.degree === "Others" ? form.degreeOther.trim() : form.degree) || undefined,
         stream: (form.stream === "Others" ? form.streamOther.trim() : form.stream) || undefined,
-        collegeName: form.collegeName.trim() || undefined,
-        universityId: form.universityId || undefined,
-        specialization:
-          form.stream === "Medical" && form.degree && form.degree !== "UG"
-            ? form.specialization.trim() || undefined
-            : undefined,
         courseInterested: form.courseInterested.trim() || undefined,
         // Backend columns are single free-text strings (see CreateAspirantLeadDto)
         // — multiple picks join into one readable value rather than needing a
@@ -302,13 +289,7 @@ export function AspirantForm({ onExit }: { onExit: () => void }) {
               </Select>
             </Field>
             <Field label="Degree">
-              <Select
-                value={form.degree}
-                onChange={(e) => {
-                  set("degree", e.target.value);
-                  set("specialization", "");
-                }}
-              >
+              <Select value={form.degree} onChange={(e) => set("degree", e.target.value)}>
                 <option value="">Select</option>
                 {DEGREES.map((d) => (
                   <option key={d}>{d}</option>
@@ -317,27 +298,12 @@ export function AspirantForm({ onExit }: { onExit: () => void }) {
             </Field>
           </div>
           <Field label="Field of interest">
-            <Select
-              value={form.stream}
-              onChange={(e) => {
-                set("stream", e.target.value);
-                set("specialization", "");
-              }}
-            >
+            <Select value={form.stream} onChange={(e) => set("stream", e.target.value)}>
               <option value="">Select</option>
               {STREAMS.map((s) => (
                 <option key={s}>{s}</option>
               ))}
             </Select>
-          </Field>
-          <Field label="College / university">
-            <CollegeSearch
-              value={form.collegeName}
-              onPick={(name, id) => {
-                set("collegeName", name);
-                set("universityId", id ?? "");
-              }}
-            />
           </Field>
           {form.qualification === "Others" && (
             <Field label="Your qualification">
@@ -366,15 +332,6 @@ export function AspirantForm({ onExit }: { onExit: () => void }) {
                 placeholder="Enter your field of interest"
                 value={form.streamOther}
                 onChange={(e) => set("streamOther", e.target.value)}
-              />
-            </Field>
-          )}
-          {form.stream === "Medical" && form.degree && form.degree !== "UG" && (
-            <Field label="Specialization" hint="(optional)">
-              <TextInput
-                placeholder="e.g. Paediatrics"
-                value={form.specialization}
-                onChange={(e) => set("specialization", e.target.value)}
               />
             </Field>
           )}

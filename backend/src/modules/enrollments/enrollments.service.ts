@@ -160,14 +160,9 @@ export class EnrollmentsService {
   async createAspirantLead(
     dto: CreateAspirantLeadDto,
   ): Promise<EnrollmentLeadAcknowledgement> {
-    const universityId = await this.resolveUniversityId(dto.universityId);
-
     return this.upsertLead(EnrollmentLeadRole.ASPIRANT, dto, {
       qualification: dto.qualification,
       degree: dto.degree,
-      specialization: dto.specialization,
-      universityId: universityId ?? undefined,
-      collegeName: dto.collegeName,
       courseInterested: dto.courseInterested,
       preferredLanguage: dto.preferredLanguage,
       preferredMentorshipTiming: dto.preferredMentorshipTiming,
