@@ -95,6 +95,18 @@ export class CreateAspirantLeadDto extends BaseLeadDto {
   @MaxLength(100)
   specialization?: string;
 
+  /** Set when the college was picked from the GET /universities dropdown. */
+  @IsOptional()
+  @IsString()
+  universityId?: string;
+
+  /** Always sent — the raw text of whatever they chose or typed, so a college
+   * that isn't in the University table yet doesn't lose the answer. */
+  @IsOptional()
+  @IsString()
+  @MaxLength(200)
+  collegeName?: string;
+
   @IsOptional()
   @IsString()
   @MaxLength(50)

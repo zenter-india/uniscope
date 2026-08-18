@@ -143,13 +143,31 @@ export class EnrollmentsService {
     return { id: lead.id, role: lead.role, status: lead.status };
   }
 
+  /** Only accepts a universityId that actually resolves — a bad id from a
+   * stale cached page would otherwise fail the FK and 500 the whole form.
+   * The typed college name always survives regardless. */
+  private async resolveUniversityId(
+    universityId: string | undefined,
+  ): Promise<string | null> {
+    if (!universityId) return null;
+    const university = await this.prisma.university.findUnique({
+      where: { id: universityId },
+      select: { id: true },
+    });
+    return university?.id ?? null;
+  }
+
   async createAspirantLead(
     dto: CreateAspirantLeadDto,
   ): Promise<EnrollmentLeadAcknowledgement> {
+    const universityId = await this.resolveUniversityId(dto.universityId);
+
     return this.upsertLead(EnrollmentLeadRole.ASPIRANT, dto, {
       qualification: dto.qualification,
       degree: dto.degree,
       specialization: dto.specialization,
+      universityId: universityId ?? undefined,
+      collegeName: dto.collegeName,
       courseInterested: dto.courseInterested,
       preferredLanguage: dto.preferredLanguage,
       preferredMentorshipTiming: dto.preferredMentorshipTiming,
@@ -159,17 +177,7 @@ export class EnrollmentsService {
   async createMentorLead(
     dto: CreateMentorLeadDto,
   ): Promise<EnrollmentLeadAcknowledgement> {
-    // Only accept a universityId that actually resolves — a bad id from a
-    // stale cached page would otherwise fail the FK and 500 the whole form.
-    // The typed college name always survives regardless.
-    let universityId: string | null = null;
-    if (dto.universityId) {
-      const university = await this.prisma.university.findUnique({
-        where: { id: dto.universityId },
-        select: { id: true },
-      });
-      universityId = university?.id ?? null;
-    }
+    const universityId = await this.resolveUniversityId(dto.universityId);
 
     const documentKey = dto.documentBase64
       ? await this.uploadDocument(dto.documentBase64)

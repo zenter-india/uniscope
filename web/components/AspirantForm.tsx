@@ -13,6 +13,7 @@ import {
   LANGUAGES,
 } from "../lib/options";
 import { useMultiStep } from "../lib/useMultiStep";
+import { CollegeSearch } from "./CollegeSearch";
 import { Field, TextInput, Select, ChipGroup, toggleInArray, ProgressBar, ErrorText } from "./form-bits";
 
 type FormState = {
@@ -25,10 +26,12 @@ type FormState = {
   cityOther: string;
   qualification: string;
   qualificationOther: string;
-  stream: string;
-  streamOther: string;
   degree: string;
   degreeOther: string;
+  stream: string;
+  streamOther: string;
+  collegeName: string;
+  universityId: string;
   specialization: string;
   courseInterested: string;
   preferredLanguages: string[];
@@ -46,10 +49,12 @@ const EMPTY: FormState = {
   cityOther: "",
   qualification: "",
   qualificationOther: "",
-  stream: "",
-  streamOther: "",
   degree: "",
   degreeOther: "",
+  stream: "",
+  streamOther: "",
+  collegeName: "",
+  universityId: "",
   specialization: "",
   courseInterested: "",
   preferredLanguages: [],
@@ -107,8 +112,10 @@ export function AspirantForm({ onExit }: { onExit: () => void }) {
         city: (form.city === "Other" ? form.cityOther.trim() : form.city) || undefined,
         qualification:
           (form.qualification === "Others" ? form.qualificationOther.trim() : form.qualification) || undefined,
-        stream: (form.stream === "Others" ? form.streamOther.trim() : form.stream) || undefined,
         degree: (form.degree === "Others" ? form.degreeOther.trim() : form.degree) || undefined,
+        stream: (form.stream === "Others" ? form.streamOther.trim() : form.stream) || undefined,
+        collegeName: form.collegeName.trim() || undefined,
+        universityId: form.universityId || undefined,
         specialization:
           form.stream === "Medical" && form.degree && form.degree !== "UG"
             ? form.specialization.trim() || undefined
@@ -294,34 +301,43 @@ export function AspirantForm({ onExit }: { onExit: () => void }) {
                 ))}
               </Select>
             </Field>
-            <Field label="Field of interest">
+            <Field label="Degree">
               <Select
-                value={form.stream}
+                value={form.degree}
                 onChange={(e) => {
-                  set("stream", e.target.value);
+                  set("degree", e.target.value);
                   set("specialization", "");
                 }}
               >
                 <option value="">Select</option>
-                {STREAMS.map((s) => (
-                  <option key={s}>{s}</option>
+                {DEGREES.map((d) => (
+                  <option key={d}>{d}</option>
                 ))}
               </Select>
             </Field>
           </div>
-          <Field label="Degree">
+          <Field label="Field of interest">
             <Select
-              value={form.degree}
+              value={form.stream}
               onChange={(e) => {
-                set("degree", e.target.value);
+                set("stream", e.target.value);
                 set("specialization", "");
               }}
             >
               <option value="">Select</option>
-              {DEGREES.map((d) => (
-                <option key={d}>{d}</option>
+              {STREAMS.map((s) => (
+                <option key={s}>{s}</option>
               ))}
             </Select>
+          </Field>
+          <Field label="College / university">
+            <CollegeSearch
+              value={form.collegeName}
+              onPick={(name, id) => {
+                set("collegeName", name);
+                set("universityId", id ?? "");
+              }}
+            />
           </Field>
           {form.qualification === "Others" && (
             <Field label="Your qualification">
@@ -333,16 +349,6 @@ export function AspirantForm({ onExit }: { onExit: () => void }) {
               />
             </Field>
           )}
-          {form.stream === "Others" && (
-            <Field label="Your field of interest">
-              <TextInput
-                required
-                placeholder="Enter your field of interest"
-                value={form.streamOther}
-                onChange={(e) => set("streamOther", e.target.value)}
-              />
-            </Field>
-          )}
           {form.degree === "Others" && (
             <Field label="Your degree">
               <TextInput
@@ -350,6 +356,16 @@ export function AspirantForm({ onExit }: { onExit: () => void }) {
                 placeholder="Enter your degree"
                 value={form.degreeOther}
                 onChange={(e) => set("degreeOther", e.target.value)}
+              />
+            </Field>
+          )}
+          {form.stream === "Others" && (
+            <Field label="Your field of interest">
+              <TextInput
+                required
+                placeholder="Enter your field of interest"
+                value={form.streamOther}
+                onChange={(e) => set("streamOther", e.target.value)}
               />
             </Field>
           )}
