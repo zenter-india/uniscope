@@ -368,7 +368,7 @@ export function AspirantForm({ onExit }: { onExit: () => void }) {
                 />
               </Field>
             )}
-          <Field label="Course you're aiming for">
+          <Field label="Course you're aiming for" hint="(optional)">
             <TextInput
               placeholder="e.g. MBBS, B.Tech, BL"
               value={form.courseInterested}
