@@ -247,6 +247,11 @@ model UserProfile {
   state                    String?  @db.VarChar(100)
   city                     String?  @db.VarChar(100)
   qualification            String?  @db.VarChar(50)
+  /// Free text, not FK'd to any picklist — only meaningful for a
+  /// Medical-stream user (aspirant or mentor) whose qualification/degree
+  /// isn't 12th/UG, e.g. "Paediatrics". Same pattern as the web enrollment
+  /// form's EnrollmentLead.specialization.
+  specialization           String?  @db.VarChar(100)
   /// Dual-purpose by role, same pattern as `specialty`: for an ASPIRANT this
   /// is their school-level stream (PCB/PCM/PCMB/Other); for a MENTOR it's
   /// their college field of study (Medical/Engineering/Law/etc — see
@@ -258,9 +263,16 @@ model UserProfile {
   /// from `stream` (PCB/PCM at the school level).
   courseInterested         String?  @db.VarChar(50) @map("course_interested")
   /// Aspirant's preferred language for mentor communication — distinct from
-  /// a mentor's own `languages` list (which is multi-select).
-  preferredLanguage        String?  @db.VarChar(30) @map("preferred_language")
+  /// a mentor's own `languages` list (which is multi-select). Widened from
+  /// VARCHAR(30) to fit multiple comma-joined picks, same fix as the web
+  /// enrollment form's EnrollmentLead.preferredLanguage.
+  preferredLanguage        String?  @db.VarChar(150) @map("preferred_language")
   preferredMentorshipTiming String? @db.VarChar(50) @map("preferred_mentorship_timing")
+  /// Mentor's own choice to keep yearOfStudy/graduationYear off their public
+  /// profile — only one of the two is ever set at a time (driven by
+  /// currentStatus), so a single flag covers both. Same pattern as the web
+  /// enrollment form's EnrollmentLead.yearInfoPrivate.
+  yearInfoPrivate          Boolean  @default(false) @map("year_info_private")
   /// Target exams/colleges, e.g. ["NEET", "AIIMS Delhi"] — free-form tags,
   /// not FK'd to the University table (an aspirant's goal college may not
   /// exist in that table yet, or may be a general aspiration like "Any

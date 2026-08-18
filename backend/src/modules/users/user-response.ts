@@ -29,9 +29,11 @@ export interface PublicUser {
   state?: string | null;
   city?: string | null;
   qualification?: string | null;
+  specialization?: string | null;
   stream?: string | null;
   yearOfStudy?: number | null;
   graduationYear?: number | null;
+  yearInfoPrivate?: boolean;
   goals?: string[];
   dateOfBirth?: string | null;
   courseInterested?: string | null;
@@ -82,9 +84,11 @@ export function toPublicUser(
       state: user.profile?.state ?? null,
       city: user.profile?.city ?? null,
       qualification: user.profile?.qualification ?? null,
+      specialization: user.profile?.specialization ?? null,
       stream: user.profile?.stream ?? null,
       yearOfStudy: user.profile?.yearOfStudy ?? null,
       graduationYear: user.profile?.graduationYear ?? null,
+      yearInfoPrivate: user.profile?.yearInfoPrivate ?? false,
       goals: user.profile?.goals ?? [],
       dateOfBirth: user.profile?.dateOfBirth?.toISOString().slice(0, 10) ?? null,
       courseInterested: user.profile?.courseInterested ?? null,

@@ -63,6 +63,14 @@ export class UpdateProfileDto {
   @MaxLength(50)
   qualification?: string;
 
+  /** Free text — only meaningful for a Medical-stream user whose
+   * qualification isn't 12th/UG, e.g. "Paediatrics". Not FK'd to any
+   * picklist. */
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  specialization?: string;
+
   // Dual-purpose (see UserProfile.stream): aspirant school-stream OR mentor
   // college field-of-study — widened to fit values like "Commerce & Business".
   @IsOptional()
@@ -86,13 +94,19 @@ export class UpdateProfileDto {
 
   @IsOptional()
   @IsString()
-  @MaxLength(30)
+  @MaxLength(150)
   preferredLanguage?: string;
 
   @IsOptional()
   @IsString()
   @MaxLength(50)
   preferredMentorshipTiming?: string;
+
+  /** Only one of yearOfStudy/graduationYear is ever set at a time (driven by
+   * currentStatus), so a single flag covers keeping either private. */
+  @IsOptional()
+  @IsBoolean()
+  yearInfoPrivate?: boolean;
 
   /** MENTOR onboarding — the mentor's actual legal name. Stored AES-256-GCM
    * encrypted (see profile-encryption.helper.ts), never returned in any
@@ -105,7 +119,7 @@ export class UpdateProfileDto {
   @IsOptional()
   @IsInt()
   @Min(1)
-  @Max(6)
+  @Max(10)
   yearOfStudy?: number;
 
   @IsOptional()

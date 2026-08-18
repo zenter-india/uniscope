@@ -235,6 +235,7 @@ export class UsersService {
       ...(dto.state !== undefined && { state: dto.state }),
       ...(dto.city !== undefined && { city: dto.city }),
       ...(dto.qualification !== undefined && { qualification: dto.qualification }),
+      ...(dto.specialization !== undefined && { specialization: dto.specialization }),
       ...(dto.stream !== undefined && { stream: dto.stream }),
       ...(dto.goals !== undefined && { goals: dto.goals }),
       ...(dto.dateOfBirth !== undefined && { dateOfBirth: new Date(dto.dateOfBirth) }),
@@ -248,6 +249,7 @@ export class UsersService {
       }),
       ...(dto.yearOfStudy !== undefined && { yearOfStudy: dto.yearOfStudy }),
       ...(dto.graduationYear !== undefined && { graduationYear: dto.graduationYear }),
+      ...(dto.yearInfoPrivate !== undefined && { yearInfoPrivate: dto.yearInfoPrivate }),
     };
 
     return this.prisma.user.update({
