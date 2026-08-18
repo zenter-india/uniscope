@@ -37,7 +37,8 @@ class _AspirantOnboardingScreenState
   String? _gender;
 
   String? _state;
-  final _cityController = TextEditingController();
+  String? _city;
+  final _cityOtherController = TextEditingController();
 
   String? _qualification;
   String? _currentStatus;
@@ -72,7 +73,7 @@ class _AspirantOnboardingScreenState
   void dispose() {
     _pageController.dispose();
     _fullNameController.dispose();
-    _cityController.dispose();
+    _cityOtherController.dispose();
     _streamOtherController.dispose();
     _specializationController.dispose();
     _courseInterestedController.dispose();
@@ -89,7 +90,9 @@ class _AspirantOnboardingScreenState
       case 0:
         return _fullNameController.text.trim().isNotEmpty && _gender != null;
       case 1:
-        return _state != null && _cityController.text.trim().isNotEmpty;
+        return _state != null &&
+            _city != null &&
+            (_city != 'Other' || _cityOtherController.text.trim().isNotEmpty);
       case 2:
         return _qualification != null && _currentStatus != null;
       case 3:
@@ -143,9 +146,7 @@ class _AspirantOnboardingScreenState
                 : _fullNameController.text.trim(),
             gender: _gender,
             state: _state,
-            city: _cityController.text.trim().isEmpty
-                ? null
-                : _cityController.text.trim(),
+            city: _city == 'Other' ? _cityOtherController.text.trim() : _city,
             qualification: _qualification,
             specialization: _needsSpecialization
                 ? _specializationController.text.trim()
@@ -241,16 +242,33 @@ class _AspirantOnboardingScreenState
                         value: _state,
                         hint: 'Select your state',
                         options: kIndianStates,
-                        onChanged: (v) => setState(() => _state = v),
+                        // The district list depends entirely on which state
+                        // this is, so a city picked under the old state
+                        // almost never makes sense under the new one.
+                        onChanged: (v) => setState(() {
+                          _state = v;
+                          _city = null;
+                          _cityOtherController.clear();
+                        }),
                       ),
                       const SizedBox(height: AppSpacing.md),
                       const OnboardingFieldLabel('City'),
-                      TextFormField(
-                        controller: _cityController,
-                        onChanged: (_) => setState(() {}),
-                        decoration:
-                            const InputDecoration(hintText: 'Enter your city'),
+                      OnboardingDropdown(
+                        value: _city,
+                        hint: _state == null ? 'Select a state first' : 'Select your city',
+                        enabled: _state != null,
+                        options: [...?kStateDistricts[_state], 'Other'],
+                        onChanged: (v) => setState(() => _city = v),
                       ),
+                      if (_city == 'Other') ...[
+                        const SizedBox(height: AppSpacing.sm),
+                        TextFormField(
+                          controller: _cityOtherController,
+                          onChanged: (_) => setState(() {}),
+                          decoration:
+                              const InputDecoration(hintText: 'Enter your city'),
+                        ),
+                      ],
                     ],
                   ),
                   OnboardingStepScaffold(

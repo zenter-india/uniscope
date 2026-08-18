@@ -104,11 +104,17 @@ class OnboardingDropdown extends StatelessWidget {
     required this.hint,
     required this.options,
     required this.onChanged,
+    this.enabled = true,
   });
   final String? value;
   final String hint;
   final List<String> options;
   final ValueChanged<String?> onChanged;
+
+  /// False disables the dropdown entirely (e.g. City before a State is
+  /// picked) — passing `onChanged: null` is what Flutter's own
+  /// DropdownButtonFormField uses to render its disabled state.
+  final bool enabled;
 
   @override
   Widget build(BuildContext context) {
@@ -117,7 +123,7 @@ class OnboardingDropdown extends StatelessWidget {
       isExpanded: true,
       hint: Text(hint),
       items: options.map((o) => DropdownMenuItem(value: o, child: Text(o))).toList(),
-      onChanged: onChanged,
+      onChanged: enabled ? onChanged : null,
     );
   }
 }

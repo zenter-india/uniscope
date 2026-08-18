@@ -51,7 +51,8 @@ class _MentorOnboardingScreenState extends ConsumerState<MentorOnboardingScreen>
   String? _gender;
 
   String? _state;
-  final _cityController = TextEditingController();
+  String? _city;
+  final _cityOtherController = TextEditingController();
 
   University? _university;
   final _collegeNameController = TextEditingController();
@@ -65,6 +66,9 @@ class _MentorOnboardingScreenState extends ConsumerState<MentorOnboardingScreen>
   String? _yearOfStudyLabel;
   final _graduationYearController = TextEditingController();
   bool _yearInfoPrivate = false;
+  final Set<String> _languages = {};
+  final _languagesOtherController = TextEditingController();
+  final Set<String> _preferredTimings = {};
 
   DocumentType _docType = DocumentType.studentId;
   Uint8List? _imageBytes;
@@ -80,7 +84,7 @@ class _MentorOnboardingScreenState extends ConsumerState<MentorOnboardingScreen>
   static const _stepSubtitles = [
     'Core identity details.',
     'For regional aspirant matching.',
-    'Are you still studying or graduated?',
+    'Are you still studying or graduated? How can aspirants reach you?',
     'Your institution and degree.',
     'Pick a look — you can always change this later from your profile.',
     'Help us confirm your college identity and build trust with aspirants.',
@@ -90,11 +94,12 @@ class _MentorOnboardingScreenState extends ConsumerState<MentorOnboardingScreen>
   void dispose() {
     _pageController.dispose();
     _fullNameController.dispose();
-    _cityController.dispose();
+    _cityOtherController.dispose();
     _collegeNameController.dispose();
     _streamOtherController.dispose();
     _specializationController.dispose();
     _graduationYearController.dispose();
+    _languagesOtherController.dispose();
     super.dispose();
   }
 
@@ -109,15 +114,19 @@ class _MentorOnboardingScreenState extends ConsumerState<MentorOnboardingScreen>
       case 0:
         return _fullNameController.text.trim().isNotEmpty && _gender != null;
       case 1:
-        return _state != null && _cityController.text.trim().isNotEmpty;
+        return _state != null &&
+            _city != null &&
+            (_city != 'Other' || _cityOtherController.text.trim().isNotEmpty);
       case 2:
-        if (_currentStatus == 'Currently Studying') {
-          return _yearOfStudyLabel != null;
-        }
-        if (_currentStatus == 'Graduated') {
-          return int.tryParse(_graduationYearController.text.trim()) != null;
-        }
-        return false;
+        final statusOk = _currentStatus == 'Currently Studying'
+            ? _yearOfStudyLabel != null
+            : _currentStatus == 'Graduated'
+                ? int.tryParse(_graduationYearController.text.trim()) != null
+                : false;
+        final languagesOk = _languages.isNotEmpty &&
+            (!_languages.contains('Others') ||
+                _languagesOtherController.text.trim().isNotEmpty);
+        return statusOk && languagesOk && _preferredTimings.isNotEmpty;
       case 3:
         final streamOk = _stream != null &&
             (_stream != 'Others' || _streamOtherController.text.trim().isNotEmpty);
@@ -131,6 +140,8 @@ class _MentorOnboardingScreenState extends ConsumerState<MentorOnboardingScreen>
   }
 
   bool get _needsSpecialization => _stream == 'Medical' && _degree != null && _degree != 'UG';
+
+  String get _resolvedCity => _city == 'Other' ? _cityOtherController.text.trim() : (_city ?? '');
 
   void _goTo(int step) {
     setState(() => _step = step);
@@ -168,7 +179,7 @@ class _MentorOnboardingScreenState extends ConsumerState<MentorOnboardingScreen>
         final university = await ref.read(universitiesApiProvider).findOrCreate(
               name: _collegeNameController.text.trim(),
               state: _state ?? '',
-              city: _cityController.text.trim(),
+              city: _resolvedCity,
               stream: _stream == 'Others' ? _streamOtherController.text.trim() : _stream,
             );
         if (!mounted) return;
@@ -231,9 +242,7 @@ class _MentorOnboardingScreenState extends ConsumerState<MentorOnboardingScreen>
                 : _fullNameController.text.trim(),
             gender: _gender,
             state: _state,
-            city: _cityController.text.trim().isEmpty
-                ? null
-                : _cityController.text.trim(),
+            city: _resolvedCity.isEmpty ? null : _resolvedCity,
             qualification: _degree,
             specialization: _needsSpecialization
                 ? _specializationController.text.trim()
@@ -246,6 +255,11 @@ class _MentorOnboardingScreenState extends ConsumerState<MentorOnboardingScreen>
                 ? int.tryParse(_graduationYearController.text.trim())
                 : null,
             yearInfoPrivate: _yearInfoPrivate,
+            languages: _languages
+                .map((l) => l == 'Others' ? _languagesOtherController.text.trim() : l)
+                .where((l) => l.isNotEmpty)
+                .toList(),
+            availableDays: _preferredTimings.toList(),
           );
       if (!mounted) return;
       setState(() => _saving = false);
@@ -355,16 +369,33 @@ class _MentorOnboardingScreenState extends ConsumerState<MentorOnboardingScreen>
                         value: _state,
                         hint: 'Select your state',
                         options: kIndianStates,
-                        onChanged: (v) => setState(() => _state = v),
+                        // The district list depends entirely on which state
+                        // this is, so a city picked under the old state
+                        // almost never makes sense under the new one.
+                        onChanged: (v) => setState(() {
+                          _state = v;
+                          _city = null;
+                          _cityOtherController.clear();
+                        }),
                       ),
                       const SizedBox(height: AppSpacing.md),
                       const OnboardingFieldLabel('City'),
-                      TextFormField(
-                        controller: _cityController,
-                        onChanged: (_) => setState(() {}),
-                        decoration:
-                            const InputDecoration(hintText: 'Enter your city'),
+                      OnboardingDropdown(
+                        value: _city,
+                        hint: _state == null ? 'Select a state first' : 'Select your city',
+                        enabled: _state != null,
+                        options: [...?kStateDistricts[_state], 'Other'],
+                        onChanged: (v) => setState(() => _city = v),
                       ),
+                      if (_city == 'Other') ...[
+                        const SizedBox(height: AppSpacing.sm),
+                        TextFormField(
+                          controller: _cityOtherController,
+                          onChanged: (_) => setState(() {}),
+                          decoration:
+                              const InputDecoration(hintText: 'Enter your city'),
+                        ),
+                      ],
                     ],
                   ),
                   OnboardingStepScaffold(
@@ -411,6 +442,41 @@ class _MentorOnboardingScreenState extends ConsumerState<MentorOnboardingScreen>
                               'When on, this stays anonymous and isn\'t shown publicly on your profile.',
                         ),
                       ],
+                      const SizedBox(height: AppSpacing.md),
+                      const OnboardingFieldLabel('Preferred Languages'),
+                      OnboardingChipGroup(
+                        options: kLanguageOptions,
+                        selected: _languages,
+                        onToggle: (option, value) => setState(() {
+                          if (value) {
+                            _languages.add(option);
+                          } else {
+                            _languages.remove(option);
+                          }
+                        }),
+                      ),
+                      if (_languages.contains('Others')) ...[
+                        const SizedBox(height: AppSpacing.sm),
+                        TextFormField(
+                          controller: _languagesOtherController,
+                          onChanged: (_) => setState(() {}),
+                          decoration:
+                              const InputDecoration(hintText: 'Enter language'),
+                        ),
+                      ],
+                      const SizedBox(height: AppSpacing.md),
+                      const OnboardingFieldLabel('Preferred Timing'),
+                      OnboardingChipGroup(
+                        options: kTimeSlots,
+                        selected: _preferredTimings,
+                        onToggle: (option, value) => setState(() {
+                          if (value) {
+                            _preferredTimings.add(option);
+                          } else {
+                            _preferredTimings.remove(option);
+                          }
+                        }),
+                      ),
                     ],
                   ),
                   OnboardingStepScaffold(
