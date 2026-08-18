@@ -71,6 +71,16 @@ const kMentorshipTimings = [
   'Flexible / Anytime',
 ];
 
+// Time-of-day slots — shared shape for the aspirant's "when do you want to
+// talk" preference and the mentor's "when am I generally free" availability,
+// matching the web enrollment form's TIME_SLOTS.
+const kTimeSlots = [
+  'Morning (6 AM - 12 PM)',
+  'Afternoon (12 PM - 4 PM)',
+  'Evening (4 PM - 8 PM)',
+  'Night (8 PM - 11 PM)',
+];
+
 const kWeekdays = [
   'Monday',
   'Tuesday',
