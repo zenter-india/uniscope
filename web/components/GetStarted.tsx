@@ -62,7 +62,7 @@ export function GetStarted() {
                 </div>
                 <h3 className="text-[18px] font-extrabold">I&apos;m a Mentor</h3>
                 <p className="mt-1.5 text-[13.5px] font-semibold text-slate-600 leading-relaxed">
-                  Current students or alumni, guide aspirants and get paid for your time.
+                  Currently studying or graduated — guide aspirants and turn your experience into income.
                 </p>
                 <div className="mt-4.5 text-[13.5px] font-extrabold text-gold-600 flex items-center gap-1.5">
                   Continue as a mentor
