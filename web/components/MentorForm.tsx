@@ -396,7 +396,7 @@ export function MentorForm({ onExit }: { onExit: () => void }) {
             </Field>
           )}
           {form.stream === "Medical" && form.degree && form.degree !== "UG" && (
-            <Field label="Specialization" hint="(optional)">
+            <Field label="Specialization">
               <TextInput
                 gold
                 placeholder="e.g. Paediatrics"

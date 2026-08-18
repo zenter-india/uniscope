@@ -335,7 +335,7 @@ export function AspirantForm({ onExit }: { onExit: () => void }) {
               />
             </Field>
           )}
-          <Field label="Course you're aiming for" hint="(optional)">
+          <Field label="Course you're aiming for">
             <TextInput
               placeholder="e.g. MBBS, B.Tech, BL"
               value={form.courseInterested}
@@ -351,14 +351,14 @@ export function AspirantForm({ onExit }: { onExit: () => void }) {
           <p className="text-[13.5px] font-semibold text-slate-600 mb-5">
             Last step — this helps us find the right mentors for you.
           </p>
-          <Field label="Preferred language" hint="(optional, pick any)">
+          <Field label="Preferred language" hint="(pick any)">
             <ChipGroup
               options={LANGUAGES.slice(0, 6)}
               selected={form.preferredLanguages}
               onToggle={(v) => set("preferredLanguages", toggleInArray(form.preferredLanguages, v))}
             />
           </Field>
-          <Field label="Preferred Timing" hint="(optional, pick any)">
+          <Field label="Preferred Timing" hint="(pick any)">
             <ChipGroup
               options={MENTORSHIP_TIMINGS}
               selected={form.preferredMentorshipTimings}
