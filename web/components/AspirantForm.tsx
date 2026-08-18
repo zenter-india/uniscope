@@ -8,7 +8,6 @@ import {
   STATE_DISTRICTS,
   QUALIFICATIONS,
   STREAMS,
-  DEGREES,
   MENTORSHIP_TIMINGS,
   LANGUAGES,
 } from "../lib/options";
@@ -25,12 +24,12 @@ type FormState = {
   cityOther: string;
   qualification: string;
   qualificationOther: string;
-  degree: string;
-  degreeOther: string;
   stream: string;
   streamOther: string;
+  specialization: string;
   courseInterested: string;
   preferredLanguages: string[];
+  preferredLanguagesOther: string;
   preferredMentorshipTimings: string[];
   website: string; // honeypot — never rendered visibly, see MentorForm for the full note
 };
@@ -45,12 +44,12 @@ const EMPTY: FormState = {
   cityOther: "",
   qualification: "",
   qualificationOther: "",
-  degree: "",
-  degreeOther: "",
   stream: "",
   streamOther: "",
+  specialization: "",
   courseInterested: "",
   preferredLanguages: [],
+  preferredLanguagesOther: "",
   preferredMentorshipTimings: [],
   website: "",
 };
@@ -78,16 +77,25 @@ export function AspirantForm({ onExit }: { onExit: () => void }) {
       if (form.city === "Other" && !form.cityOther.trim()) return "Enter your city.";
     }
     if (wizard.step === 3) {
-      if (!form.qualification) return "Select your current qualification.";
-      if (form.qualification === "Others" && !form.qualificationOther.trim()) return "Enter your qualification.";
-      if (!form.degree) return "Select your degree.";
-      if (form.degree === "Others" && !form.degreeOther.trim()) return "Enter your degree.";
       if (!form.stream) return "Select your field of interest.";
       if (form.stream === "Others" && !form.streamOther.trim()) return "Enter your field of interest.";
-      if (!form.courseInterested.trim()) return "Enter the course you're aiming for.";
+      if (!form.qualification) return "Select your current qualification.";
+      if (form.qualification === "Others" && !form.qualificationOther.trim()) return "Enter your qualification.";
+      if (
+        form.stream === "Medical" &&
+        form.qualification &&
+        form.qualification !== "Higher Secondary (12th)" &&
+        form.qualification !== "UG" &&
+        !form.specialization.trim()
+      ) {
+        return "Enter your specialization.";
+      }
     }
     if (wizard.step === 4) {
       if (form.preferredLanguages.length === 0) return "Select at least one preferred language.";
+      if (form.preferredLanguages.includes("Others") && !form.preferredLanguagesOther.trim()) {
+        return "Enter your language.";
+      }
       if (form.preferredMentorshipTimings.length === 0) return "Select at least one preferred timing.";
     }
     return null;
@@ -115,13 +123,24 @@ export function AspirantForm({ onExit }: { onExit: () => void }) {
         city: (form.city === "Other" ? form.cityOther.trim() : form.city) || undefined,
         qualification:
           (form.qualification === "Others" ? form.qualificationOther.trim() : form.qualification) || undefined,
-        degree: (form.degree === "Others" ? form.degreeOther.trim() : form.degree) || undefined,
         stream: (form.stream === "Others" ? form.streamOther.trim() : form.stream) || undefined,
+        specialization:
+          form.stream === "Medical" &&
+          form.qualification &&
+          form.qualification !== "Higher Secondary (12th)" &&
+          form.qualification !== "UG"
+            ? form.specialization.trim() || undefined
+            : undefined,
         courseInterested: form.courseInterested.trim() || undefined,
         // Backend columns are single free-text strings (see CreateAspirantLeadDto)
         // — multiple picks join into one readable value rather than needing a
         // schema change for what are optional, low-stakes preference fields.
-        preferredLanguage: form.preferredLanguages.length ? form.preferredLanguages.join(", ") : undefined,
+        preferredLanguage: form.preferredLanguages.length
+          ? form.preferredLanguages
+              .map((l) => (l === "Others" ? form.preferredLanguagesOther.trim() : l))
+              .filter(Boolean)
+              .join(", ")
+          : undefined,
         preferredMentorshipTiming: form.preferredMentorshipTimings.length
           ? form.preferredMentorshipTimings.join(", ")
           : undefined,
@@ -289,52 +308,34 @@ export function AspirantForm({ onExit }: { onExit: () => void }) {
           <p className="text-[13.5px] font-semibold text-slate-600 mb-5">
             What stage are you at, and what are you aiming for?
           </p>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
-            <Field label="Current qualification">
-              <Select value={form.qualification} onChange={(e) => set("qualification", e.target.value)}>
-                <option value="">Select</option>
-                {QUALIFICATIONS.map((q) => (
-                  <option key={q}>{q}</option>
-                ))}
-              </Select>
-            </Field>
-            <Field label="Degree">
-              <Select value={form.degree} onChange={(e) => set("degree", e.target.value)}>
-                <option value="">Select</option>
-                {DEGREES.map((d) => (
-                  <option key={d}>{d}</option>
-                ))}
-              </Select>
-            </Field>
-          </div>
           <Field label="Field of interest">
-            <Select value={form.stream} onChange={(e) => set("stream", e.target.value)}>
+            <Select
+              value={form.stream}
+              onChange={(e) => {
+                set("stream", e.target.value);
+                set("specialization", "");
+              }}
+            >
               <option value="">Select</option>
               {STREAMS.map((s) => (
                 <option key={s}>{s}</option>
               ))}
             </Select>
           </Field>
-          {form.qualification === "Others" && (
-            <Field label="Your qualification">
-              <TextInput
-                required
-                placeholder="Enter your qualification"
-                value={form.qualificationOther}
-                onChange={(e) => set("qualificationOther", e.target.value)}
-              />
-            </Field>
-          )}
-          {form.degree === "Others" && (
-            <Field label="Your degree">
-              <TextInput
-                required
-                placeholder="Enter your degree"
-                value={form.degreeOther}
-                onChange={(e) => set("degreeOther", e.target.value)}
-              />
-            </Field>
-          )}
+          <Field label="Current qualification">
+            <Select
+              value={form.qualification}
+              onChange={(e) => {
+                set("qualification", e.target.value);
+                set("specialization", "");
+              }}
+            >
+              <option value="">Select</option>
+              {QUALIFICATIONS.map((q) => (
+                <option key={q}>{q}</option>
+              ))}
+            </Select>
+          </Field>
           {form.stream === "Others" && (
             <Field label="Your field of interest">
               <TextInput
@@ -345,7 +346,29 @@ export function AspirantForm({ onExit }: { onExit: () => void }) {
               />
             </Field>
           )}
-          <Field label="Course you're aiming for">
+          {form.qualification === "Others" && (
+            <Field label="Your qualification">
+              <TextInput
+                required
+                placeholder="Enter your qualification"
+                value={form.qualificationOther}
+                onChange={(e) => set("qualificationOther", e.target.value)}
+              />
+            </Field>
+          )}
+          {form.stream === "Medical" &&
+            form.qualification &&
+            form.qualification !== "Higher Secondary (12th)" &&
+            form.qualification !== "UG" && (
+              <Field label="Specialization">
+                <TextInput
+                  placeholder="e.g. Cardiology"
+                  value={form.specialization}
+                  onChange={(e) => set("specialization", e.target.value)}
+                />
+              </Field>
+            )}
+          <Field label="Course you're aiming for" hint="(optional)">
             <TextInput
               placeholder="e.g. MBBS, B.Tech, BL"
               value={form.courseInterested}
@@ -363,11 +386,21 @@ export function AspirantForm({ onExit }: { onExit: () => void }) {
           </p>
           <Field label="Preferred language" hint="(pick any)">
             <ChipGroup
-              options={LANGUAGES.slice(0, 6)}
+              options={LANGUAGES}
               selected={form.preferredLanguages}
               onToggle={(v) => set("preferredLanguages", toggleInArray(form.preferredLanguages, v))}
             />
           </Field>
+          {form.preferredLanguages.includes("Others") && (
+            <Field label="Other language">
+              <TextInput
+                required
+                placeholder="Enter language"
+                value={form.preferredLanguagesOther}
+                onChange={(e) => set("preferredLanguagesOther", e.target.value)}
+              />
+            </Field>
+          )}
           <Field label="Preferred Timing" hint="(pick any)">
             <ChipGroup
               options={MENTORSHIP_TIMINGS}
