@@ -26,6 +26,7 @@ type FormState = {
   qualificationOther: string;
   stream: string;
   streamOther: string;
+  specialization: string;
   courseInterested: string;
   preferredLanguages: string[];
   preferredMentorshipTimings: string[];
@@ -44,6 +45,7 @@ const EMPTY: FormState = {
   qualificationOther: "",
   stream: "",
   streamOther: "",
+  specialization: "",
   courseInterested: "",
   preferredLanguages: [],
   preferredMentorshipTimings: [],
@@ -98,6 +100,13 @@ export function AspirantForm({ onExit }: { onExit: () => void }) {
         qualification:
           (form.qualification === "Others" ? form.qualificationOther.trim() : form.qualification) || undefined,
         stream: (form.stream === "Others" ? form.streamOther.trim() : form.stream) || undefined,
+        specialization:
+          form.stream === "Medical" &&
+          form.qualification &&
+          form.qualification !== "Higher Secondary (12th)" &&
+          form.qualification !== "Undergraduate"
+            ? form.specialization.trim() || undefined
+            : undefined,
         courseInterested: form.courseInterested.trim() || undefined,
         // Backend columns are single free-text strings (see CreateAspirantLeadDto)
         // — multiple picks join into one readable value rather than needing a
@@ -308,12 +317,30 @@ export function AspirantForm({ onExit }: { onExit: () => void }) {
               />
             </Field>
           )}
+          {form.stream === "Medical" &&
+            form.qualification &&
+            form.qualification !== "Higher Secondary (12th)" &&
+            form.qualification !== "Undergraduate" && (
+              <Field label="Specialization" hint="(optional)">
+                <TextInput
+                  placeholder="e.g. Cardiology"
+                  value={form.specialization}
+                  onChange={(e) => set("specialization", e.target.value)}
+                />
+              </Field>
+            )}
           <Field label="Course you're aiming for" hint="(optional)">
             <TextInput
               placeholder="e.g. MBBS"
+              list="course-interested-options"
               value={form.courseInterested}
               onChange={(e) => set("courseInterested", e.target.value)}
             />
+            <datalist id="course-interested-options">
+              <option value="MBBS" />
+              <option value="B.Tech" />
+              <option value="BL" />
+            </datalist>
           </Field>
         </div>
       )}
