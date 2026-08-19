@@ -4,15 +4,21 @@ import { getAdminEmail } from '../../lib/adminAuth';
 import { DashboardShell } from './DashboardShell';
 
 export default async function DashboardPage() {
-  const [email, queue, openReports] = await Promise.all([
+  const [email, queue, openReports, leadStats] = await Promise.all([
     getAdminEmail(),
     backendFetch<unknown[]>('/verification/queue').catch(() => []),
     backendFetch<{ data: unknown[] }>('/reports?status=OPEN&limit=50')
       .then((r) => r.data)
       .catch(() => []),
+    backendFetch<{ byStatus: Record<string, number> }>('/enrollments/stats').catch(() => null),
   ]);
 
   const statCards = [
+    {
+      label: 'New leads',
+      value: leadStats?.byStatus.NEW ?? 0,
+      href: '/dashboard/leads?status=NEW',
+    },
     {
       label: 'Pending verifications',
       value: queue.length,

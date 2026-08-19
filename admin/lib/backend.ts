@@ -92,3 +92,25 @@ export async function backendFetch<T>(
   if (res.status === 204) return undefined as T;
   return res.json() as Promise<T>;
 }
+
+/** Same auth/base-URL handling as backendFetch, but for a non-JSON response
+ * (e.g. the CSV export) — reads the body as text instead of parsing JSON. */
+export async function backendFetchText(path: string): Promise<string> {
+  const baseUrl = process.env.BACKEND_API_URL;
+  if (!baseUrl) {
+    throw new Error('BACKEND_API_URL is not configured in admin/.env.local');
+  }
+
+  const token = await signBackendJwt();
+  const res = await fetch(`${baseUrl}${path}`, {
+    cache: 'no-store',
+    headers: { Authorization: `Bearer ${token}` },
+  });
+
+  if (!res.ok) {
+    const body = await res.text().catch(() => '');
+    throw new BackendApiError(res.status, body || res.statusText);
+  }
+
+  return res.text();
+}
