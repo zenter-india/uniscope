@@ -62,6 +62,18 @@ android {
             } else {
                 signingConfigs.getByName("debug")
             }
+            // Shrinks the release build and produces a mapping.txt that the
+            // App Bundle upload includes automatically — without this, Play
+            // Console warns "no deobfuscation file" on every single upload,
+            // since there's nothing to generate. See proguard-rules.pro for
+            // the keep rules this needs (Agora's JNI wrapper especially —
+            // read that file's comment before touching this).
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
         }
     }
 }
