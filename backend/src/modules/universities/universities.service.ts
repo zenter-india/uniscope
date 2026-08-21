@@ -91,11 +91,16 @@ export class UniversitiesService {
 
   /**
    * The mentor form's curated College/University list for a given
-   * stream+degree — today only Medical/DNB has data (see
-   * scripts/seed-dnb-colleges.mjs). Returns the top CURATED_LIMIT colleges
-   * by number of accredited specializations, alphabetical; every other
-   * seeded college for this stream+degree is still reachable in the DB but
-   * not surfaced here — the form falls back to a free-text "Other" entry.
+   * stream+degree — today Medical/DNB and Medical/MD-MS have data (see
+   * scripts/seed-dnb-colleges.mjs, scripts/data/pg-mdms-colleges.json).
+   * Returns the top CURATED_LIMIT colleges by number of accredited
+   * specializations, alphabetical; every other seeded college for this
+   * stream+degree is still reachable in the DB but not surfaced here — the
+   * form falls back to a free-text "Other" entry.
+   *
+   * Label is just "name, state" — no address/PIN, even for DNB colleges
+   * whose Program.description does carry one (kept there in case it's
+   * needed later, just not shown here).
    */
   async findCurated(
     query: ListCuratedUniversitiesDto,
@@ -117,13 +122,7 @@ export class UniversitiesService {
       .slice(0, CURATED_LIMIT)
       .map((program) => ({
         id: program.universityId,
-        label: [
-          program.university.name,
-          program.description,
-          program.university.state,
-        ]
-          .filter(Boolean)
-          .join(', '),
+        label: `${program.university.name}, ${program.university.state}`,
         specializations: [...program.specializations].sort(),
       }))
       .sort((a, b) => a.label.localeCompare(b.label));

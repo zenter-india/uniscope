@@ -84,6 +84,26 @@ Unlike the UG/PG datasets above, this isn't (yet) wired into the
 one-time spreadsheet import. A live NBEMS scraper would be the natural next
 step if this needs to stay current, mirroring `refresh_pg.py`'s approach.
 
+## `pg-mdms-colleges.json` — MD/MS broad specialty seats + specializations
+
+No seed script yet — generated but not yet consumed; add a
+`seed-pg-mdms-colleges.mjs` mirroring `seed-dnb-colleges.mjs`'s
+matching/creation rules when ready to load this in. Source: NMC's public
+"PG Broad Specialty Seat Matrix" notice (AY 2025-26, supplied directly by
+the user), 8,327 course records grouped to one entry per (College Name,
+State) with its distinct `"MD - <specialty>"` / `"MS - <specialty>"`
+`specializations` list — 568 unique institutions. Unlike `dnb-colleges.json`
+this source states real ownership (`type`: GOVERNMENT/PRIVATE, mapped from
+the Govt/Trust/Society/Private/Pvt management column), so it doesn't need
+the DNB set's blanket-PRIVATE default. No address/PIN in this source — only
+College Name + State, matching the College/University field's "name, state"
+display convention (no address shown, even for DNB).
+
+11 rows were dropped from the source: they were PG Diploma courses (e.g.
+"DOMS", "DIP. ANAESTHESIOLOGY") mislabeled without an MD/MS prefix in this
+sheet — out of scope here since Diploma is a separate degree option from
+MD/MS.
+
 ## Refreshing on demand — `refresh_ug.py` / `refresh_pg.py`
 
 The steps above are also available as two standalone, re-runnable scripts
