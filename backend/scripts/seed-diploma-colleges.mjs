@@ -8,6 +8,11 @@
  * one otherwise. `type` defaults to PRIVATE since, like the DNB source,
  * this data doesn't state ownership.
  *
+ * Rows created during this run are tracked separately from pre-existing
+ * DB rows, keyed by name+state+address — see seed-dnb-colleges.mjs's
+ * header comment for why (generic hospital names like "Area Hospital"
+ * repeat across many different towns/branches in the same state).
+ *
  * Idempotent — keyed on (university match) + Program's
  * @@unique([universityId, name]), so a re-run updates specializations in
  * place instead of duplicating.
@@ -64,16 +69,18 @@ async function main() {
   const existing = await prisma.university.findMany({
     select: { id: true, name: true, state: true, slug: true, levels: true },
   });
-  const byNameState = new Map(
+  const existingByNameState = new Map(
     existing.map((u) => [`${u.name.toLowerCase().trim()}|${u.state.toLowerCase().trim()}`, u]),
   );
+  const createdThisRun = new Map();
   const taken = new Set(existing.map((u) => u.slug));
 
   const stats = { matched: 0, created: 0, programsCreated: 0, programsUpdated: 0 };
 
   for (const c of colleges) {
-    const key = `${c.name.toLowerCase().trim()}|${c.state.toLowerCase().trim()}`;
-    let university = byNameState.get(key);
+    const nameStateKey = `${c.name.toLowerCase().trim()}|${c.state.toLowerCase().trim()}`;
+    const branchKey = `${nameStateKey}|${c.address.toLowerCase().trim()}`;
+    let university = existingByNameState.get(nameStateKey) ?? createdThisRun.get(branchKey);
 
     if (university) {
       stats.matched += 1;
@@ -101,9 +108,9 @@ async function main() {
           },
         });
       } else {
-        university = { id: `dry-run:${slug}` };
+        university = { id: `dry-run:${slug}`, levels: ['PG'] };
       }
-      byNameState.set(key, university);
+      createdThisRun.set(branchKey, university);
       stats.created += 1;
     }
 

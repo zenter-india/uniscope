@@ -152,6 +152,40 @@ browser-side test that mocks the fetch response instead of hitting a
 really-seeded database won't catch this — it only surfaces once real data
 is seeded and queried for real.
 
+## Two more bugs caught in a final review pass (fixed, not just noted)
+
+**College name over `University.name`'s VARCHAR(200) limit.** One
+`pg-mdms-colleges.json` row's source cell listed four historical aliases
+for the same institution joined by commas into a single ~250-char string
+(`"E.S.I.C. Medical College & Hospital K.K. Nagar Chennai earlier known as
+ESIC Medical College & PGIMSR..., ESI-PGIMSR..., ..."`). Running any seed
+script against a name like that would fail outright at the DB with a
+"value too long for type character varying(200)" error. Fixed by taking
+just the first comma-separated segment as the canonical name across all
+four datasets (only this one row was actually affected, but the fix
+applies universally as a safety net).
+
+**Same-name, different-branch collisions silently overwriting each
+other's specializations.** `dnb-colleges.json` and `diploma-colleges.json`
+each have dozens of cases where the *same* hospital name repeats in the
+*same* state for genuinely different physical branches — hospital chains
+like "Ankura Hospital" (4 distinct Telangana locations) and generic
+government-hospital names like "Area Hospital" (reused across many
+Andhra Pradesh towns). `seed-dnb-colleges.mjs` and
+`seed-diploma-colleges.mjs` originally tracked newly-created rows in the
+*same* name+state map used for matching pre-existing DB rows — so the
+second branch in a pair would "match" the row the first branch had just
+created moments earlier in the same run, and its Program upsert would
+silently overwrite the first branch's specializations rather than
+creating its own row. Fixed by tracking within-run creations separately,
+keyed by name+state+address, while still matching *pre-existing* DB rows
+by name+state only (that half is an accepted, deliberate limitation — see
+the dedup-handling decision this was built against). Confirmed zero
+remaining name+state+address collisions in either dataset after the fix.
+`pg-mdms-colleges.json` and `dm-mch-colleges.json` have no address column
+to key by and had zero name+state collisions in the current data, so they
+were left as-is.
+
 ## Refreshing on demand — `refresh_ug.py` / `refresh_pg.py`
 
 The steps above are also available as two standalone, re-runnable scripts

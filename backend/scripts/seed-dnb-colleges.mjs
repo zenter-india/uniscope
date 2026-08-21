@@ -9,6 +9,17 @@
  * college not found is created new. Either way, upserts a "DNB" Program
  * under that university with `specializations` set from the sheet.
  *
+ * Matching against *pre-existing* rows is name+state only (accepted
+ * limitation — see the dedup-handling decision this was built against).
+ * But rows *created during this run* are tracked separately, keyed by
+ * name+state+address: several hospital chains repeat the same name in the
+ * same state for genuinely different branches (e.g. "Ankura Hospital" has
+ * 4 distinct Telangana locations; "Area Hospital" is a generic
+ * government-hospital name reused across many towns) — collapsing those
+ * onto name+state alone would silently overwrite one branch's
+ * specializations with another's on every Program upsert, since the
+ * second branch would "match" the row the first branch just created.
+ *
  * `type` has no reliable source in this data (NBEMS accreditation records
  * don't state govt/private) — every newly-created row defaults to PRIVATE,
  * same documented-approximate convention as
@@ -69,16 +80,23 @@ async function main() {
   const existing = await prisma.university.findMany({
     select: { id: true, name: true, state: true, slug: true, levels: true },
   });
-  const byNameState = new Map(
+  // Read-only snapshot of what was already in the DB before this run —
+  // never mutated, so a later same-name+state row in this run can't
+  // "match" a branch this run itself just created for a different address.
+  const existingByNameState = new Map(
     existing.map((u) => [`${u.name.toLowerCase().trim()}|${u.state.toLowerCase().trim()}`, u]),
   );
+  // Rows created during this run, keyed by name+state+address so distinct
+  // branches sharing a name+state each get their own row.
+  const createdThisRun = new Map();
   const taken = new Set(existing.map((u) => u.slug));
 
   const stats = { matched: 0, created: 0, programsCreated: 0, programsUpdated: 0 };
 
   for (const c of colleges) {
-    const key = `${c.name.toLowerCase().trim()}|${c.state.toLowerCase().trim()}`;
-    let university = byNameState.get(key);
+    const nameStateKey = `${c.name.toLowerCase().trim()}|${c.state.toLowerCase().trim()}`;
+    const branchKey = `${nameStateKey}|${c.address.toLowerCase().trim()}`;
+    let university = existingByNameState.get(nameStateKey) ?? createdThisRun.get(branchKey);
 
     if (university) {
       stats.matched += 1;
@@ -106,9 +124,9 @@ async function main() {
           },
         });
       } else {
-        university = { id: `dry-run:${slug}` };
+        university = { id: `dry-run:${slug}`, levels: ['PG'] };
       }
-      byNameState.set(key, university);
+      createdThisRun.set(branchKey, university);
       stats.created += 1;
     }
 
