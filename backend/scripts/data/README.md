@@ -128,6 +128,30 @@ label looks questionable (e.g. `"MCh - Cardiology"` — Cardiology is
 ordinarily a DM specialty) rather than silently "corrected" against what
 the specialty is more commonly categorized as.
 
+## `diploma-colleges.json` — NBEMS Diploma accreditation + specializations
+
+Input to `../seed-diploma-colleges.mjs`, which mirrors
+`seed-dnb-colleges.mjs`'s matching/creation rules exactly (own separate
+"DIPLOMA" Program per college, `type` defaults to PRIVATE since this
+source doesn't state ownership either). Source: an NBEMS Diploma
+accreditation portal extract supplied directly by the user, 1,474
+accreditation records grouped here to one entry per (Hospital/Institute,
+Address, State, PIN) with its distinct `specializations` list — 782
+unique institutions (grouping by exact address lands slightly above the
+source's own "663 unique institutions" count, same kind of gap seen in
+`dnb-colleges.json` vs its source's own dedup).
+
+## A casing bug worth knowing about — `Program.name` must be UPPERCASE
+
+`UniversitiesService.findCurated` queries `Program.name: degree.toUpperCase()`.
+Every seed script here must therefore store its `PROGRAM_NAME` fully
+uppercase (`'DNB'`, `'MD/MS'`, `'DM/MCH'`, `'DIPLOMA'`) — a mixed-case
+value like `'DM/MCh'` (this repo's actual first attempt) silently never
+matches, since `"DM/MCh".toUpperCase()` is `"DM/MCH"`, not `"DM/MCh"`. A
+browser-side test that mocks the fetch response instead of hitting a
+really-seeded database won't catch this — it only surfaces once real data
+is seeded and queried for real.
+
 ## Refreshing on demand — `refresh_ug.py` / `refresh_pg.py`
 
 The steps above are also available as two standalone, re-runnable scripts

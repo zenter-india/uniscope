@@ -1,26 +1,20 @@
 /**
- * Seed DM/MCh super-specialty colleges + their accredited specializations
- * from NMC's Super-Specialty Seat Matrix (see scripts/data/README.md for
- * provenance).
+ * Seed Diploma colleges + their accredited specializations from the NBEMS
+ * Diploma accreditation extract (see scripts/data/README.md for
+ * provenance). Own separate dataset — not merged with any other degree.
  *
- * Own distinct dataset — unlike PG/MD-MS/Doctorate (which all share the
- * MD/MS Program, see seed-pg-mdms-colleges.mjs), DM/MCh gets its own
- * Program row per college and is not shared with any other Degree option.
- *
- * Matching/creation rules mirror seed-dnb-colleges.mjs and
- * seed-pg-mdms-colleges.mjs: finds an existing University by exact
- * name+state match (case-insensitive), creates a new one otherwise. `type`
- * comes from the source data itself (GOVERNMENT/PRIVATE), same as the
- * MD/MS seed — this source states real ownership too, though see the data
- * file's own README note on this specific source's noisier OCR quality.
+ * Matching/creation rules mirror seed-dnb-colleges.mjs: finds an existing
+ * University by exact name+state match (case-insensitive), creates a new
+ * one otherwise. `type` defaults to PRIVATE since, like the DNB source,
+ * this data doesn't state ownership.
  *
  * Idempotent — keyed on (university match) + Program's
  * @@unique([universityId, name]), so a re-run updates specializations in
  * place instead of duplicating.
  *
  * Usage:
- *   node scripts/seed-dm-mch-colleges.mjs            # write
- *   node scripts/seed-dm-mch-colleges.mjs --dry-run   # report only
+ *   node scripts/seed-diploma-colleges.mjs            # write
+ *   node scripts/seed-diploma-colleges.mjs --dry-run   # report only
  */
 import 'dotenv/config';
 
@@ -36,9 +30,8 @@ const DATA = path.join(HERE, 'data');
 
 const DRY_RUN = process.argv.includes('--dry-run');
 // Uppercase to match UniversitiesService.findCurated's
-// `degree.toUpperCase()` lookup — "DM/MCh".toUpperCase() is "DM/MCH", so
-// storing anything but that exact casing here would never match.
-const PROGRAM_NAME = 'DM/MCH';
+// `degree.toUpperCase()` lookup.
+const PROGRAM_NAME = 'DIPLOMA';
 
 /** Mirrors slugify() in universities.service.ts. */
 function slugify(name) {
@@ -62,7 +55,7 @@ async function uniqueSlug(name, taken) {
 }
 
 async function main() {
-  const colleges = JSON.parse(await readFile(path.join(DATA, 'dm-mch-colleges.json'), 'utf8'));
+  const colleges = JSON.parse(await readFile(path.join(DATA, 'diploma-colleges.json'), 'utf8'));
 
   const prisma = new PrismaClient({
     adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL }),
@@ -99,7 +92,7 @@ async function main() {
           data: {
             name: c.name,
             slug,
-            type: c.type,
+            type: 'PRIVATE',
             state: c.state,
             city: null,
             stream: 'Medical',
@@ -114,16 +107,21 @@ async function main() {
       stats.created += 1;
     }
 
+    // Address + PIN have no dedicated University columns — carried on the
+    // Program instead (unused Text field), same convention as the DNB seed.
+    const addressDetail = `${c.address}, PIN ${c.pin}`;
+
     if (!DRY_RUN) {
       const priorProgram = await prisma.program.findUnique({
         where: { universityId_name: { universityId: university.id, name: PROGRAM_NAME } },
       });
       await prisma.program.upsert({
         where: { universityId_name: { universityId: university.id, name: PROGRAM_NAME } },
-        update: { specializations: c.specializations },
+        update: { description: addressDetail, specializations: c.specializations },
         create: {
           universityId: university.id,
           name: PROGRAM_NAME,
+          description: addressDetail,
           specializations: c.specializations,
         },
       });
@@ -136,7 +134,7 @@ async function main() {
 
   console.log(
     `Universities: ${stats.matched} matched existing, ${stats.created} created.\n` +
-      `DM/MCh programs: ${stats.programsCreated} created, ${stats.programsUpdated} updated.` +
+      `Diploma programs: ${stats.programsCreated} created, ${stats.programsUpdated} updated.` +
       (DRY_RUN ? '\n(dry run — nothing written)' : ''),
   );
 
