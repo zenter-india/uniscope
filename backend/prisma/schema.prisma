@@ -372,6 +372,15 @@ model Program {
   description   String?  @db.Text
   durationYears Int?     @map("duration_years") @db.SmallInt
   totalSeats    Int?     @map("total_seats") @db.SmallInt
+  /// Specializations accredited under this program at this university, e.g.
+  /// ["Cardiology", "General Surgery"] for a DNB program. Sourced from the
+  /// NBEMS accreditation dataset (see backend/scripts/data/dnb-colleges.json)
+  /// — only DNB programs are populated so far, empty for everything else.
+  /// Deliberately per-program (not a global picklist): the whole point is
+  /// that a mentor's Specialization field, once a college is picked, only
+  /// offers what that college's program actually accredits, rather than the
+  /// EnrollmentLead.specialization free-text/global-list gap noted there.
+  specializations String[] @default([])
   isActive      Boolean  @default(true) @map("is_active")
   createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz
   updatedAt     DateTime @updatedAt @map("updated_at") @db.Timestamptz

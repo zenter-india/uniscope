@@ -65,6 +65,25 @@ Colleges with no free image keep `imageUrl = null`; the mobile hero renders a
 per-college branded gradient + initials rather than a stock photo of some
 unrelated campus.
 
+## `dnb-colleges.json` — DNB accreditation + specializations
+
+Input to `../seed-dnb-colleges.mjs`. Source: an NBEMS accreditation portal
+extract supplied directly by the user (snapshot dated 19-08-2026, 5,389
+accreditation records), grouped here to one entry per
+(Hospital/Institute, Address, State, PIN) with its distinct accredited
+`specializations` list — 1,397 unique institutions.
+
+Populates `Program.specializations` for a `DNB` program at each matched or
+newly-created `University` row — see the seed script's own header comment
+for the exact matching/creation rules (name+state match against existing
+universities, `type` defaults to `PRIVATE` since the source doesn't state
+ownership).
+
+Unlike the UG/PG datasets above, this isn't (yet) wired into the
+`refresh_ug.py`/`refresh_pg.py`-style live-refresh pipeline — it was a
+one-time spreadsheet import. A live NBEMS scraper would be the natural next
+step if this needs to stay current, mirroring `refresh_pg.py`'s approach.
+
 ## Refreshing on demand — `refresh_ug.py` / `refresh_pg.py`
 
 The steps above are also available as two standalone, re-runnable scripts
