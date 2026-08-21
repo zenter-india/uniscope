@@ -9,6 +9,7 @@ import {
   STATE_DISTRICTS,
   STREAMS,
   DEGREES,
+  MEDICAL_SPECIALIZATIONS,
   CURRENT_STATUSES,
   LANGUAGES,
   YEARS_OF_STUDY,
@@ -413,12 +414,16 @@ export function MentorForm({ onExit }: { onExit: () => void }) {
           )}
           {form.stream === "Medical" && form.degree && form.degree !== "UG" && (
             <Field label="Specialization">
-              <TextInput
+              <Select
                 gold
-                placeholder="e.g. Paediatrics"
                 value={form.specialization}
                 onChange={(e) => set("specialization", e.target.value)}
-              />
+              >
+                <option value="">Select</option>
+                {MEDICAL_SPECIALIZATIONS.map((s) => (
+                  <option key={s}>{s}</option>
+                ))}
+              </Select>
             </Field>
           )}
         </div>
