@@ -104,6 +104,30 @@ display convention (no address shown, even for DNB).
 sheet — out of scope here since Diploma is a separate degree option from
 MD/MS.
 
+## `dm-mch-colleges.json` — DM/MCh super-specialty seats + specializations
+
+Input to `../seed-dm-mch-colleges.mjs`, which mirrors
+`seed-pg-mdms-colleges.mjs`'s matching/creation rules but writes its own
+"DM/MCh" Program per college rather than sharing MD/MS's. Source: NMC's public
+"Super-Specialty Seat Matrix" notice (AY 2025-26, supplied directly by the
+user), 1,359 course records grouped to one entry per (College Name, State)
+with its distinct `"DM - <specialty>"` / `"MCh - <specialty>"`
+`specializations` list — 216 unique institutions. `type`
+(GOVERNMENT/PRIVATE) comes from the source's management column, same as
+`pg-mdms-colleges.json`. Own dataset — not merged with PG/MD-MS/Doctorate.
+
+**This source is noisier than the others**: 12 rows had scrambled/garbled
+Course Name text (e.g. `"logy VisakhaMpa.Ctnha m- Neuro Surgery"` — looks
+like a PDF-extraction column-bleed artifact in NMC's own notice) and were
+dropped; the Management column had similar garbling in ~55 rows, mapped to
+GOVERNMENT/PRIVATE by a lenient "contains govt/govern" substring check
+rather than an exact lookup, so a handful of `type` values here are
+best-effort guesses, not verified fact the way `pg-mdms-colleges.json`'s are.
+Specialization labels are transcribed as-is from the source even where a
+label looks questionable (e.g. `"MCh - Cardiology"` — Cardiology is
+ordinarily a DM specialty) rather than silently "corrected" against what
+the specialty is more commonly categorized as.
+
 ## Refreshing on demand — `refresh_ug.py` / `refresh_pg.py`
 
 The steps above are also available as two standalone, re-runnable scripts

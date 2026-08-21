@@ -82,13 +82,16 @@ const OTHER_COLLEGE = "__OTHER__";
 // endpoint is queried with. PG and Doctorate have no data of their own —
 // NMC's source dataset is specifically MD/MS, so all three share it rather
 // than PG/Doctorate staying empty until real PG- or Doctorate-specific
-// data exists. Any degree not listed here (UG, Diploma, DM/MCh, Others)
-// keeps the old free-text CollegeSearch + global specialization picklist.
+// data exists. DM/MCh has its own separate NMC super-specialty dataset, so
+// it isn't merged into the MD/MS bucket. Any degree not listed here (UG,
+// Diploma, Others) keeps the old free-text CollegeSearch + global
+// specialization picklist.
 const CURATED_DEGREE_MAP: Record<string, string> = {
   DNB: "DNB",
   PG: "MD/MS",
   "MD/MS": "MD/MS",
   Doctorate: "MD/MS",
+  "DM/MCh": "DM/MCh",
 };
 
 export function MentorForm({ onExit }: { onExit: () => void }) {
