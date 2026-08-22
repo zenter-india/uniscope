@@ -95,15 +95,16 @@ export class UniversitiesService {
    * today Medical/DNB, Medical/MD-MS, Medical/DM-MCH, and Medical/DIPLOMA
    * have data (see scripts/seed-*-colleges.mjs). Two modes:
    *
-   * - Default (DNB/DM-MCh/Diploma — too many colleges to list in full):
-   *   top CURATED_LIMIT by number of accredited specializations,
-   *   alphabetical. Every other seeded college for this stream+degree is
-   *   still reachable in the DB but not surfaced here — the form falls
-   *   back to a free-text "Other" entry.
-   * - `browse=true` (MD/MS — small enough to browse in full): returns
-   *   every matching college, uncapped, alphabetical, optionally filtered
-   *   by `search` on name — the mentor form's College field is meant to
-   *   list every MD/MS college, not a curated subset.
+   * - Default (DM/MCh — too many colleges to list in full): top
+   *   CURATED_LIMIT by number of accredited specializations, alphabetical.
+   *   Every other seeded college for this stream+degree is still reachable
+   *   in the DB but not surfaced here — the form falls back to a free-text
+   *   "Other" entry.
+   * - `browse=true` (MD/MS, DNB, Diploma — small/complete enough to browse
+   *   in full): returns every matching college, uncapped, alphabetical,
+   *   optionally filtered by `search` on name — the mentor form's College
+   *   field is meant to list every college for these degrees, not a
+   *   curated subset.
    *
    * Label is just "name, state" — no address/PIN, even for DNB colleges
    * whose Program.description does carry one (kept there in case it's
