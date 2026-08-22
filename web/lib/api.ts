@@ -65,10 +65,18 @@ export interface CuratedCollege {
   specializations: string[];
 }
 
-/** Mentor form's curated College/University dropdown for a given
- * stream+degree (currently only Medical/DNB has data). */
-export function fetchCuratedColleges(stream: string, degree: string): Promise<CuratedCollege[]> {
+/** Mentor form's College/University list for a given stream+degree. Pass
+ * `browse: true` for the full-list + type-to-search mode (MD/MS) instead of
+ * the default curated-top-N subset (DNB/DM-MCh/Diploma); `search` filters
+ * that full list by name and only applies when `browse` is set. */
+export function fetchCuratedColleges(
+  stream: string,
+  degree: string,
+  options?: { browse?: boolean; search?: string },
+): Promise<CuratedCollege[]> {
   const params = new URLSearchParams({ stream, degree });
+  if (options?.browse) params.set("browse", "true");
+  if (options?.search) params.set("search", options.search);
   return request(`/universities/curated?${params.toString()}`);
 }
 

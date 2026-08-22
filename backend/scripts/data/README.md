@@ -97,14 +97,28 @@ default. No address/PIN in this source — only College Name + State,
 matching the College/University field's "name, state" display convention
 (no address shown, even for DNB).
 
-**Updated once already** — the user supplied a refreshed version of this
-same NMC notice (still 8 columns, same sheet names) partway through this
-work: 9,279 course records (up from 8,327), 649 unique institutions (up
-from 568) after the same parsing/grouping/length-fix pipeline described
-below. Regenerate the same way if a further-updated version shows up —
-nothing about the pipeline itself needed to change, only the input file.
+**Unlike DNB/DM-MCh/Diploma, this dataset is small enough to browse in
+full rather than curate a top-N subset** — the mentor form's College and
+Specialization fields for PG/MD-MS/Doctorate are both full
+browse-+ type-to-search comboboxes (`CuratedCollegeSearch` +
+`SearchableCombobox` in `web/components/`), backed by
+`GET /universities/curated?browse=true` (see
+`UniversitiesService.findCurated`'s two modes). DNB/DM-MCh/Diploma keep
+the original curated-top-30-+-"Other" `<select>` pattern unchanged.
 
-12 rows were dropped from the source: they were PG Diploma courses (e.g.
+**Updated twice already.** First refresh (still 8 columns, same "Course
+Name" combining degree+specialty): 9,279 course records (up from 8,327),
+649 unique institutions (up from 568), same parsing/grouping/length-fix
+pipeline. Second refresh came from a differently-shaped export
+(`NMC_PG_Seats_2025-26.xlsx`, sheet "PG Seats Data") — `Specialization` is
+already its own column here (no "MD - "/"MS - " prefix parsing needed),
+plus a `Management` column same as before: 9,395 records, 653 unique
+institutions. Regenerate the same way (adjusting the parse step to match
+whichever column layout the new file actually has) if a further-updated
+version shows up.
+
+12 rows were dropped from the first refresh's source: they were PG Diploma
+courses (e.g.
 "DOMS", "DIP. ANAESTHESIOLOGY") mislabeled without an MD/MS prefix in this
 sheet — out of scope here since Diploma is a separate degree option from
 MD/MS.

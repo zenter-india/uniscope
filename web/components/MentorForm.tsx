@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import { submitMentorLead, fetchCuratedColleges, fileToBase64, ApiError, type CuratedCollege } from "../lib/api";
 import { CollegeSearch } from "./CollegeSearch";
+import { CuratedCollegeSearch } from "./CuratedCollegeSearch";
+import { SearchableCombobox } from "./SearchableCombobox";
 import {
   GENDERS,
   INDIAN_STATES,
@@ -114,9 +116,16 @@ export function MentorForm({ onExit }: { onExit: () => void }) {
   const [dnbCollegeChoice, setDnbCollegeChoice] = useState("");
   const curatedDegree = form.stream === "Medical" ? CURATED_DEGREE_MAP[form.degree] : undefined;
   const hasCuratedData = curatedDegree !== undefined;
+  // MD/MS's dataset is small enough to browse+search in full (see
+  // UniversitiesService.findCurated's browse mode) rather than the
+  // curated-top-30-+-Other pattern DNB/DM-MCh/Diploma use. CuratedCollegeSearch
+  // does its own fetching, so the effect below is skipped for this case;
+  // `specializations` comes back on the picked CuratedCollege itself.
+  const isBrowseDegree = curatedDegree === "MD/MS";
+  const [browseSpecializations, setBrowseSpecializations] = useState<string[]>([]);
 
   useEffect(() => {
-    if (!curatedDegree) return;
+    if (!curatedDegree || isBrowseDegree) return;
     let cancelled = false;
     // eslint-disable-next-line react-hooks/set-state-in-effect -- loading flag for the fetch this effect performs
     setLoadingCurated(true);
@@ -133,7 +142,7 @@ export function MentorForm({ onExit }: { onExit: () => void }) {
     return () => {
       cancelled = true;
     };
-  }, [curatedDegree]);
+  }, [curatedDegree, isBrowseDegree]);
 
   const set = <K extends keyof FormState>(key: K, value: FormState[K]) =>
     setForm((f) => ({ ...f, [key]: value }));
@@ -411,6 +420,7 @@ export function MentorForm({ onExit }: { onExit: () => void }) {
                   set("collegeName", "");
                   set("universityId", "");
                   setDnbCollegeChoice("");
+                  setBrowseSpecializations([]);
                 }}
               >
                 <option value="">Select</option>
@@ -429,6 +439,7 @@ export function MentorForm({ onExit }: { onExit: () => void }) {
                   set("collegeName", "");
                   set("universityId", "");
                   setDnbCollegeChoice("");
+                  setBrowseSpecializations([]);
                 }}
               >
                 <option value="">Select</option>
@@ -438,7 +449,22 @@ export function MentorForm({ onExit }: { onExit: () => void }) {
               </Select>
             </Field>
           </div>
-          {hasCuratedData ? (
+          {isBrowseDegree ? (
+            <Field label="College / university">
+              <CuratedCollegeSearch
+                gold
+                stream="Medical"
+                degree={curatedDegree!}
+                value={form.collegeName}
+                onPick={(college, name) => {
+                  set("collegeName", name);
+                  set("universityId", college?.id ?? "");
+                  set("specialization", "");
+                  setBrowseSpecializations(college?.specializations ?? []);
+                }}
+              />
+            </Field>
+          ) : hasCuratedData ? (
             <>
               <Field label="College / university">
                 <Select
@@ -517,7 +543,16 @@ export function MentorForm({ onExit }: { onExit: () => void }) {
           )}
           {form.stream === "Medical" && form.degree && form.degree !== "UG" && (
             <Field label="Specialization">
-              {hasCuratedData ? (
+              {isBrowseDegree ? (
+                <SearchableCombobox
+                  gold
+                  value={form.specialization}
+                  options={browseSpecializations}
+                  disabled={!form.collegeName}
+                  placeholder={form.collegeName ? "Select or type to search…" : "Select a college first"}
+                  onChange={(v) => set("specialization", v)}
+                />
+              ) : hasCuratedData ? (
                 dnbCollegeChoice && dnbCollegeChoice !== OTHER_COLLEGE ? (
                   <Select gold value={form.specialization} onChange={(e) => set("specialization", e.target.value)}>
                     <option value="">Select</option>
