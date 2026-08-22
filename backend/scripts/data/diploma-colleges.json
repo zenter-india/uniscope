@@ -1,5 +1,14 @@
 [
   {
+    "name": "A J Institute of Medical Sciences & Research Centre, Mangalore",
+    "address": "nan",
+    "state": "Karnataka",
+    "pin": "nan",
+    "specializations": [
+      "Diploma in Tuberculosis & Chest Diseases"
+    ]
+  },
+  {
     "name": "A.G.Padmavatis Hospital Ltd",
     "address": "127/1A, Villianur Main Road, Arumparthapuram",
     "state": "Puducherry",
@@ -439,6 +448,16 @@
     ]
   },
   {
+    "name": "Armed Forces Medical College, Pune",
+    "address": "nan",
+    "state": "Maharashtra",
+    "pin": "nan",
+    "specializations": [
+      "Diploma in Anaesthesia",
+      "Diploma in Hospital Administration"
+    ]
+  },
+  {
     "name": "Asansol District Hospital",
     "address": "S B Gorai Road, PO + PS: Asansol",
     "state": "West Bengal",
@@ -507,6 +526,16 @@
     "specializations": [
       "Anaesthesiology - DA (NBEMS)",
       "Radio Diagnosis - DMRD (NBEMS)"
+    ]
+  },
+  {
+    "name": "Atal Bihari Vajpayee Institute of Medical Sciences and Dr. RML Hospital, New Delhi",
+    "address": "nan",
+    "state": "Delhi",
+    "pin": "nan",
+    "specializations": [
+      "Diploma in ENT",
+      "Diploma in Ophthalmology"
     ]
   },
   {
@@ -692,6 +721,19 @@
       "Anaesthesiology - DA (NBEMS)",
       "Ophthalmology - DO (NBEMS)",
       "Tuberculosis & Chest Disease - DTCD (NBEMS)"
+    ]
+  },
+  {
+    "name": "BRD Medical College, Gorakhpur",
+    "address": "nan",
+    "state": "Uttar Pradesh",
+    "pin": "nan",
+    "specializations": [
+      "Diploma in Anaesthesia",
+      "Diploma in Child Health",
+      "Diploma in Dermatology, Venereology and Leprosy",
+      "Diploma in Obstetrics & Gynaecology",
+      "Diploma in Orthopaedics"
     ]
   },
   {
@@ -1006,6 +1048,15 @@
     ]
   },
   {
+    "name": "Calcutta National Medical College, Kolkata",
+    "address": "nan",
+    "state": "West Bengal",
+    "pin": "nan",
+    "specializations": [
+      "Diploma in Anaesthesia"
+    ]
+  },
+  {
     "name": "Capital Hospital",
     "address": "Bhubaneswar Unit-6, Near Airport Orissa",
     "state": "Odisha",
@@ -1027,6 +1078,15 @@
     "pin": "570011.0",
     "specializations": [
       "Obstetrics and Gynaecology - DGO (NBEMS)"
+    ]
+  },
+  {
+    "name": "Central Health Education Bureau, New Delhi",
+    "address": "nan",
+    "state": "Delhi",
+    "pin": "nan",
+    "specializations": [
+      "Diploma in Health Education"
     ]
   },
   {
@@ -1191,6 +1251,15 @@
     "pin": "624619.0",
     "specializations": [
       "Radio Diagnosis - DMRD (NBEMS)"
+    ]
+  },
+  {
+    "name": "Christian Medical College, Vellore",
+    "address": "nan",
+    "state": "Tamil Nadu",
+    "pin": "nan",
+    "specializations": [
+      "Diploma in Clinical Pathology"
     ]
   },
   {
@@ -1587,12 +1656,30 @@
     ]
   },
   {
+    "name": "Darbhanga Medical College, Lehriasarai",
+    "address": "nan",
+    "state": "Bihar",
+    "pin": "nan",
+    "specializations": [
+      "Diploma in Anaesthesia"
+    ]
+  },
+  {
     "name": "Daya General Hospital",
     "address": "Shornur Road, Near Viyyur Bridge, Thrissur",
     "state": "Kerala",
     "pin": "680022.0",
     "specializations": [
       "Radio Diagnosis - DMRD (NBEMS)"
+    ]
+  },
+  {
+    "name": "Deccan College of Medical Sciences, Hyderabad",
+    "address": "nan",
+    "state": "Telangana",
+    "pin": "nan",
+    "specializations": [
+      "Diploma in Psychological Medicine"
     ]
   },
   {
@@ -2259,6 +2346,15 @@
     ]
   },
   {
+    "name": "Dr Sonelal Patel Autonomous State Medical College(Autonomous State Medical College Pratapgarh Post MBBS",
+    "address": "nan",
+    "state": "Uttar Pradesh",
+    "pin": "nan",
+    "specializations": [
+      "Diploma Courses in OBG-DGO"
+    ]
+  },
+  {
     "name": "Dr. Agarwals Eye Hospital",
     "address": "No. 10, South By Pass road, Opp. To BSNL, Vannarpettai, Tirunelveli",
     "state": "Tamil Nadu",
@@ -2335,6 +2431,16 @@
     "pin": "736101.0",
     "specializations": [
       "Anaesthesiology - DA (NBEMS)"
+    ]
+  },
+  {
+    "name": "Dr. P.S.I. Medical College , Chinoutpalli",
+    "address": "nan",
+    "state": "Andhra Pradesh",
+    "pin": "nan",
+    "specializations": [
+      "Diploma in Clinical Pathology",
+      "Diploma in Public Health"
     ]
   },
   {
@@ -3330,6 +3436,56 @@
     ]
   },
   {
+    "name": "Government Medical College, Amritsar",
+    "address": "nan",
+    "state": "Punjab",
+    "pin": "nan",
+    "specializations": [
+      "Diploma in Anaesthesia",
+      "Diploma in Child Health"
+    ]
+  },
+  {
+    "name": "Government Medical College, Bhavnagar",
+    "address": "nan",
+    "state": "Gujarat",
+    "pin": "nan",
+    "specializations": [
+      "Diploma in Child Health",
+      "Diploma in Dermatology, Venereology and Leprosy",
+      "Diploma in Psychological Medicine"
+    ]
+  },
+  {
+    "name": "Government Medical College, Patiala",
+    "address": "nan",
+    "state": "Punjab",
+    "pin": "nan",
+    "specializations": [
+      "Diploma in Anaesthesia"
+    ]
+  },
+  {
+    "name": "Government Medical College, Srinagar",
+    "address": "nan",
+    "state": "Jammu & Kashmir",
+    "pin": "nan",
+    "specializations": [
+      "Diploma in Dermatology, Venereology and Leprosy",
+      "Diploma in Ophthalmology"
+    ]
+  },
+  {
+    "name": "Government Medical College, Surat",
+    "address": "nan",
+    "state": "Gujarat",
+    "pin": "nan",
+    "specializations": [
+      "Diploma in Clinical Pathology",
+      "Diploma in Community Medicine"
+    ]
+  },
+  {
     "name": "Government Multi Specialty Hospital",
     "address": "Sector-16,",
     "state": "Chandigarh",
@@ -3713,6 +3869,20 @@
     ]
   },
   {
+    "name": "Indira Gandhi Medical College, Shimla",
+    "address": "nan",
+    "state": "Himachal Pradesh",
+    "pin": "nan",
+    "specializations": [
+      "Diploma in Anaesthesia",
+      "Diploma in Child Health",
+      "Diploma in Clinical Pathology",
+      "Diploma in Orthopaedics",
+      "Diploma in Oto-Rhino- Laryngology",
+      "Diploma in Radio- Diagnosis"
+    ]
+  },
+  {
     "name": "Indus International Hospital",
     "address": "Near Jawaharpur, Chandigarh-Ambala Road, National Highway no. 22, Derabassi, Mohali",
     "state": "Punjab",
@@ -3728,6 +3898,33 @@
     "pin": "221002.0",
     "specializations": [
       "Anaesthesiology - DA (NBEMS)"
+    ]
+  },
+  {
+    "name": "Institute of Medical Sciences, BHU, Varansi",
+    "address": "nan",
+    "state": "Uttar Pradesh",
+    "pin": "nan",
+    "specializations": [
+      "Diploma in Anaesthesia"
+    ]
+  },
+  {
+    "name": "Institute of Navel Medicine, INHS, Aswini",
+    "address": "nan",
+    "state": "Maharashtra",
+    "pin": "nan",
+    "specializations": [
+      "Diploma (Marine Medicine)"
+    ]
+  },
+  {
+    "name": "Institute of Nuclear Medicine & Allied Sciences, New Delhi",
+    "address": "nan",
+    "state": "Delhi",
+    "pin": "nan",
+    "specializations": [
+      "Diploma in Radiation Medicine(Nuclear Medicine)"
     ]
   },
   {
@@ -3820,6 +4017,15 @@
     "pin": "144001.0",
     "specializations": [
       "Radio Diagnosis - DMRD (NBEMS)"
+    ]
+  },
+  {
+    "name": "JSS Medical College, Mysore",
+    "address": "nan",
+    "state": "Karnataka",
+    "pin": "nan",
+    "specializations": [
+      "Diploma in Psychological Medicine (DPM)"
     ]
   },
   {
@@ -3919,6 +4125,15 @@
     "specializations": [
       "ENT - DLO (NBEMS)",
       "Radio Diagnosis - DMRD (NBEMS)"
+    ]
+  },
+  {
+    "name": "Jawaharlal Nehru Medical College, Aligarh",
+    "address": "nan",
+    "state": "Uttar Pradesh",
+    "pin": "nan",
+    "specializations": [
+      "Diploma in Ophthalmology"
     ]
   },
   {
@@ -4149,6 +4364,16 @@
     ]
   },
   {
+    "name": "Kakatiya Medical College, Warangal",
+    "address": "nan",
+    "state": "Telangana",
+    "pin": "nan",
+    "specializations": [
+      "Diploma in Public Health",
+      "Diploma in Radio- Diagnosis"
+    ]
+  },
+  {
     "name": "Kalpana Chawla Govt Medical College",
     "address": "Model Town Karnal",
     "state": "Haryana",
@@ -4230,6 +4455,16 @@
     "specializations": [
       "Obstetrics and Gynaecology - DGO (NBEMS)",
       "Ophthalmology - DO (NBEMS)"
+    ]
+  },
+  {
+    "name": "Kasturba Hospital, New Delhi",
+    "address": "nan",
+    "state": "Delhi",
+    "pin": "nan",
+    "specializations": [
+      "Diploma in Child Health (Pediatrics)",
+      "Diploma in Obstetrics & Gynaecology"
     ]
   },
   {
@@ -4320,6 +4555,15 @@
     ]
   },
   {
+    "name": "Kidwai Memorial Institute of Oncology, Bangalore",
+    "address": "nan",
+    "state": "Karnataka",
+    "pin": "nan",
+    "specializations": [
+      "Diploma in Medicine Radiotherapy"
+    ]
+  },
+  {
     "name": "Krishna Hospital",
     "address": "377, Main Road, Sattur, Virudhunagar District Tamil Nadu",
     "state": "Tamil Nadu",
@@ -4356,6 +4600,19 @@
     "pin": "474001.0",
     "specializations": [
       "Anaesthesiology - DA (NBEMS)"
+    ]
+  },
+  {
+    "name": "LLRM Medical College, Meerut",
+    "address": "nan",
+    "state": "Uttar Pradesh",
+    "pin": "nan",
+    "specializations": [
+      "Diploma in Dermatology, Venereology and Leprosy",
+      "Diploma in Ophthalmology",
+      "Diploma in Orthopaedics",
+      "Diploma in Paediatrics",
+      "Diploma in Radio- Diagnosis"
     ]
   },
   {
@@ -4469,6 +4726,23 @@
     ]
   },
   {
+    "name": "Lokmanya Tilak Municipal Medical College, Sion, Mumbai",
+    "address": "nan",
+    "state": "Maharashtra",
+    "pin": "nan",
+    "specializations": [
+      "Diploma in Anaesthesia",
+      "Diploma in Child Health",
+      "Diploma in Dermatology, Venereology and Leprosy",
+      "Diploma in Obstetrics & Gynaecology",
+      "Diploma in Ophthalmology",
+      "Diploma in Oto-Rhino- Laryngology",
+      "Diploma in Psychological Medicine",
+      "Diploma in Public Health",
+      "Diploma in Radio- Diagnosis"
+    ]
+  },
+  {
     "name": "Lord Mahavir Civil Hospital",
     "address": "Old Jail Road, Ludhiana",
     "state": "Punjab",
@@ -4477,6 +4751,26 @@
       "Anaesthesiology - DA (NBEMS)",
       "Paediatrics - DCH (NBEMS)",
       "Tuberculosis & Chest Disease - DTCD (NBEMS)"
+    ]
+  },
+  {
+    "name": "M E S Medical College , Perintalmanna Malappuram Distt.Kerala",
+    "address": "nan",
+    "state": "Kerala",
+    "pin": "nan",
+    "specializations": [
+      "Diploma in Clinical Pathology"
+    ]
+  },
+  {
+    "name": "M G M Medical College, Jamshedpur",
+    "address": "nan",
+    "state": "Jharkhand",
+    "pin": "nan",
+    "specializations": [
+      "Diploma in Child Health",
+      "Diploma in Obstetrics & Gynaecology",
+      "Diploma in Radio- Diagnosis"
     ]
   },
   {
@@ -4597,6 +4891,19 @@
     ]
   },
   {
+    "name": "MP Shah Medical College,Jamnagar",
+    "address": "nan",
+    "state": "Gujarat",
+    "pin": "nan",
+    "specializations": [
+      "Diploma in Anaesthesia",
+      "Diploma in Child Health",
+      "Diploma in Obstetrics & Gynaecology",
+      "Diploma in Radio- Diagnosis",
+      "Diploma in Tuberculosis & Chest Diseases"
+    ]
+  },
+  {
     "name": "MUSKAN HOSPITAL AND RESEARCH CENTRE",
     "address": "RAMNAGAR COLONY,CHAS,BOKARO",
     "state": "Jharkhand",
@@ -4612,6 +4919,15 @@
     "pin": "110017.0",
     "specializations": [
       "Obstetrics and Gynaecology - DGO (NBEMS)"
+    ]
+  },
+  {
+    "name": "Madras Medical College, Chennai",
+    "address": "nan",
+    "state": "Tamil Nadu",
+    "pin": "nan",
+    "specializations": [
+      "Diploma in Diabetology"
     ]
   },
   {
@@ -4853,6 +5169,15 @@
     "pin": "147001.0",
     "specializations": [
       "Anaesthesiology - DA (NBEMS)"
+    ]
+  },
+  {
+    "name": "Maulana Azad Medical College, New Delhi",
+    "address": "nan",
+    "state": "Delhi",
+    "pin": "nan",
+    "specializations": [
+      "Diploma in Dermatology, Venereology and Leprosy"
     ]
   },
   {
@@ -5259,6 +5584,15 @@
     ]
   },
   {
+    "name": "National Institute of Health and Family Welfare, New Delhi",
+    "address": "nan",
+    "state": "Delhi",
+    "pin": "nan",
+    "specializations": [
+      "Diploma in Health Administration"
+    ]
+  },
+  {
     "name": "Neelam Healthcare Private Limited",
     "address": "(Formerly Known as NEELAM HOSPITAL) NH-7, OPP. CHITKARA UNIVERSITY, RAJPURA-CHANDIGARH ROAD, FATEHPUR GARHI Punjab",
     "state": "Punjab",
@@ -5287,6 +5621,15 @@
       "Anaesthesiology - DA (NBEMS)",
       "Paediatrics - DCH (NBEMS)",
       "Radio Diagnosis - DMRD (NBEMS)"
+    ]
+  },
+  {
+    "name": "Netaji Subhas National Institute of Sports Medicine, Patiala",
+    "address": "nan",
+    "state": "Punjab",
+    "pin": "nan",
+    "specializations": [
+      "Diploma in Sports Medicine"
     ]
   },
   {
@@ -5366,6 +5709,17 @@
     ]
   },
   {
+    "name": "Osmania Medical College, Hyderabad",
+    "address": "nan",
+    "state": "Telangana",
+    "pin": "nan",
+    "specializations": [
+      "Diploma in Ophthalmology",
+      "Diploma in Public Health",
+      "Diploma in Tuberculosis & Chest Diseases"
+    ]
+  },
+  {
     "name": "P D Hinduja Hospital",
     "address": "Marvella Building, 724, 11th Rd, Khar West, Mumbai",
     "state": "Maharashtra",
@@ -5419,6 +5773,20 @@
     "pin": "695002.0",
     "specializations": [
       "Paediatrics - DCH (NBEMS)"
+    ]
+  },
+  {
+    "name": "Pandit Deendayal Upadhyay Medical College, Rajkot",
+    "address": "nan",
+    "state": "Gujarat",
+    "pin": "nan",
+    "specializations": [
+      "Diploma in Anaesthesia",
+      "Diploma in Child Health",
+      "Diploma in Dermatology, Venereology and Leprosy",
+      "Diploma in Obstetrics & Gynaecology",
+      "Diploma in Ophthalmology",
+      "Diploma in Orthopaedics"
     ]
   },
   {
@@ -5706,6 +6074,15 @@
     ]
   },
   {
+    "name": "RG Kar Medical College, Kolkata",
+    "address": "nan",
+    "state": "West Bengal",
+    "pin": "nan",
+    "specializations": [
+      "Diploma in Anaesthesia"
+    ]
+  },
+  {
     "name": "ROURKELA GOVT HOSPITAL",
     "address": "STI CHOWK RAGHUNATHPALLI PS ROURKELA",
     "state": "Odisha",
@@ -5799,6 +6176,21 @@
     "pin": "273001.0",
     "specializations": [
       "Ophthalmology - DO (NBEMS)"
+    ]
+  },
+  {
+    "name": "Rajah Muthiah Medical College, Annamalainagar",
+    "address": "nan",
+    "state": "Tamil Nadu",
+    "pin": "nan",
+    "specializations": [
+      "Diploma in Anaesthesia",
+      "Diploma in Child Health",
+      "Diploma in Dermatology, Venereology and Leprosy",
+      "Diploma in Obstetrics & Gynaecology",
+      "Diploma in Ophthalmology",
+      "Diploma in Orthopaedics",
+      "Diploma in Oto-Rhino- Laryngology"
     ]
   },
   {
@@ -5967,6 +6359,15 @@
     ]
   },
   {
+    "name": "Regional Institute of Medical Sciences, Imphal",
+    "address": "nan",
+    "state": "Manipur",
+    "pin": "nan",
+    "specializations": [
+      "Diploma in Clinical Pathology"
+    ]
+  },
+  {
     "name": "Renee Hospital",
     "address": "H.No:3-7-1 and 3-7-02, Indira Nagar, Karimnagar",
     "state": "Telangana",
@@ -6033,6 +6434,28 @@
     ]
   },
   {
+    "name": "S N Medical College, Agra",
+    "address": "nan",
+    "state": "Uttar Pradesh",
+    "pin": "nan",
+    "specializations": [
+      "Diploma in Child Health",
+      "Diploma in Dermatology",
+      "Diploma in Orthopaedics",
+      "Diploma in Oto-Rhino- Laryngology",
+      "Diploma in Tuberculosis & Chest Diseases"
+    ]
+  },
+  {
+    "name": "S V Medical College, Tirupati",
+    "address": "nan",
+    "state": "Andhra Pradesh",
+    "pin": "nan",
+    "specializations": [
+      "Diploma in Oto-Rhino- Laryngology"
+    ]
+  },
+  {
     "name": "S. G. L. Super Specialty Charitable Hospital",
     "address": "Garha Road, Jalandhar, Punjab",
     "state": "Punjab",
@@ -6040,6 +6463,16 @@
     "specializations": [
       "Anaesthesiology - DA (NBEMS)",
       "Radio Diagnosis - DMRD (NBEMS)"
+    ]
+  },
+  {
+    "name": "S. Nijalingappa Medical College & HSK Hospital & Research Centre, Bagalkot",
+    "address": "nan",
+    "state": "Karnataka",
+    "pin": "nan",
+    "specializations": [
+      "Diploma in Clinical Pathology",
+      "Diploma in Public Health"
     ]
   },
   {
@@ -6274,6 +6707,15 @@
     "pin": "140401.0",
     "specializations": [
       "Paediatrics - DCH (NBEMS)"
+    ]
+  },
+  {
+    "name": "SDM College of Medical Sciences & Hospital, Sattur, Dharwad",
+    "address": "nan",
+    "state": "Karnataka",
+    "pin": "nan",
+    "specializations": [
+      "Diploma in Public Health"
     ]
   },
   {
@@ -6593,6 +7035,16 @@
     ]
   },
   {
+    "name": "Santosh Medical College, Ghaziabad",
+    "address": "nan",
+    "state": "Uttar Pradesh",
+    "pin": "nan",
+    "specializations": [
+      "Diploma - Forensic Medicine/Forensic Medicine & Toxicology",
+      "Diploma - Social & Preventive Medicine / Community Medicine"
+    ]
+  },
+  {
     "name": "Sarji Hospital",
     "address": "R M R Road,Park Extention, Shivamogga",
     "state": "Karnataka",
@@ -6619,6 +7071,15 @@
     "specializations": [
       "Family Medicine - D Fam. Med. (NBEMS)",
       "Paediatrics - DCH (NBEMS)"
+    ]
+  },
+  {
+    "name": "School of Tropical Medicine, Kolkata",
+    "address": "nan",
+    "state": "West Bengal",
+    "pin": "nan",
+    "specializations": [
+      "Diploma in Clinical Pathology"
     ]
   },
   {
@@ -6667,6 +7128,16 @@
     "specializations": [
       "Ophthalmology - DO (NBEMS)",
       "Paediatrics - DCH (NBEMS)"
+    ]
+  },
+  {
+    "name": "Sher-I-Kashmir Instt. Of Medical Sciences, Srinagar",
+    "address": "nan",
+    "state": "Jammu & Kashmir",
+    "pin": "nan",
+    "specializations": [
+      "Diploma in Anaesthesia",
+      "Diploma in Immuno- Haematology and Blood Transfusion"
     ]
   },
   {
@@ -6829,6 +7300,16 @@
     "pin": "nan",
     "specializations": [
       "Paediatrics - DCH (NBEMS)"
+    ]
+  },
+  {
+    "name": "Smt. N.H.L.Municipal Medical College, Ahmedabad",
+    "address": "nan",
+    "state": "Gujarat",
+    "pin": "nan",
+    "specializations": [
+      "Diploma in Dermatology, Venereology and Leprosy",
+      "Diploma in Psychological Medicine"
     ]
   },
   {
@@ -7056,6 +7537,15 @@
     "pin": "226005.0",
     "specializations": [
       "Ophthalmology - DO (NBEMS)"
+    ]
+  },
+  {
+    "name": "Surat Municipal Institute of Medical Education & Research, Surat",
+    "address": "nan",
+    "state": "Gujarat",
+    "pin": "nan",
+    "specializations": [
+      "Diploma in Public Health"
     ]
   },
   {
@@ -7313,6 +7803,15 @@
     "pin": "791110.0",
     "specializations": [
       "Ophthalmology - DO (NBEMS)"
+    ]
+  },
+  {
+    "name": "Topiwala National Medical College, Mumbai",
+    "address": "nan",
+    "state": "Maharashtra",
+    "pin": "nan",
+    "specializations": [
+      "Diploma in Dermatology, Venereology and Leprosy"
     ]
   },
   {
@@ -7580,6 +8079,18 @@
     "pin": "413531.0",
     "specializations": [
       "Radio Diagnosis - DMRD (NBEMS)"
+    ]
+  },
+  {
+    "name": "Vivekananda Institute of Medical Sciences, Kolkata ( Also known as Ramakrishna Mission Seva Pratishtahna )",
+    "address": "nan",
+    "state": "West Bengal",
+    "pin": "nan",
+    "specializations": [
+      "Diploma in Child Health",
+      "Diploma in Obstetrics & Gynaecology",
+      "Diploma in Ophthalmology",
+      "Diploma in Oto-Rhino- Laryngology"
     ]
   },
   {

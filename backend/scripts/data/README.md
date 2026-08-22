@@ -139,12 +139,17 @@ Input to `../seed-diploma-colleges.mjs`, which mirrors
 `seed-dnb-colleges.mjs`'s matching/creation rules exactly (own separate
 "DIPLOMA" Program per college, `type` defaults to PRIVATE since this
 source doesn't state ownership either). Source: an NBEMS Diploma
-accreditation portal extract supplied directly by the user, 1,474
-accreditation records grouped here to one entry per (Hospital/Institute,
-Address, State, PIN) with its distinct `specializations` list — 782
-unique institutions (grouping by exact address lands slightly above the
-source's own "663 unique institutions" count, same kind of gap seen in
+accreditation portal extract supplied directly by the user, grouped here
+to one entry per (Hospital/Institute, Address, State, PIN) with its
+distinct `specializations` list (grouping by exact address lands slightly
+above the source's own unique-institution count, same kind of gap seen in
 `dnb-colleges.json` vs its source's own dedup).
+
+**Updated once already** — the user supplied a refreshed version of this
+same NBEMS extract partway through this work: 1,585 accreditation records
+(up from 1,474), 832 unique institutions (up from 782) after the same
+grouping/length-fix pipeline — 50 net-new institutions, none removed.
+Regenerate the same way if a further-updated version shows up.
 
 ## A casing bug worth knowing about — `Program.name` must be UPPERCASE
 
