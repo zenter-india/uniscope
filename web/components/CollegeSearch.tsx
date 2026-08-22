@@ -5,17 +5,26 @@ import { searchUniversities, University } from "../lib/api";
 import { TextInput } from "./form-bits";
 
 /** Shared college picker for both enrollment forms — debounced live search
- * against the public GET /universities. A college not in this list is still
+ * against the public GET /universities, plus a default browsable list (not
+ * just search-after-typing): focusing the field with no query yet still
+ * fetches and shows a list, so a mentor can either scroll/pick or type to
+ * narrow it, both in the same control. A college not in this list is still
  * accepted: onPick(query, null) below keeps the raw text so the lead never
- * loses the answer, matching CreateAspirantLeadDto/CreateMentorLeadDto. */
+ * loses the answer, matching CreateAspirantLeadDto/CreateMentorLeadDto.
+ *
+ * `level` (e.g. "UG") restricts the list to colleges offering that level —
+ * pass it for a degree-specific picker so PG-only accreditation sites don't
+ * show up as UG options (see UniversitiesService.findAll's `level` filter). */
 export function CollegeSearch({
   value,
   onPick,
   gold,
+  level,
 }: {
   value: string;
   onPick: (name: string, id: string | null) => void;
   gold?: boolean;
+  level?: string;
 }) {
   const [query, setQuery] = useState(value);
   const [results, setResults] = useState<University[]>([]);
@@ -27,16 +36,15 @@ export function CollegeSearch({
   // collegeName in sync as free text, which lands `value` back at `query` on
   // the very next render — a naive "skip if unchanged" guard would fire after
   // every single keystroke and wipe the results that keystroke just fetched.
+  //
+  // Runs on an empty query too (unlike a typical "search" effect) so the
+  // list is populated as soon as the field is focused, not only once the
+  // mentor starts typing — that's what makes this a browsable dropdown
+  // rather than search-only.
   useEffect(() => {
-    // Below the 2-char threshold, just skip scheduling a search — the render
-    // guard below (`query.trim().length >= 2`) hides any stale `results`
-    // rather than this effect clearing them, since a synchronous setState
-    // right in the effect body (not inside the async .then()/.catch() below)
-    // is exactly the pattern React's set-state-in-effect rule flags.
-    if (query.trim().length < 2) return;
     const thisRequest = ++requestId.current;
     const handle = setTimeout(() => {
-      searchUniversities(query)
+      searchUniversities(query, level)
         .then((res) => {
           // Ignore if a newer keystroke has already started a later request
           // — otherwise a slow response for "A" can land after a fast one
@@ -48,14 +56,14 @@ export function CollegeSearch({
         });
     }, 250);
     return () => clearTimeout(handle);
-  }, [query]);
+  }, [query, level]);
 
   return (
     <div className="relative">
       <TextInput
         gold={gold}
         required
-        placeholder="Start typing to search…"
+        placeholder="Select or type to search…"
         value={query}
         onChange={(e) => {
           setQuery(e.target.value);
@@ -65,7 +73,7 @@ export function CollegeSearch({
         onFocus={() => setOpen(true)}
         onBlur={() => setTimeout(() => setOpen(false), 150)}
       />
-      {open && query.trim().length >= 2 && results.length > 0 && (
+      {open && results.length > 0 && (
         <ul className="absolute z-10 mt-1 w-full bg-white border border-border rounded-[11px] shadow-lg max-h-56 overflow-auto">
           {results.map((u) => (
             <li key={u.id}>
