@@ -1,5 +1,10 @@
 import { randomUUID } from 'node:crypto';
-import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Inject,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { Prisma, University, UniversityType } from '@prisma/client';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { PrismaService } from '../../database/prisma/prisma.service.js';
@@ -7,12 +12,24 @@ import { SUPABASE_BUCKETS, SUPABASE_CLIENT } from '../../supabase/index.js';
 import { UniversityReviewsService } from '../university-reviews/university-reviews.service.js';
 import { CreateUniversityDto } from './dto/create-university.dto.js';
 import { FindOrCreateUniversityDto } from './dto/find-or-create-university.dto.js';
+import { ListCuratedUniversitiesDto } from './dto/list-curated-universities.dto.js';
 import { ListUniversitiesDto } from './dto/list-universities.dto.js';
 import { UpdateUniversityDto } from './dto/update-university.dto.js';
 import { UploadUniversityPhotoDto } from './dto/upload-university-photo.dto.js';
 
 const DEFAULT_LIMIT = 20;
 const MAX_LIMIT = 50;
+
+// Number of colleges shown directly in the mentor form's curated
+// College/University dropdown (highest specialization count first); every
+// other seeded college is still reachable by typing it under "Other".
+const CURATED_LIMIT = 30;
+
+export interface CuratedCollegeOption {
+  id: string;
+  label: string;
+  specializations: string[];
+}
 
 function slugify(name: string): string {
   return name
@@ -72,6 +89,45 @@ export class UniversitiesService {
     return { data, nextCursor };
   }
 
+  /**
+   * The mentor form's curated College/University list for a given
+   * stream+degree — today Medical/DNB and Medical/MD-MS have data (see
+   * scripts/seed-dnb-colleges.mjs, scripts/data/pg-mdms-colleges.json).
+   * Returns the top CURATED_LIMIT colleges by number of accredited
+   * specializations, alphabetical; every other seeded college for this
+   * stream+degree is still reachable in the DB but not surfaced here — the
+   * form falls back to a free-text "Other" entry.
+   *
+   * Label is just "name, state" — no address/PIN, even for DNB colleges
+   * whose Program.description does carry one (kept there in case it's
+   * needed later, just not shown here).
+   */
+  async findCurated(
+    query: ListCuratedUniversitiesDto,
+  ): Promise<CuratedCollegeOption[]> {
+    const programs = await this.prisma.program.findMany({
+      where: {
+        name: query.degree.toUpperCase(),
+        isActive: true,
+        university: { stream: query.stream, isActive: true },
+      },
+      include: {
+        university: { select: { id: true, name: true, state: true } },
+      },
+    });
+
+    return programs
+      .filter((program) => program.specializations.length > 0)
+      .sort((a, b) => b.specializations.length - a.specializations.length)
+      .slice(0, CURATED_LIMIT)
+      .map((program) => ({
+        id: program.universityId,
+        label: `${program.university.name}, ${program.university.state}`,
+        specializations: [...program.specializations].sort(),
+      }))
+      .sort((a, b) => a.label.localeCompare(b.label));
+  }
+
   async findBySlug(slug: string) {
     const university = await this.prisma.university.findFirst({
       where: { slug, isActive: true },
@@ -87,7 +143,9 @@ export class UniversitiesService {
       throw new NotFoundException(`University '${slug}' not found`);
     }
 
-    const rating = await this.universityReviewsService.ratingSummary(university.id);
+    const rating = await this.universityReviewsService.ratingSummary(
+      university.id,
+    );
     return { ...university, rating: rating.average, reviewCount: rating.count };
   }
 
@@ -159,7 +217,9 @@ export class UniversitiesService {
    * listing; it's still fully usable for this mentor's own verification
    * and shows up in the admin panel's university list for cleanup.
    */
-  async findOrCreateByName(dto: FindOrCreateUniversityDto): Promise<University> {
+  async findOrCreateByName(
+    dto: FindOrCreateUniversityDto,
+  ): Promise<University> {
     const name = dto.name.trim();
     const state = dto.state.trim();
 
@@ -197,7 +257,10 @@ export class UniversitiesService {
    * public (the image is shown to every visitor of the college detail
    * screen), so we store the public URL directly rather than signing it
    * per-request. Bucket is created on first use since it isn't pre-provisioned. */
-  async uploadPhoto(id: string, dto: UploadUniversityPhotoDto): Promise<University> {
+  async uploadPhoto(
+    id: string,
+    dto: UploadUniversityPhotoDto,
+  ): Promise<University> {
     const existing = await this.prisma.university.findUnique({ where: { id } });
     if (!existing) {
       throw new NotFoundException(`University '${id}' not found`);
@@ -208,12 +271,18 @@ export class UniversitiesService {
       throw new BadRequestException('imageBase64 did not decode to any bytes');
     }
 
-    const { error: createBucketError } = await this.supabase.storage.createBucket(
-      SUPABASE_BUCKETS.UNIVERSITY_IMAGES,
-      { public: true },
-    );
-    if (createBucketError && !/already exists/i.test(createBucketError.message)) {
-      throw new BadRequestException(`Failed to prepare storage bucket: ${createBucketError.message}`);
+    const { error: createBucketError } =
+      await this.supabase.storage.createBucket(
+        SUPABASE_BUCKETS.UNIVERSITY_IMAGES,
+        { public: true },
+      );
+    if (
+      createBucketError &&
+      !/already exists/i.test(createBucketError.message)
+    ) {
+      throw new BadRequestException(
+        `Failed to prepare storage bucket: ${createBucketError.message}`,
+      );
     }
 
     const imageKey = `${id}/${randomUUID()}.jpg`;
@@ -221,7 +290,9 @@ export class UniversitiesService {
       .from(SUPABASE_BUCKETS.UNIVERSITY_IMAGES)
       .upload(imageKey, buffer, { contentType: 'image/jpeg', upsert: true });
     if (uploadError) {
-      throw new BadRequestException(`Failed to upload image: ${uploadError.message}`);
+      throw new BadRequestException(
+        `Failed to upload image: ${uploadError.message}`,
+      );
     }
 
     const { data } = this.supabase.storage

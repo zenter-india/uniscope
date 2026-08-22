@@ -65,6 +65,158 @@ Colleges with no free image keep `imageUrl = null`; the mobile hero renders a
 per-college branded gradient + initials rather than a stock photo of some
 unrelated campus.
 
+## `dnb-colleges.json` — DNB accreditation + specializations
+
+Input to `../seed-dnb-colleges.mjs`. Source: an NBEMS accreditation portal
+extract supplied directly by the user (snapshot dated 19-08-2026, 5,389
+accreditation records), grouped here to one entry per
+(Hospital/Institute, Address, State, PIN) with its distinct accredited
+`specializations` list — 1,397 unique institutions.
+
+Populates `Program.specializations` for a `DNB` program at each matched or
+newly-created `University` row — see the seed script's own header comment
+for the exact matching/creation rules (name+state match against existing
+universities, `type` defaults to `PRIVATE` since the source doesn't state
+ownership).
+
+Unlike the UG/PG datasets above, this isn't (yet) wired into the
+`refresh_ug.py`/`refresh_pg.py`-style live-refresh pipeline — it was a
+one-time spreadsheet import. A live NBEMS scraper would be the natural next
+step if this needs to stay current, mirroring `refresh_pg.py`'s approach.
+
+## `pg-mdms-colleges.json` — MD/MS broad specialty seats + specializations
+
+Input to `../seed-pg-mdms-colleges.mjs`. Source: NMC's public "PG Broad
+Specialty Seat Matrix" notice (AY 2025-26, supplied directly by the user),
+grouped to one entry per (College Name, State) with its distinct
+`"MD - <specialty>"` / `"MS - <specialty>"` `specializations` list.
+Unlike `dnb-colleges.json` this source states real ownership (`type`:
+GOVERNMENT/PRIVATE, mapped from the Govt/Trust/Society/Private/Pvt
+management column), so it doesn't need the DNB set's blanket-PRIVATE
+default. No address/PIN in this source — only College Name + State,
+matching the College/University field's "name, state" display convention
+(no address shown, even for DNB).
+
+**Updated once already** — the user supplied a refreshed version of this
+same NMC notice (still 8 columns, same sheet names) partway through this
+work: 9,279 course records (up from 8,327), 649 unique institutions (up
+from 568) after the same parsing/grouping/length-fix pipeline described
+below. Regenerate the same way if a further-updated version shows up —
+nothing about the pipeline itself needed to change, only the input file.
+
+12 rows were dropped from the source: they were PG Diploma courses (e.g.
+"DOMS", "DIP. ANAESTHESIOLOGY") mislabeled without an MD/MS prefix in this
+sheet — out of scope here since Diploma is a separate degree option from
+MD/MS.
+
+## `dm-mch-colleges.json` — DM/MCh super-specialty seats + specializations
+
+Input to `../seed-dm-mch-colleges.mjs`, which mirrors
+`seed-pg-mdms-colleges.mjs`'s matching/creation rules but writes its own
+"DM/MCh" Program per college rather than sharing MD/MS's. Source: NMC's public
+"Super-Specialty Seat Matrix" notice (AY 2025-26, supplied directly by the
+user), grouped to one entry per (College Name, State) with its distinct
+`"DM - <specialty>"` / `"MCh - <specialty>"` `specializations` list.
+`type` (GOVERNMENT/PRIVATE) comes from the source's management column,
+same as `pg-mdms-colleges.json`. Own dataset — not merged with
+PG/MD-MS/Doctorate.
+
+**Updated once already**, and noticeably cleaner than the first version:
+1,359 course records (same count), 220 unique institutions (up from 216)
+— only 1 row dropped for scrambled Course Name text this time (down from
+12), so most of the original PDF-extraction garbling this source is
+noted for below appears to have been a one-off in the earlier file, not a
+property of the source that recurs on refresh. The State column had a
+different, narrower garbling this time — two rows read `"Tamil Nadu Pri"`
+/ `"Maharashtra Pri"` (a `" Pri"` fragment leaked in, most likely from an
+adjacent management/ownership column) — stripped with a trailing
+`/\s+Pri$/i` substitution before grouping; without it, ACS Medical
+College and Dr. D.Y.Patil Medical College (Pune) would each have split
+into two separate rows instead of one with their full specialization list.
+
+**This source can still be noisier than the others**, per the original
+version's garbling (Course Name scrambling, Management-column garbling
+handled by a lenient "contains govt/govern" substring check) — see git
+history for that writeup if a future refresh reintroduces it.
+Specialization labels are transcribed as-is from the source even where a
+label looks questionable (e.g. `"MCh - Cardiology"` — Cardiology is
+ordinarily a DM specialty) rather than silently "corrected" against what
+the specialty is more commonly categorized as.
+
+## `diploma-colleges.json` — NBEMS Diploma accreditation + specializations
+
+Input to `../seed-diploma-colleges.mjs`, which mirrors
+`seed-dnb-colleges.mjs`'s matching/creation rules exactly (own separate
+"DIPLOMA" Program per college, `type` defaults to PRIVATE since this
+source doesn't state ownership either). Source: an NBEMS Diploma
+accreditation portal extract supplied directly by the user, grouped here
+to one entry per (Hospital/Institute, Address, State, PIN) with its
+distinct `specializations` list (grouping by exact address lands slightly
+above the source's own unique-institution count, same kind of gap seen in
+`dnb-colleges.json` vs its source's own dedup).
+
+**Updated once already** — the user supplied a refreshed version of this
+same NBEMS extract partway through this work: 1,585 accreditation records
+(up from 1,474), 832 unique institutions (up from 782) after the same
+grouping/length-fix pipeline — 50 net-new institutions, none removed.
+Regenerate the same way if a further-updated version shows up.
+
+**Specialization labels have the trailing `(NBEMS)` stripped.** About half
+this refreshed source's specialty labels came formatted as
+`"<specialty> - <code> (NBEMS)"` (e.g. `"Paediatrics - DCH (NBEMS)"`), the
+other half (the 50 net-new rows, from what looks like a second
+sub-source merged into the same sheet) as plain `"Diploma in <specialty>"`
+with no suffix at all. Per the user's request, every `" (NBEMS)"` suffix
+was stripped (case-insensitive, trailing whitespace trimmed) so labels
+read as `"Paediatrics - DCH"` — the plain `"Diploma in ..."` labels were
+already suffix-free and are unaffected. Re-apply this same strip if the
+source is regenerated from scratch rather than hand-edited in place.
+
+## A casing bug worth knowing about — `Program.name` must be UPPERCASE
+
+`UniversitiesService.findCurated` queries `Program.name: degree.toUpperCase()`.
+Every seed script here must therefore store its `PROGRAM_NAME` fully
+uppercase (`'DNB'`, `'MD/MS'`, `'DM/MCH'`, `'DIPLOMA'`) — a mixed-case
+value like `'DM/MCh'` (this repo's actual first attempt) silently never
+matches, since `"DM/MCh".toUpperCase()` is `"DM/MCH"`, not `"DM/MCh"`. A
+browser-side test that mocks the fetch response instead of hitting a
+really-seeded database won't catch this — it only surfaces once real data
+is seeded and queried for real.
+
+## Two more bugs caught in a final review pass (fixed, not just noted)
+
+**College name over `University.name`'s VARCHAR(200) limit.** One
+`pg-mdms-colleges.json` row's source cell listed four historical aliases
+for the same institution joined by commas into a single ~250-char string
+(`"E.S.I.C. Medical College & Hospital K.K. Nagar Chennai earlier known as
+ESIC Medical College & PGIMSR..., ESI-PGIMSR..., ..."`). Running any seed
+script against a name like that would fail outright at the DB with a
+"value too long for type character varying(200)" error. Fixed by taking
+just the first comma-separated segment as the canonical name across all
+four datasets (only this one row was actually affected, but the fix
+applies universally as a safety net).
+
+**Same-name, different-branch collisions silently overwriting each
+other's specializations.** `dnb-colleges.json` and `diploma-colleges.json`
+each have dozens of cases where the *same* hospital name repeats in the
+*same* state for genuinely different physical branches — hospital chains
+like "Ankura Hospital" (4 distinct Telangana locations) and generic
+government-hospital names like "Area Hospital" (reused across many
+Andhra Pradesh towns). `seed-dnb-colleges.mjs` and
+`seed-diploma-colleges.mjs` originally tracked newly-created rows in the
+*same* name+state map used for matching pre-existing DB rows — so the
+second branch in a pair would "match" the row the first branch had just
+created moments earlier in the same run, and its Program upsert would
+silently overwrite the first branch's specializations rather than
+creating its own row. Fixed by tracking within-run creations separately,
+keyed by name+state+address, while still matching *pre-existing* DB rows
+by name+state only (that half is an accepted, deliberate limitation — see
+the dedup-handling decision this was built against). Confirmed zero
+remaining name+state+address collisions in either dataset after the fix.
+`pg-mdms-colleges.json` and `dm-mch-colleges.json` have no address column
+to key by and had zero name+state collisions in the current data, so they
+were left as-is.
+
 ## Refreshing on demand — `refresh_ug.py` / `refresh_pg.py`
 
 The steps above are also available as two standalone, re-runnable scripts

@@ -52,6 +52,19 @@ export function searchUniversities(query: string): Promise<{ data: University[] 
   return request(`/universities?${params.toString()}`);
 }
 
+export interface CuratedCollege {
+  id: string;
+  label: string;
+  specializations: string[];
+}
+
+/** Mentor form's curated College/University dropdown for a given
+ * stream+degree (currently only Medical/DNB has data). */
+export function fetchCuratedColleges(stream: string, degree: string): Promise<CuratedCollege[]> {
+  const params = new URLSearchParams({ stream, degree });
+  return request(`/universities/curated?${params.toString()}`);
+}
+
 export interface LeadAcknowledgement {
   id: string;
   role: "ASPIRANT" | "MENTOR";

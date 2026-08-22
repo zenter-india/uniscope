@@ -10,10 +10,10 @@ import '../profile/avatar_picker_panel.dart';
 import '../profile/profile_options.dart';
 import 'onboarding_widgets.dart';
 
-/// Post-signup 5-step wizard for ASPIRANT users — Basic Information →
-/// Location → Academic Qualification → Stream/Field of Interest → Choose
-/// Your Avatar. Runs once after role selection. Only the final avatar step
-/// is skippable — the first four are mandatory, same as before.
+/// Post-signup 6-step wizard for ASPIRANT users — Basic Information →
+/// Location → Academic Qualification → Stream/Field of Interest →
+/// Preferences → Choose Your Avatar. Runs once after role selection. Only
+/// the final avatar step is skippable — the rest are mandatory.
 ///
 /// No Date of Birth here (aspirant-only — the mentor wizard keeps its 16+
 /// gate). Collects a real name (private, encrypted — same handling as the
@@ -37,19 +37,27 @@ class _AspirantOnboardingScreenState
   String? _gender;
 
   String? _state;
-  final _cityController = TextEditingController();
+  String? _city;
+  final _cityOtherController = TextEditingController();
 
   String? _qualification;
   String? _currentStatus;
 
   String? _stream;
   final _streamOtherController = TextEditingController();
+  final _specializationController = TextEditingController();
+
+  final _courseInterestedController = TextEditingController();
+  final Set<String> _preferredLanguages = {};
+  final _preferredLanguageOtherController = TextEditingController();
+  final Set<String> _preferredTimings = {};
 
   static const _stepTitles = [
     'Basic Information',
     'Location',
     'Academic Qualification',
     'Stream / Field of Interest',
+    'Preferences',
     'Choose Your Avatar',
   ];
   static const _stepSubtitles = [
@@ -57,6 +65,7 @@ class _AspirantOnboardingScreenState
     'For regional mentor matching.',
     'Current or highest education level.',
     'Used for mentor matching.',
+    'Helps us find the right mentors for you.',
     'Pick a look — you can always change this later from your profile.',
   ];
 
@@ -64,8 +73,11 @@ class _AspirantOnboardingScreenState
   void dispose() {
     _pageController.dispose();
     _fullNameController.dispose();
-    _cityController.dispose();
+    _cityOtherController.dispose();
     _streamOtherController.dispose();
+    _specializationController.dispose();
+    _courseInterestedController.dispose();
+    _preferredLanguageOtherController.dispose();
     super.dispose();
   }
 
@@ -78,16 +90,32 @@ class _AspirantOnboardingScreenState
       case 0:
         return _fullNameController.text.trim().isNotEmpty && _gender != null;
       case 1:
-        return _state != null && _cityController.text.trim().isNotEmpty;
+        return _state != null &&
+            _city != null &&
+            (_city != 'Other' || _cityOtherController.text.trim().isNotEmpty);
       case 2:
         return _qualification != null && _currentStatus != null;
       case 3:
-        return _stream != null &&
+        final streamOk = _stream != null &&
             (_stream != 'Others' || _streamOtherController.text.trim().isNotEmpty);
+        final specializationOk =
+            !_needsSpecialization || _specializationController.text.trim().isNotEmpty;
+        return streamOk && specializationOk;
+      case 4:
+        return _preferredLanguages.isNotEmpty &&
+            (!_preferredLanguages.contains('Others') ||
+                _preferredLanguageOtherController.text.trim().isNotEmpty) &&
+            _preferredTimings.isNotEmpty;
       default:
         return true;
     }
   }
+
+  bool get _needsSpecialization =>
+      _stream == 'Medical' &&
+      _qualification != null &&
+      _qualification != 'Higher Secondary (12th)' &&
+      _qualification != 'UG';
 
   void _next() {
     if (_step == _stepTitles.length - 1) {
@@ -118,11 +146,28 @@ class _AspirantOnboardingScreenState
                 : _fullNameController.text.trim(),
             gender: _gender,
             state: _state,
-            city: _cityController.text.trim().isEmpty
-                ? null
-                : _cityController.text.trim(),
+            city: _city == 'Other' ? _cityOtherController.text.trim() : _city,
             qualification: _qualification,
+            specialization: _needsSpecialization
+                ? _specializationController.text.trim()
+                : null,
             stream: resolvedStream,
+            courseInterested: _courseInterestedController.text.trim().isEmpty
+                ? null
+                : _courseInterestedController.text.trim(),
+            // Backend column is a single free-text string — multiple picks
+            // join into one readable value, same pattern as the web
+            // enrollment form.
+            preferredLanguage: _preferredLanguages.isEmpty
+                ? null
+                : _preferredLanguages
+                    .map((l) => l == 'Others'
+                        ? _preferredLanguageOtherController.text.trim()
+                        : l)
+                    .where((l) => l.isNotEmpty)
+                    .join(', '),
+            preferredMentorshipTiming:
+                _preferredTimings.isEmpty ? null : _preferredTimings.join(', '),
           );
       if (saveAvatar) {
         final avatarConfig = _avatarPanelKey.currentState?.currentConfig;
@@ -197,16 +242,33 @@ class _AspirantOnboardingScreenState
                         value: _state,
                         hint: 'Select your state',
                         options: kIndianStates,
-                        onChanged: (v) => setState(() => _state = v),
+                        // The district list depends entirely on which state
+                        // this is, so a city picked under the old state
+                        // almost never makes sense under the new one.
+                        onChanged: (v) => setState(() {
+                          _state = v;
+                          _city = null;
+                          _cityOtherController.clear();
+                        }),
                       ),
                       const SizedBox(height: AppSpacing.md),
                       const OnboardingFieldLabel('City'),
-                      TextFormField(
-                        controller: _cityController,
-                        onChanged: (_) => setState(() {}),
-                        decoration:
-                            const InputDecoration(hintText: 'Enter your city'),
+                      OnboardingDropdown(
+                        value: _city,
+                        hint: _state == null ? 'Select a state first' : 'Select your city',
+                        enabled: _state != null,
+                        options: [...?kStateDistricts[_state], 'Other'],
+                        onChanged: (v) => setState(() => _city = v),
                       ),
+                      if (_city == 'Other') ...[
+                        const SizedBox(height: AppSpacing.sm),
+                        TextFormField(
+                          controller: _cityOtherController,
+                          onChanged: (_) => setState(() {}),
+                          decoration:
+                              const InputDecoration(hintText: 'Enter your city'),
+                        ),
+                      ],
                     ],
                   ),
                   OnboardingStepScaffold(
@@ -235,7 +297,10 @@ class _AspirantOnboardingScreenState
                       OnboardingSingleChipGroup(
                         options: kStreamOptions,
                         selected: _stream,
-                        onSelect: (v) => setState(() => _stream = v),
+                        onSelect: (v) => setState(() {
+                          _stream = v;
+                          _specializationController.clear();
+                        }),
                       ),
                       if (_stream == 'Others') ...[
                         const SizedBox(height: AppSpacing.sm),
@@ -246,11 +311,69 @@ class _AspirantOnboardingScreenState
                               hintText: 'Tell us your field of interest'),
                         ),
                       ],
+                      if (_needsSpecialization) ...[
+                        const SizedBox(height: AppSpacing.md),
+                        const OnboardingFieldLabel('Specialization'),
+                        TextFormField(
+                          controller: _specializationController,
+                          onChanged: (_) => setState(() {}),
+                          decoration:
+                              const InputDecoration(hintText: 'e.g. Cardiology'),
+                        ),
+                      ],
                     ],
                   ),
                   OnboardingStepScaffold(
                     title: _stepTitles[4],
                     subtitle: _stepSubtitles[4],
+                    children: [
+                      const OnboardingFieldLabel('Course you\'re aiming for'),
+                      TextFormField(
+                        controller: _courseInterestedController,
+                        onChanged: (_) => setState(() {}),
+                        decoration:
+                            const InputDecoration(hintText: 'e.g. MBBS, B.Tech, BL'),
+                      ),
+                      const SizedBox(height: AppSpacing.md),
+                      const OnboardingFieldLabel('Preferred Language'),
+                      OnboardingChipGroup(
+                        options: kLanguageOptions,
+                        selected: _preferredLanguages,
+                        onToggle: (option, value) => setState(() {
+                          if (value) {
+                            _preferredLanguages.add(option);
+                          } else {
+                            _preferredLanguages.remove(option);
+                          }
+                        }),
+                      ),
+                      if (_preferredLanguages.contains('Others')) ...[
+                        const SizedBox(height: AppSpacing.sm),
+                        TextFormField(
+                          controller: _preferredLanguageOtherController,
+                          onChanged: (_) => setState(() {}),
+                          decoration:
+                              const InputDecoration(hintText: 'Enter language'),
+                        ),
+                      ],
+                      const SizedBox(height: AppSpacing.md),
+                      const OnboardingFieldLabel('Preferred Timing'),
+                      OnboardingChipGroup(
+                        options: kTimeSlots,
+                        selected: _preferredTimings,
+                        onToggle: (option, value) => setState(() {
+                          if (value) {
+                            _preferredTimings.add(option);
+                          } else {
+                            _preferredTimings.remove(option);
+                          }
+                        }),
+                      ),
+                    ],
+                  ),
+                  OnboardingStepScaffold(
+                    title: _stepTitles[5],
+                    subtitle: _stepSubtitles[5],
                     children: [
                       AvatarPickerPanel(
                           key: _avatarPanelKey,

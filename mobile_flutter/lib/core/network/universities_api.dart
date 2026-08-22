@@ -119,6 +119,20 @@ class UniversitiesApi {
     return results;
   }
 
+  /// Single-page, top-8 typeahead search — unlike [list], this does NOT
+  /// paginate through the whole catalogue, since it backs a live-typing
+  /// search box (CollegeSearchField) that fires on every keystroke. Same
+  /// endpoint/shape as the web enrollment form's searchUniversities.
+  Future<List<University>> search(String query) async {
+    if (query.trim().length < 2) return const [];
+    final res = await _dio.get<Map<String, dynamic>>(
+      '/universities',
+      queryParameters: {'search': query, 'limit': 8},
+    );
+    final data = res.data!['data'] as List<dynamic>;
+    return data.map((e) => University.fromJson(e as Map<String, dynamic>)).toList();
+  }
+
   Future<University> getBySlug(String slug) async {
     final res = await _dio.get<Map<String, dynamic>>('/universities/$slug');
     return University.fromJson(res.data!);

@@ -6,6 +6,7 @@ import { LogoutButton } from '../../components/LogoutButton';
 
 const NAV_ITEMS = [
   { label: 'Overview', href: '/dashboard' },
+  { label: 'Leads', href: '/dashboard/leads' },
   { label: 'Verification Queue', href: '/dashboard/verification' },
   { label: 'Moderation', href: '/dashboard/moderation' },
   { label: 'Users', href: '/dashboard/users' },

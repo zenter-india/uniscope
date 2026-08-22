@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { submitMentorLead, fileToBase64, ApiError } from "../lib/api";
+import { useEffect, useState } from "react";
+import { submitMentorLead, fetchCuratedColleges, fileToBase64, ApiError, type CuratedCollege } from "../lib/api";
 import { CollegeSearch } from "./CollegeSearch";
 import {
   GENDERS,
@@ -9,6 +9,7 @@ import {
   STATE_DISTRICTS,
   STREAMS,
   DEGREES,
+  MEDICAL_SPECIALIZATIONS,
   CURRENT_STATUSES,
   LANGUAGES,
   YEARS_OF_STUDY,
@@ -75,12 +76,64 @@ const EMPTY: FormState = {
   website: "",
 };
 
+const OTHER_COLLEGE = "__OTHER__";
+
+// Maps a selected Degree to the canonical value the curated-colleges
+// endpoint is queried with. PG and Doctorate have no data of their own —
+// NMC's source dataset is specifically MD/MS, so all three share it rather
+// than PG/Doctorate staying empty until real PG- or Doctorate-specific
+// data exists. DM/MCh and Diploma each have their own separate NBEMS/NMC
+// dataset, so neither is merged into the MD/MS bucket. Any degree not
+// listed here (UG, Others) keeps the old free-text CollegeSearch + global
+// specialization picklist.
+const CURATED_DEGREE_MAP: Record<string, string> = {
+  DNB: "DNB",
+  PG: "MD/MS",
+  "MD/MS": "MD/MS",
+  Doctorate: "MD/MS",
+  "DM/MCh": "DM/MCh",
+  Diploma: "Diploma",
+};
+
 export function MentorForm({ onExit }: { onExit: () => void }) {
   const wizard = useMultiStep(5);
   const [form, setForm] = useState<FormState>(EMPTY);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState(false);
+
+  // Curated College/University picker — populated for the Medical-stream
+  // degrees in CURATED_DEGREE_MAP (see UniversitiesService.findCurated).
+  // `dnbCollegeChoice` is a curated college's id, OTHER_COLLEGE, or ""
+  // (nothing picked yet); it's separate from form.collegeName/universityId
+  // (the actual submitted values) so "Other" can be distinguished from
+  // "not picked yet". Named for its original DNB-only case; now covers
+  // every degree in CURATED_DEGREE_MAP.
+  const [curatedColleges, setCuratedColleges] = useState<CuratedCollege[]>([]);
+  const [loadingCurated, setLoadingCurated] = useState(false);
+  const [dnbCollegeChoice, setDnbCollegeChoice] = useState("");
+  const curatedDegree = form.stream === "Medical" ? CURATED_DEGREE_MAP[form.degree] : undefined;
+  const hasCuratedData = curatedDegree !== undefined;
+
+  useEffect(() => {
+    if (!curatedDegree) return;
+    let cancelled = false;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- loading flag for the fetch this effect performs
+    setLoadingCurated(true);
+    fetchCuratedColleges("Medical", curatedDegree)
+      .then((data) => {
+        if (!cancelled) setCuratedColleges(data);
+      })
+      .catch(() => {
+        if (!cancelled) setCuratedColleges([]);
+      })
+      .finally(() => {
+        if (!cancelled) setLoadingCurated(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [curatedDegree]);
 
   const set = <K extends keyof FormState>(key: K, value: FormState[K]) =>
     setForm((f) => ({ ...f, [key]: value }));
@@ -355,6 +408,9 @@ export function MentorForm({ onExit }: { onExit: () => void }) {
                 onChange={(e) => {
                   set("stream", e.target.value);
                   set("specialization", "");
+                  set("collegeName", "");
+                  set("universityId", "");
+                  setDnbCollegeChoice("");
                 }}
               >
                 <option value="">Select</option>
@@ -370,6 +426,9 @@ export function MentorForm({ onExit }: { onExit: () => void }) {
                 onChange={(e) => {
                   set("degree", e.target.value);
                   set("specialization", "");
+                  set("collegeName", "");
+                  set("universityId", "");
+                  setDnbCollegeChoice("");
                 }}
               >
                 <option value="">Select</option>
@@ -379,16 +438,60 @@ export function MentorForm({ onExit }: { onExit: () => void }) {
               </Select>
             </Field>
           </div>
-          <Field label="College / university">
-            <CollegeSearch
-              gold
-              value={form.collegeName}
-              onPick={(name, id) => {
-                set("collegeName", name);
-                set("universityId", id ?? "");
-              }}
-            />
-          </Field>
+          {hasCuratedData ? (
+            <>
+              <Field label="College / university">
+                <Select
+                  gold
+                  value={dnbCollegeChoice}
+                  disabled={loadingCurated}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    setDnbCollegeChoice(value);
+                    set("specialization", "");
+                    if (value === OTHER_COLLEGE) {
+                      set("collegeName", "");
+                      set("universityId", "");
+                    } else {
+                      const picked = curatedColleges.find((c) => c.id === value);
+                      set("collegeName", picked?.label ?? "");
+                      set("universityId", value);
+                    }
+                  }}
+                >
+                  <option value="">{loadingCurated ? "Loading colleges…" : "Select college"}</option>
+                  {curatedColleges.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.label}
+                    </option>
+                  ))}
+                  <option value={OTHER_COLLEGE}>Other (not listed)</option>
+                </Select>
+              </Field>
+              {dnbCollegeChoice === OTHER_COLLEGE && (
+                <Field label="Your college / university">
+                  <TextInput
+                    gold
+                    required
+                    placeholder="College/university name, state"
+                    value={form.collegeName}
+                    onChange={(e) => set("collegeName", e.target.value)}
+                  />
+                </Field>
+              )}
+            </>
+          ) : (
+            <Field label="College / university">
+              <CollegeSearch
+                gold
+                value={form.collegeName}
+                onPick={(name, id) => {
+                  set("collegeName", name);
+                  set("universityId", id ?? "");
+                }}
+              />
+            </Field>
+          )}
           {form.stream === "Others" && (
             <Field label="Your stream">
               <TextInput
@@ -413,12 +516,34 @@ export function MentorForm({ onExit }: { onExit: () => void }) {
           )}
           {form.stream === "Medical" && form.degree && form.degree !== "UG" && (
             <Field label="Specialization">
-              <TextInput
-                gold
-                placeholder="e.g. Paediatrics"
-                value={form.specialization}
-                onChange={(e) => set("specialization", e.target.value)}
-              />
+              {hasCuratedData ? (
+                dnbCollegeChoice && dnbCollegeChoice !== OTHER_COLLEGE ? (
+                  <Select gold value={form.specialization} onChange={(e) => set("specialization", e.target.value)}>
+                    <option value="">Select</option>
+                    {(curatedColleges.find((c) => c.id === dnbCollegeChoice)?.specializations ?? []).map((s) => (
+                      <option key={s}>{s}</option>
+                    ))}
+                  </Select>
+                ) : dnbCollegeChoice === OTHER_COLLEGE ? (
+                  <TextInput
+                    gold
+                    placeholder="e.g. Paediatrics"
+                    value={form.specialization}
+                    onChange={(e) => set("specialization", e.target.value)}
+                  />
+                ) : (
+                  <Select gold value="" disabled onChange={() => {}}>
+                    <option value="">Select a college first</option>
+                  </Select>
+                )
+              ) : (
+                <Select gold value={form.specialization} onChange={(e) => set("specialization", e.target.value)}>
+                  <option value="">Select</option>
+                  {MEDICAL_SPECIALIZATIONS.map((s) => (
+                    <option key={s}>{s}</option>
+                  ))}
+                </Select>
+              )}
             </Field>
           )}
         </div>
