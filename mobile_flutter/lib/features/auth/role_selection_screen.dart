@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/network/auth_api.dart';
 import '../../core/network/users_api.dart';
 import '../../core/theme/app_theme.dart';
 import '../../state/auth_controller.dart';
@@ -59,6 +60,21 @@ class _RoleSelectionScreenState extends ConsumerState<RoleSelectionScreen> {
         ref
             .read(authControllerProvider.notifier)
             .setUser(current.copyWith(role: updated.role));
+
+        // The access token still carries the pre-update role claim — every
+        // role-gated route (e.g. POST /verification, MENTOR-only) would 403
+        // until a fresh token is issued, so refresh immediately rather than
+        // waiting for the interceptor's on-401 refresh (a role mismatch is a
+        // 403, which that interceptor doesn't handle).
+        final auth = ref.read(authControllerProvider);
+        final refreshToken = auth.refreshToken;
+        if (refreshToken != null && refreshToken.isNotEmpty) {
+          final refreshed =
+              await ref.read(authApiProvider).refreshTokens(refreshToken);
+          ref
+              .read(authControllerProvider.notifier)
+              .setTokens(refreshed.accessToken, refreshed.refreshToken);
+        }
       }
       if (!mounted) return;
       // Both roles pick their public display name first (ProfileSetupScreen)
