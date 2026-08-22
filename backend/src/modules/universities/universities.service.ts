@@ -25,6 +25,10 @@ const MAX_LIMIT = 50;
 // other seeded college is still reachable by typing it under "Other".
 const CURATED_LIMIT = 30;
 
+// Sanity cap for `browse=true` mode (MD/MS) — a page size, not a deliberate
+// curation like CURATED_LIMIT above.
+const BROWSE_LIMIT = 50;
+
 export interface CuratedCollegeOption {
   id: string;
   label: string;
@@ -91,13 +95,19 @@ export class UniversitiesService {
   }
 
   /**
-   * The mentor form's curated College/University list for a given
-   * stream+degree — today Medical/DNB and Medical/MD-MS have data (see
-   * scripts/seed-dnb-colleges.mjs, scripts/data/pg-mdms-colleges.json).
-   * Returns the top CURATED_LIMIT colleges by number of accredited
-   * specializations, alphabetical; every other seeded college for this
-   * stream+degree is still reachable in the DB but not surfaced here — the
-   * form falls back to a free-text "Other" entry.
+   * The mentor form's College/University list for a given stream+degree —
+   * today Medical/DNB, Medical/MD-MS, Medical/DM-MCH, and Medical/DIPLOMA
+   * have data (see scripts/seed-*-colleges.mjs). Two modes:
+   *
+   * - Default (DNB/DM-MCh/Diploma — too many colleges to list in full):
+   *   top CURATED_LIMIT by number of accredited specializations,
+   *   alphabetical. Every other seeded college for this stream+degree is
+   *   still reachable in the DB but not surfaced here — the form falls
+   *   back to a free-text "Other" entry.
+   * - `browse=true` (MD/MS — small enough to browse in full): returns
+   *   every matching college, alphabetical, optionally filtered by
+   *   `search` on name, capped at BROWSE_LIMIT as a sanity limit rather
+   *   than a deliberate curation.
    *
    * Label is just "name, state" — no address/PIN, even for DNB colleges
    * whose Program.description does carry one (kept there in case it's
@@ -106,27 +116,49 @@ export class UniversitiesService {
   async findCurated(
     query: ListCuratedUniversitiesDto,
   ): Promise<CuratedCollegeOption[]> {
+    const browse = query.browse === 'true';
+
     const programs = await this.prisma.program.findMany({
       where: {
         name: query.degree.toUpperCase(),
         isActive: true,
-        university: { stream: query.stream, isActive: true },
+        university: {
+          stream: query.stream,
+          isActive: true,
+          ...(browse &&
+            query.search && {
+              name: { contains: query.search, mode: 'insensitive' },
+            }),
+        },
       },
       include: {
         university: { select: { id: true, name: true, state: true } },
       },
     });
 
-    return programs
+    const options = programs
       .filter((program) => program.specializations.length > 0)
-      .sort((a, b) => b.specializations.length - a.specializations.length)
-      .slice(0, CURATED_LIMIT)
       .map((program) => ({
+        specCount: program.specializations.length,
         id: program.universityId,
         label: `${program.university.name}, ${program.university.state}`,
         specializations: [...program.specializations].sort(),
-      }))
-      .sort((a, b) => a.label.localeCompare(b.label));
+      }));
+
+    const limited = browse
+      ? options
+          .sort((a, b) => a.label.localeCompare(b.label))
+          .slice(0, BROWSE_LIMIT)
+      : options
+          .sort((a, b) => b.specCount - a.specCount)
+          .slice(0, CURATED_LIMIT)
+          .sort((a, b) => a.label.localeCompare(b.label));
+
+    return limited.map(({ id, label, specializations }) => ({
+      id,
+      label,
+      specializations,
+    }));
   }
 
   async findBySlug(slug: string) {
