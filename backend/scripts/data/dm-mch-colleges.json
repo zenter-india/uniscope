@@ -1,5 +1,14 @@
 [
   {
+    "name": "ACS Medical College and Hospital Chennai",
+    "state": "Tamil Nadu",
+    "type": "PRIVATE",
+    "specializations": [
+      "MCh - Plastic Surgery/Plastic & Reconstructive Surgery",
+      "MCh - Urology/Genito-Urinary Surgery"
+    ]
+  },
+  {
     "name": "Academy of Medical Sciences,Pariyaram, Kannur",
     "state": "Kerala",
     "type": "GOVERNMENT",
@@ -36,6 +45,15 @@
       "DM - Medical Oncology",
       "DM - Pulmonary Medicine",
       "MCh - Neuro Surgery"
+    ]
+  },
+  {
+    "name": "American International Institute of Medical Sciences, Bedwas",
+    "state": "Rajasthan",
+    "type": "PRIVATE",
+    "specializations": [
+      "DM - Cardiology",
+      "DM - Nephrology"
     ]
   },
   {
@@ -421,7 +439,20 @@
     "state": "Maharashtra",
     "type": "PRIVATE",
     "specializations": [
-      "DM - Critical Care Medicine"
+      "DM - Cardiology",
+      "DM - Critical Care Medicine",
+      "DM - Endocrinology",
+      "DM - Medical Gastroenterology",
+      "DM - Nephrology",
+      "DM - Neurology",
+      "DM - interventional radiology",
+      "MCh - Neuro Surgery",
+      "MCh - Pediatric Surgery",
+      "MCh - Plastic Surgery/Plastic & Reconstructive Surgery",
+      "MCh - Surgical Gastroenterology",
+      "MCh - Surgical Oncology",
+      "MCh - Thoracic Surgery/Cardio Thoracic Surgery/Cardio Vascular and thoracic Surgery",
+      "MCh - Urology/Genito-Urinary Surgery"
     ]
   },
   {
@@ -590,6 +621,22 @@
       "DM - Neurology",
       "MCh - Neuro Surgery",
       "MCh - Pediatric Surgery"
+    ]
+  },
+  {
+    "name": "Gandhi Medical College",
+    "state": "Telangana",
+    "type": "GOVERNMENT",
+    "specializations": [
+      "DM - Cardiology",
+      "DM - Critical Care Medicine",
+      "DM - Endocrinology",
+      "DM - Medical Gastroenterology",
+      "DM - Nephrology",
+      "DM - Neurology",
+      "MCh - Neuro Surgery",
+      "MCh - Plastic Surgery/Plastic & Reconstructive Surgery",
+      "MCh - Urology/Genito-Urinary Surgery"
     ]
   },
   {
@@ -1763,6 +1810,16 @@
     ]
   },
   {
+    "name": "NEW CANCER HOSPITAL AND RESEARCH CENTRE",
+    "state": "Punjab",
+    "type": "PRIVATE",
+    "specializations": [
+      "DM - Medical Oncology",
+      "DM - Onco Pathology",
+      "MCh - Surgical Oncology"
+    ]
+  },
+  {
     "name": "NRI Medical College, Guntur",
     "state": "Andhra Pradesh",
     "type": "PRIVATE",
@@ -1995,7 +2052,8 @@
     "state": "Punjab",
     "type": "GOVERNMENT",
     "specializations": [
-      "DM - Hepatology"
+      "DM - Hepatology",
+      "MCh - Hepato Pancreato Biliary Surgery"
     ]
   },
   {
@@ -2136,6 +2194,14 @@
     ]
   },
   {
+    "name": "Regional Institute of Medical Sciences Imphal",
+    "state": "Manipur",
+    "type": "GOVERNMENT",
+    "specializations": [
+      "MCh - Plastic Surgery/Plastic & Reconstructive Surgery"
+    ]
+  },
+  {
     "name": "Regional Institute of Medical Sciences, Imphal",
     "state": "Manipur",
     "type": "GOVERNMENT",
@@ -2243,6 +2309,14 @@
     ]
   },
   {
+    "name": "SMBT Institute of Medical Sciences and Research Centre, Nandi Hills, Nashik",
+    "state": "Maharashtra",
+    "type": "PRIVATE",
+    "specializations": [
+      "DM - Cardiology"
+    ]
+  },
+  {
     "name": "SMS Medical College, Jaipur",
     "state": "Rajasthan",
     "type": "GOVERNMENT",
@@ -2313,6 +2387,14 @@
     ]
   },
   {
+    "name": "Santosh Medical College Ghaziabad",
+    "state": "Uttar Pradesh",
+    "type": "PRIVATE",
+    "specializations": [
+      "DM - Nephrology"
+    ]
+  },
+  {
     "name": "Sapthagiri Institute of Medical Sciences & Research Centre, Bangalore",
     "state": "Karnataka",
     "type": "PRIVATE",
@@ -2359,6 +2441,14 @@
     "specializations": [
       "DM - Clinical Pharmacology",
       "DM - Infectious Disease"
+    ]
+  },
+  {
+    "name": "Seth GS Medical College Mumbai",
+    "state": "Maharashtra",
+    "type": "GOVERNMENT",
+    "specializations": [
+      "DM - Interventional Radiology"
     ]
   },
   {
@@ -2417,6 +2507,14 @@
     "specializations": [
       "DM - Neurology",
       "MCh - Neuro Surgery"
+    ]
+  },
+  {
+    "name": "Shyam Shah Medical College Rewa",
+    "state": "Madhya Pradesh",
+    "type": "GOVERNMENT",
+    "specializations": [
+      "DM - Cardiology"
     ]
   },
   {
@@ -2547,6 +2645,15 @@
       "MCh - Surgical Gastroenterology",
       "MCh - Surgical Oncology",
       "MCh - Thoracic Surgery/Cardio Thoracic Surgery/Cardio Vascular and thoracic Surgery",
+      "MCh - Urology/Genito-Urinary Surgery"
+    ]
+  },
+  {
+    "name": "Srinivas Institute of Medical Research Centre",
+    "state": "Karnataka",
+    "type": "PRIVATE",
+    "specializations": [
+      "MCh - Neuro Surgery",
       "MCh - Urology/Genito-Urinary Surgery"
     ]
   },
@@ -2780,80 +2887,12 @@
     ]
   },
   {
-    "name": "ed Dr. D.Y.Patil Medical College, Pune",
-    "state": "Maharashtra Pri",
+    "name": "had Institute of Health Care & Medical Technology, Visakhapatnam",
+    "state": "Andhra Pradesh",
     "type": "PRIVATE",
     "specializations": [
       "DM - Cardiology",
-      "DM - Endocrinology",
-      "DM - Medical Gastroenterology",
-      "DM - Nephrology",
-      "DM - Neurology",
-      "DM - interventional radiology",
-      "MCh - Neuro Surgery",
-      "MCh - Pediatric Surgery",
-      "MCh - Plastic Surgery/Plastic & Reconstructive Surgery",
-      "MCh - Surgical Gastroenterology",
-      "MCh - Surgical Oncology",
-      "MCh - Thoracic Surgery/Cardio Thoracic Surgery/Cardio Vascular and thoracic Surgery",
-      "MCh - Urology/Genito-Urinary Surgery"
-    ]
-  },
-  {
-    "name": "ed Santosh Medical College Ghaziabad",
-    "state": "Uttar Pradesh Pri",
-    "type": "PRIVATE",
-    "specializations": [
-      "DM - Nephrology"
-    ]
-  },
-  {
-    "name": "edACS Medical College and Hospital Chennai",
-    "state": "Tamil Nadu Pri",
-    "type": "PRIVATE",
-    "specializations": [
-      "MCh - Plastic Surgery/Plastic & Reconstructive Surgery",
-      "MCh - Urology/Genito-Urinary Surgery"
-    ]
-  },
-  {
-    "name": "t Gandhi Medical College",
-    "state": "Telangana",
-    "type": "GOVERNMENT",
-    "specializations": [
-      "DM - Cardiology",
-      "DM - Critical Care Medicine",
-      "DM - Endocrinology",
-      "DM - Medical Gastroenterology",
-      "DM - Nephrology",
-      "DM - Neurology",
-      "MCh - Neuro Surgery",
-      "MCh - Plastic Surgery/Plastic & Reconstructive Surgery",
-      "MCh - Urology/Genito-Urinary Surgery"
-    ]
-  },
-  {
-    "name": "t Seth GS Medical College Mumbai",
-    "state": "Maharashtra",
-    "type": "GOVERNMENT",
-    "specializations": [
-      "DM - Interventional Radiology"
-    ]
-  },
-  {
-    "name": "t Shyam Shah Medical College Rewa",
-    "state": "Madhya Pradesh",
-    "type": "GOVERNMENT",
-    "specializations": [
-      "DM - Cardiology"
-    ]
-  },
-  {
-    "name": "tRegional Institute of Medical Sciences Imphal",
-    "state": "Manipur",
-    "type": "GOVERNMENT",
-    "specializations": [
-      "MCh - Plastic Surgery/Plastic & Reconstructive Surgery"
+      "MCh - Neuro Surgery"
     ]
   }
 ]

@@ -115,19 +115,29 @@ Input to `../seed-dm-mch-colleges.mjs`, which mirrors
 `seed-pg-mdms-colleges.mjs`'s matching/creation rules but writes its own
 "DM/MCh" Program per college rather than sharing MD/MS's. Source: NMC's public
 "Super-Specialty Seat Matrix" notice (AY 2025-26, supplied directly by the
-user), 1,359 course records grouped to one entry per (College Name, State)
-with its distinct `"DM - <specialty>"` / `"MCh - <specialty>"`
-`specializations` list — 216 unique institutions. `type`
-(GOVERNMENT/PRIVATE) comes from the source's management column, same as
-`pg-mdms-colleges.json`. Own dataset — not merged with PG/MD-MS/Doctorate.
+user), grouped to one entry per (College Name, State) with its distinct
+`"DM - <specialty>"` / `"MCh - <specialty>"` `specializations` list.
+`type` (GOVERNMENT/PRIVATE) comes from the source's management column,
+same as `pg-mdms-colleges.json`. Own dataset — not merged with
+PG/MD-MS/Doctorate.
 
-**This source is noisier than the others**: 12 rows had scrambled/garbled
-Course Name text (e.g. `"logy VisakhaMpa.Ctnha m- Neuro Surgery"` — looks
-like a PDF-extraction column-bleed artifact in NMC's own notice) and were
-dropped; the Management column had similar garbling in ~55 rows, mapped to
-GOVERNMENT/PRIVATE by a lenient "contains govt/govern" substring check
-rather than an exact lookup, so a handful of `type` values here are
-best-effort guesses, not verified fact the way `pg-mdms-colleges.json`'s are.
+**Updated once already**, and noticeably cleaner than the first version:
+1,359 course records (same count), 220 unique institutions (up from 216)
+— only 1 row dropped for scrambled Course Name text this time (down from
+12), so most of the original PDF-extraction garbling this source is
+noted for below appears to have been a one-off in the earlier file, not a
+property of the source that recurs on refresh. The State column had a
+different, narrower garbling this time — two rows read `"Tamil Nadu Pri"`
+/ `"Maharashtra Pri"` (a `" Pri"` fragment leaked in, most likely from an
+adjacent management/ownership column) — stripped with a trailing
+`/\s+Pri$/i` substitution before grouping; without it, ACS Medical
+College and Dr. D.Y.Patil Medical College (Pune) would each have split
+into two separate rows instead of one with their full specialization list.
+
+**This source can still be noisier than the others**, per the original
+version's garbling (Course Name scrambling, Management-column garbling
+handled by a lenient "contains govt/govern" substring check) — see git
+history for that writeup if a future refresh reintroduces it.
 Specialization labels are transcribed as-is from the source even where a
 label looks questionable (e.g. `"MCh - Cardiology"` — Cardiology is
 ordinarily a DM specialty) rather than silently "corrected" against what
