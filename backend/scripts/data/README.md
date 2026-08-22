@@ -151,6 +151,17 @@ same NBEMS extract partway through this work: 1,585 accreditation records
 grouping/length-fix pipeline — 50 net-new institutions, none removed.
 Regenerate the same way if a further-updated version shows up.
 
+**Specialization labels have the trailing `(NBEMS)` stripped.** About half
+this refreshed source's specialty labels came formatted as
+`"<specialty> - <code> (NBEMS)"` (e.g. `"Paediatrics - DCH (NBEMS)"`), the
+other half (the 50 net-new rows, from what looks like a second
+sub-source merged into the same sheet) as plain `"Diploma in <specialty>"`
+with no suffix at all. Per the user's request, every `" (NBEMS)"` suffix
+was stripped (case-insensitive, trailing whitespace trimmed) so labels
+read as `"Paediatrics - DCH"` — the plain `"Diploma in ..."` labels were
+already suffix-free and are unaffected. Re-apply this same strip if the
+source is regenerated from scratch rather than hand-edited in place.
+
 ## A casing bug worth knowing about — `Program.name` must be UPPERCASE
 
 `UniversitiesService.findCurated` queries `Program.name: degree.toUpperCase()`.
