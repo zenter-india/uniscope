@@ -25,10 +25,6 @@ const MAX_LIMIT = 50;
 // other seeded college is still reachable by typing it under "Other".
 const CURATED_LIMIT = 30;
 
-// Sanity cap for `browse=true` mode (MD/MS) — a page size, not a deliberate
-// curation like CURATED_LIMIT above.
-const BROWSE_LIMIT = 50;
-
 export interface CuratedCollegeOption {
   id: string;
   label: string;
@@ -105,9 +101,9 @@ export class UniversitiesService {
    *   still reachable in the DB but not surfaced here — the form falls
    *   back to a free-text "Other" entry.
    * - `browse=true` (MD/MS — small enough to browse in full): returns
-   *   every matching college, alphabetical, optionally filtered by
-   *   `search` on name, capped at BROWSE_LIMIT as a sanity limit rather
-   *   than a deliberate curation.
+   *   every matching college, uncapped, alphabetical, optionally filtered
+   *   by `search` on name — the mentor form's College field is meant to
+   *   list every MD/MS college, not a curated subset.
    *
    * Label is just "name, state" — no address/PIN, even for DNB colleges
    * whose Program.description does carry one (kept there in case it's
@@ -146,9 +142,7 @@ export class UniversitiesService {
       }));
 
     const limited = browse
-      ? options
-          .sort((a, b) => a.label.localeCompare(b.label))
-          .slice(0, BROWSE_LIMIT)
+      ? options.sort((a, b) => a.label.localeCompare(b.label))
       : options
           .sort((a, b) => b.specCount - a.specCount)
           .slice(0, CURATED_LIMIT)
