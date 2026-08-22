@@ -63,6 +63,7 @@ export class UniversitiesService {
       ...(query.state && { state: query.state }),
       ...(query.type && { type: query.type }),
       ...(query.stream && { stream: query.stream }),
+      ...(query.level && { levels: { has: query.level } }),
       ...(query.search && {
         OR: [
           { name: { contains: query.search, mode: 'insensitive' } },

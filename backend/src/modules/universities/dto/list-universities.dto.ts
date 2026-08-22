@@ -26,6 +26,15 @@ export class ListUniversitiesDto {
   @IsString()
   stream?: string;
 
+  /** Degree level filter (e.g. "UG", "PG") — see University.levels. Lets a
+   * UG-specific college search exclude PG-only rows (DNB/Diploma/etc
+   * accreditation sites with no UG intake), which otherwise pollute a
+   * general search with generic hospital names that repeat across many
+   * unrelated branches (e.g. many different "District Hospital"s). */
+  @IsOptional()
+  @IsString()
+  level?: string;
+
   @IsOptional()
   @IsString()
   search?: string;

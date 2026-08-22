@@ -46,9 +46,16 @@ export interface University {
   city: string | null;
 }
 
-export function searchUniversities(query: string): Promise<{ data: University[] }> {
-  const params = new URLSearchParams({ limit: "8" });
+/** `level` (e.g. "UG") restricts results to colleges offering that level —
+ * pass it whenever the picker is degree-specific, so e.g. a UG selection
+ * doesn't surface PG-only accreditation sites (DNB/Diploma/etc hospitals)
+ * that have nothing to do with undergraduate admission. Called with an
+ * empty `query` to fetch a default browsable list (not just after typing),
+ * so the field can offer a full dropdown as well as type-to-search. */
+export function searchUniversities(query: string, level?: string): Promise<{ data: University[] }> {
+  const params = new URLSearchParams({ limit: "50" });
   if (query.trim()) params.set("search", query.trim());
+  if (level) params.set("level", level);
   return request(`/universities?${params.toString()}`);
 }
 
