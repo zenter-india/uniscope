@@ -68,16 +68,39 @@ unrelated campus.
 ## `dnb-colleges.json` — DNB accreditation + specializations
 
 Input to `../seed-dnb-colleges.mjs`. Source: an NBEMS accreditation portal
-extract supplied directly by the user (snapshot dated 19-08-2026, 5,389
-accreditation records), grouped here to one entry per
-(Hospital/Institute, Address, State, PIN) with its distinct accredited
-`specializations` list — 1,397 unique institutions.
+extract supplied directly by the user, grouped here to one entry per
+(College, District, State) with its distinct accredited `specializations`
+list. **Like MD/MS, the mentor form's College field for DNB is now a full
+browse-+ type-to-search combobox** (`CuratedCollegeSearch`), not the
+curated-30-+-"Other" pattern — see `MentorForm.tsx`'s `BROWSE_DEGREES` set.
 
-Populates `Program.specializations` for a `DNB` program at each matched or
-newly-created `University` row — see the seed script's own header comment
-for the exact matching/creation rules (name+state match against existing
-universities, `type` defaults to `PRIVATE` since the source doesn't state
-ownership).
+**Updated once already**, this time with a genuinely cleaner re-export
+(`DNB_Accreditation_Clean.xlsx`, sheet "Clean Data") — a proper `District`
+column instead of the original's raw Address/PIN text, plus 10 rows the
+user had already removed as mismatched (missing state). Original: 1,397
+unique (name, address, state, pin) institutions. This refresh: **1,378**
+unique (name, district, state) institutions from 5,362 clean records —
+grouping by district naturally yields fewer, coarser entries than the old
+per-address grouping did. Two pairs were also merged that differed only in
+letter casing (e.g. "Ankura Hospital..." vs "Ankura hospital...",
+same district) — case-insensitive dedup, keeping the first-seen casing as
+canonical.
+
+The seed script's within-run branch-disambiguation key (see its own header
+comment — hospital chains like "Ankura Hospital" repeat the same name in
+the same state for genuinely different branches) switched from
+name+state+**address** to name+state+**district** to match. `Program.description`
+now carries just the district (was `"<address>, PIN <pin>"`) — still not
+shown in the UI, kept for potential future use only.
+
+**Re-running the seed script against this regrouped data will likely
+strand some already-seeded Program rows**, the same way the MD/MS refresh
+did (see that section below) — a hospital previously split across several
+address-based entries may now collapse into fewer district-based ones, so
+whichever old University row doesn't get re-matched becomes stale. Re-run
+the same stale-row detection process (compare live DB names+states against
+this file, one query, no code needed) after seeding and expect to need a
+similar `is_active = false` cleanup pass.
 
 Unlike the UG/PG datasets above, this isn't (yet) wired into the
 `refresh_ug.py`/`refresh_pg.py`-style live-refresh pipeline — it was a

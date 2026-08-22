@@ -12,7 +12,7 @@
  * Matching against *pre-existing* rows is name+state only (accepted
  * limitation — see the dedup-handling decision this was built against).
  * But rows *created during this run* are tracked separately, keyed by
- * name+state+address: several hospital chains repeat the same name in the
+ * name+state+district: several hospital chains repeat the same name in the
  * same state for genuinely different branches (e.g. "Ankura Hospital" has
  * 4 distinct Telangana locations; "Area Hospital" is a generic
  * government-hospital name reused across many towns) — collapsing those
@@ -95,7 +95,7 @@ async function main() {
 
   for (const c of colleges) {
     const nameStateKey = `${c.name.toLowerCase().trim()}|${c.state.toLowerCase().trim()}`;
-    const branchKey = `${nameStateKey}|${c.address.toLowerCase().trim()}`;
+    const branchKey = `${nameStateKey}|${c.district.toLowerCase().trim()}`;
     let university = existingByNameState.get(nameStateKey) ?? createdThisRun.get(branchKey);
 
     if (university) {
@@ -130,23 +130,21 @@ async function main() {
       stats.created += 1;
     }
 
-    // Address + PIN have no dedicated University columns — carried on the
-    // Program instead (unused Text field) so the mentor form's College
-    // field can still show name + address + state + PIN combined, per the
-    // source data's own column layout.
-    const addressDetail = `${c.address}, PIN ${c.pin}`;
-
+    // District has no dedicated University column — carried on the Program
+    // instead (unused Text field), same convention as the address+PIN this
+    // replaced (kept for potential future use, not currently shown — the
+    // College field label is just "name, state").
     if (!DRY_RUN) {
       const priorProgram = await prisma.program.findUnique({
         where: { universityId_name: { universityId: university.id, name: 'DNB' } },
       });
       await prisma.program.upsert({
         where: { universityId_name: { universityId: university.id, name: 'DNB' } },
-        update: { description: addressDetail, specializations: c.specializations },
+        update: { description: c.district, specializations: c.specializations },
         create: {
           universityId: university.id,
           name: 'DNB',
-          description: addressDetail,
+          description: c.district,
           specializations: c.specializations,
         },
       });
