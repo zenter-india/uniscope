@@ -123,6 +123,31 @@ courses (e.g.
 sheet — out of scope here since Diploma is a separate degree option from
 MD/MS.
 
+**A real ownership-detection bug, found and fixed on the second refresh's
+own re-check.** `Management` values in this source aren't always the
+clean single word the first refresh's exact-match lookup assumed — e.g.
+`"Govern ment"` (17 rows, a stray-space typo for "Government") and
+`"Govt.- Society"` (51 rows — this is GMERS, an actual Gujarat
+*government* medical education society) both fell through to the
+PRIVATE default under exact matching. Fixed by switching to the same
+lenient "strip non-letters, then check for govt/govern as a substring"
+approach `seed-dm-mch-colleges.mjs` already used — verified GMERS's 8
+colleges and ACSR Government Medical College Nellore are now correctly
+GOVERNMENT. Net result: 350 GOVERNMENT / 303 PRIVATE (previously skewed
+too-PRIVATE by the missed cases). Same substring approach, worth applying
+if any future dataset here has a similarly free-text ownership column.
+
+**The garbled names spotted in the live database after this (`"/Deem ed
+Amrita School of Medicine, Faridabad"`, `"Society GMERS Medical College,
+Gandhinagar"`, `"ACSR Government Medical College Nellore, Andhra
+Pradesh"` with the state folded into the name) are not a bug in this
+file or the current pipeline** — checked directly against this file's
+raw `College Name` column, which is clean for all three. They're stale
+rows left over in the database from an earlier, buggier version of this
+pipeline, superseded by (not duplicating) the current correct entries —
+see the `programs.is_active = false` cleanup applied to those specific
+stale rows rather than editing this file.
+
 ## `dm-mch-colleges.json` — DM/MCh super-specialty seats + specializations
 
 Input to `../seed-dm-mch-colleges.mjs`, which mirrors
