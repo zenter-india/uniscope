@@ -9,16 +9,22 @@
  * college not found is created new. Either way, upserts a "DNB" Program
  * under that university with `specializations` set from the sheet.
  *
- * Matching against *pre-existing* rows is name+state only (accepted
- * limitation — see the dedup-handling decision this was built against).
- * But rows *created during this run* are tracked separately, keyed by
- * name+state+district: several hospital chains repeat the same name in the
- * same state for genuinely different branches (e.g. "Ankura Hospital" has
- * 4 distinct Telangana locations; "Area Hospital" is a generic
- * government-hospital name reused across many towns) — collapsing those
- * onto name+state alone would silently overwrite one branch's
- * specializations with another's on every Program upsert, since the
- * second branch would "match" the row the first branch just created.
+ * IMPORTANT — branch disambiguation: several hospital chains repeat the
+ * same name in the same state for genuinely different branches (e.g.
+ * "Ankura Hospital" has 4 distinct Telangana locations; "Area Hospital" is
+ * a generic government-hospital name reused across many towns). A prior
+ * version of this script matched *pre-existing* rows by name+state alone,
+ * which meant every district-distinct JSON entry for such a name+state
+ * group collided onto the SAME arbitrary pre-existing row, silently
+ * overwriting its specializations on each upsert and leaving the other
+ * real branch rows orphaned. Fixed by tracking which pre-existing
+ * University ids have already been "claimed" by an earlier JSON entry in
+ * this run: a pre-existing name+state match is only reused if it hasn't
+ * been claimed yet (covers the common case of one college with one
+ * district); once claimed, any further JSON entry with that name+state
+ * (a different district = a different real branch) creates a fresh row
+ * instead of reusing it, mirroring how `createdThisRun` already
+ * disambiguates rows created within the same run by name+state+district.
  *
  * `type` has no reliable source in this data (NBEMS accreditation records
  * don't state govt/private) — every newly-created row defaults to PRIVATE,
@@ -83,9 +89,19 @@ async function main() {
   // Read-only snapshot of what was already in the DB before this run —
   // never mutated, so a later same-name+state row in this run can't
   // "match" a branch this run itself just created for a different address.
-  const existingByNameState = new Map(
-    existing.map((u) => [`${u.name.toLowerCase().trim()}|${u.state.toLowerCase().trim()}`, u]),
-  );
+  // Pre-existing rows may repeat a name+state key across genuinely
+  // distinct branches, so this holds every candidate, not just one.
+  const existingByNameState = new Map();
+  for (const u of existing) {
+    const key = `${u.name.toLowerCase().trim()}|${u.state.toLowerCase().trim()}`;
+    const list = existingByNameState.get(key);
+    if (list) list.push(u);
+    else existingByNameState.set(key, [u]);
+  }
+  // Pre-existing University ids already reused by an earlier JSON entry in
+  // this run — once claimed, a further entry with the same name+state (a
+  // different district = a different real branch) must not reuse it too.
+  const claimed = new Set();
   // Rows created during this run, keyed by name+state+address so distinct
   // branches sharing a name+state each get their own row.
   const createdThisRun = new Map();
@@ -96,9 +112,15 @@ async function main() {
   for (const c of colleges) {
     const nameStateKey = `${c.name.toLowerCase().trim()}|${c.state.toLowerCase().trim()}`;
     const branchKey = `${nameStateKey}|${c.district.toLowerCase().trim()}`;
-    let university = existingByNameState.get(nameStateKey) ?? createdThisRun.get(branchKey);
+    const candidates = existingByNameState.get(nameStateKey) ?? [];
+    const unclaimedCandidate = candidates.find((u) => !claimed.has(u.id));
+    let university = createdThisRun.get(branchKey) ?? unclaimedCandidate;
 
     if (university) {
+      if (!createdThisRun.has(branchKey)) {
+        claimed.add(university.id);
+        createdThisRun.set(branchKey, university);
+      }
       stats.matched += 1;
       if (!university.levels.includes('PG')) {
         if (!DRY_RUN) {
