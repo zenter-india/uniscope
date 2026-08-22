@@ -162,12 +162,17 @@ async function main() {
       });
       await prisma.program.upsert({
         where: { universityId_name: { universityId: university.id, name: 'DNB' } },
-        update: { description: c.district, specializations: c.specializations },
+        update: {
+          description: c.district,
+          specializations: c.specializations,
+          isActive: true,
+        },
         create: {
           universityId: university.id,
           name: 'DNB',
           description: c.district,
           specializations: c.specializations,
+          isActive: true,
         },
       });
       if (priorProgram) stats.programsUpdated += 1;
