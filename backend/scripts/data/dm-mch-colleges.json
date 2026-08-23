@@ -1,2898 +1,2904 @@
 [
   {
-    "name": "ACS Medical College and Hospital Chennai",
-    "state": "Tamil Nadu",
-    "type": "PRIVATE",
-    "specializations": [
-      "MCh - Plastic Surgery/Plastic & Reconstructive Surgery",
-      "MCh - Urology/Genito-Urinary Surgery"
-    ]
-  },
-  {
-    "name": "Academy of Medical Sciences,Pariyaram, Kannur",
+    "name": "Academy of Medical Sciences, Pariyaram",
+    "district": "Kannur",
     "state": "Kerala",
-    "type": "GOVERNMENT",
     "specializations": [
-      "MCh - Cardiology"
+      "Cardiology"
     ]
   },
   {
-    "name": "Acharya Harihar Regional Cancer Centre, Cuttack",
+    "name": "Acharya Harihar Regional Cancer Centre",
+    "district": "Cuttack",
     "state": "Orissa",
-    "type": "GOVERNMENT",
     "specializations": [
-      "DM - Medical Oncology",
-      "MCh - Gynaecological Oncology",
-      "MCh - Surgical Oncology"
+      "Gynaecological Oncology",
+      "Medical Oncology",
+      "Surgical Oncology"
     ]
   },
   {
-    "name": "Adichunchanagiri Institute of Medical Sciences Bellur",
+    "name": "ACS Medical College and Hospital",
+    "district": "Chennai",
+    "state": "Tamil Nadu Pri",
+    "specializations": [
+      "Plastic Surgery",
+      "Urology/Genito-Urinary Surgery"
+    ]
+  },
+  {
+    "name": "Adichunchanagiri Institute of Medical Sciences",
+    "district": "Bellur",
     "state": "Karnataka",
-    "type": "PRIVATE",
     "specializations": [
-      "MCh - Neuro Surgery",
-      "MCh - Plastic Surgery/Plastic & Reconstructive Surgery",
-      "MCh - Urology/Genito-Urinary Surgery"
+      "Neuro Surgery",
+      "Plastic Surgery",
+      "Urology/Genito-Urinary Surgery"
     ]
   },
   {
-    "name": "Amala Institute of Medical Sciences, Thrissur",
+    "name": "Amala Institute of Medical Sciences",
+    "district": "Thrissur",
     "state": "Kerala",
-    "type": "PRIVATE",
     "specializations": [
-      "DM - Cardiology",
-      "DM - Medical Oncology",
-      "DM - Pulmonary Medicine",
-      "MCh - Neuro Surgery"
+      "Cardiology",
+      "Medical Oncology",
+      "Neuro Surgery",
+      "Pulmonary Medicine"
     ]
   },
   {
-    "name": "American International Institute of Medical Sciences, Bedwas",
+    "name": "American International Institute of Medical Sciences",
+    "district": "Bedwas",
     "state": "Rajasthan",
-    "type": "PRIVATE",
     "specializations": [
-      "DM - Cardiology",
-      "DM - Nephrology"
+      "Cardiology",
+      "Nephrology"
     ]
   },
   {
-    "name": "Amrita School of Medicine, Elamkara, Kochi",
+    "name": "Amrita School of Medicine, Elamkara",
+    "district": "Kochi",
     "state": "Kerala",
-    "type": "PRIVATE",
     "specializations": [
-      "DM - Cardiac-Anaesthesia",
-      "DM - Cardiology",
-      "DM - Clinical Hematology",
-      "DM - Critical Care Medicine",
-      "DM - Endocrinology",
-      "DM - Hepatology",
-      "DM - M. Ch- Reproductive Medicine and Surgery",
-      "DM - Medical Gastroenterology",
-      "DM - Medical Oncology",
-      "DM - Nephrology",
-      "DM - Neurology",
-      "DM - Paediatric Cardiology",
-      "DM - Paediatric Neurology",
-      "DM - Pulmonary Medicine",
-      "DM - Rheumatology",
-      "MCh - Gynaecological Oncology",
-      "MCh - Head & Neck Surgery",
-      "MCh - Neuro Surgery",
-      "MCh - Pediatric Surgery",
-      "MCh - Plastic Surgery/Plastic & Reconstructive Surgery",
-      "MCh - Surgical Gastroenterology",
-      "MCh - Thoracic Surgery/Cardio Thoracic Surgery/Cardio Vascular and thoracic Surgery",
-      "MCh - Urology/Genito-Urinary Surgery"
+      "Cardiac Anaesthesia",
+      "Cardiology",
+      "Clinical Hematology",
+      "Critical Care Medicine",
+      "Endocrinology",
+      "Gynaecological Oncology",
+      "Head & Neck Surgery",
+      "Hepatology",
+      "Medical Gastroenterology",
+      "Medical Oncology",
+      "Nephrology",
+      "Neuro Surgery",
+      "Neurology",
+      "Paediatric Cardiology",
+      "Paediatric Neurology",
+      "Paediatric Surgery",
+      "Plastic Surgery",
+      "Pulmonary Medicine",
+      "Reproductive Medicine and Surgery",
+      "Rheumatology",
+      "Surgical Gastroenterology",
+      "Thoracic Surgery",
+      "Urology/Genito-Urinary Surgery"
     ]
   },
   {
-    "name": "Andhra Medical College, Visakhapatnam",
+    "name": "Andhra Medical College",
+    "district": "Visakhapatnam",
     "state": "Andhra Pradesh",
-    "type": "GOVERNMENT",
     "specializations": [
-      "DM - Cardiology",
-      "DM - Endocrinology",
-      "DM - Medical Gastroenterology",
-      "DM - Nephrology",
-      "DM - Neurology",
-      "MCh - Neuro Surgery",
-      "MCh - Pediatric Surgery",
-      "MCh - Plastic Surgery/Plastic & Reconstructive Surgery",
-      "MCh - Thoracic Surgery/Cardio Thoracic Surgery/Cardio Vascular and thoracic Surgery",
-      "MCh - Urology/Genito-Urinary Surgery"
+      "Cardiology",
+      "Endocrinology",
+      "Medical Gastroenterology",
+      "Nephrology",
+      "Neuro Surgery",
+      "Neurology",
+      "Paediatric Surgery",
+      "Plastic Surgery",
+      "Thoracic Surgery",
+      "Urology/Genito-Urinary Surgery"
     ]
   },
   {
-    "name": "Armed Forces Medical College, Pune",
+    "name": "Armed Forces Medical College",
+    "district": "Pune",
     "state": "Maharashtra",
-    "type": "GOVERNMENT",
     "specializations": [
-      "DM - Cardiology",
-      "MCh - Neuro Surgery",
-      "MCh - Plastic Surgery/Plastic & Reconstructive Surgery",
-      "MCh - Thoracic Surgery/Cardio Thoracic Surgery/Cardio Vascular and thoracic Surgery"
+      "Cardiology",
+      "Neuro Surgery",
+      "Plastic Surgery",
+      "Thoracic Surgery"
     ]
   },
   {
-    "name": "Assam Medial College, Dibrugarh",
+    "name": "Assam Medial College",
+    "district": "Dibrugarh",
     "state": "Assam",
-    "type": "GOVERNMENT",
     "specializations": [
-      "DM - Cardiology",
-      "MCh - Pediatric Surgery",
-      "MCh - Plastic Surgery/Plastic & Reconstructive Surgery"
+      "Cardiology",
+      "Paediatric Surgery",
+      "Plastic Surgery"
     ]
   },
   {
-    "name": "Atal Bihari Vajpayee Institute of Medical Sciences and Dr. RML Hospital, New Delhi",
+    "name": "Atal Bihari Vajpayee Institute of Medical Sciences and Dr. RML Hospital",
+    "district": "New Delhi",
     "state": "Delhi",
-    "type": "GOVERNMENT",
     "specializations": [
-      "DM - Cardiac-Anaesthesia",
-      "DM - Cardiology",
-      "DM - Critical Care Medicine",
-      "DM - Neonatology",
-      "DM - Nephrology",
-      "DM - Neurology",
-      "MCh - Neuro Surgery",
-      "MCh - Pediatric Surgery",
-      "MCh - Plastic Surgery/Plastic & Reconstructive Surgery",
-      "MCh - Thoracic Surgery/Cardio Thoracic Surgery/Cardio Vascular and thoracic Surgery",
-      "MCh - Urology/Genito-Urinary Surgery"
+      "Cardiac Anaesthesia",
+      "Cardiology",
+      "Critical Care Medicine",
+      "Neonatology",
+      "Nephrology",
+      "Neuro Surgery",
+      "Neurology",
+      "Paediatric Surgery",
+      "Plastic Surgery",
+      "Thoracic Surgery",
+      "Urology/Genito-Urinary Surgery"
     ]
   },
   {
-    "name": "B J Medical College, Ahmedabad",
+    "name": "B J Medical College",
+    "district": "Ahmedabad",
     "state": "Gujarat",
-    "type": "GOVERNMENT",
     "specializations": [
-      "DM - Cardiac-Anaesthesia",
-      "DM - Cardiology",
-      "DM - Medical Oncology",
-      "DM - Onco Pathology",
-      "MCh - Gynaecological Oncology",
-      "MCh - Neuro Surgery",
-      "MCh - Pediatric Surgery",
-      "MCh - Plastic Surgery/Plastic & Reconstructive Surgery",
-      "MCh - Surgical Oncology",
-      "MCh - Thoracic Surgery/Cardio Thoracic Surgery/Cardio Vascular and thoracic Surgery",
-      "MCh - Urology/Genito-Urinary Surgery"
+      "Cardiac Anaesthesia",
+      "Cardiology",
+      "Gynaecological Oncology",
+      "Medical Oncology",
+      "Neuro Surgery",
+      "Onco Pathology",
+      "Paediatric Surgery",
+      "Plastic Surgery",
+      "Surgical Oncology",
+      "Thoracic Surgery",
+      "Urology/Genito-Urinary Surgery"
     ]
   },
   {
-    "name": "B. J. Govt. Medical College, Pune",
+    "name": "B. J. Govt. Medical College",
+    "district": "Pune",
     "state": "Maharashtra",
-    "type": "GOVERNMENT",
     "specializations": [
-      "DM - Interventional Radiology",
-      "DM - Neonatology",
-      "MCh - Neuro Surgery",
-      "MCh - Pediatric Surgery",
-      "MCh - Plastic Surgery/Plastic & Reconstructive Surgery",
-      "MCh - Thoracic Surgery/Cardio Thoracic Surgery/Cardio Vascular and thoracic Surgery"
+      "Interventional Radiology",
+      "Neonatology",
+      "Neuro Surgery",
+      "Paediatric Surgery",
+      "Plastic Surgery",
+      "Thoracic Surgery"
     ]
   },
   {
-    "name": "Bangalore Medical College and Research Institute, Bangalore",
+    "name": "Bangalore Medical College and Research Institute",
+    "district": "Bangalore",
     "state": "Karnataka",
-    "type": "GOVERNMENT",
     "specializations": [
-      "DM - Cardiology",
-      "DM - Critical Care Medicine",
-      "DM - Neurology",
-      "MCh - Neuro Surgery",
-      "MCh - Pediatric Surgery",
-      "MCh - Plastic Surgery/Plastic & Reconstructive Surgery",
-      "MCh - Surgical Gastroenterology"
+      "Cardiology",
+      "Critical Care Medicine",
+      "Neuro Surgery",
+      "Neurology",
+      "Paediatric Surgery",
+      "Plastic Surgery",
+      "Surgical Gastroenterology"
     ]
   },
   {
-    "name": "Bharati Vidyapeeth University Medical College, Pune",
+    "name": "Bharati Vidyapeeth University Medical College",
+    "district": "Pune",
     "state": "Maharashtra",
-    "type": "PRIVATE",
     "specializations": [
-      "DM - Cardiology",
-      "DM - Clinical Immunology & Rheumatology",
-      "DM - Critical Care Medicine",
-      "DM - Interventional Radiology",
-      "DM - Medical Gastroenterology",
-      "DM - Neonatology",
-      "DM - Neurology",
-      "MCh - Urology/Genito-Urinary Surgery"
+      "Cardiology",
+      "Clinical Immunology & Rheumatology",
+      "Critical Care Medicine",
+      "Interventional Radiology",
+      "Medical Gastroenterology",
+      "Neonatology",
+      "Neurology",
+      "Urology/Genito-Urinary Surgery"
     ]
   },
   {
-    "name": "Bhopal Memorial Hospital and research Centre, Bhopal",
+    "name": "Bhopal Memorial Hospital and research Centre",
+    "district": "Bhopal",
     "state": "Madhya Pradesh",
-    "type": "GOVERNMENT",
     "specializations": [
-      "DM - Cardiology",
-      "MCh - Neuro Surgery",
-      "MCh - Thoracic Surgery/Cardio Thoracic Surgery/Cardio Vascular and thoracic Surgery",
-      "MCh - Urology/Genito-Urinary Surgery"
+      "Cardiology",
+      "Neuro Surgery",
+      "Thoracic Surgery",
+      "Urology/Genito-Urinary Surgery"
     ]
   },
   {
-    "name": "Bombay Hospital Institute of Medical Sciences, Mumbai",
+    "name": "Bombay Hospital Institute of Medical Sciences",
+    "district": "Mumbai",
     "state": "Maharashtra",
-    "type": "GOVERNMENT",
     "specializations": [
-      "DM - Cardiology",
-      "DM - Nephrology",
-      "DM - Neurology",
-      "MCh - Neuro Surgery",
-      "MCh - Thoracic Surgery/Cardio Thoracic Surgery/Cardio Vascular and thoracic Surgery",
-      "MCh - Urology/Genito-Urinary Surgery"
+      "Cardiology",
+      "Nephrology",
+      "Neuro Surgery",
+      "Neurology",
+      "Thoracic Surgery",
+      "Urology/Genito-Urinary Surgery"
     ]
   },
   {
-    "name": "Burdwan Medical College, Burdwan",
+    "name": "Burdwan Medical College",
+    "district": "Burdwan",
     "state": "West Bengal",
-    "type": "GOVERNMENT",
     "specializations": [
-      "DM - Cardiology",
-      "DM - Neurology"
+      "Cardiology",
+      "Neurology"
     ]
   },
   {
-    "name": "Calcutta National Medical College, Kolkata",
+    "name": "Calcutta National Medical College",
+    "district": "Kolkata",
     "state": "West Bengal",
-    "type": "GOVERNMENT",
     "specializations": [
-      "DM - Cardiology",
-      "DM - Neurology",
-      "MCh - Neuro Surgery",
-      "MCh - Urology/Genito-Urinary Surgery"
+      "Cardiology",
+      "Neuro Surgery",
+      "Neurology",
+      "Urology/Genito-Urinary Surgery"
     ]
   },
   {
     "name": "Chacha Nehru Bal Chikitsalaya",
+    "district": "",
     "state": "Delhi",
-    "type": "GOVERNMENT",
     "specializations": [
-      "MCh - Pediatric Surgery"
+      "Paediatric Surgery"
     ]
   },
   {
-    "name": "Chalmeda Anand Rao Insttitute Of Medical Sciences, Karimnagar",
+    "name": "Chalmeda Anand Rao Insttitute Of Medical Sciences",
+    "district": "Karimnagar",
     "state": "Telangana",
-    "type": "PRIVATE",
     "specializations": [
-      "DM - Neurology",
-      "MCh - Urology/Genito-Urinary Surgery"
+      "Neurology",
+      "Urology/Genito-Urinary Surgery"
     ]
   },
   {
-    "name": "Chengalpattu Medical College, Chengalpattu",
+    "name": "Chengalpattu Medical College",
+    "district": "Chengalpattu",
     "state": "Tamil Nadu",
-    "type": "GOVERNMENT",
     "specializations": [
-      "DM - Cardiology",
-      "DM - Neonatology",
-      "DM - Neurology",
-      "MCh - Neuro Surgery",
-      "MCh - Plastic Surgery/Plastic & Reconstructive Surgery",
-      "MCh - Surgical Oncology",
-      "MCh - Urology/Genito-Urinary Surgery"
+      "Cardiology",
+      "Neonatology",
+      "Neuro Surgery",
+      "Neurology",
+      "Plastic Surgery",
+      "Surgical Oncology",
+      "Urology/Genito-Urinary Surgery"
     ]
   },
   {
-    "name": "Chennai Medical College Hospital and research centre Irungalur Trichy,Trichy SRM Medical College Hospital & Research Centre Trichy",
+    "name": "Chennai Medical College Hospital and research centre Irungalur Trichy",
+    "district": "Trichy SRM Medical College Hospital & Research Centre Trichy",
     "state": "Tamil Nadu",
-    "type": "PRIVATE",
     "specializations": [
-      "MCh - Plastic Surgery/Plastic & Reconstructive Surgery"
+      "Plastic Surgery"
     ]
   },
   {
-    "name": "Chettinad Hospital & Research Institute Kanchipuram",
+    "name": "Chettinad Hospital & Research Institute",
+    "district": "Kanchipuram",
     "state": "Tamil Nadu",
-    "type": "PRIVATE",
     "specializations": [
-      "DM - Cardiology",
-      "DM - Medical Gastroenterology",
-      "DM - Neonatology",
-      "DM - Neurology",
-      "MCh - Neuro Surgery",
-      "MCh - Thoracic Surgery/Cardio Thoracic Surgery/Cardio Vascular and thoracic Surgery",
-      "MCh - Urology/Genito-Urinary Surgery"
+      "Cardiology",
+      "Medical Gastroenterology",
+      "Neonatology",
+      "Neuro Surgery",
+      "Neurology",
+      "Thoracic Surgery",
+      "Urology/Genito-Urinary Surgery"
     ]
   },
   {
     "name": "Chittaranjan National Cancer Institute",
+    "district": "",
     "state": "West Bengal",
-    "type": "GOVERNMENT",
     "specializations": [
-      "MCh - Surgical Oncology"
+      "Surgical Oncology"
     ]
   },
   {
-    "name": "Christian Medical College, Ludhiana",
+    "name": "Christian Medical College",
+    "district": "Ludhiana",
     "state": "Punjab",
-    "type": "PRIVATE",
     "specializations": [
-      "DM - Cardiology",
-      "DM - Clinical Immunology & Rheumatology",
-      "DM - Nephrology",
-      "DM - Neurology",
-      "MCh - Neuro Surgery",
-      "MCh - Pediatric Surgery",
-      "MCh - Plastic Surgery/Plastic & Reconstructive Surgery"
+      "Cardiology",
+      "Clinical Immunology & Rheumatology",
+      "Nephrology",
+      "Neuro Surgery",
+      "Neurology",
+      "Paediatric Surgery",
+      "Plastic Surgery"
     ]
   },
   {
-    "name": "Christian Medical College, Vellore",
+    "name": "Christian Medical College",
+    "district": "Vellore",
     "state": "Tamil Nadu",
-    "type": "PRIVATE",
     "specializations": [
-      "DM - Cardiac-Anaesthesia",
-      "DM - Cardiology",
-      "DM - Clinical Hematology",
-      "DM - Clinical Immunology & Rheumatology",
-      "DM - Critical Care Medicine",
-      "DM - Endocrinology",
-      "DM - Hepatology",
-      "DM - Infectious Disease",
-      "DM - Interventional Radiology",
-      "DM - M. Ch- Reproductive Medicine and Surgery",
-      "DM - Medical Gastroenterology",
-      "DM - Medical Oncology",
-      "DM - Neonatology",
-      "DM - Nephrology",
-      "DM - Neuro Anasthesia",
-      "DM - Neurology",
-      "DM - Paediatric Neurology",
-      "DM - Pulmonary Medicine",
-      "DM - Virology",
-      "MCh - Endocrine Surgery",
-      "MCh - Gynaecological Oncology",
-      "MCh - Hand Surgery",
-      "MCh - Head & Neck Surgery",
-      "MCh - Hepato Pancreato Biliary Surgery",
-      "MCh - Neuro Surgery",
-      "MCh - Paediatric Orthopaedics",
-      "MCh - Pediatric Surgery",
-      "MCh - Plastic Surgery/Plastic & Reconstructive Surgery",
-      "MCh - Thoracic Surgery/Cardio Thoracic Surgery/Cardio Vascular and thoracic Surgery",
-      "MCh - Urology/Genito-Urinary Surgery",
-      "MCh - Vascular Surgery"
+      "Cardiac Anaesthesia",
+      "Cardiology",
+      "Clinical Hematology",
+      "Clinical Immunology & Rheumatology",
+      "Critical Care Medicine",
+      "Endocrine Surgery",
+      "Endocrinology",
+      "Gynaecological Oncology",
+      "Hand Surgery",
+      "Head & Neck Surgery",
+      "Hepato Pancreato Biliary Surgery",
+      "Hepatology",
+      "Infectious Disease",
+      "Interventional Radiology",
+      "Medical Gastroenterology",
+      "Medical Oncology",
+      "Neonatology",
+      "Nephrology",
+      "Neuro Anaesthesia",
+      "Neuro Surgery",
+      "Neurology",
+      "Paediatric Neurology",
+      "Paediatric Orthopaedics",
+      "Paediatric Surgery",
+      "Plastic Surgery",
+      "Pulmonary Medicine",
+      "Reproductive Medicine and Surgery",
+      "Thoracic Surgery",
+      "Urology/Genito-Urinary Surgery",
+      "Vascular Surgery",
+      "Virology"
     ]
   },
   {
-    "name": "Coimbatore Medical College, Coimbatore",
+    "name": "Coimbatore Medical College",
+    "district": "Coimbatore",
     "state": "Tamil Nadu",
-    "type": "GOVERNMENT",
     "specializations": [
-      "DM - Cardiology",
-      "DM - Medical Gastroenterology",
-      "DM - Medical Oncology",
-      "DM - Nephrology",
-      "DM - Neurology",
-      "MCh - Neuro Surgery",
-      "MCh - Pediatric Surgery",
-      "MCh - Plastic Surgery/Plastic & Reconstructive Surgery",
-      "MCh - Surgical Oncology"
+      "Cardiology",
+      "Medical Gastroenterology",
+      "Medical Oncology",
+      "Nephrology",
+      "Neuro Surgery",
+      "Neurology",
+      "Paediatric Surgery",
+      "Plastic Surgery",
+      "Surgical Oncology"
     ]
   },
   {
-    "name": "Dayanand Medical College & Hospital, Ludhiana",
+    "name": "Dayanand Medical College & Hospital",
+    "district": "Ludhiana",
     "state": "Punjab",
-    "type": "PRIVATE",
     "specializations": [
-      "DM - Cardiology",
-      "DM - Critical Care Medicine",
-      "DM - Nephrology",
-      "DM - Neurology",
-      "MCh - Medical Gastroenterology",
-      "MCh - Neuro Surgery",
-      "MCh - Plastic Surgery/Plastic & Reconstructive Surgery",
-      "MCh - Surgical Oncology",
-      "MCh - Thoracic Surgery/Cardio Thoracic Surgery/Cardio Vascular and thoracic Surgery",
-      "MCh - Urology/Genito-Urinary Surgery"
+      "Cardiology",
+      "Critical Care Medicine",
+      "Medical Gastroenterology",
+      "Nephrology",
+      "Neuro Surgery",
+      "Neurology",
+      "Plastic Surgery",
+      "Surgical Oncology",
+      "Thoracic Surgery",
+      "Urology/Genito-Urinary Surgery"
     ]
   },
   {
-    "name": "Deccan College of Medical Sciences, Hyderabad",
+    "name": "Deccan College of Medical Sciences",
+    "district": "Hyderabad",
     "state": "Telangana",
-    "type": "PRIVATE",
     "specializations": [
-      "DM - Cardiology",
-      "DM - Neurology",
-      "MCh - Plastic Surgery/Plastic & Reconstructive Surgery",
-      "MCh - Urology/Genito-Urinary Surgery"
+      "Cardiology",
+      "Neurology",
+      "Plastic Surgery",
+      "Urology/Genito-Urinary Surgery"
     ]
   },
   {
-    "name": "Dhanalakshmi Srinivasan Medical College and Hospital,Perambalur",
+    "name": "Dhanalakshmi Srinivasan Medical College and Hospital",
+    "district": "Perambalur",
     "state": "Tamil Nadu",
-    "type": "PRIVATE",
     "specializations": [
-      "DM - Cardiology",
-      "DM - Neurology",
-      "MCh - Surgical Gastroenterology",
-      "MCh - Urology/Genito-Urinary Surgery"
+      "Cardiology",
+      "Neurology",
+      "Surgical Gastroenterology",
+      "Urology/Genito-Urinary Surgery"
     ]
   },
   {
-    "name": "Dr BR Ambedkar Medical College, Bangalore",
+    "name": "Dr BR Ambedkar Medical College",
+    "district": "Bangalore",
     "state": "Karnataka",
-    "type": "PRIVATE",
     "specializations": [
-      "MCh - Urology/Genito-Urinary Surgery"
+      "Urology/Genito-Urinary Surgery"
     ]
   },
   {
-    "name": "Dr. B. Borooah Cancer Institute (Regional Cancer Centre) Guwahati",
+    "name": "Dr. B. Borooah Cancer Institute (Regional Cancer Centre)",
+    "district": "Guwahati",
     "state": "Assam",
-    "type": "GOVERNMENT",
     "specializations": [
-      "DM - Medical Oncology",
-      "DM - Onco Pathology",
-      "MCh - Gynaecological Oncology",
-      "MCh - Head & Neck Surgery",
-      "MCh - Surgical Oncology"
+      "Gynaecological Oncology",
+      "Head & Neck Surgery",
+      "Medical Oncology",
+      "Onco Pathology",
+      "Surgical Oncology"
     ]
   },
   {
-    "name": "Dr. D.Y.Patil Medical College, Pune",
+    "name": "Dr. D.Y.Patil Medical College",
+    "district": "Pune",
     "state": "Maharashtra",
-    "type": "PRIVATE",
     "specializations": [
-      "DM - Cardiology",
-      "DM - Critical Care Medicine",
-      "DM - Endocrinology",
-      "DM - Medical Gastroenterology",
-      "DM - Nephrology",
-      "DM - Neurology",
-      "DM - interventional radiology",
-      "MCh - Neuro Surgery",
-      "MCh - Pediatric Surgery",
-      "MCh - Plastic Surgery/Plastic & Reconstructive Surgery",
-      "MCh - Surgical Gastroenterology",
-      "MCh - Surgical Oncology",
-      "MCh - Thoracic Surgery/Cardio Thoracic Surgery/Cardio Vascular and thoracic Surgery",
-      "MCh - Urology/Genito-Urinary Surgery"
+      "Cardiology",
+      "Critical Care Medicine",
+      "Interventional Radiology",
+      "Medical Gastroenterology",
+      "Nephrology",
+      "Neuro Surgery",
+      "Neurology",
+      "Paediatric Surgery",
+      "Plastic Surgery",
+      "Surgical Gastroenterology",
+      "Surgical Oncology",
+      "Thoracic Surgery",
+      "Urology/Genito-Urinary Surgery"
     ]
   },
   {
-    "name": "Dr. M.K. Shah Medical College & Research Centre Ahmedabad",
+    "name": "Dr. D.Y.Patil Medical College",
+    "district": "Pune",
+    "state": "Maharashtra Pri",
+    "specializations": [
+      "Endocrinology"
+    ]
+  },
+  {
+    "name": "Dr. M.K. Shah Medical College & Research Centre",
+    "district": "Ahmedabad",
     "state": "Gujarat",
-    "type": "PRIVATE",
     "specializations": [
-      "DM - Critical Care Medicine",
-      "DM - Nephrology",
-      "DM - Neurology",
-      "MCh - Neuro Surgery",
-      "MCh - Surgical Oncology",
-      "MCh - Urology"
+      "Critical Care Medicine",
+      "Nephrology",
+      "Neuro Surgery",
+      "Neurology",
+      "Surgical Oncology",
+      "Urology/Genito-Urinary Surgery"
     ]
   },
   {
-    "name": "Dr. P.S.I. Medical College , Chinoutpalli",
+    "name": "Dr. P.S.I. Medical College",
+    "district": "Chinoutpalli",
     "state": "Andhra Pradesh",
-    "type": "PRIVATE",
     "specializations": [
-      "DM - Cardiology",
-      "MCh - Urology/Genito-Urinary Surgery"
+      "Cardiology",
+      "Urology/Genito-Urinary Surgery"
     ]
   },
   {
-    "name": "Dr. Ram Manohar Lohia Institute of Medical Sciences,Lucknow",
+    "name": "Dr. Ram Manohar Lohia Institute of Medical Sciences",
+    "district": "Lucknow",
     "state": "Uttar Pradesh",
-    "type": "GOVERNMENT",
     "specializations": [
-      "DM - Cardiology",
-      "DM - Nephrology",
-      "DM - Neurology",
-      "MCh - Neuro Surgery",
-      "MCh - Pediatric Surgery",
-      "MCh - Surgical Gastroenterology",
-      "MCh - Surgical Oncology",
-      "MCh - Thoracic Surgery/Cardio Thoracic Surgery/Cardio Vascular and thoracic Surgery",
-      "MCh - Urology/Genito-Urinary Surgery"
+      "Cardiology",
+      "Nephrology",
+      "Neuro Surgery",
+      "Neurology",
+      "Paediatric Surgery",
+      "Surgical Gastroenterology",
+      "Surgical Oncology",
+      "Thoracic Surgery",
+      "Urology/Genito-Urinary Surgery"
     ]
   },
   {
-    "name": "Dr. S.N. Medical College, Jodhpur",
+    "name": "Dr. S.N. Medical College",
+    "district": "Jodhpur",
     "state": "Rajasthan",
-    "type": "GOVERNMENT",
     "specializations": [
-      "DM - Cardiology",
-      "DM - Medical Gastroenterology",
-      "DM - Neurology",
-      "DM - Pulmonary Medicine",
-      "MCh - Neuro Surgery",
-      "MCh - Urology/Genito-Urinary Surgery"
+      "Cardiology",
+      "Medical Gastroenterology",
+      "Neuro Surgery",
+      "Neurology",
+      "Pulmonary Medicine",
+      "Urology/Genito-Urinary Surgery"
     ]
   },
   {
-    "name": "Dr. Ulhas Patil Medical College & Hospital, Jalgaon",
+    "name": "Dr. Ulhas Patil Medical College & Hospital",
+    "district": "Jalgaon",
     "state": "Maharashtra",
-    "type": "PRIVATE",
     "specializations": [
-      "DM - Cardiology",
-      "DM - Nephrology",
-      "DM - Neurology",
-      "MCh - Neuro Surgery",
-      "MCh - Urology/Genito-Urinary Surgery"
+      "Cardiology",
+      "Nephrology",
+      "Neuro Surgery",
+      "Neurology",
+      "Urology/Genito-Urinary Surgery"
     ]
   },
   {
-    "name": "ESI-PGIMSR,ESI- Hospital,Basaidarapur,New Delhi",
-    "state": "Delhi",
-    "type": "GOVERNMENT",
-    "specializations": [
-      "DM - Pulmonary Medicine"
-    ]
-  },
-  {
-    "name": "Employees State Insurance Coporation Medical College, Sanath Nagar, Hyderabad",
+    "name": "Employees State Insurance Coporation Medical College, Sanath Nagar",
+    "district": "Hyderabad",
     "state": "Telangana",
-    "type": "GOVERNMENT",
     "specializations": [
-      "MCh - Neuro Surgery",
-      "MCh - Pediatric Surgery",
-      "MCh - Plastic Surgery/Plastic & Reconstructive Surgery",
-      "MCh - Thoracic Surgery/Cardio Thoracic Surgery/Cardio Vascular and thoracic Surgery",
-      "MCh - Urology/Genito-Urinary Surgery"
+      "Neuro Surgery",
+      "Paediatric Surgery",
+      "Plastic Surgery",
+      "Thoracic Surgery",
+      "Urology/Genito-Urinary Surgery"
     ]
   },
   {
-    "name": "Employees State Insurance Corporation Medical College, Faridabad",
+    "name": "Employees State Insurance Corporation Medical College",
+    "district": "Faridabad",
     "state": "Haryana",
-    "type": "GOVERNMENT",
     "specializations": [
-      "DM - Cardiology",
-      "DM - Critical Care Medicine",
-      "MCh - Neuro Surgery",
-      "MCh - Pediatric Surgery",
-      "MCh - Plastic Surgery/Plastic & Reconstructive Surgery",
-      "MCh - Urology"
+      "Cardiology",
+      "Critical Care Medicine",
+      "Neuro Surgery",
+      "Paediatric Surgery",
+      "Plastic Surgery",
+      "Urology/Genito-Urinary Surgery"
     ]
   },
   {
-    "name": "Father Mullers Medical College, Mangalore",
-    "state": "Karnataka",
-    "type": "PRIVATE",
-    "specializations": [
-      "DM - Medical Oncology",
-      "DM - Nephrology",
-      "DM - Neurology",
-      "MCh - Plastic Surgery/Plastic & Reconstructive Surgery",
-      "MCh - Surgical Gastroenterology",
-      "MCh - Surgical Oncology",
-      "MCh - Urology/Genito-Urinary Surgery"
-    ]
-  },
-  {
-    "name": "G.B. Pant Institute of Postgraduate Medical Education and Research, New Delhi",
+    "name": "ESI-PGIMSR, ESI- Hospital, Basaidarapur",
+    "district": "New Delhi",
     "state": "Delhi",
-    "type": "GOVERNMENT",
     "specializations": [
-      "DM - Cardiac-Anaesthesia",
-      "DM - Cardiology",
-      "DM - Medical Gastroenterology",
-      "DM - Neuro Anasthesia",
-      "DM - Neurology",
-      "MCh - Neuro Surgery",
-      "MCh - Surgical Gastroenterology",
-      "MCh - Thoracic Surgery/Cardio Thoracic Surgery/Cardio Vascular and thoracic Surgery"
+      "Pulmonary Medicine"
     ]
   },
   {
-    "name": "GCS Medical College, Hospital and Research Centre, Ahmedabad, Gujarat",
-    "state": "Gujarat",
-    "type": "PRIVATE",
+    "name": "Father Mullers Medical College",
+    "district": "Mangalore",
+    "state": "Karnataka",
     "specializations": [
-      "DM - Cardiology"
+      "Medical Oncology",
+      "Nephrology",
+      "Neurology",
+      "Plastic Surgery",
+      "Surgical Gastroenterology",
+      "Surgical Oncology",
+      "Urology/Genito-Urinary Surgery"
     ]
   },
   {
-    "name": "GSL Medical College, Rajahmundry",
-    "state": "Andhra Pradesh",
-    "type": "PRIVATE",
+    "name": "G.B. Pant Institute of Postgraduate Medical Education and Research",
+    "district": "New Delhi",
+    "state": "Delhi",
     "specializations": [
-      "DM - Cardiology",
-      "DM - M. Ch- Reproductive Medicine and Surgery",
-      "DM - Medical Gastroenterology",
-      "DM - Medical Oncology",
-      "MCh - Surgical Oncology"
+      "Cardiac Anaesthesia",
+      "Cardiology",
+      "Medical Gastroenterology",
+      "Neuro Anaesthesia",
+      "Neuro Surgery",
+      "Neurology",
+      "Surgical Gastroenterology",
+      "Thoracic Surgery"
     ]
   },
   {
-    "name": "GSVM Medical College, Kanpur",
-    "state": "Uttar Pradesh",
-    "type": "GOVERNMENT",
-    "specializations": [
-      "DM - Cardiac-Anaesthesia",
-      "DM - Cardiology",
-      "DM - Neurology",
-      "MCh - Neuro Surgery",
-      "MCh - Thoracic Surgery/Cardio Thoracic Surgery/Cardio Vascular and thoracic Surgery"
-    ]
-  },
-  {
-    "name": "Gajra Raja Medical College, Gwalior",
+    "name": "Gajra Raja Medical College",
+    "district": "Gwalior",
     "state": "Madhya Pradesh",
-    "type": "GOVERNMENT",
     "specializations": [
-      "DM - Cardiology",
-      "DM - Neurology",
-      "MCh - Neuro Surgery",
-      "MCh - Pediatric Surgery"
+      "Cardiology",
+      "Neuro Surgery",
+      "Neurology",
+      "Paediatric Surgery"
     ]
   },
   {
     "name": "Gandhi Medical College",
-    "state": "Telangana",
-    "type": "GOVERNMENT",
-    "specializations": [
-      "DM - Cardiology",
-      "DM - Critical Care Medicine",
-      "DM - Endocrinology",
-      "DM - Medical Gastroenterology",
-      "DM - Nephrology",
-      "DM - Neurology",
-      "MCh - Neuro Surgery",
-      "MCh - Plastic Surgery/Plastic & Reconstructive Surgery",
-      "MCh - Urology/Genito-Urinary Surgery"
-    ]
-  },
-  {
-    "name": "Gandhi Medical College, Bhopal",
+    "district": "Bhopal",
     "state": "Madhya Pradesh",
-    "type": "GOVERNMENT",
     "specializations": [
-      "DM - Cardiology",
-      "DM - Medical Gastroenterology",
-      "MCh - Plastic Surgery/Plastic & Reconstructive Surgery",
-      "MCh - Thoracic Surgery/Cardio Thoracic Surgery/Cardio Vascular and thoracic Surgery",
-      "MCh - Urology/Genito-Urinary Surgery"
+      "Cardiology",
+      "Medical Gastroenterology",
+      "Plastic Surgery",
+      "Thoracic Surgery",
+      "Urology/Genito-Urinary Surgery"
     ]
   },
   {
-    "name": "Gandhi Medical College, Secunderabad",
+    "name": "Gandhi Medical College",
+    "district": "Secunderabad",
     "state": "Telangana",
-    "type": "GOVERNMENT",
     "specializations": [
-      "MCh - Pediatric Surgery"
+      "Paediatric Surgery"
     ]
   },
   {
-    "name": "Gauhati Medical College, Guwahati",
+    "name": "Gandhi Medical College",
+    "district": "",
+    "state": "Telangana",
+    "specializations": [
+      "Cardiology",
+      "Critical Care Medicine",
+      "Endocrinology",
+      "Medical Gastroenterology",
+      "Nephrology",
+      "Neuro Surgery",
+      "Neurology",
+      "Plastic Surgery",
+      "Urology/Genito-Urinary Surgery"
+    ]
+  },
+  {
+    "name": "Gauhati Medical College",
+    "district": "Guwahati",
     "state": "Assam",
-    "type": "GOVERNMENT",
     "specializations": [
-      "DM - Cardiology",
-      "DM - Clinical Hematology",
-      "DM - Endocrinology",
-      "DM - Medical Gastroenterology",
-      "DM - Nephrology",
-      "DM - Neurology",
-      "DM - Onco Pathology",
-      "MCh - Neuro Surgery",
-      "MCh - Pediatric Surgery",
-      "MCh - Plastic Surgery/Plastic & Reconstructive Surgery",
-      "MCh - Surgical Oncology",
-      "MCh - Thoracic Surgery/Cardio Thoracic Surgery/Cardio Vascular and thoracic Surgery",
-      "MCh - Urology/Genito-Urinary Surgery"
+      "Cardiology",
+      "Clinical Hematology",
+      "Endocrinology",
+      "Medical Gastroenterology",
+      "Nephrology",
+      "Neuro Surgery",
+      "Neurology",
+      "Onco Pathology",
+      "Paediatric Surgery",
+      "Plastic Surgery",
+      "Surgical Oncology",
+      "Thoracic Surgery",
+      "Urology/Genito-Urinary Surgery"
     ]
   },
   {
-    "name": "Geetanjali Medical College & Hospital,Udaipur",
-    "state": "Rajasthan",
-    "type": "PRIVATE",
+    "name": "GCS Medical College, Hospital and Research Centre, Ahmedabad",
+    "district": "Gujarat",
+    "state": "Gujarat",
     "specializations": [
-      "DM - Cardiac-Anaesthesia",
-      "DM - Cardiology",
-      "DM - Critical Care Medicine",
-      "DM - Medical Gastroenterology",
-      "DM - Medical Oncology",
-      "DM - Nephrology",
-      "DM - Neurology",
-      "MCh - Neuro Surgery",
-      "MCh - Plastic Surgery/Plastic & Reconstructive Surgery",
-      "MCh - Surgical Gastroenterology",
-      "MCh - Surgical Oncology",
-      "MCh - Urology/Genito-Urinary Surgery"
+      "Cardiology"
+    ]
+  },
+  {
+    "name": "Geetanjali Medical College & Hospital",
+    "district": "Udaipur",
+    "state": "Rajasthan",
+    "specializations": [
+      "Cardiac Anaesthesia",
+      "Cardiology",
+      "Critical Care Medicine",
+      "Medical Gastroenterology",
+      "Medical Oncology",
+      "Nephrology",
+      "Neuro Surgery",
+      "Neurology",
+      "Plastic Surgery",
+      "Surgical Gastroenterology",
+      "Surgical Oncology",
+      "Urology/Genito-Urinary Surgery"
     ]
   },
   {
     "name": "Goa Medical College",
+    "district": "",
     "state": "Goa",
-    "type": "GOVERNMENT",
     "specializations": [
-      "DM - Cardiac-Anaesthesia",
-      "DM - Cardiology",
-      "DM - Endocrinology",
-      "DM - Medical Oncology",
-      "DM - Nephrology",
-      "DM - Neurology",
-      "MCh - Neuro Surgery",
-      "MCh - Plastic Surgery/Plastic & Reconstructive Surgery",
-      "MCh - Thoracic Surgery/Cardio Thoracic Surgery/Cardio Vascular and thoracic Surgery",
-      "MCh - Urology/Genito-Urinary Surgery"
+      "Cardiac Anaesthesia",
+      "Cardiology",
+      "Endocrinology",
+      "Medical Oncology",
+      "Nephrology",
+      "Neuro Surgery",
+      "Neurology",
+      "Plastic Surgery",
+      "Thoracic Surgery",
+      "Urology/Genito-Urinary Surgery"
     ]
   },
   {
-    "name": "Government Doon Medical College , Dehradun, Uttarakhand",
+    "name": "Government Doon Medical College, Dehradun",
+    "district": "Uttarakhand",
     "state": "Uttarakhand",
-    "type": "GOVERNMENT",
     "specializations": [
-      "MCh - Urology"
+      "Urology/Genito-Urinary Surgery"
     ]
   },
   {
-    "name": "Government Medical College Amritsar",
+    "name": "Government Medical College, Kozhikode",
+    "district": "Calicut",
+    "state": "Kerala",
+    "specializations": [
+      "Cardiology",
+      "Medical Gastroenterology",
+      "Nephrology",
+      "Neuro Surgery",
+      "Neurology",
+      "Paediatric Surgery",
+      "Plastic Surgery",
+      "Pulmonary Medicine",
+      "Surgical Gastroenterology",
+      "Thoracic Surgery",
+      "Urology/Genito-Urinary Surgery"
+    ]
+  },
+  {
+    "name": "Government Medical College",
+    "district": "Amritsar",
     "state": "Punjab",
-    "type": "GOVERNMENT",
     "specializations": [
-      "DM - Cardiology",
-      "MCh - Plastic Surgery/Plastic & Reconstructive Surgery",
-      "MCh - Surgical Oncology"
+      "Cardiology",
+      "Plastic Surgery",
+      "Surgical Oncology"
     ]
   },
   {
-    "name": "Government Medical College Jammu",
-    "state": "Jammu & Kashmir",
-    "type": "GOVERNMENT",
-    "specializations": [
-      "DM - Cardiology",
-      "MCh - Urology/Genito-Urinary Surgery"
-    ]
-  },
-  {
-    "name": "Government Medical College Kota",
-    "state": "Rajasthan",
-    "type": "GOVERNMENT",
-    "specializations": [
-      "DM - Cardiology",
-      "DM - Medical Gastroenterology",
-      "DM - Nephrology",
-      "DM - Neurology",
-      "MCh - Neuro Surgery",
-      "MCh - Plastic and Reconstructive Surgery",
-      "MCh - Urology/Genito-Urinary Surgery"
-    ]
-  },
-  {
-    "name": "Government Medical College, Ananthapuram",
+    "name": "Government Medical College",
+    "district": "Ananthapuram",
     "state": "Andhra Pradesh",
-    "type": "GOVERNMENT",
     "specializations": [
-      "MCh - Neuro Surgery",
-      "MCh - Paediatric Surgery"
+      "Neuro Surgery",
+      "Paediatric Surgery"
     ]
   },
   {
-    "name": "Government Medical College, Aurangabad",
+    "name": "Government Medical College",
+    "district": "Aurangabad",
     "state": "Maharashtra",
-    "type": "GOVERNMENT",
     "specializations": [
-      "DM - Medical Oncology",
-      "DM - Neonatology",
-      "DM - Onco Pathology",
-      "DM - Paediatrics oncology",
-      "MCh - Gynaecological Oncology",
-      "MCh - Head & Neck Surgery",
-      "MCh - Pediatric Surgery",
-      "MCh - Surgical Oncology"
+      "Gynaecological Oncology",
+      "Head & Neck Surgery",
+      "Medical Oncology",
+      "Neonatology",
+      "Onco Pathology",
+      "Paediatric Oncology",
+      "Paediatric Surgery",
+      "Surgical Oncology"
     ]
   },
   {
-    "name": "Government Medical College, Chandigarh",
+    "name": "Government Medical College",
+    "district": "Chandigarh",
     "state": "Chandigarh",
-    "type": "GOVERNMENT",
     "specializations": [
-      "DM - Cardiology",
-      "DM - Neonatology",
-      "DM - Pulmonary Medicine"
+      "Cardiology",
+      "Neonatology",
+      "Pulmonary Medicine"
     ]
   },
   {
-    "name": "Government Medical College, Kottayam",
-    "state": "Kerala",
-    "type": "GOVERNMENT",
-    "specializations": [
-      "DM - Cardiology",
-      "DM - Infectious Disease",
-      "DM - Medical Gastroenterology",
-      "DM - Nephrology",
-      "DM - Neurology",
-      "MCh - Neuro Surgery",
-      "MCh - Pediatric Surgery",
-      "MCh - Plastic Surgery/Plastic & Reconstructive Surgery",
-      "MCh - Thoracic Surgery/Cardio Thoracic Surgery/Cardio Vascular and thoracic Surgery",
-      "MCh - Urology/Genito-Urinary Surgery"
-    ]
-  },
-  {
-    "name": "Government Medical College, Kozhikode, Calicut",
-    "state": "Kerala",
-    "type": "GOVERNMENT",
-    "specializations": [
-      "DM - Cardiology",
-      "DM - Medical Gastroenterology",
-      "DM - Nephrology",
-      "DM - Neurology",
-      "DM - Pulmonary Medicine",
-      "MCh - Neuro Surgery",
-      "MCh - Pediatric Surgery",
-      "MCh - Plastic Surgery/Plastic & Reconstructive Surgery",
-      "MCh - Surgical Gastroenterology",
-      "MCh - Thorasic Surgery",
-      "MCh - Urology/Genito-Urinary Surgery"
-    ]
-  },
-  {
-    "name": "Government Medical College, Nagpur",
-    "state": "Maharashtra",
-    "type": "GOVERNMENT",
-    "specializations": [
-      "DM - Cardiology",
-      "DM - Medical Gastroenterology",
-      "DM - interventional radiology",
-      "MCh - Neuro Surgery",
-      "MCh - Pediatric Surgery",
-      "MCh - Plastic Surgery/Plastic & Reconstructive Surgery",
-      "MCh - Urology/Genito-Urinary Surgery"
-    ]
-  },
-  {
-    "name": "Government Medical College, Srinagar",
+    "name": "Government Medical College",
+    "district": "Jammu",
     "state": "Jammu & Kashmir",
-    "type": "GOVERNMENT",
     "specializations": [
-      "DM - Cardiology",
-      "DM - Medical Gastroenterology",
-      "DM - Neurology",
-      "DM - Pulmonary Medicine",
-      "MCh - Neuro Surgery",
-      "MCh - Paediatric Surgery",
-      "MCh - Urology/Genito-Urinary Surgery"
+      "Cardiology",
+      "Urology/Genito-Urinary Surgery"
     ]
   },
   {
-    "name": "Government Medical College, Thrissur",
+    "name": "Government Medical College",
+    "district": "Kota",
+    "state": "Rajasthan",
+    "specializations": [
+      "Cardiology",
+      "Medical Gastroenterology",
+      "Nephrology",
+      "Neuro Surgery",
+      "Neurology",
+      "Plastic Surgery",
+      "Urology/Genito-Urinary Surgery"
+    ]
+  },
+  {
+    "name": "Government Medical College",
+    "district": "Kottayam",
     "state": "Kerala",
-    "type": "GOVERNMENT",
     "specializations": [
-      "DM - Cardiology",
-      "DM - Neonatology",
-      "MCh - Neuro Surgery"
+      "Cardiology",
+      "Infectious Disease",
+      "Medical Gastroenterology",
+      "Nephrology",
+      "Neuro Surgery",
+      "Neurology",
+      "Paediatric Surgery",
+      "Plastic Surgery",
+      "Thoracic Surgery",
+      "Urology/Genito-Urinary Surgery"
     ]
   },
   {
-    "name": "Government Siddhartha Medical College, Vijaywada",
-    "state": "Andhra Pradesh",
-    "type": "GOVERNMENT",
-    "specializations": [
-      "DM - Neurology",
-      "MCh - Neuro Surgery",
-      "MCh - Plastic Surgery/Plastic & Reconstructive Surgery",
-      "MCh - Urology/Genito-Urinary Surgery"
-    ]
-  },
-  {
-    "name": "Government Vellore Medical College, Vellore",
-    "state": "Tamil Nadu",
-    "type": "GOVERNMENT",
-    "specializations": [
-      "MCh - Neuro Surgery"
-    ]
-  },
-  {
-    "name": "Govt. Mohan Kumaramangalam Medical College, Salem",
-    "state": "Tamil Nadu",
-    "type": "GOVERNMENT",
-    "specializations": [
-      "DM - Cardiology",
-      "DM - Medical Gastroenterology",
-      "DM - Nephrology",
-      "DM - Neurology",
-      "MCh - Neuro Surgery",
-      "MCh - Pediatric Surgery",
-      "MCh - Plastic Surgery/Plastic & Reconstructive Surgery",
-      "MCh - Surgical Gastroenterology",
-      "MCh - Urology/Genito-Urinary Surgery"
-    ]
-  },
-  {
-    "name": "Grant Medical College, Mumbai",
+    "name": "Government Medical College",
+    "district": "Nagpur",
     "state": "Maharashtra",
-    "type": "GOVERNMENT",
     "specializations": [
-      "DM - Cardiology",
-      "DM - Interventional Radiology",
-      "DM - Nephrology",
-      "DM - Neurology",
-      "MCh - Neuro Surgery",
-      "MCh - Pediatric Surgery",
-      "MCh - Plastic Surgery/Plastic & Reconstructive Surgery",
-      "MCh - Thoracic Surgery/Cardio Thoracic Surgery/Cardio Vascular and thoracic Surgery",
-      "MCh - Urology/Genito-Urinary Surgery"
+      "Cardiology",
+      "Interventional Radiology",
+      "Medical Gastroenterology",
+      "Neuro Surgery",
+      "Paediatric Surgery",
+      "Plastic Surgery",
+      "Urology/Genito-Urinary Surgery"
     ]
   },
   {
-    "name": "Guntur Medical College, Guntur",
+    "name": "Government Medical College",
+    "district": "Srinagar",
+    "state": "Jammu & Kashmir",
+    "specializations": [
+      "Cardiology",
+      "Medical Gastroenterology",
+      "Neuro Surgery",
+      "Neurology",
+      "Paediatric Surgery",
+      "Pulmonary Medicine",
+      "Urology/Genito-Urinary Surgery"
+    ]
+  },
+  {
+    "name": "Government Medical College",
+    "district": "Thrissur",
+    "state": "Kerala",
+    "specializations": [
+      "Cardiology",
+      "Neonatology",
+      "Neuro Surgery"
+    ]
+  },
+  {
+    "name": "Government Siddhartha Medical College",
+    "district": "Vijaywada",
     "state": "Andhra Pradesh",
-    "type": "GOVERNMENT",
     "specializations": [
-      "DM - Cardiology",
-      "DM - Medical Gastroenterology",
-      "DM - Nephrology",
-      "DM - Neurology",
-      "MCh - Neuro Surgery",
-      "MCh - Pediatric Surgery",
-      "MCh - Plastic Surgery/Plastic & Reconstructive Surgery",
-      "MCh - Urology/Genito-Urinary Surgery"
+      "Neuro Surgery",
+      "Neurology",
+      "Plastic Surgery",
+      "Urology/Genito-Urinary Surgery"
     ]
   },
   {
-    "name": "Guru Govind Singh Medical College, Faridkot",
+    "name": "Government Vellore Medical College",
+    "district": "Vellore",
+    "state": "Tamil Nadu",
+    "specializations": [
+      "Neuro Surgery"
+    ]
+  },
+  {
+    "name": "Govt. Mohan Kumaramangalam Medical College",
+    "district": "Salem",
+    "state": "Tamil Nadu",
+    "specializations": [
+      "Cardiology",
+      "Medical Gastroenterology",
+      "Nephrology",
+      "Neuro Surgery",
+      "Neurology",
+      "Paediatric Surgery",
+      "Plastic Surgery",
+      "Surgical Gastroenterology",
+      "Urology/Genito-Urinary Surgery"
+    ]
+  },
+  {
+    "name": "Grant Medical College",
+    "district": "Mumbai",
+    "state": "Maharashtra",
+    "specializations": [
+      "Cardiology",
+      "Interventional Radiology",
+      "Nephrology",
+      "Neuro Surgery",
+      "Neurology",
+      "Paediatric Surgery",
+      "Plastic Surgery",
+      "Thoracic Surgery",
+      "Urology/Genito-Urinary Surgery"
+    ]
+  },
+  {
+    "name": "GSL Medical College",
+    "district": "Rajahmundry",
+    "state": "Andhra Pradesh",
+    "specializations": [
+      "Cardiology",
+      "Medical Gastroenterology",
+      "Medical Oncology",
+      "Reproductive Medicine and Surgery",
+      "Surgical Oncology"
+    ]
+  },
+  {
+    "name": "GSVM Medical College",
+    "district": "Kanpur",
+    "state": "Uttar Pradesh",
+    "specializations": [
+      "Cardiac Anaesthesia",
+      "Cardiology",
+      "Neuro Surgery",
+      "Neurology",
+      "Thoracic Surgery"
+    ]
+  },
+  {
+    "name": "Guntur Medical College",
+    "district": "Guntur",
+    "state": "Andhra Pradesh",
+    "specializations": [
+      "Cardiology",
+      "Medical Gastroenterology",
+      "Nephrology",
+      "Neuro Surgery",
+      "Neurology",
+      "Paediatric Surgery",
+      "Plastic Surgery",
+      "Urology/Genito-Urinary Surgery"
+    ]
+  },
+  {
+    "name": "Guru Govind Singh Medical College",
+    "district": "Faridkot",
     "state": "Punjab",
-    "type": "GOVERNMENT",
     "specializations": [
-      "MCh - Pediatric Surgery",
-      "MCh - Plastic Surgery/Plastic & Reconstructive Surgery"
+      "Paediatric Surgery",
+      "Plastic Surgery"
     ]
   },
   {
-    "name": "Heritage Institute of Medical Sciences, Bhadwar, Varanasi",
-    "state": "Uttar Pradesh",
-    "type": "PRIVATE",
-    "specializations": [
-      "DM - Endocrinology",
-      "DM - Medical Gastroenterology"
-    ]
-  },
-  {
-    "name": "Himalayan Institute of Medical Sciences, Dehradun",
-    "state": "Uttarakhand",
-    "type": "PRIVATE",
-    "specializations": [
-      "DM - Cardiology",
-      "DM - Critical Care Medicine",
-      "DM - Neonatology",
-      "DM - Neurology",
-      "MCh - Neuro Surgery",
-      "MCh - Surgical Oncology",
-      "MCh - Urology/Genito-Urinary Surgery"
-    ]
-  },
-  {
-    "name": "Hind Institute of Medical Sciences , Barabanki",
-    "state": "Uttar Pradesh",
-    "type": "PRIVATE",
-    "specializations": [
-      "MCh - Plastic Surgery/Plastic & Reconstructive Surgery",
-      "MCh - Surgical Oncology",
-      "MCh - Urology/Genito-Urinary Surgery"
-    ]
-  },
-  {
-    "name": "Hind Institute of Medical Sciences, Sitapur",
-    "state": "Uttar Pradesh",
-    "type": "PRIVATE",
-    "specializations": [
-      "MCh - Neuro Surgery"
-    ]
-  },
-  {
-    "name": "Homi Bhabha Cancer Hospital and Research Centre, Visakhapatnam",
+    "name": "had Institute of Health Care & Medical Technology",
+    "district": "Visakhapatnam",
     "state": "Andhra Pradesh",
-    "type": "GOVERNMENT",
     "specializations": [
-      "DM - Onco Pathology",
-      "MCh - Head & Neck Surgery"
+      "Cardiology",
+      "Neuro Surgery"
     ]
   },
   {
-    "name": "Homi Bhabha Cancer Hospital, Varanasi, Uttar Pradesh",
+    "name": "Heritage Institute of Medical Sciences, Bhadwar",
+    "district": "Varanasi",
     "state": "Uttar Pradesh",
-    "type": "GOVERNMENT",
     "specializations": [
-      "DM - Medical Oncology",
-      "DM - Onco Pathology",
-      "MCh - Head & Neck Surgery",
-      "MCh - Surgical Oncology"
+      "Endocrinology",
+      "Medical Gastroenterology"
     ]
   },
   {
-    "name": "INSTITUTE OF NEPHRO-UROLOGY, BANGALORE",
-    "state": "Karnataka",
-    "type": "GOVERNMENT",
+    "name": "Himalayan Institute of Medical Sciences",
+    "district": "Dehradun",
+    "state": "Uttarakhand",
     "specializations": [
-      "DM - Nephrology",
-      "MCh - Urology/Genito-Urinary Surgery"
+      "Cardiology",
+      "Critical Care Medicine",
+      "Neonatology",
+      "Neuro Surgery",
+      "Neurology",
+      "Surgical Oncology",
+      "Urology/Genito-Urinary Surgery"
     ]
   },
   {
-    "name": "Index Medical College Hospital & Research Centre,Indore",
+    "name": "Hind Institute of Medical Sciences",
+    "district": "Barabanki",
+    "state": "Uttar Pradesh",
+    "specializations": [
+      "Plastic Surgery",
+      "Surgical Oncology",
+      "Urology/Genito-Urinary Surgery"
+    ]
+  },
+  {
+    "name": "Hind Institute of Medical Sciences",
+    "district": "Sitapur",
+    "state": "Uttar Pradesh",
+    "specializations": [
+      "Neuro Surgery"
+    ]
+  },
+  {
+    "name": "Homi Bhabha Cancer Hospital and Research Centre",
+    "district": "Visakhapatnam",
+    "state": "Andhra Pradesh",
+    "specializations": [
+      "Head & Neck Surgery",
+      "Onco Pathology"
+    ]
+  },
+  {
+    "name": "Homi Bhabha Cancer Hospital, Varanasi",
+    "district": "Uttar Pradesh",
+    "state": "Uttar Pradesh",
+    "specializations": [
+      "Head & Neck Surgery",
+      "Medical Oncology",
+      "Onco Pathology",
+      "Surgical Oncology"
+    ]
+  },
+  {
+    "name": "Index Medical College Hospital & Research Centre",
+    "district": "Indore",
     "state": "Madhya Pradesh",
-    "type": "PRIVATE",
     "specializations": [
-      "DM - Cardiology",
-      "DM - Endocrinology",
-      "DM - Nephrology",
-      "MCh - Pediatric Surgery",
-      "MCh - Urology/Genito-Urinary Surgery"
+      "Cardiology",
+      "Endocrinology",
+      "Nephrology",
+      "Paediatric Surgery",
+      "Urology/Genito-Urinary Surgery"
     ]
   },
   {
-    "name": "Indira Gandhi Institute of Child Health, Bangalore",
+    "name": "Indira Gandhi Institute of Child Health",
+    "district": "Bangalore",
     "state": "Karnataka",
-    "type": "GOVERNMENT",
     "specializations": [
-      "MCh - Paediatric Orthopaedics",
-      "MCh - Pediatric Surgery"
+      "Paediatric Orthopaedics",
+      "Paediatric Surgery"
     ]
   },
   {
-    "name": "Indira Gandhi Institute of Medical Sciences Sheikhpura Patna",
+    "name": "Indira Gandhi Institute of Medical Sciences Sheikhpura",
+    "district": "Patna",
     "state": "Bihar",
-    "type": "GOVERNMENT",
     "specializations": [
-      "DM - Cardiology",
-      "DM - Clinical Pharmacology",
-      "DM - Critical Care Medicine",
-      "DM - M. Ch- Reproductive Medicine and Surgery",
-      "DM - Medical Gastroenterology",
-      "DM - Nephrology",
-      "DM - Neurology",
-      "MCh - Gynaecological Oncology",
-      "MCh - Neuro Surgery",
-      "MCh - Pediatric Surgery",
-      "MCh - Surgical Gastroenterology",
-      "MCh - Thoracic Surgery/Cardio Thoracic Surgery/Cardio Vascular and thoracic Surgery",
-      "MCh - Urology/Genito-Urinary Surgery"
+      "Cardiology",
+      "Clinical Pharmacology",
+      "Critical Care Medicine",
+      "Gynaecological Oncology",
+      "Medical Gastroenterology",
+      "Nephrology",
+      "Neuro Surgery",
+      "Neurology",
+      "Paediatric Surgery",
+      "Reproductive Medicine and Surgery",
+      "Surgical Gastroenterology",
+      "Thoracic Surgery",
+      "Urology/Genito-Urinary Surgery"
     ]
   },
   {
     "name": "Institute of Gastroenterology Sciences & Organ Transplant (IGOT Hospital)",
+    "district": "",
     "state": "Karnataka",
-    "type": "GOVERNMENT",
     "specializations": [
-      "DM - Medical Gastroenterology",
-      "MCh - Hepato Pancreato Biliary Surgery",
-      "MCh - Surgical Gastroenterology"
+      "Hepato Pancreato Biliary Surgery",
+      "Medical Gastroenterology",
+      "Surgical Gastroenterology"
     ]
   },
   {
-    "name": "Institute of Human Behaviour and Allied Sciences, Delhi",
+    "name": "Institute of Human Behaviour and Allied Sciences",
+    "district": "Delhi",
     "state": "Delhi",
-    "type": "GOVERNMENT",
     "specializations": [
-      "DM - Geriatric Mental Health",
-      "MCh - Neuro Surgery"
+      "Geriatric Mental Health",
+      "Neuro Surgery"
     ]
   },
   {
-    "name": "Institute of Liver and Biliary Sciences, New Delhi",
+    "name": "Institute of Liver and Biliary Sciences",
+    "district": "New Delhi",
     "state": "Delhi",
-    "type": "GOVERNMENT",
     "specializations": [
-      "DM - Hepatology",
-      "DM - Interventional Radiology",
-      "DM - Organ Transplant Anaesthesia & Critical Care",
-      "DM - Paediatric Hepatology",
-      "DM - Virology",
-      "MCh - Hepato Pancreato Biliary Surgery"
+      "Hepato Pancreato Biliary Surgery",
+      "Hepatology",
+      "Interventional Radiology",
+      "Organ Transplant Anaesthesia & Critical Care",
+      "Paediatric Hepatology",
+      "Virology"
     ]
   },
   {
-    "name": "Institute of Medical Science & SUM hospital,Bhubaneswar",
+    "name": "Institute of Medical Science & SUM hospital",
+    "district": "Bhubaneswar",
     "state": "Orissa",
-    "type": "PRIVATE",
     "specializations": [
-      "DM - Cardiology",
-      "DM - Clinical Hematology",
-      "DM - Clinical Immunology & Rheumatology",
-      "DM - Critical Care Medicine",
-      "DM - Endocrinology",
-      "DM - Medical Gastroenterology",
-      "DM - Medical Oncology",
-      "DM - Neonatology",
-      "DM - Nephrology",
-      "DM - Neurology",
-      "MCh - Neuro Surgery",
-      "MCh - Plastic Surgery/Plastic & Reconstructive Surgery",
-      "MCh - Surgical Gastroenterology",
-      "MCh - Surgical Oncology",
-      "MCh - Urology/Genito-Urinary Surgery"
+      "Cardiology",
+      "Clinical Hematology",
+      "Clinical Immunology & Rheumatology",
+      "Critical Care Medicine",
+      "Endocrinology",
+      "Medical Gastroenterology",
+      "Medical Oncology",
+      "Neonatology",
+      "Nephrology",
+      "Neuro Surgery",
+      "Neurology",
+      "Plastic Surgery",
+      "Surgical Gastroenterology",
+      "Surgical Oncology",
+      "Urology/Genito-Urinary Surgery"
     ]
   },
   {
-    "name": "Institute of Postgraduate Medical Education & Research, Kolkata",
-    "state": "West Bengal",
-    "type": "GOVERNMENT",
-    "specializations": [
-      "DM - Cardiac-Anaesthesia",
-      "DM - Cardiology",
-      "DM - Clinical Immunology & Rheumatology",
-      "DM - Critical Care Medicine",
-      "DM - Endocrinology",
-      "DM - Hepatology",
-      "DM - Infectious Disease",
-      "DM - Medical Gastroenterology",
-      "DM - Neonatology",
-      "DM - Nephrology",
-      "DM - Neurology",
-      "DM - Pulmonology",
-      "MCh - Head & Neck Surgery",
-      "MCh - Neuro Surgery",
-      "MCh - Pediatric Surgery",
-      "MCh - Plastic Surgery/Plastic & Reconstructive Surgery",
-      "MCh - Surgical Gastroenterology",
-      "MCh - Surgical Oncology",
-      "MCh - Thoracic Surgery/Cardio Thoracic Surgery/Cardio Vascular and thoracic Surgery",
-      "MCh - Urology/Genito-Urinary Surgery"
-    ]
-  },
-  {
-    "name": "JSS Medical College, Mysore",
+    "name": "INSTITUTE OF NEPHRO-UROLOGY",
+    "district": "BANGALORE",
     "state": "Karnataka",
-    "type": "PRIVATE",
     "specializations": [
-      "DM - Clinical Immunology & Rheumatology",
-      "DM - Medical Gastroenterology",
-      "DM - Nephrology",
-      "DM - Neurology",
-      "MCh - Neuro Surgery",
-      "MCh - Plastic Surgery/Plastic & Reconstructive Surgery",
-      "MCh - Surgical Gastroenterology",
-      "MCh - Urology/Genito-Urinary Surgery"
+      "Nephrology",
+      "Urology/Genito-Urinary Surgery"
     ]
   },
   {
-    "name": "Jawahar Lal Nehru Medical College, Ajmer",
+    "name": "Institute of Postgraduate Medical Education & Research",
+    "district": "Kolkata",
+    "state": "West Bengal",
+    "specializations": [
+      "Cardiac Anaesthesia",
+      "Cardiology",
+      "Clinical Immunology & Rheumatology",
+      "Critical Care Medicine",
+      "Endocrinology",
+      "Head & Neck Surgery",
+      "Hepatology",
+      "Infectious Disease",
+      "Medical Gastroenterology",
+      "Neonatology",
+      "Nephrology",
+      "Neuro Surgery",
+      "Neurology",
+      "Paediatric Surgery",
+      "Plastic Surgery",
+      "Pulmonology",
+      "Surgical Gastroenterology",
+      "Surgical Oncology",
+      "Thoracic Surgery",
+      "Urology/Genito-Urinary Surgery"
+    ]
+  },
+  {
+    "name": "Jawahar Lal Nehru Medical College",
+    "district": "Ajmer",
     "state": "Rajasthan",
-    "type": "GOVERNMENT",
     "specializations": [
-      "DM - Cardiology",
-      "DM - Medical Gastroenterology",
-      "MCh - Neuro Surgery",
-      "MCh - Pediatric Surgery",
-      "MCh - Plastic Surgery/Plastic & Reconstructive Surgery",
-      "MCh - Urology/Genito-Urinary Surgery"
+      "Cardiology",
+      "Medical Gastroenterology",
+      "Neuro Surgery",
+      "Paediatric Surgery",
+      "Plastic Surgery",
+      "Urology/Genito-Urinary Surgery"
     ]
   },
   {
-    "name": "Jawaharlal Nehru Medical College Belgaum",
-    "state": "Karnataka",
-    "type": "PRIVATE",
-    "specializations": [
-      "DM - Cardiac-Anaesthesia",
-      "DM - Cardiology",
-      "DM - Endocrinology",
-      "DM - Interventional Radiology",
-      "DM - Medical Gastroenterology",
-      "DM - Medical Oncology",
-      "DM - Neonatology",
-      "DM - Nephrology",
-      "DM - Neurology",
-      "DM - Paediatric Neurology",
-      "MCh - Neuro Surgery",
-      "MCh - Pediatric Surgery",
-      "MCh - Plastic Surgery/Plastic & Reconstructive Surgery",
-      "MCh - Surgical Oncology",
-      "MCh - Thoracic Surgery/Cardio Thoracic Surgery/Cardio Vascular and thoracic Surgery",
-      "MCh - Urology/Genito-Urinary Surgery"
-    ]
-  },
-  {
-    "name": "Jawaharlal Nehru Medical College, Aligarh",
-    "state": "Uttar Pradesh",
-    "type": "GOVERNMENT",
-    "specializations": [
-      "DM - Cardiology",
-      "MCh - Neuro Surgery",
-      "MCh - Plastic Surgery/Plastic & Reconstructive Surgery"
-    ]
-  },
-  {
-    "name": "Jawaharlal Nehru Medical College, Sawangi (Meghe), Wardha",
+    "name": "Jawaharlal Nehru Medical College, Sawangi (Meghe)",
+    "district": "Wardha",
     "state": "Maharashtra",
-    "type": "PRIVATE",
     "specializations": [
-      "DM - Cardiology",
-      "DM - Critical Care Medicine",
-      "DM - Interventional Radiology",
-      "DM - Medical Gastroenterology",
-      "DM - Medical Oncology",
-      "DM - Neonatology",
-      "DM - Nephrology",
-      "DM - Neurology",
-      "MCh - Neuro Surgery",
-      "MCh - Urology/Genito-Urinary Surgery"
+      "Cardiology",
+      "Critical Care Medicine",
+      "Interventional Radiology",
+      "Medical Gastroenterology",
+      "Medical Oncology",
+      "Neonatology",
+      "Nephrology",
+      "Neuro Surgery",
+      "Neurology",
+      "Urology/Genito-Urinary Surgery"
     ]
   },
   {
-    "name": "Jubilee Mission Medical College & Research Institute Thrissur",
+    "name": "Jawaharlal Nehru Medical College",
+    "district": "Aligarh",
+    "state": "Uttar Pradesh",
+    "specializations": [
+      "Cardiology",
+      "Neuro Surgery",
+      "Plastic Surgery"
+    ]
+  },
+  {
+    "name": "Jawaharlal Nehru Medical College",
+    "district": "Belgaum",
+    "state": "Karnataka",
+    "specializations": [
+      "Cardiac Anaesthesia",
+      "Cardiology",
+      "Endocrinology",
+      "Interventional Radiology",
+      "Medical Gastroenterology",
+      "Medical Oncology",
+      "Neonatology",
+      "Nephrology",
+      "Neuro Surgery",
+      "Neurology",
+      "Paediatric Neurology",
+      "Paediatric Surgery",
+      "Plastic Surgery",
+      "Surgical Oncology",
+      "Thoracic Surgery",
+      "Urology/Genito-Urinary Surgery"
+    ]
+  },
+  {
+    "name": "JSS Medical College",
+    "district": "Mysore",
+    "state": "Karnataka",
+    "specializations": [
+      "Clinical Immunology & Rheumatology",
+      "Medical Gastroenterology",
+      "Nephrology",
+      "Neuro Surgery",
+      "Neurology",
+      "Plastic Surgery",
+      "Surgical Gastroenterology",
+      "Urology/Genito-Urinary Surgery"
+    ]
+  },
+  {
+    "name": "Jubilee Mission Medical College & Research Institute",
+    "district": "Thrissur",
     "state": "Kerala",
-    "type": "PRIVATE",
     "specializations": [
-      "DM - Cardiology",
-      "DM - Critical Care Medicine",
-      "DM - Neurology"
+      "Cardiology",
+      "Critical Care Medicine",
+      "Neurology"
     ]
   },
   {
-    "name": "K A P Viswanathan Government Medical College, Trichy",
+    "name": "K A P Viswanathan Government Medical College",
+    "district": "Trichy",
     "state": "Tamil Nadu",
-    "type": "GOVERNMENT",
     "specializations": [
-      "DM - Cardiology",
-      "DM - Neurology",
-      "MCh - Neuro Surgery"
+      "Cardiology",
+      "Neuro Surgery",
+      "Neurology"
     ]
   },
   {
-    "name": "K S Hegde Medical Academy, Mangalore",
+    "name": "K S Hegde Medical Academy",
+    "district": "Mangalore",
     "state": "Karnataka",
-    "type": "PRIVATE",
     "specializations": [
-      "MCh - Urology/Genito-Urinary Surgery"
+      "Urology/Genito-Urinary Surgery"
     ]
   },
   {
-    "name": "Kakatiya Medical College, Warangal",
+    "name": "Kakatiya Medical College",
+    "district": "Warangal",
     "state": "Telangana",
-    "type": "GOVERNMENT",
     "specializations": [
-      "DM - Cardiology",
-      "DM - Nephrology",
-      "MCh - Paediatric Surgery",
-      "MCh - Plastic Surgery/Plastic & Reconstructive Surgery",
-      "MCh - Thoracic Surgery/Cardio Thoracic Surgery/Cardio Vascular and thoracic Surgery",
-      "MCh - Urology/Genito-Urinary Surgery"
+      "Cardiology",
+      "Nephrology",
+      "Paediatric Surgery",
+      "Plastic Surgery",
+      "Thoracic Surgery",
+      "Urology/Genito-Urinary Surgery"
     ]
   },
   {
-    "name": "Kalinga Institute of Medical Sciences, Bhubaneswar",
+    "name": "Kalinga Institute of Medical Sciences",
+    "district": "Bhubaneswar",
     "state": "Orissa",
-    "type": "PRIVATE",
     "specializations": [
-      "DM - Cardiology",
-      "DM - Clinical Immunology & Rheumatology",
-      "DM - Critical Care Medicine",
-      "DM - Endocrinology",
-      "DM - Medical Gastroenterology",
-      "DM - Neonatology",
-      "DM - Nephrology",
-      "DM - Neurology",
-      "MCh - Neuro Surgery",
-      "MCh - Pediatric Surgery",
-      "MCh - Plastic Surgery/Plastic & Reconstructive Surgery",
-      "MCh - Urology/Genito-Urinary Surgery"
+      "Cardiology",
+      "Clinical Immunology & Rheumatology",
+      "Critical Care Medicine",
+      "Endocrinology",
+      "Medical Gastroenterology",
+      "Neonatology",
+      "Nephrology",
+      "Neuro Surgery",
+      "Neurology",
+      "Paediatric Surgery",
+      "Plastic Surgery",
+      "Urology/Genito-Urinary Surgery"
     ]
   },
   {
-    "name": "Kamineni Academy of Medical Sciences & Research Center, Hyderabad",
+    "name": "Kamineni Academy of Medical Sciences & Research Center",
+    "district": "Hyderabad",
     "state": "Telangana",
-    "type": "PRIVATE",
     "specializations": [
-      "DM - Cardiology",
-      "MCh - Neuro Surgery",
-      "MCh - Urology/Genito-Urinary Surgery"
+      "Cardiology",
+      "Neuro Surgery",
+      "Urology/Genito-Urinary Surgery"
     ]
   },
   {
-    "name": "Kamineni Institute of Medical Sciences, Narketpally",
+    "name": "Kamineni Institute of Medical Sciences",
+    "district": "Narketpally",
     "state": "Telangana",
-    "type": "PRIVATE",
     "specializations": [
-      "MCh - Urology/Genito-Urinary Surgery"
+      "Urology/Genito-Urinary Surgery"
     ]
   },
   {
-    "name": "KanyaKumari Government Medical College, Asaripallam",
+    "name": "KanyaKumari Government Medical College",
+    "district": "Asaripallam",
     "state": "Tamil Nadu",
-    "type": "GOVERNMENT",
     "specializations": [
-      "DM - Neurology",
-      "MCh - Neuro Surgery"
+      "Neuro Surgery",
+      "Neurology"
     ]
   },
   {
-    "name": "Karnataka Institute of Medical Sciences, Hubballi",
+    "name": "Karnataka Institute of Medical Sciences",
+    "district": "Hubballi",
     "state": "Karnataka",
-    "type": "GOVERNMENT",
     "specializations": [
-      "DM - Cardiology",
-      "DM - Medical Gastroenterology",
-      "DM - Nephrology",
-      "DM - Neurology",
-      "MCh - Neuro Surgery",
-      "MCh - Pediatric Surgery",
-      "MCh - Plastic Surgery/Plastic & Reconstructive Surgery",
-      "MCh - Surgical Oncology",
-      "MCh - Urology/Genito-Urinary Surgery"
+      "Cardiology",
+      "Medical Gastroenterology",
+      "Nephrology",
+      "Neuro Surgery",
+      "Neurology",
+      "Paediatric Surgery",
+      "Plastic Surgery",
+      "Surgical Oncology",
+      "Urology/Genito-Urinary Surgery"
     ]
   },
   {
-    "name": "Kasturba Medical College, Manipal",
+    "name": "Kasturba Medical College",
+    "district": "Manipal",
     "state": "Karnataka",
-    "type": "PRIVATE",
     "specializations": [
-      "DM - Cardiology",
-      "DM - Critical Care Medicine",
-      "DM - Endocrinology",
-      "DM - Infectious Disease",
-      "DM - M. Ch- Reproductive Medicine and Surgery",
-      "DM - Medical Gastroenterology",
-      "DM - Medical Genetics",
-      "DM - Medical Oncology",
-      "DM - Neonatology",
-      "DM - Nephrology",
-      "DM - Neurology",
-      "DM - Paediatric Oncology",
-      "MCh - Hand Surgery",
-      "MCh - Head & Neck Surgery",
-      "MCh - Neuro Surgery",
-      "MCh - Paediatric Orthopaedics",
-      "MCh - Pediatric Surgery",
-      "MCh - Plastic Surgery/Plastic & Reconstructive Surgery",
-      "MCh - Surgical Oncology",
-      "MCh - Thoracic Surgery/Cardio Thoracic Surgery/Cardio Vascular and thoracic Surgery",
-      "MCh - Urology/Genito-Urinary Surgery"
+      "Cardiology",
+      "Critical Care Medicine",
+      "Endocrinology",
+      "Hand Surgery",
+      "Head & Neck Surgery",
+      "Infectious Disease",
+      "Medical Gastroenterology",
+      "Medical Genetics",
+      "Medical Oncology",
+      "Neonatology",
+      "Nephrology",
+      "Neuro Surgery",
+      "Neurology",
+      "Paediatric Oncology",
+      "Paediatric Orthopaedics",
+      "Paediatric Surgery",
+      "Plastic Surgery",
+      "Reproductive Medicine and Surgery",
+      "Surgical Oncology",
+      "Thoracic Surgery",
+      "Urology/Genito-Urinary Surgery"
     ]
   },
   {
-    "name": "Katuri Medical College, Guntur",
+    "name": "Katuri Medical College",
+    "district": "Guntur",
     "state": "Andhra Pradesh",
-    "type": "PRIVATE",
     "specializations": [
-      "DM - Cardiology",
-      "MCh - Urology/Genito-Urinary Surgery"
+      "Cardiology",
+      "Urology/Genito-Urinary Surgery"
     ]
   },
   {
-    "name": "Kidwai Memorial Institute of Oncology, Bangalore",
+    "name": "Kidwai Memorial Institute of Oncology",
+    "district": "Bangalore",
     "state": "Karnataka",
-    "type": "GOVERNMENT",
     "specializations": [
-      "DM - Medical Oncology",
-      "DM - Onco Pathology",
-      "DM - Paediatric Oncology",
-      "MCh - Gynaecological Oncology",
-      "MCh - Head & Neck Surgery",
-      "MCh - Surgical Oncology"
+      "Gynaecological Oncology",
+      "Head & Neck Surgery",
+      "Medical Oncology",
+      "Onco Pathology",
+      "Paediatric Oncology",
+      "Surgical Oncology"
     ]
   },
   {
-    "name": "Kilpauk Medical College, Chennai",
+    "name": "Kilpauk Medical College",
+    "district": "Chennai",
     "state": "Tamil Nadu",
-    "type": "GOVERNMENT",
     "specializations": [
-      "DM - Cardiology",
-      "DM - Medical Gastroenterology",
-      "DM - Medical Oncology",
-      "DM - Nephrology",
-      "DM - Neurology",
-      "MCh - Neuro Surgery",
-      "MCh - Plastic Surgery/Plastic & Reconstructive Surgery",
-      "MCh - Surgical Gastroenterology",
-      "MCh - Surgical Oncology",
-      "MCh - Urology/Genito-Urinary Surgery"
+      "Cardiology",
+      "Medical Gastroenterology",
+      "Medical Oncology",
+      "Nephrology",
+      "Neuro Surgery",
+      "Neurology",
+      "Plastic Surgery",
+      "Surgical Gastroenterology",
+      "Surgical Oncology",
+      "Urology/Genito-Urinary Surgery"
     ]
   },
   {
-    "name": "King George Medical University, Lucknow",
+    "name": "King George Medical University",
+    "district": "Lucknow",
     "state": "Uttar Pradesh",
-    "type": "GOVERNMENT",
     "specializations": [
-      "DM - Cardiology",
-      "DM - Clinical Hematology",
-      "DM - Clinical Immunology & Rheumatology",
-      "DM - Critical Care Medicine",
-      "DM - Geriatic Mental Health",
-      "DM - Infectious Disease",
-      "DM - Medical Gastroenterology",
-      "DM - Neurology",
-      "DM - Pulmonary Medicine",
-      "MCh - Endocrine Surgery",
-      "MCh - Neuro Surgery",
-      "MCh - Paediatric Orthopaedics",
-      "MCh - Pediatric Surgery",
-      "MCh - Plastic Surgery/Plastic & Reconstructive Surgery",
-      "MCh - Surgical Gastroenterology",
-      "MCh - Surgical Oncology",
-      "MCh - Thoracic Surgery/Cardio Thoracic Surgery/Cardio Vascular and thoracic Surgery",
-      "MCh - Urology/Genito-Urinary Surgery"
+      "Cardiology",
+      "Clinical Hematology",
+      "Clinical Immunology & Rheumatology",
+      "Critical Care Medicine",
+      "Endocrine Surgery",
+      "Geriatric Mental Health",
+      "Infectious Disease",
+      "Medical Gastroenterology",
+      "Neuro Surgery",
+      "Neurology",
+      "Paediatric Orthopaedics",
+      "Paediatric Surgery",
+      "Plastic Surgery",
+      "Pulmonary Medicine",
+      "Surgical Gastroenterology",
+      "Surgical Oncology",
+      "Thoracic Surgery",
+      "Urology/Genito-Urinary Surgery"
     ]
   },
   {
-    "name": "Krishna Institute of Medical Sciences, Karad",
+    "name": "Krishna Institute of Medical Sciences",
+    "district": "Karad",
     "state": "Maharashtra",
-    "type": "PRIVATE",
     "specializations": [
-      "DM - Cardiology",
-      "DM - Critical Care Medicine",
-      "DM - Neuro Anasthesia",
-      "MCh - Neuro Surgery",
-      "MCh - Plastic Surgery/Plastic & Reconstructive Surgery",
-      "MCh - Urology/Genito-Urinary Surgery"
+      "Cardiology",
+      "Critical Care Medicine",
+      "Neuro Anaesthesia",
+      "Neuro Surgery",
+      "Plastic Surgery",
+      "Urology/Genito-Urinary Surgery"
     ]
   },
   {
-    "name": "Kurnool Medical College, Kurnool",
+    "name": "Kurnool Medical College",
+    "district": "Kurnool",
     "state": "Andhra Pradesh",
-    "type": "GOVERNMENT",
     "specializations": [
-      "DM - Cardiology",
-      "DM - Endocrinology",
-      "DM - Medical Gastroenterology",
-      "DM - Nephrology",
-      "DM - Neurology",
-      "MCh - Neuro Surgery",
-      "MCh - Pediatric Surgery",
-      "MCh - Plastic Surgery/Plastic & Reconstructive Surgery",
-      "MCh - Urology/Genito-Urinary Surgery"
+      "Cardiology",
+      "Endocrinology",
+      "Medical Gastroenterology",
+      "Nephrology",
+      "Neuro Surgery",
+      "Neurology",
+      "Paediatric Surgery",
+      "Plastic Surgery",
+      "Urology/Genito-Urinary Surgery"
     ]
   },
   {
-    "name": "L.N. Medical College and Research Centre Bhopal",
+    "name": "L.N. Medical College and Research Centre",
+    "district": "Bhopal",
     "state": "Madhya Pradesh",
-    "type": "PRIVATE",
     "specializations": [
-      "DM - Cardiology",
-      "DM - Critical Care Medicine",
-      "DM - Neurology",
-      "MCh - Neurosurgery"
+      "Cardiology",
+      "Critical Care Medicine",
+      "Neuro Surgery",
+      "Neurology"
     ]
   },
   {
-    "name": "LLRM Medical College, Meerut",
-    "state": "Uttar Pradesh",
-    "type": "GOVERNMENT",
-    "specializations": [
-      "DM - Endocrinology",
-      "MCh - Neuro Surgery"
-    ]
-  },
-  {
-    "name": "Lady Hardinge Medical College, New Delhi",
+    "name": "Lady Hardinge Medical College",
+    "district": "New Delhi",
     "state": "Delhi",
-    "type": "GOVERNMENT",
     "specializations": [
-      "DM - Neonatology",
-      "DM - Paediatric and neonatal Anesthesia",
-      "MCh - Pediatric Surgery"
+      "Neonatology",
+      "Paediatric Surgery",
+      "Paediatric and Neonatal Anaesthesia"
     ]
   },
   {
-    "name": "Lokmanya Tilak Municipal Medical College, Sion, Mumbai",
-    "state": "Maharashtra",
-    "type": "GOVERNMENT",
-    "specializations": [
-      "DM - Cardiology",
-      "DM - Interventional Radiology",
-      "DM - Medical Gastroenterology",
-      "DM - Neonatology",
-      "MCh - Neuro Surgery",
-      "MCh - Pediatric Surgery",
-      "MCh - Plastic Surgery/Plastic & Reconstructive Surgery",
-      "MCh - Thoracic Surgery/Cardio Thoracic Surgery/Cardio Vascular and thoracic Surgery",
-      "MCh - Urology/Genito-Urinary Surgery"
-    ]
-  },
-  {
-    "name": "M E S Medical College , Perintalmanna Malappuram Distt.Kerala",
-    "state": "Kerala",
-    "type": "PRIVATE",
-    "specializations": [
-      "DM - Neurology"
-    ]
-  },
-  {
-    "name": "M G M Medical College, Indore",
-    "state": "Madhya Pradesh",
-    "type": "GOVERNMENT",
-    "specializations": [
-      "DM - Cardiology",
-      "DM - Neurology",
-      "MCh - Neuro Surgery",
-      "MCh - Pediatric Surgery"
-    ]
-  },
-  {
-    "name": "M S Ramaiah Medical College, Bangalore",
-    "state": "Karnataka",
-    "type": "PRIVATE",
-    "specializations": [
-      "DM - Cardiology",
-      "DM - Critical Care Medicine",
-      "DM - Endocrinology",
-      "DM - Medical Gastroenterology",
-      "DM - Medical Oncology",
-      "DM - Nephrology",
-      "DM - Neurology",
-      "MCh - Neuro Surgery",
-      "MCh - Pediatric Surgery",
-      "MCh - Plastic Surgery/Plastic & Reconstructive Surgery",
-      "MCh - Surgical Oncology",
-      "MCh - Urology/Genito-Urinary Surgery",
-      "MCh - Vascular Surgery"
-    ]
-  },
-  {
-    "name": "MEDICAL COLLEGE, KOLKATA",
-    "state": "West Bengal",
-    "type": "GOVERNMENT",
-    "specializations": [
-      "DM - Cardiology",
-      "DM - Clinical Hematology",
-      "DM - Endocrinology",
-      "DM - Medical Gastroenterology",
-      "DM - Neurology",
-      "MCh - Pediatric Surgery",
-      "MCh - Plastic Surgery/Plastic & Reconstructive Surgery",
-      "MCh - Urology/Genito-Urinary Surgery"
-    ]
-  },
-  {
-    "name": "MKCG Medical College, Berhampur",
-    "state": "Orissa",
-    "type": "GOVERNMENT",
-    "specializations": [
-      "DM - Cardiology",
-      "DM - Endocrinology",
-      "MCh - Plastic Surgery/Plastic & Reconstructive Surgery",
-      "MCh - Urology/Genito-Urinary Surgery"
-    ]
-  },
-  {
-    "name": "Madras Medical College, Chennai",
-    "state": "Tamil Nadu",
-    "type": "GOVERNMENT",
-    "specializations": [
-      "DM - Cardiology",
-      "DM - Clinical Hematology",
-      "DM - Critical Care Medicine",
-      "DM - Endocrinology",
-      "DM - Hepatology",
-      "DM - Interventional Radiology",
-      "DM - Medical Gastroenterology",
-      "DM - Medical Oncology",
-      "DM - Neonatology",
-      "DM - Nephrology",
-      "DM - Neurology",
-      "DM - Paediatric Neurology",
-      "DM - Pediatrics Gastroenterology",
-      "DM - Rheumatology",
-      "MCh - Endocrine Surgery",
-      "MCh - Neuro Surgery",
-      "MCh - Pediatric Surgery",
-      "MCh - Plastic Surgery/Plastic & Reconstructive Surgery",
-      "MCh - Surgical Gastroenterology",
-      "MCh - Surgical Oncology",
-      "MCh - Thoracic Surgery/Cardio Thoracic Surgery/Cardio Vascular and thoracic Surgery",
-      "MCh - Urology/Genito-Urinary Surgery",
-      "MCh - Vascular Surgery"
-    ]
-  },
-  {
-    "name": "Madurai Medical College, Madurai",
-    "state": "Tamil Nadu",
-    "type": "PRIVATE",
-    "specializations": [
-      "DM - Cardiology",
-      "DM - Endocrinology",
-      "DM - Medical Gastroenterology",
-      "DM - Medical Oncology",
-      "DM - Neonatology",
-      "DM - Nephrology",
-      "DM - Neurology",
-      "MCh - Neuro Surgery",
-      "MCh - Pediatric Surgery",
-      "MCh - Plastic Surgery/Plastic & Reconstructive Surgery",
-      "MCh - Surgical Gastroenterology",
-      "MCh - Surgical Oncology",
-      "MCh - Thoracic Surgery/Cardio Thoracic Surgery/Cardio Vascular and thoracic Surgery",
-      "MCh - Urology/Genito-Urinary Surgery",
-      "MCh - Vascular Surgery"
-    ]
-  },
-  {
-    "name": "Maharani Laxmi Bai Medical College, Jhansi",
+    "name": "LLRM Medical College",
+    "district": "Meerut",
     "state": "Uttar Pradesh",
-    "type": "GOVERNMENT",
     "specializations": [
-      "DM - Neurology",
-      "MCh - Neuro Surgery",
-      "MCh - Plastic Surgery/Plastic & Reconstructive Surgery"
+      "Endocrinology",
+      "Neuro Surgery"
     ]
   },
   {
-    "name": "Maharishi Markandeshwar Institute Of Medical Sciences & Research, Mullana, Ambala",
+    "name": "Lokmanya Tilak Municipal Medical College, Sion",
+    "district": "Mumbai",
+    "state": "Maharashtra",
+    "specializations": [
+      "Cardiology",
+      "Interventional Radiology",
+      "Medical Gastroenterology",
+      "Neonatology",
+      "Neuro Surgery",
+      "Paediatric Surgery",
+      "Plastic Surgery",
+      "Thoracic Surgery",
+      "Urology/Genito-Urinary Surgery"
+    ]
+  },
+  {
+    "name": "M E S Medical College",
+    "district": "Perintalmanna Malappuram Distt.Kerala",
+    "state": "Kerala",
+    "specializations": [
+      "Neurology"
+    ]
+  },
+  {
+    "name": "M G M Medical College",
+    "district": "Indore",
+    "state": "Madhya Pradesh",
+    "specializations": [
+      "Cardiology",
+      "Neuro Surgery",
+      "Neurology",
+      "Paediatric Surgery"
+    ]
+  },
+  {
+    "name": "M S Ramaiah Medical College",
+    "district": "Bangalore",
+    "state": "Karnataka",
+    "specializations": [
+      "Cardiology",
+      "Critical Care Medicine",
+      "Endocrinology",
+      "Medical Gastroenterology",
+      "Medical Oncology",
+      "Nephrology",
+      "Neuro Surgery",
+      "Neurology",
+      "Paediatric Surgery",
+      "Plastic Surgery",
+      "Surgical Oncology",
+      "Urology/Genito-Urinary Surgery",
+      "Vascular Surgery"
+    ]
+  },
+  {
+    "name": "Madras Medical College",
+    "district": "Chennai",
+    "state": "Tamil Nadu",
+    "specializations": [
+      "Cardiology",
+      "Clinical Hematology",
+      "Critical Care Medicine",
+      "Endocrine Surgery",
+      "Endocrinology",
+      "Hepatology",
+      "Interventional Radiology",
+      "Medical Gastroenterology",
+      "Medical Oncology",
+      "Neonatology",
+      "Nephrology",
+      "Neuro Surgery",
+      "Neurology",
+      "Paediatric Gastroenterology",
+      "Paediatric Neurology",
+      "Paediatric Surgery",
+      "Plastic Surgery",
+      "Rheumatology",
+      "Surgical Gastroenterology",
+      "Surgical Oncology",
+      "Thoracic Surgery",
+      "Urology/Genito-Urinary Surgery",
+      "Vascular Surgery"
+    ]
+  },
+  {
+    "name": "Madurai Medical College",
+    "district": "Madurai",
+    "state": "Tamil Nadu",
+    "specializations": [
+      "Cardiology",
+      "Endocrinology",
+      "Medical Gastroenterology",
+      "Medical Oncology",
+      "Neonatology",
+      "Nephrology",
+      "Neuro Surgery",
+      "Neurology",
+      "Paediatric Surgery",
+      "Plastic Surgery",
+      "Surgical Gastroenterology",
+      "Surgical Oncology",
+      "Thoracic Surgery",
+      "Urology/Genito-Urinary Surgery",
+      "Vascular Surgery"
+    ]
+  },
+  {
+    "name": "Maharani Laxmi Bai Medical College",
+    "district": "Jhansi",
+    "state": "Uttar Pradesh",
+    "specializations": [
+      "Neuro Surgery",
+      "Neurology",
+      "Plastic Surgery"
+    ]
+  },
+  {
+    "name": "Maharishi Markandeshwar Institute Of Medical Sciences & Research, Mullana",
+    "district": "Ambala",
     "state": "Haryana",
-    "type": "PRIVATE",
     "specializations": [
-      "DM - Cardiology",
-      "DM - Medical Gastroenterology",
-      "MCh - Neuro Surgery",
-      "MCh - Urology/Genito-Urinary Surgery"
+      "Cardiology",
+      "Medical Gastroenterology",
+      "Neuro Surgery",
+      "Urology/Genito-Urinary Surgery"
     ]
   },
   {
-    "name": "Mahatma Gandhi Medical College & Research Institute, Pondicherry",
+    "name": "Mahatma Gandhi Medical College & Research Institute",
+    "district": "Pondicherry",
     "state": "Pondicherry",
-    "type": "PRIVATE",
     "specializations": [
-      "DM - Cardiology",
-      "MCh - Neuro Surgery",
-      "MCh - Thoracic Surgery/Cardio Thoracic Surgery/Cardio Vascular and thoracic Surgery",
-      "MCh - Urology/Genito-Urinary Surgery"
+      "Cardiology",
+      "Neuro Surgery",
+      "Thoracic Surgery",
+      "Urology/Genito-Urinary Surgery"
     ]
   },
   {
-    "name": "Mahatma Gandhi Medical College and Hospital, Sitapur, Jaipur",
+    "name": "Mahatma Gandhi Medical College and Hospital, Sitapur",
+    "district": "Jaipur",
     "state": "Rajasthan",
-    "type": "PRIVATE",
     "specializations": [
-      "DM - Cardiac-Anaesthesia",
-      "DM - Cardiology",
-      "DM - Clinical Hematology",
-      "DM - Critical Care Medicine",
-      "DM - Endocrinology",
-      "DM - Hepatology",
-      "DM - Interventional Radiology",
-      "DM - M. Ch- Reproductive Medicine and Surgery",
-      "DM - Medical Gastroenterology",
-      "DM - Medical Oncology",
-      "DM - Neonatology",
-      "DM - Nephrology",
-      "DM - Neuro Anasthesia",
-      "DM - Neurology",
-      "DM - Onco Pathology",
-      "DM - Organ Transplant Anaesthesia & Critical Care",
-      "MCh - Hepato Pancreato Biliary Surgery",
-      "MCh - Neuro Surgery",
-      "MCh - Plastic Surgery/Plastic & Reconstructive Surgery",
-      "MCh - Surgical Gastroenterology",
-      "MCh - Surgical Oncology",
-      "MCh - Thoracic Surgery/Cardio Thoracic Surgery/Cardio Vascular and thoracic Surgery",
-      "MCh - Urology/Genito-Urinary Surgery"
+      "Cardiac Anaesthesia",
+      "Cardiology",
+      "Clinical Hematology",
+      "Critical Care Medicine",
+      "Endocrinology",
+      "Hepato Pancreato Biliary Surgery",
+      "Hepatology",
+      "Interventional Radiology",
+      "Medical Gastroenterology",
+      "Medical Oncology",
+      "Neonatology",
+      "Nephrology",
+      "Neuro Anaesthesia",
+      "Neuro Surgery",
+      "Neurology",
+      "Onco Pathology",
+      "Organ Transplant Anaesthesia & Critical Care",
+      "Plastic Surgery",
+      "Reproductive Medicine and Surgery",
+      "Surgical Gastroenterology",
+      "Surgical Oncology",
+      "Thoracic Surgery",
+      "Urology/Genito-Urinary Surgery"
     ]
   },
   {
-    "name": "Mahatma Gandhi Missions Medical College Aurangabad",
+    "name": "Mahatma Gandhi Missions Medical College",
+    "district": "Aurangabad",
     "state": "Maharashtra",
-    "type": "PRIVATE",
     "specializations": [
-      "DM - Cardiology",
-      "DM - Nephrology",
-      "MCh - Hepato Pancreato Biliary Surgery",
-      "MCh - Plastic Surgery/Plastic & Reconstructive Surgery",
-      "MCh - Thoracic Surgery/Cardio Thoracic Surgery/Cardio Vascular and thoracic Surgery",
-      "MCh - Urology/Genito-Urinary Surgery"
+      "Cardiology",
+      "Hepato Pancreato Biliary Surgery",
+      "Nephrology",
+      "Plastic Surgery",
+      "Thoracic Surgery",
+      "Urology/Genito-Urinary Surgery"
     ]
   },
   {
-    "name": "Mahatma Gandhi Missions Medical College, Navi Mumbai",
+    "name": "Mahatma Gandhi Missions Medical College",
+    "district": "Navi Mumbai",
     "state": "Maharashtra",
-    "type": "PRIVATE",
     "specializations": [
-      "DM - Cardiology",
-      "MCh - Neuro Surgery",
-      "MCh - Thoracic Surgery/Cardio Thoracic Surgery/Cardio Vascular and thoracic Surgery",
-      "MCh - Urology/Genito-Urinary Surgery"
+      "Cardiology",
+      "Neuro Surgery",
+      "Thoracic Surgery",
+      "Urology/Genito-Urinary Surgery"
     ]
   },
   {
-    "name": "Malabar Cancer Centre – Post Graduate Institute of Oncology Sciences & Research, Thalassery",
+    "name": "Malabar Cancer Centre – Post Graduate Institute of Oncology Sciences & Research",
+    "district": "Thalassery",
     "state": "Kerala",
-    "type": "PRIVATE",
     "specializations": [
-      "DM - Onco Pathology"
+      "Onco Pathology"
     ]
   },
   {
-    "name": "Malabar Medical College, Kozhikode,Calicut",
+    "name": "Malabar Medical College, Kozhikode",
+    "district": "Calicut",
     "state": "Kerala",
-    "type": "PRIVATE",
     "specializations": [
-      "DM - Cardiology",
-      "DM - Medical Gastroenterology",
-      "MCh - Urology/Genito-Urinary Surgery"
+      "Cardiology",
+      "Medical Gastroenterology",
+      "Urology/Genito-Urinary Surgery"
     ]
   },
   {
-    "name": "Malankara Orthodox Syrian Church Medical College, Kolenchery",
+    "name": "Malankara Orthodox Syrian Church Medical College",
+    "district": "Kolenchery",
     "state": "Kerala",
-    "type": "PRIVATE",
     "specializations": [
-      "DM - Neonatology"
+      "Neonatology"
     ]
   },
   {
-    "name": "Mallareddy Medical College for Women, Hyderabad",
+    "name": "Mallareddy Medical College for Women",
+    "district": "Hyderabad",
     "state": "Telangana",
-    "type": "PRIVATE",
     "specializations": [
-      "DM - Cardiology"
+      "Cardiology"
     ]
   },
   {
-    "name": "Mamata Medical College Khammam",
+    "name": "Mamata Medical College",
+    "district": "Khammam",
     "state": "Telangana",
-    "type": "PRIVATE",
     "specializations": [
-      "DM - Cardiology",
-      "MCh - Neuro Surgery",
-      "MCh - Urology/Genito-Urinary Surgery"
+      "Cardiology",
+      "Neuro Surgery",
+      "Urology/Genito-Urinary Surgery"
     ]
   },
   {
-    "name": "Maulana Azad Medical College, New Delhi",
+    "name": "Maulana Azad Medical College",
+    "district": "New Delhi",
     "state": "Delhi",
-    "type": "GOVERNMENT",
     "specializations": [
-      "DM - Medical Genetics",
-      "DM - Neonatology",
-      "DM - Neuro Anasthesia",
-      "DM - Pulmonary Medicine",
-      "MCh - Pediatric Surgery"
+      "Medical Genetics",
+      "Neonatology",
+      "Neuro Anaesthesia",
+      "Paediatric Surgery",
+      "Pulmonary Medicine"
     ]
   },
   {
-    "name": "Medical College, Thiruvananthapuram",
+    "name": "MEDICAL COLLEGE",
+    "district": "KOLKATA",
+    "state": "West Bengal",
+    "specializations": [
+      "Cardiology",
+      "Clinical Hematology",
+      "Endocrinology",
+      "Medical Gastroenterology",
+      "Neurology",
+      "Paediatric Surgery",
+      "Plastic Surgery",
+      "Urology/Genito-Urinary Surgery"
+    ]
+  },
+  {
+    "name": "Medical College",
+    "district": "Thiruvananthapuram",
     "state": "Kerala",
-    "type": "GOVERNMENT",
     "specializations": [
-      "DM - Cardiology",
-      "DM - Endocrinology",
-      "DM - M. Ch- Reproductive Medicine and Surgery",
-      "DM - Medical Gastroenterology",
-      "DM - Neonatology",
-      "DM - Nephrology",
-      "DM - Neurology",
-      "DM - Paediatric Neurology",
-      "DM - Paediatrics Nephrology",
-      "DM - Pulmonary Medicine",
-      "MCh - Neuro Surgery",
-      "MCh - Pediatric Surgery",
-      "MCh - Plastic Surgery/Plastic & Reconstructive Surgery",
-      "MCh - Surgical Gastroenterology",
-      "MCh - Thoracic Surgery/Cardio Thoracic Surgery/Cardio Vascular and thoracic Surgery",
-      "MCh - Urology/Genito-Urinary Surgery"
+      "Cardiology",
+      "Endocrinology",
+      "Medical Gastroenterology",
+      "Neonatology",
+      "Nephrology",
+      "Neuro Surgery",
+      "Neurology",
+      "Paediatric Nephrology",
+      "Paediatric Neurology",
+      "Paediatric Surgery",
+      "Plastic Surgery",
+      "Pulmonary Medicine",
+      "Reproductive Medicine and Surgery",
+      "Surgical Gastroenterology",
+      "Thoracic Surgery",
+      "Urology/Genito-Urinary Surgery"
     ]
   },
   {
-    "name": "Meenakshi Medical College and Research Institute, Enathur",
+    "name": "Meenakshi Medical College and Research Institute",
+    "district": "Enathur",
     "state": "Tamil Nadu",
-    "type": "PRIVATE",
     "specializations": [
-      "DM - Cardiology",
-      "DM - Medical Gastroenterology",
-      "MCh - Urology/Genito-Urinary Surgery"
+      "Cardiology",
+      "Medical Gastroenterology",
+      "Urology/Genito-Urinary Surgery"
     ]
   },
   {
-    "name": "Moti Lal Nehru Medical College, Allahabad",
+    "name": "MKCG Medical College",
+    "district": "Berhampur",
+    "state": "Orissa",
+    "specializations": [
+      "Cardiology",
+      "Endocrinology",
+      "Plastic Surgery",
+      "Urology/Genito-Urinary Surgery"
+    ]
+  },
+  {
+    "name": "Moti Lal Nehru Medical College",
+    "district": "Allahabad",
     "state": "Uttar Pradesh",
-    "type": "GOVERNMENT",
     "specializations": [
-      "DM - Medical Gastroenterology",
-      "DM - Nephrology",
-      "DM - Neurology",
-      "MCh - Neuro Surgery",
-      "MCh - Plastic Surgery/Plastic & Reconstructive Surgery"
+      "Medical Gastroenterology",
+      "Nephrology",
+      "Neuro Surgery",
+      "Neurology",
+      "Plastic Surgery"
     ]
   },
   {
-    "name": "Muzaffarnagar Medical College, Muzaffarnagar",
+    "name": "Muzaffarnagar Medical College",
+    "district": "Muzaffarnagar",
     "state": "Uttar Pradesh",
-    "type": "PRIVATE",
     "specializations": [
-      "DM - Cardiology"
+      "Cardiology"
     ]
   },
   {
-    "name": "Mysore Medical College and Research Instt. (Prev.name Government Medical College), Mysore",
+    "name": "Mysore Medical College and Research Instt. (Prev.name Government Medical College)",
+    "district": "Mysore",
     "state": "Karnataka",
-    "type": "GOVERNMENT",
     "specializations": [
-      "DM - Nephrology",
-      "MCh - Plastic Surgery/Plastic & Reconstructive Surgery",
-      "MCh - Urology/Genito-Urinary Surgery"
+      "Nephrology",
+      "Plastic Surgery",
+      "Urology/Genito-Urinary Surgery"
     ]
   },
   {
-    "name": "N. K. P. Salve Instt. of Medical Sciences and Research Centre and Lata Mangeshkar Hospital, Nagpur",
+    "name": "N. K. P. Salve Instt. of Medical Sciences and Research Centre and Lata Mangeshkar Hospital",
+    "district": "Nagpur",
     "state": "Maharashtra",
-    "type": "PRIVATE",
     "specializations": [
-      "MCh - Pediatric Surgery",
-      "MCh - Plastic Surgery/Plastic & Reconstructive Surgery"
+      "Paediatric Surgery",
+      "Plastic Surgery"
+    ]
+  },
+  {
+    "name": "Narayana Medical College",
+    "district": "Nellore",
+    "state": "Andhra Pradesh",
+    "specializations": [
+      "Cardiology",
+      "Endocrinology",
+      "Medical Gastroenterology",
+      "Nephrology",
+      "Neurology",
+      "Surgical Gastroenterology",
+      "Urology/Genito-Urinary Surgery"
+    ]
+  },
+  {
+    "name": "National Institute of Medical Science & Research",
+    "district": "Jaipur",
+    "state": "Rajasthan",
+    "specializations": [
+      "Cardiology",
+      "Critical Care Medicine",
+      "Endocrinology",
+      "Interventional Radiology",
+      "Medical Gastroenterology",
+      "Medical Oncology",
+      "Neonatology",
+      "Nephrology",
+      "Neuro Surgery",
+      "Neurology",
+      "Reproductive Medicine and Surgery",
+      "Surgical Gastroenterology",
+      "Surgical Oncology",
+      "Thoracic Surgery",
+      "Urology/Genito-Urinary Surgery"
+    ]
+  },
+  {
+    "name": "Netaji Subhash Chandra Bose Medical College",
+    "district": "Jabalpur",
+    "state": "Madhya Pradesh",
+    "specializations": [
+      "Cardiology",
+      "Neuro Anaesthesia",
+      "Neuro Surgery",
+      "Paediatric Surgery",
+      "Plastic Surgery",
+      "Pulmonary Medicine",
+      "Thoracic Surgery",
+      "Urology/Genito-Urinary Surgery"
     ]
   },
   {
     "name": "NEW CANCER HOSPITAL AND RESEARCH CENTRE",
+    "district": "",
     "state": "Punjab",
-    "type": "PRIVATE",
     "specializations": [
-      "DM - Medical Oncology",
-      "DM - Onco Pathology",
-      "MCh - Surgical Oncology"
+      "Medical Oncology",
+      "Onco Pathology",
+      "Surgical Oncology"
     ]
   },
   {
-    "name": "NRI Medical College, Guntur",
-    "state": "Andhra Pradesh",
-    "type": "PRIVATE",
-    "specializations": [
-      "DM - Cardiology",
-      "DM - Critical Care Medicine",
-      "DM - Nephrology",
-      "DM - Neurology",
-      "MCh - Neuro Surgery",
-      "MCh - Thoracic Surgery/Cardio Thoracic Surgery/Cardio Vascular and thoracic Surgery",
-      "MCh - Urology/Genito-Urinary Surgery"
-    ]
-  },
-  {
-    "name": "Narayana Medical College, Nellore",
-    "state": "Andhra Pradesh",
-    "type": "PRIVATE",
-    "specializations": [
-      "DM - Cardiology",
-      "DM - Endocrinology",
-      "DM - Medical Gastroenterology",
-      "DM - Nephrology",
-      "DM - Neurology",
-      "MCh - Surgical Gastroenterology",
-      "MCh - Urology/Genito-Urinary Surgery"
-    ]
-  },
-  {
-    "name": "National Institute of Medical Science & Research, Jaipur",
-    "state": "Rajasthan",
-    "type": "PRIVATE",
-    "specializations": [
-      "DM - Cardiology",
-      "DM - Critical Care Medicine",
-      "DM - Endocrinology",
-      "DM - Interventional Radiology",
-      "DM - M. Ch- Reproductive Medicine and Surgery",
-      "DM - Medical Gastroenterology",
-      "DM - Medical Oncology",
-      "DM - Neonatology",
-      "DM - Nephrology",
-      "DM - Neurology",
-      "MCh - Neuro Surgery",
-      "MCh - Surgical Gastroenterology",
-      "MCh - Surgical Oncology",
-      "MCh - Thoracic Surgery/Cardio Thoracic Surgery/Cardio Vascular and thoracic Surgery",
-      "MCh - Urology/Genito-Urinary Surgery"
-    ]
-  },
-  {
-    "name": "Netaji Subhash Chandra Bose Medical College, Jabalpur",
-    "state": "Madhya Pradesh",
-    "type": "GOVERNMENT",
-    "specializations": [
-      "DM - Cardiology",
-      "DM - Neuro Anasthesia",
-      "DM - Pulmonary Medicine",
-      "MCh - Neuro Surgery",
-      "MCh - Pediatric Surgery",
-      "MCh - Plastic Surgery/Plastic & Reconstructive Surgery",
-      "MCh - Thoracic Surgery/Cardio Thoracic Surgery/Cardio Vascular and thoracic Surgery",
-      "MCh - Urology/Genito-Urinary Surgery"
-    ]
-  },
-  {
-    "name": "Nilratan Sircar Medical College, Kolkata",
+    "name": "Nilratan Sircar Medical College",
+    "district": "Kolkata",
     "state": "West Bengal",
-    "type": "GOVERNMENT",
     "specializations": [
-      "DM - Cardiac-Anaesthesia",
-      "DM - Cardiology",
-      "DM - Clinical Hematology",
-      "DM - Endocrinology",
-      "DM - Nephrology",
-      "DM - Neurology",
-      "MCh - Neuro Surgery",
-      "MCh - Pediatric Surgery",
-      "MCh - Plastic Surgery/Plastic & Reconstructive Surgery",
-      "MCh - Thoracic Surgery/Cardio Thoracic Surgery/Cardio Vascular and thoracic Surgery",
-      "MCh - Urology/Genito-Urinary Surgery"
+      "Cardiac Anaesthesia",
+      "Cardiology",
+      "Clinical Hematology",
+      "Endocrinology",
+      "Nephrology",
+      "Neuro Surgery",
+      "Neurology",
+      "Paediatric Surgery",
+      "Plastic Surgery",
+      "Thoracic Surgery",
+      "Urology/Genito-Urinary Surgery"
     ]
   },
   {
-    "name": "Nizams Institute of Medical Sciences, Hyderabad",
+    "name": "Nizams Institute of Medical Sciences",
+    "district": "Hyderabad",
     "state": "Telangana",
-    "type": "GOVERNMENT",
     "specializations": [
-      "DM - Cardiology",
-      "DM - Clinical Immunology & Rheumatology",
-      "DM - Clinical Pharmacology",
-      "DM - Critical Care Medicine",
-      "DM - Medical Oncology",
-      "DM - Nephrology",
-      "DM - Neuro Anasthesia",
-      "DM - Neurology",
-      "DM - Onco Pathology",
-      "MCh - Neuro Surgery",
-      "MCh - Plastic Surgery/Plastic & Reconstructive Surgery",
-      "MCh - Surgical Gastroenterology",
-      "MCh - Surgical Oncology",
-      "MCh - Thoracic Surgery/Cardio Thoracic Surgery/Cardio Vascular and thoracic Surgery",
-      "MCh - Urology/Genito-Urinary Surgery",
-      "MCh - Vascular Surgery"
+      "Cardiology",
+      "Clinical Immunology & Rheumatology",
+      "Clinical Pharmacology",
+      "Critical Care Medicine",
+      "Medical Oncology",
+      "Nephrology",
+      "Neuro Anaesthesia",
+      "Neuro Surgery",
+      "Neurology",
+      "Onco Pathology",
+      "Plastic Surgery",
+      "Surgical Gastroenterology",
+      "Surgical Oncology",
+      "Thoracic Surgery",
+      "Urology/Genito-Urinary Surgery",
+      "Vascular Surgery"
     ]
   },
   {
-    "name": "North Eastern Indira Gandhi Regional Instt. of Health and Medical Sciences, Shillong",
+    "name": "North Eastern Indira Gandhi Regional Instt. of Health and Medical Sciences",
+    "district": "Shillong",
     "state": "Meghalaya",
-    "type": "GOVERNMENT",
     "specializations": [
-      "DM - Cardiology",
-      "DM - Neurology"
+      "Cardiology",
+      "Neurology"
     ]
   },
   {
-    "name": "Osmania Medical College, Hyderabad",
+    "name": "NRI Institute of Medical Sciences",
+    "district": "Visakhapatna",
+    "state": "Andhra Pradesh",
+    "specializations": [
+      "Urology/Genito-Urinary Surgery"
+    ]
+  },
+  {
+    "name": "NRI Medical College",
+    "district": "Guntur",
+    "state": "Andhra Pradesh",
+    "specializations": [
+      "Cardiology",
+      "Critical Care Medicine",
+      "Nephrology",
+      "Neuro Surgery",
+      "Neurology",
+      "Thoracic Surgery",
+      "Urology/Genito-Urinary Surgery"
+    ]
+  },
+  {
+    "name": "Osmania Medical College",
+    "district": "Hyderabad",
     "state": "Telangana",
-    "type": "GOVERNMENT",
     "specializations": [
-      "DM - Cardiology",
-      "DM - Endocrinology",
-      "DM - Medical Gastroenterology",
-      "DM - Medical Oncology",
-      "DM - Neonatology",
-      "DM - Nephrology",
-      "DM - Neurology",
-      "MCh - Neuro Surgery",
-      "MCh - Pediatric Surgery",
-      "MCh - Plastic Surgery/Plastic & Reconstructive Surgery",
-      "MCh - Surgical Gastroenterology",
-      "MCh - Surgical Oncology",
-      "MCh - Thoracic Surgery/Cardio Thoracic Surgery/Cardio Vascular and thoracic Surgery",
-      "MCh - Urology/Genito-Urinary Surgery"
+      "Cardiology",
+      "Endocrinology",
+      "Medical Gastroenterology",
+      "Medical Oncology",
+      "Neonatology",
+      "Nephrology",
+      "Neuro Surgery",
+      "Neurology",
+      "Paediatric Surgery",
+      "Plastic Surgery",
+      "Surgical Gastroenterology",
+      "Surgical Oncology",
+      "Thoracic Surgery",
+      "Urology/Genito-Urinary Surgery"
     ]
   },
   {
-    "name": "PSG Institute of Medical Sciences, Coimbatore",
-    "state": "Tamil Nadu",
-    "type": "PRIVATE",
-    "specializations": [
-      "DM - Cardiology",
-      "DM - Medical Gastroenterology",
-      "DM - Nephrology",
-      "DM - Neurology"
-    ]
-  },
-  {
-    "name": "Padmashree Dr. D.Y.Patil Medical College, Navi Mumbai",
+    "name": "Padmashree Dr. D.Y.Patil Medical College",
+    "district": "Navi Mumbai",
     "state": "Maharashtra",
-    "type": "PRIVATE",
     "specializations": [
-      "DM - Cardiology",
-      "DM - Critical Care Medicine",
-      "DM - Interventional Radiology",
-      "DM - Medical Gastroenterology",
-      "DM - Nephrology",
-      "DM - Neurology",
-      "MCh - Neuro Surgery",
-      "MCh - Pediatric Surgery",
-      "MCh - Plastic Surgery/Plastic & Reconstructive Surgery",
-      "MCh - Thoracic Surgery/Cardio Thoracic Surgery/Cardio Vascular and thoracic Surgery",
-      "MCh - Urology/Genito-Urinary Surgery"
+      "Cardiology",
+      "Critical Care Medicine",
+      "Interventional Radiology",
+      "Medical Gastroenterology",
+      "Nephrology",
+      "Neuro Surgery",
+      "Neurology",
+      "Paediatric Surgery",
+      "Plastic Surgery",
+      "Thoracic Surgery",
+      "Urology/Genito-Urinary Surgery"
     ]
   },
   {
-    "name": "Patna Medical College, Patna",
+    "name": "Patna Medical College",
+    "district": "Patna",
     "state": "Bihar",
-    "type": "GOVERNMENT",
     "specializations": [
-      "MCh - Neuro Surgery",
-      "MCh - Plastic Surgery/Plastic & Reconstructive Surgery"
+      "Neuro Surgery",
+      "Plastic Surgery"
     ]
   },
   {
-    "name": "Pondicherry Institute of Medical Sciences & Research, Pondicherry",
+    "name": "Pondicherry Institute of Medical Sciences & Research",
+    "district": "Pondicherry",
     "state": "Pondicherry",
-    "type": "PRIVATE",
     "specializations": [
-      "MCh - Plastic Surgery/Plastic & Reconstructive Surgery"
+      "Plastic Surgery"
     ]
   },
   {
-    "name": "Post Graduate Institute of Child Health, Noida (Formely known as Super Speciality Paediatric Hospital & Post Graduate Teaching Institute)",
+    "name": "Post Graduate Institute of Child Health",
+    "district": "Noida",
     "state": "Uttar Pradesh",
-    "type": "GOVERNMENT",
     "specializations": [
-      "DM - Paediatric and Neonatal Anaesthesia",
-      "MCh - Pediatric Surgery"
+      "Paediatric Surgery",
+      "Paediatric and Neonatal Anaesthesia"
     ]
   },
   {
-    "name": "Pramukhswami Medical College, Karmsad",
+    "name": "Pramukhswami Medical College",
+    "district": "Karmsad",
     "state": "Gujarat",
-    "type": "PRIVATE",
     "specializations": [
-      "DM - Neonatology"
+      "Neonatology"
     ]
   },
   {
-    "name": "Pt. B D Sharma Postgraduate Institute of Medical Sciences, Rohtak (Haryana)",
+    "name": "PSG Institute of Medical Sciences",
+    "district": "Coimbatore",
+    "state": "Tamil Nadu",
+    "specializations": [
+      "Cardiology",
+      "Medical Gastroenterology",
+      "Nephrology",
+      "Neurology"
+    ]
+  },
+  {
+    "name": "Pt. B D Sharma Postgraduate Institute of Medical Sciences",
+    "district": "Rohtak",
     "state": "Haryana",
-    "type": "GOVERNMENT",
     "specializations": [
-      "DM - Cardiac-Anaesthesia",
-      "DM - Cardiology",
-      "DM - Neonatology",
-      "DM - Pulmonary Medicine",
-      "MCh - Neuro Surgery",
-      "MCh - Pediatric Surgery",
-      "MCh - Plastic Surgery/Plastic & Reconstructive Surgery",
-      "MCh - Surgical Oncology",
-      "MCh - Thoracic Surgery/Cardio Thoracic Surgery/Cardio Vascular and thoracic Surgery",
-      "MCh - Urology/Genito-Urinary Surgery"
+      "Cardiac Anaesthesia",
+      "Cardiology",
+      "Neonatology",
+      "Neuro Surgery",
+      "Paediatric Surgery",
+      "Plastic Surgery",
+      "Pulmonary Medicine",
+      "Surgical Oncology",
+      "Thoracic Surgery",
+      "Urology/Genito-Urinary Surgery"
     ]
   },
   {
-    "name": "Pt. J N M Medical College, Raipur",
+    "name": "Pt. J N M Medical College",
+    "district": "Raipur",
     "state": "Chhatisgarh",
-    "type": "GOVERNMENT",
     "specializations": [
-      "DM - Cardiology",
-      "MCh - Neuro Surgery",
-      "MCh - Pediatric Surgery",
-      "MCh - Plastic Surgery/Plastic & Reconstructive Surgery",
-      "MCh - Surgical Oncology"
+      "Cardiology",
+      "Neuro Surgery",
+      "Paediatric Surgery",
+      "Plastic Surgery",
+      "Surgical Oncology"
     ]
   },
   {
     "name": "Punjab Institute of Liver and Biliary Sciences",
+    "district": "",
     "state": "Punjab",
-    "type": "GOVERNMENT",
     "specializations": [
-      "DM - Hepatology",
-      "MCh - Hepato Pancreato Biliary Surgery"
+      "Hepato Pancreato Biliary Surgery",
+      "Hepatology"
     ]
   },
   {
-    "name": "Pushpagiri Institute Of Medical Sciences and Research Centre, Tiruvalla",
+    "name": "Pushpagiri Institute Of Medical Sciences and Research Centre",
+    "district": "Tiruvalla",
     "state": "Kerala",
-    "type": "PRIVATE",
     "specializations": [
-      "DM - Cardiology",
-      "DM - Nephrology",
-      "DM - Neurology"
+      "Cardiology",
+      "Nephrology",
+      "Neurology"
     ]
   },
   {
-    "name": "R N T Medical College, Udaipur",
+    "name": "R N T Medical College",
+    "district": "Udaipur",
     "state": "Rajasthan",
-    "type": "GOVERNMENT",
     "specializations": [
-      "DM - Cardiology",
-      "DM - Endocrinology",
-      "DM - Medical Gastroenterology",
-      "DM - Nephrology",
-      "DM - Neurology",
-      "MCh - Neuro Surgery",
-      "MCh - Thoracic Surgery/Cardio Thoracic Surgery/Cardio Vascular and thoracic Surgery",
-      "MCh - Urology/Genito-Urinary Surgery"
+      "Cardiology",
+      "Endocrinology",
+      "Medical Gastroenterology",
+      "Nephrology",
+      "Neuro Surgery",
+      "Neurology",
+      "Thoracic Surgery",
+      "Urology/Genito-Urinary Surgery"
     ]
   },
   {
-    "name": "R.V.M. Institute of Medical Sciences and Research Centre Siddipet",
+    "name": "R.V.M. Institute of Medical Sciences and Research Centre",
+    "district": "Siddipet",
     "state": "Telangana",
-    "type": "PRIVATE",
     "specializations": [
-      "DM - Cardiology",
-      "DM - Medical Gastroenterology",
-      "DM - Medical Oncology",
-      "DM - Neonatology",
-      "DM - Nephrology",
-      "DM - Neurology",
-      "MCh - Neuro Surgery",
-      "MCh - Plastic Surgery/Plastic & Reconstructive Surgery",
-      "MCh - Surgical Gastroenterology",
-      "MCh - Surgical Oncology",
-      "MCh - Thoracic Surgery/Cardio Thoracic Surgery/Cardio Vascular and thoracic Surgery",
-      "MCh - Urology"
+      "Cardiology",
+      "Medical Gastroenterology",
+      "Medical Oncology",
+      "Neonatology",
+      "Nephrology",
+      "Neuro Surgery",
+      "Neurology",
+      "Plastic Surgery",
+      "Surgical Gastroenterology",
+      "Surgical Oncology",
+      "Thoracic Surgery",
+      "Urology/Genito-Urinary Surgery"
     ]
   },
   {
-    "name": "RG Kar Medical College, Kolkata",
-    "state": "West Bengal",
-    "type": "GOVERNMENT",
-    "specializations": [
-      "DM - Cardiac-Anaesthesia",
-      "DM - Cardiology",
-      "DM - Clinical Pharmacology",
-      "DM - Medical Gastroenterology",
-      "DM - Pulmonary Medicine",
-      "MCh - Neuro Surgery",
-      "MCh - Plastic Surgery/Plastic & Reconstructive Surgery",
-      "MCh - Thoracic Surgery/Cardio Thoracic Surgery/Cardio Vascular and thoracic Surgery",
-      "MCh - Urology/Genito-Urinary Surgery"
-    ]
-  },
-  {
-    "name": "Rajarajeswari Medical College & Hospital, Bangalore",
+    "name": "Rajarajeswari Medical College & Hospital",
+    "district": "Bangalore",
     "state": "Karnataka",
-    "type": "PRIVATE",
     "specializations": [
-      "DM - Cardiology",
-      "DM - Medical Gastroenterology",
-      "DM - Nephrology",
-      "MCh - Neuro Surgery",
-      "MCh - Pediatric Surgery",
-      "MCh - Plastic Surgery/Plastic & Reconstructive Surgery",
-      "MCh - Thoracic Surgery/Cardio Thoracic Surgery/Cardio Vascular and thoracic Surgery",
-      "MCh - Urology/Genito-Urinary Surgery"
+      "Cardiology",
+      "Medical Gastroenterology",
+      "Nephrology",
+      "Neuro Surgery",
+      "Paediatric Surgery",
+      "Plastic Surgery",
+      "Thoracic Surgery",
+      "Urology/Genito-Urinary Surgery"
     ]
   },
   {
-    "name": "Rajashree Chatrapati Shahu Maharaj Government Medical College, Kolhapur",
+    "name": "Rajashree Chatrapati Shahu Maharaj Government Medical College",
+    "district": "Kolhapur",
     "state": "Maharashtra",
-    "type": "GOVERNMENT",
     "specializations": [
-      "DM - Cardiology",
-      "MCh - Thoracic Surgery/Cardio Thoracic Surgery/Cardio Vascular and thoracic Surgery"
+      "Cardiology",
+      "Thoracic Surgery"
     ]
   },
   {
-    "name": "Rajendra Institute of Medical Sciences, Ranchi",
+    "name": "Rajendra Institute of Medical Sciences",
+    "district": "Ranchi",
     "state": "Jharkhand",
-    "type": "GOVERNMENT",
     "specializations": [
-      "DM - Cardiology",
-      "DM - Critical Care Medicine",
-      "MCh - Neuro Surgery",
-      "MCh - Pediatric Surgery"
+      "Cardiology",
+      "Critical Care Medicine",
+      "Neuro Surgery",
+      "Paediatric Surgery"
     ]
   },
   {
-    "name": "Rama Medical College Hospital and Research Centre, Hapur",
+    "name": "Rama Medical College and Hospital",
+    "district": "Kanpur",
     "state": "Uttar Pradesh",
-    "type": "PRIVATE",
     "specializations": [
-      "DM - Cardiology",
-      "MCh - Urology/Genito-Urinary Surgery"
+      "Cardiology",
+      "Neuro Surgery"
     ]
   },
   {
-    "name": "Rama Medical College and Hospital , Kanpur",
+    "name": "Rama Medical College Hospital and Research Centre",
+    "district": "Hapur",
     "state": "Uttar Pradesh",
-    "type": "PRIVATE",
     "specializations": [
-      "DM - Cardiology",
-      "MCh - Neuro Surgery"
+      "Cardiology",
+      "Urology/Genito-Urinary Surgery"
     ]
   },
   {
-    "name": "Rangaraya Medical College, Kakinada",
+    "name": "Rangaraya Medical College",
+    "district": "Kakinada",
     "state": "Andhra Pradesh",
-    "type": "GOVERNMENT",
     "specializations": [
-      "DM - Neonatology",
-      "MCh - Neuro Surgery",
-      "MCh - Pediatric Surgery",
-      "MCh - Plastic Surgery/Plastic & Reconstructive Surgery"
+      "Neonatology",
+      "Neuro Surgery",
+      "Paediatric Surgery",
+      "Plastic Surgery"
     ]
   },
   {
-    "name": "Regional Cancer Centre, Thiruvanthapuram",
+    "name": "Regional Cancer Centre",
+    "district": "Thiruvanthapuram",
     "state": "Kerala",
-    "type": "GOVERNMENT",
     "specializations": [
-      "DM - Medical Oncology",
-      "DM - Onco Pathology",
-      "DM - Paediatric Oncology",
-      "MCh - Gynaecological Oncology",
-      "MCh - Head & Neck Surgery",
-      "MCh - Surgical Oncology"
+      "Gynaecological Oncology",
+      "Head & Neck Surgery",
+      "Medical Oncology",
+      "Onco Pathology",
+      "Paediatric Oncology",
+      "Surgical Oncology"
     ]
   },
   {
-    "name": "Regional Institute of Medical Sciences Imphal",
+    "name": "Regional centre for Cancer Research and treatment, Adyar",
+    "district": "Chennai",
+    "state": "Tamil Nadu",
+    "specializations": [
+      "Medical Oncology",
+      "Onco Pathology",
+      "Surgical Oncology"
+    ]
+  },
+  {
+    "name": "Regional Institute of Medical Sciences",
+    "district": "Imphal",
     "state": "Manipur",
-    "type": "GOVERNMENT",
     "specializations": [
-      "MCh - Plastic Surgery/Plastic & Reconstructive Surgery"
+      "Nephrology",
+      "Plastic Surgery",
+      "Urology/Genito-Urinary Surgery"
     ]
   },
   {
-    "name": "Regional Institute of Medical Sciences, Imphal",
-    "state": "Manipur",
-    "type": "GOVERNMENT",
-    "specializations": [
-      "DM - Nephrology",
-      "MCh - Plastic Surgery/Plastic & Reconstructive Surgery",
-      "MCh - Urology/Genito-Urinary Surgery"
-    ]
-  },
-  {
-    "name": "Regional centre for Cancer Research and treatment,Adyar,Chennai",
-    "state": "Tamil Nadu",
-    "type": "GOVERNMENT",
-    "specializations": [
-      "DM - Medical Oncology",
-      "DM - Onco Pathology",
-      "MCh - Surgical Oncology"
-    ]
-  },
-  {
-    "name": "Rohilkhand Medical College & Hospital Bareilly",
-    "state": "Uttar Pradesh",
-    "type": "PRIVATE",
-    "specializations": [
-      "MCh - Surgical Oncology"
-    ]
-  },
-  {
-    "name": "S N Medical College, Agra",
-    "state": "Uttar Pradesh",
-    "type": "GOVERNMENT",
-    "specializations": [
-      "DM - Nephrology",
-      "DM - Neurology"
-    ]
-  },
-  {
-    "name": "S S Institute of Medical Sciences& Research Centre, Davangere",
-    "state": "Karnataka",
-    "type": "PRIVATE",
-    "specializations": [
-      "DM - Cardiology",
-      "DM - Neurology",
-      "MCh - Plastic Surgery/Plastic & Reconstructive Surgery",
-      "MCh - Urology/Genito-Urinary Surgery"
-    ]
-  },
-  {
-    "name": "S V Medical College, Tirupati",
-    "state": "Andhra Pradesh",
-    "type": "GOVERNMENT",
-    "specializations": [
-      "MCh - Plastic Surgery/Plastic & Reconstructive Surgery"
-    ]
-  },
-  {
-    "name": "SBKS Medical Instt. & Research Centre, Vadodra",
-    "state": "Gujarat",
-    "type": "PRIVATE",
-    "specializations": [
-      "DM - Cardiology",
-      "DM - Neurology",
-      "MCh - Neuro Surgery",
-      "MCh - Plastic Surgery/Plastic & Reconstructive Surgery",
-      "MCh - Thoracic Surgery/Cardio Thoracic Surgery/Cardio Vascular and thoracic Surgery"
-    ]
-  },
-  {
-    "name": "SCB Medical College, Cuttack",
-    "state": "Orissa",
-    "type": "GOVERNMENT",
-    "specializations": [
-      "DM - Cardiology",
-      "DM - Endocrinology",
-      "DM - Hepatology",
-      "DM - Medical Gastroenterology",
-      "DM - Nephrology",
-      "DM - Neurology",
-      "DM - Pulmonary Medicine",
-      "MCh - Neuro Surgery",
-      "MCh - Pediatric Surgery",
-      "MCh - Plastic Surgery/Plastic & Reconstructive Surgery",
-      "MCh - Urology/Genito-Urinary Surgery"
-    ]
-  },
-  {
-    "name": "SDM College of Medical Sciences & Hospital, Sattur, Dharwad",
-    "state": "Karnataka",
-    "type": "PRIVATE",
-    "specializations": [
-      "DM - Clinical Hematology",
-      "DM - Nephrology",
-      "MCh - Neuro Surgery",
-      "MCh - Pediatric Surgery",
-      "MCh - Plastic Surgery/Plastic & Reconstructive Surgery",
-      "MCh - Urology/Genito-Urinary Surgery"
-    ]
-  },
-  {
-    "name": "SDS Tuberculosis Research Centre and Rajiv Gandhi Institute of Chest Diseases, Bangalore",
-    "state": "Karnataka",
-    "type": "GOVERNMENT",
-    "specializations": [
-      "MCh - Thoracic Surgery/Cardio Thoracic Surgery/Cardio Vascular and thoracic Surgery"
-    ]
-  },
-  {
-    "name": "SMBT Institute of Medical Sciences and Research Centre, Nandi Hills, Nashik",
-    "state": "Maharashtra",
-    "type": "PRIVATE",
-    "specializations": [
-      "DM - Cardiology"
-    ]
-  },
-  {
-    "name": "SMS Medical College, Jaipur",
-    "state": "Rajasthan",
-    "type": "GOVERNMENT",
-    "specializations": [
-      "DM - Cardiology",
-      "DM - Clinical Immunology & Rheumatology",
-      "DM - Endocrinology",
-      "DM - Interventional Radiology",
-      "DM - Medical Gastroenterology",
-      "DM - Medical Oncology",
-      "DM - Nephrology",
-      "DM - Neurology",
-      "DM - Paediatrics Nephrology",
-      "MCh - Neuro Surgery",
-      "MCh - Pediatric Surgery",
-      "MCh - Plastic Surgery/Plastic & Reconstructive Surgery",
-      "MCh - Surgical Gastroenterology",
-      "MCh - Surgical Oncology",
-      "MCh - Thoracic Surgery/Cardio Thoracic Surgery/Cardio Vascular and thoracic Surgery",
-      "MCh - Urology/Genito-Urinary Surgery"
-    ]
-  },
-  {
-    "name": "SRM Medical College Hospital & Research Centre Chengalpattu,SRM Medical College Hospital & Research Centre Kancheepuram",
-    "state": "Tamil Nadu",
-    "type": "PRIVATE",
-    "specializations": [
-      "DM - Cardiology",
-      "DM - Critical Care Medicine",
-      "DM - Medical Gastroenterology",
-      "DM - Neonatology",
-      "DM - Nephrology",
-      "DM - Neurology",
-      "MCh - Neuro Surgery",
-      "MCh - Pediatric Surgery",
-      "MCh - Plastic Surgery/Plastic & Reconstructive Surgery",
-      "MCh - Thoracic Surgery/Cardio Thoracic Surgery/Cardio Vascular and thoracic Surgery",
-      "MCh - Urology/Genito-Urinary Surgery"
-    ]
-  },
-  {
-    "name": "Sanjay Gandhi Postgraduate Institute of Medical Sciences, Lucknow",
-    "state": "Uttar Pradesh",
-    "type": "GOVERNMENT",
-    "specializations": [
-      "DM - Cardiac-Anaesthesia",
-      "DM - Cardiology",
-      "DM - Clinical Hematology",
-      "DM - Clinical Immunology & Rheumatology",
-      "DM - Critical Care Medicine",
-      "DM - Endocrinology",
-      "DM - Hepatology",
-      "DM - Medical Gastroenterology",
-      "DM - Medical Genetics",
-      "DM - Neonatology",
-      "DM - Nephrology",
-      "DM - Neuro Anasthesia",
-      "DM - Neurology",
-      "DM - Pediatrics Gastroenterology",
-      "DM - Pulmonary Medicine",
-      "MCh - Endocrine Surgery",
-      "MCh - Neuro Surgery",
-      "MCh - Pediatric Surgery",
-      "MCh - Plastic Surgery/Plastic & Reconstructive Surgery",
-      "MCh - Surgical Gastroenterology",
-      "MCh - Thoracic Surgery/Cardio Thoracic Surgery/Cardio Vascular and thoracic Surgery",
-      "MCh - Urology/Genito-Urinary Surgery"
-    ]
-  },
-  {
-    "name": "Santosh Medical College Ghaziabad",
-    "state": "Uttar Pradesh",
-    "type": "PRIVATE",
-    "specializations": [
-      "DM - Nephrology"
-    ]
-  },
-  {
-    "name": "Sapthagiri Institute of Medical Sciences & Research Centre, Bangalore",
-    "state": "Karnataka",
-    "type": "PRIVATE",
-    "specializations": [
-      "DM - Cardiology",
-      "DM - Endocrinology",
-      "DM - Medical Gastroenterology",
-      "MCh - Surgical Oncology",
-      "MCh - Urology/Genito-Urinary Surgery"
-    ]
-  },
-  {
-    "name": "Sardar Patel Medical College, Bikaner",
-    "state": "Rajasthan",
-    "type": "GOVERNMENT",
-    "specializations": [
-      "DM - Cardiology",
-      "DM - Medical Gastroenterology",
-      "DM - Medical Oncology",
-      "DM - Neurology",
-      "MCh - Neuro Surgery",
-      "MCh - Urology/Genito-Urinary Surgery"
-    ]
-  },
-  {
-    "name": "Saveetha Medical College and Hospital, Kanchipuram",
-    "state": "Tamil Nadu",
-    "type": "PRIVATE",
-    "specializations": [
-      "DM - Cardiology",
-      "DM - Critical Care Medicine",
-      "DM - Neonatology",
-      "DM - Nephrology",
-      "DM - Neurology",
-      "MCh - Plastic Surgery/Plastic & Reconstructive Surgery",
-      "MCh - Urology/Genito-Urinary Surgery",
-      "MCh - Vascular Surgery"
-    ]
-  },
-  {
-    "name": "School of Tropical Medicine, Kolkata",
+    "name": "RG Kar Medical College",
+    "district": "Kolkata",
     "state": "West Bengal",
-    "type": "GOVERNMENT",
     "specializations": [
-      "DM - Clinical Pharmacology",
-      "DM - Infectious Disease"
+      "Cardiac Anaesthesia",
+      "Cardiology",
+      "Clinical Pharmacology",
+      "Medical Gastroenterology",
+      "Neuro Surgery",
+      "Plastic Surgery",
+      "Pulmonary Medicine",
+      "Thoracic Surgery",
+      "Urology/Genito-Urinary Surgery"
     ]
   },
   {
-    "name": "Seth GS Medical College Mumbai",
-    "state": "Maharashtra",
-    "type": "GOVERNMENT",
-    "specializations": [
-      "DM - Interventional Radiology"
-    ]
-  },
-  {
-    "name": "Sher-I-Kashmir Instt. Of Medical Sciences, Srinagar",
-    "state": "Jammu & Kashmir",
-    "type": "GOVERNMENT",
-    "specializations": [
-      "DM - Cardiology",
-      "DM - Clinical Immunology & Rheumatology",
-      "DM - Endocrinology",
-      "DM - Medical Gastroenterology",
-      "DM - Medical Oncology",
-      "DM - Nephrology",
-      "DM - Neuro Anasthesia",
-      "DM - Neurology",
-      "DM - Paediatric and Neonatal Anaesthesia",
-      "DM - Pulmonary Medicine",
-      "MCh - Endocrine Surgery",
-      "MCh - Neuro Surgery",
-      "MCh - Pediatric",
-      "MCh - Plastic Surgery/Plastic & Reconstructive Surgery",
-      "MCh - Surgical Gastroenterology",
-      "MCh - Thoracic Surgery/Cardio Thoracic Surgery/Cardio Vascular and thoracic Surgery",
-      "MCh - Urology/Genito-Urinary Surgery"
-    ]
-  },
-  {
-    "name": "Shri B M Patil Medical College, Hospital & Research Centre, Vijayapura(Bijapur",
-    "state": "Karnataka",
-    "type": "PRIVATE",
-    "specializations": [
-      "DM - Cardiology",
-      "MCh - Urology/Genito-Urinary Surgery"
-    ]
-  },
-  {
-    "name": "Shri Guru Ram Rai Institute of Medical & Health Sciences, Dehradun",
-    "state": "Uttarakhand",
-    "type": "PRIVATE",
-    "specializations": [
-      "DM - Cardiology",
-      "DM - Critical Care Medicine",
-      "DM - Medical Gastroenterology",
-      "DM - Nephrology",
-      "DM - Neurology",
-      "MCh - Neuro Surgery",
-      "MCh - Plastic Surgery/Plastic & Reconstructive Surgery",
-      "MCh - Surgical Oncology",
-      "MCh - Urology/Genito-Urinary Surgery"
-    ]
-  },
-  {
-    "name": "Shri Ram Murti Smarak Institute of Medical Sciences, Bareilly",
+    "name": "Rohilkhand Medical College & Hospital",
+    "district": "Bareilly",
     "state": "Uttar Pradesh",
-    "type": "PRIVATE",
     "specializations": [
-      "DM - Neurology",
-      "MCh - Neuro Surgery"
+      "Surgical Oncology"
     ]
   },
   {
-    "name": "Shyam Shah Medical College Rewa",
-    "state": "Madhya Pradesh",
-    "type": "GOVERNMENT",
+    "name": "S N Medical College",
+    "district": "Agra",
+    "state": "Uttar Pradesh",
     "specializations": [
-      "DM - Cardiology"
+      "Nephrology",
+      "Neurology"
     ]
   },
   {
-    "name": "Smt. G.R. Doshi and Smt. K.M. Mehta Institute of Kidney Diseases and Research Centre, Dr. H.L. Trivedi Institute of Transplantation Sciences, Ahmedabad, Gujarat",
-    "state": "Gujarat",
-    "type": "GOVERNMENT",
-    "specializations": [
-      "DM - Nephrology",
-      "DM - Paediatrics Nephrology",
-      "MCh - Urology/Genito-Urinary Surgery"
-    ]
-  },
-  {
-    "name": "Smt. N.H.L.Municipal Medical College, Ahmedabad",
-    "state": "Gujarat",
-    "type": "GOVERNMENT",
-    "specializations": [
-      "DM - Cardiology",
-      "DM - Clinical Immunology & Rheumatology",
-      "DM - Medical Gastroenterology",
-      "DM - Neurology",
-      "MCh - Neuro Surgery",
-      "MCh - Pediatric Surgery",
-      "MCh - Plastic Surgery/Plastic & Reconstructive Surgery",
-      "MCh - Surgical Gastroenterology",
-      "MCh - Thoracic Surgery/Cardio Thoracic Surgery/Cardio Vascular and thoracic Surgery",
-      "MCh - Urology/Genito-Urinary Surgery"
-    ]
-  },
-  {
-    "name": "Sree Balaji Medical College and Hospital, Chennai",
-    "state": "Tamil Nadu",
-    "type": "PRIVATE",
-    "specializations": [
-      "DM - Neurology"
-    ]
-  },
-  {
-    "name": "Sri Aurobindo Medical College and Post Graduate Institute , Indore",
-    "state": "Madhya Pradesh",
-    "type": "PRIVATE",
-    "specializations": [
-      "DM - Cardiology",
-      "DM - Endocrinology",
-      "DM - Medical Gastroenterology",
-      "DM - Medical Oncology",
-      "DM - Nephrology",
-      "DM - Neurology",
-      "MCh - Neuro Surgery",
-      "MCh - Surgical Oncology",
-      "MCh - Urology/Genito-Urinary Surgery"
-    ]
-  },
-  {
-    "name": "Sri Devaraj URS Medical College, Kolar",
+    "name": "S S Institute of Medical Sciences& Research Centre",
+    "district": "Davangere",
     "state": "Karnataka",
-    "type": "PRIVATE",
     "specializations": [
-      "MCh - Surgical Oncology",
-      "MCh - Urology/Genito-Urinary Surgery"
+      "Cardiology",
+      "Neurology",
+      "Plastic Surgery",
+      "Urology/Genito-Urinary Surgery"
     ]
   },
   {
-    "name": "Sri Jayadeva Institute of Cardiology, Banglore",
-    "state": "Karnataka",
-    "type": "GOVERNMENT",
-    "specializations": [
-      "DM - Cardiac-Anaesthesia",
-      "DM - Cardiology",
-      "DM - Pediatric Cardiology",
-      "MCh - Pediatric Surgery",
-      "MCh - Thoracic Surgery/Cardio Thoracic Surgery/Cardio Vascular and thoracic Surgery",
-      "MCh - Vascular Surgery"
-    ]
-  },
-  {
-    "name": "Sri Ramachandra Medical College & Research Institute, Chennai",
-    "state": "Tamil Nadu",
-    "type": "PRIVATE",
-    "specializations": [
-      "DM - Cardiac-Anaesthesia",
-      "DM - Cardiology",
-      "DM - Clinical Immunology & Rheumatology",
-      "DM - Critical Care Medicine",
-      "DM - Endocrinology",
-      "DM - Hepatology",
-      "DM - M. Ch- Reproductive Medicine and Surgery",
-      "DM - Medical Gastroenterology",
-      "DM - Medical Oncology",
-      "DM - Neonatology",
-      "DM - Nephrology",
-      "DM - Neuro Radiology",
-      "DM - Neurology",
-      "DM - Paediatric Oncology",
-      "MCh - Hand Surgery",
-      "MCh - Neuro Surgery(3 years)",
-      "MCh - Neuro Surgery(6 years)",
-      "MCh - Pediatric Surgery",
-      "MCh - Plastic Surgery/Plastic & Reconstructive Surgery",
-      "MCh - Surgical Gastroenterology",
-      "MCh - Surgical Oncology",
-      "MCh - Thoracic Surgery/Cardio Thoracic Surgery/Cardio Vascular and thoracic Surgery",
-      "MCh - Urology/Genito-Urinary Surgery",
-      "MCh - Vascular Surgery"
-    ]
-  },
-  {
-    "name": "Sri Siddhartha Medical College, Tumkur",
-    "state": "Karnataka",
-    "type": "PRIVATE",
-    "specializations": [
-      "DM - Nephrology",
-      "MCh - Pediatric Surgery"
-    ]
-  },
-  {
-    "name": "Sri Venkateswara Institute of Medical Sciences (SVIMS) , Tirupati",
+    "name": "S V Medical College",
+    "district": "Tirupati",
     "state": "Andhra Pradesh",
-    "type": "GOVERNMENT",
     "specializations": [
-      "DM - Cardiology",
-      "DM - Endocrinology",
-      "DM - Medical Oncology",
-      "DM - Nephrology",
-      "DM - Neurology",
-      "DM - Pediatric Cardiology",
-      "MCh - Neuro Surgery",
-      "MCh - Surgical Gastroenterology",
-      "MCh - Surgical Oncology",
-      "MCh - Thoracic Surgery/Cardio Thoracic Surgery/Cardio Vascular and thoracic Surgery",
-      "MCh - Urology/Genito-Urinary Surgery"
+      "Plastic Surgery"
+    ]
+  },
+  {
+    "name": "Sanjay Gandhi Postgraduate Institute of Medical Sciences",
+    "district": "Lucknow",
+    "state": "Uttar Pradesh",
+    "specializations": [
+      "Cardiac Anaesthesia",
+      "Cardiology",
+      "Clinical Hematology",
+      "Clinical Immunology & Rheumatology",
+      "Critical Care Medicine",
+      "Endocrine Surgery",
+      "Endocrinology",
+      "Hepatology",
+      "Medical Gastroenterology",
+      "Medical Genetics",
+      "Neonatology",
+      "Nephrology",
+      "Neuro Anaesthesia",
+      "Neuro Surgery",
+      "Neurology",
+      "Paediatric Gastroenterology",
+      "Paediatric Surgery",
+      "Plastic Surgery",
+      "Pulmonary Medicine",
+      "Surgical Gastroenterology",
+      "Thoracic Surgery",
+      "Urology/Genito-Urinary Surgery"
+    ]
+  },
+  {
+    "name": "Santosh Medical College",
+    "district": "Ghaziabad",
+    "state": "Uttar Pradesh",
+    "specializations": [
+      "Nephrology"
+    ]
+  },
+  {
+    "name": "Sapthagiri Institute of Medical Sciences & Research Centre",
+    "district": "Bangalore",
+    "state": "Karnataka",
+    "specializations": [
+      "Cardiology",
+      "Endocrinology",
+      "Medical Gastroenterology",
+      "Surgical Oncology",
+      "Urology/Genito-Urinary Surgery"
+    ]
+  },
+  {
+    "name": "Sardar Patel Medical College",
+    "district": "Bikaner",
+    "state": "Rajasthan",
+    "specializations": [
+      "Cardiology",
+      "Medical Gastroenterology",
+      "Medical Oncology",
+      "Neuro Surgery",
+      "Neurology",
+      "Urology/Genito-Urinary Surgery"
+    ]
+  },
+  {
+    "name": "Saveetha Medical College and Hospital",
+    "district": "Kanchipuram",
+    "state": "Tamil Nadu",
+    "specializations": [
+      "Cardiology",
+      "Critical Care Medicine",
+      "Neonatology",
+      "Nephrology",
+      "Neurology",
+      "Plastic Surgery",
+      "Urology/Genito-Urinary Surgery",
+      "Vascular Surgery"
+    ]
+  },
+  {
+    "name": "SBKS Medical Instt. & Research Centre",
+    "district": "Vadodra",
+    "state": "Gujarat",
+    "specializations": [
+      "Cardiology",
+      "Neuro Surgery",
+      "Neurology",
+      "Plastic Surgery",
+      "Thoracic Surgery"
+    ]
+  },
+  {
+    "name": "SCB Medical College",
+    "district": "Cuttack",
+    "state": "Orissa",
+    "specializations": [
+      "Cardiology",
+      "Endocrinology",
+      "Hepatology",
+      "Medical Gastroenterology",
+      "Nephrology",
+      "Neuro Surgery",
+      "Neurology",
+      "Paediatric Surgery",
+      "Plastic Surgery",
+      "Pulmonary Medicine",
+      "Urology/Genito-Urinary Surgery"
+    ]
+  },
+  {
+    "name": "School of Tropical Medicine",
+    "district": "Kolkata",
+    "state": "West Bengal",
+    "specializations": [
+      "Clinical Pharmacology",
+      "Infectious Disease"
+    ]
+  },
+  {
+    "name": "SDM College of Medical Sciences & Hospital, Sattur",
+    "district": "Dharwad",
+    "state": "Karnataka",
+    "specializations": [
+      "Clinical Hematology",
+      "Nephrology",
+      "Neuro Surgery",
+      "Paediatric Surgery",
+      "Plastic Surgery",
+      "Urology/Genito-Urinary Surgery"
+    ]
+  },
+  {
+    "name": "SDS Tuberculosis Research Centre and Rajiv Gandhi Institute of Chest Diseases",
+    "district": "Bangalore",
+    "state": "Karnataka",
+    "specializations": [
+      "Thoracic Surgery"
+    ]
+  },
+  {
+    "name": "Seth GS Medical College",
+    "district": "Mumbai",
+    "state": "Maharashtra",
+    "specializations": [
+      "Interventional Radiology"
+    ]
+  },
+  {
+    "name": "Sher-I-Kashmir Instt. Of Medical Sciences",
+    "district": "Srinagar",
+    "state": "Jammu & Kashmir",
+    "specializations": [
+      "Cardiology",
+      "Clinical Immunology & Rheumatology",
+      "Endocrine Surgery",
+      "Endocrinology",
+      "Medical Gastroenterology",
+      "Medical Oncology",
+      "Nephrology",
+      "Neuro Anaesthesia",
+      "Neuro Surgery",
+      "Neurology",
+      "Paediatric Surgery",
+      "Paediatric and Neonatal Anaesthesia",
+      "Plastic Surgery",
+      "Pulmonary Medicine",
+      "Surgical Gastroenterology",
+      "Thoracic Surgery",
+      "Urology/Genito-Urinary Surgery"
+    ]
+  },
+  {
+    "name": "Shri B M Patil Medical College, Hospital & Research Centre",
+    "district": "Vijayapura(Bijapur",
+    "state": "Karnataka",
+    "specializations": [
+      "Cardiology",
+      "Urology/Genito-Urinary Surgery"
+    ]
+  },
+  {
+    "name": "Shri Guru Ram Rai Institute of Medical & Health Sciences",
+    "district": "Dehradun",
+    "state": "Uttarakhand",
+    "specializations": [
+      "Cardiology",
+      "Critical Care Medicine",
+      "Medical Gastroenterology",
+      "Nephrology",
+      "Neuro Surgery",
+      "Neurology",
+      "Plastic Surgery",
+      "Surgical Oncology",
+      "Urology/Genito-Urinary Surgery"
+    ]
+  },
+  {
+    "name": "Shri Ram Murti Smarak Institute of Medical Sciences",
+    "district": "Bareilly",
+    "state": "Uttar Pradesh",
+    "specializations": [
+      "Neuro Surgery",
+      "Neurology"
+    ]
+  },
+  {
+    "name": "Shyam Shah Medical College",
+    "district": "Rewa",
+    "state": "Madhya Pradesh",
+    "specializations": [
+      "Cardiology"
+    ]
+  },
+  {
+    "name": "SMBT Institute of Medical Sciences and Research Centre, Nandi Hills",
+    "district": "Nashik",
+    "state": "Maharashtra",
+    "specializations": [
+      "Cardiology"
+    ]
+  },
+  {
+    "name": "SMS Medical College",
+    "district": "Jaipur",
+    "state": "Rajasthan",
+    "specializations": [
+      "Cardiology",
+      "Clinical Immunology & Rheumatology",
+      "Endocrinology",
+      "Interventional Radiology",
+      "Medical Gastroenterology",
+      "Medical Oncology",
+      "Nephrology",
+      "Neuro Surgery",
+      "Neurology",
+      "Paediatric Nephrology",
+      "Paediatric Surgery",
+      "Plastic Surgery",
+      "Surgical Gastroenterology",
+      "Surgical Oncology",
+      "Thoracic Surgery",
+      "Urology/Genito-Urinary Surgery"
+    ]
+  },
+  {
+    "name": "Smt. G.R. Doshi and Smt. K.M. Mehta Institute of Kidney Diseases and Research Centre, Dr. H.L. Trivedi Institute of Transplantation Sciences, Ahmedabad",
+    "district": "Gujarat",
+    "state": "Gujarat",
+    "specializations": [
+      "Nephrology",
+      "Paediatric Nephrology",
+      "Urology/Genito-Urinary Surgery"
+    ]
+  },
+  {
+    "name": "Smt. N.H.L.Municipal Medical College",
+    "district": "Ahmedabad",
+    "state": "Gujarat",
+    "specializations": [
+      "Cardiology",
+      "Clinical Immunology & Rheumatology",
+      "Medical Gastroenterology",
+      "Neuro Surgery",
+      "Neurology",
+      "Paediatric Surgery",
+      "Plastic Surgery",
+      "Surgical Gastroenterology",
+      "Thoracic Surgery",
+      "Urology/Genito-Urinary Surgery"
+    ]
+  },
+  {
+    "name": "Sree Balaji Medical College and Hospital",
+    "district": "Chennai",
+    "state": "Tamil Nadu",
+    "specializations": [
+      "Neurology"
+    ]
+  },
+  {
+    "name": "Sri Aurobindo Medical College and Post Graduate Institute",
+    "district": "Indore",
+    "state": "Madhya Pradesh",
+    "specializations": [
+      "Cardiology",
+      "Endocrinology",
+      "Medical Gastroenterology",
+      "Medical Oncology",
+      "Nephrology",
+      "Neuro Surgery",
+      "Neurology",
+      "Surgical Oncology",
+      "Urology/Genito-Urinary Surgery"
+    ]
+  },
+  {
+    "name": "Sri Devaraj URS Medical College",
+    "district": "Kolar",
+    "state": "Karnataka",
+    "specializations": [
+      "Surgical Oncology",
+      "Urology/Genito-Urinary Surgery"
+    ]
+  },
+  {
+    "name": "Sri Jayadeva Institute of Cardiology",
+    "district": "Banglore",
+    "state": "Karnataka",
+    "specializations": [
+      "Cardiac Anaesthesia",
+      "Cardiology",
+      "Paediatric Cardiology",
+      "Paediatric Surgery",
+      "Thoracic Surgery",
+      "Vascular Surgery"
+    ]
+  },
+  {
+    "name": "Sri Ramachandra Medical College & Research Institute",
+    "district": "Chennai",
+    "state": "Tamil Nadu",
+    "specializations": [
+      "Cardiac Anaesthesia",
+      "Cardiology",
+      "Clinical Immunology & Rheumatology",
+      "Critical Care Medicine",
+      "Endocrinology",
+      "Hand Surgery",
+      "Hepatology",
+      "Medical Gastroenterology",
+      "Medical Oncology",
+      "Neonatology",
+      "Nephrology",
+      "Neuro Radiology",
+      "Neuro Surgery",
+      "Neurology",
+      "Paediatric Oncology",
+      "Paediatric Surgery",
+      "Plastic Surgery",
+      "Reproductive Medicine and Surgery",
+      "Surgical Gastroenterology",
+      "Surgical Oncology",
+      "Thoracic Surgery",
+      "Urology/Genito-Urinary Surgery",
+      "Vascular Surgery"
+    ]
+  },
+  {
+    "name": "Sri Siddhartha Medical College",
+    "district": "Tumkur",
+    "state": "Karnataka",
+    "specializations": [
+      "Nephrology",
+      "Paediatric Surgery"
+    ]
+  },
+  {
+    "name": "Sri Venkateswara Institute of Medical Sciences (SVIMS)",
+    "district": "Tirupati",
+    "state": "Andhra Pradesh",
+    "specializations": [
+      "Cardiology",
+      "Endocrinology",
+      "Medical Oncology",
+      "Nephrology",
+      "Neuro Surgery",
+      "Neurology",
+      "Paediatric Cardiology",
+      "Surgical Gastroenterology",
+      "Surgical Oncology",
+      "Thoracic Surgery",
+      "Urology/Genito-Urinary Surgery"
     ]
   },
   {
     "name": "Srinivas Institute of Medical Research Centre",
+    "district": "",
     "state": "Karnataka",
-    "type": "PRIVATE",
     "specializations": [
-      "MCh - Neuro Surgery",
-      "MCh - Urology/Genito-Urinary Surgery"
+      "Neuro Surgery",
+      "Urology/Genito-Urinary Surgery"
     ]
   },
   {
-    "name": "St. Johns Medical College, Bangalore",
-    "state": "Karnataka",
-    "type": "PRIVATE",
-    "specializations": [
-      "DM - Cardiology",
-      "DM - Critical Care Medicine",
-      "DM - Endocrinology",
-      "DM - Medical Gastroenterology",
-      "DM - Neonatology",
-      "DM - Nephrology",
-      "DM - Neurology",
-      "DM - Paediatrics Nephrology",
-      "DM - Pulmonary Medicine",
-      "MCh - Gynaecological Oncology",
-      "MCh - Neuro Surgery",
-      "MCh - Pediatric Surgery",
-      "MCh - Plastic Surgery",
-      "MCh - Surgical Oncology",
-      "MCh - Urology/Genito-Urinary Surgery"
-    ]
-  },
-  {
-    "name": "Stanley Medical College, Chennai",
+    "name": "SRM Medical College Hospital & Research Centre Chengalpattu",
+    "district": "SRM Medical College Hospital & Research Centre Kancheepuram",
     "state": "Tamil Nadu",
-    "type": "GOVERNMENT",
     "specializations": [
-      "DM - Cardiology",
-      "DM - Medical Gastroenterology",
-      "DM - Medical Oncology",
-      "DM - Nephrology",
-      "DM - Neurology",
-      "MCh - Hand Surgery",
-      "MCh - Neuro Surgery",
-      "MCh - Pediatric Surgery",
-      "MCh - Plastic Surgery/Plastic & Reconstructive Surgery",
-      "MCh - Surgical Gastroenterology",
-      "MCh - Thoracic Surgery/Cardio Thoracic Surgery/Cardio Vascular and thoracic Surgery",
-      "MCh - Urology/Genito-Urinary Surgery",
-      "MCh - Vascular Surgery"
+      "Cardiology",
+      "Critical Care Medicine",
+      "Medical Gastroenterology",
+      "Neonatology",
+      "Nephrology",
+      "Neuro Surgery",
+      "Neurology",
+      "Paediatric Surgery",
+      "Plastic Surgery",
+      "Thoracic Surgery",
+      "Urology/Genito-Urinary Surgery"
     ]
   },
   {
-    "name": "Subharti Medical College, Meerut",
+    "name": "St. Johns Medical College",
+    "district": "Bangalore",
+    "state": "Karnataka",
+    "specializations": [
+      "Cardiology",
+      "Critical Care Medicine",
+      "Endocrinology",
+      "Gynaecological Oncology",
+      "Medical Gastroenterology",
+      "Neonatology",
+      "Nephrology",
+      "Neuro Surgery",
+      "Neurology",
+      "Paediatric Nephrology",
+      "Paediatric Surgery",
+      "Plastic Surgery",
+      "Pulmonary Medicine",
+      "Surgical Oncology",
+      "Urology/Genito-Urinary Surgery"
+    ]
+  },
+  {
+    "name": "Stanley Medical College",
+    "district": "Chennai",
+    "state": "Tamil Nadu",
+    "specializations": [
+      "Cardiology",
+      "Hand Surgery",
+      "Medical Gastroenterology",
+      "Medical Oncology",
+      "Nephrology",
+      "Neuro Surgery",
+      "Neurology",
+      "Paediatric Surgery",
+      "Plastic Surgery",
+      "Surgical Gastroenterology",
+      "Thoracic Surgery",
+      "Urology/Genito-Urinary Surgery",
+      "Vascular Surgery"
+    ]
+  },
+  {
+    "name": "Subharti Medical College",
+    "district": "Meerut",
     "state": "Uttar Pradesh",
-    "type": "PRIVATE",
     "specializations": [
-      "DM - Cardiology",
-      "MCh - Neuro Surgery"
+      "Cardiology",
+      "Neuro Surgery"
     ]
   },
   {
-    "name": "T D Medical College, Alleppey (Allappuzha)",
+    "name": "T D Medical College",
+    "district": "Alleppey",
     "state": "Kerala",
-    "type": "GOVERNMENT",
     "specializations": [
-      "DM - Cardiology",
-      "DM - Nephrology",
-      "DM - Neurology",
-      "MCh - Neuro Surgery",
-      "MCh - Urology/Genito-Urinary Surgery"
+      "Cardiology",
+      "Nephrology",
+      "Neuro Surgery",
+      "Neurology",
+      "Urology/Genito-Urinary Surgery"
     ]
   },
   {
-    "name": "Tata Memorial centre, Mumbai",
+    "name": "Tata Memorial centre",
+    "district": "Mumbai",
     "state": "Maharashtra",
-    "type": "GOVERNMENT",
     "specializations": [
-      "DM - Critical Care Medicine",
-      "DM - Interventional Radiology",
-      "DM - Medical Gastroenterology",
-      "DM - Medical Oncology",
-      "DM - Onco Pathology",
-      "DM - Paediatrics oncology",
-      "MCh - Gynaecological Oncology",
-      "MCh - Head & Neck Surgery",
-      "MCh - Plastic Surgery/Plastic & Reconstructive Surgery",
-      "MCh - Surgical Oncology"
+      "Critical Care Medicine",
+      "Gynaecological Oncology",
+      "Head & Neck Surgery",
+      "Interventional Radiology",
+      "Medical Gastroenterology",
+      "Medical Oncology",
+      "Onco Pathology",
+      "Paediatric Oncology",
+      "Plastic Surgery",
+      "Surgical Oncology"
     ]
   },
   {
-    "name": "Thanjavur Medical College,Thanjavur",
+    "name": "Thanjavur Medical College",
+    "district": "Thanjavur",
     "state": "Tamil Nadu",
-    "type": "GOVERNMENT",
     "specializations": [
-      "DM - Cardiology",
-      "DM - Neurology",
-      "MCh - Neuro Surgery",
-      "MCh - Pediatric Surgery",
-      "MCh - Plastic Surgery/Plastic & Reconstructive Surgery",
-      "MCh - Surgical Gastroenterology",
-      "MCh - Surgical Oncology",
-      "MCh - Vascular Surgery"
+      "Cardiology",
+      "Neuro Surgery",
+      "Neurology",
+      "Paediatric Surgery",
+      "Plastic Surgery",
+      "Surgical Gastroenterology",
+      "Surgical Oncology",
+      "Vascular Surgery"
     ]
   },
   {
-    "name": "Thoothukudi Medical College, Thoothukudi",
+    "name": "Thoothukudi Medical College",
+    "district": "Thoothukudi",
     "state": "Tamil Nadu",
-    "type": "GOVERNMENT",
     "specializations": [
-      "DM - Medical Gastroenterology",
-      "DM - Neurology"
+      "Medical Gastroenterology",
+      "Neurology"
     ]
   },
   {
-    "name": "Tirunelveli Medical College,Tirunelveli",
+    "name": "Tirunelveli Medical College",
+    "district": "Tirunelveli",
     "state": "Tamil Nadu",
-    "type": "GOVERNMENT",
     "specializations": [
-      "DM - Cardiology",
-      "DM - Medical Gastroenterology",
-      "DM - Medical Oncology",
-      "DM - Nephrology",
-      "DM - Neurology",
-      "DM - Virology",
-      "MCh - Neuro Surgery",
-      "MCh - Pediatric Surgery",
-      "MCh - Plastic Surgery/Plastic & Reconstructive Surgery",
-      "MCh - Surgical Gastroenterology",
-      "MCh - Surgical Oncology",
-      "MCh - Urology/Genito-Urinary Surgery"
+      "Cardiology",
+      "Medical Gastroenterology",
+      "Medical Oncology",
+      "Nephrology",
+      "Neuro Surgery",
+      "Neurology",
+      "Paediatric Surgery",
+      "Plastic Surgery",
+      "Surgical Gastroenterology",
+      "Surgical Oncology",
+      "Urology/Genito-Urinary Surgery",
+      "Virology"
     ]
   },
   {
-    "name": "Topiwala National Medical College, Mumbai",
+    "name": "Topiwala National Medical College",
+    "district": "Mumbai",
     "state": "Maharashtra",
-    "type": "GOVERNMENT",
     "specializations": [
-      "DM - Cardiology",
-      "DM - Endocrinology",
-      "DM - Interventional Radiology",
-      "DM - Medical Gastroenterology",
-      "DM - Nephrology",
-      "DM - Neurology",
-      "MCh - Neuro Surgery",
-      "MCh - Pediatric Surgery",
-      "MCh - Plastic Surgery/Plastic & Reconstructive Surgery",
-      "MCh - Thoracic Surgery/Cardio Thoracic Surgery/Cardio Vascular and thoracic Surgery",
-      "MCh - Urology/Genito-Urinary Surgery"
+      "Cardiology",
+      "Endocrinology",
+      "Interventional Radiology",
+      "Medical Gastroenterology",
+      "Nephrology",
+      "Neuro Surgery",
+      "Neurology",
+      "Paediatric Surgery",
+      "Plastic Surgery",
+      "Thoracic Surgery",
+      "Urology/Genito-Urinary Surgery"
     ]
   },
   {
-    "name": "University College of Medical Sciences & GTB Hospital, New Delhi",
+    "name": "University College of Medical Sciences & GTB Hospital",
+    "district": "New Delhi",
     "state": "Delhi",
-    "type": "GOVERNMENT",
     "specializations": [
-      "DM - Endocrinology"
+      "Endocrinology"
     ]
   },
   {
-    "name": "Uttar Pradesh University of Medical Sciences, (Prev. UP Rural Inst.of Med.Sc&R) Etawah",
+    "name": "Uttar Pradesh University of Medical Sciences",
+    "district": "Etawah",
     "state": "Uttar Pradesh",
-    "type": "GOVERNMENT",
     "specializations": [
-      "MCh - Neuro Surgery"
+      "Neuro Surgery"
     ]
   },
   {
-    "name": "Vallabhbhai Patel Chest Institute, University of Delhi , Delhi",
+    "name": "Vallabhbhai Patel Chest Institute, University of Delhi",
+    "district": "Delhi",
     "state": "Delhi",
-    "type": "GOVERNMENT",
     "specializations": [
-      "DM - Pulmonary Medicine"
+      "Pulmonary Medicine"
     ]
   },
   {
-    "name": "Vardhman Mahavir Medical College & Safdarjung Hospital, Delhi",
+    "name": "Vardhman Mahavir Medical College & Safdarjung Hospital",
+    "district": "Delhi",
     "state": "Delhi",
-    "type": "GOVERNMENT",
     "specializations": [
-      "DM - Cardiology",
-      "DM - Critical Care Medicine",
-      "DM - Nephrology",
-      "DM - Neurology",
-      "DM - Pulmonary Medicine",
-      "MCh - Gynaecological Oncology",
-      "MCh - Neuro Surgery",
-      "MCh - Pediatric Surgery",
-      "MCh - Plastic Surgery/Plastic & Reconstructive Surgery",
-      "MCh - Thoracic Surgery/Cardio Thoracic Surgery/Cardio Vascular and thoracic Surgery",
-      "MCh - Urology/Genito-Urinary Surgery"
+      "Cardiology",
+      "Critical Care Medicine",
+      "Gynaecological Oncology",
+      "Nephrology",
+      "Neuro Surgery",
+      "Neurology",
+      "Paediatric Surgery",
+      "Plastic Surgery",
+      "Pulmonary Medicine",
+      "Thoracic Surgery",
+      "Urology/Genito-Urinary Surgery"
     ]
   },
   {
-    "name": "Vijaynagar Institute of Medical Sciences, Bellary",
+    "name": "Vijaynagar Institute of Medical Sciences",
+    "district": "Bellary",
     "state": "Karnataka",
-    "type": "GOVERNMENT",
     "specializations": [
-      "MCh - Neuro Surgery",
-      "MCh - Plastic Surgery/Plastic & Reconstructive Surgery",
-      "MCh - Urology/Genito-Urinary Surgery"
+      "Neuro Surgery",
+      "Plastic Surgery",
+      "Urology/Genito-Urinary Surgery"
     ]
   },
   {
-    "name": "Vivekananda Institute of Medical Sciences, Kolkata ( Also known as Ramakrishna Mission Seva Pratishtahna )",
+    "name": "Vivekananda Institute of Medical Sciences",
+    "district": "Kolkata",
     "state": "West Bengal",
-    "type": "PRIVATE",
     "specializations": [
-      "MCh - Urology/Genito-Urinary Surgery"
+      "Urology/Genito-Urinary Surgery"
     ]
   },
   {
-    "name": "Vydehi Institute Of Medical Sciences & Research Centre, Bangalore",
+    "name": "Vydehi Institute Of Medical Sciences & Research Centre",
+    "district": "Bangalore",
     "state": "Karnataka",
-    "type": "PRIVATE",
     "specializations": [
-      "DM - Cardiology",
-      "DM - Endocrinology",
-      "DM - Medical Gastroenterology",
-      "DM - Medical Oncology",
-      "DM - Neurology",
-      "MCh - Neuro Surgery",
-      "MCh - Plastic Surgery/Plastic & Reconstructive Surgery",
-      "MCh - Surgical Oncology",
-      "MCh - Thoracic Surgery/Cardio Thoracic Surgery/Cardio Vascular and thoracic Surgery",
-      "MCh - Urology/Genito-Urinary Surgery"
+      "Cardiology",
+      "Endocrinology",
+      "Medical Gastroenterology",
+      "Medical Oncology",
+      "Neuro Surgery",
+      "Neurology",
+      "Plastic Surgery",
+      "Surgical Oncology",
+      "Thoracic Surgery",
+      "Urology/Genito-Urinary Surgery"
     ]
   },
   {
-    "name": "Yenepoya Medical College, Mangalore",
+    "name": "Yenepoya Medical College",
+    "district": "Mangalore",
     "state": "Karnataka",
-    "type": "PRIVATE",
     "specializations": [
-      "DM - Nephrology",
-      "DM - Onco Pathology",
-      "MCh - Surgical Oncology",
-      "MCh - Urology/Genito-Urinary Surgery"
-    ]
-  },
-  {
-    "name": "had Institute of Health Care & Medical Technology, Visakhapatnam",
-    "state": "Andhra Pradesh",
-    "type": "PRIVATE",
-    "specializations": [
-      "DM - Cardiology",
-      "MCh - Neuro Surgery"
+      "Nephrology",
+      "Onco Pathology",
+      "Surgical Oncology",
+      "Urology/Genito-Urinary Surgery"
     ]
   }
 ]
