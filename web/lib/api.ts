@@ -51,9 +51,13 @@ export interface University {
  * doesn't surface PG-only accreditation sites (DNB/Diploma/etc hospitals)
  * that have nothing to do with undergraduate admission. Called with an
  * empty `query` to fetch a default browsable list (not just after typing),
- * so the field can offer a full dropdown as well as type-to-search. */
+ * so the field can offer a full dropdown as well as type-to-search.
+ * `browse=true` is always sent — without it, GET /universities caps the
+ * default (no-query) page at 50 rows, which for a college count in the
+ * hundreds only ever shows the alphabetically-first handful (e.g. never
+ * anything past "An…"); see UniversitiesService.findAll's doc comment. */
 export function searchUniversities(query: string, level?: string): Promise<{ data: University[] }> {
-  const params = new URLSearchParams({ limit: "50" });
+  const params = new URLSearchParams({ browse: "true" });
   if (query.trim()) params.set("search", query.trim());
   if (level) params.set("level", level);
   return request(`/universities?${params.toString()}`);
