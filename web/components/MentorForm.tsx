@@ -97,6 +97,11 @@ const CURATED_DEGREE_MAP: Record<string, string> = {
   Diploma: "Diploma",
 };
 
+// Degrees whose curated data is small/complete enough to browse in full +
+// type-to-search (CuratedCollegeSearch/SearchableCombobox), rather than the
+// original curated-top-30-+-"Other" pattern.
+const BROWSE_DEGREES = new Set(["MD/MS", "DNB", "Diploma", "DM/MCh"]);
+
 export function MentorForm({ onExit }: { onExit: () => void }) {
   const wizard = useMultiStep(5);
   const [form, setForm] = useState<FormState>(EMPTY);
@@ -116,12 +121,13 @@ export function MentorForm({ onExit }: { onExit: () => void }) {
   const [dnbCollegeChoice, setDnbCollegeChoice] = useState("");
   const curatedDegree = form.stream === "Medical" ? CURATED_DEGREE_MAP[form.degree] : undefined;
   const hasCuratedData = curatedDegree !== undefined;
-  // MD/MS's dataset is small enough to browse+search in full (see
+  // See BROWSE_DEGREES — these use the full browse+search picker (see
   // UniversitiesService.findCurated's browse mode) rather than the
-  // curated-top-30-+-Other pattern DNB/DM-MCh/Diploma use. CuratedCollegeSearch
-  // does its own fetching, so the effect below is skipped for this case;
-  // `specializations` comes back on the picked CuratedCollege itself.
-  const isBrowseDegree = curatedDegree === "MD/MS";
+  // curated-top-30-+-Other pattern DM-MCh/Diploma still use.
+  // CuratedCollegeSearch does its own fetching, so the effect below is
+  // skipped for this case; `specializations` comes back on the picked
+  // CuratedCollege itself.
+  const isBrowseDegree = curatedDegree !== undefined && BROWSE_DEGREES.has(curatedDegree);
   const [browseSpecializations, setBrowseSpecializations] = useState<string[]>([]);
 
   useEffect(() => {

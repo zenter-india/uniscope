@@ -25,10 +25,6 @@ const MAX_LIMIT = 50;
 // other seeded college is still reachable by typing it under "Other".
 const CURATED_LIMIT = 30;
 
-// Sanity cap for `browse=true` mode (MD/MS) — a page size, not a deliberate
-// curation like CURATED_LIMIT above.
-const BROWSE_LIMIT = 50;
-
 export interface CuratedCollegeOption {
   id: string;
   label: string;
@@ -54,8 +50,21 @@ export class UniversitiesService {
   /**
    * Cursor-paginated list of active universities, ordered by NIRF rank
    * (unranked last) with id as a stable tiebreaker for the cursor.
-   * Search is a simple case-insensitive match on name/city/state — full-text
-   * via the search_vector column is a later enhancement.
+   * Search is a case-insensitive *prefix* match (startsWith) on `name`
+   * only — not substring, and not city/state either. A `contains` match on
+   * a short/common query like "a" returns nearly every row (virtually
+   * every college name contains an "a" somewhere), and since results sort
+   * alphabetically, results starting with a digit (e.g. "7 Air Force
+   * Hospital") sort ahead of actual "A…" colleges, making a type-to-search
+   * field look broken ("I typed 'a' but colleges starting with A aren't
+   * showing"). Matching city/state in the same OR had a related problem:
+   * this is the mentor form's "College / university" field — a college
+   * *name* lookup — but a college whose city happens to start with the
+   * typed letter (e.g. "Adesh Institute…, Bhatinda" for a "b" search) would
+   * appear even though its name doesn't start with "b", which looks just
+   * as broken from the user's point of view. Name-only startsWith is what
+   * this field should do. Full-text via the search_vector column, or a
+   * separate location filter, is a later enhancement if ever needed.
    */
   async findAll(
     query: ListUniversitiesDto,
@@ -69,11 +78,7 @@ export class UniversitiesService {
       ...(query.stream && { stream: query.stream }),
       ...(query.level && { levels: { has: query.level } }),
       ...(query.search && {
-        OR: [
-          { name: { contains: query.search, mode: 'insensitive' } },
-          { city: { contains: query.search, mode: 'insensitive' } },
-          { state: { contains: query.search, mode: 'insensitive' } },
-        ],
+        name: { startsWith: query.search, mode: 'insensitive' },
       }),
     };
 
@@ -97,21 +102,24 @@ export class UniversitiesService {
   /**
    * The mentor form's College/University list for a given stream+degree —
    * today Medical/DNB, Medical/MD-MS, Medical/DM-MCH, and Medical/DIPLOMA
-   * have data (see scripts/seed-*-colleges.mjs). Two modes:
+   * have data (see scripts/seed-*-colleges.mjs). Two modes, though only
+   * `browse=true` is used by any degree today (kept as the CURATED_LIMIT
+   * default in case a future degree's data is too large to browse in full):
    *
-   * - Default (DNB/DM-MCh/Diploma — too many colleges to list in full):
-   *   top CURATED_LIMIT by number of accredited specializations,
+   * - Default: top CURATED_LIMIT by number of accredited specializations,
    *   alphabetical. Every other seeded college for this stream+degree is
    *   still reachable in the DB but not surfaced here — the form falls
    *   back to a free-text "Other" entry.
-   * - `browse=true` (MD/MS — small enough to browse in full): returns
-   *   every matching college, alphabetical, optionally filtered by
-   *   `search` on name, capped at BROWSE_LIMIT as a sanity limit rather
-   *   than a deliberate curation.
+   * - `browse=true` (MD/MS, DNB, Diploma, DM/MCh — all small/complete
+   *   enough to browse in full): returns every matching college, uncapped,
+   *   alphabetical, optionally filtered by `search` as a case-insensitive
+   *   *prefix* match on name (see findAll's doc comment for why prefix,
+   *   not substring) — the mentor form's College field is meant to list
+   *   every college for these degrees, not a curated subset.
    *
-   * Label is just "name, state" — no address/PIN, even for DNB colleges
-   * whose Program.description does carry one (kept there in case it's
-   * needed later, just not shown here).
+   * Label is just "name, state" — no address/PIN, even for DNB/DM-MCh
+   * colleges whose Program.description does carry a district (kept there
+   * in case it's needed later, just not shown here).
    */
   async findCurated(
     query: ListCuratedUniversitiesDto,
@@ -127,7 +135,7 @@ export class UniversitiesService {
           isActive: true,
           ...(browse &&
             query.search && {
-              name: { contains: query.search, mode: 'insensitive' },
+              name: { startsWith: query.search, mode: 'insensitive' },
             }),
         },
       },
@@ -146,9 +154,7 @@ export class UniversitiesService {
       }));
 
     const limited = browse
-      ? options
-          .sort((a, b) => a.label.localeCompare(b.label))
-          .slice(0, BROWSE_LIMIT)
+      ? options.sort((a, b) => a.label.localeCompare(b.label))
       : options
           .sort((a, b) => b.specCount - a.specCount)
           .slice(0, CURATED_LIMIT)

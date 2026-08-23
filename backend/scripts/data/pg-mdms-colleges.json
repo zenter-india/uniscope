@@ -599,7 +599,7 @@
   {
     "name": "Andaman & Nicobar Islands Institute of Medical Sciences Port Blair",
     "state": "Andaman Nicobar Islands",
-    "type": "PRIVATE",
+    "type": "GOVERNMENT",
     "specializations": [
       "MD - Anaesthesiology",
       "MD - Bio-Chemistry",
@@ -3156,7 +3156,7 @@
   {
     "name": "Fakhruddin Ali Ahmed Medical College Barpeta Assam",
     "state": "Assam",
-    "type": "PRIVATE",
+    "type": "GOVERNMENT",
     "specializations": [
       "MD - Anaesthesiology",
       "MD - Bio-Chemistry",
@@ -3374,7 +3374,7 @@
   {
     "name": "GMERS Medical College, Gandhinagar",
     "state": "Gujarat",
-    "type": "PRIVATE",
+    "type": "GOVERNMENT",
     "specializations": [
       "Gynaecology",
       "MD - Anaesthesiology",
@@ -3395,7 +3395,7 @@
   {
     "name": "GMERS Medical College, Gotri, Vadodara",
     "state": "Gujarat",
-    "type": "PRIVATE",
+    "type": "GOVERNMENT",
     "specializations": [
       "MD - Anaesthesiology",
       "MD - Community Medicine",
@@ -3415,7 +3415,7 @@
   {
     "name": "GMERS Medical College, Sola, Ahmedabad",
     "state": "Gujarat",
-    "type": "PRIVATE",
+    "type": "GOVERNMENT",
     "specializations": [
       "MD - Anaesthesiology",
       "MD - Bio-Chemistry",
@@ -4527,7 +4527,7 @@
   {
     "name": "Government Medical College, Faizabad",
     "state": "Uttar Pradesh",
-    "type": "PRIVATE",
+    "type": "GOVERNMENT",
     "specializations": [
       "MD - Anatomy",
       "MD - Community Medicine",

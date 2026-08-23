@@ -8,14 +8,23 @@
  * one otherwise. `type` defaults to PRIVATE since, like the DNB source,
  * this data doesn't state ownership.
  *
- * Rows created during this run are tracked separately from pre-existing
- * DB rows, keyed by name+state+address — see seed-dnb-colleges.mjs's
- * header comment for why (generic hospital names like "Area Hospital"
- * repeat across many different towns/branches in the same state).
+ * Unlike DNB, this source has no district/address column at all — just
+ * college name, state, and specialization — so generic hospital names
+ * that repeat within a state (e.g. "District Hospital" appearing many
+ * times in Karnataka) can't be told apart as distinct branches; they're
+ * grouped into one college entry by name+state (see the data-generation
+ * step in scripts/data/README.md). Given that, name+state IS this
+ * dataset's branch key — but pre-existing rows are still tracked with a
+ * "claimed" set (same fix applied to seed-dnb-colleges.mjs after a real
+ * data-corruption incident there) so that if the *same* name+state ever
+ * appears twice in the JSON, the second occurrence doesn't silently
+ * overwrite the first upsert's data.
  *
  * Idempotent — keyed on (university match) + Program's
  * @@unique([universityId, name]), so a re-run updates specializations in
- * place instead of duplicating.
+ * place instead of duplicating. The update clause also sets
+ * isActive: true, so a re-run correctly revives a row that had been
+ * deactivated (e.g. as part of a clean-slate re-seed).
  *
  * Usage:
  *   node scripts/seed-diploma-colleges.mjs            # write
@@ -69,9 +78,19 @@ async function main() {
   const existing = await prisma.university.findMany({
     select: { id: true, name: true, state: true, slug: true, levels: true },
   });
-  const existingByNameState = new Map(
-    existing.map((u) => [`${u.name.toLowerCase().trim()}|${u.state.toLowerCase().trim()}`, u]),
-  );
+  // Pre-existing rows may repeat a name+state key (see header comment) —
+  // this holds every candidate, not just one.
+  const existingByNameState = new Map();
+  for (const u of existing) {
+    const key = `${u.name.toLowerCase().trim()}|${u.state.toLowerCase().trim()}`;
+    const list = existingByNameState.get(key);
+    if (list) list.push(u);
+    else existingByNameState.set(key, [u]);
+  }
+  // Pre-existing University ids already reused by an earlier JSON entry in
+  // this run — prevents a repeated name+state key from stealing a row
+  // another entry already claimed.
+  const claimed = new Set();
   const createdThisRun = new Map();
   const taken = new Set(existing.map((u) => u.slug));
 
@@ -79,10 +98,16 @@ async function main() {
 
   for (const c of colleges) {
     const nameStateKey = `${c.name.toLowerCase().trim()}|${c.state.toLowerCase().trim()}`;
-    const branchKey = `${nameStateKey}|${c.address.toLowerCase().trim()}`;
-    let university = existingByNameState.get(nameStateKey) ?? createdThisRun.get(branchKey);
+    const branchKey = nameStateKey;
+    const candidates = existingByNameState.get(nameStateKey) ?? [];
+    const unclaimedCandidate = candidates.find((u) => !claimed.has(u.id));
+    let university = createdThisRun.get(branchKey) ?? unclaimedCandidate;
 
     if (university) {
+      if (!createdThisRun.has(branchKey)) {
+        claimed.add(university.id);
+        createdThisRun.set(branchKey, university);
+      }
       stats.matched += 1;
       if (!university.levels.includes('PG')) {
         if (!DRY_RUN) {
@@ -114,22 +139,18 @@ async function main() {
       stats.created += 1;
     }
 
-    // Address + PIN have no dedicated University columns — carried on the
-    // Program instead (unused Text field), same convention as the DNB seed.
-    const addressDetail = `${c.address}, PIN ${c.pin}`;
-
     if (!DRY_RUN) {
       const priorProgram = await prisma.program.findUnique({
         where: { universityId_name: { universityId: university.id, name: PROGRAM_NAME } },
       });
       await prisma.program.upsert({
         where: { universityId_name: { universityId: university.id, name: PROGRAM_NAME } },
-        update: { description: addressDetail, specializations: c.specializations },
+        update: { specializations: c.specializations, isActive: true },
         create: {
           universityId: university.id,
           name: PROGRAM_NAME,
-          description: addressDetail,
           specializations: c.specializations,
+          isActive: true,
         },
       });
       if (priorProgram) stats.programsUpdated += 1;

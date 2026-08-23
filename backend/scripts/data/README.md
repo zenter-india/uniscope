@@ -68,16 +68,39 @@ unrelated campus.
 ## `dnb-colleges.json` — DNB accreditation + specializations
 
 Input to `../seed-dnb-colleges.mjs`. Source: an NBEMS accreditation portal
-extract supplied directly by the user (snapshot dated 19-08-2026, 5,389
-accreditation records), grouped here to one entry per
-(Hospital/Institute, Address, State, PIN) with its distinct accredited
-`specializations` list — 1,397 unique institutions.
+extract supplied directly by the user, grouped here to one entry per
+(College, District, State) with its distinct accredited `specializations`
+list. **Like MD/MS, the mentor form's College field for DNB is now a full
+browse-+ type-to-search combobox** (`CuratedCollegeSearch`), not the
+curated-30-+-"Other" pattern — see `MentorForm.tsx`'s `BROWSE_DEGREES` set.
 
-Populates `Program.specializations` for a `DNB` program at each matched or
-newly-created `University` row — see the seed script's own header comment
-for the exact matching/creation rules (name+state match against existing
-universities, `type` defaults to `PRIVATE` since the source doesn't state
-ownership).
+**Updated once already**, this time with a genuinely cleaner re-export
+(`DNB_Accreditation_Clean.xlsx`, sheet "Clean Data") — a proper `District`
+column instead of the original's raw Address/PIN text, plus 10 rows the
+user had already removed as mismatched (missing state). Original: 1,397
+unique (name, address, state, pin) institutions. This refresh: **1,378**
+unique (name, district, state) institutions from 5,362 clean records —
+grouping by district naturally yields fewer, coarser entries than the old
+per-address grouping did. Two pairs were also merged that differed only in
+letter casing (e.g. "Ankura Hospital..." vs "Ankura hospital...",
+same district) — case-insensitive dedup, keeping the first-seen casing as
+canonical.
+
+The seed script's within-run branch-disambiguation key (see its own header
+comment — hospital chains like "Ankura Hospital" repeat the same name in
+the same state for genuinely different branches) switched from
+name+state+**address** to name+state+**district** to match. `Program.description`
+now carries just the district (was `"<address>, PIN <pin>"`) — still not
+shown in the UI, kept for potential future use only.
+
+**Re-running the seed script against this regrouped data will likely
+strand some already-seeded Program rows**, the same way the MD/MS refresh
+did (see that section below) — a hospital previously split across several
+address-based entries may now collapse into fewer district-based ones, so
+whichever old University row doesn't get re-matched becomes stale. Re-run
+the same stale-row detection process (compare live DB names+states against
+this file, one query, no code needed) after seeding and expect to need a
+similar `is_active = false` cleanup pass.
 
 Unlike the UG/PG datasets above, this isn't (yet) wired into the
 `refresh_ug.py`/`refresh_pg.py`-style live-refresh pipeline — it was a
@@ -97,14 +120,14 @@ default. No address/PIN in this source — only College Name + State,
 matching the College/University field's "name, state" display convention
 (no address shown, even for DNB).
 
-**Unlike DNB/DM-MCh/Diploma, this dataset is small enough to browse in
-full rather than curate a top-N subset** — the mentor form's College and
-Specialization fields for PG/MD-MS/Doctorate are both full
-browse-+ type-to-search comboboxes (`CuratedCollegeSearch` +
-`SearchableCombobox` in `web/components/`), backed by
+**Like DNB and Diploma (see below), this dataset is small/complete
+enough to browse in full rather than curate a top-N subset** — the
+mentor form's College and Specialization fields for PG/MD-MS/Doctorate
+are both full browse-+ type-to-search comboboxes (`CuratedCollegeSearch`
++ `SearchableCombobox` in `web/components/`), backed by
 `GET /universities/curated?browse=true` (see
-`UniversitiesService.findCurated`'s two modes). DNB/DM-MCh/Diploma keep
-the original curated-top-30-+-"Other" `<select>` pattern unchanged.
+`UniversitiesService.findCurated`'s two modes). DM-MCh is the only
+degree still on the original curated-top-30-+-"Other" `<select>` pattern.
 
 **Updated twice already.** First refresh (still 8 columns, same "Course
 Name" combining degree+specialty): 9,279 course records (up from 8,327),
@@ -123,68 +146,151 @@ courses (e.g.
 sheet — out of scope here since Diploma is a separate degree option from
 MD/MS.
 
+**A real ownership-detection bug, found and fixed on the second refresh's
+own re-check.** `Management` values in this source aren't always the
+clean single word the first refresh's exact-match lookup assumed — e.g.
+`"Govern ment"` (17 rows, a stray-space typo for "Government") and
+`"Govt.- Society"` (51 rows — this is GMERS, an actual Gujarat
+*government* medical education society) both fell through to the
+PRIVATE default under exact matching. Fixed by switching to the same
+lenient "strip non-letters, then check for govt/govern as a substring"
+approach `seed-dm-mch-colleges.mjs` already used — verified GMERS's 8
+colleges and ACSR Government Medical College Nellore are now correctly
+GOVERNMENT. Net result: 350 GOVERNMENT / 303 PRIVATE (previously skewed
+too-PRIVATE by the missed cases). Same substring approach, worth applying
+if any future dataset here has a similarly free-text ownership column.
+
+**The garbled names spotted in the live database after this (`"/Deem ed
+Amrita School of Medicine, Faridabad"`, `"Society GMERS Medical College,
+Gandhinagar"`, `"ACSR Government Medical College Nellore, Andhra
+Pradesh"` with the state folded into the name) are not a bug in this
+file or the current pipeline** — checked directly against this file's
+raw `College Name` column, which is clean for all three. They're stale
+rows left over in the database from an earlier, buggier version of this
+pipeline, superseded by (not duplicating) the current correct entries —
+see the `programs.is_active = false` cleanup applied to those specific
+stale rows rather than editing this file.
+
 ## `dm-mch-colleges.json` — DM/MCh super-specialty seats + specializations
 
-Input to `../seed-dm-mch-colleges.mjs`, which mirrors
-`seed-pg-mdms-colleges.mjs`'s matching/creation rules but writes its own
-"DM/MCh" Program per college rather than sharing MD/MS's. Source: NMC's public
-"Super-Specialty Seat Matrix" notice (AY 2025-26, supplied directly by the
-user), grouped to one entry per (College Name, State) with its distinct
-`"DM - <specialty>"` / `"MCh - <specialty>"` `specializations` list.
-`type` (GOVERNMENT/PRIVATE) comes from the source's management column,
-same as `pg-mdms-colleges.json`. Own dataset — not merged with
-PG/MD-MS/Doctorate.
+Input to `../seed-dm-mch-colleges.mjs`. Source: NMC's public
+"Super-Specialty Seat Matrix" notice, grouped to one entry per (College
+Name, District, State) with its distinct `specializations` list. Own
+dataset — not merged with PG/MD-MS/Doctorate.
 
-**Updated once already**, and noticeably cleaner than the first version:
-1,359 course records (same count), 220 unique institutions (up from 216)
-— only 1 row dropped for scrambled Course Name text this time (down from
-12), so most of the original PDF-extraction garbling this source is
-noted for below appears to have been a one-off in the earlier file, not a
-property of the source that recurs on refresh. The State column had a
-different, narrower garbling this time — two rows read `"Tamil Nadu Pri"`
-/ `"Maharashtra Pri"` (a `" Pri"` fragment leaked in, most likely from an
-adjacent management/ownership column) — stripped with a trailing
-`/\s+Pri$/i` substitution before grouping; without it, ACS Medical
-College and Dr. D.Y.Patil Medical College (Pune) would each have split
-into two separate rows instead of one with their full specialization list.
+**Two prior versions used College+State-only grouping and an OCR'd
+Management column** (garbled Course Name/State text, ownership detected
+via lenient "contains govt/govern" substring check) — see git history if
+that writeup is ever needed again.
 
-**This source can still be noisier than the others**, per the original
-version's garbling (Course Name scrambling, Management-column garbling
-handled by a lenient "contains govt/govern" substring check) — see git
-history for that writeup if a future refresh reintroduces it.
-Specialization labels are transcribed as-is from the source even where a
-label looks questionable (e.g. `"MCh - Cardiology"` — Cardiology is
-ordinarily a DM specialty) rather than silently "corrected" against what
-the specialty is more commonly categorized as.
+**Third refresh (`DM_MCh_SuperSpeciality_Clean.xlsx`, sheet "Clean
+Data") is a different shape entirely**: S.No/College/District/State/
+Specialization, matching the DNB/Diploma "Clean Data" format rather than
+the old seat-matrix format. 1,356 records, 221 unique (College, District,
+State) groups. **Adds a District column** (the prior versions didn't have
+one) — same as the DNB refresh, this enables real branch disambiguation
+via the district-aware `claimed`-set matching in `seed-dm-mch-colleges.mjs`
+(see that file's header comment), rather than DM/MCh needing the
+name+state-only merge Diploma was stuck with. **No ownership/management
+column this time** — `type` now defaults to PRIVATE like DNB/Diploma,
+losing the real GOVERNMENT/PRIVATE split the prior two versions had.
+
+**Specialization labels heavily normalized** — this source's raw labels
+were the messiest of any dataset here: inconsistent `"DM - X"` / `"M.Ch -
+X"` / `"M. Ch - X"` / `"MCh X"` prefix formatting (including an en-dash
+`–` used as the separator in two rows), real typos (`"Thorasic Surgery"`,
+`"Geriatic Mental Health"`, `"Neuro Anasthesia"`), a stray leading `"m "`
+typo on one row, duration-suffix duplicates (`"Neuro Surgery(3 years)"` /
+`"(6 years)"`), and spelling/verbosity variants of the same specialty
+(`"Pediatric"` vs `"Paediatric"`, `"Urology"` vs `"Urology/Genito -
+Urinary Surgery"`, three different Plastic Surgery phrasings). Cleaned in
+two passes: (1) strip the degree-type prefix via regex (handles all the
+punctuation/spacing/case variants), (2) an explicit canonicalization map
+for the ~20 remaining near-duplicate spellings/typos. Result: 47 distinct
+specialization labels, no "DM -"/"MCh -" prefix (matches the DNB/Diploma
+plain-name convention — unlike the prior version of this file, which
+deliberately kept the prefix "transcribed as-is"). Some judgment calls
+here are genuinely debatable (e.g. merging "Pulmonary Medicine" and
+"Pulmonology" was considered but *not* done, since unlike the obvious
+prefix/typo cases there's no way to verify from the data alone whether
+they're the same NBE-recognized specialty or two distinct ones) — see
+git history for the exact canonicalization map if a future refresh needs
+revisiting.
+
+**Grouped using the same normalized (lowercase+trim) key the seed script
+matches on** — learned from the diploma refresh's 746-vs-735 bug that
+exact-string grouping here can silently diverge from the script's
+normalized matching. No case/whitespace collisions found in this
+dataset, but the key is normalized regardless as a safety net.
 
 ## `diploma-colleges.json` — NBEMS Diploma accreditation + specializations
 
-Input to `../seed-diploma-colleges.mjs`, which mirrors
-`seed-dnb-colleges.mjs`'s matching/creation rules exactly (own separate
-"DIPLOMA" Program per college, `type` defaults to PRIVATE since this
-source doesn't state ownership either). Source: an NBEMS Diploma
+Input to `../seed-diploma-colleges.mjs`. Source: an NBEMS Diploma
 accreditation portal extract supplied directly by the user, grouped here
-to one entry per (Hospital/Institute, Address, State, PIN) with its
-distinct `specializations` list (grouping by exact address lands slightly
-above the source's own unique-institution count, same kind of gap seen in
-`dnb-colleges.json` vs its source's own dedup).
+to one entry per (College, State) with its distinct `specializations`
+list.
 
-**Updated once already** — the user supplied a refreshed version of this
-same NBEMS extract partway through this work: 1,585 accreditation records
-(up from 1,474), 832 unique institutions (up from 782) after the same
-grouping/length-fix pipeline — 50 net-new institutions, none removed.
-Regenerate the same way if a further-updated version shows up.
+**Updated twice already.** First refresh (still address+PIN in the
+source): 1,585 accreditation records (up from 1,474), 832 unique
+institutions (up from 782), grouped by (Hospital/Institute, Address,
+State, PIN). Specialization labels had a trailing `" (NBEMS)"` suffix
+stripped (case-insensitive) per the user's request.
 
-**Specialization labels have the trailing `(NBEMS)` stripped.** About half
-this refreshed source's specialty labels came formatted as
-`"<specialty> - <code> (NBEMS)"` (e.g. `"Paediatrics - DCH (NBEMS)"`), the
-other half (the 50 net-new rows, from what looks like a second
-sub-source merged into the same sheet) as plain `"Diploma in <specialty>"`
-with no suffix at all. Per the user's request, every `" (NBEMS)"` suffix
-was stripped (case-insensitive, trailing whitespace trimmed) so labels
-read as `"Paediatrics - DCH"` — the plain `"Diploma in ..."` labels were
-already suffix-free and are unaffected. Re-apply this same strip if the
-source is regenerated from scratch rather than hand-edited in place.
+**Second refresh (`Diploma_Institutions_Clean.xlsx`, sheet "Clean
+Data") dropped address/PIN entirely** — just College, State,
+Specialization: 1,461 records, 746 unique (College, State) groups. This
+is a real loss of location detail versus the first refresh, not an
+improvement (contrast with the DNB refresh around the same time, which
+*added* a district column) — generic hospital names that repeat many
+times within a state (e.g. "District Hospital" ×7 in Karnataka,
+"Capital Hospital" ×7 in Odisha) can no longer be told apart as distinct
+branches. Per explicit user confirmation, name+state is now this
+dataset's branch key — every row sharing a (College, State) pair is
+merged into one college entry, specializations pooled together. If a
+future refresh of this source adds district/address back, re-key by
+name+state+district the same way `dnb-colleges.json` does, rather than
+continuing to merge by name+state alone.
+
+**Specialization labels normalized to plain names** (mirrors the DNB
+convention — no abbreviations, no "Diploma in" prefix). The raw source
+mixes two inconsistent formats for the same underlying specialty —
+`"Diploma in Paediatrics"` and `"Paediatrics (DCH)"` both occur — so
+labels were cleaned by stripping leading `"Diploma"`/`"Diploma in"`/
+`"Diploma -"`/`"Diploma Courses in"` prefixes and trailing `"(ABBR)"`
+parentheticals, then a small explicit canonicalization map merged
+remaining near-duplicate spellings (`"Anaesthesia"` → `"Anaesthesiology"`,
+`"Obstetrics & Gynaecology"` → `"Obstetrics and Gynaecology"`, `"Radio-
+Diagnosis"` → `"Radio Diagnosis"`, `"Tuberculosis & Chest Disease"` →
+`"...Diseases"`, `"OBG-DGO"` → `"Obstetrics and Gynaecology"`, `"Social &
+Preventive Medicine / Community Medicine"` → `"Community Medicine"`,
+`"Forensic Medicine/Forensic Medicine & Toxicology"` → `"Forensic
+Medicine"`, `"Radiation Medicine"`/`"Medicine Radiotherapy"` → `"Radiation
+Medicine (Nuclear Medicine)"`). Result: 27 distinct specialization
+labels. Re-apply this same normalization + canonicalization map if the
+source is regenerated from scratch.
+
+**746 → 735: a real data-generation bug, found by a live-DB mismatch,
+not a prod duplicate-row issue.** The first version of this file grouped
+raw rows into one entry per (College, State) using an *exact* string
+match — but the seed script matches existing DB rows using a
+*normalized* (lowercased, trimmed) key. 11 colleges appear in the raw
+source under two different castings of the same name (e.g. `"DISTRICT
+HOSPITAL"` and `"District Hospital"` both under Punjab) — exact-match
+grouping kept these as two separate JSON entries, which the seed script
+then silently collapsed onto the same University row at write time
+(second entry's Program upsert overwrote the first's), landing at 735
+active rows against an expected 746. Fixed by grouping with the same
+normalized key the seed script uses, so these merge properly (specializations
+combined) at generation time instead of colliding at write time — 735 is
+the correct count. Worth remembering for any future dataset here:
+**grouping key at generation time must match the seed script's matching
+key exactly**, including case/whitespace normalization, or a silent
+collision like this can happen again.
+
+**Now uses the browse+search combobox** (`CuratedCollegeSearch` +
+`SearchableCombobox`), same as DNB/MD-MS — see the PG/MD-MS section
+above. `web/components/MentorForm.tsx`'s `BROWSE_DEGREES` includes
+`"Diploma"`.
 
 ## A casing bug worth knowing about — `Program.name` must be UPPERCASE
 
@@ -211,25 +317,52 @@ four datasets (only this one row was actually affected, but the fix
 applies universally as a safety net).
 
 **Same-name, different-branch collisions silently overwriting each
-other's specializations.** `dnb-colleges.json` and `diploma-colleges.json`
-each have dozens of cases where the *same* hospital name repeats in the
-*same* state for genuinely different physical branches — hospital chains
-like "Ankura Hospital" (4 distinct Telangana locations) and generic
-government-hospital names like "Area Hospital" (reused across many
-Andhra Pradesh towns). `seed-dnb-colleges.mjs` and
-`seed-diploma-colleges.mjs` originally tracked newly-created rows in the
-*same* name+state map used for matching pre-existing DB rows — so the
-second branch in a pair would "match" the row the first branch had just
-created moments earlier in the same run, and its Program upsert would
-silently overwrite the first branch's specializations rather than
-creating its own row. Fixed by tracking within-run creations separately,
-keyed by name+state+address, while still matching *pre-existing* DB rows
-by name+state only (that half is an accepted, deliberate limitation — see
-the dedup-handling decision this was built against). Confirmed zero
-remaining name+state+address collisions in either dataset after the fix.
-`pg-mdms-colleges.json` and `dm-mch-colleges.json` have no address column
-to key by and had zero name+state collisions in the current data, so they
-were left as-is.
+other's specializations.** `dnb-colleges.json` (address-keyed era) and
+the first `diploma-colleges.json` refresh each had dozens of cases where
+the *same* hospital name repeats in the *same* state for genuinely
+different physical branches — hospital chains like "Ankura Hospital" (4
+distinct Telangana locations) and generic government-hospital names like
+"Area Hospital" (reused across many Andhra Pradesh towns).
+`seed-dnb-colleges.mjs` and `seed-diploma-colleges.mjs` originally
+tracked newly-created rows in the *same* name+state map used for
+matching pre-existing DB rows — so the second branch in a pair would
+"match" the row the first branch had just created moments earlier in the
+same run, and its Program upsert would silently overwrite the first
+branch's specializations rather than creating its own row. First fix:
+tracked within-run creations separately, keyed by name+state+address,
+while still matching *pre-existing* DB rows by name+state only.
+
+**That first fix turned out to be incomplete — it only protected
+against collisions among rows created within the same run, not against
+multiple genuinely distinct rows that already existed in the DB from an
+earlier address-keyed seeding.** A DNB re-seed onto the new
+district-keyed `dnb-colleges.json` surfaced this for real: several
+name+state groups had multiple real pre-existing branch rows, and since
+`existingByNameState` could only hold one candidate per key, every
+district-distinct JSON entry for such a group collided onto the same
+arbitrary survivor row — repeatedly overwriting its specializations and
+orphaning the other branches (1,426 live DNB programs found vs. 1,378
+correct). Fixed properly in both `seed-dnb-colleges.mjs` and
+`seed-diploma-colleges.mjs`: `existingByNameState` now holds *every*
+pre-existing candidate per key, and a `claimed` set tracks which one an
+earlier JSON entry in the same run already reused, so a later entry with
+the same name+state can no longer steal it. Remediated on the real DB by
+deactivating all DNB Program rows and re-seeding fresh — verified back to
+exactly 1,378 active rows. The seed scripts' upsert `update` clause also
+now sets `isActive: true` (a related bug found during that remediation:
+without it, a row revived by a re-seed after being deactivated stayed
+inactive even though it was correctly matched and updated).
+
+`diploma-colleges.json`'s second refresh has no address/district column
+at all (see above) — colliding rows there are a deliberate merge-by-
+name+state decision, not a bug, so this fix mainly matters for exact
+duplicate (name, state) entries appearing twice in the JSON itself.
+`dm-mch-colleges.json`'s third refresh gained a District column (see
+above) and got the same district-aware `claimed`-set fix applied
+proactively before its first seed run against prod, rather than
+discovering the same bug again after the fact. `pg-mdms-colleges.json`
+still has no address column to key by and had zero name+state collisions
+in the current data, so it was left as-is.
 
 ## Refreshing on demand — `refresh_ug.py` / `refresh_pg.py`
 
