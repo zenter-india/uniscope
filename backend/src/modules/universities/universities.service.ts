@@ -142,11 +142,15 @@ export class UniversitiesService {
    * - `browse=true` (MD/MS, DNB, Diploma, DM/MCh — all small/complete
    *   enough to browse in full): returns every matching college, uncapped,
    *   optionally filtered by `search` as a case-insensitive substring
-   *   match on name — ranked the same way as findAll's search (see its
-   *   doc comment): a name starting with the query sorts before a name
-   *   that merely contains it elsewhere. The mentor form's College field
-   *   is meant to list every college for these degrees, not a curated
-   *   subset.
+   *   match on the college's name, district, *or* state (so searching a
+   *   district/state, e.g. "Cuddalore", finds its colleges too, not just a
+   *   search for the college's own name) — ranked the same way as
+   *   findAll's search (see its doc comment): a *label* starting with the
+   *   query sorts before one that merely contains it elsewhere (the label
+   *   always starts with the name, so this still means name-prefix
+   *   matches surface first; district/state matches sort in after,
+   *   alphabetically). The mentor form's College field is meant to list
+   *   every college for these degrees, not a curated subset.
    *
    * Label is "name, district, state" when the Program has a district on
    * its `description` (DNB/DM-MCh/Diploma — all three now seeded with
@@ -165,11 +169,19 @@ export class UniversitiesService {
         university: {
           stream: query.stream,
           isActive: true,
-          ...(browse &&
-            query.search && {
-              name: { contains: query.search, mode: 'insensitive' },
-            }),
         },
+        // Matches college name, district (Program.description — see
+        // findCurated's label doc comment above), or state, so a search
+        // for a district/state (e.g. "Cuddalore") surfaces its colleges
+        // too, not just a search for the college's own name.
+        ...(browse &&
+          query.search && {
+            OR: [
+              { university: { name: { contains: query.search, mode: 'insensitive' } } },
+              { description: { contains: query.search, mode: 'insensitive' } },
+              { university: { state: { contains: query.search, mode: 'insensitive' } } },
+            ],
+          }),
       },
       include: {
         university: { select: { id: true, name: true, state: true } },
