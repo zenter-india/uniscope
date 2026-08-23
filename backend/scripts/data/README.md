@@ -102,6 +102,24 @@ the same stale-row detection process (compare live DB names+states against
 this file, one query, no code needed) after seeding and expect to need a
 similar `is_active = false` cleanup pass.
 
+**Second refresh (`DNB_Accreditation_Clean_with_PIN.xlsx`, same "Clean
+Data" shape plus a PIN Code column, unused here) — the cleanest source
+this dataset has had.** 1,379 unique (name, district, state) institutions
+(up from 1,378), 98 distinct specialization labels — an exact match to
+the source's own "By Specialization" sheet count, no typos or near-
+duplicates found this time, just a `"DNB- "` prefix stripped to match the
+existing plain-name convention. Two case-variant name collisions caught
+by grouping on the normalized (lowercase+trim) key rather than exact
+string match, same lesson as the diploma refresh. A few specializations
+have a distinct `"(Direct 6 Years Course)"` variant alongside the base
+name (e.g. `"Neuro Surgery"` vs `"Neuro Surgery (Direct 6 Years
+Course)"`) — both have substantial independent record counts (not one
+clearly the "real" entry and one noise), so kept as separate entries
+rather than merged, unlike the DM/MCh refresh's duration-suffix cleanup
+where the base form dominated. No seed script changes needed — the
+existing `claimed`-set + `isActive: true` fixes already cover this
+refresh.
+
 Unlike the UG/PG datasets above, this isn't (yet) wired into the
 `refresh_ug.py`/`refresh_pg.py`-style live-refresh pipeline — it was a
 one-time spreadsheet import. A live NBEMS scraper would be the natural next
