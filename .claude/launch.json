@@ -25,7 +25,7 @@
       "runtimeExecutable": "bash",
       "runtimeArgs": [
         "-lc",
-        "cd /Users/kiranrajr/uniscope && NODE_ENV=development exec /opt/homebrew/bin/npm run dev:web"
+        "cd /c/uniscope/uniscope/web && exec npm run dev"
       ],
       "port": 3002
     },
