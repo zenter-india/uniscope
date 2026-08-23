@@ -411,20 +411,25 @@ district under its old and renamed spelling) and was left unmerged
 rather than guessed at — fixing that class of issue generally would
 need a canonical Indian-district-renaming lookup, out of scope here.
 
-**Specialization labels: 38 raw → 27 after canonicalization.** Same
-"Diploma in X" vs "X - CODE (NBEMS)" mixed-format problem as the first
-refresh, but this time *both* forms coexist for many specialties within
-the same file (not cleanly non-overlapping like before) — e.g. `"ENT"`
-(1 row) and `"ENT - DLO"` (76 rows) are the same specialty labeled two
-ways. Canonicalized to whichever form is more common per specialty
-(`"Anaesthesia"` → `"Anaesthesiology - DA"`, `"Ophthalmology"` →
-`"Ophthalmology - DO"`, `"Obstetrics & Gynaecology"` → `"Obstetrics and
-Gynaecology - DGO"`, `"ENT"` → `"ENT - DLO"`, `"Tuberculosis & Chest
-Diseases"` → `"...Disease - DTCD"`, `"Paediatrics"` → `"Paediatrics -
-DCH"`, `"Radio- Diagnosis"` → `"Radio Diagnosis - DMRD"`,
-`"Dermatology"` → `"...Venereology and Leprosy"`, `"Community
-Medicine"` → `"Social & Preventive Medicine / Community Medicine"`),
-same `"(NBEMS)"`-suffix-stripping otherwise. Re-check this map (or
+**Specialization labels: 38 raw → 27 after canonicalization, `"(NBEMS)"`
+suffix kept intact this time** (earlier refreshes stripped it; per
+explicit user request it's now preserved verbatim wherever the source
+has it, e.g. `"Paediatrics - DCH (NBEMS)"`, not `"Paediatrics - DCH"`).
+Same "Diploma in X" vs "X - CODE (NBEMS)" mixed-format problem as the
+first refresh, but this time *both* forms coexist for many specialties
+within the same file (not cleanly non-overlapping like before) — e.g.
+`"ENT"` (1 row) and `"ENT - DLO (NBEMS)"` (76 rows) are the same
+specialty labeled two ways. Canonicalized to whichever form is more
+common per specialty (`"Anaesthesia"` → `"Anaesthesiology - DA
+(NBEMS)"`, `"Ophthalmology"` → `"Ophthalmology - DO (NBEMS)"`,
+`"Obstetrics & Gynaecology"` → `"Obstetrics and Gynaecology - DGO
+(NBEMS)"`, `"ENT"` → `"ENT - DLO (NBEMS)"`, `"Tuberculosis & Chest
+Diseases"` → `"...Disease - DTCD (NBEMS)"`, `"Paediatrics"` →
+`"Paediatrics - DCH (NBEMS)"`, `"Radio- Diagnosis"` → `"Radio Diagnosis
+- DMRD (NBEMS)"`, `"Dermatology"` → `"...Venereology and Leprosy"`
+(this one and `"Community Medicine"` → `"Social & Preventive Medicine /
+Community Medicine"` had no NBEMS-suffixed form to map onto — both
+sides of those two merges were plain names). Re-check this map (or
 extend it) if a future refresh's raw label list looks meaningfully
 different.
 
