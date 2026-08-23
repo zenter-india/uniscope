@@ -11,6 +11,8 @@ import {
   STATE_DISTRICTS,
   STREAMS,
   DEGREES,
+  DEGREES_BY_STREAM,
+  DEFAULT_NON_MEDICAL_DEGREES,
   MEDICAL_SPECIALIZATIONS,
   CURRENT_STATUSES,
   LANGUAGES,
@@ -120,6 +122,12 @@ export function MentorForm({ onExit }: { onExit: () => void }) {
   const [curatedColleges, setCuratedColleges] = useState<CuratedCollege[]>([]);
   const [loadingCurated, setLoadingCurated] = useState(false);
   const [dnbCollegeChoice, setDnbCollegeChoice] = useState("");
+  // Medical keeps the full DEGREES list (UG/PG/MD-MS/DNB/Diploma/
+  // Doctorate/DM-MCh/Others); Dental and Engineering each get their own
+  // stream-specific first/second degree names; every other stream falls
+  // back to the generic UG/PG/Doctorate/Others list.
+  const degreeOptions: readonly string[] =
+    form.stream === "Medical" ? DEGREES : (DEGREES_BY_STREAM[form.stream] ?? DEFAULT_NON_MEDICAL_DEGREES);
   const curatedDegree = form.stream === "Medical" ? CURATED_DEGREE_MAP[form.degree] : undefined;
   const hasCuratedData = curatedDegree !== undefined;
   // See BROWSE_DEGREES — these use the full browse+search picker (see
@@ -450,6 +458,10 @@ export function MentorForm({ onExit }: { onExit: () => void }) {
                 value={form.stream}
                 onChange={(e) => {
                   set("stream", e.target.value);
+                  // The Degree list is stream-specific (see degreeOptions)
+                  // — the previously-picked degree may not be a valid
+                  // option for the newly-picked stream, so reset it too.
+                  set("degree", "");
                   set("specialization", "");
                   set("collegeName", "");
                   set("universityId", "");
@@ -477,7 +489,7 @@ export function MentorForm({ onExit }: { onExit: () => void }) {
                 }}
               >
                 <option value="">Select</option>
-                {DEGREES.map((d) => (
+                {degreeOptions.map((d) => (
                   <option key={d}>{d}</option>
                 ))}
               </Select>
