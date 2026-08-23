@@ -14,54 +14,6 @@
     ]
   },
   {
-    "name": "ALL IS WELL MULTI SPECIALITY HOSPITAL",
-    "state": "Madhya Pradesh",
-    "specializations": [
-      "Anaesthesiology",
-      "Paediatrics",
-      "Radio Diagnosis"
-    ]
-  },
-  {
-    "name": "AMAR HOSPITAL",
-    "state": "Karnataka",
-    "specializations": [
-      "Paediatrics"
-    ]
-  },
-  {
-    "name": "AMAR SHAHEED JAGDEO PRASAD SADAR HOSPITAL",
-    "state": "Bihar",
-    "specializations": [
-      "Obstetrics and Gynaecology",
-      "Paediatrics"
-    ]
-  },
-  {
-    "name": "APL and ANR Area Hospital",
-    "state": "Andhra Pradesh",
-    "specializations": [
-      "Anaesthesiology",
-      "Family Medicine"
-    ]
-  },
-  {
-    "name": "AREA HOSPITAL",
-    "state": "Andhra Pradesh",
-    "specializations": [
-      "Paediatrics"
-    ]
-  },
-  {
-    "name": "AUTONOMOUS STATE MEDICAL COLLEGE AND HOSPITAL",
-    "state": "Uttar Pradesh",
-    "specializations": [
-      "Anaesthesiology",
-      "Paediatrics",
-      "Tuberculosis & Chest Diseases"
-    ]
-  },
-  {
     "name": "Aanandlok Remedial Research Centre Pvt. Ltd.",
     "state": "Uttar Pradesh",
     "specializations": [
@@ -168,6 +120,15 @@
     ]
   },
   {
+    "name": "ALL IS WELL MULTI SPECIALITY HOSPITAL",
+    "state": "Madhya Pradesh",
+    "specializations": [
+      "Anaesthesiology",
+      "Paediatrics",
+      "Radio Diagnosis"
+    ]
+  },
+  {
     "name": "Almadeena Institute of Medical Science",
     "state": "Kerala",
     "specializations": [
@@ -193,10 +154,25 @@
     ]
   },
   {
+    "name": "AMAR HOSPITAL",
+    "state": "Karnataka",
+    "specializations": [
+      "Paediatrics"
+    ]
+  },
+  {
     "name": "Amar Hospital",
     "state": "Punjab",
     "specializations": [
       "Radio Diagnosis"
+    ]
+  },
+  {
+    "name": "AMAR SHAHEED JAGDEO PRASAD SADAR HOSPITAL",
+    "state": "Bihar",
+    "specializations": [
+      "Obstetrics and Gynaecology",
+      "Paediatrics"
     ]
   },
   {
@@ -260,6 +236,14 @@
     ]
   },
   {
+    "name": "APL and ANR Area Hospital",
+    "state": "Andhra Pradesh",
+    "specializations": [
+      "Anaesthesiology",
+      "Family Medicine"
+    ]
+  },
+  {
     "name": "Apollo Hospital",
     "state": "Chhattisgarh",
     "specializations": [
@@ -284,19 +268,19 @@
     ]
   },
   {
+    "name": "Area Hospital Sriikalahasthi",
+    "state": "Andhra Pradesh",
+    "specializations": [
+      "Anaesthesiology"
+    ]
+  },
+  {
     "name": "Area Hospital",
     "state": "Andhra Pradesh",
     "specializations": [
       "Anaesthesiology",
       "Obstetrics and Gynaecology",
       "Paediatrics"
-    ]
-  },
-  {
-    "name": "Area Hospital Sriikalahasthi",
-    "state": "Andhra Pradesh",
-    "specializations": [
-      "Anaesthesiology"
     ]
   },
   {
@@ -373,16 +357,6 @@
     ]
   },
   {
-    "name": "Autonomous State Medical College",
-    "state": "Uttar Pradesh",
-    "specializations": [
-      "Anaesthesiology",
-      "Obstetrics and Gynaecology",
-      "Paediatrics",
-      "Radio Diagnosis"
-    ]
-  },
-  {
     "name": "Autonomous State Medical College and Allied Pandit Ram Prasad Bismil Memorial Hospital",
     "state": "Uttar Pradesh",
     "specializations": [
@@ -394,10 +368,12 @@
     ]
   },
   {
-    "name": "Autonomous State Medical College, Hardoi",
+    "name": "AUTONOMOUS STATE MEDICAL COLLEGE AND HOSPITAL",
     "state": "Uttar Pradesh",
     "specializations": [
-      "Obstetrics and Gynaecology"
+      "Anaesthesiology",
+      "Paediatrics",
+      "Tuberculosis & Chest Diseases"
     ]
   },
   {
@@ -406,6 +382,23 @@
     "specializations": [
       "ENT",
       "Ophthalmology"
+    ]
+  },
+  {
+    "name": "Autonomous State Medical College, Hardoi",
+    "state": "Uttar Pradesh",
+    "specializations": [
+      "Obstetrics and Gynaecology"
+    ]
+  },
+  {
+    "name": "Autonomous State Medical College",
+    "state": "Uttar Pradesh",
+    "specializations": [
+      "Anaesthesiology",
+      "Obstetrics and Gynaecology",
+      "Paediatrics",
+      "Radio Diagnosis"
     ]
   },
   {
@@ -431,110 +424,18 @@
     ]
   },
   {
+    "name": "Bakin Pertin General Hospital and Training Centre",
+    "state": "Arunachal Pradesh",
+    "specializations": [
+      "Anaesthesiology"
+    ]
+  },
+  {
     "name": "BALAJI CURE AND CARE HOSPITAL",
     "state": "Rajasthan",
     "specializations": [
       "Anaesthesiology",
       "Obstetrics and Gynaecology"
-    ]
-  },
-  {
-    "name": "BALURGHAT DH and SSH",
-    "state": "West Bengal",
-    "specializations": [
-      "Paediatrics"
-    ]
-  },
-  {
-    "name": "BARJORA SUPER SPECIALTY HOSPITAL",
-    "state": "West Bengal",
-    "specializations": [
-      "Obstetrics and Gynaecology"
-    ]
-  },
-  {
-    "name": "BASEL MISSION CSI HOSPITAL",
-    "state": "Karnataka",
-    "specializations": [
-      "Family Medicine"
-    ]
-  },
-  {
-    "name": "BCM Hospital",
-    "state": "Uttar Pradesh",
-    "specializations": [
-      "Obstetrics and Gynaecology",
-      "Paediatrics"
-    ]
-  },
-  {
-    "name": "BEENT HOSPITAL",
-    "state": "Tamil Nadu",
-    "specializations": [
-      "Ophthalmology"
-    ]
-  },
-  {
-    "name": "BHAGIRATHI NEOTIA WOMAN AND CHILD CARE CENTRE",
-    "state": "West Bengal",
-    "specializations": [
-      "Paediatrics"
-    ]
-  },
-  {
-    "name": "BHAGWAN DAS HOSPITAL (A UNIT OF BHAGWAN DAS KHEM CHAND MEMORIAL EDUCATIONAL CHARITABLE TRUST)",
-    "state": "Haryana",
-    "specializations": [
-      "Anaesthesiology"
-    ]
-  },
-  {
-    "name": "BHAGWAN MAHAVIR HOSPITAL",
-    "state": "Delhi",
-    "specializations": [
-      "Anaesthesiology"
-    ]
-  },
-  {
-    "name": "BHAGWAN MAHAVIR INSTITUTE OF MEDICAL SCIENCES",
-    "state": "Bihar",
-    "specializations": [
-      "Paediatrics"
-    ]
-  },
-  {
-    "name": "BHIMAVARAM HOSPITALS LIMITED",
-    "state": "Andhra Pradesh",
-    "specializations": [
-      "Anaesthesiology",
-      "Radio Diagnosis"
-    ]
-  },
-  {
-    "name": "BOLPUR SUB DIVISION HOSPITAL",
-    "state": "West Bengal",
-    "specializations": [
-      "Anaesthesiology",
-      "Ophthalmology",
-      "Tuberculosis & Chest Diseases"
-    ]
-  },
-  {
-    "name": "BRD Medical College, Gorakhpur",
-    "state": "Uttar Pradesh",
-    "specializations": [
-      "Anaesthesiology",
-      "Child Health",
-      "Dermatology, Venereology and Leprosy",
-      "Obstetrics and Gynaecology",
-      "Orthopaedics"
-    ]
-  },
-  {
-    "name": "Bakin Pertin General Hospital and Training Centre",
-    "state": "Arunachal Pradesh",
-    "specializations": [
-      "Anaesthesiology"
     ]
   },
   {
@@ -545,6 +446,13 @@
       "Ophthalmology",
       "Paediatrics",
       "Tuberculosis & Chest Diseases"
+    ]
+  },
+  {
+    "name": "BALURGHAT DH and SSH",
+    "state": "West Bengal",
+    "specializations": [
+      "Paediatrics"
     ]
   },
   {
@@ -577,8 +485,37 @@
     ]
   },
   {
+    "name": "BARJORA SUPER SPECIALTY HOSPITAL",
+    "state": "West Bengal",
+    "specializations": [
+      "Obstetrics and Gynaecology"
+    ]
+  },
+  {
     "name": "Baruipur Sub Division Hospital",
     "state": "West Bengal",
+    "specializations": [
+      "Ophthalmology"
+    ]
+  },
+  {
+    "name": "BASEL MISSION CSI HOSPITAL",
+    "state": "Karnataka",
+    "specializations": [
+      "Family Medicine"
+    ]
+  },
+  {
+    "name": "BCM Hospital",
+    "state": "Uttar Pradesh",
+    "specializations": [
+      "Obstetrics and Gynaecology",
+      "Paediatrics"
+    ]
+  },
+  {
+    "name": "BEENT HOSPITAL",
+    "state": "Tamil Nadu",
     "specializations": [
       "Ophthalmology"
     ]
@@ -609,11 +546,39 @@
     ]
   },
   {
+    "name": "BHAGIRATHI NEOTIA WOMAN AND CHILD CARE CENTRE",
+    "state": "West Bengal",
+    "specializations": [
+      "Paediatrics"
+    ]
+  },
+  {
+    "name": "BHAGWAN DAS HOSPITAL (A UNIT OF BHAGWAN DAS KHEM CHAND MEMORIAL EDUCATIONAL CHARITABLE TRUST)",
+    "state": "Haryana",
+    "specializations": [
+      "Anaesthesiology"
+    ]
+  },
+  {
     "name": "Bhagwan Mahavir Cancer Hospital and Research Centre",
     "state": "Rajasthan",
     "specializations": [
       "Anaesthesiology",
       "Radio Diagnosis"
+    ]
+  },
+  {
+    "name": "BHAGWAN MAHAVIR HOSPITAL",
+    "state": "Delhi",
+    "specializations": [
+      "Anaesthesiology"
+    ]
+  },
+  {
+    "name": "BHAGWAN MAHAVIR INSTITUTE OF MEDICAL SCIENCES",
+    "state": "Bihar",
+    "specializations": [
+      "Paediatrics"
     ]
   },
   {
@@ -678,10 +643,34 @@
     ]
   },
   {
+    "name": "BHIMAVARAM HOSPITALS LIMITED",
+    "state": "Andhra Pradesh",
+    "specializations": [
+      "Anaesthesiology",
+      "Radio Diagnosis"
+    ]
+  },
+  {
     "name": "Bishnupur District Hospital",
     "state": "West Bengal",
     "specializations": [
       "Paediatrics"
+    ]
+  },
+  {
+    "name": "BOLPUR SUB DIVISION HOSPITAL",
+    "state": "West Bengal",
+    "specializations": [
+      "Anaesthesiology",
+      "Ophthalmology",
+      "Tuberculosis & Chest Diseases"
+    ]
+  },
+  {
+    "name": "Bombay Hospital and Institute of Medical Sciences",
+    "state": "Maharashtra",
+    "specializations": [
+      "Family Medicine"
     ]
   },
   {
@@ -693,10 +682,14 @@
     ]
   },
   {
-    "name": "Bombay Hospital and Institute of Medical Sciences",
-    "state": "Maharashtra",
+    "name": "BRD Medical College, Gorakhpur",
+    "state": "Uttar Pradesh",
     "specializations": [
-      "Family Medicine"
+      "Anaesthesiology",
+      "Child Health",
+      "Dermatology, Venereology and Leprosy",
+      "Obstetrics and Gynaecology",
+      "Orthopaedics"
     ]
   },
   {
@@ -711,63 +704,6 @@
     "state": "Tamil Nadu",
     "specializations": [
       "Anaesthesiology"
-    ]
-  },
-  {
-    "name": "CC Shroff Memorial Hospital (a unit of Nandini Ramesh Gandhi Public Charitable Trust)",
-    "state": "Telangana",
-    "specializations": [
-      "Anaesthesiology"
-    ]
-  },
-  {
-    "name": "CHAUHAN MULTISPECIALTY AND TRAUMA CENTRE",
-    "state": "Punjab",
-    "specializations": [
-      "Anaesthesiology"
-    ]
-  },
-  {
-    "name": "CHL Hospital",
-    "state": "Madhya Pradesh",
-    "specializations": [
-      "Radio Diagnosis"
-    ]
-  },
-  {
-    "name": "CIVIL HOSPITAL",
-    "state": "Punjab",
-    "specializations": [
-      "Obstetrics and Gynaecology"
-    ]
-  },
-  {
-    "name": "CIVIL HOSPITAL MALERKOTLA",
-    "state": "Punjab",
-    "specializations": [
-      "Obstetrics and Gynaecology"
-    ]
-  },
-  {
-    "name": "CKRD MEMORIAL HOSPITAL AND RESEARCH INSTITUTE",
-    "state": "Rajasthan",
-    "specializations": [
-      "Obstetrics and Gynaecology"
-    ]
-  },
-  {
-    "name": "COMBINED DISTRICT HOSPITAL KANNAUJ",
-    "state": "Uttar Pradesh",
-    "specializations": [
-      "Ophthalmology"
-    ]
-  },
-  {
-    "name": "CRITICARE ASIA MULTISPECIALITY HOSPITAL AND RESEARCH CENTRE",
-    "state": "Maharashtra",
-    "specializations": [
-      "Anaesthesiology",
-      "ENT"
     ]
   },
   {
@@ -798,10 +734,26 @@
     ]
   },
   {
+    "name": "CC Shroff Memorial Hospital (a unit of Nandini Ramesh Gandhi Public Charitable Trust)",
+    "state": "Telangana",
+    "specializations": [
+      "Anaesthesiology"
+    ]
+  },
+  {
     "name": "Central Health Education Bureau, New Delhi",
     "state": "Delhi",
     "specializations": [
       "Health Education"
+    ]
+  },
+  {
+    "name": "Central Hospital, S.E.C.Railway",
+    "state": "Chhattisgarh",
+    "specializations": [
+      "Anaesthesiology",
+      "Family Medicine",
+      "Obstetrics and Gynaecology"
     ]
   },
   {
@@ -816,15 +768,6 @@
     "name": "Central Hospital",
     "state": "Rajasthan",
     "specializations": [
-      "Obstetrics and Gynaecology"
-    ]
-  },
-  {
-    "name": "Central Hospital, S.E.C.Railway",
-    "state": "Chhattisgarh",
-    "specializations": [
-      "Anaesthesiology",
-      "Family Medicine",
       "Obstetrics and Gynaecology"
     ]
   },
@@ -876,6 +819,13 @@
     ]
   },
   {
+    "name": "CHAUHAN MULTISPECIALTY AND TRAUMA CENTRE",
+    "state": "Punjab",
+    "specializations": [
+      "Anaesthesiology"
+    ]
+  },
+  {
     "name": "Chettinad Super Speciality Hospital",
     "state": "Tamil Nadu",
     "specializations": [
@@ -907,6 +857,13 @@
     ]
   },
   {
+    "name": "CHL Hospital",
+    "state": "Madhya Pradesh",
+    "specializations": [
+      "Radio Diagnosis"
+    ]
+  },
+  {
     "name": "Choithram Netralaya",
     "state": "Madhya Pradesh",
     "specializations": [
@@ -932,6 +889,52 @@
     "state": "Tamil Nadu",
     "specializations": [
       "Clinical Pathology"
+    ]
+  },
+  {
+    "name": "Civil Hospital (Gov) Rani Durgawati Hospital",
+    "state": "Madhya Pradesh",
+    "specializations": [
+      "Obstetrics and Gynaecology"
+    ]
+  },
+  {
+    "name": "Civil Hospital GURDASPUR",
+    "state": "Punjab",
+    "specializations": [
+      "Anaesthesiology",
+      "Obstetrics and Gynaecology",
+      "Paediatrics"
+    ]
+  },
+  {
+    "name": "Civil Hospital Kapurthala",
+    "state": "Punjab",
+    "specializations": [
+      "Radio Diagnosis"
+    ]
+  },
+  {
+    "name": "CIVIL HOSPITAL MALERKOTLA",
+    "state": "Punjab",
+    "specializations": [
+      "Obstetrics and Gynaecology"
+    ]
+  },
+  {
+    "name": "Civil Hospital Palwal",
+    "state": "Haryana",
+    "specializations": [
+      "Ophthalmology",
+      "Paediatrics"
+    ]
+  },
+  {
+    "name": "Civil Hospital Shillong",
+    "state": "Meghalaya",
+    "specializations": [
+      "Anaesthesiology",
+      "Radio Diagnosis"
     ]
   },
   {
@@ -963,42 +966,10 @@
     ]
   },
   {
-    "name": "Civil Hospital (Gov) Rani Durgawati Hospital",
-    "state": "Madhya Pradesh",
+    "name": "CKRD MEMORIAL HOSPITAL AND RESEARCH INSTITUTE",
+    "state": "Rajasthan",
     "specializations": [
       "Obstetrics and Gynaecology"
-    ]
-  },
-  {
-    "name": "Civil Hospital GURDASPUR",
-    "state": "Punjab",
-    "specializations": [
-      "Anaesthesiology",
-      "Obstetrics and Gynaecology",
-      "Paediatrics"
-    ]
-  },
-  {
-    "name": "Civil Hospital Kapurthala",
-    "state": "Punjab",
-    "specializations": [
-      "Radio Diagnosis"
-    ]
-  },
-  {
-    "name": "Civil Hospital Palwal",
-    "state": "Haryana",
-    "specializations": [
-      "Ophthalmology",
-      "Paediatrics"
-    ]
-  },
-  {
-    "name": "Civil Hospital Shillong",
-    "state": "Meghalaya",
-    "specializations": [
-      "Anaesthesiology",
-      "Radio Diagnosis"
     ]
   },
   {
@@ -1006,6 +977,13 @@
     "state": "Tamil Nadu",
     "specializations": [
       "Paediatrics"
+    ]
+  },
+  {
+    "name": "COMBINED DISTRICT HOSPITAL KANNAUJ",
+    "state": "Uttar Pradesh",
+    "specializations": [
+      "Ophthalmology"
     ]
   },
   {
@@ -1030,154 +1008,18 @@
     ]
   },
   {
+    "name": "CRITICARE ASIA MULTISPECIALITY HOSPITAL AND RESEARCH CENTRE",
+    "state": "Maharashtra",
+    "specializations": [
+      "Anaesthesiology",
+      "ENT"
+    ]
+  },
+  {
     "name": "Cure Well Hospital",
     "state": "Telangana",
     "specializations": [
       "Obstetrics and Gynaecology"
-    ]
-  },
-  {
-    "name": "DISTRICT COMBINED HOSPITAL",
-    "state": "Uttar Pradesh",
-    "specializations": [
-      "Obstetrics and Gynaecology"
-    ]
-  },
-  {
-    "name": "DISTRICT HEAD QUARTER HOSPITAL",
-    "state": "Odisha",
-    "specializations": [
-      "Paediatrics"
-    ]
-  },
-  {
-    "name": "DISTRICT HEAD QUARTER HOSPITAL NAYAGARH",
-    "state": "Odisha",
-    "specializations": [
-      "Paediatrics"
-    ]
-  },
-  {
-    "name": "DISTRICT HEADQUARTER HOSPITAL",
-    "state": "Odisha",
-    "specializations": [
-      "Anaesthesiology",
-      "Paediatrics"
-    ]
-  },
-  {
-    "name": "DISTRICT HEADQUARTER HOSPITAL, KENDRAPARA",
-    "state": "Odisha",
-    "specializations": [
-      "Paediatrics"
-    ]
-  },
-  {
-    "name": "DISTRICT HEADQUARTERS HOSPITAL, BALANGIR",
-    "state": "Odisha",
-    "specializations": [
-      "Paediatrics"
-    ]
-  },
-  {
-    "name": "DISTRICT HEADQUATERS HOSPITAL, KHORDHA",
-    "state": "Odisha",
-    "specializations": [
-      "Paediatrics"
-    ]
-  },
-  {
-    "name": "DISTRICT HOSPITAL",
-    "state": "Andhra Pradesh",
-    "specializations": [
-      "Family Medicine"
-    ]
-  },
-  {
-    "name": "DISTRICT HOSPITAL",
-    "state": "Chhattisgarh",
-    "specializations": [
-      "Anaesthesiology",
-      "Family Medicine",
-      "Obstetrics and Gynaecology",
-      "Paediatrics"
-    ]
-  },
-  {
-    "name": "DISTRICT HOSPITAL",
-    "state": "Madhya Pradesh",
-    "specializations": [
-      "ENT",
-      "Obstetrics and Gynaecology",
-      "Ophthalmology",
-      "Paediatrics"
-    ]
-  },
-  {
-    "name": "DISTRICT HOSPITAL",
-    "state": "Punjab",
-    "specializations": [
-      "Paediatrics"
-    ]
-  },
-  {
-    "name": "DISTRICT HOSPITAL AND EPIDEMIOLOGICAL DISEASES HOSPITAL",
-    "state": "Karnataka",
-    "specializations": [
-      "Anaesthesiology"
-    ]
-  },
-  {
-    "name": "DISTRICT WOMEN HOSPITAL",
-    "state": "Uttar Pradesh",
-    "specializations": [
-      "Obstetrics and Gynaecology",
-      "Paediatrics"
-    ]
-  },
-  {
-    "name": "DISTRICT WOMEN HOSPITAL BARABANKI",
-    "state": "Uttar Pradesh",
-    "specializations": [
-      "Obstetrics and Gynaecology"
-    ]
-  },
-  {
-    "name": "DISTRICT WOMEN HOSPITAL JAUNPUR",
-    "state": "Uttar Pradesh",
-    "specializations": [
-      "Obstetrics and Gynaecology"
-    ]
-  },
-  {
-    "name": "DIVISIONAL DISTRICT HOSPITAL",
-    "state": "Uttar Pradesh",
-    "specializations": [
-      "ENT",
-      "Ophthalmology"
-    ]
-  },
-  {
-    "name": "DR ANIL KUMAR EYE HOSPITAL",
-    "state": "Tamil Nadu",
-    "specializations": [
-      "Ophthalmology"
-    ]
-  },
-  {
-    "name": "DR RAJAN EYECARE HOSPITAL",
-    "state": "Punjab",
-    "specializations": [
-      "Ophthalmology"
-    ]
-  },
-  {
-    "name": "DURGAPUR SUB DIVISIONAL HOSPITAL",
-    "state": "West Bengal",
-    "specializations": [
-      "ENT",
-      "Obstetrics and Gynaecology",
-      "Paediatrics"
     ]
   },
   {
@@ -1297,7 +1139,21 @@
     ]
   },
   {
-    "name": "District Headquarter Hospital,",
+    "name": "DISTRICT HEAD QUARTER HOSPITAL NAYAGARH",
+    "state": "Odisha",
+    "specializations": [
+      "Paediatrics"
+    ]
+  },
+  {
+    "name": "DISTRICT HEAD QUARTER HOSPITAL",
+    "state": "Odisha",
+    "specializations": [
+      "Paediatrics"
+    ]
+  },
+  {
+    "name": "DISTRICT HEADQUARTER HOSPITAL, KENDRAPARA",
     "state": "Odisha",
     "specializations": [
       "Paediatrics"
@@ -1311,6 +1167,21 @@
     ]
   },
   {
+    "name": "District Headquarter Hospital,",
+    "state": "Odisha",
+    "specializations": [
+      "Paediatrics"
+    ]
+  },
+  {
+    "name": "DISTRICT HEADQUARTER HOSPITAL",
+    "state": "Odisha",
+    "specializations": [
+      "Anaesthesiology",
+      "Paediatrics"
+    ]
+  },
+  {
     "name": "District Headquarters Hospital Angul",
     "state": "Odisha",
     "specializations": [
@@ -1318,98 +1189,24 @@
     ]
   },
   {
-    "name": "District Hospital",
-    "state": "Andhra Pradesh",
+    "name": "DISTRICT HEADQUARTERS HOSPITAL, BALANGIR",
+    "state": "Odisha",
     "specializations": [
-      "Anaesthesiology",
-      "ENT",
-      "Obstetrics and Gynaecology",
-      "Ophthalmology",
-      "Paediatrics",
-      "Radio Diagnosis"
-    ]
-  },
-  {
-    "name": "District Hospital",
-    "state": "Chhattisgarh",
-    "specializations": [
-      "Obstetrics and Gynaecology",
-      "Ophthalmology",
       "Paediatrics"
     ]
   },
   {
-    "name": "District Hospital",
-    "state": "Jammu and Kashmir",
+    "name": "DISTRICT HEADQUATERS HOSPITAL, KHORDHA",
+    "state": "Odisha",
     "specializations": [
-      "Anaesthesiology",
-      "ENT",
-      "Family Medicine",
-      "Obstetrics and Gynaecology",
-      "Paediatrics",
-      "Radio Diagnosis"
+      "Paediatrics"
     ]
   },
   {
-    "name": "District Hospital",
+    "name": "DISTRICT HOSPITAL AND EPIDEMIOLOGICAL DISEASES HOSPITAL",
     "state": "Karnataka",
     "specializations": [
-      "Anaesthesiology",
-      "ENT",
-      "Family Medicine",
-      "Obstetrics and Gynaecology",
-      "Ophthalmology",
-      "Paediatrics",
-      "Radio Diagnosis"
-    ]
-  },
-  {
-    "name": "District Hospital",
-    "state": "Madhya Pradesh",
-    "specializations": [
-      "Anaesthesiology",
-      "Family Medicine",
-      "Obstetrics and Gynaecology",
-      "Ophthalmology",
-      "Paediatrics"
-    ]
-  },
-  {
-    "name": "District Hospital",
-    "state": "Maharashtra",
-    "specializations": [
-      "Obstetrics and Gynaecology",
-      "Ophthalmology"
-    ]
-  },
-  {
-    "name": "District Hospital",
-    "state": "Punjab",
-    "specializations": [
-      "Paediatrics"
-    ]
-  },
-  {
-    "name": "District Hospital",
-    "state": "Rajasthan",
-    "specializations": [
-      "Anaesthesiology",
-      "Family Medicine",
-      "Obstetrics and Gynaecology",
-      "Ophthalmology",
-      "Paediatrics"
-    ]
-  },
-  {
-    "name": "District Hospital",
-    "state": "West Bengal",
-    "specializations": [
-      "Anaesthesiology",
-      "ENT",
-      "Obstetrics and Gynaecology",
-      "Ophthalmology",
-      "Paediatrics",
-      "Radio Diagnosis"
+      "Anaesthesiology"
     ]
   },
   {
@@ -1453,6 +1250,14 @@
     ]
   },
   {
+    "name": "District Hospital for Women",
+    "state": "Maharashtra",
+    "specializations": [
+      "Obstetrics and Gynaecology",
+      "Paediatrics"
+    ]
+  },
+  {
     "name": "District Hospital Kargil",
     "state": "Ladakh",
     "specializations": [
@@ -1475,11 +1280,102 @@
     ]
   },
   {
-    "name": "District Hospital for Women",
+    "name": "District Hospital",
+    "state": "Andhra Pradesh",
+    "specializations": [
+      "Anaesthesiology",
+      "ENT",
+      "Family Medicine",
+      "Obstetrics and Gynaecology",
+      "Ophthalmology",
+      "Paediatrics",
+      "Radio Diagnosis"
+    ]
+  },
+  {
+    "name": "District Hospital",
+    "state": "Chhattisgarh",
+    "specializations": [
+      "Anaesthesiology",
+      "Family Medicine",
+      "Obstetrics and Gynaecology",
+      "Ophthalmology",
+      "Paediatrics"
+    ]
+  },
+  {
+    "name": "District Hospital",
+    "state": "Jammu and Kashmir",
+    "specializations": [
+      "Anaesthesiology",
+      "ENT",
+      "Family Medicine",
+      "Obstetrics and Gynaecology",
+      "Paediatrics",
+      "Radio Diagnosis"
+    ]
+  },
+  {
+    "name": "District Hospital",
+    "state": "Karnataka",
+    "specializations": [
+      "Anaesthesiology",
+      "ENT",
+      "Family Medicine",
+      "Obstetrics and Gynaecology",
+      "Ophthalmology",
+      "Paediatrics",
+      "Radio Diagnosis"
+    ]
+  },
+  {
+    "name": "District Hospital",
+    "state": "Madhya Pradesh",
+    "specializations": [
+      "Anaesthesiology",
+      "ENT",
+      "Family Medicine",
+      "Obstetrics and Gynaecology",
+      "Ophthalmology",
+      "Paediatrics"
+    ]
+  },
+  {
+    "name": "District Hospital",
     "state": "Maharashtra",
     "specializations": [
       "Obstetrics and Gynaecology",
+      "Ophthalmology"
+    ]
+  },
+  {
+    "name": "District Hospital",
+    "state": "Punjab",
+    "specializations": [
       "Paediatrics"
+    ]
+  },
+  {
+    "name": "District Hospital",
+    "state": "Rajasthan",
+    "specializations": [
+      "Anaesthesiology",
+      "Family Medicine",
+      "Obstetrics and Gynaecology",
+      "Ophthalmology",
+      "Paediatrics"
+    ]
+  },
+  {
+    "name": "District Hospital",
+    "state": "West Bengal",
+    "specializations": [
+      "Anaesthesiology",
+      "ENT",
+      "Obstetrics and Gynaecology",
+      "Ophthalmology",
+      "Paediatrics",
+      "Radio Diagnosis"
     ]
   },
   {
@@ -1487,6 +1383,20 @@
     "state": "Uttar Pradesh",
     "specializations": [
       "Tuberculosis & Chest Diseases"
+    ]
+  },
+  {
+    "name": "DISTRICT WOMEN HOSPITAL BARABANKI",
+    "state": "Uttar Pradesh",
+    "specializations": [
+      "Obstetrics and Gynaecology"
+    ]
+  },
+  {
+    "name": "DISTRICT WOMEN HOSPITAL JAUNPUR",
+    "state": "Uttar Pradesh",
+    "specializations": [
+      "Obstetrics and Gynaecology"
     ]
   },
   {
@@ -1501,7 +1411,8 @@
     "name": "District women hospital",
     "state": "Uttar Pradesh",
     "specializations": [
-      "Obstetrics and Gynaecology"
+      "Obstetrics and Gynaecology",
+      "Paediatrics"
     ]
   },
   {
@@ -1510,6 +1421,14 @@
     "specializations": [
       "Anaesthesiology",
       "Obstetrics and Gynaecology"
+    ]
+  },
+  {
+    "name": "DIVISIONAL DISTRICT HOSPITAL",
+    "state": "Uttar Pradesh",
+    "specializations": [
+      "ENT",
+      "Ophthalmology"
     ]
   },
   {
@@ -1544,6 +1463,13 @@
     ]
   },
   {
+    "name": "DR ANIL KUMAR EYE HOSPITAL",
+    "state": "Tamil Nadu",
+    "specializations": [
+      "Ophthalmology"
+    ]
+  },
+  {
     "name": "Dr Kamdar Eye Hospital",
     "state": "Rajasthan",
     "specializations": [
@@ -1555,6 +1481,13 @@
     "state": "Tamil Nadu",
     "specializations": [
       "Anaesthesiology"
+    ]
+  },
+  {
+    "name": "DR RAJAN EYECARE HOSPITAL",
+    "state": "Punjab",
+    "specializations": [
+      "Ophthalmology"
     ]
   },
   {
@@ -1682,10 +1615,26 @@
     ]
   },
   {
+    "name": "DURGAPUR SUB DIVISIONAL HOSPITAL",
+    "state": "West Bengal",
+    "specializations": [
+      "ENT",
+      "Obstetrics and Gynaecology",
+      "Paediatrics"
+    ]
+  },
+  {
     "name": "E.S.I. Hospital,",
     "state": "Delhi",
     "specializations": [
       "Radio Diagnosis"
+    ]
+  },
+  {
+    "name": "Employee State Insurance Corporation Model Hospital",
+    "state": "Punjab",
+    "specializations": [
+      "Tuberculosis & Chest Diseases"
     ]
   },
   {
@@ -1700,10 +1649,33 @@
     ]
   },
   {
+    "name": "Endoworld Hospital Private Limited",
+    "state": "Maharashtra",
+    "specializations": [
+      "Obstetrics and Gynaecology"
+    ]
+  },
+  {
+    "name": "Erode Medical Centre",
+    "state": "Tamil Nadu",
+    "specializations": [
+      "Anaesthesiology",
+      "Family Medicine"
+    ]
+  },
+  {
     "name": "ESIC Hospital",
     "state": "Delhi",
     "specializations": [
       "ENT",
+      "Paediatrics"
+    ]
+  },
+  {
+    "name": "Esic Hospital",
+    "state": "Uttar Pradesh",
+    "specializations": [
+      "Anaesthesiology",
       "Paediatrics"
     ]
   },
@@ -1718,21 +1690,6 @@
     ]
   },
   {
-    "name": "ESIC MEDICAL COLLEGE AND HOSPITAL",
-    "state": "Maharashtra",
-    "specializations": [
-      "Ophthalmology"
-    ]
-  },
-  {
-    "name": "ESIC MEDICAL COLLEGE AND HOSPITAL",
-    "state": "Rajasthan",
-    "specializations": [
-      "Ophthalmology",
-      "Radio Diagnosis"
-    ]
-  },
-  {
     "name": "ESIC Medical College and Hospital",
     "state": "Gujarat",
     "specializations": [
@@ -1740,11 +1697,20 @@
     ]
   },
   {
+    "name": "ESIC MEDICAL COLLEGE AND HOSPITAL",
+    "state": "Maharashtra",
+    "specializations": [
+      "Ophthalmology"
+    ]
+  },
+  {
     "name": "ESIC Medical College and Hospital",
     "state": "Rajasthan",
     "specializations": [
       "Anaesthesiology",
-      "Paediatrics"
+      "Ophthalmology",
+      "Paediatrics",
+      "Radio Diagnosis"
     ]
   },
   {
@@ -1769,36 +1735,6 @@
     ]
   },
   {
-    "name": "Employee State Insurance Corporation Model Hospital",
-    "state": "Punjab",
-    "specializations": [
-      "Tuberculosis & Chest Diseases"
-    ]
-  },
-  {
-    "name": "Endoworld Hospital Private Limited",
-    "state": "Maharashtra",
-    "specializations": [
-      "Obstetrics and Gynaecology"
-    ]
-  },
-  {
-    "name": "Erode Medical Centre",
-    "state": "Tamil Nadu",
-    "specializations": [
-      "Anaesthesiology",
-      "Family Medicine"
-    ]
-  },
-  {
-    "name": "Esic Hospital",
-    "state": "Uttar Pradesh",
-    "specializations": [
-      "Anaesthesiology",
-      "Paediatrics"
-    ]
-  },
-  {
     "name": "FAKIR MOHAN MEDICAL COLLEGE AND HOSPITAL",
     "state": "Odisha",
     "specializations": [
@@ -1810,6 +1746,15 @@
     ]
   },
   {
+    "name": "Felix Hospital",
+    "state": "Uttar Pradesh",
+    "specializations": [
+      "Anaesthesiology",
+      "Family Medicine",
+      "Paediatrics"
+    ]
+  },
+  {
     "name": "FIMS HOSPITAL(FRANK INSTITUTE OF MEDICAL SCIENCES)",
     "state": "Haryana",
     "specializations": [
@@ -1817,15 +1762,6 @@
       "Paediatrics",
       "Radio Diagnosis",
       "Tuberculosis & Chest Diseases"
-    ]
-  },
-  {
-    "name": "Felix Hospital",
-    "state": "Uttar Pradesh",
-    "specializations": [
-      "Anaesthesiology",
-      "Family Medicine",
-      "Paediatrics"
     ]
   },
   {
@@ -1848,76 +1784,6 @@
     "state": "Tamil Nadu",
     "specializations": [
       "ENT"
-    ]
-  },
-  {
-    "name": "GMERS Medical College and General Hospital",
-    "state": "Gujarat",
-    "specializations": [
-      "Anaesthesiology",
-      "Obstetrics and Gynaecology",
-      "Paediatrics",
-      "Radio Diagnosis",
-      "Tuberculosis & Chest Diseases"
-    ]
-  },
-  {
-    "name": "GMERS Medical College and Hospital",
-    "state": "Gujarat",
-    "specializations": [
-      "Ophthalmology",
-      "Paediatrics",
-      "Radio Diagnosis",
-      "Tuberculosis & Chest Diseases"
-    ]
-  },
-  {
-    "name": "GMERS Medical College and Hospital, Porbandar",
-    "state": "Gujarat",
-    "specializations": [
-      "Radio Diagnosis"
-    ]
-  },
-  {
-    "name": "GMERS Medical college",
-    "state": "Gujarat",
-    "specializations": [
-      "Anaesthesiology",
-      "ENT",
-      "Ophthalmology",
-      "Paediatrics"
-    ]
-  },
-  {
-    "name": "GMR Varalakshmi Care Hospital",
-    "state": "Andhra Pradesh",
-    "specializations": [
-      "Anaesthesiology",
-      "Obstetrics and Gynaecology"
-    ]
-  },
-  {
-    "name": "GREENLAND HOSPITAL AND RESEARCH CENTRE PVT LTD",
-    "state": "Uttar Pradesh",
-    "specializations": [
-      "Paediatrics",
-      "Radio Diagnosis"
-    ]
-  },
-  {
-    "name": "GUPTA SURGICAL HOSPITAL",
-    "state": "Uttar Pradesh",
-    "specializations": [
-      "Radio Diagnosis"
-    ]
-  },
-  {
-    "name": "GURUKRIPA HOSPITALS",
-    "state": "Rajasthan",
-    "specializations": [
-      "Anaesthesiology",
-      "Obstetrics and Gynaecology",
-      "Radio Diagnosis"
     ]
   },
   {
@@ -1953,6 +1819,28 @@
     ]
   },
   {
+    "name": "General Hospital - Sub District Hospital",
+    "state": "Gujarat",
+    "specializations": [
+      "Paediatrics"
+    ]
+  },
+  {
+    "name": "General Hospital KGF",
+    "state": "Karnataka",
+    "specializations": [
+      "Paediatrics"
+    ]
+  },
+  {
+    "name": "General Hospital Shikaripura",
+    "state": "Karnataka",
+    "specializations": [
+      "Anaesthesiology",
+      "Obstetrics and Gynaecology"
+    ]
+  },
+  {
     "name": "General Hospital",
     "state": "Gujarat",
     "specializations": [
@@ -2000,28 +1888,6 @@
     ]
   },
   {
-    "name": "General Hospital - Sub District Hospital",
-    "state": "Gujarat",
-    "specializations": [
-      "Paediatrics"
-    ]
-  },
-  {
-    "name": "General Hospital KGF",
-    "state": "Karnataka",
-    "specializations": [
-      "Paediatrics"
-    ]
-  },
-  {
-    "name": "General Hospital Shikaripura",
-    "state": "Karnataka",
-    "specializations": [
-      "Anaesthesiology",
-      "Obstetrics and Gynaecology"
-    ]
-  },
-  {
     "name": "Ghatal S.D Hospital",
     "state": "West Bengal",
     "specializations": [
@@ -2041,6 +1907,52 @@
     "state": "Kerala",
     "specializations": [
       "Ophthalmology"
+    ]
+  },
+  {
+    "name": "GMERS Medical College and General Hospital",
+    "state": "Gujarat",
+    "specializations": [
+      "Anaesthesiology",
+      "Obstetrics and Gynaecology",
+      "Paediatrics",
+      "Radio Diagnosis",
+      "Tuberculosis & Chest Diseases"
+    ]
+  },
+  {
+    "name": "GMERS Medical College and Hospital, Porbandar",
+    "state": "Gujarat",
+    "specializations": [
+      "Radio Diagnosis"
+    ]
+  },
+  {
+    "name": "GMERS Medical College and Hospital",
+    "state": "Gujarat",
+    "specializations": [
+      "Ophthalmology",
+      "Paediatrics",
+      "Radio Diagnosis",
+      "Tuberculosis & Chest Diseases"
+    ]
+  },
+  {
+    "name": "GMERS Medical college",
+    "state": "Gujarat",
+    "specializations": [
+      "Anaesthesiology",
+      "ENT",
+      "Ophthalmology",
+      "Paediatrics"
+    ]
+  },
+  {
+    "name": "GMR Varalakshmi Care Hospital",
+    "state": "Andhra Pradesh",
+    "specializations": [
+      "Anaesthesiology",
+      "Obstetrics and Gynaecology"
     ]
   },
   {
@@ -2159,34 +2071,6 @@
     ]
   },
   {
-    "name": "Government Medical College",
-    "state": "Jammu and Kashmir",
-    "specializations": [
-      "Anaesthesiology",
-      "Family Medicine",
-      "Obstetrics and Gynaecology",
-      "Paediatrics",
-      "Radio Diagnosis"
-    ]
-  },
-  {
-    "name": "Government Medical College",
-    "state": "Maharashtra",
-    "specializations": [
-      "Anaesthesiology"
-    ]
-  },
-  {
-    "name": "Government Medical College",
-    "state": "Uttar Pradesh",
-    "specializations": [
-      "Obstetrics and Gynaecology",
-      "Ophthalmology",
-      "Paediatrics",
-      "Tuberculosis & Chest Diseases"
-    ]
-  },
-  {
     "name": "Government Medical College Alibag Raigad District Hospital",
     "state": "Maharashtra",
     "specializations": [
@@ -2275,6 +2159,34 @@
     "specializations": [
       "Clinical Pathology",
       "Community Medicine"
+    ]
+  },
+  {
+    "name": "Government Medical College",
+    "state": "Jammu and Kashmir",
+    "specializations": [
+      "Anaesthesiology",
+      "Family Medicine",
+      "Obstetrics and Gynaecology",
+      "Paediatrics",
+      "Radio Diagnosis"
+    ]
+  },
+  {
+    "name": "Government Medical College",
+    "state": "Maharashtra",
+    "specializations": [
+      "Anaesthesiology"
+    ]
+  },
+  {
+    "name": "Government Medical College",
+    "state": "Uttar Pradesh",
+    "specializations": [
+      "Obstetrics and Gynaecology",
+      "Ophthalmology",
+      "Paediatrics",
+      "Tuberculosis & Chest Diseases"
     ]
   },
   {
@@ -2388,6 +2300,14 @@
     ]
   },
   {
+    "name": "GREENLAND HOSPITAL AND RESEARCH CENTRE PVT LTD",
+    "state": "Uttar Pradesh",
+    "specializations": [
+      "Paediatrics",
+      "Radio Diagnosis"
+    ]
+  },
+  {
     "name": "Gunam Super Speciality Hospital",
     "state": "Tamil Nadu",
     "specializations": [
@@ -2395,6 +2315,13 @@
       "ENT",
       "Obstetrics and Gynaecology",
       "Paediatrics"
+    ]
+  },
+  {
+    "name": "GUPTA SURGICAL HOSPITAL",
+    "state": "Uttar Pradesh",
+    "specializations": [
+      "Radio Diagnosis"
     ]
   },
   {
@@ -2413,49 +2340,20 @@
     ]
   },
   {
+    "name": "GURUKRIPA HOSPITALS",
+    "state": "Rajasthan",
+    "specializations": [
+      "Anaesthesiology",
+      "Obstetrics and Gynaecology",
+      "Radio Diagnosis"
+    ]
+  },
+  {
     "name": "H.B.P. PRABHAKAR MALHARRAO KUTE MEMORIAL HOSPITAL",
     "state": "Maharashtra",
     "specializations": [
       "Anaesthesiology",
       "Obstetrics and Gynaecology",
-      "Paediatrics"
-    ]
-  },
-  {
-    "name": "HAJI ABDUL MAJID MEMORIAL HOSPITAL and RESEARCH CENTER",
-    "state": "Assam",
-    "specializations": [
-      "Anaesthesiology",
-      "Family Medicine",
-      "Obstetrics and Gynaecology"
-    ]
-  },
-  {
-    "name": "HARISH HOSPITAL",
-    "state": "Rajasthan",
-    "specializations": [
-      "Obstetrics and Gynaecology",
-      "Radio Diagnosis"
-    ]
-  },
-  {
-    "name": "HCG Manavata Cancer Centre",
-    "state": "Maharashtra",
-    "specializations": [
-      "Radio Diagnosis"
-    ]
-  },
-  {
-    "name": "HIRAMANI MEMORIAL HOSPITAL",
-    "state": "West Bengal",
-    "specializations": [
-      "Paediatrics"
-    ]
-  },
-  {
-    "name": "HOPE CHILDRENS HOSPITAL",
-    "state": "Telangana",
-    "specializations": [
       "Paediatrics"
     ]
   },
@@ -2469,10 +2367,27 @@
     ]
   },
   {
+    "name": "HAJI ABDUL MAJID MEMORIAL HOSPITAL and RESEARCH CENTER",
+    "state": "Assam",
+    "specializations": [
+      "Anaesthesiology",
+      "Family Medicine",
+      "Obstetrics and Gynaecology"
+    ]
+  },
+  {
     "name": "Haldia Sub-Divisional Hospital",
     "state": "West Bengal",
     "specializations": [
       "Obstetrics and Gynaecology"
+    ]
+  },
+  {
+    "name": "HARISH HOSPITAL",
+    "state": "Rajasthan",
+    "specializations": [
+      "Obstetrics and Gynaecology",
+      "Radio Diagnosis"
     ]
   },
   {
@@ -2487,6 +2402,13 @@
     "state": "Assam",
     "specializations": [
       "Anaesthesiology",
+      "Radio Diagnosis"
+    ]
+  },
+  {
+    "name": "HCG Manavata Cancer Centre",
+    "state": "Maharashtra",
+    "specializations": [
       "Radio Diagnosis"
     ]
   },
@@ -2510,6 +2432,13 @@
     "specializations": [
       "Paediatrics",
       "Tuberculosis & Chest Diseases"
+    ]
+  },
+  {
+    "name": "HIRAMANI MEMORIAL HOSPITAL",
+    "state": "West Bengal",
+    "specializations": [
+      "Paediatrics"
     ]
   },
   {
@@ -2538,6 +2467,13 @@
     ]
   },
   {
+    "name": "HOPE CHILDRENS HOSPITAL",
+    "state": "Telangana",
+    "specializations": [
+      "Paediatrics"
+    ]
+  },
+  {
     "name": "I VISION EYE HOSPITAL (A UNIT OF JASM EYE HOSPITALS PRIVATE LTD)",
     "state": "Kerala",
     "specializations": [
@@ -2560,13 +2496,6 @@
     "specializations": [
       "Anaesthesiology",
       "Family Medicine"
-    ]
-  },
-  {
-    "name": "IQRAA HOSPITAL",
-    "state": "Kerala",
-    "specializations": [
-      "Obstetrics and Gynaecology"
     ]
   },
   {
@@ -2643,6 +2572,13 @@
     ]
   },
   {
+    "name": "IQRAA HOSPITAL",
+    "state": "Kerala",
+    "specializations": [
+      "Obstetrics and Gynaecology"
+    ]
+  },
+  {
     "name": "Islampur SDH/ ISSH",
     "state": "West Bengal",
     "specializations": [
@@ -2657,78 +2593,18 @@
     ]
   },
   {
-    "name": "JAG PRAVESH CHANDRA HOSPITAL",
-    "state": "Delhi",
-    "specializations": [
-      "Paediatrics"
-    ]
-  },
-  {
-    "name": "JBMM District Hospital",
-    "state": "Punjab",
-    "specializations": [
-      "Anaesthesiology",
-      "Obstetrics and Gynaecology",
-      "Paediatrics"
-    ]
-  },
-  {
-    "name": "JIJAMATA HOSPITAL",
-    "state": "Maharashtra",
-    "specializations": [
-      "Obstetrics and Gynaecology",
-      "Paediatrics"
-    ]
-  },
-  {
-    "name": "JLN Government Hospital",
-    "state": "Rajasthan",
-    "specializations": [
-      "Anaesthesiology",
-      "ENT",
-      "Obstetrics and Gynaecology",
-      "Ophthalmology",
-      "Paediatrics",
-      "Tuberculosis & Chest Diseases"
-    ]
-  },
-  {
-    "name": "JLNM Hospital",
-    "state": "Jammu and Kashmir",
-    "specializations": [
-      "Family Medicine",
-      "Obstetrics and Gynaecology",
-      "Paediatrics",
-      "Radio Diagnosis"
-    ]
-  },
-  {
-    "name": "JOSHI HOSPITAL",
-    "state": "Punjab",
-    "specializations": [
-      "Radio Diagnosis"
-    ]
-  },
-  {
-    "name": "JSS Medical College, Mysore",
-    "state": "Karnataka",
-    "specializations": [
-      "Psychological Medicine"
-    ]
-  },
-  {
-    "name": "JYOTHI HOSPITAL",
-    "state": "Telangana",
-    "specializations": [
-      "Obstetrics and Gynaecology"
-    ]
-  },
-  {
     "name": "Jabalpur Hospital and Research Centre",
     "state": "Madhya Pradesh",
     "specializations": [
       "Anaesthesiology",
       "Obstetrics and Gynaecology",
+      "Paediatrics"
+    ]
+  },
+  {
+    "name": "JAG PRAVESH CHANDRA HOSPITAL",
+    "state": "Delhi",
+    "specializations": [
       "Paediatrics"
     ]
   },
@@ -2803,6 +2679,15 @@
     ]
   },
   {
+    "name": "JBMM District Hospital",
+    "state": "Punjab",
+    "specializations": [
+      "Anaesthesiology",
+      "Obstetrics and Gynaecology",
+      "Paediatrics"
+    ]
+  },
+  {
     "name": "Jeevan Rekha Critical Care and Trauma Hospital Research and Training Institute",
     "state": "Rajasthan",
     "specializations": [
@@ -2817,10 +2702,61 @@
     ]
   },
   {
+    "name": "JIJAMATA HOSPITAL",
+    "state": "Maharashtra",
+    "specializations": [
+      "Obstetrics and Gynaecology",
+      "Paediatrics"
+    ]
+  },
+  {
+    "name": "JLN Government Hospital",
+    "state": "Rajasthan",
+    "specializations": [
+      "Anaesthesiology",
+      "ENT",
+      "Obstetrics and Gynaecology",
+      "Ophthalmology",
+      "Paediatrics",
+      "Tuberculosis & Chest Diseases"
+    ]
+  },
+  {
+    "name": "JLNM Hospital",
+    "state": "Jammu and Kashmir",
+    "specializations": [
+      "Family Medicine",
+      "Obstetrics and Gynaecology",
+      "Paediatrics",
+      "Radio Diagnosis"
+    ]
+  },
+  {
     "name": "Johal Multispeciality Hospital,",
     "state": "Punjab",
     "specializations": [
       "Anaesthesiology"
+    ]
+  },
+  {
+    "name": "JOSHI HOSPITAL",
+    "state": "Punjab",
+    "specializations": [
+      "Radio Diagnosis"
+    ]
+  },
+  {
+    "name": "JSS Medical College, Mysore",
+    "state": "Karnataka",
+    "specializations": [
+      "Psychological Medicine"
+    ]
+  },
+  {
+    "name": "JYOTHI HOSPITAL",
+    "state": "Telangana",
+    "specializations": [
+      "Obstetrics and Gynaecology"
     ]
   },
   {
@@ -2878,97 +2814,6 @@
     ]
   },
   {
-    "name": "KALNA SD and SS HOSPITAL",
-    "state": "West Bengal",
-    "specializations": [
-      "Obstetrics and Gynaecology",
-      "Paediatrics"
-    ]
-  },
-  {
-    "name": "KAUSHALYA DEVI EYE INSTITUE",
-    "state": "Uttar Pradesh",
-    "specializations": [
-      "Ophthalmology"
-    ]
-  },
-  {
-    "name": "KAUVERY HOSPITAL",
-    "state": "Karnataka",
-    "specializations": [
-      "Radio Diagnosis"
-    ]
-  },
-  {
-    "name": "KHATRA SUB DIVISINAL HOSPITAL SUB DIVISIONAL HOSPITAL",
-    "state": "West Bengal",
-    "specializations": [
-      "Ophthalmology"
-    ]
-  },
-  {
-    "name": "KHURANA EYE CENTRE",
-    "state": "Haryana",
-    "specializations": [
-      "Ophthalmology"
-    ]
-  },
-  {
-    "name": "KHUSHLOK HOSPITAL",
-    "state": "Uttar Pradesh",
-    "specializations": [
-      "Paediatrics"
-    ]
-  },
-  {
-    "name": "KIMS Al Shifa Hospital",
-    "state": "Kerala",
-    "specializations": [
-      "Radio Diagnosis"
-    ]
-  },
-  {
-    "name": "KIMS Hospital",
-    "state": "Telangana",
-    "specializations": [
-      "Obstetrics and Gynaecology"
-    ]
-  },
-  {
-    "name": "KIMS Hospital Kurnool",
-    "state": "Andhra Pradesh",
-    "specializations": [
-      "Paediatrics"
-    ]
-  },
-  {
-    "name": "KIMS KOLLAM MULTISPECIALITY HOSPITAL INDIA PVT LTD",
-    "state": "Kerala",
-    "specializations": [
-      "Anaesthesiology",
-      "Obstetrics and Gynaecology"
-    ]
-  },
-  {
-    "name": "KIMS SunShine Hospital (Formerly known as SunShine Hospital)",
-    "state": "Telangana",
-    "specializations": [
-      "Anaesthesiology"
-    ]
-  },
-  {
-    "name": "KMC Specialty Hospital",
-    "state": "Tamil Nadu",
-    "specializations": [
-      "Anaesthesiology",
-      "ENT",
-      "Family Medicine",
-      "Obstetrics and Gynaecology",
-      "Paediatrics",
-      "Radio Diagnosis"
-    ]
-  },
-  {
     "name": "Kabra Eye Hospital",
     "state": "Rajasthan",
     "specializations": [
@@ -2989,6 +2834,14 @@
     "specializations": [
       "Public Health",
       "Radio Diagnosis"
+    ]
+  },
+  {
+    "name": "KALNA SD and SS HOSPITAL",
+    "state": "West Bengal",
+    "specializations": [
+      "Obstetrics and Gynaecology",
+      "Paediatrics"
     ]
   },
   {
@@ -3050,19 +2903,19 @@
     ]
   },
   {
-    "name": "Kasturba Hospital",
-    "state": "Gujarat",
-    "specializations": [
-      "Obstetrics and Gynaecology",
-      "Ophthalmology"
-    ]
-  },
-  {
     "name": "Kasturba Hospital, New Delhi",
     "state": "Delhi",
     "specializations": [
       "Child Health",
       "Obstetrics and Gynaecology"
+    ]
+  },
+  {
+    "name": "Kasturba Hospital",
+    "state": "Gujarat",
+    "specializations": [
+      "Obstetrics and Gynaecology",
+      "Ophthalmology"
     ]
   },
   {
@@ -3073,18 +2926,17 @@
     ]
   },
   {
+    "name": "KAUSHALYA DEVI EYE INSTITUE",
+    "state": "Uttar Pradesh",
+    "specializations": [
+      "Ophthalmology"
+    ]
+  },
+  {
     "name": "Kaushalya Medical Foundation",
     "state": "Maharashtra",
     "specializations": [
       "Paediatrics"
-    ]
-  },
-  {
-    "name": "Kauvery Hospital",
-    "state": "Tamil Nadu",
-    "specializations": [
-      "Anaesthesiology",
-      "Radio Diagnosis"
     ]
   },
   {
@@ -3093,6 +2945,21 @@
     "specializations": [
       "Anaesthesiology",
       "ENT",
+      "Radio Diagnosis"
+    ]
+  },
+  {
+    "name": "KAUVERY HOSPITAL",
+    "state": "Karnataka",
+    "specializations": [
+      "Radio Diagnosis"
+    ]
+  },
+  {
+    "name": "Kauvery Hospital",
+    "state": "Tamil Nadu",
+    "specializations": [
+      "Anaesthesiology",
       "Radio Diagnosis"
     ]
   },
@@ -3127,10 +2994,79 @@
     ]
   },
   {
+    "name": "KHATRA SUB DIVISINAL HOSPITAL SUB DIVISIONAL HOSPITAL",
+    "state": "West Bengal",
+    "specializations": [
+      "Ophthalmology"
+    ]
+  },
+  {
+    "name": "KHURANA EYE CENTRE",
+    "state": "Haryana",
+    "specializations": [
+      "Ophthalmology"
+    ]
+  },
+  {
+    "name": "KHUSHLOK HOSPITAL",
+    "state": "Uttar Pradesh",
+    "specializations": [
+      "Paediatrics"
+    ]
+  },
+  {
     "name": "Kidwai Memorial Institute of Oncology, Bangalore",
     "state": "Karnataka",
     "specializations": [
       "Radiation Medicine (Nuclear Medicine)"
+    ]
+  },
+  {
+    "name": "KIMS Al Shifa Hospital",
+    "state": "Kerala",
+    "specializations": [
+      "Radio Diagnosis"
+    ]
+  },
+  {
+    "name": "KIMS Hospital Kurnool",
+    "state": "Andhra Pradesh",
+    "specializations": [
+      "Paediatrics"
+    ]
+  },
+  {
+    "name": "KIMS Hospital",
+    "state": "Telangana",
+    "specializations": [
+      "Obstetrics and Gynaecology"
+    ]
+  },
+  {
+    "name": "KIMS KOLLAM MULTISPECIALITY HOSPITAL INDIA PVT LTD",
+    "state": "Kerala",
+    "specializations": [
+      "Anaesthesiology",
+      "Obstetrics and Gynaecology"
+    ]
+  },
+  {
+    "name": "KIMS SunShine Hospital (Formerly known as SunShine Hospital)",
+    "state": "Telangana",
+    "specializations": [
+      "Anaesthesiology"
+    ]
+  },
+  {
+    "name": "KMC Specialty Hospital",
+    "state": "Tamil Nadu",
+    "specializations": [
+      "Anaesthesiology",
+      "ENT",
+      "Family Medicine",
+      "Obstetrics and Gynaecology",
+      "Paediatrics",
+      "Radio Diagnosis"
     ]
   },
   {
@@ -3149,37 +3085,19 @@
     ]
   },
   {
+    "name": "Lakshmi Madhavan Hospital",
+    "state": "Tamil Nadu",
+    "specializations": [
+      "Obstetrics and Gynaecology"
+    ]
+  },
+  {
     "name": "LAL BAHADUR SHASTRI HOSPITAL",
     "state": "Uttar Pradesh",
     "specializations": [
       "ENT",
       "Ophthalmology",
       "Tuberculosis & Chest Diseases"
-    ]
-  },
-  {
-    "name": "LINK HOSPITAL",
-    "state": "Madhya Pradesh",
-    "specializations": [
-      "Anaesthesiology"
-    ]
-  },
-  {
-    "name": "LLRM Medical College, Meerut",
-    "state": "Uttar Pradesh",
-    "specializations": [
-      "Dermatology, Venereology and Leprosy",
-      "Ophthalmology",
-      "Orthopaedics",
-      "Paediatrics",
-      "Radio Diagnosis"
-    ]
-  },
-  {
-    "name": "Lakshmi Madhavan Hospital",
-    "state": "Tamil Nadu",
-    "specializations": [
-      "Obstetrics and Gynaecology"
     ]
   },
   {
@@ -3249,10 +3167,28 @@
     ]
   },
   {
+    "name": "LINK HOSPITAL",
+    "state": "Madhya Pradesh",
+    "specializations": [
+      "Anaesthesiology"
+    ]
+  },
+  {
     "name": "Little Stars and She Women and Children",
     "state": "Telangana",
     "specializations": [
       "Paediatrics"
+    ]
+  },
+  {
+    "name": "LLRM Medical College, Meerut",
+    "state": "Uttar Pradesh",
+    "specializations": [
+      "Dermatology, Venereology and Leprosy",
+      "Ophthalmology",
+      "Orthopaedics",
+      "Paediatrics",
+      "Radio Diagnosis"
     ]
   },
   {
@@ -3331,92 +3267,6 @@
     ]
   },
   {
-    "name": "MAGNUS HOSPITAL",
-    "state": "Rajasthan",
-    "specializations": [
-      "Obstetrics and Gynaecology"
-    ]
-  },
-  {
-    "name": "MALABAR INSTITUTE OF MEDICAL SCIENCES Ltd",
-    "state": "Kerala",
-    "specializations": [
-      "Anaesthesiology",
-      "Obstetrics and Gynaecology",
-      "Paediatrics",
-      "Radio Diagnosis"
-    ]
-  },
-  {
-    "name": "MALANKARA MEDICAL MISSION HOSPITAL",
-    "state": "Kerala",
-    "specializations": [
-      "Tuberculosis & Chest Diseases"
-    ]
-  },
-  {
-    "name": "MANAYAWAR KANSHI RAM DISTRCIT COMBINED HOSPITAL AND TRAUMA CENTRE",
-    "state": "Uttar Pradesh",
-    "specializations": [
-      "Obstetrics and Gynaecology",
-      "Tuberculosis & Chest Diseases"
-    ]
-  },
-  {
-    "name": "MGM Eye Insitute,",
-    "state": "Chhattisgarh",
-    "specializations": [
-      "Ophthalmology"
-    ]
-  },
-  {
-    "name": "MGM Govt District Hospital",
-    "state": "Rajasthan",
-    "specializations": [
-      "Anaesthesiology",
-      "Ophthalmology",
-      "Paediatrics",
-      "Tuberculosis & Chest Diseases"
-    ]
-  },
-  {
-    "name": "MGM Health Care Private Limited",
-    "state": "Tamil Nadu",
-    "specializations": [
-      "Anaesthesiology",
-      "Family Medicine",
-      "Paediatrics",
-      "Radio Diagnosis"
-    ]
-  },
-  {
-    "name": "MMI Narayana Multispecialty Hospital",
-    "state": "Chhattisgarh",
-    "specializations": [
-      "Anaesthesiology",
-      "Family Medicine",
-      "Tuberculosis & Chest Diseases"
-    ]
-  },
-  {
-    "name": "MP Shah Medical College,Jamnagar",
-    "state": "Gujarat",
-    "specializations": [
-      "Anaesthesiology",
-      "Child Health",
-      "Obstetrics and Gynaecology",
-      "Radio Diagnosis",
-      "Tuberculosis & Chest Diseases"
-    ]
-  },
-  {
-    "name": "MUSKAN HOSPITAL AND RESEARCH CENTRE",
-    "state": "Jharkhand",
-    "specializations": [
-      "Paediatrics"
-    ]
-  },
-  {
     "name": "Madhukar Rainbow Childrens Hospital",
     "state": "Delhi",
     "specializations": [
@@ -3428,6 +3278,13 @@
     "state": "Tamil Nadu",
     "specializations": [
       "Diabetology"
+    ]
+  },
+  {
+    "name": "MAGNUS HOSPITAL",
+    "state": "Rajasthan",
+    "specializations": [
+      "Obstetrics and Gynaecology"
     ]
   },
   {
@@ -3541,6 +3398,16 @@
     ]
   },
   {
+    "name": "MALABAR INSTITUTE OF MEDICAL SCIENCES Ltd",
+    "state": "Kerala",
+    "specializations": [
+      "Anaesthesiology",
+      "Obstetrics and Gynaecology",
+      "Paediatrics",
+      "Radio Diagnosis"
+    ]
+  },
+  {
     "name": "Malabar Institute of Medical Sciences",
     "state": "Kerala",
     "specializations": [
@@ -3549,10 +3416,25 @@
     ]
   },
   {
+    "name": "MALANKARA MEDICAL MISSION HOSPITAL",
+    "state": "Kerala",
+    "specializations": [
+      "Tuberculosis & Chest Diseases"
+    ]
+  },
+  {
     "name": "Mallige Medical Centre",
     "state": "Karnataka",
     "specializations": [
       "Anaesthesiology"
+    ]
+  },
+  {
+    "name": "MANAYAWAR KANSHI RAM DISTRCIT COMBINED HOSPITAL AND TRAUMA CENTRE",
+    "state": "Uttar Pradesh",
+    "specializations": [
+      "Obstetrics and Gynaecology",
+      "Tuberculosis & Chest Diseases"
     ]
   },
   {
@@ -3631,18 +3513,18 @@
     ]
   },
   {
-    "name": "Max Super Speciality Hospital",
-    "state": "Uttar Pradesh",
-    "specializations": [
-      "Paediatrics"
-    ]
-  },
-  {
     "name": "Max Super Speciality Hospital (A unit of Alexis Multi-Speciality Hospital Private Limited",
     "state": "Maharashtra",
     "specializations": [
       "Anaesthesiology",
       "Radio Diagnosis"
+    ]
+  },
+  {
+    "name": "Max Super Speciality Hospital",
+    "state": "Uttar Pradesh",
+    "specializations": [
+      "Paediatrics"
     ]
   },
   {
@@ -3736,10 +3618,46 @@
     ]
   },
   {
+    "name": "MGM Eye Insitute,",
+    "state": "Chhattisgarh",
+    "specializations": [
+      "Ophthalmology"
+    ]
+  },
+  {
+    "name": "MGM Govt District Hospital",
+    "state": "Rajasthan",
+    "specializations": [
+      "Anaesthesiology",
+      "Ophthalmology",
+      "Paediatrics",
+      "Tuberculosis & Chest Diseases"
+    ]
+  },
+  {
+    "name": "MGM Health Care Private Limited",
+    "state": "Tamil Nadu",
+    "specializations": [
+      "Anaesthesiology",
+      "Family Medicine",
+      "Paediatrics",
+      "Radio Diagnosis"
+    ]
+  },
+  {
     "name": "Midland Healthcare and Research Centre",
     "state": "Uttar Pradesh",
     "specializations": [
       "Anaesthesiology",
+      "Tuberculosis & Chest Diseases"
+    ]
+  },
+  {
+    "name": "MMI Narayana Multispecialty Hospital",
+    "state": "Chhattisgarh",
+    "specializations": [
+      "Anaesthesiology",
+      "Family Medicine",
       "Tuberculosis & Chest Diseases"
     ]
   },
@@ -3761,6 +3679,24 @@
   {
     "name": "Mothers Care Children Hospital and Research Centre",
     "state": "Manipur",
+    "specializations": [
+      "Paediatrics"
+    ]
+  },
+  {
+    "name": "MP Shah Medical College,Jamnagar",
+    "state": "Gujarat",
+    "specializations": [
+      "Anaesthesiology",
+      "Child Health",
+      "Obstetrics and Gynaecology",
+      "Radio Diagnosis",
+      "Tuberculosis & Chest Diseases"
+    ]
+  },
+  {
+    "name": "MUSKAN HOSPITAL AND RESEARCH CENTRE",
+    "state": "Jharkhand",
     "specializations": [
       "Paediatrics"
     ]
@@ -3790,70 +3726,6 @@
     ]
   },
   {
-    "name": "NAIHATI STATE GENERAL HOSPITAL",
-    "state": "West Bengal",
-    "specializations": [
-      "Tuberculosis & Chest Diseases"
-    ]
-  },
-  {
-    "name": "NEO Hospital",
-    "state": "Uttar Pradesh",
-    "specializations": [
-      "Anaesthesiology"
-    ]
-  },
-  {
-    "name": "NETAJI SUBHASH CHANDRA BOSE DISTRICT HOSPITAL",
-    "state": "Uttar Pradesh",
-    "specializations": [
-      "Paediatrics"
-    ]
-  },
-  {
-    "name": "NETRODAYA THE EYE CITY LLP",
-    "state": "Uttar Pradesh",
-    "specializations": [
-      "Ophthalmology"
-    ]
-  },
-  {
-    "name": "NEW BHOSARI HOSPITAL",
-    "state": "Maharashtra",
-    "specializations": [
-      "Obstetrics and Gynaecology"
-    ]
-  },
-  {
-    "name": "NH Brahamananda Narayana Multispeciality Hospital",
-    "state": "Jharkhand",
-    "specializations": [
-      "Anaesthesiology",
-      "Tuberculosis & Chest Diseases"
-    ]
-  },
-  {
-    "name": "NIMS Medicare Surgical And Dental Hospital",
-    "state": "Maharashtra",
-    "specializations": [
-      "Anaesthesiology"
-    ]
-  },
-  {
-    "name": "NIMS Medicity",
-    "state": "Kerala",
-    "specializations": [
-      "Obstetrics and Gynaecology"
-    ]
-  },
-  {
-    "name": "NUVISION EYE CARE LLP",
-    "state": "Kerala",
-    "specializations": [
-      "Ophthalmology"
-    ]
-  },
-  {
     "name": "Nabadwip State General Hospital",
     "state": "West Bengal",
     "specializations": [
@@ -3874,17 +3746,17 @@
     ]
   },
   {
+    "name": "NAIHATI STATE GENERAL HOSPITAL",
+    "state": "West Bengal",
+    "specializations": [
+      "Tuberculosis & Chest Diseases"
+    ]
+  },
+  {
     "name": "Nanjappa Hospital",
     "state": "Karnataka",
     "specializations": [
       "Anaesthesiology"
-    ]
-  },
-  {
-    "name": "Narayana Hrudayalaya",
-    "state": "Gujarat",
-    "specializations": [
-      "Tuberculosis & Chest Diseases"
     ]
   },
   {
@@ -3893,6 +3765,13 @@
     "specializations": [
       "Family Medicine",
       "Obstetrics and Gynaecology"
+    ]
+  },
+  {
+    "name": "Narayana Hrudayalaya",
+    "state": "Gujarat",
+    "specializations": [
+      "Tuberculosis & Chest Diseases"
     ]
   },
   {
@@ -3937,17 +3816,17 @@
     ]
   },
   {
-    "name": "National Institute Of Ophthalmology",
-    "state": "Maharashtra",
-    "specializations": [
-      "Ophthalmology"
-    ]
-  },
-  {
     "name": "National Institute of Health and Family Welfare, New Delhi",
     "state": "Delhi",
     "specializations": [
       "Health Administration"
+    ]
+  },
+  {
+    "name": "National Institute Of Ophthalmology",
+    "state": "Maharashtra",
+    "specializations": [
+      "Ophthalmology"
     ]
   },
   {
@@ -3957,6 +3836,13 @@
       "Anaesthesiology",
       "Paediatrics",
       "Radio Diagnosis"
+    ]
+  },
+  {
+    "name": "NEO Hospital",
+    "state": "Uttar Pradesh",
+    "specializations": [
+      "Anaesthesiology"
     ]
   },
   {
@@ -3983,8 +3869,22 @@
     ]
   },
   {
+    "name": "NETAJI SUBHASH CHANDRA BOSE DISTRICT HOSPITAL",
+    "state": "Uttar Pradesh",
+    "specializations": [
+      "Paediatrics"
+    ]
+  },
+  {
     "name": "Nethradhama Super Specialty Eye Hospital",
     "state": "Karnataka",
+    "specializations": [
+      "Ophthalmology"
+    ]
+  },
+  {
+    "name": "NETRODAYA THE EYE CITY LLP",
+    "state": "Uttar Pradesh",
     "specializations": [
       "Ophthalmology"
     ]
@@ -3997,6 +3897,13 @@
     ]
   },
   {
+    "name": "NEW BHOSARI HOSPITAL",
+    "state": "Maharashtra",
+    "specializations": [
+      "Obstetrics and Gynaecology"
+    ]
+  },
+  {
     "name": "New Thergaon Hospital",
     "state": "Maharashtra",
     "specializations": [
@@ -4004,6 +3911,28 @@
       "Obstetrics and Gynaecology",
       "Paediatrics",
       "Radio Diagnosis"
+    ]
+  },
+  {
+    "name": "NH Brahamananda Narayana Multispeciality Hospital",
+    "state": "Jharkhand",
+    "specializations": [
+      "Anaesthesiology",
+      "Tuberculosis & Chest Diseases"
+    ]
+  },
+  {
+    "name": "NIMS Medicare Surgical And Dental Hospital",
+    "state": "Maharashtra",
+    "specializations": [
+      "Anaesthesiology"
+    ]
+  },
+  {
+    "name": "NIMS Medicity",
+    "state": "Kerala",
+    "specializations": [
+      "Obstetrics and Gynaecology"
     ]
   },
   {
@@ -4029,8 +3958,8 @@
     ]
   },
   {
-    "name": "OM SAI NIRWANA NETRALAYA TRUST",
-    "state": "Bihar",
+    "name": "NUVISION EYE CARE LLP",
+    "state": "Kerala",
     "specializations": [
       "Ophthalmology"
     ]
@@ -4040,6 +3969,13 @@
     "state": "Haryana",
     "specializations": [
       "Anaesthesiology"
+    ]
+  },
+  {
+    "name": "OM SAI NIRWANA NETRALAYA TRUST",
+    "state": "Bihar",
+    "specializations": [
+      "Ophthalmology"
     ]
   },
   {
@@ -4070,27 +4006,6 @@
   {
     "name": "PANDIT DEEN DAYAL UPADHYAY DIVISIONAL DISTRICT HOSPITAL",
     "state": "Uttar Pradesh",
-    "specializations": [
-      "Paediatrics"
-    ]
-  },
-  {
-    "name": "PARIHAR HOSPITAL KAWARDHA",
-    "state": "Chhattisgarh",
-    "specializations": [
-      "Paediatrics"
-    ]
-  },
-  {
-    "name": "PRIYA HOSPITAL",
-    "state": "Uttar Pradesh",
-    "specializations": [
-      "Obstetrics and Gynaecology"
-    ]
-  },
-  {
-    "name": "PRS Hospital",
-    "state": "Kerala",
     "specializations": [
       "Paediatrics"
     ]
@@ -4154,6 +4069,13 @@
     "state": "Haryana",
     "specializations": [
       "Tuberculosis & Chest Diseases"
+    ]
+  },
+  {
+    "name": "PARIHAR HOSPITAL KAWARDHA",
+    "state": "Chhattisgarh",
+    "specializations": [
+      "Paediatrics"
     ]
   },
   {
@@ -4236,6 +4158,20 @@
     ]
   },
   {
+    "name": "PRIYA HOSPITAL",
+    "state": "Uttar Pradesh",
+    "specializations": [
+      "Obstetrics and Gynaecology"
+    ]
+  },
+  {
+    "name": "PRS Hospital",
+    "state": "Kerala",
+    "specializations": [
+      "Paediatrics"
+    ]
+  },
+  {
     "name": "Public Health Centre",
     "state": "Tamil Nadu",
     "specializations": [
@@ -4274,19 +4210,19 @@
     ]
   },
   {
-    "name": "Pushpanjali Hospital",
-    "state": "Haryana",
-    "specializations": [
-      "Tuberculosis & Chest Diseases"
-    ]
-  },
-  {
     "name": "Pushpanjali Hospital and Research Centre",
     "state": "Uttar Pradesh",
     "specializations": [
       "Anaesthesiology",
       "Family Medicine",
       "Obstetrics and Gynaecology"
+    ]
+  },
+  {
+    "name": "Pushpanjali Hospital",
+    "state": "Haryana",
+    "specializations": [
+      "Tuberculosis & Chest Diseases"
     ]
   },
   {
@@ -4301,59 +4237,6 @@
     "name": "R.K. Govt District Hospital",
     "state": "Rajasthan",
     "specializations": [
-      "Paediatrics"
-    ]
-  },
-  {
-    "name": "RAJ JINDAL HOSPITAL AND RESEARCH CENTRE PVT LTD",
-    "state": "Rajasthan",
-    "specializations": [
-      "Anaesthesiology",
-      "Obstetrics and Gynaecology"
-    ]
-  },
-  {
-    "name": "RAJA PRATAP BAHADUR HOSPITAL ALLIED WITH DR SONELAL PATEL AUTONOMOUS STATE MEDICAL COLLEGE",
-    "state": "Uttar Pradesh",
-    "specializations": [
-      "Obstetrics and Gynaecology"
-    ]
-  },
-  {
-    "name": "RANA BENI MADHAV SINGH (RBMS) DISTRICT HOSPITAL",
-    "state": "Uttar Pradesh",
-    "specializations": [
-      "Paediatrics"
-    ]
-  },
-  {
-    "name": "RANI LAXMI BAI COMBINED HOSPITAL LUYCKNOW",
-    "state": "Uttar Pradesh",
-    "specializations": [
-      "Paediatrics"
-    ]
-  },
-  {
-    "name": "RG Kar Medical College, Kolkata",
-    "state": "West Bengal",
-    "specializations": [
-      "Anaesthesiology"
-    ]
-  },
-  {
-    "name": "ROURKELA GOVT HOSPITAL",
-    "state": "Odisha",
-    "specializations": [
-      "Obstetrics and Gynaecology",
-      "Ophthalmology",
-      "Paediatrics"
-    ]
-  },
-  {
-    "name": "RURAL DEVELOPMENT TRUST HOSPITAL",
-    "state": "Andhra Pradesh",
-    "specializations": [
-      "Obstetrics and Gynaecology",
       "Paediatrics"
     ]
   },
@@ -4407,6 +4290,21 @@
     "state": "Uttar Pradesh",
     "specializations": [
       "Ophthalmology"
+    ]
+  },
+  {
+    "name": "RAJ JINDAL HOSPITAL AND RESEARCH CENTRE PVT LTD",
+    "state": "Rajasthan",
+    "specializations": [
+      "Anaesthesiology",
+      "Obstetrics and Gynaecology"
+    ]
+  },
+  {
+    "name": "RAJA PRATAP BAHADUR HOSPITAL ALLIED WITH DR SONELAL PATEL AUTONOMOUS STATE MEDICAL COLLEGE",
+    "state": "Uttar Pradesh",
+    "specializations": [
+      "Obstetrics and Gynaecology"
     ]
   },
   {
@@ -4495,6 +4393,13 @@
     ]
   },
   {
+    "name": "RANA BENI MADHAV SINGH (RBMS) DISTRICT HOSPITAL",
+    "state": "Uttar Pradesh",
+    "specializations": [
+      "Paediatrics"
+    ]
+  },
+  {
     "name": "Ranaghat Sub Division Hospital",
     "state": "West Bengal",
     "specializations": [
@@ -4526,6 +4431,13 @@
   {
     "name": "Rani Hospital",
     "state": "Jharkhand",
+    "specializations": [
+      "Paediatrics"
+    ]
+  },
+  {
+    "name": "RANI LAXMI BAI COMBINED HOSPITAL LUYCKNOW",
+    "state": "Uttar Pradesh",
     "specializations": [
       "Paediatrics"
     ]
@@ -4571,6 +4483,13 @@
     ]
   },
   {
+    "name": "RG Kar Medical College, Kolkata",
+    "state": "West Bengal",
+    "specializations": [
+      "Anaesthesiology"
+    ]
+  },
+  {
     "name": "Rich Hospital",
     "state": "Andhra Pradesh",
     "specializations": [
@@ -4581,6 +4500,15 @@
     "name": "Rio Childrens Hospital Pvt Ltd",
     "state": "Tamil Nadu",
     "specializations": [
+      "Paediatrics"
+    ]
+  },
+  {
+    "name": "ROURKELA GOVT HOSPITAL",
+    "state": "Odisha",
+    "specializations": [
+      "Obstetrics and Gynaecology",
+      "Ophthalmology",
       "Paediatrics"
     ]
   },
@@ -4668,11 +4596,16 @@
     ]
   },
   {
-    "name": "SADAR HOSPITAL",
+    "name": "Sacred Heart Hospital",
+    "state": "Punjab",
+    "specializations": [
+      "Anaesthesiology"
+    ]
+  },
+  {
+    "name": "Sadar Hospital Arwal",
     "state": "Bihar",
     "specializations": [
-      "Anaesthesiology",
-      "Obstetrics and Gynaecology",
       "Paediatrics"
     ]
   },
@@ -4699,200 +4632,19 @@
     ]
   },
   {
-    "name": "SANKARA NETRA CHIKITSALAYA",
-    "state": "Andhra Pradesh",
-    "specializations": [
-      "Ophthalmology"
-    ]
-  },
-  {
-    "name": "SARDAR VALLABH BHAI PATEL DISTRICT HOSPITAL",
-    "state": "Madhya Pradesh",
-    "specializations": [
-      "Obstetrics and Gynaecology"
-    ]
-  },
-  {
-    "name": "SBLS Civil Hospital",
-    "state": "Punjab",
-    "specializations": [
-      "Obstetrics and Gynaecology",
-      "Paediatrics",
-      "Radio Diagnosis"
-    ]
-  },
-  {
-    "name": "SDAR HOSPITAL",
+    "name": "Sadar Hospital, Madhepura",
     "state": "Bihar",
     "specializations": [
-      "Paediatrics"
-    ]
-  },
-  {
-    "name": "SDH KUPWARA",
-    "state": "Jammu and Kashmir",
-    "specializations": [
-      "Anaesthesiology",
-      "Obstetrics and Gynaecology",
-      "Paediatrics"
-    ]
-  },
-  {
-    "name": "SDH PHAGWARA",
-    "state": "Punjab",
-    "specializations": [
-      "Paediatrics"
-    ]
-  },
-  {
-    "name": "SDH RAJPURA",
-    "state": "Punjab",
-    "specializations": [
-      "Paediatrics"
-    ]
-  },
-  {
-    "name": "SDM College of Medical Sciences & Hospital, Sattur, Dharwad",
-    "state": "Karnataka",
-    "specializations": [
-      "Public Health"
-    ]
-  },
-  {
-    "name": "SETH V. C. GANDHI and M. A. VORA MUNICIPAL GENERAL HOSPITAL (RAJAWADI HOSPITAL)",
-    "state": "Maharashtra",
-    "specializations": [
-      "ENT",
-      "Ophthalmology"
-    ]
-  },
-  {
-    "name": "SGVP Holistic Hospital",
-    "state": "Gujarat",
-    "specializations": [
-      "Anaesthesiology"
-    ]
-  },
-  {
-    "name": "SHRI BHAUSAHEB HIRE GOVT. MEDICAL COLLEGE, DHULE",
-    "state": "Maharashtra",
-    "specializations": [
-      "Radio Diagnosis"
-    ]
-  },
-  {
-    "name": "SHRIMANT MADHAVRAO SCHINDHIYA DISTRICT HOSPITAL",
-    "state": "Madhya Pradesh",
-    "specializations": [
-      "Anaesthesiology",
       "Obstetrics and Gynaecology"
-    ]
-  },
-  {
-    "name": "SHRIPAL HOSPITAL",
-    "state": "Maharashtra",
-    "specializations": [
-      "Paediatrics"
-    ]
-  },
-  {
-    "name": "SMITA MEMORIAL HOSPTIAL AND RESEARCH CENTRE",
-    "state": "Kerala",
-    "specializations": [
-      "Anaesthesiology",
-      "Paediatrics",
-      "Radio Diagnosis"
-    ]
-  },
-  {
-    "name": "SNR District Hospital",
-    "state": "Karnataka",
-    "specializations": [
-      "Anaesthesiology",
-      "Family Medicine",
-      "Paediatrics"
-    ]
-  },
-  {
-    "name": "SOHAM HOSPITAL",
-    "state": "Chhattisgarh",
-    "specializations": [
-      "Anaesthesiology"
-    ]
-  },
-  {
-    "name": "SRCC Children`s Hoapital",
-    "state": "Maharashtra",
-    "specializations": [
-      "Paediatrics"
-    ]
-  },
-  {
-    "name": "SRI SAI HOSPITAL",
-    "state": "Uttar Pradesh",
-    "specializations": [
-      "Anaesthesiology"
-    ]
-  },
-  {
-    "name": "SSG government district hospital",
-    "state": "Rajasthan",
-    "specializations": [
-      "Anaesthesiology",
-      "Family Medicine",
-      "Obstetrics and Gynaecology",
-      "Ophthalmology",
-      "Paediatrics"
-    ]
-  },
-  {
-    "name": "SURAKSHA WOMEN AND CHILDREN HOSPITAL",
-    "state": "Telangana",
-    "specializations": [
-      "Paediatrics"
-    ]
-  },
-  {
-    "name": "SUSHIL EYE HOSPITAL AND BRAHMA LASER CENTER",
-    "state": "Maharashtra",
-    "specializations": [
-      "Ophthalmology"
-    ]
-  },
-  {
-    "name": "SWAMI KALYAN DEV DISTRICT HOSPITAL MUZAFFARNAGAR",
-    "state": "Uttar Pradesh",
-    "specializations": [
-      "ENT"
-    ]
-  },
-  {
-    "name": "Sacred Heart Hospital",
-    "state": "Punjab",
-    "specializations": [
-      "Anaesthesiology"
     ]
   },
   {
     "name": "Sadar Hospital",
     "state": "Bihar",
     "specializations": [
+      "Anaesthesiology",
       "Obstetrics and Gynaecology",
       "Paediatrics"
-    ]
-  },
-  {
-    "name": "Sadar Hospital Arwal",
-    "state": "Bihar",
-    "specializations": [
-      "Paediatrics"
-    ]
-  },
-  {
-    "name": "Sadar Hospital, Madhepura",
-    "state": "Bihar",
-    "specializations": [
-      "Obstetrics and Gynaecology"
     ]
   },
   {
@@ -4978,6 +4730,13 @@
     ]
   },
   {
+    "name": "SANKARA NETRA CHIKITSALAYA",
+    "state": "Andhra Pradesh",
+    "specializations": [
+      "Ophthalmology"
+    ]
+  },
+  {
     "name": "Santhi Hospital",
     "state": "Kerala",
     "specializations": [
@@ -4991,6 +4750,13 @@
     "specializations": [
       "Community Medicine",
       "Forensic Medicine"
+    ]
+  },
+  {
+    "name": "SARDAR VALLABH BHAI PATEL DISTRICT HOSPITAL",
+    "state": "Madhya Pradesh",
+    "specializations": [
+      "Obstetrics and Gynaecology"
     ]
   },
   {
@@ -5017,6 +4783,15 @@
     ]
   },
   {
+    "name": "SBLS Civil Hospital",
+    "state": "Punjab",
+    "specializations": [
+      "Obstetrics and Gynaecology",
+      "Paediatrics",
+      "Radio Diagnosis"
+    ]
+  },
+  {
     "name": "School of Tropical Medicine, Kolkata",
     "state": "West Bengal",
     "specializations": [
@@ -5024,10 +4799,62 @@
     ]
   },
   {
+    "name": "SDAR HOSPITAL",
+    "state": "Bihar",
+    "specializations": [
+      "Paediatrics"
+    ]
+  },
+  {
+    "name": "SDH KUPWARA",
+    "state": "Jammu and Kashmir",
+    "specializations": [
+      "Anaesthesiology",
+      "Obstetrics and Gynaecology",
+      "Paediatrics"
+    ]
+  },
+  {
+    "name": "SDH PHAGWARA",
+    "state": "Punjab",
+    "specializations": [
+      "Paediatrics"
+    ]
+  },
+  {
+    "name": "SDH RAJPURA",
+    "state": "Punjab",
+    "specializations": [
+      "Paediatrics"
+    ]
+  },
+  {
+    "name": "SDM College of Medical Sciences & Hospital, Sattur, Dharwad",
+    "state": "Karnataka",
+    "specializations": [
+      "Public Health"
+    ]
+  },
+  {
     "name": "Second Sight Southend Eye Centre Pvt. Ltd.",
     "state": "West Bengal",
     "specializations": [
       "Ophthalmology"
+    ]
+  },
+  {
+    "name": "SETH V. C. GANDHI and M. A. VORA MUNICIPAL GENERAL HOSPITAL (RAJAWADI HOSPITAL)",
+    "state": "Maharashtra",
+    "specializations": [
+      "ENT",
+      "Ophthalmology"
+    ]
+  },
+  {
+    "name": "SGVP Holistic Hospital",
+    "state": "Gujarat",
+    "specializations": [
+      "Anaesthesiology"
     ]
   },
   {
@@ -5106,6 +4933,13 @@
     ]
   },
   {
+    "name": "SHRI BHAUSAHEB HIRE GOVT. MEDICAL COLLEGE, DHULE",
+    "state": "Maharashtra",
+    "specializations": [
+      "Radio Diagnosis"
+    ]
+  },
+  {
     "name": "Shri Dada Dev Matri Avum Shishu Chikitsalaya",
     "state": "Delhi",
     "specializations": [
@@ -5140,6 +4974,21 @@
     "state": "Gujarat",
     "specializations": [
       "Anaesthesiology",
+      "Paediatrics"
+    ]
+  },
+  {
+    "name": "SHRIMANT MADHAVRAO SCHINDHIYA DISTRICT HOSPITAL",
+    "state": "Madhya Pradesh",
+    "specializations": [
+      "Anaesthesiology",
+      "Obstetrics and Gynaecology"
+    ]
+  },
+  {
+    "name": "SHRIPAL HOSPITAL",
+    "state": "Maharashtra",
+    "specializations": [
       "Paediatrics"
     ]
   },
@@ -5198,11 +5047,36 @@
     ]
   },
   {
+    "name": "SMITA MEMORIAL HOSPTIAL AND RESEARCH CENTRE",
+    "state": "Kerala",
+    "specializations": [
+      "Anaesthesiology",
+      "Paediatrics",
+      "Radio Diagnosis"
+    ]
+  },
+  {
     "name": "Smt. N.H.L.Municipal Medical College, Ahmedabad",
     "state": "Gujarat",
     "specializations": [
       "Dermatology, Venereology and Leprosy",
       "Psychological Medicine"
+    ]
+  },
+  {
+    "name": "SNR District Hospital",
+    "state": "Karnataka",
+    "specializations": [
+      "Anaesthesiology",
+      "Family Medicine",
+      "Paediatrics"
+    ]
+  },
+  {
+    "name": "SOHAM HOSPITAL",
+    "state": "Chhattisgarh",
+    "specializations": [
+      "Anaesthesiology"
     ]
   },
   {
@@ -5245,6 +5119,13 @@
     ]
   },
   {
+    "name": "SRCC Children`s Hoapital",
+    "state": "Maharashtra",
+    "specializations": [
+      "Paediatrics"
+    ]
+  },
+  {
     "name": "Sri Chandra Sekara Hospital",
     "state": "Tamil Nadu",
     "specializations": [
@@ -5274,6 +5155,13 @@
     ]
   },
   {
+    "name": "SRI SAI HOSPITAL",
+    "state": "Uttar Pradesh",
+    "specializations": [
+      "Anaesthesiology"
+    ]
+  },
+  {
     "name": "Sri Sathya Sai Institute of Higher Medical Sciences",
     "state": "Andhra Pradesh",
     "specializations": [
@@ -5285,6 +5173,17 @@
     "state": "Karnataka",
     "specializations": [
       "Anaesthesiology"
+    ]
+  },
+  {
+    "name": "SSG government district hospital",
+    "state": "Rajasthan",
+    "specializations": [
+      "Anaesthesiology",
+      "Family Medicine",
+      "Obstetrics and Gynaecology",
+      "Ophthalmology",
+      "Paediatrics"
     ]
   },
   {
@@ -5387,6 +5286,13 @@
     ]
   },
   {
+    "name": "SURAKSHA WOMEN AND CHILDREN HOSPITAL",
+    "state": "Telangana",
+    "specializations": [
+      "Paediatrics"
+    ]
+  },
+  {
     "name": "Surat Municipal Institute of Medical Education & Research, Surat",
     "state": "Gujarat",
     "specializations": [
@@ -5428,6 +5334,13 @@
     ]
   },
   {
+    "name": "SUSHIL EYE HOSPITAL AND BRAHMA LASER CENTER",
+    "state": "Maharashtra",
+    "specializations": [
+      "Ophthalmology"
+    ]
+  },
+  {
     "name": "Sushrut Hospital And Research Centre",
     "state": "Maharashtra",
     "specializations": [
@@ -5457,6 +5370,13 @@
     ]
   },
   {
+    "name": "SWAMI KALYAN DEV DISTRICT HOSPITAL MUZAFFARNAGAR",
+    "state": "Uttar Pradesh",
+    "specializations": [
+      "ENT"
+    ]
+  },
+  {
     "name": "Swami Ramanand Teerth Rural Government And Medical College",
     "state": "Maharashtra",
     "specializations": [
@@ -5477,21 +5397,6 @@
     "state": "Uttarakhand",
     "specializations": [
       "Anaesthesiology"
-    ]
-  },
-  {
-    "name": "THE MEDICITY HOSPITAL",
-    "state": "Uttarakhand",
-    "specializations": [
-      "Obstetrics and Gynaecology",
-      "Paediatrics"
-    ]
-  },
-  {
-    "name": "TIBRA EYE HOSPITAL AND RETINA CENTRE",
-    "state": "Rajasthan",
-    "specializations": [
-      "Ophthalmology"
     ]
   },
   {
@@ -5561,6 +5466,14 @@
     ]
   },
   {
+    "name": "THE MEDICITY HOSPITAL",
+    "state": "Uttarakhand",
+    "specializations": [
+      "Obstetrics and Gynaecology",
+      "Paediatrics"
+    ]
+  },
+  {
     "name": "The Voluntary Health Services and Medical Centre",
     "state": "Tamil Nadu",
     "specializations": [
@@ -5571,6 +5484,13 @@
   {
     "name": "Thorat Netra Hospital",
     "state": "Maharashtra",
+    "specializations": [
+      "Ophthalmology"
+    ]
+  },
+  {
+    "name": "TIBRA EYE HOSPITAL AND RETINA CENTRE",
+    "state": "Rajasthan",
     "specializations": [
       "Ophthalmology"
     ]
@@ -5670,44 +5590,6 @@
     ]
   },
   {
-    "name": "VARUN TRAUMA and BURN CENTRE (P) LTD",
-    "state": "Uttar Pradesh",
-    "specializations": [
-      "Anaesthesiology"
-    ]
-  },
-  {
-    "name": "VCSG Govt Institute of Medical Science and Research and HNB Base Teaching Hospital",
-    "state": "Uttarakhand",
-    "specializations": [
-      "ENT",
-      "Tuberculosis & Chest Diseases"
-    ]
-  },
-  {
-    "name": "VIKASH MULTI SPECIALITY HOSPITAL",
-    "state": "Odisha",
-    "specializations": [
-      "Radio Diagnosis",
-      "Tuberculosis & Chest Diseases"
-    ]
-  },
-  {
-    "name": "VISAKHA STEEL GENERAL HOSPITAL",
-    "state": "Andhra Pradesh",
-    "specializations": [
-      "Anaesthesiology"
-    ]
-  },
-  {
-    "name": "VInayaka hospital",
-    "state": "Kerala",
-    "specializations": [
-      "Obstetrics and Gynaecology",
-      "Paediatrics"
-    ]
-  },
-  {
     "name": "Vadamalayan Hospital",
     "state": "Tamil Nadu",
     "specializations": [
@@ -5722,6 +5604,21 @@
     "state": "Kerala",
     "specializations": [
       "Obstetrics and Gynaecology"
+    ]
+  },
+  {
+    "name": "VARUN TRAUMA and BURN CENTRE (P) LTD",
+    "state": "Uttar Pradesh",
+    "specializations": [
+      "Anaesthesiology"
+    ]
+  },
+  {
+    "name": "VCSG Govt Institute of Medical Science and Research and HNB Base Teaching Hospital",
+    "state": "Uttarakhand",
+    "specializations": [
+      "ENT",
+      "Tuberculosis & Chest Diseases"
     ]
   },
   {
@@ -5778,6 +5675,14 @@
     ]
   },
   {
+    "name": "VIKASH MULTI SPECIALITY HOSPITAL",
+    "state": "Odisha",
+    "specializations": [
+      "Radio Diagnosis",
+      "Tuberculosis & Chest Diseases"
+    ]
+  },
+  {
     "name": "Vinayak Multispeciality Hospital",
     "state": "Madhya Pradesh",
     "specializations": [
@@ -5786,8 +5691,23 @@
     ]
   },
   {
+    "name": "VInayaka hospital",
+    "state": "Kerala",
+    "specializations": [
+      "Obstetrics and Gynaecology",
+      "Paediatrics"
+    ]
+  },
+  {
     "name": "Virk Hospital Private Limited",
     "state": "Haryana",
+    "specializations": [
+      "Anaesthesiology"
+    ]
+  },
+  {
+    "name": "VISAKHA STEEL GENERAL HOSPITAL",
+    "state": "Andhra Pradesh",
     "specializations": [
       "Anaesthesiology"
     ]
@@ -5867,10 +5787,10 @@
     ]
   },
   {
-    "name": "YATHARTH SUPER SPECIALTY HOSPITALS",
-    "state": "Uttar Pradesh",
+    "name": "Yashoda Health Care Services Private Limited (YHSPL)",
+    "state": "Telangana",
     "specializations": [
-      "Obstetrics and Gynaecology"
+      "Tuberculosis & Chest Diseases"
     ]
   },
   {
@@ -5881,13 +5801,6 @@
       "Emergency Medicine",
       "Paediatrics",
       "Radio Diagnosis",
-      "Tuberculosis & Chest Diseases"
-    ]
-  },
-  {
-    "name": "Yashoda Health Care Services Private Limited (YHSPL)",
-    "state": "Telangana",
-    "specializations": [
       "Tuberculosis & Chest Diseases"
     ]
   },
@@ -5918,6 +5831,13 @@
     "state": "Maharashtra",
     "specializations": [
       "Radio Diagnosis"
+    ]
+  },
+  {
+    "name": "YATHARTH SUPER SPECIALTY HOSPITALS",
+    "state": "Uttar Pradesh",
+    "specializations": [
+      "Obstetrics and Gynaecology"
     ]
   },
   {
