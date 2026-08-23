@@ -251,6 +251,24 @@ Medicine (Nuclear Medicine)"`). Result: 27 distinct specialization
 labels. Re-apply this same normalization + canonicalization map if the
 source is regenerated from scratch.
 
+**746 → 735: a real data-generation bug, found by a live-DB mismatch,
+not a prod duplicate-row issue.** The first version of this file grouped
+raw rows into one entry per (College, State) using an *exact* string
+match — but the seed script matches existing DB rows using a
+*normalized* (lowercased, trimmed) key. 11 colleges appear in the raw
+source under two different castings of the same name (e.g. `"DISTRICT
+HOSPITAL"` and `"District Hospital"` both under Punjab) — exact-match
+grouping kept these as two separate JSON entries, which the seed script
+then silently collapsed onto the same University row at write time
+(second entry's Program upsert overwrote the first's), landing at 735
+active rows against an expected 746. Fixed by grouping with the same
+normalized key the seed script uses, so these merge properly (specializations
+combined) at generation time instead of colliding at write time — 735 is
+the correct count. Worth remembering for any future dataset here:
+**grouping key at generation time must match the seed script's matching
+key exactly**, including case/whitespace normalization, or a silent
+collision like this can happen again.
+
 **Now uses the browse+search combobox** (`CuratedCollegeSearch` +
 `SearchableCombobox`), same as DNB/MD-MS — see the PG/MD-MS section
 above. `web/components/MentorForm.tsx`'s `BROWSE_DEGREES` includes
