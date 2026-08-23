@@ -50,21 +50,25 @@ export class UniversitiesService {
   /**
    * Cursor-paginated list of active universities, ordered by NIRF rank
    * (unranked last) with id as a stable tiebreaker for the cursor.
-   * Search is a case-insensitive *prefix* match (startsWith) on `name`
-   * only — not substring, and not city/state either. A `contains` match on
-   * a short/common query like "a" returns nearly every row (virtually
-   * every college name contains an "a" somewhere), and since results sort
-   * alphabetically, results starting with a digit (e.g. "7 Air Force
-   * Hospital") sort ahead of actual "A…" colleges, making a type-to-search
-   * field look broken ("I typed 'a' but colleges starting with A aren't
-   * showing"). Matching city/state in the same OR had a related problem:
-   * this is the mentor form's "College / university" field — a college
-   * *name* lookup — but a college whose city happens to start with the
-   * typed letter (e.g. "Adesh Institute…, Bhatinda" for a "b" search) would
-   * appear even though its name doesn't start with "b", which looks just
-   * as broken from the user's point of view. Name-only startsWith is what
-   * this field should do. Full-text via the search_vector column, or a
-   * separate location filter, is a later enhancement if ever needed.
+   * Search is a case-insensitive *substring* match on `name` only (not
+   * city/state — see the "b" search example below), but results are
+   * ranked so a name *starting with* the query sorts before a name that
+   * merely contains it elsewhere, each group alphabetical — plain
+   * `contains` + alphabetical sort previously let irrelevant-looking
+   * matches (e.g. a digit-prefixed name like "7 Air Force Hospital"
+   * matching because names in general contain lots of common letters)
+   * outrank the colleges someone was actually looking for. This ranking
+   * can't be expressed as a single Prisma `orderBy`, so it's done in JS
+   * after fetching every match — fine at this table's size, but means
+   * cursor pagination mid-search isn't exact (a page boundary crossed
+   * while searching may not perfectly continue the JS-sorted order on the
+   * next request); no current caller paginates while a search is active.
+   * A college whose city/state (not name) matches the query used to be
+   * included too, which had its own confusing case: searching "b" could
+   * surface "Adesh Institute…, Bhatinda" (name starts with A, city starts
+   * with B) ahead of colleges actually named starting with B — dropped
+   * for that reason, since this is the mentor form's "College /
+   * university" field, a name lookup.
    */
   async findAll(
     query: ListUniversitiesDto,
@@ -78,9 +82,20 @@ export class UniversitiesService {
       ...(query.stream && { stream: query.stream }),
       ...(query.level && { levels: { has: query.level } }),
       ...(query.search && {
-        name: { startsWith: query.search, mode: 'insensitive' },
+        name: { contains: query.search, mode: 'insensitive' },
       }),
     };
+
+    if (query.search) {
+      const search = query.search.toLowerCase();
+      const rows = await this.prisma.university.findMany({ where });
+      const sorted = rows.sort((a, b) => {
+        const aStarts = a.name.toLowerCase().startsWith(search) ? 0 : 1;
+        const bStarts = b.name.toLowerCase().startsWith(search) ? 0 : 1;
+        return aStarts !== bStarts ? aStarts - bStarts : a.name.localeCompare(b.name);
+      });
+      return { data: sorted.slice(0, take), nextCursor: null };
+    }
 
     const rows = await this.prisma.university.findMany({
       where,
@@ -112,10 +127,12 @@ export class UniversitiesService {
    *   back to a free-text "Other" entry.
    * - `browse=true` (MD/MS, DNB, Diploma, DM/MCh — all small/complete
    *   enough to browse in full): returns every matching college, uncapped,
-   *   alphabetical, optionally filtered by `search` as a case-insensitive
-   *   *prefix* match on name (see findAll's doc comment for why prefix,
-   *   not substring) — the mentor form's College field is meant to list
-   *   every college for these degrees, not a curated subset.
+   *   optionally filtered by `search` as a case-insensitive substring
+   *   match on name — ranked the same way as findAll's search (see its
+   *   doc comment): a name starting with the query sorts before a name
+   *   that merely contains it elsewhere. The mentor form's College field
+   *   is meant to list every college for these degrees, not a curated
+   *   subset.
    *
    * Label is just "name, state" — no address/PIN, even for DNB/DM-MCh
    * colleges whose Program.description does carry a district (kept there
@@ -135,7 +152,7 @@ export class UniversitiesService {
           isActive: true,
           ...(browse &&
             query.search && {
-              name: { startsWith: query.search, mode: 'insensitive' },
+              name: { contains: query.search, mode: 'insensitive' },
             }),
         },
       },
@@ -153,8 +170,16 @@ export class UniversitiesService {
         specializations: [...program.specializations].sort(),
       }));
 
+    const search = browse && query.search ? query.search.toLowerCase() : null;
     const limited = browse
-      ? options.sort((a, b) => a.label.localeCompare(b.label))
+      ? options.sort((a, b) => {
+          if (search) {
+            const aStarts = a.label.toLowerCase().startsWith(search) ? 0 : 1;
+            const bStarts = b.label.toLowerCase().startsWith(search) ? 0 : 1;
+            if (aStarts !== bStarts) return aStarts - bStarts;
+          }
+          return a.label.localeCompare(b.label);
+        })
       : options
           .sort((a, b) => b.specCount - a.specCount)
           .slice(0, CURATED_LIMIT)
