@@ -149,9 +149,9 @@ export class UniversitiesService {
    *   subset.
    *
    * Label is "name, district, state" when the Program has a district on
-   * its `description` (DNB/DM-MCh — both seeded with district data), or
-   * just "name, state" otherwise (MD/MS/Diploma — no district in either
-   * source).
+   * its `description` (DNB/DM-MCh/Diploma — all three now seeded with
+   * district data), or just "name, state" otherwise (MD/MS — no district
+   * in its source).
    */
   async findCurated(
     query: ListCuratedUniversitiesDto,

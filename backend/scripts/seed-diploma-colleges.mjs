@@ -4,21 +4,20 @@
  * provenance). Own separate dataset — not merged with any other degree.
  *
  * Matching/creation rules mirror seed-dnb-colleges.mjs: finds an existing
- * University by exact name+state match (case-insensitive), creates a new
- * one otherwise. `type` defaults to PRIVATE since, like the DNB source,
- * this data doesn't state ownership.
+ * University by name+state match (case-insensitive), creates a new one
+ * otherwise. `type` defaults to PRIVATE since this source doesn't state
+ * ownership.
  *
- * Unlike DNB, this source has no district/address column at all — just
- * college name, state, and specialization — so generic hospital names
- * that repeat within a state (e.g. "District Hospital" appearing many
- * times in Karnataka) can't be told apart as distinct branches; they're
- * grouped into one college entry by name+state (see the data-generation
- * step in scripts/data/README.md). Given that, name+state IS this
- * dataset's branch key — but pre-existing rows are still tracked with a
- * "claimed" set (same fix applied to seed-dnb-colleges.mjs after a real
- * data-corruption incident there) so that if the *same* name+state ever
- * appears twice in the JSON, the second occurrence doesn't silently
- * overwrite the first upsert's data.
+ * This source now has a District column (added in its second refresh —
+ * earlier versions didn't have one, which forced a name+state-only merge
+ * that couldn't tell distinct branches apart). Branch disambiguation:
+ * `existingByNameState` holds every pre-existing candidate for a
+ * name+state key (not just one), and a `claimed` set tracks which
+ * candidate an earlier JSON entry in this run already reused, so a
+ * different district under the same name+state can't steal a row another
+ * district already claimed — same fix applied to seed-dnb-colleges.mjs
+ * after a real data-corruption incident there. Rows created during this
+ * run are tracked separately, keyed by name+state+district.
  *
  * Idempotent — keyed on (university match) + Program's
  * @@unique([universityId, name]), so a re-run updates specializations in
@@ -78,8 +77,8 @@ async function main() {
   const existing = await prisma.university.findMany({
     select: { id: true, name: true, state: true, slug: true, levels: true },
   });
-  // Pre-existing rows may repeat a name+state key (see header comment) —
-  // this holds every candidate, not just one.
+  // Pre-existing rows may repeat a name+state key across genuinely
+  // distinct branches, so this holds every candidate, not just one.
   const existingByNameState = new Map();
   for (const u of existing) {
     const key = `${u.name.toLowerCase().trim()}|${u.state.toLowerCase().trim()}`;
@@ -88,9 +87,11 @@ async function main() {
     else existingByNameState.set(key, [u]);
   }
   // Pre-existing University ids already reused by an earlier JSON entry in
-  // this run — prevents a repeated name+state key from stealing a row
-  // another entry already claimed.
+  // this run — once claimed, a further entry with the same name+state (a
+  // different district = a different real branch) must not reuse it too.
   const claimed = new Set();
+  // Rows created during this run, keyed by name+state+district so distinct
+  // branches sharing a name+state each get their own row.
   const createdThisRun = new Map();
   const taken = new Set(existing.map((u) => u.slug));
 
@@ -98,7 +99,7 @@ async function main() {
 
   for (const c of colleges) {
     const nameStateKey = `${c.name.toLowerCase().trim()}|${c.state.toLowerCase().trim()}`;
-    const branchKey = nameStateKey;
+    const branchKey = `${nameStateKey}|${c.district.toLowerCase().trim()}`;
     const candidates = existingByNameState.get(nameStateKey) ?? [];
     const unclaimedCandidate = candidates.find((u) => !claimed.has(u.id));
     let university = createdThisRun.get(branchKey) ?? unclaimedCandidate;
@@ -139,16 +140,20 @@ async function main() {
       stats.created += 1;
     }
 
+    // District has no dedicated University column — carried on the
+    // Program instead (unused Text field), same convention as
+    // seed-dnb-colleges.mjs.
     if (!DRY_RUN) {
       const priorProgram = await prisma.program.findUnique({
         where: { universityId_name: { universityId: university.id, name: PROGRAM_NAME } },
       });
       await prisma.program.upsert({
         where: { universityId_name: { universityId: university.id, name: PROGRAM_NAME } },
-        update: { specializations: c.specializations, isActive: true },
+        update: { description: c.district, specializations: c.specializations, isActive: true },
         create: {
           universityId: university.id,
           name: PROGRAM_NAME,
+          description: c.district,
           specializations: c.specializations,
           isActive: true,
         },
