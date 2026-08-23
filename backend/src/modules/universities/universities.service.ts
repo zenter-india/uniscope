@@ -50,16 +50,21 @@ export class UniversitiesService {
   /**
    * Cursor-paginated list of active universities, ordered by NIRF rank
    * (unranked last) with id as a stable tiebreaker for the cursor.
-   * Search is a case-insensitive *prefix* match (startsWith) on
-   * name/city/state, not substring — a `contains` match on a short/common
-   * query like "a" returns nearly every row (virtually every college name
-   * contains an "a" somewhere), and since the mentor form's College field
-   * sorts alphabetically, results starting with a digit (e.g. "7 Air Force
+   * Search is a case-insensitive *prefix* match (startsWith) on `name`
+   * only — not substring, and not city/state either. A `contains` match on
+   * a short/common query like "a" returns nearly every row (virtually
+   * every college name contains an "a" somewhere), and since results sort
+   * alphabetically, results starting with a digit (e.g. "7 Air Force
    * Hospital") sort ahead of actual "A…" colleges, making a type-to-search
    * field look broken ("I typed 'a' but colleges starting with A aren't
-   * showing"). startsWith is what a type-to-search / autocomplete field
-   * should do anyway. Full-text via the search_vector column is a later
-   * enhancement if prefix-only search ever proves too limited.
+   * showing"). Matching city/state in the same OR had a related problem:
+   * this is the mentor form's "College / university" field — a college
+   * *name* lookup — but a college whose city happens to start with the
+   * typed letter (e.g. "Adesh Institute…, Bhatinda" for a "b" search) would
+   * appear even though its name doesn't start with "b", which looks just
+   * as broken from the user's point of view. Name-only startsWith is what
+   * this field should do. Full-text via the search_vector column, or a
+   * separate location filter, is a later enhancement if ever needed.
    */
   async findAll(
     query: ListUniversitiesDto,
@@ -73,11 +78,7 @@ export class UniversitiesService {
       ...(query.stream && { stream: query.stream }),
       ...(query.level && { levels: { has: query.level } }),
       ...(query.search && {
-        OR: [
-          { name: { startsWith: query.search, mode: 'insensitive' } },
-          { city: { startsWith: query.search, mode: 'insensitive' } },
-          { state: { startsWith: query.search, mode: 'insensitive' } },
-        ],
+        name: { startsWith: query.search, mode: 'insensitive' },
       }),
     };
 
