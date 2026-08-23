@@ -82,17 +82,18 @@ const OTHER_COLLEGE = "__OTHER__";
 
 // Maps a selected Degree to the canonical value the curated-colleges
 // endpoint is queried with. PG and Doctorate have no data of their own —
-// NMC's source dataset is specifically MD/MS, so all three share it rather
-// than PG/Doctorate staying empty until real PG- or Doctorate-specific
-// data exists. DM/MCh and Diploma each have their own separate NBEMS/NMC
-// dataset, so neither is merged into the MD/MS bucket. Any degree not
-// listed here (UG, Others) keeps the old free-text CollegeSearch + global
-// specialization picklist.
+// NMC's source dataset is specifically MD/MS, so PG/MD-MS/Doctorate/Others
+// all share it rather than staying empty until real PG-, Doctorate-, or
+// Others-specific data exists. DM/MCh and Diploma each have their own
+// separate NBEMS/NMC dataset, so neither is merged into the MD/MS bucket.
+// UG is the only Medical-stream degree not listed here — it keeps the old
+// free-text CollegeSearch + global specialization picklist.
 const CURATED_DEGREE_MAP: Record<string, string> = {
   DNB: "DNB",
   PG: "MD/MS",
   "MD/MS": "MD/MS",
   Doctorate: "MD/MS",
+  Others: "MD/MS",
   "DM/MCh": "DM/MCh",
   Diploma: "Diploma",
 };
