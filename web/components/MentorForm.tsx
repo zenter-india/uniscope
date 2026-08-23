@@ -581,7 +581,18 @@ export function MentorForm({ onExit }: { onExit: () => void }) {
                 <SearchableCombobox
                   gold
                   value={form.specialization}
-                  options={browseSpecializations.length > 0 ? browseSpecializations : allSpecializationsForDegree}
+                  // Doctorate always shows the full specialization list
+                  // regardless of which college is picked, per explicit
+                  // request — every other browse degree still scopes to
+                  // the picked college's own list, falling back to the
+                  // full list only when no college matched.
+                  options={
+                    form.degree === "Doctorate"
+                      ? allSpecializationsForDegree
+                      : browseSpecializations.length > 0
+                        ? browseSpecializations
+                        : allSpecializationsForDegree
+                  }
                   disabled={!form.collegeName}
                   placeholder={form.collegeName ? "Select or type to search…" : "Select a college first"}
                   onChange={(v) => set("specialization", v)}
