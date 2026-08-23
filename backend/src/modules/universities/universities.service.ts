@@ -148,9 +148,10 @@ export class UniversitiesService {
    *   is meant to list every college for these degrees, not a curated
    *   subset.
    *
-   * Label is just "name, state" — no address/PIN, even for DNB/DM-MCh
-   * colleges whose Program.description does carry a district (kept there
-   * in case it's needed later, just not shown here).
+   * Label is "name, district, state" when the Program has a district on
+   * its `description` (DNB/DM-MCh — both seeded with district data), or
+   * just "name, state" otherwise (MD/MS/Diploma — no district in either
+   * source).
    */
   async findCurated(
     query: ListCuratedUniversitiesDto,
@@ -180,7 +181,9 @@ export class UniversitiesService {
       .map((program) => ({
         specCount: program.specializations.length,
         id: program.universityId,
-        label: `${program.university.name}, ${program.university.state}`,
+        label: program.description
+          ? `${program.university.name}, ${program.description}, ${program.university.state}`
+          : `${program.university.name}, ${program.university.state}`,
         specializations: [...program.specializations].sort(),
       }));
 
