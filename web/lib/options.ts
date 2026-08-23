@@ -342,6 +342,17 @@ export const STREAMS = [
 
 export const DEGREES = ["UG", "PG", "MD/MS", "DNB", "Diploma", "Doctorate", "DM/MCh", "Others"] as const;
 
+/** Degree dropdown options for a stream other than Medical, which keeps
+ * the full DEGREES list above. Dental and Engineering each get their own
+ * stream-specific first/second degree names; every other non-Medical
+ * stream (Arts & Humanities, Commerce & Business, Law, Design, Others)
+ * falls back to the generic UG/PG list. */
+export const DEGREES_BY_STREAM: Record<string, readonly string[]> = {
+  Dental: ["BDS", "MDS", "Doctorate", "Others"],
+  Engineering: ["B.Tech/B.E", "M.Tech/M.E", "Doctorate", "Others"],
+};
+export const DEFAULT_NON_MEDICAL_DEGREES = ["UG", "PG", "Doctorate", "Others"] as const;
+
 /** UserProfile.specialization picklist — shown for Medical-stream mentors on
  * any degree except UG (which has no specialization yet). */
 export const MEDICAL_SPECIALIZATIONS = [
