@@ -129,6 +129,33 @@ export function MentorForm({ onExit }: { onExit: () => void }) {
   // CuratedCollege itself.
   const isBrowseDegree = curatedDegree !== undefined && BROWSE_DEGREES.has(curatedDegree);
   const [browseSpecializations, setBrowseSpecializations] = useState<string[]>([]);
+  // Union of every specialization across the whole degree's dataset — the
+  // Specialization field's fallback when the mentor types a college that
+  // isn't in the list (CuratedCollegeSearch.onPick's `college` is then
+  // null, so there's no single college's specializations to scope to;
+  // without this fallback the field showed zero options for that case).
+  const [allSpecializationsForDegree, setAllSpecializationsForDegree] = useState<string[]>([]);
+
+  useEffect(() => {
+    if (!curatedDegree || !isBrowseDegree) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- resets the fallback list when leaving a browse degree
+      setAllSpecializationsForDegree([]);
+      return;
+    }
+    let cancelled = false;
+    fetchCuratedColleges("Medical", curatedDegree, { browse: true })
+      .then((data) => {
+        if (cancelled) return;
+        const all = Array.from(new Set(data.flatMap((c) => c.specializations))).sort();
+        setAllSpecializationsForDegree(all);
+      })
+      .catch(() => {
+        if (!cancelled) setAllSpecializationsForDegree([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [curatedDegree, isBrowseDegree]);
 
   useEffect(() => {
     if (!curatedDegree || isBrowseDegree) return;
@@ -553,7 +580,7 @@ export function MentorForm({ onExit }: { onExit: () => void }) {
                 <SearchableCombobox
                   gold
                   value={form.specialization}
-                  options={browseSpecializations}
+                  options={browseSpecializations.length > 0 ? browseSpecializations : allSpecializationsForDegree}
                   disabled={!form.collegeName}
                   placeholder={form.collegeName ? "Select or type to search…" : "Select a college first"}
                   onChange={(v) => set("specialization", v)}
