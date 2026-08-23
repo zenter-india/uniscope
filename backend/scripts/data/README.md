@@ -105,8 +105,13 @@ similar `is_active = false` cleanup pass.
 **Second refresh (`DNB_Accreditation_Clean_with_PIN.xlsx`, same "Clean
 Data" shape plus a PIN Code column, unused here).** 98 distinct
 specialization labels — an exact match to the source's own "By
-Specialization" sheet count, no typos found, just a `"DNB- "` prefix
-stripped to match the existing plain-name convention. A few
+Specialization" sheet count, no typos found. The `"DNB- "` prefix was
+initially stripped to match the plain-name convention every other DNB
+refresh used, but restored per explicit user request to match the
+source verbatim (e.g. `"DNB- Anaesthesiology"`, not `"Anaesthesiology"`)
+— this dataset's specialization convention is now inconsistent with
+MD/MS/Diploma/DM-MCh's plain-name style, a deliberate exception, not an
+oversight. A few
 specializations have a distinct `"(Direct 6 Years Course)"` variant
 alongside the base name (e.g. `"Neuro Surgery"` vs `"Neuro Surgery
 (Direct 6 Years Course)"`) — both have substantial independent record
