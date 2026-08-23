@@ -173,37 +173,55 @@ stale rows rather than editing this file.
 
 ## `dm-mch-colleges.json` — DM/MCh super-specialty seats + specializations
 
-Input to `../seed-dm-mch-colleges.mjs`, which mirrors
-`seed-pg-mdms-colleges.mjs`'s matching/creation rules but writes its own
-"DM/MCh" Program per college rather than sharing MD/MS's. Source: NMC's public
-"Super-Specialty Seat Matrix" notice (AY 2025-26, supplied directly by the
-user), grouped to one entry per (College Name, State) with its distinct
-`"DM - <specialty>"` / `"MCh - <specialty>"` `specializations` list.
-`type` (GOVERNMENT/PRIVATE) comes from the source's management column,
-same as `pg-mdms-colleges.json`. Own dataset — not merged with
-PG/MD-MS/Doctorate.
+Input to `../seed-dm-mch-colleges.mjs`. Source: NMC's public
+"Super-Specialty Seat Matrix" notice, grouped to one entry per (College
+Name, District, State) with its distinct `specializations` list. Own
+dataset — not merged with PG/MD-MS/Doctorate.
 
-**Updated once already**, and noticeably cleaner than the first version:
-1,359 course records (same count), 220 unique institutions (up from 216)
-— only 1 row dropped for scrambled Course Name text this time (down from
-12), so most of the original PDF-extraction garbling this source is
-noted for below appears to have been a one-off in the earlier file, not a
-property of the source that recurs on refresh. The State column had a
-different, narrower garbling this time — two rows read `"Tamil Nadu Pri"`
-/ `"Maharashtra Pri"` (a `" Pri"` fragment leaked in, most likely from an
-adjacent management/ownership column) — stripped with a trailing
-`/\s+Pri$/i` substitution before grouping; without it, ACS Medical
-College and Dr. D.Y.Patil Medical College (Pune) would each have split
-into two separate rows instead of one with their full specialization list.
+**Two prior versions used College+State-only grouping and an OCR'd
+Management column** (garbled Course Name/State text, ownership detected
+via lenient "contains govt/govern" substring check) — see git history if
+that writeup is ever needed again.
 
-**This source can still be noisier than the others**, per the original
-version's garbling (Course Name scrambling, Management-column garbling
-handled by a lenient "contains govt/govern" substring check) — see git
-history for that writeup if a future refresh reintroduces it.
-Specialization labels are transcribed as-is from the source even where a
-label looks questionable (e.g. `"MCh - Cardiology"` — Cardiology is
-ordinarily a DM specialty) rather than silently "corrected" against what
-the specialty is more commonly categorized as.
+**Third refresh (`DM_MCh_SuperSpeciality_Clean.xlsx`, sheet "Clean
+Data") is a different shape entirely**: S.No/College/District/State/
+Specialization, matching the DNB/Diploma "Clean Data" format rather than
+the old seat-matrix format. 1,356 records, 221 unique (College, District,
+State) groups. **Adds a District column** (the prior versions didn't have
+one) — same as the DNB refresh, this enables real branch disambiguation
+via the district-aware `claimed`-set matching in `seed-dm-mch-colleges.mjs`
+(see that file's header comment), rather than DM/MCh needing the
+name+state-only merge Diploma was stuck with. **No ownership/management
+column this time** — `type` now defaults to PRIVATE like DNB/Diploma,
+losing the real GOVERNMENT/PRIVATE split the prior two versions had.
+
+**Specialization labels heavily normalized** — this source's raw labels
+were the messiest of any dataset here: inconsistent `"DM - X"` / `"M.Ch -
+X"` / `"M. Ch - X"` / `"MCh X"` prefix formatting (including an en-dash
+`–` used as the separator in two rows), real typos (`"Thorasic Surgery"`,
+`"Geriatic Mental Health"`, `"Neuro Anasthesia"`), a stray leading `"m "`
+typo on one row, duration-suffix duplicates (`"Neuro Surgery(3 years)"` /
+`"(6 years)"`), and spelling/verbosity variants of the same specialty
+(`"Pediatric"` vs `"Paediatric"`, `"Urology"` vs `"Urology/Genito -
+Urinary Surgery"`, three different Plastic Surgery phrasings). Cleaned in
+two passes: (1) strip the degree-type prefix via regex (handles all the
+punctuation/spacing/case variants), (2) an explicit canonicalization map
+for the ~20 remaining near-duplicate spellings/typos. Result: 47 distinct
+specialization labels, no "DM -"/"MCh -" prefix (matches the DNB/Diploma
+plain-name convention — unlike the prior version of this file, which
+deliberately kept the prefix "transcribed as-is"). Some judgment calls
+here are genuinely debatable (e.g. merging "Pulmonary Medicine" and
+"Pulmonology" was considered but *not* done, since unlike the obvious
+prefix/typo cases there's no way to verify from the data alone whether
+they're the same NBE-recognized specialty or two distinct ones) — see
+git history for the exact canonicalization map if a future refresh needs
+revisiting.
+
+**Grouped using the same normalized (lowercase+trim) key the seed script
+matches on** — learned from the diploma refresh's 746-vs-735 bug that
+exact-string grouping here can silently diverge from the script's
+normalized matching. No case/whitespace collisions found in this
+dataset, but the key is normalized regardless as a safety net.
 
 ## `diploma-colleges.json` — NBEMS Diploma accreditation + specializations
 
@@ -339,9 +357,12 @@ inactive even though it was correctly matched and updated).
 at all (see above) — colliding rows there are a deliberate merge-by-
 name+state decision, not a bug, so this fix mainly matters for exact
 duplicate (name, state) entries appearing twice in the JSON itself.
-`pg-mdms-colleges.json` and `dm-mch-colleges.json` have no address column
-to key by and had zero name+state collisions in the current data, so they
-were left as-is.
+`dm-mch-colleges.json`'s third refresh gained a District column (see
+above) and got the same district-aware `claimed`-set fix applied
+proactively before its first seed run against prod, rather than
+discovering the same bug again after the fact. `pg-mdms-colleges.json`
+still has no address column to key by and had zero name+state collisions
+in the current data, so it was left as-is.
 
 ## Refreshing on demand — `refresh_ug.py` / `refresh_pg.py`
 
