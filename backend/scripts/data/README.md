@@ -388,6 +388,51 @@ collision like this can happen again.
 above. `web/components/MentorForm.tsx`'s `BROWSE_DEGREES` includes
 `"Diploma"`.
 
+**Third refresh (`Diploma_Institutions_Clean (1).xlsx`, same "Clean
+Data" shape) brings District back** — reversing the second refresh's
+loss of location detail, matching what happened with DNB around the
+same time. 830 unique (College, District, State) institutions (matches
+the source's own "Unique Colleges" sheet count exactly), grouped and
+branch-disambiguated the same way `dnb-colleges.json` is: normalized
+grouping key at generation time (diploma refresh #2's own lesson),
+first-comma name truncation for address bleed (DNB refresh #2's
+lesson — this source has the same issue, e.g. `"Sadar Hospital,
+Madhepura"` where `"Madhepura"` duplicates the District column), and
+`seed-diploma-colleges.mjs` upgraded from name+state-only matching to
+the full district-aware `claimed`-set matching `seed-dnb-colleges.mjs`
+uses (name+state+district branch key, `Program.description` carries the
+district). Spot-checked the resulting (name, state) duplicate groups
+the same way as DNB's: the overwhelming majority (38 of 39) are
+genuinely distinct branches in different real districts (e.g. "District
+Hospital, Karnataka" correctly split across 8 real districts); one
+false-positive slipped through (`"Rural Development Trust Hospital,
+Andhra Pradesh"` under `"Anantapur"` vs `"Ananthapuramu"` — the same
+district under its old and renamed spelling) and was left unmerged
+rather than guessed at — fixing that class of issue generally would
+need a canonical Indian-district-renaming lookup, out of scope here.
+
+**Specialization labels: 38 raw → 27 after canonicalization, `"(NBEMS)"`
+suffix kept intact this time** (earlier refreshes stripped it; per
+explicit user request it's now preserved verbatim wherever the source
+has it, e.g. `"Paediatrics - DCH (NBEMS)"`, not `"Paediatrics - DCH"`).
+Same "Diploma in X" vs "X - CODE (NBEMS)" mixed-format problem as the
+first refresh, but this time *both* forms coexist for many specialties
+within the same file (not cleanly non-overlapping like before) — e.g.
+`"ENT"` (1 row) and `"ENT - DLO (NBEMS)"` (76 rows) are the same
+specialty labeled two ways. Canonicalized to whichever form is more
+common per specialty (`"Anaesthesia"` → `"Anaesthesiology - DA
+(NBEMS)"`, `"Ophthalmology"` → `"Ophthalmology - DO (NBEMS)"`,
+`"Obstetrics & Gynaecology"` → `"Obstetrics and Gynaecology - DGO
+(NBEMS)"`, `"ENT"` → `"ENT - DLO (NBEMS)"`, `"Tuberculosis & Chest
+Diseases"` → `"...Disease - DTCD (NBEMS)"`, `"Paediatrics"` →
+`"Paediatrics - DCH (NBEMS)"`, `"Radio- Diagnosis"` → `"Radio Diagnosis
+- DMRD (NBEMS)"`, `"Dermatology"` → `"...Venereology and Leprosy"`
+(this one and `"Community Medicine"` → `"Social & Preventive Medicine /
+Community Medicine"` had no NBEMS-suffixed form to map onto — both
+sides of those two merges were plain names). Re-check this map (or
+extend it) if a future refresh's raw label list looks meaningfully
+different.
+
 ## A casing bug worth knowing about — `Program.name` must be UPPERCASE
 
 `UniversitiesService.findCurated` queries `Program.name: degree.toUpperCase()`.
