@@ -155,7 +155,7 @@
     ]
   },
   {
-    "name": "Accord Superspeciality Hospital, Tehsil",
+    "name": "Accord Superspeciality Hospital",
     "district": "Faridabad",
     "state": "Haryana",
     "specializations": [
@@ -231,7 +231,7 @@
     ]
   },
   {
-    "name": "Advanced Centre for Treatment, Research and Education in Cancer",
+    "name": "Advanced Centre for Treatment",
     "district": "Navi Mumbai",
     "state": "Maharashtra",
     "specializations": [
@@ -419,18 +419,11 @@
     ]
   },
   {
-    "name": "AMARA HOSPITAL, RENIGUNTA",
-    "district": "TIRUPATI",
-    "state": "Andhra Pradesh",
-    "specializations": [
-      "Anaesthesiology"
-    ]
-  },
-  {
     "name": "AMARA HOSPITAL",
     "district": "TIRUPATI",
     "state": "Andhra Pradesh",
     "specializations": [
+      "Anaesthesiology",
       "Orthopaedics"
     ]
   },
@@ -543,7 +536,7 @@
     ]
   },
   {
-    "name": "Ankura Hospital for Women and Children (Unit of Ankura hospitals, Gachibowli), Khajaguda(V) Serilingampally(M)",
+    "name": "Ankura Hospital for Women and Children (Unit of Ankura hospitals",
     "district": "Ranga Reddy",
     "state": "Telangana",
     "specializations": [
@@ -552,19 +545,10 @@
     ]
   },
   {
-    "name": "ANKURA HOSPITAL FOR WOMEN AND CHILDREN(A UNIT OF ANKURA TIRUPATI HOSPITALS PVT LTD), Chittoor",
+    "name": "ANKURA HOSPITAL FOR WOMEN AND CHILDREN(A UNIT OF ANKURA TIRUPATI HOSPITALS PVT LTD)",
     "district": "Tirupati",
     "state": "Andhra Pradesh",
     "specializations": [
-      "Paediatrics"
-    ]
-  },
-  {
-    "name": "ANKURA HOSPITAL FOR WOMEN AND CHILDREN, Asif Nagar",
-    "district": "Hyderabad",
-    "state": "Telangana",
-    "specializations": [
-      "Obstetrics and Gynaecology",
       "Paediatrics"
     ]
   },
@@ -582,6 +566,7 @@
     "state": "Telangana",
     "specializations": [
       "Neonatology",
+      "Obstetrics and Gynaecology",
       "Paediatrics"
     ]
   },
@@ -702,7 +687,7 @@
     ]
   },
   {
-    "name": "Apollo Adlux Hospital ( A Unit of Adlux Medicity and Convention Centre Private Limited), Angamaly",
+    "name": "Apollo Adlux Hospital ( A Unit of Adlux Medicity and Convention Centre Private Limited)",
     "district": "Ernakulam",
     "state": "Kerala",
     "specializations": [
@@ -775,27 +760,6 @@
       "Radiation Oncology",
       "Radio Diagnosis",
       "Surgical Oncology"
-    ]
-  },
-  {
-    "name": "Apollo Hospital,",
-    "district": "Hyderguda",
-    "state": "Telangana",
-    "specializations": [
-      "Cardiology",
-      "Critical Care Medicine",
-      "General Medicine",
-      "General Surgery"
-    ]
-  },
-  {
-    "name": "Apollo Hospital,",
-    "district": "Secunderabad",
-    "state": "Telangana",
-    "specializations": [
-      "Cardiology",
-      "General Medicine",
-      "Nephrology"
     ]
   },
   {
@@ -984,6 +948,17 @@
   },
   {
     "name": "Apollo Hospital",
+    "district": "Hyderguda",
+    "state": "Telangana",
+    "specializations": [
+      "Cardiology",
+      "Critical Care Medicine",
+      "General Medicine",
+      "General Surgery"
+    ]
+  },
+  {
+    "name": "Apollo Hospital",
     "district": "Navi Mumbai",
     "state": "Maharashtra",
     "specializations": [
@@ -1010,6 +985,16 @@
   },
   {
     "name": "Apollo Hospital",
+    "district": "Secunderabad",
+    "state": "Telangana",
+    "specializations": [
+      "Cardiology",
+      "General Medicine",
+      "Nephrology"
+    ]
+  },
+  {
+    "name": "Apollo Hospital",
     "district": "Visakhapatnam",
     "state": "Andhra Pradesh",
     "specializations": [
@@ -1024,7 +1009,7 @@
     ]
   },
   {
-    "name": "Apollo KH Hospital, Melvisharam",
+    "name": "Apollo KH Hospital",
     "district": "Ranipet",
     "state": "Tamil Nadu",
     "specializations": [
@@ -1071,7 +1056,7 @@
     ]
   },
   {
-    "name": "Apollo Rajshree Hospitals Pvt Ltd, Vijay Nagar",
+    "name": "Apollo Rajshree Hospitals Pvt Ltd",
     "district": "Indore",
     "state": "Madhya Pradesh",
     "specializations": [
@@ -1082,19 +1067,19 @@
     ]
   },
   {
-    "name": "Apollo Speciality Hospitals, near old palpannai, Ariyamangalam",
-    "district": "Trichy",
-    "state": "Tamil Nadu",
-    "specializations": [
-      "General Medicine"
-    ]
-  },
-  {
     "name": "APOLLO SPECIALITY HOSPITALS",
     "district": "Nellore",
     "state": "Andhra Pradesh",
     "specializations": [
       "Anaesthesiology"
+    ]
+  },
+  {
+    "name": "Apollo Speciality Hospitals",
+    "district": "Trichy",
+    "state": "Tamil Nadu",
+    "specializations": [
+      "General Medicine"
     ]
   },
   {
@@ -1114,20 +1099,12 @@
     ]
   },
   {
-    "name": "Apollo Specialty Hospital, Ayanambakkam",
+    "name": "Apollo Specialty Hospital",
     "district": "Chennai",
     "state": "Tamil Nadu",
     "specializations": [
       "Cardiology",
       "Critical Care Medicine",
-      "Radio Diagnosis"
-    ]
-  },
-  {
-    "name": "Apollo Specialty Hospital",
-    "district": "Chennai",
-    "state": "Tamil Nadu",
-    "specializations": [
       "Medical Oncology",
       "Radiation Oncology",
       "Radio Diagnosis",
@@ -1349,17 +1326,17 @@
     ]
   },
   {
-    "name": "Arvind Eye Hospital, Abishekapakkam Road",
-    "district": "Puducherry",
-    "state": "Puducherry",
+    "name": "Arvind Eye Hospital",
+    "district": "Coimbatore",
+    "state": "Tamil Nadu",
     "specializations": [
       "Ophthalmology"
     ]
   },
   {
     "name": "Arvind Eye Hospital",
-    "district": "Coimbatore",
-    "state": "Tamil Nadu",
+    "district": "Puducherry",
+    "state": "Puducherry",
     "specializations": [
       "Ophthalmology"
     ]
@@ -1386,7 +1363,7 @@
     ]
   },
   {
-    "name": "ASHA HOSPITAL, Near Lekha Nagar Cantonment Kamptee",
+    "name": "ASHA HOSPITAL",
     "district": "Nagpur",
     "state": "Maharashtra",
     "specializations": [
@@ -1504,7 +1481,7 @@
     ]
   },
   {
-    "name": "Associated Hospital Government Medical College, Kanthbagh",
+    "name": "Associated Hospital Government Medical College",
     "district": "Baramulla",
     "state": "Jammu and Kashmir",
     "specializations": [
@@ -1574,7 +1551,7 @@
     ]
   },
   {
-    "name": "ASTER HOSPITAL, Whitefield Main Road",
+    "name": "ASTER HOSPITAL",
     "district": "Bengaluru",
     "state": "Karnataka",
     "specializations": [
@@ -1642,7 +1619,7 @@
     ]
   },
   {
-    "name": "ASYM DISTRICT HOSPITAL,  Near Fire Service Station",
+    "name": "ASYM DISTRICT HOSPITAL",
     "district": "Budgam",
     "state": "Jammu and Kashmir",
     "specializations": [
@@ -1693,14 +1670,6 @@
     ]
   },
   {
-    "name": "Autonomous State Medical College, Hardoi",
-    "district": "Sitapur Road",
-    "state": "Uttar Pradesh",
-    "specializations": [
-      "General Surgery"
-    ]
-  },
-  {
     "name": "Autonomous State Medical College",
     "district": "Amethi",
     "state": "Uttar Pradesh",
@@ -1716,6 +1685,14 @@
     "state": "Uttar Pradesh",
     "specializations": [
       "Emergency Medicine"
+    ]
+  },
+  {
+    "name": "Autonomous State Medical College",
+    "district": "Sitapur Road",
+    "state": "Uttar Pradesh",
+    "specializations": [
+      "General Surgery"
     ]
   },
   {
@@ -1834,7 +1811,7 @@
     ]
   },
   {
-    "name": "Balaji Institute of Surgery, Research and Rehabilitation for the Disabled Hospital (BIRRD), Chittoor",
+    "name": "Balaji Institute of Surgery",
     "district": "Tirupati",
     "state": "Andhra Pradesh",
     "specializations": [
@@ -1842,7 +1819,7 @@
     ]
   },
   {
-    "name": "Balrampur Hospital, Golaganj",
+    "name": "Balrampur Hospital",
     "district": "Lucknow",
     "state": "Uttar Pradesh",
     "specializations": [
@@ -1893,7 +1870,7 @@
     ]
   },
   {
-    "name": "Bansal Hospital, Shahpura",
+    "name": "Bansal Hospital",
     "district": "Bhopal",
     "state": "Madhya Pradesh",
     "specializations": [
@@ -1908,7 +1885,7 @@
     ]
   },
   {
-    "name": "BAPS Pramukh Swami Hospital, Adajan",
+    "name": "BAPS Pramukh Swami Hospital",
     "district": "Surat",
     "state": "Gujarat",
     "specializations": [
@@ -1974,7 +1951,7 @@
     ]
   },
   {
-    "name": "BBC TRUST MULTISPECIALITY HOSPITAL, Gangavathi",
+    "name": "BBC TRUST MULTISPECIALITY HOSPITAL",
     "district": "Koppal",
     "state": "Karnataka",
     "specializations": [
@@ -2036,7 +2013,7 @@
     ]
   },
   {
-    "name": "Bhagat Phool Singh Govt. Medical College for Women, Khanpur Kalan",
+    "name": "Bhagat Phool Singh Govt. Medical College for Women",
     "district": "Sonepat",
     "state": "Haryana",
     "specializations": [
@@ -2176,7 +2153,7 @@
     ]
   },
   {
-    "name": "Bharati Vidyapeeth (Deemed to be University) Medical College and Hospital,  Sangli",
+    "name": "Bharati Vidyapeeth (Deemed to be University) Medical College and Hospital",
     "district": "Sangli",
     "state": "Maharashtra",
     "specializations": [
@@ -2235,7 +2212,7 @@
     ]
   },
   {
-    "name": "Bhima Bhoi Medical College and Hospital,",
+    "name": "Bhima Bhoi Medical College and Hospital",
     "district": "Balangir",
     "state": "Odisha",
     "specializations": [
@@ -2361,7 +2338,7 @@
     ]
   },
   {
-    "name": "C.S.I. Kalyani General Hospital,",
+    "name": "C.S.I. Kalyani General Hospital",
     "district": "Chennai",
     "state": "Tamil Nadu",
     "specializations": [
@@ -2381,7 +2358,7 @@
     ]
   },
   {
-    "name": "Cancer Hospital and Research Institute, Lashkar",
+    "name": "Cancer Hospital and Research Institute",
     "district": "Gwalior",
     "state": "Madhya Pradesh",
     "specializations": [
@@ -2469,7 +2446,7 @@
     ]
   },
   {
-    "name": "Caritas Hospital, Thellakom",
+    "name": "Caritas Hospital",
     "district": "Kottayam",
     "state": "Kerala",
     "specializations": [
@@ -2518,16 +2495,7 @@
     ]
   },
   {
-    "name": "Central Hospital, N F Railway Maligaon",
-    "district": "Guwahati",
-    "state": "Assam",
-    "specializations": [
-      "Anaesthesiology",
-      "General Medicine"
-    ]
-  },
-  {
-    "name": "Central Hospital, S.E.C.Railway",
+    "name": "Central Hospital",
     "district": "Bilaspur",
     "state": "Chhattisgarh",
     "specializations": [
@@ -2542,6 +2510,15 @@
       "Anaesthesiology",
       "General Medicine",
       "General Surgery"
+    ]
+  },
+  {
+    "name": "Central Hospital",
+    "district": "Guwahati",
+    "state": "Assam",
+    "specializations": [
+      "Anaesthesiology",
+      "General Medicine"
     ]
   },
   {
@@ -2629,7 +2606,7 @@
     ]
   },
   {
-    "name": "Chandra Mother and Eye Care Pvt Ltd, Vibhuti Khand Next To Hyatt Regency Gomti Nagar",
+    "name": "Chandra Mother and Eye Care Pvt Ltd",
     "district": "Lucknow",
     "state": "Uttar Pradesh",
     "specializations": [
@@ -2726,7 +2703,7 @@
     ]
   },
   {
-    "name": "Christian Fellowship Hospital, Oddanchatram",
+    "name": "Christian Fellowship Hospital",
     "district": "Dindigul",
     "state": "Tamil Nadu",
     "specializations": [
@@ -2816,7 +2793,7 @@
     ]
   },
   {
-    "name": "Civil Hospital, Dawrpui",
+    "name": "Civil Hospital",
     "district": "Aizawl",
     "state": "Mizoram",
     "specializations": [
@@ -2885,7 +2862,7 @@
     ]
   },
   {
-    "name": "Command Hospital Air Force, Old Airport Road Agram Post",
+    "name": "Command Hospital Air Force",
     "district": "Bangalore",
     "state": "Karnataka",
     "specializations": [
@@ -2976,7 +2953,7 @@
     ]
   },
   {
-    "name": "CRITICARE ASIA MULTISPECIALITY HOSPITAL AND RESEARCH CENTRE, kurla",
+    "name": "CRITICARE ASIA MULTISPECIALITY HOSPITAL AND RESEARCH CENTRE",
     "district": "Mumbai",
     "state": "Maharashtra",
     "specializations": [
@@ -3117,7 +3094,7 @@
     ]
   },
   {
-    "name": "Devadoss Multi Speciality Hospital,",
+    "name": "Devadoss Multi Speciality Hospital",
     "district": "Madurai",
     "state": "Tamil Nadu",
     "specializations": [
@@ -3125,7 +3102,7 @@
     ]
   },
   {
-    "name": "Dhanvantri Critical Care Center, Poonkundranar Street Karungalpalayam",
+    "name": "Dhanvantri Critical Care Center",
     "district": "Erode",
     "state": "Tamil Nadu",
     "specializations": [
@@ -3171,7 +3148,7 @@
     ]
   },
   {
-    "name": "Dhir Hospital, Meham Chowk Circular Road",
+    "name": "Dhir Hospital",
     "district": "Bhiwani",
     "state": "Haryana",
     "specializations": [
@@ -3208,20 +3185,11 @@
     ]
   },
   {
-    "name": "District Civil Hospital, Opposite Govt.Polytechnic",
+    "name": "District Civil Hospital",
     "district": "Ambala",
     "state": "Haryana",
     "specializations": [
       "Ophthalmology"
-    ]
-  },
-  {
-    "name": "District Combined Hospital,Gautam Budh Nagar",
-    "district": "Sector 39 Noida",
-    "state": "Uttar Pradesh",
-    "specializations": [
-      "General Medicine",
-      "General Surgery"
     ]
   },
   {
@@ -3233,6 +3201,15 @@
     ]
   },
   {
+    "name": "District Combined Hospital",
+    "district": "Sector 39 Noida",
+    "state": "Uttar Pradesh",
+    "specializations": [
+      "General Medicine",
+      "General Surgery"
+    ]
+  },
+  {
     "name": "District Hospital Kargil",
     "district": "Kargil",
     "state": "Ladakh",
@@ -3241,7 +3218,7 @@
     ]
   },
   {
-    "name": "DISTRICT HOSPITAL MALE BUDAUN, Kutchery Road",
+    "name": "DISTRICT HOSPITAL MALE BUDAUN",
     "district": "Budaun",
     "state": "Uttar Pradesh",
     "specializations": [
@@ -3249,29 +3226,12 @@
     ]
   },
   {
-    "name": "District Hospital, Duderhama",
-    "district": "Ganderbal",
-    "state": "Jammu and Kashmir",
-    "specializations": [
-      "General Medicine",
-      "General Surgery"
-    ]
-  },
-  {
-    "name": "District Hospital, Navanagar",
+    "name": "District Hospital",
     "district": "Bagalkot",
     "state": "Karnataka",
     "specializations": [
       "General Medicine",
       "General Surgery"
-    ]
-  },
-  {
-    "name": "District Hospital, Reasi Aghar Ballian",
-    "district": "Reasi",
-    "state": "Jammu and Kashmir",
-    "specializations": [
-      "General Medicine"
     ]
   },
   {
@@ -3334,6 +3294,15 @@
   },
   {
     "name": "District Hospital",
+    "district": "Ganderbal",
+    "state": "Jammu and Kashmir",
+    "specializations": [
+      "General Medicine",
+      "General Surgery"
+    ]
+  },
+  {
+    "name": "District Hospital",
     "district": "Howrah",
     "state": "West Bengal",
     "specializations": [
@@ -3381,6 +3350,14 @@
     "specializations": [
       "General Medicine",
       "General Surgery"
+    ]
+  },
+  {
+    "name": "District Hospital",
+    "district": "Reasi",
+    "state": "Jammu and Kashmir",
+    "specializations": [
+      "General Medicine"
     ]
   },
   {
@@ -3455,7 +3432,7 @@
     ]
   },
   {
-    "name": "Divisional Railway Hospital, Ajmer",
+    "name": "Divisional Railway Hospital",
     "district": "Ajmer",
     "state": "Rajasthan",
     "specializations": [
@@ -3479,7 +3456,7 @@
     ]
   },
   {
-    "name": "Down Town Hospital, Dispur",
+    "name": "Down Town Hospital",
     "district": "Guwahati",
     "state": "Assam",
     "specializations": [
@@ -3492,7 +3469,7 @@
     ]
   },
   {
-    "name": "DR K M CHERIAN INSTITUTE OF MEDICAL SCIENCES, Chengannur",
+    "name": "DR K M CHERIAN INSTITUTE OF MEDICAL SCIENCES",
     "district": "Alappuzha",
     "state": "Kerala",
     "specializations": [
@@ -3522,7 +3499,7 @@
     ]
   },
   {
-    "name": "DR SREEKANTH EYECARE AND RESEARCH CENTRE, Kotooli Mavoor Road",
+    "name": "DR SREEKANTH EYECARE AND RESEARCH CENTRE",
     "district": "Kozhikode",
     "state": "Kerala",
     "specializations": [
@@ -3530,7 +3507,7 @@
     ]
   },
   {
-    "name": "Dr Y S Parmar Government Medical College, Nahan",
+    "name": "Dr Y S Parmar Government Medical College",
     "district": "Sirmaur",
     "state": "Himachal Pradesh",
     "specializations": [
@@ -3705,7 +3682,7 @@
     ]
   },
   {
-    "name": "Dr. Bidaris Ashwini Hospital, B.L.D.E Road",
+    "name": "Dr. Bidaris Ashwini Hospital",
     "district": "Bijapur",
     "state": "Karnataka",
     "specializations": [
@@ -3817,7 +3794,7 @@
     ]
   },
   {
-    "name": "Dr. Rajendra Prasad Govt. Medical College, Tanda",
+    "name": "Dr. Rajendra Prasad Govt. Medical College",
     "district": "Dist. Kangra",
     "state": "Himachal Pradesh",
     "specializations": [
@@ -3927,7 +3904,7 @@
     ]
   },
   {
-    "name": "Dr. Virendra Laser, Phaco Surgery Center - Eye Hospital",
+    "name": "Dr. Virendra Laser",
     "district": "Jaipur",
     "state": "Rajasthan",
     "specializations": [
@@ -3935,7 +3912,7 @@
     ]
   },
   {
-    "name": "Dr.Pinnamaneni Siddhartha Institute of medical sciences and research foundation, Chinna Avutapalli",
+    "name": "Dr.Pinnamaneni Siddhartha Institute of medical sciences and research foundation",
     "district": "Vijayawada",
     "state": "Andhra Pradesh",
     "specializations": [
@@ -3951,7 +3928,7 @@
     ]
   },
   {
-    "name": "Dream flower ivf centre, Opposite Town Police Station Bank Road",
+    "name": "Dream flower ivf centre",
     "district": "Kasaragod",
     "state": "Kerala",
     "specializations": [
@@ -4010,7 +3987,7 @@
     ]
   },
   {
-    "name": "Ekashilaa Hospitals ( Formerly Maxcare Hospital, A Unit of Kakatiyan Medical Services Pvt. Ltd.)",
+    "name": "Ekashilaa Hospitals ( Formerly Maxcare Hospital",
     "district": "Warangal Urban",
     "state": "Telangana",
     "specializations": [
@@ -4065,7 +4042,7 @@
     ]
   },
   {
-    "name": "Ernakulam Medical Centre, Palarivattom",
+    "name": "Ernakulam Medical Centre",
     "district": "Kochi",
     "state": "Kerala",
     "specializations": [
@@ -4101,20 +4078,20 @@
     ]
   },
   {
-    "name": "ESIC Hospital,Ezhukone",
-    "district": "Kollam",
-    "state": "Kerala",
-    "specializations": [
-      "General Medicine"
-    ]
-  },
-  {
     "name": "ESIC Hospital",
     "district": "Bengaluru",
     "state": "Karnataka",
     "specializations": [
       "Obstetrics and Gynaecology",
       "Paediatrics"
+    ]
+  },
+  {
+    "name": "ESIC Hospital",
+    "district": "Kollam",
+    "state": "Kerala",
+    "specializations": [
+      "General Medicine"
     ]
   },
   {
@@ -4146,7 +4123,7 @@
     ]
   },
   {
-    "name": "ESIC Medical College and Hospital, Bapunagar",
+    "name": "ESIC Medical College and Hospital",
     "district": "Ahmedabad",
     "state": "Gujarat",
     "specializations": [
@@ -4272,7 +4249,7 @@
     ]
   },
   {
-    "name": "ESIC Model Hospital, Sector 9A",
+    "name": "ESIC Model Hospital",
     "district": "Gurgaon",
     "state": "Haryana",
     "specializations": [
@@ -4320,7 +4297,7 @@
     ]
   },
   {
-    "name": "First Neuro, Brain and Spine Super Speciality Hospital",
+    "name": "First Neuro",
     "district": "Mangalore",
     "state": "Karnataka",
     "specializations": [
@@ -4376,35 +4353,6 @@
     ]
   },
   {
-    "name": "Fortis Hospital, Jalandhar",
-    "district": "Jalandhar",
-    "state": "Punjab",
-    "specializations": [
-      "Cardiology",
-      "Nephrology"
-    ]
-  },
-  {
-    "name": "Fortis Hospital,",
-    "district": "Kolkata",
-    "state": "West Bengal",
-    "specializations": [
-      "Anaesthesiology",
-      "Cardiology",
-      "Critical Care Medicine",
-      "Emergency Medicine",
-      "General Medicine",
-      "General Surgery",
-      "Interventional Cardiology",
-      "Medical Gastroenterology",
-      "Nephrology",
-      "Neurology",
-      "Orthopaedics",
-      "Respiratory Medicine",
-      "Urology"
-    ]
-  },
-  {
     "name": "Fortis Hospital",
     "district": "Bangalore",
     "state": "Karnataka",
@@ -4424,6 +4372,35 @@
       "Paediatrics",
       "Radio Diagnosis",
       "Surgical Oncology",
+      "Urology"
+    ]
+  },
+  {
+    "name": "Fortis Hospital",
+    "district": "Jalandhar",
+    "state": "Punjab",
+    "specializations": [
+      "Cardiology",
+      "Nephrology"
+    ]
+  },
+  {
+    "name": "Fortis Hospital",
+    "district": "Kolkata",
+    "state": "West Bengal",
+    "specializations": [
+      "Anaesthesiology",
+      "Cardiology",
+      "Critical Care Medicine",
+      "Emergency Medicine",
+      "General Medicine",
+      "General Surgery",
+      "Interventional Cardiology",
+      "Medical Gastroenterology",
+      "Nephrology",
+      "Neurology",
+      "Orthopaedics",
+      "Respiratory Medicine",
       "Urology"
     ]
   },
@@ -4517,7 +4494,7 @@
     ]
   },
   {
-    "name": "Fortune Hospital, 117/Q/40A41 Sharda Nagar",
+    "name": "Fortune Hospital",
     "district": "Kanpur",
     "state": "Uttar Pradesh",
     "specializations": [
@@ -4618,7 +4595,7 @@
     ]
   },
   {
-    "name": "GCS Medical College, Hospital And Research Centre",
+    "name": "GCS Medical College",
     "district": "Ahmedabad",
     "state": "Gujarat",
     "specializations": [
@@ -4810,7 +4787,7 @@
     ]
   },
   {
-    "name": "Global Hospital Institute of Ophthalmology, Mount Abu",
+    "name": "Global Hospital Institute of Ophthalmology",
     "district": "Sirohi",
     "state": "Rajasthan",
     "specializations": [
@@ -4818,20 +4795,11 @@
     ]
   },
   {
-    "name": "GMERS Medical College and General Hospital, Rajpipla",
+    "name": "GMERS Medical College and General Hospital",
     "district": "Dist- Narmada",
     "state": "Gujarat",
     "specializations": [
       "Biochemistry",
-      "Pathology"
-    ]
-  },
-  {
-    "name": "GMERS Medical College and General Hospital, Vadnagar",
-    "district": "Mehsana",
-    "state": "Gujarat",
-    "specializations": [
-      "Orthopaedics",
       "Pathology"
     ]
   },
@@ -4847,38 +4815,19 @@
   },
   {
     "name": "GMERS Medical College and General Hospital",
+    "district": "Mehsana",
+    "state": "Gujarat",
+    "specializations": [
+      "Orthopaedics",
+      "Pathology"
+    ]
+  },
+  {
+    "name": "GMERS Medical College and General Hospital",
     "district": "Vadodara",
     "state": "Gujarat",
     "specializations": [
       "Microbiology"
-    ]
-  },
-  {
-    "name": "GMERS Medical College and Hospital, Navsari",
-    "district": "Navsari",
-    "state": "Gujarat",
-    "specializations": [
-      "Anaesthesiology",
-      "Biochemistry",
-      "Microbiology",
-      "Obstetrics and Gynaecology",
-      "Ophthalmology",
-      "Orthopaedics",
-      "Paediatrics",
-      "Pathology"
-    ]
-  },
-  {
-    "name": "GMERS Medical College and Hospital, Porbandar",
-    "district": "Porbandar",
-    "state": "Gujarat",
-    "specializations": [
-      "Anaesthesiology",
-      "General Medicine",
-      "General Surgery",
-      "Obstetrics and Gynaecology",
-      "Otorhinolaryngology (ENT)",
-      "Pathology"
     ]
   },
   {
@@ -4904,6 +4853,34 @@
   },
   {
     "name": "GMERS Medical College and Hospital",
+    "district": "Navsari",
+    "state": "Gujarat",
+    "specializations": [
+      "Anaesthesiology",
+      "Biochemistry",
+      "Microbiology",
+      "Obstetrics and Gynaecology",
+      "Ophthalmology",
+      "Orthopaedics",
+      "Paediatrics",
+      "Pathology"
+    ]
+  },
+  {
+    "name": "GMERS Medical College and Hospital",
+    "district": "Porbandar",
+    "state": "Gujarat",
+    "specializations": [
+      "Anaesthesiology",
+      "General Medicine",
+      "General Surgery",
+      "Obstetrics and Gynaecology",
+      "Otorhinolaryngology (ENT)",
+      "Pathology"
+    ]
+  },
+  {
+    "name": "GMERS Medical College and Hospital",
     "district": "Valsad",
     "state": "Gujarat",
     "specializations": [
@@ -4911,15 +4888,6 @@
       "Microbiology",
       "Otorhinolaryngology (ENT)",
       "Paediatrics"
-    ]
-  },
-  {
-    "name": "GMERS Medical College, Panchmahal, Godhra",
-    "district": "Panchmahal",
-    "state": "Gujarat",
-    "specializations": [
-      "General Medicine",
-      "General Surgery"
     ]
   },
   {
@@ -4944,6 +4912,15 @@
     ]
   },
   {
+    "name": "GMERS Medical College",
+    "district": "Panchmahal",
+    "state": "Gujarat",
+    "specializations": [
+      "General Medicine",
+      "General Surgery"
+    ]
+  },
+  {
     "name": "GNRC Hospital (A Unit of GNRC Ltd)",
     "district": "Guwahati",
     "state": "Assam",
@@ -4963,7 +4940,7 @@
     ]
   },
   {
-    "name": "GOKUL HOSPITAL MANAGED BYGOKUL LIFECARE PRIVATE LIMITED, Vidhyanagar Main Road",
+    "name": "GOKUL HOSPITAL MANAGED BYGOKUL LIFECARE PRIVATE LIMITED",
     "district": "Rajkot",
     "state": "Gujarat",
     "specializations": [
@@ -5113,7 +5090,7 @@
     ]
   },
   {
-    "name": "Government Hospital, Gandhi Nagar",
+    "name": "Government Hospital",
     "district": "Jammu",
     "state": "Jammu and Kashmir",
     "specializations": [
@@ -5204,7 +5181,7 @@
     ]
   },
   {
-    "name": "Government Medical college and New Civil Hospital, Surat",
+    "name": "Government Medical college and New Civil Hospital",
     "district": "Surat",
     "state": "Gujarat",
     "specializations": [
@@ -5232,7 +5209,24 @@
     ]
   },
   {
-    "name": "Government Medical College, Makeshift Campus Bye Pass Road, Handwara",
+    "name": "Government Medical College",
+    "district": "Dist. Sindhudurg",
+    "state": "Maharashtra",
+    "specializations": [
+      "General Medicine",
+      "Obstetrics and Gynaecology"
+    ]
+  },
+  {
+    "name": "GOVERNMENT MEDICAL COLLEGE",
+    "district": "Gondia",
+    "state": "Maharashtra",
+    "specializations": [
+      "General Medicine"
+    ]
+  },
+  {
+    "name": "Government Medical College",
     "district": "Kupwara",
     "state": "Jammu and Kashmir",
     "specializations": [
@@ -5247,41 +5241,9 @@
     ]
   },
   {
-    "name": "Government Medical College, Nalgonda",
+    "name": "Government Medical College",
     "district": "Nalgonda",
     "state": "Telangana",
-    "specializations": [
-      "General Medicine"
-    ]
-  },
-  {
-    "name": "Government Medical College, Sallian Talab Dhar Road",
-    "district": "Udhampur",
-    "state": "Jammu and Kashmir",
-    "specializations": [
-      "Anaesthesiology",
-      "General Medicine",
-      "General Surgery",
-      "Obstetrics and Gynaecology",
-      "Orthopaedics",
-      "Paediatrics",
-      "Pathology",
-      "Pharmacology"
-    ]
-  },
-  {
-    "name": "Government Medical College",
-    "district": "Dist. Sindhudurg",
-    "state": "Maharashtra",
-    "specializations": [
-      "General Medicine",
-      "Obstetrics and Gynaecology"
-    ]
-  },
-  {
-    "name": "GOVERNMENT MEDICAL COLLEGE",
-    "district": "Gondia",
-    "state": "Maharashtra",
     "specializations": [
       "General Medicine"
     ]
@@ -5307,6 +5269,21 @@
   },
   {
     "name": "Government Medical College",
+    "district": "Udhampur",
+    "state": "Jammu and Kashmir",
+    "specializations": [
+      "Anaesthesiology",
+      "General Medicine",
+      "General Surgery",
+      "Obstetrics and Gynaecology",
+      "Orthopaedics",
+      "Paediatrics",
+      "Pathology",
+      "Pharmacology"
+    ]
+  },
+  {
+    "name": "Government Medical College",
     "district": "West Champaran",
     "state": "Bihar",
     "specializations": [
@@ -5317,7 +5294,7 @@
     ]
   },
   {
-    "name": "Government Mental Health Centre, Kuthiravattom",
+    "name": "Government Mental Health Centre",
     "district": "Kozhikode",
     "state": "Kerala",
     "specializations": [
@@ -5434,7 +5411,7 @@
     ]
   },
   {
-    "name": "Gujarat Institute of Mental Health Hospital, Shahibag",
+    "name": "Gujarat Institute of Mental Health Hospital",
     "district": "Ahmedabad",
     "state": "Gujarat",
     "specializations": [
@@ -5442,7 +5419,7 @@
     ]
   },
   {
-    "name": "Gunam Super Speciality Hospital, Hosur",
+    "name": "Gunam Super Speciality Hospital",
     "district": "Krishnagiri",
     "state": "Tamil Nadu",
     "specializations": [
@@ -5474,7 +5451,7 @@
     ]
   },
   {
-    "name": "GURU HOSPITAL, Pandikovil Ring Road",
+    "name": "GURU HOSPITAL",
     "district": "Madurai",
     "state": "Tamil Nadu",
     "specializations": [
@@ -5482,7 +5459,7 @@
     ]
   },
   {
-    "name": "Guru Teg Bahadur Hospital,",
+    "name": "Guru Teg Bahadur Hospital",
     "district": "Dilshad Garden",
     "state": "Delhi",
     "specializations": [
@@ -5524,7 +5501,7 @@
     ]
   },
   {
-    "name": "HARISH HOSPITAL, Telco Circle",
+    "name": "HARISH HOSPITAL",
     "district": "Alwar",
     "state": "Rajasthan",
     "specializations": [
@@ -5570,7 +5547,7 @@
     ]
   },
   {
-    "name": "HCG Hospital, Ellisbridge",
+    "name": "HCG Hospital",
     "district": "Ahmedabad",
     "state": "Gujarat",
     "specializations": [
@@ -5674,7 +5651,7 @@
     ]
   },
   {
-    "name": "HINDU MISSION HOSPITAL, Gst Road",
+    "name": "HINDU MISSION HOSPITAL",
     "district": "Tambaram West, Chennai",
     "state": "Tamil Nadu",
     "specializations": [
@@ -5921,7 +5898,7 @@
     ]
   },
   {
-    "name": "Indira Gandhi Eye Hospital and Research Centre, Qaiserbagh",
+    "name": "Indira Gandhi Eye Hospital and Research Centre",
     "district": "Lucknow",
     "state": "Uttar Pradesh",
     "specializations": [
@@ -5971,7 +5948,7 @@
     ]
   },
   {
-    "name": "Indira Gandhi Medical College and Research Institute, Kathirkamam",
+    "name": "Indira Gandhi Medical College and Research Institute",
     "district": "Puducherry",
     "state": "Puducherry",
     "specializations": [
@@ -6029,14 +6006,6 @@
     ]
   },
   {
-    "name": "Indira IVF Hospital Private Limited, Kumharon Ka Bhatta",
-    "district": "Udaipur",
-    "state": "Rajasthan",
-    "specializations": [
-      "Reproductive Medicine"
-    ]
-  },
-  {
     "name": "INDIRA IVF HOSPITAL PRIVATE LIMITED",
     "district": "Jaipur",
     "state": "Rajasthan",
@@ -6053,17 +6022,17 @@
     ]
   },
   {
-    "name": "Indira IVF Hospital Pvt Ltd, Jp Nagar 2Nd Phase",
-    "district": "Bangalore",
-    "state": "Karnataka",
+    "name": "Indira IVF Hospital Private Limited",
+    "district": "Udaipur",
+    "state": "Rajasthan",
     "specializations": [
       "Reproductive Medicine"
     ]
   },
   {
-    "name": "INDIRA IVF HOSPITAL PVT LTD, Near Hanuman Road",
-    "district": "Prayagraj",
-    "state": "Uttar Pradesh",
+    "name": "Indira IVF Hospital Pvt Ltd",
+    "district": "Bangalore",
+    "state": "Karnataka",
     "specializations": [
       "Reproductive Medicine"
     ]
@@ -6080,6 +6049,14 @@
     "name": "Indira IVF Hospital Pvt Ltd",
     "district": "Near Giri International School",
     "state": "Delhi",
+    "specializations": [
+      "Reproductive Medicine"
+    ]
+  },
+  {
+    "name": "INDIRA IVF HOSPITAL PVT LTD",
+    "district": "Prayagraj",
+    "state": "Uttar Pradesh",
     "specializations": [
       "Reproductive Medicine"
     ]
@@ -6125,7 +6102,7 @@
     ]
   },
   {
-    "name": "Indo American Hospital, Near Vaikom",
+    "name": "Indo American Hospital",
     "district": "Kottayam",
     "state": "Kerala",
     "specializations": [
@@ -6306,7 +6283,7 @@
     ]
   },
   {
-    "name": "International Hospital Limited, Majitha Verka Bypass Road",
+    "name": "International Hospital Limited",
     "district": "Amritsar",
     "state": "Punjab",
     "specializations": [
@@ -6407,7 +6384,7 @@
     ]
   },
   {
-    "name": "Ispat General Hospital, Sector-19, Rourkela",
+    "name": "Ispat General Hospital",
     "district": "Sundargarh",
     "state": "Odisha",
     "specializations": [
@@ -6475,7 +6452,7 @@
     ]
   },
   {
-    "name": "Jaiprakash Hospital and Research Centre Pvt. Ltd, Rourkela",
+    "name": "Jaiprakash Hospital and Research Centre Pvt. Ltd",
     "district": "Sundargarh",
     "state": "Odisha",
     "specializations": [
@@ -6532,7 +6509,7 @@
     ]
   },
   {
-    "name": "Jan Swasthya Sahyog,",
+    "name": "Jan Swasthya Sahyog",
     "district": "Vill. And Po Ganiyari District Bilaspur",
     "state": "Chhattisgarh",
     "specializations": [
@@ -6625,7 +6602,7 @@
     ]
   },
   {
-    "name": "Jayprabha Medanta Superspeciality Hospital, Kankarbagh Colony",
+    "name": "Jayprabha Medanta Superspeciality Hospital",
     "district": "Patna",
     "state": "Bihar",
     "specializations": [
@@ -6645,7 +6622,7 @@
     ]
   },
   {
-    "name": "JBMM District Hospital, Nandan Cinema Chowk",
+    "name": "JBMM District Hospital",
     "district": "Amritsar",
     "state": "Punjab",
     "specializations": [
@@ -6693,7 +6670,7 @@
     ]
   },
   {
-    "name": "Johal Multispeciality Hospital,",
+    "name": "Johal Multispeciality Hospital",
     "district": "Jalandhar",
     "state": "Punjab",
     "specializations": [
@@ -6709,7 +6686,7 @@
     ]
   },
   {
-    "name": "Jothi Eye Care Centre, Calve Subraya Chetty Street",
+    "name": "Jothi Eye Care Centre",
     "district": "Puducherry",
     "state": "Puducherry",
     "specializations": [
@@ -6856,7 +6833,7 @@
     ]
   },
   {
-    "name": "K.G. Patel Children Hospital and Jayodia Research Institute,",
+    "name": "K.G. Patel Children Hospital and Jayodia Research Institute",
     "district": "Baroda",
     "state": "Gujarat",
     "specializations": [
@@ -6875,7 +6852,7 @@
     ]
   },
   {
-    "name": "Kabra Eye Hospital, Jamna Nagar Sodala",
+    "name": "Kabra Eye Hospital",
     "district": "Jaipur",
     "state": "Rajasthan",
     "specializations": [
@@ -6907,7 +6884,7 @@
     ]
   },
   {
-    "name": "Kailash hospital neuro institute,H-33 Sector 27",
+    "name": "Kailash hospital neuro institute",
     "district": "Noida",
     "state": "Uttar Pradesh",
     "specializations": [
@@ -6945,7 +6922,7 @@
     ]
   },
   {
-    "name": "Kalpana Chawla Govt Medical College, Model Town",
+    "name": "Kalpana Chawla Govt Medical College",
     "district": "Karnal",
     "state": "Haryana",
     "specializations": [
@@ -6959,7 +6936,7 @@
     ]
   },
   {
-    "name": "Kalra Hospital and Shri Ram Cardiothoracic and Neuro-Sciences Centre,",
+    "name": "Kalra Hospital and Shri Ram Cardiothoracic and Neuro-Sciences Centre",
     "district": "Kirti Nagar",
     "state": "Delhi",
     "specializations": [
@@ -6990,7 +6967,7 @@
     ]
   },
   {
-    "name": "Kalyani Kidney Care Centre, Sampath Nagar Main Road",
+    "name": "Kalyani Kidney Care Centre",
     "district": "Erode",
     "state": "Tamil Nadu",
     "specializations": [
@@ -7135,7 +7112,7 @@
     ]
   },
   {
-    "name": "Kauvery Hospital Heart City, Cantonment",
+    "name": "Kauvery Hospital Heart City",
     "district": "Trichy",
     "state": "Tamil Nadu",
     "specializations": [
@@ -7263,7 +7240,7 @@
     ]
   },
   {
-    "name": "Khan Bahadur Bhabha Hospital, Kurla",
+    "name": "Khan Bahadur Bhabha Hospital",
     "district": "Mumbai",
     "state": "Maharashtra",
     "specializations": [
@@ -7328,7 +7305,7 @@
     ]
   },
   {
-    "name": "KIMS HOSPITALS, GACHIBOWLI",
+    "name": "KIMS HOSPITALS",
     "district": "Gachibowli",
     "state": "Telangana",
     "specializations": [
@@ -7568,7 +7545,7 @@
     ]
   },
   {
-    "name": "Kozhikode District Co-Operative Hospital, Eranhipalam",
+    "name": "Kozhikode District Co-Operative Hospital",
     "district": "Kozhikode",
     "state": "Kerala",
     "specializations": [
@@ -7754,7 +7731,7 @@
     ]
   },
   {
-    "name": "Laxmi Charitable Trust Eye Hospital, Panvel",
+    "name": "Laxmi Charitable Trust Eye Hospital",
     "district": "Raigad",
     "state": "Maharashtra",
     "specializations": [
@@ -7762,7 +7739,7 @@
     ]
   },
   {
-    "name": "Laxmi Narasimha Hospital, Hanamkonda",
+    "name": "Laxmi Narasimha Hospital",
     "district": "Warangal",
     "state": "Telangana",
     "specializations": [
@@ -7838,7 +7815,7 @@
     ]
   },
   {
-    "name": "Little Flower Hospital and Research Centre, Angamaly",
+    "name": "Little Flower Hospital and Research Centre",
     "district": "Ernakulam",
     "state": "Kerala",
     "specializations": [
@@ -7862,7 +7839,7 @@
     ]
   },
   {
-    "name": "Livasa Hospital (Formerly known as Ivy Health and Life Sciences) (A UNIT OF CAREIVY HOSPITALS PRIVATE LIMITED), Sas Nagar",
+    "name": "Livasa Hospital (Formerly known as Ivy Health and Life Sciences) (A UNIT OF CAREIVY HOSPITALS PRIVATE LIMITED)",
     "district": "Mohali",
     "state": "Punjab",
     "specializations": [
@@ -7884,7 +7861,7 @@
     ]
   },
   {
-    "name": "Lok Bandhu Raj Narayan Combined Hospital, Lda Colony Kanpur Road",
+    "name": "Lok Bandhu Raj Narayan Combined Hospital",
     "district": "Lucknow",
     "state": "Uttar Pradesh",
     "specializations": [
@@ -7915,7 +7892,7 @@
     ]
   },
   {
-    "name": "Lokmanya Tilak Municipal Medical College and General Hospital,",
+    "name": "Lokmanya Tilak Municipal Medical College and General Hospital",
     "district": "Mumbai",
     "state": "Maharashtra",
     "specializations": [
@@ -8070,7 +8047,7 @@
     ]
   },
   {
-    "name": "M.R.A. Medical College, Saddarpur",
+    "name": "M.R.A. Medical College",
     "district": "Ambedkar Nagar",
     "state": "Uttar Pradesh",
     "specializations": [
@@ -8112,7 +8089,7 @@
     ]
   },
   {
-    "name": "Madras Medical Mission Hospital, Mogappair",
+    "name": "Madras Medical Mission Hospital",
     "district": "Chennai",
     "state": "Tamil Nadu",
     "specializations": [
@@ -8192,7 +8169,7 @@
     ]
   },
   {
-    "name": "Maharana Pratap District Combined Hospital, Kutubkhan Road",
+    "name": "Maharana Pratap District Combined Hospital",
     "district": "Bareilly",
     "state": "Uttar Pradesh",
     "specializations": [
@@ -8403,7 +8380,7 @@
     ]
   },
   {
-    "name": "MALLIKA HOSPITALS (Formerly known as MALLIKA SPINE CENTRE), Kothapeta",
+    "name": "MALLIKA HOSPITALS (Formerly known as MALLIKA SPINE CENTRE)",
     "district": "Guntur",
     "state": "Andhra Pradesh",
     "specializations": [
@@ -8411,7 +8388,7 @@
     ]
   },
   {
-    "name": "MANASA NURSING HOME, 1 St Cross",
+    "name": "MANASA NURSING HOME",
     "district": "Shivamogga",
     "state": "Karnataka",
     "specializations": [
@@ -8419,7 +8396,7 @@
     ]
   },
   {
-    "name": "MANAYAWAR KANSHI RAM DISTRCIT COMBINED HOSPITAL AND TRAUMA CENTRE, 100/21A Gandhigram Gt Road Ramadevi",
+    "name": "MANAYAWAR KANSHI RAM DISTRCIT COMBINED HOSPITAL AND TRAUMA CENTRE",
     "district": "Kanpur Nagar",
     "state": "Uttar Pradesh",
     "specializations": [
@@ -8427,7 +8404,7 @@
     ]
   },
   {
-    "name": "Manipal Hospital Broadway,A Unit Of Manipal Hospitals East India Pvt. Ltd. (Formerly Known As Amri Hospital) Saltlake",
+    "name": "Manipal Hospital Broadway",
     "district": "Jc 16 And 17 Saltlake Sector-3",
     "state": "West Bengal",
     "specializations": [
@@ -8480,15 +8457,6 @@
       "Radio Diagnosis",
       "Respiratory Medicine",
       "Urology"
-    ]
-  },
-  {
-    "name": "Manipal Hospital, Tadepalli",
-    "district": "Guntur",
-    "state": "Andhra Pradesh",
-    "specializations": [
-      "Anaesthesiology",
-      "Medical Oncology"
     ]
   },
   {
@@ -8644,6 +8612,15 @@
   },
   {
     "name": "Manipal Hospital",
+    "district": "Guntur",
+    "state": "Andhra Pradesh",
+    "specializations": [
+      "Anaesthesiology",
+      "Medical Oncology"
+    ]
+  },
+  {
+    "name": "Manipal Hospital",
     "district": "Jaipur",
     "state": "Rajasthan",
     "specializations": [
@@ -8675,7 +8652,7 @@
     ]
   },
   {
-    "name": "MAR SLEEVA MEDICITY PALAI, Kezhuvankulam P.O. Cherpunkal",
+    "name": "MAR SLEEVA MEDICITY PALAI",
     "district": "Kottayam",
     "state": "Kerala",
     "specializations": [
@@ -8835,7 +8812,7 @@
     ]
   },
   {
-    "name": "Max Super Speciality Hospital, Gautam Buddh Nagar",
+    "name": "Max Super Speciality Hospital",
     "district": "Noida",
     "state": "Uttar Pradesh",
     "specializations": [
@@ -9281,7 +9258,7 @@
     ]
   },
   {
-    "name": "MENTAL HOSPITAL, Sa 2/1 Pandeypur",
+    "name": "MENTAL HOSPITAL",
     "district": "Varanasi",
     "state": "Uttar Pradesh",
     "specializations": [
@@ -9357,7 +9334,7 @@
     ]
   },
   {
-    "name": "MGM Eye Insitute,",
+    "name": "MGM Eye Insitute",
     "district": "Raipur",
     "state": "Chhattisgarh",
     "specializations": [
@@ -9456,7 +9433,7 @@
     ]
   },
   {
-    "name": "MIMHANS NEUROSCIENCES HOSPITAL, Mangal Pandey Nagar",
+    "name": "MIMHANS NEUROSCIENCES HOSPITAL",
     "district": "Meerut",
     "state": "Uttar Pradesh",
     "specializations": [
@@ -9476,7 +9453,7 @@
     ]
   },
   {
-    "name": "MNJ Institute of Oncology and Cancer Regional Center, Lakdi Ka Oil",
+    "name": "MNJ Institute of Oncology and Cancer Regional Center",
     "district": "Hyderabad",
     "state": "Telangana",
     "specializations": [
@@ -9498,7 +9475,7 @@
     ]
   },
   {
-    "name": "Moolchand Khairatiram Hospital and Ayurvedic Research Institute,",
+    "name": "Moolchand Khairatiram Hospital and Ayurvedic Research Institute",
     "district": "Lajpat Nagar-Iii",
     "state": "Delhi",
     "specializations": [
@@ -9593,7 +9570,7 @@
     ]
   },
   {
-    "name": "Mydhili Hospital, Gudur Spsr",
+    "name": "Mydhili Hospital",
     "district": "Nellore",
     "state": "Andhra Pradesh",
     "specializations": [
@@ -9779,7 +9756,7 @@
     ]
   },
   {
-    "name": "Narula Diagnostic Centre LLP, Civil Road",
+    "name": "Narula Diagnostic Centre LLP",
     "district": "Rohtak",
     "state": "Haryana",
     "specializations": [
@@ -9871,7 +9848,7 @@
     ]
   },
   {
-    "name": "Neelam Healthcare Private Limited, Fatehpur Garhi",
+    "name": "Neelam Healthcare Private Limited",
     "district": "Patiala",
     "state": "Punjab",
     "specializations": [
@@ -9880,7 +9857,7 @@
     ]
   },
   {
-    "name": "NEMCARE Hospital, Bhangagarh",
+    "name": "NEMCARE Hospital",
     "district": "Guwahati",
     "state": "Assam",
     "specializations": [
@@ -9941,7 +9918,7 @@
     ]
   },
   {
-    "name": "NETAJI SUBHASH CHANDRA BOSE DISTRICT HOSPITAL, Ghosh Company Chauraha",
+    "name": "NETAJI SUBHASH CHANDRA BOSE DISTRICT HOSPITAL",
     "district": "Gorakhpur",
     "state": "Uttar Pradesh",
     "specializations": [
@@ -9985,7 +9962,7 @@
     ]
   },
   {
-    "name": "Nice Hospital For Women, Newborn and Children",
+    "name": "Nice Hospital For Women",
     "district": "Hyderabad",
     "state": "Telangana",
     "specializations": [
@@ -9993,7 +9970,7 @@
     ]
   },
   {
-    "name": "NIDAAN HOSPITAL, Revli",
+    "name": "NIDAAN HOSPITAL",
     "district": "Sonipat",
     "state": "Haryana",
     "specializations": [
@@ -10156,7 +10133,7 @@
     ]
   },
   {
-    "name": "Oriana Hospital, Ravindrapuri",
+    "name": "Oriana Hospital",
     "district": "Varanasi",
     "state": "Uttar Pradesh",
     "specializations": [
@@ -10277,7 +10254,7 @@
     ]
   },
   {
-    "name": "Palakkad Institute of Medical Sciences, Pudussery East",
+    "name": "Palakkad Institute of Medical Sciences",
     "district": "Palakkad",
     "state": "Kerala",
     "specializations": [
@@ -10355,7 +10332,7 @@
     ]
   },
   {
-    "name": "Paras Hospitals, Near Nada Sahib Gurudwara Sec. 22",
+    "name": "Paras Hospitals",
     "district": "Panchkula",
     "state": "Haryana",
     "specializations": [
@@ -10396,22 +10373,6 @@
     ]
   },
   {
-    "name": "Park Hospital, Gt Karnal Road.",
-    "district": "Panipat",
-    "state": "Haryana",
-    "specializations": [
-      "General Medicine"
-    ]
-  },
-  {
-    "name": "Park Hospital,",
-    "district": "Outer Ring Road",
-    "state": "Delhi",
-    "specializations": [
-      "General Medicine"
-    ]
-  },
-  {
     "name": "PARK HOSPITALS",
     "district": "Patiala",
     "state": "Punjab",
@@ -10426,6 +10387,22 @@
     "specializations": [
       "Anaesthesiology",
       "Cardiology",
+      "General Medicine"
+    ]
+  },
+  {
+    "name": "Park Hospital",
+    "district": "Outer Ring Road",
+    "state": "Delhi",
+    "specializations": [
+      "General Medicine"
+    ]
+  },
+  {
+    "name": "Park Hospital",
+    "district": "Panipat",
+    "state": "Haryana",
+    "specializations": [
       "General Medicine"
     ]
   },
@@ -10537,7 +10514,7 @@
     ]
   },
   {
-    "name": "PGIMER, Dr. Ram Manohar Lohia Hospital",
+    "name": "PGIMER",
     "district": "Cannaught Place",
     "state": "Delhi",
     "specializations": [
@@ -10630,7 +10607,7 @@
     ]
   },
   {
-    "name": "Prakash Hospital Pvt.Ltd, 12B Sec33",
+    "name": "Prakash Hospital Pvt.Ltd",
     "district": "Noida",
     "state": "Uttar Pradesh",
     "specializations": [
@@ -10646,7 +10623,7 @@
     ]
   },
   {
-    "name": "Prakriya Hospitals, Nagasandra",
+    "name": "Prakriya Hospitals",
     "district": "Bangalore",
     "state": "Karnataka",
     "specializations": [
@@ -10664,7 +10641,7 @@
     ]
   },
   {
-    "name": "PRANAYAM LUNG AND HEART INSTITUTE, New Vip Road",
+    "name": "PRANAYAM LUNG AND HEART INSTITUTE",
     "district": "Vadodara",
     "state": "Gujarat",
     "specializations": [
@@ -10672,7 +10649,7 @@
     ]
   },
   {
-    "name": "PRASAD HOSPITALS, PRAGATHI NAGAR",
+    "name": "PRASAD HOSPITALS",
     "district": "Hyderabad",
     "state": "Telangana",
     "specializations": [
@@ -10757,7 +10734,7 @@
     ]
   },
   {
-    "name": "PRS Hospital, Tc 21/53 Killippalam Karamana",
+    "name": "PRS Hospital",
     "district": "Trivandrum",
     "state": "Kerala",
     "specializations": [
@@ -10780,7 +10757,7 @@
     ]
   },
   {
-    "name": "Pt. B D Sharma, PGIMS,",
+    "name": "Pt. B D Sharma",
     "district": "Rohtak",
     "state": "Haryana",
     "specializations": [
@@ -10863,7 +10840,7 @@
     ]
   },
   {
-    "name": "Pushpanjali Hospital, Sector 4",
+    "name": "Pushpanjali Hospital",
     "district": "Rewari",
     "state": "Haryana",
     "specializations": [
@@ -11046,14 +11023,6 @@
     ]
   },
   {
-    "name": "Rainbow Childrens Hospital, Anna Salai",
-    "district": "Chennai",
-    "state": "Tamil Nadu",
-    "specializations": [
-      "Paediatrics"
-    ]
-  },
-  {
     "name": "Rainbow Childrens Hospital",
     "district": "Bengaluru",
     "state": "Karnataka",
@@ -11061,6 +11030,14 @@
       "Neonatology",
       "Paediatric Anaesthesia",
       "Paediatric Critical Care",
+      "Paediatrics"
+    ]
+  },
+  {
+    "name": "Rainbow Childrens Hospital",
+    "district": "Chennai",
+    "state": "Tamil Nadu",
+    "specializations": [
       "Paediatrics"
     ]
   },
@@ -11097,7 +11074,7 @@
     ]
   },
   {
-    "name": "RAINBOW INSTITIUTE OF MEDICAL SCIENCES (RIMS), Beside Hotelneelam Opp Empire Mall Badnera Road",
+    "name": "RAINBOW INSTITIUTE OF MEDICAL SCIENCES (RIMS)",
     "district": "Amravati",
     "state": "Maharashtra",
     "specializations": [
@@ -11122,7 +11099,7 @@
     ]
   },
   {
-    "name": "Rajagiri Hospital, Chunangamveli Aluva",
+    "name": "Rajagiri Hospital",
     "district": "Ernakulam",
     "state": "Kerala",
     "specializations": [
@@ -11200,7 +11177,7 @@
     ]
   },
   {
-    "name": "Rajiv Gandhi Government Women and Children Hospital, Ellapillaichavady",
+    "name": "Rajiv Gandhi Government Women and Children Hospital",
     "district": "Puducherry",
     "state": "Puducherry",
     "specializations": [
@@ -11362,7 +11339,7 @@
     ]
   },
   {
-    "name": "Referral Hospital, I.T.B.P. Force (CAPFs)",
+    "name": "Referral Hospital",
     "district": "Greater Noida Gautam Buddh Nagar",
     "state": "Uttar Pradesh",
     "specializations": [
@@ -11414,7 +11391,7 @@
     ]
   },
   {
-    "name": "RENOVA NEELIMA HOSPITAL, Sanathnagar",
+    "name": "RENOVA NEELIMA HOSPITAL",
     "district": "Hyderabad",
     "state": "Telangana",
     "specializations": [
@@ -11541,7 +11518,7 @@
     ]
   },
   {
-    "name": "Ruby Hall Clinic, 40 Sassoon Road",
+    "name": "Ruby Hall Clinic",
     "district": "Pune",
     "state": "Maharashtra",
     "specializations": [
@@ -11674,23 +11651,16 @@
     ]
   },
   {
-    "name": "Sacred Heart Hospital, G. T. Road Maqsudan",
+    "name": "Sacred Heart Hospital",
     "district": "Jalandhar",
     "state": "Punjab",
     "specializations": [
-      "Family Medicine"
-    ]
-  },
-  {
-    "name": "Sacred Heart Hospital,G. T. Road Maqsudan",
-    "district": "Jalandhar",
-    "state": "Punjab",
-    "specializations": [
+      "Family Medicine",
       "General Medicine"
     ]
   },
   {
-    "name": "SADAR HOSPITAL, Lok Nayak Jay Prakash Naryan Sadar Hospital  Near Ghantaghar Chowk",
+    "name": "SADAR HOSPITAL",
     "district": "Bhagalpur",
     "state": "Bihar",
     "specializations": [
@@ -11731,7 +11701,7 @@
     ]
   },
   {
-    "name": "Sadguru Nethra Chikitsalaya, Jankikund-Chitrakoot",
+    "name": "Sadguru Nethra Chikitsalaya",
     "district": "Dist Satna",
     "state": "Madhya Pradesh",
     "specializations": [
@@ -11799,7 +11769,7 @@
     ]
   },
   {
-    "name": "Sahai Hospital and Research Centre, Moti Dungri",
+    "name": "Sahai Hospital and Research Centre",
     "district": "Jaipur",
     "state": "Rajasthan",
     "specializations": [
@@ -11885,7 +11855,7 @@
     ]
   },
   {
-    "name": "Sai Sukhda Hospital, Near New Passport Office Philibhit Bypass Road",
+    "name": "Sai Sukhda Hospital",
     "district": "Bareilly",
     "state": "Uttar Pradesh",
     "specializations": [
@@ -11893,7 +11863,7 @@
     ]
   },
   {
-    "name": "Saideep Healthcare and Research Pvt Ltd, Tarakpur",
+    "name": "Saideep Healthcare and Research Pvt Ltd",
     "district": "Ahmednagar",
     "state": "Maharashtra",
     "specializations": [
@@ -12014,7 +11984,7 @@
     ]
   },
   {
-    "name": "Sanjay Gandhi Memorial Hospital,",
+    "name": "Sanjay Gandhi Memorial Hospital",
     "district": "S Block",
     "state": "Delhi",
     "specializations": [
@@ -12034,25 +12004,9 @@
     ]
   },
   {
-    "name": "Sankar Foundation Eye Hospital,",
+    "name": "Sankar Foundation Eye Hospital",
     "district": "Vishakhapatnam",
     "state": "Andhra Pradesh",
-    "specializations": [
-      "Ophthalmology"
-    ]
-  },
-  {
-    "name": "Sankara Eye Hospital, Pedakakani",
-    "district": "Guntur",
-    "state": "Andhra Pradesh",
-    "specializations": [
-      "Ophthalmology"
-    ]
-  },
-  {
-    "name": "Sankara Eye Hospital, Village Panau Purwa",
-    "district": "Kanpur Nagar",
-    "state": "Uttar Pradesh",
     "specializations": [
       "Ophthalmology"
     ]
@@ -12077,6 +12031,22 @@
     "name": "Sankara Eye Hospital",
     "district": "Coimbatore",
     "state": "Tamil Nadu",
+    "specializations": [
+      "Ophthalmology"
+    ]
+  },
+  {
+    "name": "Sankara Eye Hospital",
+    "district": "Guntur",
+    "state": "Andhra Pradesh",
+    "specializations": [
+      "Ophthalmology"
+    ]
+  },
+  {
+    "name": "Sankara Eye Hospital",
+    "district": "Kanpur Nagar",
+    "state": "Uttar Pradesh",
     "specializations": [
       "Ophthalmology"
     ]
@@ -12166,7 +12136,7 @@
     ]
   },
   {
-    "name": "Saraswathy Hospital, Parassala",
+    "name": "Saraswathy Hospital",
     "district": "Thiruvanathapuram",
     "state": "Kerala",
     "specializations": [
@@ -12324,7 +12294,7 @@
     ]
   },
   {
-    "name": "SETH V. C. GANDHI and M. A. VORA MUNICIPAL GENERAL HOSPITAL (RAJAWADI HOSPITAL), Ghatkopar",
+    "name": "SETH V. C. GANDHI and M. A. VORA MUNICIPAL GENERAL HOSPITAL (RAJAWADI HOSPITAL)",
     "district": "East Mumbai",
     "state": "Maharashtra",
     "specializations": [
@@ -12436,7 +12406,7 @@
     ]
   },
   {
-    "name": "SHANMUGA HOSPITAL PRIVATE LIMITED (Formerly Shanmuga Hospital and Salem Cancer Institute), Sarada College Road",
+    "name": "SHANMUGA HOSPITAL PRIVATE LIMITED (Formerly Shanmuga Hospital and Salem Cancer Institute)",
     "district": "Salem",
     "state": "Tamil Nadu",
     "specializations": [
@@ -12598,7 +12568,7 @@
     ]
   },
   {
-    "name": "Shree Mata Vaishno Devi Narayana Superspeciality Hospital, Katra",
+    "name": "Shree Mata Vaishno Devi Narayana Superspeciality Hospital",
     "district": "Reasi",
     "state": "Jammu and Kashmir",
     "specializations": [
@@ -12764,7 +12734,7 @@
     ]
   },
   {
-    "name": "Shri Shishu Bhawan Hospital, Eidgah Road Near Madhyanagari Square",
+    "name": "Shri Shishu Bhawan Hospital",
     "district": "Bilaspur",
     "state": "Chhattisgarh",
     "specializations": [
@@ -12800,7 +12770,7 @@
     ]
   },
   {
-    "name": "Shriram Care Hospital, Near Cseb Office Nehrunagar",
+    "name": "Shriram Care Hospital",
     "district": "Bilaspur",
     "state": "Chhattisgarh",
     "specializations": [
@@ -12970,7 +12940,7 @@
     ]
   },
   {
-    "name": "SKR Hospital And Trauma Centre Pvt. Ltd, Malikpur Chowk",
+    "name": "SKR Hospital And Trauma Centre Pvt. Ltd",
     "district": "Pathankot",
     "state": "Punjab",
     "specializations": [
@@ -12978,7 +12948,7 @@
     ]
   },
   {
-    "name": "SMITA MEMORIAL HOSPTIAL AND RESEARCH CENTRE, Thodupuzha",
+    "name": "SMITA MEMORIAL HOSPTIAL AND RESEARCH CENTRE",
     "district": "Idukki",
     "state": "Kerala",
     "specializations": [
@@ -12986,7 +12956,7 @@
     ]
   },
   {
-    "name": "Smt. Rasilaben Sevantilal Shah Venus Hospital, Ashaktashram Complex Rampura",
+    "name": "Smt. Rasilaben Sevantilal Shah Venus Hospital",
     "district": "Surat",
     "state": "Gujarat",
     "specializations": [
@@ -13047,7 +13017,7 @@
     ]
   },
   {
-    "name": "South Western Railway, Central Hospital, Hubballi",
+    "name": "South Western Railway",
     "district": "Dharwad",
     "state": "Karnataka",
     "specializations": [
@@ -13137,7 +13107,7 @@
     ]
   },
   {
-    "name": "SRCC Children's Hospital, Mahalaxmi",
+    "name": "SRCC Children's Hospital",
     "district": "Mumbai",
     "state": "Maharashtra",
     "specializations": [
@@ -13206,7 +13176,7 @@
     ]
   },
   {
-    "name": "Sri Chandra Sekara Hospital, Hosur",
+    "name": "Sri Chandra Sekara Hospital",
     "district": "Krishnagiri",
     "state": "Tamil Nadu",
     "specializations": [
@@ -13214,7 +13184,7 @@
     ]
   },
   {
-    "name": "Sri Gokulam Hospital,",
+    "name": "Sri Gokulam Hospital",
     "district": "Salem",
     "state": "Tamil Nadu",
     "specializations": [
@@ -13271,7 +13241,7 @@
     ]
   },
   {
-    "name": "Sri Ram Hospital, Near Ayodhya Junction Railway Station",
+    "name": "Sri Ram Hospital",
     "district": "Ayodhya",
     "state": "Uttar Pradesh",
     "specializations": [
@@ -13482,7 +13452,7 @@
     ]
   },
   {
-    "name": "St. James Hospital, Chalakudy",
+    "name": "St. James Hospital",
     "district": "Thrissur",
     "state": "Kerala",
     "specializations": [
@@ -13492,7 +13462,7 @@
     ]
   },
   {
-    "name": "St. Johns Medical College Hospital, Koramanagala",
+    "name": "St. Johns Medical College Hospital",
     "district": "Bangalore",
     "state": "Karnataka",
     "specializations": [
@@ -13647,7 +13617,7 @@
     ]
   },
   {
-    "name": "State Hospital, Dharampur Garden Road, Dharampur",
+    "name": "State Hospital",
     "district": "Dist Valsad",
     "state": "Gujarat",
     "specializations": [
@@ -13679,7 +13649,7 @@
     ]
   },
   {
-    "name": "Sub Division Hospital, Opp Town Police Station",
+    "name": "Sub Division Hospital",
     "district": "Gangavathi",
     "state": "Karnataka",
     "specializations": [
@@ -13687,7 +13657,7 @@
     ]
   },
   {
-    "name": "Suchirayu Mulitispeciality Hospital, Hubballi",
+    "name": "Suchirayu Mulitispeciality Hospital",
     "district": "Dharwad",
     "state": "Karnataka",
     "specializations": [
@@ -13705,7 +13675,7 @@
     ]
   },
   {
-    "name": "Sudha Hospitals, Perundurai Road",
+    "name": "Sudha Hospitals",
     "district": "Erode",
     "state": "Tamil Nadu",
     "specializations": [
@@ -13713,7 +13683,7 @@
     ]
   },
   {
-    "name": "SUDHA MEDICAL COLLEGE AND HOSPITAL, Jhalawar Road",
+    "name": "SUDHA MEDICAL COLLEGE AND HOSPITAL",
     "district": "Kota",
     "state": "Rajasthan",
     "specializations": [
@@ -13721,7 +13691,7 @@
     ]
   },
   {
-    "name": "SUGAM HOSPITALS, Chromepet",
+    "name": "SUGAM HOSPITALS",
     "district": "Chennai",
     "state": "Tamil Nadu",
     "specializations": [
@@ -13750,7 +13720,7 @@
     ]
   },
   {
-    "name": "SUNAYAN ADVANCED EYE INSTITUTE, Salgechia, Tamluk",
+    "name": "SUNAYAN ADVANCED EYE INSTITUTE",
     "district": "Purba Medinipur",
     "state": "West Bengal",
     "specializations": [
@@ -13816,7 +13786,7 @@
     ]
   },
   {
-    "name": "Sushrut Hospital And Research Centre, 365 Swastik Park",
+    "name": "Sushrut Hospital And Research Centre",
     "district": "Mumbai",
     "state": "Maharashtra",
     "specializations": [
@@ -13866,7 +13836,7 @@
     ]
   },
   {
-    "name": "Swagat Super Speciality Surgical Institute, Maligaon",
+    "name": "Swagat Super Speciality Surgical Institute",
     "district": "Guwahati",
     "state": "Assam",
     "specializations": [
@@ -14206,14 +14176,6 @@
     ]
   },
   {
-    "name": "TX Hospitals, Bharat Nagar",
-    "district": "Medchal Malkajgiri",
-    "state": "Telangana",
-    "specializations": [
-      "General Medicine"
-    ]
-  },
-  {
     "name": "TX HOSPITALS",
     "district": "Hyderabad",
     "state": "Telangana",
@@ -14221,6 +14183,14 @@
       "Anaesthesiology",
       "General Medicine",
       "General Surgery"
+    ]
+  },
+  {
+    "name": "TX Hospitals",
+    "district": "Medchal Malkajgiri",
+    "state": "Telangana",
+    "specializations": [
+      "General Medicine"
     ]
   },
   {
@@ -14351,7 +14321,7 @@
     ]
   },
   {
-    "name": "Valluvanad Hospital Complex Limited, Kanniyampuram(Po) Ottapalam",
+    "name": "Valluvanad Hospital Complex Limited",
     "district": "Palakkad",
     "state": "Kerala",
     "specializations": [
@@ -14420,7 +14390,7 @@
     ]
   },
   {
-    "name": "Veerangana Awanti Bai Women Hospital, Quaiserbagh",
+    "name": "Veerangana Awanti Bai Women Hospital",
     "district": "Lucknow",
     "state": "Uttar Pradesh",
     "specializations": [
@@ -14464,7 +14434,7 @@
     ]
   },
   {
-    "name": "Venu Eye Institute,",
+    "name": "Venu Eye Institute",
     "district": "Sheikh Sarai",
     "state": "Delhi",
     "specializations": [
@@ -14480,7 +14450,7 @@
     ]
   },
   {
-    "name": "Vihaan Heart Care Pvt Ltd, 4Th Phase",
+    "name": "Vihaan Heart Care Pvt Ltd",
     "district": "Hubballi",
     "state": "Karnataka",
     "specializations": [
@@ -14498,7 +14468,7 @@
     ]
   },
   {
-    "name": "Vijay Super Speciality Hospital, Lachhirampur",
+    "name": "Vijay Super Speciality Hospital",
     "district": "Azamgarh",
     "state": "Uttar Pradesh",
     "specializations": [
@@ -14553,7 +14523,7 @@
     ]
   },
   {
-    "name": "VINAYAKA HOSPITAL, NEAR UMED HOSPITAL",
+    "name": "VINAYAKA HOSPITAL",
     "district": "JODHPUR",
     "state": "Rajasthan",
     "specializations": [
@@ -14675,7 +14645,7 @@
     ]
   },
   {
-    "name": "Walsh S.D.H., Serampore",
+    "name": "Walsh S.D.H.",
     "district": "Dist-Hooghly",
     "state": "West Bengal",
     "specializations": [
@@ -14699,23 +14669,11 @@
     ]
   },
   {
-    "name": "Western India Instt. of Neurosciences,",
+    "name": "Western India Instt. of Neurosciences",
     "district": "Kolhapur",
     "state": "Maharashtra",
     "specializations": [
       "Neuro Surgery (Direct 6 Years Course)"
-    ]
-  },
-  {
-    "name": "Wockhardt Hospital, Dr. Anand Rao Nair Marg Mumbai Central",
-    "district": "Mumbai",
-    "state": "Maharashtra",
-    "specializations": [
-      "Anaesthesiology",
-      "Cardiology",
-      "Critical Care Medicine",
-      "General Medicine",
-      "Orthopaedics"
     ]
   },
   {
@@ -14725,6 +14683,18 @@
     "specializations": [
       "Anaesthesiology",
       "Critical Care Medicine"
+    ]
+  },
+  {
+    "name": "Wockhardt Hospital",
+    "district": "Mumbai",
+    "state": "Maharashtra",
+    "specializations": [
+      "Anaesthesiology",
+      "Cardiology",
+      "Critical Care Medicine",
+      "General Medicine",
+      "Orthopaedics"
     ]
   },
   {
@@ -14962,7 +14932,7 @@
     ]
   },
   {
-    "name": "Yenepoya Specialty Hospital, V.T Road Kodialbail",
+    "name": "Yenepoya Specialty Hospital",
     "district": "Mangalore",
     "state": "Karnataka",
     "specializations": [

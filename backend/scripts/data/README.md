@@ -103,22 +103,44 @@ this file, one query, no code needed) after seeding and expect to need a
 similar `is_active = false` cleanup pass.
 
 **Second refresh (`DNB_Accreditation_Clean_with_PIN.xlsx`, same "Clean
-Data" shape plus a PIN Code column, unused here) — the cleanest source
-this dataset has had.** 1,379 unique (name, district, state) institutions
-(up from 1,378), 98 distinct specialization labels — an exact match to
-the source's own "By Specialization" sheet count, no typos or near-
-duplicates found this time, just a `"DNB- "` prefix stripped to match the
-existing plain-name convention. Two case-variant name collisions caught
-by grouping on the normalized (lowercase+trim) key rather than exact
-string match, same lesson as the diploma refresh. A few specializations
-have a distinct `"(Direct 6 Years Course)"` variant alongside the base
-name (e.g. `"Neuro Surgery"` vs `"Neuro Surgery (Direct 6 Years
-Course)"`) — both have substantial independent record counts (not one
-clearly the "real" entry and one noise), so kept as separate entries
-rather than merged, unlike the DM/MCh refresh's duration-suffix cleanup
-where the base form dominated. No seed script changes needed — the
-existing `claimed`-set + `isActive: true` fixes already cover this
-refresh.
+Data" shape plus a PIN Code column, unused here).** 98 distinct
+specialization labels — an exact match to the source's own "By
+Specialization" sheet count, no typos found, just a `"DNB- "` prefix
+stripped to match the existing plain-name convention. A few
+specializations have a distinct `"(Direct 6 Years Course)"` variant
+alongside the base name (e.g. `"Neuro Surgery"` vs `"Neuro Surgery
+(Direct 6 Years Course)"`) — both have substantial independent record
+counts (not one clearly the "real" entry and one noise), so kept as
+separate entries rather than merged, unlike the DM/MCh refresh's
+duration-suffix cleanup where the base form dominated.
+
+**The `College` column in this export is noticeably less clean than the
+first refresh's — 587 of 5,379 rows have a locality/address fragment
+appended after a comma** (e.g. `"State Hospital, Dharampur Garden Road,
+Dharampur"` where the first refresh's source just had `"State
+Hospital"`), not consistently matching the separate `District` column
+closely enough to detect and strip surgically. **First attempt at
+regenerating this file didn't account for that** — grouping used the
+full (unstripped) `College` text, and a diff against the prior refresh's
+file caught it: 168 (name, state) keys existed only in the new file, and
+161 of those matched an already-known college once truncated to the
+first comma segment — i.e. the same real hospitals, just about to get
+duplicate University rows because of the address text bleeding into the
+name field, not 168 genuinely new colleges. Fixed by truncating every
+`College` value at its first comma (not just the >200-char safety net
+this file's `College` values never actually hit) before grouping — this
+dropped the "only in new file" count to a much more plausible 47.
+**1,375** unique (name, district, state) institutions. Two case-variant
+name collisions still caught by grouping on the normalized
+(lowercase+trim) key, same lesson as the diploma refresh. No seed script
+changes needed — the existing `claimed`-set + `isActive: true` fixes
+already cover this refresh.
+
+Worth remembering for the *next* DNB refresh: **check whether this
+comma-truncation is still needed, or whether a future export goes back
+to clean plain names** — don't assume this file's shape carries forward
+unchanged; check for it explicitly (diff a sample of `(name, state)`
+keys against the prior refresh before seeding) rather than assuming.
 
 Unlike the UG/PG datasets above, this isn't (yet) wired into the
 `refresh_ug.py`/`refresh_pg.py`-style live-refresh pipeline — it was a
