@@ -86,11 +86,7 @@ export function CollegeSearch({
                 }}
                 className={`w-full text-left px-3.5 py-2.5 text-[13.5px] font-semibold ${gold ? "hover:bg-[#fbf1de]" : "hover:bg-[#eef3ff]"}`}
               >
-                {u.name}
-                <span className="block text-[11.5px] font-medium text-slate-400">
-                  {u.city ? `${u.city}, ` : ""}
-                  {u.state}
-                </span>
+                {u.name}, {u.state}
               </button>
             </li>
           ))}
