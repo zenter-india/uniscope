@@ -99,9 +99,9 @@ const CURATED_DEGREE_MAP: Record<string, string> = {
 
 // Degrees whose curated data is small/complete enough to browse in full +
 // type-to-search (CuratedCollegeSearch/SearchableCombobox), rather than the
-// original curated-top-30-+-"Other" pattern. DM-MCh/Diploma haven't been
-// asked for this treatment yet, so they stay on the old pattern.
-const BROWSE_DEGREES = new Set(["MD/MS", "DNB"]);
+// original curated-top-30-+-"Other" pattern. DM-MCh hasn't been asked for
+// this treatment yet, so it stays on the old pattern.
+const BROWSE_DEGREES = new Set(["MD/MS", "DNB", "Diploma"]);
 
 export function MentorForm({ onExit }: { onExit: () => void }) {
   const wizard = useMultiStep(5);
