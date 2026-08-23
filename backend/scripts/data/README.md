@@ -129,16 +129,67 @@ are both full browse-+ type-to-search comboboxes (`CuratedCollegeSearch`
 `UniversitiesService.findCurated`'s two modes). DM-MCh is the only
 degree still on the original curated-top-30-+-"Other" `<select>` pattern.
 
-**Updated twice already.** First refresh (still 8 columns, same "Course
+**Updated three times now.** First refresh (still 8 columns, same "Course
 Name" combining degree+specialty): 9,279 course records (up from 8,327),
 649 unique institutions (up from 568), same parsing/grouping/length-fix
 pipeline. Second refresh came from a differently-shaped export
 (`NMC_PG_Seats_2025-26.xlsx`, sheet "PG Seats Data") — `Specialization` is
-already its own column here (no "MD - "/"MS - " prefix parsing needed),
-plus a `Management` column same as before: 9,395 records, 653 unique
-institutions. Regenerate the same way (adjusting the parse step to match
-whichever column layout the new file actually has) if a further-updated
-version shows up.
+already its own column here, formatted as `"MD - <specialty>"` /
+`"MS - <specialty>"` (no need to *construct* that prefix from a combined
+Course Name field the way the first refresh did), plus a `Management`
+column same as before: 9,395 records, 653 unique institutions.
+
+**Third refresh (`NMC_PG_Seats_2025-26 (1).xlsx`, same "PG Seats Data"
+sheet shape)** dropped from 653 to 645 unique (College Name, State)
+groups: 9,284 non-blank records (110 fully-blank padding rows at the
+sheet's end dropped), then 8 further rows dropped for scrambled
+OCR-garbled text (an institute name — "TRIHMS, Naharlagun" — folded into
+the Specialization field, unrecoverable), and 24 rows dropped for having
+no MD/MS prefix at all (PG Diploma courses like `"DOMS"`/`"DIP.
+ANAESTHESIOLOGY"`, same out-of-scope treatment as the first refresh's 12
+dropped Diploma rows). Net: 343 GOVERNMENT / 302 PRIVATE (previously 350/
+303) via the same lenient "strip non-letters, check for govt/govern as a
+substring" ownership detection — a couple of new `Management` spellings
+showed up this refresh (`"Society Govt.- Society"`, `"Trust (Private )"`)
+and both classify correctly under the existing lenient check.
+
+**This refresh's raw `Specialization` text was the messiest of any
+dataset here — 352 distinct raw strings for what turned out to be 38 real
+specialties.** Cleaned in stages: (1) normalize a stray en-dash separator
+to a plain hyphen, (2) parse the `MD`/`MS` prefix via a regex tolerant of
+punctuation/spacing variants (`"MD-X"`, `"M.D. X"`, `"MD - X"`, …), (3) an
+explicit typo-fix map for ~25 misspellings (`"Ceneral Medicine"` →
+`"General Medicine"`, `"Micrology"` → `"Microbiology"`, `"Psychaitry"` →
+`"Psychiatry"`, etc.) and a few malformed fragments (`"/MS - Anatomy"` →
+`"Anatomy"`), (4) reclassify a handful of rows whose stated prefix
+contradicts this taxonomy's convention (Ophthalmology/Obstetrics &
+Gynaecology/Orthopaedics/General Surgery/OBG are always MS here, Anatomy
+is always MD — a few rows had the wrong one), (5) normalize
+British/American spelling pairs (paediatric/pediatric,
+anaesthes-/anesthes-, gynaecolog-/gynecolog-, haematolog-/hematolog-,
+orthopaed-/orthoped-, ophthalmolog-/opthalmolog-) before grouping, (6) an
+explicit equivalence map merging abbreviations and multi-name specialties
+onto one canonical bucket (ENT ≡ Otorhinolaryngology, OBG ≡ Obstetrics &
+Gynaecology, DVL ≡ Dermatology/Venereology/Leprosy, PSM ≡ Community
+Medicine, Radiology ≡ Radio Diagnosis, Radiotherapy ≡ Radiation Oncology,
+Forensic Medicine ≡ …& Toxicology, Respiratory/Pulmonary/TB-RD Medicine ≡
+one bucket, PMR ≡ Physical Medicine & Rehabilitation, the various
+Immuno(-)Haematology/Hematology/Transfusion Medicine spellings ≡ one
+bucket, Anaesthesia ≡ Anaesthesiology). The canonical display spelling
+for each bucket is whichever raw variant occurred most often, not a
+hand-picked "correct" one. A few genuinely-distinct-looking niche
+specialties (Aviation Medicine, Bio-Physics, Tropical Medicine, Community
+Health Administration, Traumatology & Surgery, Lab Medicine) were
+deliberately left unmerged rather than guessed into a larger bucket —
+only merges with reasonably clear justification were made; re-check git
+history for the exact map before extending it. Grouped using the same
+normalized (lowercase+trim) key the seed script matches on, per the
+diploma refresh's 746-vs-735 lesson.
+
+Regenerate the same way (adjusting the parse step to match whichever
+column layout the new file actually has, and expect to re-review the
+specialization cleanup maps against whatever new typos/variants show up)
+if a further-updated version shows up.
 
 12 rows were dropped from the first refresh's source: they were PG Diploma
 courses (e.g.
@@ -360,9 +411,12 @@ duplicate (name, state) entries appearing twice in the JSON itself.
 `dm-mch-colleges.json`'s third refresh gained a District column (see
 above) and got the same district-aware `claimed`-set fix applied
 proactively before its first seed run against prod, rather than
-discovering the same bug again after the fact. `pg-mdms-colleges.json`
-still has no address column to key by and had zero name+state collisions
-in the current data, so it was left as-is.
+discovering the same bug again after the fact. `pg-mdms-colleges.json`'s
+third refresh got the non-district-aware version of the same fix (a
+`claimed` set without location disambiguation, same treatment as
+`diploma-colleges.json` — this source has no address/district column
+either) applied proactively for the same reason, plus `isActive: true`
+on upsert.
 
 ## Refreshing on demand — `refresh_ug.py` / `refresh_pg.py`
 

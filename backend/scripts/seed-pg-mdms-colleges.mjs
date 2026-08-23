@@ -8,15 +8,22 @@
  * available today; there's no separate PG- or Doctorate-specific dataset.
  *
  * Matching/creation rules mirror seed-dnb-colleges.mjs: finds an existing
- * University by exact name+state match (case-insensitive) so a hospital
- * already seeded as a UG college gets an MD/MS Program attached rather than
- * a duplicate row; creates a new one otherwise. Unlike the DNB seed, `type`
- * comes from the source data itself (GOVERNMENT/PRIVATE), not a default —
- * this dataset states real ownership.
+ * University by name+state match (case-insensitive). Unlike the DNB seed,
+ * `type` comes from the source data itself (GOVERNMENT/PRIVATE), not a
+ * default — this dataset states real ownership.
+ *
+ * This source has no district/address column (like Diploma's second
+ * refresh), so branch disambiguation by location isn't possible — but
+ * pre-existing rows are still tracked with a "claimed" set (the fix
+ * applied to seed-dnb-colleges.mjs after a real data-corruption incident
+ * there) so a repeated name+state key within the same run can't steal a
+ * row another entry already claimed.
  *
  * Idempotent — keyed on (university match) + Program's
  * @@unique([universityId, name]), so a re-run updates specializations in
- * place instead of duplicating.
+ * place instead of duplicating. The update clause also sets
+ * isActive: true, so a re-run correctly revives a row that had been
+ * deactivated (e.g. as part of a clean-slate re-seed).
  *
  * Usage:
  *   node scripts/seed-pg-mdms-colleges.mjs            # write
@@ -68,18 +75,35 @@ async function main() {
   const existing = await prisma.university.findMany({
     select: { id: true, name: true, state: true, slug: true, levels: true },
   });
-  const byNameState = new Map(
-    existing.map((u) => [`${u.name.toLowerCase().trim()}|${u.state.toLowerCase().trim()}`, u]),
-  );
+  // Pre-existing rows may repeat a name+state key — this holds every
+  // candidate, not just one.
+  const existingByNameState = new Map();
+  for (const u of existing) {
+    const key = `${u.name.toLowerCase().trim()}|${u.state.toLowerCase().trim()}`;
+    const list = existingByNameState.get(key);
+    if (list) list.push(u);
+    else existingByNameState.set(key, [u]);
+  }
+  // Pre-existing University ids already reused by an earlier JSON entry in
+  // this run — prevents a repeated name+state key from stealing a row
+  // another entry already claimed.
+  const claimed = new Set();
+  const createdThisRun = new Map();
   const taken = new Set(existing.map((u) => u.slug));
 
   const stats = { matched: 0, created: 0, programsCreated: 0, programsUpdated: 0 };
 
   for (const c of colleges) {
     const key = `${c.name.toLowerCase().trim()}|${c.state.toLowerCase().trim()}`;
-    let university = byNameState.get(key);
+    const candidates = existingByNameState.get(key) ?? [];
+    const unclaimedCandidate = candidates.find((u) => !claimed.has(u.id));
+    let university = createdThisRun.get(key) ?? unclaimedCandidate;
 
     if (university) {
+      if (!createdThisRun.has(key)) {
+        claimed.add(university.id);
+        createdThisRun.set(key, university);
+      }
       stats.matched += 1;
       if (!university.levels.includes('PG')) {
         if (!DRY_RUN) {
@@ -105,9 +129,9 @@ async function main() {
           },
         });
       } else {
-        university = { id: `dry-run:${slug}` };
+        university = { id: `dry-run:${slug}`, levels: ['PG'] };
       }
-      byNameState.set(key, university);
+      createdThisRun.set(key, university);
       stats.created += 1;
     }
 
@@ -117,11 +141,12 @@ async function main() {
       });
       await prisma.program.upsert({
         where: { universityId_name: { universityId: university.id, name: PROGRAM_NAME } },
-        update: { specializations: c.specializations },
+        update: { specializations: c.specializations, isActive: true },
         create: {
           universityId: university.id,
           name: PROGRAM_NAME,
           specializations: c.specializations,
+          isActive: true,
         },
       });
       if (priorProgram) stats.programsUpdated += 1;
