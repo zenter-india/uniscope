@@ -50,8 +50,16 @@ export class UniversitiesService {
   /**
    * Cursor-paginated list of active universities, ordered by NIRF rank
    * (unranked last) with id as a stable tiebreaker for the cursor.
-   * Search is a simple case-insensitive match on name/city/state — full-text
-   * via the search_vector column is a later enhancement.
+   * Search is a case-insensitive *prefix* match (startsWith) on
+   * name/city/state, not substring — a `contains` match on a short/common
+   * query like "a" returns nearly every row (virtually every college name
+   * contains an "a" somewhere), and since the mentor form's College field
+   * sorts alphabetically, results starting with a digit (e.g. "7 Air Force
+   * Hospital") sort ahead of actual "A…" colleges, making a type-to-search
+   * field look broken ("I typed 'a' but colleges starting with A aren't
+   * showing"). startsWith is what a type-to-search / autocomplete field
+   * should do anyway. Full-text via the search_vector column is a later
+   * enhancement if prefix-only search ever proves too limited.
    */
   async findAll(
     query: ListUniversitiesDto,
@@ -66,9 +74,9 @@ export class UniversitiesService {
       ...(query.level && { levels: { has: query.level } }),
       ...(query.search && {
         OR: [
-          { name: { contains: query.search, mode: 'insensitive' } },
-          { city: { contains: query.search, mode: 'insensitive' } },
-          { state: { contains: query.search, mode: 'insensitive' } },
+          { name: { startsWith: query.search, mode: 'insensitive' } },
+          { city: { startsWith: query.search, mode: 'insensitive' } },
+          { state: { startsWith: query.search, mode: 'insensitive' } },
         ],
       }),
     };
@@ -103,9 +111,10 @@ export class UniversitiesService {
    *   back to a free-text "Other" entry.
    * - `browse=true` (MD/MS, DNB, Diploma, DM/MCh — all small/complete
    *   enough to browse in full): returns every matching college, uncapped,
-   *   alphabetical, optionally filtered by `search` on name — the mentor
-   *   form's College field is meant to list every college for these
-   *   degrees, not a curated subset.
+   *   alphabetical, optionally filtered by `search` as a case-insensitive
+   *   *prefix* match on name (see findAll's doc comment for why prefix,
+   *   not substring) — the mentor form's College field is meant to list
+   *   every college for these degrees, not a curated subset.
    *
    * Label is just "name, state" — no address/PIN, even for DNB/DM-MCh
    * colleges whose Program.description does carry a district (kept there
@@ -125,7 +134,7 @@ export class UniversitiesService {
           isActive: true,
           ...(browse &&
             query.search && {
-              name: { contains: query.search, mode: 'insensitive' },
+              name: { startsWith: query.search, mode: 'insensitive' },
             }),
         },
       },
