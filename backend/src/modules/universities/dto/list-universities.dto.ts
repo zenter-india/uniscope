@@ -39,6 +39,15 @@ export class ListUniversitiesDto {
   @IsString()
   search?: string;
 
+  /** `browse=true` returns every matching row uncapped (no `limit`/cursor
+   * pagination) — for a type-to-search College picker that's meant to
+   * browse the full list, not just the first page. See
+   * UniversitiesService.findAll's doc comment. Cursor-paginated callers
+   * (e.g. the Discover/Colleges tab) must omit this. */
+  @IsOptional()
+  @IsString()
+  browse?: string;
+
   @IsOptional()
   @Type(() => Number)
   @IsInt()

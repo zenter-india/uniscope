@@ -49,7 +49,13 @@ export class UniversitiesService {
 
   /**
    * Cursor-paginated list of active universities, ordered by NIRF rank
-   * (unranked last) with id as a stable tiebreaker for the cursor.
+   * (unranked last) with id as a stable tiebreaker for the cursor. This is
+   * also the mentor form's UG/"Others" College field (CollegeSearch.tsx),
+   * which needs `browse=true` (see below) — without it, the default
+   * take-50-and-stop page only ever shows colleges from the very start of
+   * the alphabet, since nothing narrows the query yet when the field is
+   * first focused.
+   *
    * Search is a case-insensitive *substring* match on `name` only (not
    * city/state — see the "b" search example below), but results are
    * ranked so a name *starting with* the query sorts before a name that
@@ -57,23 +63,28 @@ export class UniversitiesService {
    * `contains` + alphabetical sort previously let irrelevant-looking
    * matches (e.g. a digit-prefixed name like "7 Air Force Hospital"
    * matching because names in general contain lots of common letters)
-   * outrank the colleges someone was actually looking for. This ranking
-   * can't be expressed as a single Prisma `orderBy`, so it's done in JS
-   * after fetching every match — fine at this table's size, but means
-   * cursor pagination mid-search isn't exact (a page boundary crossed
-   * while searching may not perfectly continue the JS-sorted order on the
-   * next request); no current caller paginates while a search is active.
-   * A college whose city/state (not name) matches the query used to be
-   * included too, which had its own confusing case: searching "b" could
-   * surface "Adesh Institute…, Bhatinda" (name starts with A, city starts
-   * with B) ahead of colleges actually named starting with B — dropped
-   * for that reason, since this is the mentor form's "College /
-   * university" field, a name lookup.
+   * outrank the colleges someone was actually looking for. A college whose
+   * city/state (not name) matches the query used to be included too,
+   * which had its own confusing case: searching "b" could surface "Adesh
+   * Institute…, Bhatinda" (name starts with A, city starts with B) ahead
+   * of colleges actually named starting with B — dropped for that reason,
+   * since this is a college *name* lookup.
+   *
+   * `browse=true` (CollegeSearch.tsx's only mode) returns every matching
+   * row uncapped, ranked as above — same "browse the full list, not just
+   * a capped page" contract as findCurated's browse mode, for the same
+   * reason (a type-to-search field should let you actually reach every
+   * college, not just the alphabetically-first handful). Without
+   * `browse`, results stay cursor-paginated at `take` per page (the
+   * Discover/Colleges tab's usage) — a plain `search` without `browse` in
+   * that mode is still ranked but capped, e.g. mobile's small-page
+   * typeahead.
    */
   async findAll(
     query: ListUniversitiesDto,
   ): Promise<{ data: University[]; nextCursor: string | null }> {
     const take = Math.min(query.limit ?? DEFAULT_LIMIT, MAX_LIMIT);
+    const browse = query.browse === 'true';
 
     const where: Prisma.UniversityWhereInput = {
       isActive: true,
@@ -86,15 +97,18 @@ export class UniversitiesService {
       }),
     };
 
-    if (query.search) {
-      const search = query.search.toLowerCase();
+    if (browse || query.search) {
+      const search = query.search?.toLowerCase();
       const rows = await this.prisma.university.findMany({ where });
       const sorted = rows.sort((a, b) => {
-        const aStarts = a.name.toLowerCase().startsWith(search) ? 0 : 1;
-        const bStarts = b.name.toLowerCase().startsWith(search) ? 0 : 1;
-        return aStarts !== bStarts ? aStarts - bStarts : a.name.localeCompare(b.name);
+        if (search) {
+          const aStarts = a.name.toLowerCase().startsWith(search) ? 0 : 1;
+          const bStarts = b.name.toLowerCase().startsWith(search) ? 0 : 1;
+          if (aStarts !== bStarts) return aStarts - bStarts;
+        }
+        return a.name.localeCompare(b.name);
       });
-      return { data: sorted.slice(0, take), nextCursor: null };
+      return { data: browse ? sorted : sorted.slice(0, take), nextCursor: null };
     }
 
     const rows = await this.prisma.university.findMany({
