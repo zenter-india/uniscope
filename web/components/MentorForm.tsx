@@ -581,7 +581,21 @@ export function MentorForm({ onExit }: { onExit: () => void }) {
                 <SearchableCombobox
                   gold
                   value={form.specialization}
-                  options={browseSpecializations.length > 0 ? browseSpecializations : allSpecializationsForDegree}
+                  // Others and Doctorate both use the old static
+                  // MEDICAL_SPECIALIZATIONS picklist (not tied to the
+                  // MD/MS dataset), always in full regardless of which
+                  // college is picked, per explicit request. Every other
+                  // browse degree (MD/MS, PG, DNB, Diploma, DM/MCh) keeps
+                  // the normal behavior: the picked college's own list,
+                  // falling back to the full curated-dataset list only
+                  // when no college matched.
+                  options={
+                    form.degree === "Doctorate" || form.degree === "Others"
+                      ? [...MEDICAL_SPECIALIZATIONS]
+                      : browseSpecializations.length > 0
+                        ? browseSpecializations
+                        : allSpecializationsForDegree
+                  }
                   disabled={!form.collegeName}
                   placeholder={form.collegeName ? "Select or type to search…" : "Select a college first"}
                   onChange={(v) => set("specialization", v)}
