@@ -552,7 +552,7 @@ export function MentorForm({ onExit }: { onExit: () => void }) {
                 </Field>
               )}
             </>
-          ) : (
+          ) : form.stream === "Medical" ? (
             <Field label="College / university">
               <CollegeSearch
                 gold
@@ -562,6 +562,22 @@ export function MentorForm({ onExit }: { onExit: () => void }) {
                   set("collegeName", name);
                   set("universityId", id ?? "");
                 }}
+              />
+            </Field>
+          ) : (
+            // No seeded college data exists yet for any non-Medical
+            // stream (Dental/Engineering/etc — to be uploaded later, per
+            // the user), so this is a plain free-text field with no
+            // dropdown/autocomplete list, rather than CollegeSearch
+            // (which queries GET /universities with no stream filter and
+            // would otherwise surface irrelevant Medical colleges here).
+            <Field label="College / university">
+              <TextInput
+                gold
+                required
+                placeholder="College/university name"
+                value={form.collegeName}
+                onChange={(e) => set("collegeName", e.target.value)}
               />
             </Field>
           )}
