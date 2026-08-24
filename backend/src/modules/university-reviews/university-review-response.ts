@@ -9,6 +9,9 @@ export interface UniversityReviewResponse {
   clinicalExposureRating: number | null;
   campusLifeRating: number | null;
   placementsRating: number | null;
+  workloadRating: number | null;
+  wouldRecommend: boolean | null;
+  tags: string[];
   pros: string | null;
   cons: string | null;
   body: string | null;
@@ -31,6 +34,9 @@ export function toUniversityReviewResponse(
     clinicalExposureRating: review.clinicalExposureRating,
     campusLifeRating: review.campusLifeRating,
     placementsRating: review.placementsRating,
+    workloadRating: review.workloadRating,
+    wouldRecommend: review.wouldRecommend,
+    tags: review.tags,
     pros: review.pros,
     cons: review.cons,
     body: review.body,

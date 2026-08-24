@@ -21,6 +21,25 @@ export interface UniversityRatingSummary {
   count: number;
 }
 
+/** Backs the review summary card — every number here is a real aggregate
+ * over ACTIVE reviews, nothing invented. `categoryAverages`/`recommendPercent`
+ * entries are null (not 0) when nobody has answered that question yet, so
+ * the client can render "no data" rather than a misleadingly low bar. */
+export interface UniversityReviewSummary {
+  overallAverage: number | null;
+  reviewCount: number;
+  recommendPercent: number | null;
+  categoryAverages: {
+    academics: number | null;
+    campusLife: number | null;
+    workload: number | null;
+    careerValue: number | null;
+  };
+  /** Only tags that were actually picked at least once appear here — the
+   * client shows real counts, never a zero-count tag from the picklist. */
+  tagCounts: Record<string, number>;
+}
+
 /**
  * University-scoped reviews (distinct from MentorReview, which rates a
  * 1:1 mentoring session). Gated to VERIFIED users only — "honest reviews
@@ -110,6 +129,62 @@ export class UniversityReviewsService {
   async ratingSummary(universityId: string): Promise<UniversityRatingSummary> {
     const map = await this.ratingSummaries([universityId]);
     return map.get(universityId) ?? { average: null, count: 0 };
+  }
+
+  /** Full aggregate behind the review summary card — category averages,
+   * recommend %, and real tag counts, all computed fresh from ACTIVE
+   * reviews rather than cached, since review volume per university is
+   * small enough that this is cheap. */
+  async reviewSummary(universityId: string): Promise<UniversityReviewSummary> {
+    const where = {
+      universityId,
+      status: ReviewStatus.ACTIVE,
+      deletedAt: null,
+    };
+
+    const [aggregate, recommendYes, recommendAnswered, tagRows] = await Promise.all([
+      this.prisma.review.aggregate({
+        where,
+        _avg: {
+          overallRating: true,
+          clinicalExposureRating: true,
+          campusLifeRating: true,
+          workloadRating: true,
+          placementsRating: true,
+        },
+        _count: { overallRating: true },
+      }),
+      this.prisma.review.count({
+        where: { ...where, wouldRecommend: true },
+      }),
+      this.prisma.review.count({
+        where: { ...where, wouldRecommend: { not: null } },
+      }),
+      this.prisma.review.findMany({ where, select: { tags: true } }),
+    ]);
+
+    const tagCounts: Record<string, number> = {};
+    for (const row of tagRows) {
+      for (const tag of row.tags) {
+        tagCounts[tag] = (tagCounts[tag] ?? 0) + 1;
+      }
+    }
+
+    return {
+      overallAverage: aggregate._avg.overallRating,
+      reviewCount: aggregate._count.overallRating,
+      recommendPercent:
+        recommendAnswered > 0
+          ? Math.round((recommendYes / recommendAnswered) * 100)
+          : null,
+      categoryAverages: {
+        academics: aggregate._avg.clinicalExposureRating,
+        campusLife: aggregate._avg.campusLifeRating,
+        workload: aggregate._avg.workloadRating,
+        careerValue: aggregate._avg.placementsRating,
+      },
+      tagCounts,
+    };
   }
 
   /** Whether the given author has already reviewed this university — used

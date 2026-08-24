@@ -431,6 +431,18 @@ model Review {
   clinicalExposureRating Int?                     @map("clinical_exposure_rating") @db.SmallInt
   campusLifeRating       Int?                     @map("campus_life_rating") @db.SmallInt
   placementsRating       Int?                     @map("placements_rating") @db.SmallInt
+  /// The 4th "Rated by Category" axis alongside clinicalExposureRating
+  /// (shown as "Academics"), campusLifeRating, and placementsRating (shown
+  /// as "Career Value") — added for the review summary card.
+  workloadRating         Int?                     @map("workload_rating") @db.SmallInt
+  /// Null means the reviewer didn't answer; only non-null answers count
+  /// toward the aggregated "would recommend" percentage.
+  wouldRecommend         Boolean?                 @map("would_recommend")
+  /// Structured highlight tags the reviewer picked (e.g. "Great faculty",
+  /// "Heavy workload") — aggregated into real counts for the summary card's
+  /// tag chips. Free-form pros/cons text below stays separate; these are
+  /// selected from a fixed picklist client-side, not typed.
+  tags                   String[]                 @default([])
   pros                   String?                  @db.Text
   cons                   String?                  @db.Text
   body                   String?                  @db.Text

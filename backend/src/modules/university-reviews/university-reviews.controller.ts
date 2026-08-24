@@ -18,6 +18,13 @@ export class UniversityReviewsController {
     return this.universityReviewsService.findForUniversity(universityId, query);
   }
 
+  /** Backs the review summary card shown on every university's list card
+   * and detail screen — category averages, recommend %, real tag counts. */
+  @Get('summary')
+  summary(@Param('universityId') universityId: string) {
+    return this.universityReviewsService.reviewSummary(universityId);
+  }
+
   @UseGuards(JwtAuthGuard)
   @Post()
   create(
