@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../core/network/college_wishlist_api.dart';
 import '../../core/network/universities_api.dart';
@@ -8,8 +9,10 @@ import '../../core/network/users_api.dart';
 import '../../core/theme/app_theme.dart';
 import '../../state/auth_controller.dart' show UserRole;
 import '../../widgets/app_widgets.dart';
-import '../auth/auth_background.dart' show authBrandTeal, authBrandNavy, authBrandBlue;
+import '../auth/auth_background.dart' show authBrandTeal, authBrandNavy;
 import '../mentors/mentor_list_screen.dart';
+import 'review_summary_card.dart';
+import 'review_widgets.dart';
 
 final universityDetailProvider =
     FutureProvider.autoDispose.family<University, String>(
@@ -512,107 +515,6 @@ class _OverviewTab extends ConsumerWidget {
   }
 }
 
-/// A single review, its author shown only as a role — never a name or
-/// handle — per the app's anonymity model.
-class _ReviewCard extends StatelessWidget {
-  const _ReviewCard({required this.review});
-  final UniversityReview review;
-
-  String get _dateLabel {
-    final d = DateTime.tryParse(review.createdAt);
-    if (d == null) return '';
-    const months = [
-      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
-    ];
-    return '${months[d.month - 1]} ${d.day}, ${d.year}';
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AppCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              StatusChip(
-                label: review.authorIsMentor ? 'Mentor' : 'Student',
-                color: review.authorIsMentor ? authBrandBlue : AppColors.primary,
-              ),
-              const Spacer(),
-              Row(
-                children: [
-                  for (var i = 1; i <= 5; i++)
-                    Icon(
-                      i <= review.overallRating
-                          ? Icons.star_rounded
-                          : Icons.star_border_rounded,
-                      size: 16,
-                      color: const Color(0xFFF5A524),
-                    ),
-                ],
-              ),
-            ],
-          ),
-          if (_dateLabel.isNotEmpty) ...[
-            const SizedBox(height: 4),
-            Text(_dateLabel,
-                style: const TextStyle(fontSize: AppFont.xs, color: AppColors.textMuted)),
-          ],
-          if (review.body != null && review.body!.trim().isNotEmpty) ...[
-            const SizedBox(height: AppSpacing.sm),
-            Text(review.body!,
-                style: const TextStyle(
-                    fontSize: AppFont.sm, color: AppColors.textPrimary, height: 1.4)),
-          ],
-          if ((review.pros != null && review.pros!.trim().isNotEmpty) ||
-              (review.cons != null && review.cons!.trim().isNotEmpty)) ...[
-            const SizedBox(height: AppSpacing.sm),
-            if (review.pros != null && review.pros!.trim().isNotEmpty)
-              _ProsConsLine(
-                icon: Icons.thumb_up_rounded,
-                color: AppColors.primary,
-                text: review.pros!,
-              ),
-            if (review.cons != null && review.cons!.trim().isNotEmpty)
-              _ProsConsLine(
-                icon: Icons.thumb_down_rounded,
-                color: const Color(0xFFE08E45),
-                text: review.cons!,
-              ),
-          ],
-        ],
-      ),
-    );
-  }
-}
-
-class _ProsConsLine extends StatelessWidget {
-  const _ProsConsLine({required this.icon, required this.color, required this.text});
-  final IconData icon;
-  final Color color;
-  final String text;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(top: 4),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(icon, size: 14, color: color),
-          const SizedBox(width: AppSpacing.xs),
-          Expanded(
-            child: Text(text,
-                style: const TextStyle(fontSize: AppFont.sm, color: AppColors.textPrimary)),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
 class _ReviewsTab extends ConsumerWidget {
   const _ReviewsTab({required this.university});
   final University university;
@@ -634,6 +536,16 @@ class _ReviewsTab extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          ReviewSummaryCard(
+            universityId: university.id,
+            fallbackRating: university.rating,
+            fallbackReviewCount: university.reviewCount,
+            onTap: () => context.push(
+              '/colleges/detail/reviews',
+              extra: {'universityId': university.id, 'universityName': university.name},
+            ),
+          ),
+          const SizedBox(height: AppSpacing.md),
           if (hasReviewedAsync.value == false && canReview)
             SizedBox(
               width: double.infinity,
@@ -647,12 +559,13 @@ class _ReviewsTab extends ConsumerWidget {
                       borderRadius:
                           BorderRadius.vertical(top: Radius.circular(AppRadius.xl)),
                     ),
-                    builder: (_) => _WriteReviewSheet(universityId: university.id),
+                    builder: (_) => WriteReviewSheet(universityId: university.id),
                   );
                   if (posted == true) {
                     ref.invalidate(universityReviewsListProvider(university.id));
                     ref.invalidate(hasReviewedUniversityProvider(university.id));
                     ref.invalidate(universityDetailProvider(university.slug));
+                    ref.invalidate(universityReviewSummaryProvider(university.id));
                   }
                 },
                 icon: const Icon(Icons.edit_rounded, size: 18),
@@ -686,7 +599,7 @@ class _ReviewsTab extends ConsumerWidget {
               return Column(
                 children: [
                   for (final review in reviews) ...[
-                    _ReviewCard(review: review),
+                    ReviewCard(review: review),
                     const SizedBox(height: AppSpacing.md),
                   ],
                 ],
@@ -725,148 +638,6 @@ class _MentorsTab extends ConsumerWidget {
             : Column(
                 children: [for (final m in mentors) MentorCard(mentor: m)],
               ),
-      ),
-    );
-  }
-}
-
-class _WriteReviewSheet extends ConsumerStatefulWidget {
-  const _WriteReviewSheet({required this.universityId});
-  final String universityId;
-
-  @override
-  ConsumerState<_WriteReviewSheet> createState() => _WriteReviewSheetState();
-}
-
-class _WriteReviewSheetState extends ConsumerState<_WriteReviewSheet> {
-  int _overallRating = 5;
-  final _bodyController = TextEditingController();
-  final _prosController = TextEditingController();
-  final _consController = TextEditingController();
-  bool _submitting = false;
-  String? _error;
-
-  @override
-  void dispose() {
-    _bodyController.dispose();
-    _prosController.dispose();
-    _consController.dispose();
-    super.dispose();
-  }
-
-  Future<void> _submit() async {
-    setState(() {
-      _submitting = true;
-      _error = null;
-    });
-    try {
-      await ref.read(universityReviewsApiProvider).create(
-            widget.universityId,
-            overallRating: _overallRating,
-            body: _bodyController.text.trim(),
-            pros: _prosController.text.trim(),
-            cons: _consController.text.trim(),
-          );
-      if (!mounted) return;
-      Navigator.of(context).pop(true);
-    } catch (e) {
-      setState(() {
-        _submitting = false;
-        _error = e.toString();
-      });
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: EdgeInsets.fromLTRB(
-        AppSpacing.lg,
-        AppSpacing.md,
-        AppSpacing.lg,
-        AppSpacing.lg + MediaQuery.of(context).viewInsets.bottom,
-      ),
-      child: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Center(
-              child: Container(
-                width: 36,
-                height: 4,
-                margin: const EdgeInsets.only(bottom: AppSpacing.md),
-                decoration: BoxDecoration(
-                  color: AppColors.border,
-                  borderRadius: BorderRadius.circular(AppRadius.full),
-                ),
-              ),
-            ),
-            const Text('Write a review',
-                style: TextStyle(
-                    fontSize: AppFont.lg, fontWeight: AppFont.extraBold)),
-            const SizedBox(height: AppSpacing.md),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                for (var i = 1; i <= 5; i++)
-                  IconButton(
-                    onPressed: () => setState(() => _overallRating = i),
-                    icon: Icon(
-                      i <= _overallRating ? Icons.star_rounded : Icons.star_border_rounded,
-                      color: AppColors.warning,
-                      size: 32,
-                    ),
-                  ),
-              ],
-            ),
-            const SizedBox(height: AppSpacing.sm),
-            TextField(
-              controller: _bodyController,
-              maxLines: 4,
-              maxLength: 3000,
-              decoration: const InputDecoration(
-                hintText: 'Share your experience — academics, faculty, campus life...',
-                border: OutlineInputBorder(),
-              ),
-            ),
-            TextField(
-              controller: _prosController,
-              maxLength: 1000,
-              decoration: const InputDecoration(
-                labelText: 'Pros (optional) — e.g. "Great faculty"',
-                border: OutlineInputBorder(),
-              ),
-            ),
-            TextField(
-              controller: _consController,
-              maxLength: 1000,
-              decoration: const InputDecoration(
-                labelText: 'Cons (optional) — e.g. "Crowded labs"',
-                border: OutlineInputBorder(),
-              ),
-            ),
-            if (_error != null) ...[
-              const SizedBox(height: AppSpacing.sm),
-              Text(_error!,
-                  style: const TextStyle(fontSize: AppFont.xs, color: AppColors.error)),
-            ],
-            const SizedBox(height: AppSpacing.sm),
-            SizedBox(
-              width: double.infinity,
-              child: FilledButton(
-                onPressed: _submitting ? null : _submit,
-                child: _submitting
-                    ? const SizedBox(
-                        height: 18,
-                        width: 18,
-                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                      )
-                    : const Text('Post review'),
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }

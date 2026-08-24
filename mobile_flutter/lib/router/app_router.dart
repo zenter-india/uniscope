@@ -29,6 +29,7 @@ import '../features/sessions/session_chat_screen.dart';
 import '../features/sessions/session_list_screen.dart';
 import '../features/sessions/support_chat_screen.dart';
 import '../features/shell/main_shell.dart';
+import '../features/universities/review_breakdown_screen.dart';
 import '../features/universities/saved_colleges_screen.dart';
 import '../features/universities/university_detail_screen.dart';
 import '../features/universities/university_list_screen.dart';
@@ -93,6 +94,16 @@ List<StatefulShellBranch> _buildAspirantBranches() => [
                 },
               ),
               GoRoute(path: 'saved', builder: (_, __) => const SavedCollegesScreen()),
+              GoRoute(
+                path: 'reviews',
+                builder: (_, state) {
+                  final a = state.extra as Map<String, dynamic>? ?? const {};
+                  return ReviewBreakdownScreen(
+                    universityId: a['universityId'] as String? ?? '',
+                    universityName: a['universityName'] as String? ?? '',
+                  );
+                },
+              ),
             ],
           ),
         ],

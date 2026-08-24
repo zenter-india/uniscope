@@ -381,3 +381,17 @@ const kYearsOfStudy = [
   '6th Year',
   'Intern',
 ];
+
+// Fixed picklist a reviewer selects highlight tags from when writing a
+// university review — mirrors backend/src/modules/university-reviews/dto/
+// review-tags.ts (REVIEW_TAGS) exactly. Validated server-side, so keep the
+// two in sync rather than adding options only on one side.
+const kReviewTags = [
+  'Great exposure',
+  'Good placement',
+  'Great faculty',
+  'Heavy workload',
+  'Good hostel',
+  'Worth the fees',
+  'Stipend delayed',
+];

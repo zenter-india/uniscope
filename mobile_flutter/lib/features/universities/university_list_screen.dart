@@ -8,6 +8,7 @@ import '../../core/network/users_api.dart';
 import '../../core/theme/app_theme.dart';
 import '../../widgets/app_widgets.dart';
 import '../profile/profile_options.dart';
+import 'review_summary_card.dart';
 
 const _typeFilters = ['All', 'GOVERNMENT', 'PRIVATE', 'DEEMED', 'CENTRAL'];
 // 'All' plus the same academic-field picklist mentors/aspirants use, so
@@ -362,56 +363,82 @@ class UniversityCard extends ConsumerWidget {
     return AppCard(
       onTap: onTap,
       margin: const EdgeInsets.only(bottom: AppSpacing.sm),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            width: 44,
-            height: 44,
-            decoration: BoxDecoration(
-              color: AppColors.background,
-              borderRadius: BorderRadius.circular(AppRadius.sm),
-            ),
-            alignment: Alignment.center,
-            child: Icon(
-              Icons.account_balance_rounded,
-              size: 20,
-              color: AppColors.textMuted.withValues(alpha: 0.6),
-            ),
-          ),
-          const SizedBox(width: AppSpacing.md),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  university.name,
-                  style: const TextStyle(
-                    fontSize: AppFont.md,
-                    fontWeight: AppFont.bold,
-                    color: AppColors.textPrimary,
-                  ),
+          Row(
+            children: [
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: AppColors.background,
+                  borderRadius: BorderRadius.circular(AppRadius.sm),
                 ),
-                const SizedBox(height: 2),
-                Text(
-                  [
-                    if (university.stream != null) university.stream!,
-                    university.state,
-                    if (university.mbbsSeats != null) '${university.mbbsSeats} seats',
-                  ].join(' · '),
-                  style: const TextStyle(
-                    fontSize: AppFont.xs,
-                    color: AppColors.textSecondary,
-                  ),
+                alignment: Alignment.center,
+                child: Icon(
+                  Icons.account_balance_rounded,
+                  size: 20,
+                  color: AppColors.textMuted.withValues(alpha: 0.6),
                 ),
-              ],
+              ),
+              const SizedBox(width: AppSpacing.md),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      university.name,
+                      style: const TextStyle(
+                        fontSize: AppFont.md,
+                        fontWeight: AppFont.bold,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      [
+                        if (university.stream != null) university.stream!,
+                        university.state,
+                        if (university.mbbsSeats != null) '${university.mbbsSeats} seats',
+                      ].join(' · '),
+                      style: const TextStyle(
+                        fontSize: AppFont.xs,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: AppSpacing.xs),
+              StatusChip(
+                label: _typeLabel(university.type),
+                color: _typeColor(university.type),
+              ),
+              _CollegeSaveButton(universityId: university.id),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.md),
+          const Divider(height: 1, color: AppColors.border),
+          const SizedBox(height: AppSpacing.md),
+          // Its own tap target, nested inside the card's own (detail-screen)
+          // tap target — tapping the review summary goes straight to the
+          // full breakdown instead of the college's Overview tab.
+          Material(
+            color: Colors.transparent,
+            child: InkWell(
+              borderRadius: BorderRadius.circular(AppRadius.md),
+              onTap: () => context.push(
+                '/colleges/detail/reviews',
+                extra: {'universityId': university.id, 'universityName': university.name},
+              ),
+              child: ReviewSummaryBody(
+                universityId: university.id,
+                fallbackRating: university.rating,
+                fallbackReviewCount: university.reviewCount,
+              ),
             ),
           ),
-          const SizedBox(width: AppSpacing.xs),
-          StatusChip(
-            label: _typeLabel(university.type),
-            color: _typeColor(university.type),
-          ),
-          _CollegeSaveButton(universityId: university.id),
         ],
       ),
     );

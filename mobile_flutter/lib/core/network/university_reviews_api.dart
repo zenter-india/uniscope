@@ -13,6 +13,9 @@ class UniversityReview {
     this.clinicalExposureRating,
     this.campusLifeRating,
     this.placementsRating,
+    this.workloadRating,
+    this.wouldRecommend,
+    this.tags = const [],
     this.pros,
     this.cons,
     this.body,
@@ -29,6 +32,9 @@ class UniversityReview {
   final int? clinicalExposureRating;
   final int? campusLifeRating;
   final int? placementsRating;
+  final int? workloadRating;
+  final bool? wouldRecommend;
+  final List<String> tags;
   final String? pros;
   final String? cons;
   final String? body;
@@ -47,6 +53,9 @@ class UniversityReview {
         clinicalExposureRating: (json['clinicalExposureRating'] as num?)?.toInt(),
         campusLifeRating: (json['campusLifeRating'] as num?)?.toInt(),
         placementsRating: (json['placementsRating'] as num?)?.toInt(),
+        workloadRating: (json['workloadRating'] as num?)?.toInt(),
+        wouldRecommend: json['wouldRecommend'] as bool?,
+        tags: (json['tags'] as List<dynamic>? ?? []).map((e) => e as String).toList(),
         pros: json['pros'] as String?,
         cons: json['cons'] as String?,
         body: json['body'] as String?,
@@ -54,6 +63,46 @@ class UniversityReview {
         createdAt: json['createdAt'] as String,
         authorRole: json['authorRole'] as String,
       );
+}
+
+/// Real aggregates only — category averages and recommendPercent are null
+/// (not 0) when nobody has answered that question yet; tagCounts only ever
+/// contains tags that were actually picked at least once.
+class UniversityReviewSummary {
+  const UniversityReviewSummary({
+    required this.overallAverage,
+    required this.reviewCount,
+    required this.recommendPercent,
+    required this.academics,
+    required this.campusLife,
+    required this.workload,
+    required this.careerValue,
+    required this.tagCounts,
+  });
+
+  final double? overallAverage;
+  final int reviewCount;
+  final int? recommendPercent;
+  final double? academics;
+  final double? campusLife;
+  final double? workload;
+  final double? careerValue;
+  final Map<String, int> tagCounts;
+
+  factory UniversityReviewSummary.fromJson(Map<String, dynamic> json) {
+    final categories = json['categoryAverages'] as Map<String, dynamic>? ?? {};
+    final tagCountsJson = json['tagCounts'] as Map<String, dynamic>? ?? {};
+    return UniversityReviewSummary(
+      overallAverage: (json['overallAverage'] as num?)?.toDouble(),
+      reviewCount: (json['reviewCount'] as num?)?.toInt() ?? 0,
+      recommendPercent: (json['recommendPercent'] as num?)?.toInt(),
+      academics: (categories['academics'] as num?)?.toDouble(),
+      campusLife: (categories['campusLife'] as num?)?.toDouble(),
+      workload: (categories['workload'] as num?)?.toDouble(),
+      careerValue: (categories['careerValue'] as num?)?.toDouble(),
+      tagCounts: tagCountsJson.map((k, v) => MapEntry(k, (v as num).toInt())),
+    );
+  }
 }
 
 class UniversityReviewsApi {
@@ -72,6 +121,12 @@ class UniversityReviewsApi {
     return res.data ?? false;
   }
 
+  Future<UniversityReviewSummary> summary(String universityId) async {
+    final res =
+        await _dio.get<Map<String, dynamic>>('/universities/$universityId/reviews/summary');
+    return UniversityReviewSummary.fromJson(res.data!);
+  }
+
   Future<UniversityReview> create(
     String universityId, {
     required int overallRating,
@@ -80,6 +135,9 @@ class UniversityReviewsApi {
     int? clinicalExposureRating,
     int? campusLifeRating,
     int? placementsRating,
+    int? workloadRating,
+    bool? wouldRecommend,
+    List<String>? tags,
     String? pros,
     String? cons,
     String? body,
@@ -93,6 +151,9 @@ class UniversityReviewsApi {
         if (clinicalExposureRating != null) 'clinicalExposureRating': clinicalExposureRating,
         if (campusLifeRating != null) 'campusLifeRating': campusLifeRating,
         if (placementsRating != null) 'placementsRating': placementsRating,
+        if (workloadRating != null) 'workloadRating': workloadRating,
+        if (wouldRecommend != null) 'wouldRecommend': wouldRecommend,
+        if (tags != null && tags.isNotEmpty) 'tags': tags,
         if (pros != null && pros.isNotEmpty) 'pros': pros,
         if (cons != null && cons.isNotEmpty) 'cons': cons,
         if (body != null && body.isNotEmpty) 'body': body,
@@ -114,4 +175,9 @@ final universityReviewsListProvider =
 final hasReviewedUniversityProvider =
     FutureProvider.autoDispose.family<bool, String>(
   (ref, universityId) => ref.watch(universityReviewsApiProvider).hasReviewed(universityId),
+);
+
+final universityReviewSummaryProvider =
+    FutureProvider.autoDispose.family<UniversityReviewSummary, String>(
+  (ref, universityId) => ref.watch(universityReviewsApiProvider).summary(universityId),
 );
