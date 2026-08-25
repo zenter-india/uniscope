@@ -16,6 +16,7 @@ class UserProfile {
     this.specialty,
     this.languages = const [],
     this.isMentorAvailable = false,
+    this.universityId,
     this.universityName,
     this.gender,
     this.state,
@@ -46,6 +47,7 @@ class UserProfile {
   final String? specialty;
   final List<String> languages;
   final bool isMentorAvailable;
+  final String? universityId;
   final String? universityName;
   final String? gender;
   final String? state;
@@ -76,6 +78,8 @@ class UserProfile {
             .map((e) => e as String)
             .toList(),
         isMentorAvailable: (json['isMentorAvailable'] as bool?) ?? false,
+        universityId:
+            (json['university'] as Map<String, dynamic>?)?['id'] as String?,
         universityName:
             (json['university'] as Map<String, dynamic>?)?['name'] as String?,
         gender: json['gender'] as String?,

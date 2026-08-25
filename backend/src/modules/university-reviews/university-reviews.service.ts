@@ -4,7 +4,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { ReviewStatus, VerificationStatus } from '@prisma/client';
+import { ReviewStatus, UserRole, VerificationStatus } from '@prisma/client';
 import { PrismaService } from '../../database/prisma/prisma.service.js';
 import { CreateUniversityReviewDto } from './dto/create-university-review.dto.js';
 import { ListUniversityReviewsDto } from './dto/list-university-reviews.dto.js';
@@ -57,7 +57,10 @@ export class UniversityReviewsService {
     dto: CreateUniversityReviewDto,
   ): Promise<UniversityReviewResponse> {
     const [user, university] = await Promise.all([
-      this.prisma.user.findUniqueOrThrow({ where: { id: authorId } }),
+      this.prisma.user.findUniqueOrThrow({
+        where: { id: authorId },
+        include: { profile: true },
+      }),
       this.prisma.university.findUnique({ where: { id: universityId } }),
     ]);
 
@@ -66,6 +69,15 @@ export class UniversityReviewsService {
     }
     if (!university) {
       throw new NotFoundException(`University '${universityId}' not found`);
+    }
+    // A mentor's verification ties them to exactly one college (see
+    // VerificationService.review's universityId link) — they can only
+    // review that one, not any college they happen to be browsing. This
+    // is what keeps "verified students and alumni" honest: the review is
+    // tied to the same college the ID document was actually verified
+    // against.
+    if (user.role === UserRole.MENTOR && user.profile?.universityId !== universityId) {
+      throw new ForbiddenException('You can only review your own college');
     }
 
     try {

@@ -524,12 +524,16 @@ class _ReviewsTab extends ConsumerWidget {
     final reviewsAsync = ref.watch(universityReviewsListProvider(university.id));
     final hasReviewedAsync = ref.watch(hasReviewedUniversityProvider(university.id));
     final myProfile = ref.watch(myProfileProvider).asData?.value;
-    // Only verified mentors can post — the backend enforces this too, but
-    // showing the button to everyone else just leads to a 403 after they've
-    // already filled out the whole form. "Verified students and alumni"
-    // means mentors here: aspirants are prospective, not yet attending.
+    // Only a verified mentor reviewing their OWN linked college can post —
+    // the backend enforces both checks too, but showing the button
+    // anywhere else just leads to a 403 after they've already filled out
+    // the whole form. "Verified students and alumni" means mentors here:
+    // aspirants are prospective, not yet attending. A mentor's
+    // verification ties them to exactly one college, so they can't review
+    // any college they merely browse.
     final canReview = myProfile?.role == UserRole.mentor &&
-        myProfile?.verificationStatus == 'VERIFIED';
+        myProfile?.verificationStatus == 'VERIFIED' &&
+        myProfile?.universityId == university.id;
 
     return Padding(
       padding: const EdgeInsets.all(AppSpacing.md),

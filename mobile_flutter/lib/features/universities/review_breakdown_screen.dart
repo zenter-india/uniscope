@@ -28,8 +28,11 @@ class ReviewBreakdownScreen extends ConsumerWidget {
     final reviewsAsync = ref.watch(universityReviewsListProvider(universityId));
     final hasReviewedAsync = ref.watch(hasReviewedUniversityProvider(universityId));
     final myProfile = ref.watch(myProfileProvider).asData?.value;
+    // A mentor's verification ties them to exactly one college — they can
+    // only review that one, not any college they're merely browsing.
     final canReview = myProfile?.role == UserRole.mentor &&
-        myProfile?.verificationStatus == 'VERIFIED';
+        myProfile?.verificationStatus == 'VERIFIED' &&
+        myProfile?.universityId == universityId;
 
     return Scaffold(
       backgroundColor: AppColors.background,
