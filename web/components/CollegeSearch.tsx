@@ -14,17 +14,23 @@ import { TextInput } from "./form-bits";
  *
  * `level` (e.g. "UG") restricts the list to colleges offering that level —
  * pass it for a degree-specific picker so PG-only accreditation sites don't
- * show up as UG options (see UniversitiesService.findAll's `level` filter). */
+ * show up as UG options (see UniversitiesService.findAll's `level` filter).
+ * `stream` (e.g. "Dental") restricts to that stream's colleges — omit it
+ * for a stream with no seeded data yet, since an unfiltered search would
+ * otherwise surface irrelevant colleges from whichever stream does have
+ * data (currently Medical). */
 export function CollegeSearch({
   value,
   onPick,
   gold,
   level,
+  stream,
 }: {
   value: string;
   onPick: (name: string, id: string | null) => void;
   gold?: boolean;
   level?: string;
+  stream?: string;
 }) {
   const [query, setQuery] = useState(value);
   const [results, setResults] = useState<University[]>([]);
@@ -44,7 +50,7 @@ export function CollegeSearch({
   useEffect(() => {
     const thisRequest = ++requestId.current;
     const handle = setTimeout(() => {
-      searchUniversities(query, level)
+      searchUniversities(query, level, stream)
         .then((res) => {
           // Ignore if a newer keystroke has already started a later request
           // — otherwise a slow response for "A" can land after a fast one
@@ -56,7 +62,7 @@ export function CollegeSearch({
         });
     }, 250);
     return () => clearTimeout(handle);
-  }, [query, level]);
+  }, [query, level, stream]);
 
   return (
     <div className="relative">

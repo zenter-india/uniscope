@@ -433,6 +433,43 @@ sides of those two merges were plain names). Re-check this map (or
 extend it) if a future refresh's raw label list looks meaningfully
 different.
 
+## `bds-colleges.json` — BDS (Dental UG) colleges
+
+Input to `../seed-bds-colleges.mjs`. Source: a clean BDS institution list
+supplied directly by the user (`BDS_Colleges_Clean.xlsx`, sheet "Clean
+Data"), one entry per (College Name, District, State) with a
+`Management` column (`Govt.`/`Private`) mapped to `type` via the same
+lenient "strip non-letters, check for govt/govern as a substring"
+detection used elsewhere. **329 colleges, 60 GOVERNMENT / 269 PRIVATE.**
+
+**The only dataset here with no specialization data at all.** BDS is
+the base dental undergraduate degree, not a postgrad specialty program
+— there's no NBEMS/NMC-style specialization list the way MD/MS, DNB,
+DM/MCh, and Diploma each have, so this seed script only creates/updates
+`University` rows (`stream: 'Dental'`, `levels: ['UG']`) — no `Program`
+row at all. District goes on `University.city` (not `Program.description`
+the way DNB/DM-MCh/Diploma carry it) since there's no Program to attach
+it to here, and `city` is exactly what that column is for.
+
+**The mentor form's College field for Stream=Dental uses
+`CollegeSearch` with a `stream="Dental"` filter** (added to
+`searchUniversities`/`CollegeSearch` — previously that component had no
+stream parameter at all, since it queried `GET /universities`
+unfiltered by stream), not the curated/Program-based
+`CuratedCollegeSearch` pattern MD/MS/DNB/Diploma/DM-MCh use — there's no
+Program-derived specialization data to browse for a Dental
+degree, and BDS itself doesn't have specializations to pick from
+anyway. `MentorForm.tsx`'s `STREAMS_WITH_COLLEGE_DATA` set gates which
+non-Medical streams get this treatment instead of the plain free-text
+fallback every other non-Medical stream still uses until their own data
+is uploaded — currently just `"Dental"`.
+
+**No address-bleed or exact-vs-normalized grouping issues found** in
+this source (checked both, per the DNB/diploma refreshes' lessons) — 20
+comma-containing names, all genuine institutional name components
+(hospital/institute affiliations), none matching the District column's
+text the way DNB's/diploma's address-bleed did.
+
 ## A casing bug worth knowing about — `Program.name` must be UPPERCASE
 
 `UniversitiesService.findCurated` queries `Program.name: degree.toUpperCase()`.

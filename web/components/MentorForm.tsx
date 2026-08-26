@@ -105,6 +105,13 @@ const CURATED_DEGREE_MAP: Record<string, string> = {
 // original curated-top-30-+-"Other" pattern.
 const BROWSE_DEGREES = new Set(["MD/MS", "DNB", "Diploma", "DM/MCh"]);
 
+// Non-Medical streams that have real seeded college data (see
+// seed-bds-colleges.mjs) — these use CollegeSearch with a stream filter,
+// same browse+search UX as Medical, instead of the plain free-text
+// fallback every other non-Medical stream still uses until their own
+// data is uploaded.
+const STREAMS_WITH_COLLEGE_DATA = new Set(["Dental"]);
+
 export function MentorForm({ onExit }: { onExit: () => void }) {
   const wizard = useMultiStep(5);
   const [form, setForm] = useState<FormState>(EMPTY);
@@ -564,13 +571,24 @@ export function MentorForm({ onExit }: { onExit: () => void }) {
                 }}
               />
             </Field>
+          ) : STREAMS_WITH_COLLEGE_DATA.has(form.stream) ? (
+            <Field label="College / university">
+              <CollegeSearch
+                gold
+                value={form.collegeName}
+                stream={form.stream}
+                onPick={(name, id) => {
+                  set("collegeName", name);
+                  set("universityId", id ?? "");
+                }}
+              />
+            </Field>
           ) : (
-            // No seeded college data exists yet for any non-Medical
-            // stream (Dental/Engineering/etc — to be uploaded later, per
-            // the user), so this is a plain free-text field with no
-            // dropdown/autocomplete list, rather than CollegeSearch
-            // (which queries GET /universities with no stream filter and
-            // would otherwise surface irrelevant Medical colleges here).
+            // No seeded college data exists yet for this stream (to be
+            // uploaded later, per the user), so this is a plain free-text
+            // field with no dropdown/autocomplete list, rather than
+            // CollegeSearch (which without a stream filter would surface
+            // irrelevant colleges from whichever stream does have data).
             <Field label="College / university">
               <TextInput
                 gold

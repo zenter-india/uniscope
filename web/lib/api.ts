@@ -56,10 +56,11 @@ export interface University {
  * default (no-query) page at 50 rows, which for a college count in the
  * hundreds only ever shows the alphabetically-first handful (e.g. never
  * anything past "An…"); see UniversitiesService.findAll's doc comment. */
-export function searchUniversities(query: string, level?: string): Promise<{ data: University[] }> {
+export function searchUniversities(query: string, level?: string, stream?: string): Promise<{ data: University[] }> {
   const params = new URLSearchParams({ browse: "true" });
   if (query.trim()) params.set("search", query.trim());
   if (level) params.set("level", level);
+  if (stream) params.set("stream", stream);
   return request(`/universities?${params.toString()}`);
 }
 
