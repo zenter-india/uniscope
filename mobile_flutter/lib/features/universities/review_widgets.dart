@@ -4,7 +4,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/network/university_reviews_api.dart';
 import '../../core/theme/app_theme.dart';
 import '../../widgets/app_widgets.dart';
-import '../auth/auth_background.dart' show authBrandBlue;
 import '../profile/profile_options.dart';
 
 /// Tags that read as a downside — colored like a caution, not a highlight,
@@ -192,7 +191,7 @@ class ReviewCard extends StatelessWidget {
             children: [
               StatusChip(
                 label: review.authorIsMentor ? 'Mentor' : 'Student',
-                color: review.authorIsMentor ? authBrandBlue : AppColors.primary,
+                color: review.authorIsMentor ? AppColors.accent : AppColors.primary,
               ),
               const Spacer(),
               Row(

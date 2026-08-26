@@ -2,11 +2,10 @@ import 'package:flutter/material.dart';
 
 import '../../core/theme/app_theme.dart';
 
-// Named aliases kept because the pre-auth screens read more clearly with
-// them, but they now resolve to the shared brand tokens — there is exactly
-// one teal and one blue in the app, defined in AppColors.
+// Named alias kept because the pre-auth screens read more clearly with it,
+// but it resolves to the shared brand token — there is exactly one teal in
+// the app, defined in AppColors.
 const authBrandTeal = AppColors.primary;
-const authBrandBlue = AppColors.brandBlue;
 const authBrandNavy = Color(0xFF0F2A3E);
 
 /// Soft decorative backdrop shared by the pre-auth screens (Login, OTP) —

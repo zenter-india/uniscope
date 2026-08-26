@@ -8,13 +8,52 @@ import '../../core/network/wallet_api.dart';
 import '../../core/theme/app_theme.dart';
 import '../../state/auth_controller.dart';
 import '../../widgets/app_widgets.dart';
+import 'cancel_deflection_sheet.dart';
 
 final sessionsListProvider = FutureProvider.autoDispose<List<Session>>(
   (ref) => ref.watch(sessionsApiProvider).list(),
 );
 
-final hasReviewedProvider =
-    FutureProvider.autoDispose.family<bool, String>(
+bool _isActiveStatus(SessionStatus status) =>
+    status == SessionStatus.pending ||
+    status == SessionStatus.accepted ||
+    status == SessionStatus.ringing ||
+    status == SessionStatus.inProgress;
+
+/// Groups currently-actionable sessions (pending/accepted/ringing/in
+/// progress) with the same counterpart into a single list entry, so a
+/// mentor with both an open chat and an open call request from the same
+/// person shows as one card with two action rows instead of two separate
+/// cards. Completed/cancelled/rejected/expired sessions are left as their
+/// own single-item entries — they're a record of a past event, not a
+/// current state to merge.
+List<List<Session>> _groupActiveSessions(
+  List<Session> sessions,
+  String? myUserId,
+) {
+  final result = <List<Session>>[];
+  final activeGroupIndex = <String, int>{};
+
+  for (final session in sessions) {
+    if (!_isActiveStatus(session.status)) {
+      result.add([session]);
+      continue;
+    }
+    final counterpartId = session.mentorId == myUserId
+        ? session.aspirantId
+        : session.mentorId;
+    final existingIndex = activeGroupIndex[counterpartId];
+    if (existingIndex != null) {
+      result[existingIndex].add(session);
+    } else {
+      activeGroupIndex[counterpartId] = result.length;
+      result.add([session]);
+    }
+  }
+  return result;
+}
+
+final hasReviewedProvider = FutureProvider.autoDispose.family<bool, String>(
   (ref, sessionId) => ref.watch(reviewsApiProvider).hasReviewed(sessionId),
 );
 
@@ -28,7 +67,8 @@ class SessionListScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final sessionsAsync = ref.watch(sessionsListProvider);
     final myUserId = ref.watch(authControllerProvider).user?.id;
-    final isMentorAccount = ref.watch(authControllerProvider).user?.role == UserRole.mentor;
+    final isMentorAccount =
+        ref.watch(authControllerProvider).user?.role == UserRole.mentor;
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -82,13 +122,31 @@ class SessionListScreen extends ConsumerWidget {
                                   ),
                           ],
                         )
-                      : ListView.builder(
-                          padding: const EdgeInsets.all(AppSpacing.md),
-                          itemCount: sessions.length,
-                          itemBuilder: (_, i) => _SessionCard(
-                            session: sessions[i],
-                            isMentor: sessions[i].mentorId == myUserId,
-                          ),
+                      : Builder(
+                          builder: (context) {
+                            final groups = _groupActiveSessions(
+                              sessions,
+                              myUserId,
+                            );
+                            return ListView.builder(
+                              padding: const EdgeInsets.all(AppSpacing.md),
+                              itemCount: groups.length,
+                              itemBuilder: (_, i) {
+                                final group = groups[i];
+                                final isMentor =
+                                    group.first.mentorId == myUserId;
+                                return group.length > 1
+                                    ? _MergedSessionCard(
+                                        sessions: group,
+                                        isMentor: isMentor,
+                                      )
+                                    : _SessionCard(
+                                        session: group.first,
+                                        isMentor: isMentor,
+                                      );
+                              },
+                            );
+                          },
                         ),
                 ),
               ),
@@ -108,12 +166,18 @@ class _SupportChatEntry extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(
-          AppSpacing.md, AppSpacing.sm, AppSpacing.md, 0),
+        AppSpacing.md,
+        AppSpacing.sm,
+        AppSpacing.md,
+        0,
+      ),
       child: AppCard(
         onTap: onTap,
         gradient: AppGradients.brand,
         padding: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.md, vertical: 14),
+          horizontal: AppSpacing.md,
+          vertical: 14,
+        ),
         child: Row(
           children: [
             Container(
@@ -123,8 +187,11 @@ class _SupportChatEntry extends StatelessWidget {
                 color: Colors.white.withValues(alpha: 0.16),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(Icons.support_agent_rounded,
-                  color: Colors.white, size: 19),
+              child: const Icon(
+                Icons.support_agent_rounded,
+                color: Colors.white,
+                size: 19,
+              ),
             ),
             const SizedBox(width: AppSpacing.sm),
             const Expanded(
@@ -137,8 +204,11 @@ class _SupportChatEntry extends StatelessWidget {
                 ),
               ),
             ),
-            const Icon(Icons.chevron_right_rounded,
-                color: Colors.white70, size: 22),
+            const Icon(
+              Icons.chevron_right_rounded,
+              color: Colors.white70,
+              size: 22,
+            ),
           ],
         ),
       ),
@@ -146,16 +216,133 @@ class _SupportChatEntry extends StatelessWidget {
   }
 }
 
-class _SessionCard extends ConsumerStatefulWidget {
+/// A single actionable/completed session, shown as its own card.
+class _SessionCard extends StatelessWidget {
   const _SessionCard({required this.session, required this.isMentor});
   final Session session;
   final bool isMentor;
 
   @override
-  ConsumerState<_SessionCard> createState() => _SessionCardState();
+  Widget build(BuildContext context) {
+    return AppCard(
+      margin: const EdgeInsets.only(bottom: AppSpacing.sm),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _SessionHeader(session: session, isMentor: isMentor),
+          const SizedBox(height: AppSpacing.md),
+          _SessionActions(session: session, isMentor: isMentor),
+        ],
+      ),
+    );
+  }
 }
 
-class _SessionCardState extends ConsumerState<_SessionCard> {
+/// A mentor with both an open chat and an open call request from the same
+/// person — one card, avatar/name and every action (Join Call, Open Chat,
+/// Accept/Reject/Cancel) all on the single header row.
+class _MergedSessionCard extends StatelessWidget {
+  const _MergedSessionCard({required this.sessions, required this.isMentor});
+  final List<Session> sessions;
+  final bool isMentor;
+
+  @override
+  Widget build(BuildContext context) {
+    final first = sessions.first;
+    return AppCard(
+      margin: const EdgeInsets.only(bottom: AppSpacing.sm),
+      child: Row(
+        children: [
+          AppAvatar(
+            name: isMentor ? first.aspirantName : first.mentorName,
+            avatarUrl: isMentor
+                ? first.aspirantAvatarUrl
+                : first.mentorAvatarUrl,
+            size: 40,
+          ),
+          const SizedBox(width: AppSpacing.sm),
+          Expanded(
+            child: Text(
+              isMentor ? first.aspirantName : first.mentorName,
+              style: const TextStyle(
+                fontWeight: AppFont.bold,
+                fontSize: AppFont.md,
+              ),
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+          for (final session in sessions) ...[
+            const SizedBox(width: AppSpacing.xs),
+            _SessionActions(
+              session: session,
+              isMentor: isMentor,
+              dense: true,
+              showLabel: false,
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _SessionHeader extends StatelessWidget {
+  const _SessionHeader({required this.session, required this.isMentor});
+  final Session session;
+  final bool isMentor;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        AppAvatar(
+          name: isMentor ? session.aspirantName : session.mentorName,
+          avatarUrl: isMentor
+              ? session.aspirantAvatarUrl
+              : session.mentorAvatarUrl,
+          size: 40,
+        ),
+        const SizedBox(width: AppSpacing.sm),
+        Expanded(
+          child: Text(
+            isMentor ? session.aspirantName : session.mentorName,
+            style: const TextStyle(
+              fontWeight: AppFont.bold,
+              fontSize: AppFont.md,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// Type label, status chip, action buttons, and review prompt for one
+/// session — reused standalone (_SessionCard) and stacked (_MergedSessionCard).
+class _SessionActions extends ConsumerStatefulWidget {
+  const _SessionActions({
+    required this.session,
+    required this.isMentor,
+    this.dense = false,
+    this.showLabel = true,
+  });
+  final Session session;
+  final bool isMentor;
+
+  /// Compact layout used inside a merged card: small icon-only buttons for
+  /// Open Chat / Join Call instead of full-width labelled pills, so two
+  /// stacked sessions don't blow up the card's height.
+  final bool dense;
+
+  /// False when the type/status row is shown elsewhere (e.g. inline in the
+  /// card header next to the name) — renders just the action controls.
+  final bool showLabel;
+
+  @override
+  ConsumerState<_SessionActions> createState() => _SessionActionsState();
+}
+
+class _SessionActionsState extends ConsumerState<_SessionActions> {
   bool _busy = false;
 
   Future<void> _act(Future<Session> Function(String) action) async {
@@ -165,8 +352,30 @@ class _SessionCardState extends ConsumerState<_SessionCard> {
       ref.invalidate(sessionsListProvider);
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text('Failed: $e')));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Failed: $e')));
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  Future<void> _cancelWithDeflection(SessionsApi api) async {
+    setState(() => _busy = true);
+    try {
+      await api.cancel(widget.session.id);
+      ref.invalidate(sessionsListProvider);
+      if (!mounted) return;
+      await showCancelDeflectionSheet(
+        context,
+        ref,
+        excludeMentorId: widget.session.mentorId,
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Failed: $e')));
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -200,8 +409,9 @@ class _SessionCardState extends ConsumerState<_SessionCard> {
     } catch (e) {
       debugPrint('[session] accept FAILED sessionId=${widget.session.id} — $e');
       if (!mounted) return;
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text('Failed: $e')));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Failed: $e')));
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -226,131 +436,307 @@ class _SessionCardState extends ConsumerState<_SessionCard> {
     }
   }
 
+  // Sentence-case, plain-language status instead of the raw wire enum
+  // (e.g. "PENDING") — a status code isn't self-explanatory at a glance.
+  String _statusLabel(SessionStatus status) {
+    switch (status) {
+      case SessionStatus.pending:
+        return 'Pending';
+      case SessionStatus.accepted:
+        return 'Accepted';
+      case SessionStatus.ringing:
+        return 'Connecting';
+      case SessionStatus.inProgress:
+        return 'In call';
+      case SessionStatus.completed:
+        return 'Completed';
+      case SessionStatus.rejected:
+        return 'Declined';
+      case SessionStatus.cancelled:
+        return 'Cancelled';
+      case SessionStatus.expired:
+        return 'Expired';
+      case SessionStatus.failed:
+        return 'Failed';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final session = widget.session;
     final api = ref.read(sessionsApiProvider);
     final isCall = session.type == 'AUDIO_CALL';
-    final canOpenChat = session.type == 'CHAT' &&
+    final canOpenChat =
+        session.type == 'CHAT' &&
         (session.status == SessionStatus.accepted ||
             session.status == SessionStatus.inProgress ||
             session.status == SessionStatus.completed);
-    final canJoinCall = isCall &&
+    final canJoinCall =
+        isCall &&
         (session.status == SessionStatus.accepted ||
             session.status == SessionStatus.ringing ||
             session.status == SessionStatus.inProgress);
     final canReview =
         !widget.isMentor && session.status == SessionStatus.completed;
 
-    return AppCard(
-      margin: const EdgeInsets.only(bottom: AppSpacing.sm),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (widget.showLabel) ...[
           Row(
             children: [
-              AppAvatar(
-                name: widget.isMentor ? session.aspirantName : session.mentorName,
-                avatarUrl: widget.isMentor
-                    ? session.aspirantAvatarUrl
-                    : session.mentorAvatarUrl,
-                size: 40,
+              Expanded(
+                child: Text(
+                  isCall && session.callSlotMinutes != null
+                      ? 'Audio call · ${uniminutesLabel(slotUniminutes(session.callSlotMinutes!))}'
+                      : 'Chat',
+                  style: const TextStyle(
+                    fontSize: AppFont.xs,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+              ),
+              // Chat has no approval gate — anyone can message anyone for
+              // free, so a PENDING/ACCEPTED chip on a chat row is just
+              // noise. Only calls have a real status worth surfacing.
+              if (isCall)
+                StatusChip(
+                  label: _statusLabel(session.status),
+                  color: _statusColor(session.status),
+                ),
+            ],
+          ),
+          SizedBox(height: widget.dense ? AppSpacing.xs : AppSpacing.sm),
+        ],
+        Row(
+          mainAxisSize: widget.showLabel ? MainAxisSize.max : MainAxisSize.min,
+          mainAxisAlignment: widget.dense
+              ? MainAxisAlignment.end
+              : MainAxisAlignment.start,
+          children: [
+            if (widget.isMentor && session.status == SessionStatus.pending) ...[
+              _ActionButton(
+                label: 'Reject',
+                outlined: true,
+                dense: widget.dense,
+                onPressed: _busy ? null : () => _act(api.reject),
               ),
               const SizedBox(width: AppSpacing.sm),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      widget.isMentor ? session.aspirantName : session.mentorName,
-                      style: const TextStyle(
-                          fontWeight: AppFont.bold, fontSize: AppFont.md),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      isCall && session.callSlotMinutes != null
-                          ? 'Audio call · ${uniminutesLabel(slotUniminutes(session.callSlotMinutes!))}'
-                          : 'Chat',
-                      style: const TextStyle(
-                          fontSize: AppFont.xs,
-                          color: AppColors.textSecondary),
-                    ),
-                  ],
-                ),
+              _ActionButton(
+                label: 'Accept',
+                dense: widget.dense,
+                busy: _busy,
+                onPressed: _busy ? null : () => _acceptAndMaybeJoin(api),
               ),
-              StatusChip(
-                label: session.status.wire,
-                color: _statusColor(session.status),
-              ),
+            ] else if (!widget.isMentor &&
+                // Only AUDIO_CALL still has a "withdraw my request" phase —
+                // CHAT sessions open immediately and skip PENDING/ACCEPTED
+                // entirely, so there's never an outstanding chat request to
+                // cancel.
+                isCall &&
+                (session.status == SessionStatus.pending ||
+                    session.status == SessionStatus.accepted)) ...[
+              widget.dense
+                  ? _TappableStatusChip(
+                      label: _statusLabel(session.status),
+                      color: _statusColor(session.status),
+                      onTap: _busy ? null : () => _cancelWithDeflection(api),
+                    )
+                  : _ActionButton(
+                      label: 'Cancel',
+                      outlined: true,
+                      onPressed: _busy
+                          ? null
+                          : () => _cancelWithDeflection(api),
+                    ),
             ],
-          ),
-          const SizedBox(height: AppSpacing.md),
-          Row(
-            children: [
-              if (widget.isMentor &&
-                  session.status == SessionStatus.pending) ...[
-                Expanded(
-                  child: OutlinedButton(
-                    onPressed: _busy ? null : () => _act(api.reject),
-                    child: const Text('Reject'),
-                  ),
-                ),
-                const SizedBox(width: AppSpacing.sm),
-                Expanded(
-                  child: FilledButton(
-                    onPressed: _busy ? null : () => _acceptAndMaybeJoin(api),
-                    child: _busy
-                        ? const SizedBox(
-                            width: 16,
-                            height: 16,
-                            child: CircularProgressIndicator(
-                                strokeWidth: 2, color: Colors.white),
-                          )
-                        : const Text('Accept'),
-                  ),
-                ),
-              ] else if (!widget.isMentor &&
-                  // Only AUDIO_CALL still has a "withdraw my request" phase —
-                  // CHAT sessions open immediately and skip PENDING/ACCEPTED
-                  // entirely, so there's never an outstanding chat request to
-                  // cancel.
-                  isCall &&
-                  (session.status == SessionStatus.pending ||
-                      session.status == SessionStatus.accepted)) ...[
-                Expanded(
-                  child: OutlinedButton(
-                    onPressed: _busy ? null : () => _act(api.cancel),
-                    child: const Text('Cancel'),
-                  ),
-                ),
-              ],
-              if (canOpenChat) ...[
-                const SizedBox(width: AppSpacing.sm),
-                Expanded(
-                  child: FilledButton.icon(
-                    onPressed: () => context
-                        .push('/chats/room', extra: {'sessionId': session.id}),
-                    icon: const Icon(Icons.forum_rounded, size: 17),
-                    label: const Text('Open Chat'),
-                  ),
-                ),
-              ],
-              if (canJoinCall) ...[
-                const SizedBox(width: AppSpacing.sm),
-                Expanded(
-                  child: FilledButton.icon(
-                    style:
-                        FilledButton.styleFrom(backgroundColor: AppColors.primary),
-                    onPressed: () => context.push('/call/${session.id}'),
-                    icon: const Icon(Icons.call_rounded, size: 17),
-                    label: const Text('Join Call'),
-                  ),
-                ),
-              ],
+            if (canOpenChat) ...[
+              const SizedBox(width: AppSpacing.sm),
+              widget.dense
+                  ? _CompactIconAction(
+                      icon: Icons.forum_rounded,
+                      tooltip: 'Open Chat',
+                      onPressed: () => context.push(
+                        '/chats/room',
+                        extra: {'sessionId': session.id},
+                      ),
+                    )
+                  : Expanded(
+                      child: FilledButton.icon(
+                        onPressed: () => context.push(
+                          '/chats/room',
+                          extra: {'sessionId': session.id},
+                        ),
+                        icon: const Icon(Icons.forum_rounded, size: 17),
+                        label: const Text('Open Chat'),
+                      ),
+                    ),
             ],
+            if (canJoinCall) ...[
+              const SizedBox(width: AppSpacing.sm),
+              widget.dense
+                  ? _CompactIconAction(
+                      icon: Icons.call_rounded,
+                      tooltip: 'Join Call',
+                      onPressed: () => context.push('/call/${session.id}'),
+                    )
+                  : Expanded(
+                      child: FilledButton.icon(
+                        style: FilledButton.styleFrom(
+                          backgroundColor: AppColors.primary,
+                        ),
+                        onPressed: () => context.push('/call/${session.id}'),
+                        icon: const Icon(Icons.call_rounded, size: 17),
+                        label: const Text('Join Call'),
+                      ),
+                    ),
+            ],
+          ],
+        ),
+        if (canReview) _ReviewPrompt(session: session),
+      ],
+    );
+  }
+}
+
+/// Reject/Accept/Cancel — full-width when standalone, content-sized when
+/// [dense] (stacked inside a merged card).
+class _ActionButton extends StatelessWidget {
+  const _ActionButton({
+    required this.label,
+    required this.onPressed,
+    this.outlined = false,
+    this.dense = false,
+    this.busy = false,
+  });
+
+  final String label;
+  final VoidCallback? onPressed;
+  final bool outlined;
+  final bool dense;
+  final bool busy;
+
+  static final _denseOutlinedStyle = OutlinedButton.styleFrom(
+    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+    minimumSize: Size.zero,
+    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+    textStyle: const TextStyle(
+      fontSize: AppFont.xs,
+      fontWeight: AppFont.semibold,
+    ),
+  );
+
+  static final _denseFilledStyle = FilledButton.styleFrom(
+    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+    minimumSize: Size.zero,
+    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+    textStyle: const TextStyle(fontSize: AppFont.xs, fontWeight: AppFont.bold),
+  );
+
+  @override
+  Widget build(BuildContext context) {
+    final child = busy
+        ? const SizedBox(
+            width: 14,
+            height: 14,
+            child: CircularProgressIndicator(
+              strokeWidth: 2,
+              color: Colors.white,
+            ),
+          )
+        : Text(label);
+
+    final button = outlined
+        ? OutlinedButton(
+            onPressed: onPressed,
+            style: dense ? _denseOutlinedStyle : null,
+            child: child,
+          )
+        : FilledButton(
+            onPressed: onPressed,
+            style: dense ? _denseFilledStyle : null,
+            child: child,
+          );
+
+    return dense ? button : Expanded(child: button);
+  }
+}
+
+/// Icon-only round button used for Open Chat / Join Call inside a merged
+/// card, instead of a full-width labelled pill.
+class _CompactIconAction extends StatelessWidget {
+  const _CompactIconAction({
+    required this.icon,
+    required this.onPressed,
+    this.tooltip,
+  });
+
+  final IconData icon;
+  final VoidCallback onPressed;
+  final String? tooltip;
+
+  @override
+  Widget build(BuildContext context) {
+    final button = Material(
+      color: AppColors.primary,
+      shape: const CircleBorder(),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onPressed,
+        child: Padding(
+          padding: const EdgeInsets.all(8),
+          child: Icon(icon, size: 17, color: Colors.white),
+        ),
+      ),
+    );
+    return tooltip != null ? Tooltip(message: tooltip!, child: button) : button;
+  }
+}
+
+/// A call's status (PENDING/ACCEPTED/…), doubling as the cancel control in
+/// the merged card — tapping it withdraws the request, so a separate
+/// "Cancel" button isn't needed alongside it.
+class _TappableStatusChip extends StatelessWidget {
+  const _TappableStatusChip({
+    required this.label,
+    required this.color,
+    required this.onTap,
+  });
+
+  final String label;
+  final Color color;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Tooltip(
+      message: 'Tap to cancel',
+      child: Material(
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(AppRadius.full),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(AppRadius.full),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: AppFont.bold,
+                    letterSpacing: 0.3,
+                    color: color,
+                  ),
+                ),
+                const SizedBox(width: 3),
+                Icon(Icons.close_rounded, size: 12, color: color),
+              ],
+            ),
           ),
-          if (canReview) _ReviewPrompt(session: session),
-        ],
+        ),
       ),
     );
   }
@@ -388,10 +774,19 @@ class _ReviewPrompt extends ConsumerWidget {
             padding: EdgeInsets.only(top: AppSpacing.sm),
             child: Row(
               children: [
-                Icon(Icons.check_circle_rounded, size: 15, color: AppColors.primary),
+                Icon(
+                  Icons.check_circle_rounded,
+                  size: 15,
+                  color: AppColors.primary,
+                ),
                 SizedBox(width: 4),
-                Text('You reviewed this session',
-                    style: TextStyle(fontSize: AppFont.xs, color: AppColors.textSecondary)),
+                Text(
+                  'You reviewed this session',
+                  style: TextStyle(
+                    fontSize: AppFont.xs,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
               ],
             ),
           );
@@ -434,7 +829,9 @@ class _RateMentorSheetState extends ConsumerState<_RateMentorSheet> {
   Future<void> _submit() async {
     setState(() => _submitting = true);
     try {
-      await ref.read(reviewsApiProvider).create(
+      await ref
+          .read(reviewsApiProvider)
+          .create(
             sessionId: widget.sessionId,
             rating: _rating,
             comment: _commentController.text.trim(),
@@ -443,8 +840,9 @@ class _RateMentorSheetState extends ConsumerState<_RateMentorSheet> {
       Navigator.of(context).pop(true);
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text('Could not submit review: $e')));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Could not submit review: $e')));
       setState(() => _submitting = false);
     }
   }
@@ -462,8 +860,13 @@ class _RateMentorSheetState extends ConsumerState<_RateMentorSheet> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Rate your mentor',
-              style: TextStyle(fontSize: AppFont.lg, fontWeight: AppFont.extraBold)),
+          const Text(
+            'Rate your mentor',
+            style: TextStyle(
+              fontSize: AppFont.lg,
+              fontWeight: AppFont.extraBold,
+            ),
+          ),
           const SizedBox(height: AppSpacing.lg),
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -472,7 +875,9 @@ class _RateMentorSheetState extends ConsumerState<_RateMentorSheet> {
               return IconButton(
                 onPressed: () => setState(() => _rating = starIndex),
                 icon: Icon(
-                  starIndex <= _rating ? Icons.star_rounded : Icons.star_outline_rounded,
+                  starIndex <= _rating
+                      ? Icons.star_rounded
+                      : Icons.star_outline_rounded,
                   color: AppColors.warning,
                   size: 34,
                 ),
@@ -497,7 +902,10 @@ class _RateMentorSheetState extends ConsumerState<_RateMentorSheet> {
                   ? const SizedBox(
                       width: 18,
                       height: 18,
-                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
                     )
                   : const Text('Submit Review'),
             ),

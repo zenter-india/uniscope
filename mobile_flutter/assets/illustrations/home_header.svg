@@ -1,0 +1,72 @@
+<svg width="320" height="220" viewBox="0 0 320 220" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="columnGrad" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#EAF6F5"/>
+      <stop offset="0.5" stop-color="#C7DEE3"/>
+      <stop offset="1" stop-color="#9FC2C9"/>
+    </linearGradient>
+    <linearGradient id="roofGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#1B2E38"/>
+      <stop offset="1" stop-color="#0F1D17"/>
+    </linearGradient>
+    <linearGradient id="baseGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#22343D"/>
+      <stop offset="1" stop-color="#0F1D17"/>
+    </linearGradient>
+    <radialGradient id="treeGrad" cx="0.35" cy="0.3" r="0.8">
+      <stop offset="0" stop-color="#3FBFA8"/>
+      <stop offset="1" stop-color="#0C8C77"/>
+    </radialGradient>
+  </defs>
+
+  <!-- Clouds -->
+  <ellipse cx="56" cy="38" rx="34" ry="14" fill="#FFFFFF" fill-opacity="0.75"/>
+  <ellipse cx="86" cy="32" rx="24" ry="12" fill="#FFFFFF" fill-opacity="0.75"/>
+  <ellipse cx="232" cy="18" rx="26" ry="11" fill="#FFFFFF" fill-opacity="0.6"/>
+  <ellipse cx="257" cy="24" rx="18" ry="9" fill="#FFFFFF" fill-opacity="0.6"/>
+
+  <!-- Birds -->
+  <path d="M118 52 q7 -8 14 0 q7 -8 14 0" stroke="#0F1D17" stroke-width="2.4" stroke-linecap="round" fill="none" opacity="0.5"/>
+  <path d="M173 72 q6 -7 12 0 q6 -7 12 0" stroke="#0F1D17" stroke-width="2.2" stroke-linecap="round" fill="none" opacity="0.4"/>
+
+  <!-- Tree (soft radial shading for depth instead of flat fills) -->
+  <rect x="266" y="122" width="9" height="48" rx="2" fill="#6B4F3A"/>
+  <circle cx="270" cy="104" r="30" fill="url(#treeGrad)"/>
+  <circle cx="247" cy="120" r="19" fill="url(#treeGrad)" fill-opacity="0.9"/>
+  <circle cx="293" cy="120" r="17" fill="url(#treeGrad)" fill-opacity="0.9"/>
+
+  <!-- Ground shadow under the building -->
+  <ellipse cx="160" cy="182" rx="102" ry="7" fill="#0F1D17" fill-opacity="0.08"/>
+
+  <!-- Base steps -->
+  <rect x="66" y="162" width="188" height="9" rx="2" fill="url(#baseGrad)"/>
+  <rect x="56" y="171" width="208" height="8" rx="2" fill="url(#baseGrad)"/>
+
+  <!-- Columns, alternating light/shadow faces for a hint of dimension -->
+  <rect x="84" y="94" width="15" height="68" fill="url(#columnGrad)"/>
+  <rect x="117" y="94" width="15" height="68" fill="url(#columnGrad)"/>
+  <rect x="150" y="94" width="15" height="68" fill="url(#columnGrad)"/>
+  <rect x="183" y="94" width="15" height="68" fill="url(#columnGrad)"/>
+  <rect x="216" y="94" width="15" height="68" fill="url(#columnGrad)"/>
+  <rect x="84" y="94" width="5" height="68" fill="#FFFFFF" fill-opacity="0.35"/>
+  <rect x="117" y="94" width="5" height="68" fill="#FFFFFF" fill-opacity="0.35"/>
+  <rect x="150" y="94" width="5" height="68" fill="#FFFFFF" fill-opacity="0.35"/>
+  <rect x="183" y="94" width="5" height="68" fill="#FFFFFF" fill-opacity="0.35"/>
+  <rect x="216" y="94" width="5" height="68" fill="#FFFFFF" fill-opacity="0.35"/>
+
+  <!-- Entablature -->
+  <rect x="74" y="84" width="166" height="11" rx="2" fill="url(#roofGrad)"/>
+
+  <!-- Pediment (triangular roof) -->
+  <path d="M68 84 L160 36 L252 84 Z" fill="url(#roofGrad)"/>
+
+  <!-- Roof medallion -->
+  <circle cx="160" cy="64" r="9" fill="#FFFFFF" fill-opacity="0.92"/>
+  <circle cx="160" cy="64" r="4" fill="#12A9A3"/>
+
+  <!-- Side wing, slightly set back, to break up the silhouette -->
+  <rect x="24" y="140" width="44" height="31" fill="#22343D" fill-opacity="0.85"/>
+  <rect x="30" y="118" width="10" height="53" fill="url(#columnGrad)"/>
+  <rect x="46" y="118" width="10" height="53" fill="url(#columnGrad)"/>
+  <path d="M22 118 L46 96 L70 118 Z" fill="url(#roofGrad)" fill-opacity="0.9"/>
+</svg>

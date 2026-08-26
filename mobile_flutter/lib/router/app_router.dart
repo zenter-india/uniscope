@@ -13,6 +13,7 @@ import '../features/auth/splash_screen.dart';
 import '../features/auth/welcome_screen.dart';
 import '../features/calls/call_screen.dart';
 import '../features/common/placeholder_screen.dart';
+import '../features/common/web_page_screen.dart';
 import '../features/home/home_screen.dart';
 import '../features/home/mentor_home_screen.dart';
 import '../features/home/mentor_landing_screen.dart';
@@ -43,7 +44,7 @@ import '../state/auth_controller.dart';
 /// into '/call/:sessionId' when a "mentor accepted" push arrives.
 final rootNavigatorKey = GlobalKey<NavigatorState>();
 
-const _preAuthRoutes = {'/welcome', '/login', '/otp'};
+const _preAuthRoutes = {'/welcome', '/login', '/otp', '/legal'};
 
 // Role-selection through the role-specific wizard. While AuthState.
 // needsOnboarding is true, redirect keeps a user inside this set instead of
@@ -60,7 +61,7 @@ const _aspirantTabs = <TabItem>[
   TabItem('Home', Icons.home_outlined, Icons.home_rounded),
   TabItem('Discover', Icons.explore_outlined, Icons.explore_rounded),
   TabItem('Mentors', Icons.people_alt_outlined, Icons.people_alt_rounded),
-  TabItem('Messages', Icons.forum_outlined, Icons.forum_rounded),
+  TabItem('Sessions', Icons.forum_outlined, Icons.forum_rounded),
   TabItem('Profile', Icons.person_outline_rounded, Icons.person_rounded),
 ];
 
@@ -266,6 +267,16 @@ final routerProvider = Provider<GoRouter>((ref) {
           return OtpScreen(
             phone: args['phone'] as String? ?? '',
             serviceId: args['serviceId'] as String? ?? '',
+          );
+        },
+      ),
+      GoRoute(
+        path: '/legal',
+        builder: (_, state) {
+          final args = state.extra as Map<String, dynamic>? ?? const {};
+          return WebPageScreen(
+            title: args['title'] as String? ?? 'Uniscope',
+            url: args['url'] as String? ?? 'https://uniscope.in/privacy',
           );
         },
       ),

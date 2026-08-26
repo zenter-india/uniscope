@@ -10,7 +10,6 @@ import '../../widgets/app_widgets.dart';
 import '../profile/profile_options.dart';
 import 'review_summary_card.dart';
 
-const _typeFilters = ['All', 'GOVERNMENT', 'PRIVATE', 'DEEMED', 'CENTRAL'];
 // 'All' plus the same academic-field picklist mentors/aspirants use, so
 // Discover can narrow a mixed-stream list down to e.g. "just Engineering".
 const _streamFilters = ['All', ...kStreamOptions];
@@ -40,60 +39,19 @@ class CollegeStateFilterNotifier extends Notifier<bool> {
 
 final collegeStateFilterProvider =
     NotifierProvider<CollegeStateFilterNotifier, bool>(
-  CollegeStateFilterNotifier.new,
-);
-
-String _typeLabel(String type) {
-  switch (type) {
-    case 'GOVERNMENT':
-      return 'Government';
-    case 'PRIVATE':
-      return 'Private';
-    case 'DEEMED':
-      return 'Deemed';
-    case 'CENTRAL':
-      return 'Central';
-    default:
-      return type;
-  }
-}
-
-/// One distinct colour per UniversityType — previously GOVERNMENT/CENTRAL
-/// shared teal and PRIVATE/DEEMED shared blue, which visually erased the
-/// real distinction between (e.g.) a state government college and a
-/// central Institute of National Importance. All four pulled from the
-/// existing palette rather than new ad-hoc hex values:
-///   GOVERNMENT — success green (state-run, public)
-///   CENTRAL    — brand teal (national-importance institutes: AIIMS, BHU…)
-///   PRIVATE    — info blue
-///   DEEMED     — accent amber (quasi-autonomous; not currently populated
-///                by the NMC import — see colleges.json's README — but a
-///                real enum value admins can set by hand)
-Color _typeColor(String type) {
-  switch (type) {
-    case 'GOVERNMENT':
-      return AppColors.success;
-    case 'CENTRAL':
-      return AppColors.primary;
-    case 'PRIVATE':
-      return AppColors.info;
-    case 'DEEMED':
-      return AppColors.accent;
-    default:
-      return AppColors.textMuted;
-  }
-}
+      CollegeStateFilterNotifier.new,
+    );
 
 class UniversityListScreen extends ConsumerStatefulWidget {
   const UniversityListScreen({super.key});
 
   @override
-  ConsumerState<UniversityListScreen> createState() => _UniversityListScreenState();
+  ConsumerState<UniversityListScreen> createState() =>
+      _UniversityListScreenState();
 }
 
 class _UniversityListScreenState extends ConsumerState<UniversityListScreen> {
   String _query = '';
-  String _typeFilter = 'All';
   String _streamFilter = 'All';
   String _levelFilter = 'All';
   // null until the aspirant explicitly picks a state from the sheet —
@@ -102,7 +60,7 @@ class _UniversityListScreenState extends ConsumerState<UniversityListScreen> {
   // stay merged into one pill instead of fighting each other.
   String? _explicitStateFilter;
 
-  /// Bottom sheet used by both the Type and Stream pills — single-select
+  /// Bottom sheet used by the Stream/Degree/State pills — single-select
   /// list of the given options, closes itself on tap.
   Future<void> _pickOption({
     required String title,
@@ -121,7 +79,11 @@ class _UniversityListScreenState extends ConsumerState<UniversityListScreen> {
           children: [
             Padding(
               padding: const EdgeInsets.fromLTRB(
-                  AppSpacing.lg, 0, AppSpacing.lg, AppSpacing.sm),
+                AppSpacing.lg,
+                0,
+                AppSpacing.lg,
+                AppSpacing.sm,
+              ),
               child: Text(
                 title,
                 style: const TextStyle(
@@ -179,7 +141,9 @@ class _UniversityListScreenState extends ConsumerState<UniversityListScreen> {
           children: [
             Padding(
               padding: const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.md, vertical: AppSpacing.sm),
+                horizontal: AppSpacing.md,
+                vertical: AppSpacing.sm,
+              ),
               child: TextField(
                 onChanged: (t) => setState(() => _query = t),
                 decoration: const InputDecoration(
@@ -211,27 +175,13 @@ class _UniversityListScreenState extends ConsumerState<UniversityListScreen> {
                           // Picking anything here always wins from now on —
                           // clear the ambient toggle so it can't silently
                           // fight the explicit choice on the next rebuild.
-                          ref.read(collegeStateFilterProvider.notifier).set(false);
-                          setState(() => _explicitStateFilter = v == 'All' ? 'All' : v);
+                          ref
+                              .read(collegeStateFilterProvider.notifier)
+                              .set(false);
+                          setState(
+                            () => _explicitStateFilter = v == 'All' ? 'All' : v,
+                          );
                         },
-                      ),
-                    ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.only(right: AppSpacing.sm),
-                    child: _FilterPill(
-                      icon: Icons.account_balance_rounded,
-                      label: _typeFilter == 'All'
-                          ? 'Type'
-                          : _typeLabel(_typeFilter),
-                      active: _typeFilter != 'All',
-                      trailing: Icons.keyboard_arrow_down_rounded,
-                      onTap: () => _pickOption(
-                        title: 'College type',
-                        options: _typeFilters,
-                        optionLabel: _typeLabel,
-                        selected: _typeFilter,
-                        onSelected: (v) => setState(() => _typeFilter = v),
                       ),
                     ),
                   ),
@@ -279,7 +229,11 @@ class _UniversityListScreenState extends ConsumerState<UniversityListScreen> {
                 child: universitiesAsync.when(
                   loading: () => ListView(
                     padding: const EdgeInsets.all(AppSpacing.md),
-                    children: const [SkeletonCard(), SkeletonCard(), SkeletonCard()],
+                    children: const [
+                      SkeletonCard(),
+                      SkeletonCard(),
+                      SkeletonCard(),
+                    ],
                   ),
                   error: (err, _) => ListView(
                     children: [
@@ -288,24 +242,25 @@ class _UniversityListScreenState extends ConsumerState<UniversityListScreen> {
                         title: 'Could not load colleges',
                         message: 'Check your connection and pull to refresh.',
                         actionLabel: 'Retry',
-                        onAction: () => ref.invalidate(universitiesListProvider),
+                        onAction: () =>
+                            ref.invalidate(universitiesListProvider),
                       ),
                     ],
                   ),
                   data: (universities) {
                     final filtered = universities.where((u) {
-                      final matchesQuery =
-                          u.name.toLowerCase().contains(_query.toLowerCase());
-                      final matchesType =
-                          _typeFilter == 'All' || u.type == _typeFilter;
-                      final matchesStream = _streamFilter == 'All' ||
-                          u.stream == _streamFilter;
-                      final matchesState = effectiveState == null ||
+                      final matchesQuery = u.name.toLowerCase().contains(
+                        _query.toLowerCase(),
+                      );
+                      final matchesStream =
+                          _streamFilter == 'All' || u.stream == _streamFilter;
+                      final matchesState =
+                          effectiveState == null ||
                           u.state.toLowerCase() == effectiveState.toLowerCase();
-                      final matchesLevel = _levelFilter == 'All' ||
+                      final matchesLevel =
+                          _levelFilter == 'All' ||
                           u.levels.contains(_levelFilter);
                       return matchesQuery &&
-                          matchesType &&
                           matchesStream &&
                           matchesState &&
                           matchesLevel;
@@ -328,7 +283,11 @@ class _UniversityListScreenState extends ConsumerState<UniversityListScreen> {
 
                     return ListView.builder(
                       padding: const EdgeInsets.fromLTRB(
-                          AppSpacing.md, 0, AppSpacing.md, AppSpacing.xl),
+                        AppSpacing.md,
+                        0,
+                        AppSpacing.md,
+                        AppSpacing.xl,
+                      ),
                       itemCount: filtered.length,
                       itemBuilder: (_, i) => UniversityCard(
                         university: filtered[i],
@@ -353,7 +312,11 @@ class _UniversityListScreenState extends ConsumerState<UniversityListScreen> {
 }
 
 class UniversityCard extends ConsumerWidget {
-  const UniversityCard({super.key, required this.university, required this.onTap});
+  const UniversityCard({
+    super.key,
+    required this.university,
+    required this.onTap,
+  });
 
   final University university;
   final VoidCallback onTap;
@@ -400,7 +363,8 @@ class UniversityCard extends ConsumerWidget {
                       [
                         if (university.stream != null) university.stream!,
                         university.state,
-                        if (university.mbbsSeats != null) '${university.mbbsSeats} seats',
+                        if (university.mbbsSeats != null)
+                          '${university.mbbsSeats} seats',
                       ].join(' · '),
                       style: const TextStyle(
                         fontSize: AppFont.xs,
@@ -411,34 +375,40 @@ class UniversityCard extends ConsumerWidget {
                 ),
               ),
               const SizedBox(width: AppSpacing.xs),
-              StatusChip(
-                label: _typeLabel(university.type),
-                color: _typeColor(university.type),
-              ),
               _CollegeSaveButton(universityId: university.id),
             ],
           ),
-          const SizedBox(height: AppSpacing.md),
-          const Divider(height: 1, color: AppColors.border),
-          const SizedBox(height: AppSpacing.md),
-          // Its own tap target, nested inside the card's own (detail-screen)
-          // tap target — tapping the review summary goes straight to the
-          // full breakdown instead of the college's Overview tab.
-          Material(
-            color: Colors.transparent,
-            child: InkWell(
-              borderRadius: BorderRadius.circular(AppRadius.md),
-              onTap: () => context.push(
-                '/colleges/detail/reviews',
-                extra: {'universityId': university.id, 'universityName': university.name},
-              ),
-              child: ReviewSummaryBody(
-                universityId: university.id,
-                fallbackRating: university.rating,
-                fallbackReviewCount: university.reviewCount,
+          // A college with no reviews yet has nothing to show here — most
+          // viewers can't write one either (see ReviewSummaryBody), so an
+          // empty "No reviews yet" row on every unreviewed card in a list
+          // this long is just noise. It still appears once real reviews
+          // exist.
+          if (university.reviewCount > 0) ...[
+            const SizedBox(height: AppSpacing.md),
+            const Divider(height: 1, color: AppColors.border),
+            const SizedBox(height: AppSpacing.md),
+            // Its own tap target, nested inside the card's own (detail-screen)
+            // tap target — tapping the review summary goes straight to the
+            // full breakdown instead of the college's Overview tab.
+            Material(
+              color: Colors.transparent,
+              child: InkWell(
+                borderRadius: BorderRadius.circular(AppRadius.md),
+                onTap: () => context.push(
+                  '/colleges/detail/reviews',
+                  extra: {
+                    'universityId': university.id,
+                    'universityName': university.name,
+                  },
+                ),
+                child: ReviewSummaryBody(
+                  universityId: university.id,
+                  fallbackRating: university.rating,
+                  fallbackReviewCount: university.reviewCount,
+                ),
               ),
             ),
-          ),
+          ],
         ],
       ),
     );
@@ -495,7 +465,9 @@ class _FilterPill extends StatelessWidget {
         borderRadius: BorderRadius.circular(AppRadius.full),
         child: Container(
           padding: const EdgeInsets.symmetric(
-              horizontal: AppSpacing.sm, vertical: 6),
+            horizontal: AppSpacing.sm,
+            vertical: 6,
+          ),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(AppRadius.full),
             border: Border.all(
@@ -506,10 +478,11 @@ class _FilterPill extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               if (icon != null) ...[
-                Icon(icon,
-                    size: 14,
-                    color:
-                        active ? AppColors.textInverse : AppColors.primary),
+                Icon(
+                  icon,
+                  size: 14,
+                  color: active ? AppColors.textInverse : AppColors.primary,
+                ),
                 const SizedBox(width: 4),
               ],
               Text(
@@ -517,16 +490,18 @@ class _FilterPill extends StatelessWidget {
                 style: TextStyle(
                   fontSize: AppFont.sm,
                   fontWeight: AppFont.semibold,
-                  color: active ? AppColors.textInverse : AppColors.textSecondary,
+                  color: active
+                      ? AppColors.textInverse
+                      : AppColors.textSecondary,
                 ),
               ),
               if (trailing != null) ...[
                 const SizedBox(width: 2),
-                Icon(trailing,
-                    size: 16,
-                    color: active
-                        ? AppColors.textInverse
-                        : AppColors.textMuted),
+                Icon(
+                  trailing,
+                  size: 16,
+                  color: active ? AppColors.textInverse : AppColors.textMuted,
+                ),
               ],
             ],
           ),

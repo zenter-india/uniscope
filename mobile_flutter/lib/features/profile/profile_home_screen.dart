@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -239,9 +240,15 @@ class _MentorAvailabilityCardState
       ref.invalidate(myProfileProvider);
     } catch (e) {
       if (!mounted) return;
+      final message = e is DioException
+          ? ((e.response?.data as Map<String, dynamic>?)?['message']
+                    as String? ??
+                e.message ??
+                '$e')
+          : '$e';
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text('Could not update: $e')));
+      ).showSnackBar(SnackBar(content: Text(message)));
     } finally {
       if (mounted) setState(() => _saving = false);
     }
@@ -275,16 +282,22 @@ class _MentorAvailabilityCardState
                   height: 20,
                   child: CircularProgressIndicator(strokeWidth: 2),
                 )
-              else
+              else if (isVerified)
                 Switch(
                   value: isAvailable,
                   activeThumbColor: AppColors.primary,
-                  // Unverified mentors are still discoverable and
-                  // chat-reachable (see MentorsService) — verification only
-                  // gates this specific toggle, since paid calls are the
-                  // monetized surface. Disabled rather than left tappable
-                  // into a backend 400, matching UsersService.updateProfile.
-                  onChanged: isVerified ? _toggle : null,
+                  onChanged: _toggle,
+                )
+              else
+                // A disabled Switch swallows taps silently. Wrap it so an
+                // unverified mentor tapping it lands on the verification
+                // screen instead of hitting a dead control — matches
+                // UsersService.updateProfile's backend gate.
+                GestureDetector(
+                  onTap: () => context.go('/profile/verification'),
+                  child: AbsorbPointer(
+                    child: Switch(value: false, onChanged: (_) {}),
+                  ),
                 ),
             ],
           ),
@@ -294,13 +307,27 @@ class _MentorAvailabilityCardState
                 ? 'Students can always message you. This only controls whether '
                     'they can book a paid call. It switches itself off after 24 '
                     'hours so your profile never promises a call you forgot about.'
-                : 'Students can already find and message you. Complete identity '
-                    'verification to start accepting paid calls too.',
+                : 'Students can already find and message you. Verify your '
+                    'identity to start accepting paid calls and earning too.',
             style: const TextStyle(
               fontSize: AppFont.xs,
               color: AppColors.textSecondary,
             ),
           ),
+          if (!isVerified) ...[
+            const SizedBox(height: AppSpacing.xs),
+            GestureDetector(
+              onTap: () => context.go('/profile/verification'),
+              child: const Text(
+                'Verify Now',
+                style: TextStyle(
+                  fontSize: AppFont.xs,
+                  fontWeight: AppFont.bold,
+                  color: AppColors.primary,
+                ),
+              ),
+            ),
+          ],
         ],
       ),
     );

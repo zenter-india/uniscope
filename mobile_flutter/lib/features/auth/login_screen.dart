@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -18,6 +19,7 @@ class LoginScreen extends ConsumerStatefulWidget {
 
 class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _controller = TextEditingController();
+  late final TapGestureRecognizer _termsTapRecognizer;
   String _phone = '';
   bool _loading = false;
   String _error = '';
@@ -25,8 +27,22 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   bool get _isValid => _phone.replaceAll(RegExp(r'\D'), '').length == 10;
 
   @override
+  void initState() {
+    super.initState();
+    _termsTapRecognizer = TapGestureRecognizer()
+      ..onTap = () => context.push(
+            '/legal',
+            extra: {
+              'title': 'Terms & Privacy',
+              'url': 'https://uniscope.in/privacy',
+            },
+          );
+  }
+
+  @override
   void dispose() {
     _controller.dispose();
+    _termsTapRecognizer.dispose();
     super.dispose();
   }
 
@@ -163,6 +179,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                 decoration: const InputDecoration(
                                   counterText: '',
                                   border: InputBorder.none,
+                                  enabledBorder: InputBorder.none,
+                                  focusedBorder: InputBorder.none,
+                                  disabledBorder: InputBorder.none,
+                                  errorBorder: InputBorder.none,
+                                  focusedErrorBorder: InputBorder.none,
+                                  filled: false,
                                   contentPadding: EdgeInsets.symmetric(
                                       horizontal: AppSpacing.md,
                                       vertical: AppSpacing.md),
@@ -213,22 +235,23 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         ),
                       ),
                       const SizedBox(height: AppSpacing.lg),
-                      const Padding(
-                        padding: EdgeInsets.only(bottom: AppSpacing.lg),
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: AppSpacing.lg),
                         child: Text.rich(
                           TextSpan(
                             text: 'By continuing you agree to ',
-                            style: TextStyle(
+                            style: const TextStyle(
                               fontSize: AppFont.xs,
                               color: AppColors.textMuted,
                             ),
                             children: [
                               TextSpan(
                                 text: 'Terms & Privacy',
-                                style: TextStyle(
+                                style: const TextStyle(
                                   color: authBrandTeal,
                                   fontWeight: AppFont.semibold,
                                 ),
+                                recognizer: _termsTapRecognizer,
                               ),
                             ],
                           ),

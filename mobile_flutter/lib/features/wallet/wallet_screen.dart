@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:razorpay_flutter/razorpay_flutter.dart';
@@ -59,7 +60,9 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
   Future<void> _startTopup(int amountMinor) async {
     setState(() => _toppingUp = true);
     try {
-      final order = await ref.read(walletApiProvider).createTopupOrder(amountMinor);
+      final order = await ref
+          .read(walletApiProvider)
+          .createTopupOrder(amountMinor);
       _pendingOrderId = order.orderId;
 
       _razorpay.open({
@@ -75,14 +78,17 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
     } catch (e) {
       if (!mounted) return;
       setState(() => _toppingUp = false);
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text('Could not start top-up: $e')));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Could not start top-up: $e')));
     }
   }
 
   Future<void> _onPaymentSuccess(PaymentSuccessResponse response) async {
     try {
-      await ref.read(walletApiProvider).verifyTopup(
+      await ref
+          .read(walletApiProvider)
+          .verifyTopup(
             razorpayOrderId: response.orderId ?? _pendingOrderId ?? '',
             razorpayPaymentId: response.paymentId!,
             razorpaySignature: response.signature!,
@@ -90,12 +96,14 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
       ref.invalidate(walletBalanceProvider);
       ref.invalidate(walletLedgerProvider);
       if (!mounted) return;
-      ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text('Wallet topped up successfully')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Wallet topped up successfully')),
+      );
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text('Payment succeeded but crediting failed: $e')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Payment succeeded but crediting failed: $e')),
+      );
     } finally {
       if (mounted) setState(() => _toppingUp = false);
     }
@@ -142,12 +150,20 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
       ref.invalidate(walletLedgerProvider);
       ref.invalidate(mentorPayoutsProvider);
       if (!mounted) return;
-      ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text('Payout requested')));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Payout requested')));
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text('Could not request payout: $e')));
+      final message = e is DioException
+          ? ((e.response?.data as Map<String, dynamic>?)?['message']
+                    as String? ??
+                e.message ??
+                '$e')
+          : '$e';
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(message)));
     } finally {
       if (mounted) setState(() => _withdrawing = false);
     }
@@ -166,15 +182,21 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Top up wallet',
-                style: TextStyle(
-                    fontSize: AppFont.lg, fontWeight: AppFont.extraBold)),
+            const Text(
+              'Top up wallet',
+              style: TextStyle(
+                fontSize: AppFont.lg,
+                fontWeight: AppFont.extraBold,
+              ),
+            ),
             const SizedBox(height: AppSpacing.xs),
             const Text(
               'Uniminutes are your talk time — 1 Uniminute is 1 minute on a '
               'call. ₹250 gets you 20 Uniminutes.',
               style: TextStyle(
-                  fontSize: AppFont.xs, color: AppColors.textSecondary),
+                fontSize: AppFont.xs,
+                color: AppColors.textSecondary,
+              ),
             ),
             const SizedBox(height: AppSpacing.md),
             Row(
@@ -236,13 +258,19 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
                   children: [
                     Row(
                       children: [
-                        const Text('Balance',
-                            style: TextStyle(
-                                color: Colors.white70, fontSize: AppFont.sm)),
+                        const Text(
+                          'Balance',
+                          style: TextStyle(
+                            color: Colors.white70,
+                            fontSize: AppFont.sm,
+                          ),
+                        ),
                         const Spacer(),
-                        Icon(Icons.account_balance_wallet_rounded,
-                            color: Colors.white.withValues(alpha: 0.5),
-                            size: 20),
+                        Icon(
+                          Icons.account_balance_wallet_rounded,
+                          color: Colors.white.withValues(alpha: 0.5),
+                          size: 20,
+                        ),
                       ],
                     ),
                     const SizedBox(height: AppSpacing.xs),
@@ -251,13 +279,18 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
                         height: 28,
                         width: 28,
                         child: CircularProgressIndicator(
-                            strokeWidth: 2, color: Colors.white),
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
                       ),
-                      error: (e, _) => const Text('—',
-                          style: TextStyle(
-                              color: Colors.white,
-                              fontSize: AppFont.display,
-                              fontWeight: AppFont.extraBold)),
+                      error: (e, _) => const Text(
+                        '—',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: AppFont.display,
+                          fontWeight: AppFont.extraBold,
+                        ),
+                      ),
                       // Aspirants think in Uniminutes; only mentors, who
                       // withdraw to a real bank account, ever see rupees.
                       data: (wallet) => Row(
@@ -269,18 +302,20 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
                                 ? '₹${wallet.balanceRupees.toStringAsFixed(2)}'
                                 : '${wallet.balanceUniminutes}',
                             style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: AppFont.display,
-                                fontWeight: AppFont.extraBold),
+                              color: Colors.white,
+                              fontSize: AppFont.display,
+                              fontWeight: AppFont.extraBold,
+                            ),
                           ),
                           if (!isMentor) ...[
                             const SizedBox(width: 6),
                             const Text(
                               'Uniminutes',
                               style: TextStyle(
-                                  color: Colors.white70,
-                                  fontSize: AppFont.md,
-                                  fontWeight: AppFont.semibold),
+                                color: Colors.white70,
+                                fontSize: AppFont.md,
+                                fontWeight: AppFont.semibold,
+                              ),
                             ),
                           ],
                         ],
@@ -295,17 +330,21 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
                                 backgroundColor: Colors.white,
                                 foregroundColor: AppColors.primaryDark,
                               ),
-                              onPressed:
-                                  _withdrawing ? null : _requestWithdrawal,
+                              onPressed: _withdrawing
+                                  ? null
+                                  : _requestWithdrawal,
                               icon: _withdrawing
                                   ? const SizedBox(
                                       height: 18,
                                       width: 18,
                                       child: CircularProgressIndicator(
-                                          strokeWidth: 2))
+                                        strokeWidth: 2,
+                                      ),
+                                    )
                                   : const Icon(
                                       Icons.account_balance_rounded,
-                                      size: 20),
+                                      size: 20,
+                                    ),
                               label: const Text('Withdraw'),
                             )
                           : FilledButton.icon(
@@ -319,7 +358,9 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
                                       height: 18,
                                       width: 18,
                                       child: CircularProgressIndicator(
-                                          strokeWidth: 2))
+                                        strokeWidth: 2,
+                                      ),
+                                    )
                                   : const Icon(Icons.add_rounded, size: 20),
                               label: const Text('Top Up'),
                             ),
@@ -376,11 +417,11 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
                         ),
                       )
                     : Column(
-                        children:
-                            entries
-                                .map((e) =>
-                                    _LedgerRow(entry: e, asRupees: isMentor))
-                                .toList(),
+                        children: entries
+                            .map(
+                              (e) => _LedgerRow(entry: e, asRupees: isMentor),
+                            )
+                            .toList(),
                       ),
               ),
             ],
@@ -409,6 +450,8 @@ class _LedgerRow extends StatelessWidget {
         return 'Session earnings';
       case 'REFUND':
         return 'Refund';
+      case 'PAYOUT':
+        return 'Withdrawal';
       default:
         return entry.type;
     }
@@ -442,15 +485,13 @@ class _LedgerRow extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(_label,
-                    style: const TextStyle(
-                        fontWeight: AppFont.bold, fontSize: AppFont.sm)),
-                if (entry.note != null)
-                  Text(entry.note!,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                          fontSize: AppFont.xs,
-                          color: AppColors.textSecondary)),
+                Text(
+                  _label,
+                  style: const TextStyle(
+                    fontWeight: AppFont.bold,
+                    fontSize: AppFont.sm,
+                  ),
+                ),
               ],
             ),
           ),
@@ -458,7 +499,7 @@ class _LedgerRow extends StatelessWidget {
             asRupees
                 ? '${isCredit ? '+' : ''}₹${entry.amountRupees.toStringAsFixed(2)}'
                 : '${isCredit ? '+' : '-'}'
-                    '${uniminutesLabel(minorToUniminutes(entry.amountMinor.abs()))}',
+                      '${uniminutesLabel(minorToUniminutes(entry.amountMinor.abs()))}',
             style: TextStyle(
               fontWeight: AppFont.extraBold,
               fontSize: AppFont.sm,
@@ -504,13 +545,17 @@ class _PayoutRow extends StatelessWidget {
                 Text(
                   '₹${payout.amountRupees.toStringAsFixed(2)}',
                   style: const TextStyle(
-                      fontWeight: AppFont.extraBold, fontSize: AppFont.sm),
+                    fontWeight: AppFont.extraBold,
+                    fontSize: AppFont.sm,
+                  ),
                 ),
                 if (payout.bankReference != null)
                   Text(
                     'Ref: ${payout.bankReference}',
                     style: const TextStyle(
-                        fontSize: AppFont.xs, color: AppColors.textSecondary),
+                      fontSize: AppFont.xs,
+                      color: AppColors.textSecondary,
+                    ),
                   ),
               ],
             ),

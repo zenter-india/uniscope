@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/network/sessions_api.dart';
 import '../../core/network/wallet_api.dart';
 import '../../core/theme/app_theme.dart';
+import 'session_list_screen.dart' show sessionsListProvider;
 
 /// Opens the slot-picker sheet and requests an AUDIO_CALL with [mentorId]
 /// if the aspirant confirms. Cost is expressed in Uniminutes only —
@@ -29,14 +30,20 @@ Future<void> showCallRequestSheet(
 
   // TEMP DIAGNOSTIC — remove once real-device call testing is confirmed
   // working. mentorId is an opaque id, never PII.
-  debugPrint('[session] call requested mentorId=$mentorId slotMinutes=$slotMinutes');
+  debugPrint(
+    '[session] call requested mentorId=$mentorId slotMinutes=$slotMinutes',
+  );
   try {
-    final session = await ref.read(sessionsApiProvider).create(
-          mentorId,
-          SessionKind.audioCall,
-          slotMinutes: slotMinutes,
-        );
-    debugPrint('[session] call request created sessionId=${session.id} status=${session.status.wire}');
+    final session = await ref
+        .read(sessionsApiProvider)
+        .create(mentorId, SessionKind.audioCall, slotMinutes: slotMinutes);
+    debugPrint(
+      '[session] call request created sessionId=${session.id} status=${session.status.wire}',
+    );
+    // Without this, neither the persistent session dock nor the Sessions
+    // tab would show the new request until something else happened to
+    // refresh sessionsListProvider — defeating the dock's whole point.
+    ref.invalidate(sessionsListProvider);
     if (!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Call requested — check the Sessions tab')),
@@ -45,8 +52,9 @@ Future<void> showCallRequestSheet(
     debugPrint('[session] call request FAILED mentorId=$mentorId — $e');
     if (!context.mounted) return;
     final message = e is DioException ? (e.message ?? '$e') : '$e';
-    ScaffoldMessenger.of(context)
-        .showSnackBar(SnackBar(content: Text(message)));
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 }
 
@@ -92,11 +100,15 @@ class _CallRequestSheetState extends State<_CallRequestSheet> {
                 ? 'Request a call with ${widget.mentorName}'
                 : 'Request a call',
             style: const TextStyle(
-                fontSize: AppFont.lg, fontWeight: AppFont.extraBold),
+              fontSize: AppFont.lg,
+              fontWeight: AppFont.extraBold,
+            ),
           ),
           const SizedBox(height: AppSpacing.lg),
-          const Text('Choose a slot',
-              style: TextStyle(fontWeight: AppFont.bold, fontSize: AppFont.sm)),
+          const Text(
+            'Choose a slot',
+            style: TextStyle(fontWeight: AppFont.bold, fontSize: AppFont.sm),
+          ),
           const SizedBox(height: AppSpacing.sm),
           Row(
             children: kCallSlotMinutes.map((m) {
@@ -107,8 +119,9 @@ class _CallRequestSheetState extends State<_CallRequestSheet> {
                   child: OutlinedButton(
                     style: OutlinedButton.styleFrom(
                       backgroundColor: selected ? AppColors.primaryLight : null,
-                      foregroundColor:
-                          selected ? AppColors.primaryDark : AppColors.textPrimary,
+                      foregroundColor: selected
+                          ? AppColors.primaryDark
+                          : AppColors.textPrimary,
                       side: BorderSide(
                         color: selected ? AppColors.primary : AppColors.border,
                         width: 1.5,
@@ -125,7 +138,9 @@ class _CallRequestSheetState extends State<_CallRequestSheet> {
           Text(
             '${uniminutesLabel(cost)} are deducted once the call connects.',
             style: const TextStyle(
-                fontSize: AppFont.xs, color: AppColors.textSecondary),
+              fontSize: AppFont.xs,
+              color: AppColors.textSecondary,
+            ),
           ),
           const SizedBox(height: AppSpacing.lg),
           SizedBox(

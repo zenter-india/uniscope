@@ -24,13 +24,18 @@ class ReviewBreakdownScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final summaryAsync = ref.watch(universityReviewSummaryProvider(universityId));
+    final summaryAsync = ref.watch(
+      universityReviewSummaryProvider(universityId),
+    );
     final reviewsAsync = ref.watch(universityReviewsListProvider(universityId));
-    final hasReviewedAsync = ref.watch(hasReviewedUniversityProvider(universityId));
+    final hasReviewedAsync = ref.watch(
+      hasReviewedUniversityProvider(universityId),
+    );
     final myProfile = ref.watch(myProfileProvider).asData?.value;
     // A mentor's verification ties them to exactly one college — they can
     // only review that one, not any college they're merely browsing.
-    final canReview = myProfile?.role == UserRole.mentor &&
+    final canReview =
+        myProfile?.role == UserRole.mentor &&
         myProfile?.verificationStatus == 'VERIFIED' &&
         myProfile?.universityId == universityId;
 
@@ -40,7 +45,8 @@ class ReviewBreakdownScreen extends ConsumerWidget {
       body: SafeArea(
         child: summaryAsync.when(
           loading: () => const Center(
-              child: CircularProgressIndicator(color: AppColors.primary)),
+            child: CircularProgressIndicator(color: AppColors.primary),
+          ),
           error: (err, _) => const EmptyState(
             icon: Icons.wifi_off_rounded,
             title: 'Could not load reviews',
@@ -77,7 +83,10 @@ class ReviewBreakdownScreen extends ConsumerWidget {
                       const SizedBox(height: 4),
                       Text(
                         '${summary.reviewCount} verified review${summary.reviewCount == 1 ? '' : 's'} from students & alumni',
-                        style: const TextStyle(fontSize: AppFont.sm, color: AppColors.textMuted),
+                        style: const TextStyle(
+                          fontSize: AppFont.sm,
+                          color: AppColors.textMuted,
+                        ),
                       ),
                       if (summary.recommendPercent != null) ...[
                         const SizedBox(height: AppSpacing.sm),
@@ -91,24 +100,46 @@ class ReviewBreakdownScreen extends ConsumerWidget {
                     summary.campusLife != null ||
                     summary.workload != null ||
                     summary.careerValue != null) ...[
-                  const Text('Rated by Category',
-                      style: TextStyle(fontSize: AppFont.md, fontWeight: AppFont.extraBold)),
+                  const Text(
+                    'Rated by Category',
+                    style: TextStyle(
+                      fontSize: AppFont.md,
+                      fontWeight: AppFont.extraBold,
+                    ),
+                  ),
                   const SizedBox(height: AppSpacing.sm),
                   AppCard(
                     child: Column(
                       children: [
-                        CategoryRatingBar(label: 'Academics', value: summary.academics),
-                        CategoryRatingBar(label: 'Campus Life', value: summary.campusLife),
-                        CategoryRatingBar(label: 'Workload', value: summary.workload),
-                        CategoryRatingBar(label: 'Career Value', value: summary.careerValue),
+                        CategoryRatingBar(
+                          label: 'Academics',
+                          value: summary.academics,
+                        ),
+                        CategoryRatingBar(
+                          label: 'Campus Life',
+                          value: summary.campusLife,
+                        ),
+                        CategoryRatingBar(
+                          label: 'Workload',
+                          value: summary.workload,
+                        ),
+                        CategoryRatingBar(
+                          label: 'Career Value',
+                          value: summary.careerValue,
+                        ),
                       ],
                     ),
                   ),
                   const SizedBox(height: AppSpacing.lg),
                 ],
                 if (summary.tagCounts.isNotEmpty) ...[
-                  const Text('Student Highlights',
-                      style: TextStyle(fontSize: AppFont.md, fontWeight: AppFont.extraBold)),
+                  const Text(
+                    'Student Highlights',
+                    style: TextStyle(
+                      fontSize: AppFont.md,
+                      fontWeight: AppFont.extraBold,
+                    ),
+                  ),
                   const SizedBox(height: AppSpacing.sm),
                   Wrap(
                     spacing: AppSpacing.xs,
@@ -123,8 +154,13 @@ class ReviewBreakdownScreen extends ConsumerWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text('From the Reviews',
-                        style: TextStyle(fontSize: AppFont.md, fontWeight: AppFont.extraBold)),
+                    const Text(
+                      'From the Reviews',
+                      style: TextStyle(
+                        fontSize: AppFont.md,
+                        fontWeight: AppFont.extraBold,
+                      ),
+                    ),
                     if (hasReviewedAsync.value == false && canReview)
                       TextButton.icon(
                         onPressed: () async {
@@ -133,15 +169,23 @@ class ReviewBreakdownScreen extends ConsumerWidget {
                             backgroundColor: AppColors.surface,
                             isScrollControlled: true,
                             shape: const RoundedRectangleBorder(
-                              borderRadius:
-                                  BorderRadius.vertical(top: Radius.circular(AppRadius.xl)),
+                              borderRadius: BorderRadius.vertical(
+                                top: Radius.circular(AppRadius.xl),
+                              ),
                             ),
-                            builder: (_) => WriteReviewSheet(universityId: universityId),
+                            builder: (_) =>
+                                WriteReviewSheet(universityId: universityId),
                           );
                           if (posted == true) {
-                            ref.invalidate(universityReviewsListProvider(universityId));
-                            ref.invalidate(universityReviewSummaryProvider(universityId));
-                            ref.invalidate(hasReviewedUniversityProvider(universityId));
+                            ref.invalidate(
+                              universityReviewsListProvider(universityId),
+                            );
+                            ref.invalidate(
+                              universityReviewSummaryProvider(universityId),
+                            );
+                            ref.invalidate(
+                              hasReviewedUniversityProvider(universityId),
+                            );
                           }
                         },
                         icon: const Icon(Icons.edit_rounded, size: 16),
@@ -151,7 +195,8 @@ class ReviewBreakdownScreen extends ConsumerWidget {
                 ),
                 const SizedBox(height: AppSpacing.sm),
                 reviewsAsync.when(
-                  loading: () => const Column(children: [SkeletonCard(), SkeletonCard()]),
+                  loading: () =>
+                      const Column(children: [SkeletonCard(), SkeletonCard()]),
                   error: (err, _) => const EmptyState(
                     icon: Icons.wifi_off_rounded,
                     title: 'Could not load reviews',
@@ -161,7 +206,8 @@ class ReviewBreakdownScreen extends ConsumerWidget {
                       ? const EmptyState(
                           icon: Icons.rate_review_rounded,
                           title: 'No reviews yet',
-                          message: 'Be the first verified student or mentor to review.',
+                          message:
+                              'Waiting for a verified mentor from this college to write one.',
                         )
                       : Column(
                           children: [

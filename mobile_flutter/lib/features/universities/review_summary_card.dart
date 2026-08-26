@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/network/university_reviews_api.dart';
+import '../../core/network/users_api.dart';
 import '../../core/theme/app_theme.dart';
+import '../../state/auth_controller.dart' show UserRole;
 import '../../widgets/app_widgets.dart';
 import 'review_widgets.dart';
 
@@ -32,22 +34,43 @@ class ReviewSummaryBody extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final summaryAsync = ref.watch(universityReviewSummaryProvider(universityId));
+    final summaryAsync = ref.watch(
+      universityReviewSummaryProvider(universityId),
+    );
     final summary = summaryAsync.value;
     final reviewCount = summary?.reviewCount ?? fallbackReviewCount;
 
     if (reviewCount == 0) {
-      return const Row(
+      // Only a verified mentor reviewing their own college can ever act on
+      // "be the first to review" — aspirants are prospective, not yet
+      // attending, so they structurally can't write one (see
+      // ReviewBreakdownScreen's canReview). Inviting them to anyway is a
+      // dead end, so the copy only promises what the viewer can actually do.
+      final myProfile = ref.watch(myProfileProvider).asData?.value;
+      final canReview =
+          myProfile?.role == UserRole.mentor &&
+          myProfile?.verificationStatus == 'VERIFIED' &&
+          myProfile?.universityId == universityId;
+      return Row(
         children: [
-          Icon(Icons.rate_review_outlined, color: AppColors.textMuted, size: 22),
-          SizedBox(width: AppSpacing.sm),
+          const Icon(
+            Icons.rate_review_outlined,
+            color: AppColors.textMuted,
+            size: 22,
+          ),
+          const SizedBox(width: AppSpacing.sm),
           Expanded(
             child: Text(
-              'No reviews yet — be the first to review',
-              style: TextStyle(fontSize: AppFont.sm, color: AppColors.textSecondary),
+              canReview
+                  ? 'No reviews yet — be the first to review'
+                  : 'No reviews yet',
+              style: const TextStyle(
+                fontSize: AppFont.sm,
+                color: AppColors.textSecondary,
+              ),
             ),
           ),
-          Icon(Icons.chevron_right_rounded, color: AppColors.textMuted),
+          const Icon(Icons.chevron_right_rounded, color: AppColors.textMuted),
         ],
       );
     }
@@ -80,7 +103,10 @@ class ReviewSummaryBody extends ConsumerWidget {
                   const SizedBox(height: 6),
                   Text(
                     'Based on $reviewCount verified review${reviewCount == 1 ? '' : 's'}',
-                    style: const TextStyle(fontSize: AppFont.xs, color: AppColors.textMuted),
+                    style: const TextStyle(
+                      fontSize: AppFont.xs,
+                      color: AppColors.textMuted,
+                    ),
                   ),
                 ],
               ),
@@ -114,11 +140,17 @@ class ReviewSummaryBody extends ConsumerWidget {
                 children: [
                   const Text(
                     'See full review breakdown',
-                    style: TextStyle(fontSize: AppFont.sm, fontWeight: AppFont.bold),
+                    style: TextStyle(
+                      fontSize: AppFont.sm,
+                      fontWeight: AppFont.bold,
+                    ),
                   ),
                   Text(
                     '$reviewCount verified review${reviewCount == 1 ? '' : 's'}',
-                    style: const TextStyle(fontSize: AppFont.xs, color: AppColors.textMuted),
+                    style: const TextStyle(
+                      fontSize: AppFont.xs,
+                      color: AppColors.textMuted,
+                    ),
                   ),
                 ],
               ),
@@ -130,7 +162,11 @@ class ReviewSummaryBody extends ConsumerWidget {
                 gradient: AppGradients.brand,
                 shape: BoxShape.circle,
               ),
-              child: const Icon(Icons.arrow_forward_rounded, color: Colors.white, size: 18),
+              child: const Icon(
+                Icons.arrow_forward_rounded,
+                color: Colors.white,
+                size: 18,
+              ),
             ),
           ],
         ),

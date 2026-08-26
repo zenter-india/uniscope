@@ -14,10 +14,10 @@ import '../mentors/mentor_list_screen.dart';
 import 'review_summary_card.dart';
 import 'review_widgets.dart';
 
-final universityDetailProvider =
-    FutureProvider.autoDispose.family<University, String>(
-  (ref, slug) => ref.watch(universitiesApiProvider).getBySlug(slug),
-);
+final universityDetailProvider = FutureProvider.autoDispose
+    .family<University, String>(
+      (ref, slug) => ref.watch(universitiesApiProvider).getBySlug(slug),
+    );
 
 String _typeLabel(String type) {
   switch (type) {
@@ -51,10 +51,12 @@ class UniversityDetailScreen extends ConsumerStatefulWidget {
   final String universityName;
 
   @override
-  ConsumerState<UniversityDetailScreen> createState() => _UniversityDetailScreenState();
+  ConsumerState<UniversityDetailScreen> createState() =>
+      _UniversityDetailScreenState();
 }
 
-class _UniversityDetailScreenState extends ConsumerState<UniversityDetailScreen> {
+class _UniversityDetailScreenState
+    extends ConsumerState<UniversityDetailScreen> {
   static const _tabs = <(String, String)>[
     ('overview', 'Overview'),
     ('reviews', 'Reviews'),
@@ -65,20 +67,24 @@ class _UniversityDetailScreenState extends ConsumerState<UniversityDetailScreen>
 
   @override
   Widget build(BuildContext context) {
-    final detailAsync = ref.watch(universityDetailProvider(widget.universitySlug));
+    final detailAsync = ref.watch(
+      universityDetailProvider(widget.universitySlug),
+    );
 
     return Scaffold(
       backgroundColor: AppColors.background,
       body: detailAsync.when(
         loading: () => const Center(
-            child: CircularProgressIndicator(color: AppColors.primary)),
+          child: CircularProgressIndicator(color: AppColors.primary),
+        ),
         error: (err, _) => SafeArea(
           child: EmptyState(
             icon: Icons.wifi_off_rounded,
             title: 'Could not load this college',
             message: 'Check your connection and try again.',
             actionLabel: 'Retry',
-            onAction: () => ref.invalidate(universityDetailProvider(widget.universitySlug)),
+            onAction: () =>
+                ref.invalidate(universityDetailProvider(widget.universitySlug)),
           ),
         ),
         data: (uni) => Column(
@@ -86,7 +92,9 @@ class _UniversityDetailScreenState extends ConsumerState<UniversityDetailScreen>
             _Hero(university: uni),
             Padding(
               padding: const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.md, vertical: AppSpacing.sm),
+                horizontal: AppSpacing.md,
+                vertical: AppSpacing.sm,
+              ),
               child: _TabBar(
                 tabs: _tabs,
                 active: _active,
@@ -94,15 +102,17 @@ class _UniversityDetailScreenState extends ConsumerState<UniversityDetailScreen>
               ),
             ),
             Expanded(
-              child: SingleChildScrollView(
-                child: _buildContent(context, uni),
-              ),
+              child: SingleChildScrollView(child: _buildContent(context, uni)),
             ),
             SafeArea(
               top: false,
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(
-                    AppSpacing.md, 0, AppSpacing.md, AppSpacing.md),
+                  AppSpacing.md,
+                  0,
+                  AppSpacing.md,
+                  AppSpacing.md,
+                ),
                 child: SizedBox(
                   width: double.infinity,
                   child: FilledButton.icon(
@@ -156,9 +166,11 @@ class _Hero extends StatelessWidget {
             Image.network(
               university.imageUrl!,
               fit: BoxFit.cover,
-              errorBuilder: (_, __, ___) => _HeroPlaceholder(name: university.name),
-              loadingBuilder: (context, child, progress) =>
-                  progress == null ? child : _HeroPlaceholder(name: university.name),
+              errorBuilder: (_, __, ___) =>
+                  _HeroPlaceholder(name: university.name),
+              loadingBuilder: (context, child, progress) => progress == null
+                  ? child
+                  : _HeroPlaceholder(name: university.name),
             )
           else
             _HeroPlaceholder(name: university.name),
@@ -169,7 +181,10 @@ class _Hero extends StatelessWidget {
               gradient: LinearGradient(
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
-                colors: [Colors.transparent, Colors.black.withValues(alpha: 0.75)],
+                colors: [
+                  Colors.transparent,
+                  Colors.black.withValues(alpha: 0.75),
+                ],
                 stops: const [0.4, 1.0],
               ),
             ),
@@ -190,7 +205,9 @@ class _Hero extends StatelessWidget {
                       final savedIds = ref.watch(savedCollegeIdsProvider).value;
                       final saved = savedIds?.contains(university.id) ?? false;
                       return _CircleIconButton(
-                        icon: saved ? Icons.favorite_rounded : Icons.favorite_border_rounded,
+                        icon: saved
+                            ? Icons.favorite_rounded
+                            : Icons.favorite_border_rounded,
                         iconColor: saved ? AppColors.error : Colors.white,
                         onTap: () => ref
                             .read(savedCollegeIdsProvider.notifier)
@@ -221,15 +238,23 @@ class _Hero extends StatelessWidget {
                 const SizedBox(height: AppSpacing.xs),
                 Row(
                   children: [
-                    const Icon(Icons.location_on_rounded, size: 15, color: Colors.white70),
+                    const Icon(
+                      Icons.location_on_rounded,
+                      size: 15,
+                      color: Colors.white70,
+                    ),
                     const SizedBox(width: 3),
                     Expanded(
                       child: Text(
-                        [university.city, university.state]
-                            .where((p) => p != null && p.isNotEmpty)
-                            .join(', '),
+                        [
+                          university.city,
+                          university.state,
+                        ].where((p) => p != null && p.isNotEmpty).join(', '),
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(color: Colors.white70, fontSize: AppFont.sm),
+                        style: const TextStyle(
+                          color: Colors.white70,
+                          fontSize: AppFont.sm,
+                        ),
                       ),
                     ),
                   ],
@@ -238,19 +263,27 @@ class _Hero extends StatelessWidget {
                   const SizedBox(height: 4),
                   Row(
                     children: [
-                      const Icon(Icons.star_rounded, size: 18, color: Color(0xFFF5A524)),
+                      const Icon(
+                        Icons.star_rounded,
+                        size: 18,
+                        color: Color(0xFFF5A524),
+                      ),
                       const SizedBox(width: 3),
                       Text(
                         university.rating!.toStringAsFixed(1),
                         style: const TextStyle(
-                            color: Colors.white,
-                            fontWeight: AppFont.bold,
-                            fontSize: AppFont.sm),
+                          color: Colors.white,
+                          fontWeight: AppFont.bold,
+                          fontSize: AppFont.sm,
+                        ),
                       ),
                       const SizedBox(width: 4),
                       Text(
                         '(${university.reviewCount} reviews)',
-                        style: const TextStyle(color: Colors.white70, fontSize: AppFont.sm),
+                        style: const TextStyle(
+                          color: Colors.white70,
+                          fontSize: AppFont.sm,
+                        ),
                       ),
                     ],
                   ),
@@ -283,19 +316,30 @@ class _HeroPlaceholder extends StatelessWidget {
   /// filler words nearly every Indian medical college shares).
   static String _initials(String value) {
     const skip = {
-      'of', 'and', 'the', 'for', 'institute', 'institution', 'college',
-      'medical', 'sciences', 'science', 'hospital', 'research', 'centre',
-      'center', 'school', 'university', 'academy',
+      'of',
+      'and',
+      'the',
+      'for',
+      'institute',
+      'institution',
+      'college',
+      'medical',
+      'sciences',
+      'science',
+      'hospital',
+      'research',
+      'centre',
+      'center',
+      'school',
+      'university',
+      'academy',
     };
     final words = value
         .split(RegExp(r'[\s,&\-]+'))
         .where((w) => w.isNotEmpty && !skip.contains(w.toLowerCase()))
         .toList();
     final source = words.isNotEmpty ? words : value.split(RegExp(r'\s+'));
-    return source
-        .take(3)
-        .map((w) => w[0].toUpperCase())
-        .join();
+    return source.take(3).map((w) => w[0].toUpperCase()).join();
   }
 
   @override
@@ -311,8 +355,11 @@ class _HeroPlaceholder extends StatelessWidget {
           ),
         ),
         child: Center(
-          child: Icon(Icons.account_balance_rounded,
-              size: 72, color: Colors.white.withValues(alpha: 0.25)),
+          child: Icon(
+            Icons.account_balance_rounded,
+            size: 72,
+            color: Colors.white.withValues(alpha: 0.25),
+          ),
         ),
       );
     }
@@ -335,8 +382,11 @@ class _HeroPlaceholder extends StatelessWidget {
           Positioned(
             right: -20,
             bottom: -10,
-            child: Icon(Icons.account_balance_rounded,
-                size: 190, color: Colors.white.withValues(alpha: 0.07)),
+            child: Icon(
+              Icons.account_balance_rounded,
+              size: 190,
+              color: Colors.white.withValues(alpha: 0.07),
+            ),
           ),
           Text(
             _initials(label),
@@ -417,7 +467,9 @@ class _TabBar extends StatelessWidget {
                   style: TextStyle(
                     fontSize: AppFont.sm,
                     fontWeight: AppFont.bold,
-                    color: active == id ? Colors.white : AppColors.textSecondary,
+                    color: active == id
+                        ? Colors.white
+                        : AppColors.textSecondary,
                   ),
                 ),
               ),
@@ -454,7 +506,10 @@ class _OverviewTab extends ConsumerWidget {
               child: Text(
                 university.description!,
                 style: const TextStyle(
-                    fontSize: AppFont.sm, color: AppColors.textPrimary, height: 1.5),
+                  fontSize: AppFont.sm,
+                  color: AppColors.textPrimary,
+                  height: 1.5,
+                ),
               ),
             ),
             const SizedBox(height: AppSpacing.md),
@@ -464,7 +519,9 @@ class _OverviewTab extends ConsumerWidget {
               children: [
                 for (var i = 0; i < rows.length; i++)
                   Container(
-                    padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
+                    padding: const EdgeInsets.symmetric(
+                      vertical: AppSpacing.sm,
+                    ),
                     decoration: BoxDecoration(
                       border: Border(
                         bottom: BorderSide(
@@ -477,17 +534,23 @@ class _OverviewTab extends ConsumerWidget {
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text(rows[i].$1,
-                            style: const TextStyle(
-                                fontSize: AppFont.sm,
-                                color: AppColors.textSecondary)),
+                        Text(
+                          rows[i].$1,
+                          style: const TextStyle(
+                            fontSize: AppFont.sm,
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
                         Flexible(
-                          child: Text(rows[i].$2,
-                              textAlign: TextAlign.right,
-                              style: const TextStyle(
-                                  fontSize: AppFont.sm,
-                                  fontWeight: AppFont.semibold,
-                                  color: AppColors.textPrimary)),
+                          child: Text(
+                            rows[i].$2,
+                            textAlign: TextAlign.right,
+                            style: const TextStyle(
+                              fontSize: AppFont.sm,
+                              fontWeight: AppFont.semibold,
+                              color: AppColors.textPrimary,
+                            ),
+                          ),
                         ),
                       ],
                     ),
@@ -495,10 +558,13 @@ class _OverviewTab extends ConsumerWidget {
               ],
             ),
           ),
-          if (university.programs != null && university.programs!.isNotEmpty) ...[
+          if (university.programs != null &&
+              university.programs!.isNotEmpty) ...[
             const SizedBox(height: AppSpacing.md),
-            const Text('Programs offered',
-                style: TextStyle(fontSize: AppFont.md, fontWeight: AppFont.bold)),
+            const Text(
+              'Programs offered',
+              style: TextStyle(fontSize: AppFont.md, fontWeight: AppFont.bold),
+            ),
             const SizedBox(height: AppSpacing.sm),
             Wrap(
               spacing: AppSpacing.sm,
@@ -521,8 +587,12 @@ class _ReviewsTab extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final reviewsAsync = ref.watch(universityReviewsListProvider(university.id));
-    final hasReviewedAsync = ref.watch(hasReviewedUniversityProvider(university.id));
+    final reviewsAsync = ref.watch(
+      universityReviewsListProvider(university.id),
+    );
+    final hasReviewedAsync = ref.watch(
+      hasReviewedUniversityProvider(university.id),
+    );
     final myProfile = ref.watch(myProfileProvider).asData?.value;
     // Only a verified mentor reviewing their OWN linked college can post —
     // the backend enforces both checks too, but showing the button
@@ -531,7 +601,8 @@ class _ReviewsTab extends ConsumerWidget {
     // aspirants are prospective, not yet attending. A mentor's
     // verification ties them to exactly one college, so they can't review
     // any college they merely browse.
-    final canReview = myProfile?.role == UserRole.mentor &&
+    final canReview =
+        myProfile?.role == UserRole.mentor &&
         myProfile?.verificationStatus == 'VERIFIED' &&
         myProfile?.universityId == university.id;
 
@@ -540,16 +611,24 @@ class _ReviewsTab extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          ReviewSummaryCard(
-            universityId: university.id,
-            fallbackRating: university.rating,
-            fallbackReviewCount: university.reviewCount,
-            onTap: () => context.push(
-              '/colleges/detail/reviews',
-              extra: {'universityId': university.id, 'universityName': university.name},
+          // Nothing to summarize with zero reviews — the list below already
+          // shows its own "no reviews" state, so skip this to avoid saying
+          // "no reviews yet" twice on the same screen.
+          if (university.reviewCount > 0) ...[
+            ReviewSummaryCard(
+              universityId: university.id,
+              fallbackRating: university.rating,
+              fallbackReviewCount: university.reviewCount,
+              onTap: () => context.push(
+                '/colleges/detail/reviews',
+                extra: {
+                  'universityId': university.id,
+                  'universityName': university.name,
+                },
+              ),
             ),
-          ),
-          const SizedBox(height: AppSpacing.md),
+            const SizedBox(height: AppSpacing.md),
+          ],
           if (hasReviewedAsync.value == false && canReview)
             SizedBox(
               width: double.infinity,
@@ -560,16 +639,24 @@ class _ReviewsTab extends ConsumerWidget {
                     backgroundColor: AppColors.surface,
                     isScrollControlled: true,
                     shape: const RoundedRectangleBorder(
-                      borderRadius:
-                          BorderRadius.vertical(top: Radius.circular(AppRadius.xl)),
+                      borderRadius: BorderRadius.vertical(
+                        top: Radius.circular(AppRadius.xl),
+                      ),
                     ),
-                    builder: (_) => WriteReviewSheet(universityId: university.id),
+                    builder: (_) =>
+                        WriteReviewSheet(universityId: university.id),
                   );
                   if (posted == true) {
-                    ref.invalidate(universityReviewsListProvider(university.id));
-                    ref.invalidate(hasReviewedUniversityProvider(university.id));
+                    ref.invalidate(
+                      universityReviewsListProvider(university.id),
+                    );
+                    ref.invalidate(
+                      hasReviewedUniversityProvider(university.id),
+                    );
                     ref.invalidate(universityDetailProvider(university.slug));
-                    ref.invalidate(universityReviewSummaryProvider(university.id));
+                    ref.invalidate(
+                      universityReviewSummaryProvider(university.id),
+                    );
                   }
                 },
                 icon: const Icon(Icons.edit_rounded, size: 18),
@@ -581,12 +668,16 @@ class _ReviewsTab extends ConsumerWidget {
               padding: EdgeInsets.only(bottom: AppSpacing.sm),
               child: Text(
                 'You\'ve already reviewed this college.',
-                style: TextStyle(fontSize: AppFont.sm, color: AppColors.textSecondary),
+                style: TextStyle(
+                  fontSize: AppFont.sm,
+                  color: AppColors.textSecondary,
+                ),
               ),
             ),
           const SizedBox(height: AppSpacing.md),
           reviewsAsync.when(
-            loading: () => const Column(children: [SkeletonCard(), SkeletonCard()]),
+            loading: () =>
+                const Column(children: [SkeletonCard(), SkeletonCard()]),
             error: (err, _) => const EmptyState(
               icon: Icons.wifi_off_rounded,
               title: 'Could not load reviews',
@@ -597,7 +688,8 @@ class _ReviewsTab extends ConsumerWidget {
                 return const EmptyState(
                   icon: Icons.rate_review_rounded,
                   title: 'No reviews yet',
-                  message: 'Be the first verified student or mentor to review.',
+                  message:
+                      'Waiting for a verified mentor from this college to write one.',
                 );
               }
               return Column(

@@ -45,6 +45,7 @@ dependencies:
   firebase_core: ^4.12.1
   firebase_messaging: ^16.4.3
   flutter_svg: ^2.2.1
+  webview_flutter: ^4.13.0
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -79,6 +80,7 @@ flutter:
     - assets/icons/
     - assets/logo/
     - assets/onboarding/
+    - assets/illustrations/
 
   fonts:
     - family: Manrope

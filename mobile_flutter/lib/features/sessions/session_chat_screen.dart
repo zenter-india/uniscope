@@ -51,7 +51,9 @@ class _SessionChatScreenState extends ConsumerState<SessionChatScreen> {
 
   Future<void> _loadSession() async {
     try {
-      final session = await ref.read(sessionsApiProvider).findById(widget.sessionId);
+      final session = await ref
+          .read(sessionsApiProvider)
+          .findById(widget.sessionId);
       if (!mounted) return;
       setState(() => _session = session);
 
@@ -60,7 +62,10 @@ class _SessionChatScreenState extends ConsumerState<SessionChatScreen> {
       } else if (_isTerminal(session.status)) {
         setState(() => _error = 'This chat is no longer available.');
       } else {
-        _pollTimer ??= Timer.periodic(const Duration(seconds: 3), (_) => _loadSession());
+        _pollTimer ??= Timer.periodic(
+          const Duration(seconds: 3),
+          (_) => _loadSession(),
+        );
       }
     } catch (e) {
       if (!mounted) return;
@@ -69,17 +74,19 @@ class _SessionChatScreenState extends ConsumerState<SessionChatScreen> {
   }
 
   bool _isTerminal(SessionStatus status) => const {
-        SessionStatus.rejected,
-        SessionStatus.cancelled,
-        SessionStatus.expired,
-        SessionStatus.failed,
-      }.contains(status);
+    SessionStatus.rejected,
+    SessionStatus.cancelled,
+    SessionStatus.expired,
+    SessionStatus.failed,
+  }.contains(status);
 
   Future<void> _connect() async {
     _pollTimer?.cancel();
     try {
       final userId = ref.read(authControllerProvider).user!.id;
-      final chatToken = await ref.read(chatApiProvider).getToken(widget.sessionId);
+      final chatToken = await ref
+          .read(chatApiProvider)
+          .getToken(widget.sessionId);
 
       final client = StreamChatClient(chatToken.apiKey);
       await client.connectUser(User(id: userId), chatToken.token);
@@ -114,7 +121,10 @@ class _SessionChatScreenState extends ConsumerState<SessionChatScreen> {
         body: Center(
           child: Padding(
             padding: const EdgeInsets.all(AppSpacing.xl),
-            child: Text('$_error', style: const TextStyle(color: AppColors.error)),
+            child: Text(
+              '$_error',
+              style: const TextStyle(color: AppColors.error),
+            ),
           ),
         ),
       );
@@ -134,13 +144,19 @@ class _SessionChatScreenState extends ConsumerState<SessionChatScreen> {
                 const SizedBox(height: AppSpacing.lg),
                 const Text(
                   'Waiting for your mentor to accept…',
-                  style: TextStyle(fontWeight: AppFont.bold, fontSize: AppFont.md),
+                  style: TextStyle(
+                    fontWeight: AppFont.bold,
+                    fontSize: AppFont.md,
+                  ),
                 ),
                 const SizedBox(height: AppSpacing.xs),
                 const Text(
                   'You\'ll be able to chat as soon as they do.',
                   textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: AppFont.sm, color: AppColors.textSecondary),
+                  style: TextStyle(
+                    fontSize: AppFont.sm,
+                    color: AppColors.textSecondary,
+                  ),
                 ),
               ],
             ),
@@ -152,7 +168,9 @@ class _SessionChatScreenState extends ConsumerState<SessionChatScreen> {
     if (_client == null || _channel == null) {
       return const Scaffold(
         backgroundColor: AppColors.background,
-        body: Center(child: CircularProgressIndicator(color: AppColors.primary)),
+        body: Center(
+          child: CircularProgressIndicator(color: AppColors.primary),
+        ),
       );
     }
 
@@ -172,15 +190,20 @@ class _SessionChatScreenState extends ConsumerState<SessionChatScreen> {
               builder: (context) {
                 final currentUserId = ref.read(authControllerProvider).user!.id;
                 final isAspirant = currentUserId == _session!.aspirantId;
-                final otherName =
-                    isAspirant ? _session!.mentorName : _session!.aspirantName;
+                final otherName = isAspirant
+                    ? _session!.mentorName
+                    : _session!.aspirantName;
                 final otherAvatarUrl = isAspirant
                     ? _session!.mentorAvatarUrl
                     : _session!.aspirantAvatarUrl;
                 return Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    AppAvatar(name: otherName, avatarUrl: otherAvatarUrl, size: 32),
+                    AppAvatar(
+                      name: otherName,
+                      avatarUrl: otherAvatarUrl,
+                      size: 32,
+                    ),
                     const SizedBox(width: AppSpacing.sm),
                     Expanded(child: StreamChannelName(channel: _channel!)),
                   ],
@@ -192,12 +215,13 @@ class _SessionChatScreenState extends ConsumerState<SessionChatScreen> {
                 icon: const Icon(Icons.call_rounded, color: AppColors.primary),
                 tooltip: 'Request a call',
                 onPressed: () async {
-                  final wallet =
-                      await ref.read(walletBalanceProvider.future);
+                  final wallet = await ref.read(walletBalanceProvider.future);
                   if (!context.mounted) return;
                   if (wallet.balanceUniminutes < _minCallSlotUniminutes) {
-                    await showLowBalanceSheet(context,
-                        balanceUniminutes: wallet.balanceUniminutes);
+                    await showLowBalanceSheet(
+                      context,
+                      balanceUniminutes: wallet.balanceUniminutes,
+                    );
                     return;
                   }
                   if (!context.mounted) return;
@@ -210,12 +234,18 @@ class _SessionChatScreenState extends ConsumerState<SessionChatScreen> {
               ),
               Builder(
                 builder: (context) {
-                  final currentUserId = ref.read(authControllerProvider).user!.id;
+                  final currentUserId = ref
+                      .read(authControllerProvider)
+                      .user!
+                      .id;
                   final otherUserId = currentUserId == _session!.aspirantId
                       ? _session!.mentorId
                       : _session!.aspirantId;
                   return IconButton(
-                    icon: const Icon(Icons.more_vert_rounded, color: AppColors.textSecondary),
+                    icon: const Icon(
+                      Icons.more_vert_rounded,
+                      color: AppColors.textSecondary,
+                    ),
                     tooltip: 'Report or block',
                     onPressed: () => showSafetyMenuSheet(
                       context,
@@ -231,7 +261,10 @@ class _SessionChatScreenState extends ConsumerState<SessionChatScreen> {
           body: const Column(
             children: [
               Expanded(child: StreamMessageListView()),
-              StreamMessageInput(showCommandsButton: false, disableAttachments: true),
+              StreamMessageInput(
+                showCommandsButton: false,
+                disableAttachments: true,
+              ),
             ],
           ),
         ),

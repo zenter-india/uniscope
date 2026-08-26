@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ConflictException,
   ForbiddenException,
   Injectable,
   Logger,
@@ -76,20 +77,7 @@ export class UsersService {
       return { user: updated, isNewUser: false };
     }
 
-    const user = await this.prisma.user.create({
-      data: {
-        phoneHash,
-        displayName: generatePseudonym(),
-        role: UserRole.ASPIRANT,
-        lastActiveAt: new Date(),
-        profile: {
-          create: {},
-        },
-        wallet: {
-          create: {},
-        },
-      },
-    });
+    const user = await this.createUserWithUniquePseudonym(phoneHash);
 
     // Give every new user an illustrated avatar immediately, so nobody
     // ever sees a blank or initials placeholder. Deliberately non-fatal:
@@ -185,11 +173,13 @@ export class UsersService {
     });
   }
 
-  /** Live check for the mentor wizard's "Alias" field — not a DB-level
-   * unique constraint (displayName has none, and pseudonym generation
-   * already has no collisions in practice), just a courtesy check so a
-   * mentor doesn't pick a handle someone else already has. Case-insensitive
-   * so "Riya_NIT" and "riya_nit" collide as expected. */
+  /** Live check for the mentor wizard's "Alias" field as the user types.
+   * Backed by a real DB-level constraint now (a case-insensitive unique
+   * index on lower(display_name) — see the
+   * unique_display_name_case_insensitive migration), so this is a fast
+   * pre-check for UX only; the actual guarantee is enforced at save time
+   * in updateProfile via the DB constraint + a friendly ConflictException
+   * on P2002. Case-insensitive so "Riya_NIT" and "riya_nit" collide. */
   async isDisplayNameAvailable(displayName: string, excludingUserId?: string): Promise<boolean> {
     const existing = await this.prisma.user.findFirst({
       where: {
@@ -199,6 +189,39 @@ export class UsersService {
       select: { id: true },
     });
     return existing === null;
+  }
+
+  /** Every new user gets an auto-generated pseudonym (see
+   * pseudonym.helper.ts) — collisions are now rejected at the DB level
+   * (case-insensitive unique index), so retry with a freshly rolled name
+   * on the rare P2002 instead of letting signup fail outright. */
+  private async createUserWithUniquePseudonym(phoneHash: string, attempt = 0): Promise<User> {
+    try {
+      return await this.prisma.user.create({
+        data: {
+          phoneHash,
+          displayName: generatePseudonym(),
+          role: UserRole.ASPIRANT,
+          lastActiveAt: new Date(),
+          profile: { create: {} },
+          wallet: { create: {} },
+        },
+      });
+    } catch (err) {
+      if (this.isUniqueDisplayNameViolation(err) && attempt < 5) {
+        return this.createUserWithUniquePseudonym(phoneHash, attempt + 1);
+      }
+      throw err;
+    }
+  }
+
+  private isUniqueDisplayNameViolation(err: unknown): boolean {
+    return (
+      typeof err === 'object' &&
+      err !== null &&
+      'code' in err &&
+      (err as { code: unknown }).code === 'P2002'
+    );
   }
 
   async updateProfile(userId: string, dto: UpdateProfileDto) {
@@ -252,16 +275,27 @@ export class UsersService {
       ...(dto.yearInfoPrivate !== undefined && { yearInfoPrivate: dto.yearInfoPrivate }),
     };
 
-    return this.prisma.user.update({
-      where: { id: userId },
-      data: {
-        ...(dto.displayName !== undefined && { displayName: dto.displayName }),
-        ...(Object.keys(profileUpdate).length > 0 && {
-          profile: { update: profileUpdate },
-        }),
-      },
-      include: { profile: { include: { university: true } } },
-    });
+    try {
+      return await this.prisma.user.update({
+        where: { id: userId },
+        data: {
+          ...(dto.displayName !== undefined && { displayName: dto.displayName }),
+          ...(Object.keys(profileUpdate).length > 0 && {
+            profile: { update: profileUpdate },
+          }),
+        },
+        include: { profile: { include: { university: true } } },
+      });
+    } catch (err) {
+      // The live check-display-name call the wizard makes as you type is
+      // only a UX hint — this is the actual guarantee (DB-level, so a race
+      // between two people checking the same free name at once still can't
+      // let both through).
+      if (dto.displayName !== undefined && this.isUniqueDisplayNameViolation(err)) {
+        throw new ConflictException('That name is already taken — try another.');
+      }
+      throw err;
+    }
   }
 
   /** Admin-only search/list — deliberately excludes ADMIN-role rows from

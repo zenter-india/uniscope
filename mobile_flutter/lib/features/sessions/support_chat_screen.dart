@@ -64,8 +64,10 @@ class _SupportChatScreenState extends ConsumerState<SupportChatScreen> {
         body: Center(
           child: Padding(
             padding: const EdgeInsets.all(AppSpacing.xl),
-            child: Text('Could not open support chat: $_error',
-                style: const TextStyle(color: AppColors.error)),
+            child: Text(
+              'Could not open support chat: $_error',
+              style: const TextStyle(color: AppColors.error),
+            ),
           ),
         ),
       );
@@ -74,7 +76,9 @@ class _SupportChatScreenState extends ConsumerState<SupportChatScreen> {
     if (_client == null || _channel == null) {
       return const Scaffold(
         backgroundColor: AppColors.background,
-        body: Center(child: CircularProgressIndicator(color: AppColors.primary)),
+        body: Center(
+          child: CircularProgressIndicator(color: AppColors.primary),
+        ),
       );
     }
 
@@ -87,7 +91,10 @@ class _SupportChatScreenState extends ConsumerState<SupportChatScreen> {
           body: const Column(
             children: [
               Expanded(child: StreamMessageListView()),
-              StreamMessageInput(showCommandsButton: false, disableAttachments: true),
+              StreamMessageInput(
+                showCommandsButton: false,
+                disableAttachments: true,
+              ),
             ],
           ),
         ),

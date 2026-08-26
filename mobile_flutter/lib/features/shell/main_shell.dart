@@ -2,11 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/theme/app_theme.dart';
+import '../sessions/active_session_dock.dart';
 
 /// Bottom navigation shell — tab set is role-dependent (see app_router.dart),
 /// active tab gets a soft pill highlight.
 class MainShell extends StatelessWidget {
-  const MainShell({super.key, required this.navigationShell, required this.tabs});
+  const MainShell({
+    super.key,
+    required this.navigationShell,
+    required this.tabs,
+  });
 
   final StatefulNavigationShell navigationShell;
   final List<TabItem> tabs;
@@ -22,38 +27,48 @@ class MainShell extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       body: navigationShell,
-      bottomNavigationBar: Container(
-        decoration: const BoxDecoration(
-          color: AppColors.surface,
-          boxShadow: [
-            BoxShadow(
-              color: Color(0x0D0F1D17),
-              blurRadius: 20,
-              offset: Offset(0, -4),
-            ),
-          ],
-        ),
-        child: SafeArea(
-          top: false,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppSpacing.sm,
-              vertical: AppSpacing.sm,
-            ),
-            child: Row(
-              children: [
-                for (var i = 0; i < tabs.length; i++)
-                  Expanded(
-                    child: _TabButton(
-                      item: tabs[i],
-                      focused: i == navigationShell.currentIndex,
-                      onTap: () => _onTap(i),
-                    ),
-                  ),
+      // Pinned above the tab bar on every tab so a call request never gets
+      // lost — previously the only way to reach /call/:id was remembering
+      // to open Messages and tap Join Call, which is why real calls were
+      // never actually connecting.
+      bottomNavigationBar: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const ActiveSessionDock(),
+          Container(
+            decoration: const BoxDecoration(
+              color: AppColors.surface,
+              boxShadow: [
+                BoxShadow(
+                  color: Color(0x0D0F1D17),
+                  blurRadius: 20,
+                  offset: Offset(0, -4),
+                ),
               ],
             ),
+            child: SafeArea(
+              top: false,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.sm,
+                  vertical: AppSpacing.sm,
+                ),
+                child: Row(
+                  children: [
+                    for (var i = 0; i < tabs.length; i++)
+                      Expanded(
+                        child: _TabButton(
+                          item: tabs[i],
+                          focused: i == navigationShell.currentIndex,
+                          onTap: () => _onTap(i),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ),
           ),
-        ),
+        ],
       ),
     );
   }

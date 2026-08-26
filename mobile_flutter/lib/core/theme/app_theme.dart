@@ -8,17 +8,14 @@ import 'package:flutter/material.dart';
 /// mass rename. New concepts (shadows, gradients, text styles) get their
 /// own token classes below.
 class AppColors {
-  // Brand — teal, with blue as its partner at the dark end. These are the
-  // same two endpoints as AppGradients.canopy, so a flat brand surface and
-  // a gradient one always read as the same family. (Superseded the earlier
-  // emerald green — nothing in the app should be green except the semantic
+  // Brand — teal only. Blue was removed from the brand identity (it used
+  // to anchor the dark end of AppGradients.canopy/brand); everything now
+  // stays within the teal family. (Also superseded the earlier emerald
+  // green — nothing in the app should be green except the semantic
   // `success` token below.)
   static const Color primary = Color(0xFF12A9A3);
   static const Color primaryLight = Color(0xFFE3F5F4);
   static const Color primaryDark = Color(0xFF0C7A76);
-
-  /// The blue foot of the brand gradient, usable as a flat colour.
-  static const Color brandBlue = Color(0xFF2A72DC);
 
   static const Color accent = Color(0xFFF4A261);
 
@@ -105,12 +102,11 @@ class AppShadows {
 
 class AppGradients {
   /// Compact brand fill for buttons, FABs, and banner cards. Same two
-  /// endpoints as [canopy] but run corner-to-corner, so small surfaces
-  /// still show the teal→blue travel.
+  /// endpoints as [canopy] — both teal, light to dark.
   static const LinearGradient brand = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    colors: [Color(0xFF12A9A3), Color(0xFF2A72DC)],
+    colors: [Color(0xFF12A9A3), Color(0xFF0C7A76)],
   );
 
   /// Barely-there teal wash for full-screen backgrounds behind cards.
@@ -120,21 +116,20 @@ class AppGradients {
     colors: [Color(0xFFE3F5F4), Color(0xFFF6F8F9)],
   );
 
-  /// Teal-dominant brand gradient. Deliberately weighted so the teal holds
-  /// most of the run and the blue only lands at the very foot — the blue
-  /// reads as a shadow under the teal rather than an equal partner.
+  /// Teal-only brand gradient (blue removed) — same light-to-dark travel
+  /// as before, just without the blue foot.
   ///
   /// Apply this to the canopy container itself, never to a full-screen
-  /// background: stretched over a whole screen the blue stop falls below
+  /// background: stretched over a whole screen the dark stop falls below
   /// the fold and only flat teal is visible.
   static const LinearGradient canopy = LinearGradient(
     begin: Alignment.topCenter,
     end: Alignment.bottomCenter,
     colors: [
       Color(0xFF12A9A3),
-      Color(0xFF15A2A9),
-      Color(0xFF1B8BC7),
-      Color(0xFF2A72DC),
+      Color(0xFF0FA09A),
+      Color(0xFF0D8C87),
+      Color(0xFF0C7A76),
     ],
     stops: [0.0, 0.46, 0.80, 1.0],
   );
