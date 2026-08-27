@@ -2,11 +2,14 @@ import 'package:flutter/material.dart';
 
 import '../../core/theme/app_theme.dart';
 
-// Named alias kept because the pre-auth screens read more clearly with it,
-// but it resolves to the shared brand token — there is exactly one teal in
-// the app, defined in AppColors.
+// Named aliases kept because the pre-auth screens read more clearly with
+// them, but both resolve to shared brand tokens — there is exactly one teal
+// and one ink color in the app, both defined in AppColors. authBrandNavy
+// used to be its own standalone blue-navy (#0F2A3E), a leftover from before
+// blue was removed from the brand identity; it now matches the same
+// textPrimary every other screen (Home, mentor list, etc.) already uses.
 const authBrandTeal = AppColors.primary;
-const authBrandNavy = Color(0xFF0F2A3E);
+const authBrandNavy = AppColors.textPrimary;
 
 /// Soft decorative backdrop shared by the pre-auth screens (Login, OTP) —
 /// a few low-opacity blob shapes and a bottom wave, matching the reference
@@ -19,9 +22,7 @@ class AuthBackground extends StatelessWidget {
   Widget build(BuildContext context) {
     return Stack(
       children: [
-        Positioned.fill(
-          child: ColoredBox(color: Colors.white),
-        ),
+        Positioned.fill(child: ColoredBox(color: Colors.white)),
         Positioned(
           top: -60,
           right: -60,
@@ -37,8 +38,11 @@ class AuthBackground extends StatelessWidget {
         Positioned(
           top: 40,
           right: 24,
-          child: Icon(Icons.add_rounded,
-              size: 28, color: authBrandTeal.withValues(alpha: 0.18)),
+          child: Icon(
+            Icons.add_rounded,
+            size: 28,
+            color: authBrandTeal.withValues(alpha: 0.18),
+          ),
         ),
         Positioned(
           bottom: 0,
@@ -49,7 +53,9 @@ class AuthBackground extends StatelessWidget {
               height: 90,
               width: double.infinity,
               child: CustomPaint(
-                painter: _WavePainter(color: authBrandTeal.withValues(alpha: 0.08)),
+                painter: _WavePainter(
+                  color: authBrandTeal.withValues(alpha: 0.08),
+                ),
               ),
             ),
           ),
@@ -70,9 +76,17 @@ class _WavePainter extends CustomPainter {
     final path = Path()
       ..moveTo(0, size.height * 0.5)
       ..quadraticBezierTo(
-          size.width * 0.25, size.height * 0.2, size.width * 0.5, size.height * 0.45)
+        size.width * 0.25,
+        size.height * 0.2,
+        size.width * 0.5,
+        size.height * 0.45,
+      )
       ..quadraticBezierTo(
-          size.width * 0.75, size.height * 0.7, size.width, size.height * 0.35)
+        size.width * 0.75,
+        size.height * 0.7,
+        size.width,
+        size.height * 0.35,
+      )
       ..lineTo(size.width, size.height)
       ..lineTo(0, size.height)
       ..close();
@@ -80,7 +94,8 @@ class _WavePainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant _WavePainter oldDelegate) => oldDelegate.color != color;
+  bool shouldRepaint(covariant _WavePainter oldDelegate) =>
+      oldDelegate.color != color;
 }
 
 /// The real Uniscope icon mark (graduation cap + magnifying glass) used on

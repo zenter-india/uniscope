@@ -266,7 +266,7 @@ class _Hero extends StatelessWidget {
                       const Icon(
                         Icons.star_rounded,
                         size: 18,
-                        color: Color(0xFFF5A524),
+                        color: AppColors.warning,
                       ),
                       const SizedBox(width: 3),
                       Text(

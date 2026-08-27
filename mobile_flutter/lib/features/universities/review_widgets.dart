@@ -30,7 +30,10 @@ class ReviewTagChip extends StatelessWidget {
     final negative = _kNegativeReviewTags.contains(tag);
     final color = negative ? AppColors.error : AppColors.primary;
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: 6),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.sm,
+        vertical: 6,
+      ),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(AppRadius.full),
@@ -38,7 +41,11 @@ class ReviewTagChip extends StatelessWidget {
       ),
       child: Text(
         count != null ? '$tag · $count' : tag,
-        style: TextStyle(fontSize: AppFont.xs, fontWeight: AppFont.semibold, color: color),
+        style: TextStyle(
+          fontSize: AppFont.xs,
+          fontWeight: AppFont.semibold,
+          color: color,
+        ),
       ),
     );
   }
@@ -47,7 +54,11 @@ class ReviewTagChip extends StatelessWidget {
 /// One "Rated by Category" row — a labeled progress bar, skipped entirely
 /// (not rendered as a zero) when nobody has answered that category yet.
 class CategoryRatingBar extends StatelessWidget {
-  const CategoryRatingBar({super.key, required this.label, required this.value});
+  const CategoryRatingBar({
+    super.key,
+    required this.label,
+    required this.value,
+  });
   final String label;
   final double? value;
 
@@ -63,7 +74,10 @@ class CategoryRatingBar extends StatelessWidget {
             width: 92,
             child: Text(
               label,
-              style: const TextStyle(fontSize: AppFont.sm, color: AppColors.textPrimary),
+              style: const TextStyle(
+                fontSize: AppFont.sm,
+                color: AppColors.textPrimary,
+              ),
             ),
           ),
           Expanded(
@@ -83,7 +97,10 @@ class CategoryRatingBar extends StatelessWidget {
             child: Text(
               v.toStringAsFixed(1),
               textAlign: TextAlign.right,
-              style: const TextStyle(fontSize: AppFont.sm, fontWeight: AppFont.bold),
+              style: const TextStyle(
+                fontSize: AppFont.sm,
+                fontWeight: AppFont.bold,
+              ),
             ),
           ),
         ],
@@ -115,7 +132,9 @@ class ReviewScoreRing extends StatelessWidget {
               value: v == null ? 0 : (v / 5).clamp(0, 1),
               strokeWidth: size * 0.09,
               backgroundColor: AppColors.border,
-              valueColor: AlwaysStoppedAnimation(v == null ? AppColors.border : reviewScoreColor(v)),
+              valueColor: AlwaysStoppedAnimation(
+                v == null ? AppColors.border : reviewScoreColor(v),
+              ),
             ),
           ),
           Column(
@@ -131,7 +150,10 @@ class ReviewScoreRing extends StatelessWidget {
               ),
               Text(
                 '/ 5.0',
-                style: TextStyle(fontSize: size * 0.13, color: AppColors.textMuted),
+                style: TextStyle(
+                  fontSize: size * 0.13,
+                  color: AppColors.textMuted,
+                ),
               ),
             ],
           ),
@@ -148,7 +170,10 @@ class RecommendPill extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: 6),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.sm,
+        vertical: 6,
+      ),
       decoration: BoxDecoration(
         color: AppColors.success.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(AppRadius.full),
@@ -175,8 +200,18 @@ class ReviewCard extends StatelessWidget {
     final d = DateTime.tryParse(review.createdAt);
     if (d == null) return '';
     const months = [
-      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
     ];
     return '${months[d.month - 1]} ${d.day}, ${d.year}';
   }
@@ -191,7 +226,9 @@ class ReviewCard extends StatelessWidget {
             children: [
               StatusChip(
                 label: review.authorIsMentor ? 'Mentor' : 'Student',
-                color: review.authorIsMentor ? AppColors.accent : AppColors.primary,
+                color: review.authorIsMentor
+                    ? AppColors.accent
+                    : AppColors.primary,
               ),
               const Spacer(),
               Row(
@@ -202,7 +239,7 @@ class ReviewCard extends StatelessWidget {
                           ? Icons.star_rounded
                           : Icons.star_border_rounded,
                       size: 16,
-                      color: const Color(0xFFF5A524),
+                      color: AppColors.warning,
                     ),
                 ],
               ),
@@ -210,14 +247,24 @@ class ReviewCard extends StatelessWidget {
           ),
           if (_dateLabel.isNotEmpty) ...[
             const SizedBox(height: 4),
-            Text(_dateLabel,
-                style: const TextStyle(fontSize: AppFont.xs, color: AppColors.textMuted)),
+            Text(
+              _dateLabel,
+              style: const TextStyle(
+                fontSize: AppFont.xs,
+                color: AppColors.textMuted,
+              ),
+            ),
           ],
           if (review.body != null && review.body!.trim().isNotEmpty) ...[
             const SizedBox(height: AppSpacing.sm),
-            Text(review.body!,
-                style: const TextStyle(
-                    fontSize: AppFont.sm, color: AppColors.textPrimary, height: 1.4)),
+            Text(
+              review.body!,
+              style: const TextStyle(
+                fontSize: AppFont.sm,
+                color: AppColors.textPrimary,
+                height: 1.4,
+              ),
+            ),
           ],
           if ((review.pros != null && review.pros!.trim().isNotEmpty) ||
               (review.cons != null && review.cons!.trim().isNotEmpty)) ...[
@@ -250,7 +297,11 @@ class ReviewCard extends StatelessWidget {
 }
 
 class _ProsConsLine extends StatelessWidget {
-  const _ProsConsLine({required this.icon, required this.color, required this.text});
+  const _ProsConsLine({
+    required this.icon,
+    required this.color,
+    required this.text,
+  });
   final IconData icon;
   final Color color;
   final String text;
@@ -265,8 +316,13 @@ class _ProsConsLine extends StatelessWidget {
           Icon(icon, size: 14, color: color),
           const SizedBox(width: AppSpacing.xs),
           Expanded(
-            child: Text(text,
-                style: const TextStyle(fontSize: AppFont.sm, color: AppColors.textPrimary)),
+            child: Text(
+              text,
+              style: const TextStyle(
+                fontSize: AppFont.sm,
+                color: AppColors.textPrimary,
+              ),
+            ),
           ),
         ],
       ),
@@ -315,7 +371,9 @@ class _WriteReviewSheetState extends ConsumerState<WriteReviewSheet> {
       _error = null;
     });
     try {
-      await ref.read(universityReviewsApiProvider).create(
+      await ref
+          .read(universityReviewsApiProvider)
+          .create(
             widget.universityId,
             overallRating: _overallRating,
             clinicalExposureRating: _academicsRating,
@@ -353,7 +411,9 @@ class _WriteReviewSheetState extends ConsumerState<WriteReviewSheet> {
               constraints: const BoxConstraints(),
               onPressed: () => onChanged(i),
               icon: Icon(
-                value != null && i <= value ? Icons.star_rounded : Icons.star_border_rounded,
+                value != null && i <= value
+                    ? Icons.star_rounded
+                    : Icons.star_border_rounded,
                 color: AppColors.warning,
                 size: 22,
               ),
@@ -388,9 +448,13 @@ class _WriteReviewSheetState extends ConsumerState<WriteReviewSheet> {
                 ),
               ),
             ),
-            const Text('Write a review',
-                style: TextStyle(
-                    fontSize: AppFont.lg, fontWeight: AppFont.extraBold)),
+            const Text(
+              'Write a review',
+              style: TextStyle(
+                fontSize: AppFont.lg,
+                fontWeight: AppFont.extraBold,
+              ),
+            ),
             const SizedBox(height: AppSpacing.md),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -399,7 +463,9 @@ class _WriteReviewSheetState extends ConsumerState<WriteReviewSheet> {
                   IconButton(
                     onPressed: () => setState(() => _overallRating = i),
                     icon: Icon(
-                      i <= _overallRating ? Icons.star_rounded : Icons.star_border_rounded,
+                      i <= _overallRating
+                          ? Icons.star_rounded
+                          : Icons.star_border_rounded,
                       color: AppColors.warning,
                       size: 32,
                     ),
@@ -407,16 +473,36 @@ class _WriteReviewSheetState extends ConsumerState<WriteReviewSheet> {
               ],
             ),
             const SizedBox(height: AppSpacing.md),
-            const Text('Rate by category (optional)',
-                style: TextStyle(fontSize: AppFont.sm, fontWeight: AppFont.bold)),
+            const Text(
+              'Rate by category (optional)',
+              style: TextStyle(fontSize: AppFont.sm, fontWeight: AppFont.bold),
+            ),
             const SizedBox(height: AppSpacing.xs),
-            _starRow('Academics', _academicsRating, (v) => setState(() => _academicsRating = v)),
-            _starRow('Campus Life', _campusLifeRating, (v) => setState(() => _campusLifeRating = v)),
-            _starRow('Workload', _workloadRating, (v) => setState(() => _workloadRating = v)),
-            _starRow('Career Value', _careerValueRating, (v) => setState(() => _careerValueRating = v)),
+            _starRow(
+              'Academics',
+              _academicsRating,
+              (v) => setState(() => _academicsRating = v),
+            ),
+            _starRow(
+              'Campus Life',
+              _campusLifeRating,
+              (v) => setState(() => _campusLifeRating = v),
+            ),
+            _starRow(
+              'Workload',
+              _workloadRating,
+              (v) => setState(() => _workloadRating = v),
+            ),
+            _starRow(
+              'Career Value',
+              _careerValueRating,
+              (v) => setState(() => _careerValueRating = v),
+            ),
             const SizedBox(height: AppSpacing.sm),
-            const Text('Would you recommend this college?',
-                style: TextStyle(fontSize: AppFont.sm, fontWeight: AppFont.bold)),
+            const Text(
+              'Would you recommend this college?',
+              style: TextStyle(fontSize: AppFont.sm, fontWeight: AppFont.bold),
+            ),
             const SizedBox(height: AppSpacing.xs),
             Row(
               children: [
@@ -434,8 +520,10 @@ class _WriteReviewSheetState extends ConsumerState<WriteReviewSheet> {
               ],
             ),
             const SizedBox(height: AppSpacing.sm),
-            const Text('Highlights (optional)',
-                style: TextStyle(fontSize: AppFont.sm, fontWeight: AppFont.bold)),
+            const Text(
+              'Highlights (optional)',
+              style: TextStyle(fontSize: AppFont.sm, fontWeight: AppFont.bold),
+            ),
             const SizedBox(height: AppSpacing.xs),
             Wrap(
               spacing: AppSpacing.xs,
@@ -461,7 +549,8 @@ class _WriteReviewSheetState extends ConsumerState<WriteReviewSheet> {
               maxLines: 4,
               maxLength: 3000,
               decoration: const InputDecoration(
-                hintText: 'Share your experience — academics, faculty, campus life...',
+                hintText:
+                    'Share your experience — academics, faculty, campus life...',
                 border: OutlineInputBorder(),
               ),
             ),
@@ -483,8 +572,13 @@ class _WriteReviewSheetState extends ConsumerState<WriteReviewSheet> {
             ),
             if (_error != null) ...[
               const SizedBox(height: AppSpacing.sm),
-              Text(_error!,
-                  style: const TextStyle(fontSize: AppFont.xs, color: AppColors.error)),
+              Text(
+                _error!,
+                style: const TextStyle(
+                  fontSize: AppFont.xs,
+                  color: AppColors.error,
+                ),
+              ),
             ],
             const SizedBox(height: AppSpacing.sm),
             SizedBox(
@@ -495,7 +589,10 @@ class _WriteReviewSheetState extends ConsumerState<WriteReviewSheet> {
                     ? const SizedBox(
                         height: 18,
                         width: 18,
-                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
                       )
                     : const Text('Post review'),
               ),
