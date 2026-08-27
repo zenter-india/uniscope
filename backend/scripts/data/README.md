@@ -516,6 +516,51 @@ matching correctly reuses those rows and pushes `"PG"` onto their
 `levels` (already `["UG"]` from BDS) rather than creating duplicates,
 same as how DNB/DM-MCh/Diploma reuse UG-seeded rows.
 
+## `btech-colleges.json` — B.Tech/B.E (Engineering UG) colleges
+
+Input to `../seed-btech-colleges.mjs`. Source: `NBA_Colleges_Clean.xlsx`,
+sheet "Clean Data" (S.No/College/District/State — no ownership/management
+column at all). One entry per (College Name, District, State). **316
+colleges, `type` defaulted to `PRIVATE`** for all of them since this
+source has no ownership data to derive it from (unlike BDS, which had a
+`Management` column).
+
+**Like BDS, no specialization data at all.** B.Tech/B.E is the base
+engineering undergraduate degree — this seed script only creates/updates
+`University` rows (`stream: 'Engineering'`, `levels: ['UG']`), no
+`Program` row. District goes on `University.city`, same convention as
+`bds-colleges.json`.
+
+**28 rows dropped for having no state (and therefore no district)
+at all** — matches the source's own "No District in Source" sheet count
+exactly. `University.state` is a required field, so these were excluded
+rather than guessed at, consistent with every other "don't guess, flag
+and exclude" decision in this file.
+
+**Address-bleed found and fixed, same as the DNB/MDS lesson** — 20 of 42
+comma-containing college names had the district text duplicated after a
+comma in the name itself (e.g. `"XYZ College of Engineering, Kancheepuram"`
+where `District` already says `"Kancheepuram"`). Fixed by truncating at
+the first comma before grouping, checked proactively this time rather
+than discovered after seeding.
+
+**The mentor form's College field for Stream=Engineering uses
+`CollegeSearch` with a `stream="Engineering"` filter** — same pattern as
+Dental/BDS. `MentorForm.tsx`'s `STREAMS_WITH_COLLEGE_DATA` set now
+includes `"Engineering"` alongside `"Dental"`.
+
+**Unlike BDS, the Specialization field is still shown for
+Stream=Engineering — just empty/disabled ("Coming soon"), pending a
+future specialization dataset upload.** This is a genuinely new gating
+mechanism, `STREAMS_WITH_EMPTY_SPECIALIZATION`, distinct from
+`hasCuratedData` (which governs both whether the field renders *and*
+whether it's required/submitted): Engineering isn't in
+`CURATED_DEGREE_MAP_BY_STREAM` at all, so `hasCuratedData` stays `false`
+for it (matching BDS — no specialization required at submit time, none
+sent in the payload), but the field still renders as a disabled
+placeholder so mentors can see it's coming rather than it being wholly
+absent the way it is for BDS.
+
 ## A casing bug worth knowing about — `Program.name` must be UPPERCASE
 
 `UniversitiesService.findCurated` queries `Program.name: degree.toUpperCase()`.

@@ -122,7 +122,14 @@ const BROWSE_DEGREES = new Set(["MD/MS", "DNB", "Diploma", "DM/MCh", "MDS"]);
 // uses until their own data is uploaded. A stream+degree with curated
 // specialization data (e.g. Dental+MDS, see CURATED_DEGREE_MAP_BY_STREAM)
 // doesn't need to be listed here — it's handled by the curated path.
-const STREAMS_WITH_COLLEGE_DATA = new Set(["Dental"]);
+const STREAMS_WITH_COLLEGE_DATA = new Set(["Dental", "Engineering"]);
+
+// Streams whose College field has real data (STREAMS_WITH_COLLEGE_DATA)
+// but no specialization dataset uploaded yet — per explicit request, the
+// Specialization field still shows (so the field exists, distinguishing
+// "we don't have this yet" from BDS's "this degree has no concept of
+// specializations at all"), just empty/disabled until real data arrives.
+const STREAMS_WITH_EMPTY_SPECIALIZATION = new Set(["Engineering"]);
 
 export function MentorForm({ onExit }: { onExit: () => void }) {
   const wizard = useMultiStep(5);
@@ -683,6 +690,13 @@ export function MentorForm({ onExit }: { onExit: () => void }) {
                   ))}
                 </Select>
               )}
+            </Field>
+          )}
+          {STREAMS_WITH_EMPTY_SPECIALIZATION.has(form.stream) && (
+            <Field label="Specialization" hint="Coming soon — specialization data for this stream is being added">
+              <Select gold value="" disabled onChange={() => {}}>
+                <option value="">Coming soon</option>
+              </Select>
             </Field>
           )}
         </div>
