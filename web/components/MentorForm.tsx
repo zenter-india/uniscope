@@ -122,7 +122,7 @@ const BROWSE_DEGREES = new Set(["MD/MS", "DNB", "Diploma", "DM/MCh", "MDS"]);
 // uses until their own data is uploaded. A stream+degree with curated
 // specialization data (e.g. Dental+MDS, see CURATED_DEGREE_MAP_BY_STREAM)
 // doesn't need to be listed here — it's handled by the curated path.
-const STREAMS_WITH_COLLEGE_DATA = new Set(["Dental", "Engineering"]);
+const STREAMS_WITH_COLLEGE_DATA = new Set(["Dental", "Engineering", "Law"]);
 
 // Streams whose College field has real data (STREAMS_WITH_COLLEGE_DATA)
 // but no specialization dataset uploaded yet — per explicit request, the

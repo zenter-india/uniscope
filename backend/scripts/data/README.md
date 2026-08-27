@@ -649,6 +649,79 @@ M.Tech/M.E automatically gets the same real `CollegeSearch` (stream
 filter) and disabled "Coming soon" Specialization field that B.Tech/B.E
 already has, with zero code changes.
 
+## `law-ug-colleges.json` — UG Law (B.A. LL.B. / LL.B. / integrated) colleges
+
+Input to `../seed-law-ug-colleges.mjs`. Source:
+`UG_Law_Programmes_Clean.xlsx`, sheet **"Unique Colleges"** — a
+different shape from every other dataset here: this workbook's raw
+"Clean Data" sheet is AISHE programme-level data (3,250 rows, one row
+per College×Programme×Level×Mode — 10 distinct UG/Integrated Law
+programme names like `"B.A. L.L.B."`, `"L.L.B."`, `"B.B.A-L.L.B."`),
+already pre-collapsed by the source into a "Unique Colleges" sheet
+(College Name/District/State/Programmes Offered count) — used directly
+rather than re-deriving the college list from the programme-level rows
+ourselves. **2,085 raw unique-college rows → 2,083 after normalized-key
+dedup**, `type` defaulted to `PRIVATE` (no ownership column, same as
+the two Engineering datasets).
+
+**No specialization data, no `Program` row** — same as BDS/B.Tech/
+M.Tech/M.E. `stream: 'Law'`, `levels: ['UG']`.
+
+**This source's raw college names are noticeably messier than the
+NBA/NBEMS "Clean Data"-style exports used elsewhere** — many are raw
+AISHE names with embedded street addresses, PIN codes, and
+trust/society name prefixes, not a clean pre-truncated college name.
+Blind first-comma truncation (the rule used for every dataset above)
+would have badly mangled a meaningful number of these — e.g.
+`"Institute of Law, Nirma University"` → `"Institute of Law"` (a real,
+specific, well-known law school reduced to an unhelpfully generic
+name) or `"MIT Art, Design and Technology University, Pune"` →
+`"MIT Art"`.
+
+**A different, more conservative truncation rule was used for this
+dataset instead**: after stripping `"(...)"` parenthetical asides (as
+usual), only truncate at the first comma if the text *after* it looks
+like a bare locality — at most 4 words, none of them a common
+institutional/connector word (`and`, `&`, `of`, `for`, `college`,
+`university`, `institute`, `school`, `society`, `trust`, `foundation`,
+`science`, `technology`, `law`, etc.). A tail that fails this check
+(e.g. `"Design and Technology University, Pune"`, `"Arts & Science"`)
+means the comma is very likely part of the real name or a multi-part
+address, not a bare trailing locality — so the **full name is kept
+as-is** rather than guessed at, consistent with this whole file's
+"don't guess, keep the safer option" principle. Of 914 comma-containing
+raw names, 823 were truncated (locality tail) and 91 were kept in full.
+This is a real tradeoff: some kept-in-full names still carry a messy
+embedded street address (e.g. `"Kishinchand Chellaram Law College, 123,
+Dinshaw Wachha Road, ... Churchgate, Mumbai - 400 020"`) rather than
+being cleanly reduced — accepted as the lesser risk versus mangling a
+real name, and worth a manual pass if this file needs a cleaner
+re-export in future.
+
+**Only 2 normalized-key duplicate pairs found** (both legitimate merges
+of a full-address entry and a shorter/generic entry for the same real
+college, e.g. `"Government Law College, Salgame Road, Hassan"` merging
+with `"Government Law College, Holenarasipura"` under the same
+district) — no case-variant collisions otherwise.
+
+**One state name normalized for consistency**, same as the Engineering
+refresh: the source's `"The Dadra and Nagar Haveli and Daman and Diu"`
+(1 row) had its leading `"The "` stripped to match `INDIAN_STATES`'
+`"Dadra and Nagar Haveli and Daman and Diu"`.
+
+**The mentor form's College field for Stream=Law uses `CollegeSearch`
+with a `stream="Law"` filter** — same pattern as Dental/BDS and
+Engineering. `MentorForm.tsx`'s `STREAMS_WITH_COLLEGE_DATA` set now
+includes `"Law"`. **Unlike Engineering, no Specialization field is
+shown at all for Law** (not added to `STREAMS_WITH_EMPTY_SPECIALIZATION`)
+— per explicit request this refresh, matching BDS's "field doesn't
+exist" treatment rather than Engineering's "empty placeholder"
+treatment; both are legitimate per-stream choices the same gating
+mechanism supports. Law's `Degree` dropdown wasn't given its own
+`DEGREES_BY_STREAM` entry — it already falls back to
+`DEFAULT_NON_MEDICAL_DEGREES` (`UG`/`PG`/`Doctorate`/`Others`), and this
+dataset is UG-only, so no options-list change was needed either.
+
 ## A casing bug worth knowing about — `Program.name` must be UPPERCASE
 
 `UniversitiesService.findCurated` queries `Program.name: degree.toUpperCase()`.
