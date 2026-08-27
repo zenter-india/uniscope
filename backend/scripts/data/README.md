@@ -470,6 +470,52 @@ comma-containing names, all genuine institutional name components
 (hospital/institute affiliations), none matching the District column's
 text the way DNB's/diploma's address-bleed did.
 
+## `mds-colleges.json` — MDS (Dental PG) colleges + specializations
+
+Input to `../seed-mds-colleges.mjs`. Source: `MDS_Colleges_Clean.xlsx`
+(same provider as `bds-colleges.json`), sheet "Clean Data" — one row per
+(College, District, State, Specialization). Unlike BDS, MDS is a
+postgrad dental specialty program with real specialization data, so
+this seed script creates/updates both `University` and a "MDS" `Program`
+row per college, mirroring `seed-dnb-colleges.mjs` exactly (same
+district-aware `claimed`-set matching, `Program.description` carries the
+district, `isActive: true` on upsert). **287 colleges, 46 GOVERNMENT /
+241 PRIVATE, 9 specializations** (`MDS Conservative Dentistry &
+Endodontics`, `MDS Oral & Maxillofacial Pathology and Oral Microbiology`,
+`MDS Oral Medicine & Radiology`, `MDS Oral and Maxillofacial Surgery`,
+`MDS Orthodontics & Dentofacial Orthopedics`, `MDS Pediatric and
+Preventive Dentistry`, `MDS Periodontology`, `MDS Prosthodontics and
+Crown & Bridge`, `MDS Public Health Dentistry`) — one typo fixed
+(`"Orthodonitics"` → `"Orthodontics"`), otherwise the source's own
+`"MDS <Specialty>"` labels kept as-is.
+
+**No separate ownership column in "Clean Data"** — `type` comes from
+joining against this same workbook's "Colleges" sheet (329 rows, the
+same sheet `bds-colleges.json` reads from) by (name, state); all 280
+distinct MDS colleges matched a row there. Same lenient govt/govern
+substring detection as elsewhere.
+
+**The mentor form's College field for Stream=Dental, Degree=MDS uses
+the full `CuratedCollegeSearch` browse+search pattern**, same as
+Medical's MD/MS/DNB/Diploma/DM-MCh — picking a college populates the
+Specialization field with that college's own specializations, falling
+back to the full 9-item list only when no college matched (same
+mechanism as every other curated degree). This required generalizing
+`MentorForm.tsx`'s `CURATED_DEGREE_MAP` (previously Medical-only,
+hardcoded `stream="Medical"` on `CuratedCollegeSearch` and in the
+`fetchCuratedColleges` calls) into `CURATED_DEGREE_MAP_BY_STREAM`, keyed
+by stream then degree — no backend change was needed, since
+`UniversitiesService.findCurated` was already stream-agnostic
+(`query.stream` was never hardcoded there). BDS stays on the plain
+`CollegeSearch`+`stream` filter pattern (see above) since it has no
+specialization data to browse.
+
+**Many MDS colleges already exist as `University` rows from the BDS
+seed** (same physical college, same name+state) — the district-aware
+matching correctly reuses those rows and pushes `"PG"` onto their
+`levels` (already `["UG"]` from BDS) rather than creating duplicates,
+same as how DNB/DM-MCh/Diploma reuse UG-seeded rows.
+
 ## A casing bug worth knowing about — `Program.name` must be UPPERCASE
 
 `UniversitiesService.findCurated` queries `Program.name: degree.toUpperCase()`.

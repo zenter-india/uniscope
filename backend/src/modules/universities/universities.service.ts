@@ -130,8 +130,12 @@ export class UniversitiesService {
 
   /**
    * The mentor form's College/University list for a given stream+degree —
-   * today Medical/DNB, Medical/MD-MS, Medical/DM-MCH, and Medical/DIPLOMA
-   * have data (see scripts/seed-*-colleges.mjs). Two modes, though only
+   * today Medical/DNB, Medical/MD-MS, Medical/DM-MCH, Medical/DIPLOMA, and
+   * Dental/MDS have data (see scripts/seed-*-colleges.mjs). Stream isn't
+   * hardcoded anywhere in this method — it's always whatever `query.stream`
+   * says, so a new stream's curated degree (like Dental/MDS) needs no
+   * backend change, just a seed script and a frontend entry in
+   * MentorForm.tsx's CURATED_DEGREE_MAP_BY_STREAM. Two modes, though only
    * `browse=true` is used by any degree today (kept as the CURATED_LIMIT
    * default in case a future degree's data is too large to browse in full):
    *
@@ -139,7 +143,7 @@ export class UniversitiesService {
    *   alphabetical. Every other seeded college for this stream+degree is
    *   still reachable in the DB but not surfaced here — the form falls
    *   back to a free-text "Other" entry.
-   * - `browse=true` (MD/MS, DNB, Diploma, DM/MCh — all small/complete
+   * - `browse=true` (MD/MS, DNB, Diploma, DM/MCh, MDS — all small/complete
    *   enough to browse in full): returns every matching college, uncapped,
    *   optionally filtered by `search` as a case-insensitive substring
    *   match on the college's name, district, *or* state (so searching a
@@ -153,9 +157,9 @@ export class UniversitiesService {
    *   every college for these degrees, not a curated subset.
    *
    * Label is "name, district, state" when the Program has a district on
-   * its `description` (DNB/DM-MCh/Diploma — all three now seeded with
-   * district data), or just "name, state" otherwise (MD/MS — no district
-   * in its source).
+   * its `description` (DNB/DM-MCh/Diploma/MDS — all seeded with district
+   * data), or just "name, state" otherwise (MD/MS — no district in its
+   * source).
    */
   async findCurated(
     query: ListCuratedUniversitiesDto,
