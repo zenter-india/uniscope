@@ -520,10 +520,9 @@ same as how DNB/DM-MCh/Diploma reuse UG-seeded rows.
 
 Input to `../seed-btech-colleges.mjs`. Source: `NBA_Colleges_Clean.xlsx`,
 sheet "Clean Data" (S.No/College/District/State — no ownership/management
-column at all). One entry per (College Name, District, State). **316
-colleges, `type` defaulted to `PRIVATE`** for all of them since this
-source has no ownership data to derive it from (unlike BDS, which had a
-`Management` column).
+column at all). One entry per (College Name, District, State), `type`
+defaulted to `PRIVATE` for all of them since this source has no ownership
+data to derive it from (unlike BDS, which had a `Management` column).
 
 **Like BDS, no specialization data at all.** B.Tech/B.E is the base
 engineering undergraduate degree — this seed script only creates/updates
@@ -531,18 +530,52 @@ engineering undergraduate degree — this seed script only creates/updates
 `Program` row. District goes on `University.city`, same convention as
 `bds-colleges.json`.
 
-**28 rows dropped for having no state (and therefore no district)
-at all** — matches the source's own "No District in Source" sheet count
-exactly. `University.state` is a required field, so these were excluded
-rather than guessed at, consistent with every other "don't guess, flag
-and exclude" decision in this file.
+**Refreshed once already, from a Tamil-Nadu-heavy 344-row export to a
+genuinely nationwide one (`NBA_Colleges_Clean_2.xlsx`, same "Clean Data"
+shape): 1,312 raw rows across 30 states/UTs → 1,256 unique (College,
+District, State) colleges** (up from the first version's 316). Tamil
+Nadu is still the largest single state (254), followed by Maharashtra
+(186), Andhra Pradesh (130), Karnataka (126), Telangana (124) — the
+first version's data is a strict subset of this one, so this file
+**replaces** rather than merges with it.
 
-**Address-bleed found and fixed, same as the DNB/MDS lesson** — 20 of 42
-comma-containing college names had the district text duplicated after a
-comma in the name itself (e.g. `"XYZ College of Engineering, Kancheepuram"`
-where `District` already says `"Kancheepuram"`). Fixed by truncating at
-the first comma before grouping, checked proactively this time rather
-than discovered after seeding.
+**33 rows dropped for having no state at all** (matches the source's own
+"No District in Source" sheet count exactly) — `University.state` is
+required, so excluded rather than guessed at, same as the first
+refresh's 28. One further row (`"Career Institute of Technology &
+Management"`, Haryana) has a state but no district — kept, with
+`University.city` left `null` for it, same as every other dataset here
+handles a missing city.
+
+**Address-bleed found and fixed again, same as the DNB/MDS lesson** — 77
+of 162 comma-containing college names had the district text duplicated
+after a comma in the name itself (e.g. `"JNTUA COLLEGE OF ENGINEERING,
+PULIVENDULA, KADAPA"` where `District` already says `"Pulivendula,
+Kadapa"`). Fixed by truncating at the first comma before grouping,
+checked proactively rather than discovered after seeding.
+
+**Normalized (lowercase+trim) grouping key used again, per the diploma
+refresh's 746-vs-735 lesson** — 1,279 rows (after dropping no-state rows)
+collapsed to 1,256 unique keys; the 23-row difference was almost
+entirely case-variant duplicates of the same college (e.g. `"ACHARYA
+INSTITUTE OF TECHNOLOGY"` vs `"Acharya Institute of Technology"`, both
+Bangalore, Karnataka) plus a few comma-bleed variants of the same
+college now correctly merging after the truncation fix above (e.g.
+`"KARUNYA INSTITUTE OF TECHNOLOGY"` and `"KARUNYA INSTITUTE OF
+TECHNOLOGY, COIMBATORE"`) — first-seen casing kept as canonical, same
+convention as the DNB refresh. No name over `University.name`'s
+VARCHAR(200) limit.
+
+**One state name normalized for consistency**: the source's `"Andaman
+and Nicobar"` (1 row) was expanded to `"Andaman and Nicobar Islands"` to
+match the full official name used elsewhere in the app (`INDIAN_STATES`
+in `web/lib/options.ts`) — this doesn't affect matching/search logic
+(University.state is free text, not gated to that list), just display
+consistency.
+
+Seed script itself needed no changes for this refresh — the existing
+district-aware `claimed`-set matching in `seed-btech-colleges.mjs`
+already handles the larger dataset the same way it did the smaller one.
 
 **The mentor form's College field for Stream=Engineering uses
 `CollegeSearch` with a `stream="Engineering"` filter** — same pattern as
