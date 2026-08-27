@@ -1,0 +1,4319 @@
+[
+  {
+    "name": "A.B. Shetty Memorial Institute of Dental Sciences",
+    "district": "Mangalore",
+    "state": "Karnataka",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral & Maxillofacial Pathology and Oral Microbiology",
+      "MDS Oral Medicine & Radiology",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge"
+    ]
+  },
+  {
+    "name": "A.J. Institute of Dental Sciences",
+    "district": "Mangalore",
+    "state": "Karnataka",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral & Maxillofacial Pathology and Oral Microbiology",
+      "MDS Oral Medicine & Radiology",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge",
+      "MDS Public Health Dentistry"
+    ]
+  },
+  {
+    "name": "Adesh Institute of Dental Sciences & Research",
+    "district": "Bathinda",
+    "state": "Punjab",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Orthodontics & Dentofacial Orthopedics"
+    ]
+  },
+  {
+    "name": "Adhiparasakthi Dental College & Hospital",
+    "district": "Melmaruvathur",
+    "state": "Tamil Nadu",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral & Maxillofacial Pathology and Oral Microbiology",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge"
+    ]
+  },
+  {
+    "name": "Aditya Dental College",
+    "district": "Beed",
+    "state": "Maharashtra",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge"
+    ]
+  },
+  {
+    "name": "Ahmedabad Dental College & Hospital",
+    "district": "Gandhinagar",
+    "state": "Gujarat",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral & Maxillofacial Pathology and Oral Microbiology",
+      "MDS Oral Medicine & Radiology",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge"
+    ]
+  },
+  {
+    "name": "Al Ameen Dental College & Hospital",
+    "district": "Bijapur",
+    "state": "Karnataka",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics"
+    ]
+  },
+  {
+    "name": "Al-Azhar Dental College",
+    "district": "Kerala",
+    "state": "Kerala",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral Medicine & Radiology",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Prosthodontics and Crown & Bridge"
+    ]
+  },
+  {
+    "name": "Al-Badar Rural Dental College & Hospital",
+    "district": "Gulbarga",
+    "state": "Karnataka",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral & Maxillofacial Pathology and Oral Microbiology",
+      "MDS Oral Medicine & Radiology",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge"
+    ]
+  },
+  {
+    "name": "AMC Dental College",
+    "district": "Ahmedabad",
+    "state": "Gujarat",
+    "type": "GOVERNMENT",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge"
+    ]
+  },
+  {
+    "name": "AME’s Dental College & Hospital",
+    "district": "Raichur",
+    "state": "Karnataka",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral Medicine & Radiology",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge"
+    ]
+  },
+  {
+    "name": "Amrita School of Dentistry",
+    "district": "Kochi",
+    "state": "Kerala",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral & Maxillofacial Pathology and Oral Microbiology",
+      "MDS Oral Medicine & Radiology",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge",
+      "MDS Public Health Dentistry"
+    ]
+  },
+  {
+    "name": "Anil Neerukonda Institute of Dental Sciences",
+    "district": "Visakhapatnam",
+    "state": "Andhra Pradesh",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral Medicine & Radiology",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge",
+      "MDS Public Health Dentistry"
+    ]
+  },
+  {
+    "name": "Annasaheb Chudaman Patil Memorial Dental College",
+    "district": "Dhule",
+    "state": "Maharashtra",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge",
+      "MDS Public Health Dentistry"
+    ]
+  },
+  {
+    "name": "Annoor Dental College & Hospital",
+    "district": "Ernakulam",
+    "state": "Kerala",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral & Maxillofacial Pathology and Oral Microbiology",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge"
+    ]
+  },
+  {
+    "name": "Armed Forces Medical College",
+    "district": "Pune-1",
+    "state": "Maharashtra",
+    "type": "GOVERNMENT",
+    "specializations": [
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge"
+    ]
+  },
+  {
+    "name": "Army College of Dental Sciences",
+    "district": "Secunderabad",
+    "state": "Telangana",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge"
+    ]
+  },
+  {
+    "name": "Army Hospital (Research and Referral) Delhi Cantt",
+    "district": "Delhi",
+    "state": "Delhi",
+    "type": "GOVERNMENT",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge"
+    ]
+  },
+  {
+    "name": "Awadh Dental College & Hospital",
+    "district": "Jamshedpur",
+    "state": "Jharkhand",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral & Maxillofacial Pathology and Oral Microbiology",
+      "MDS Oral Medicine & Radiology",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge"
+    ]
+  },
+  {
+    "name": "Azeezia College of Dental Sciences & Research",
+    "district": "Kollam",
+    "state": "Kerala",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral & Maxillofacial Pathology and Oral Microbiology",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge"
+    ]
+  },
+  {
+    "name": "Baba Jaswant Singh Dental College Hospital & Research Institute",
+    "district": "Ludhiana",
+    "state": "Punjab",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge"
+    ]
+  },
+  {
+    "name": "Babu Banarasi Das College of Dental Sciences",
+    "district": "Lucknow",
+    "state": "Uttar Pradesh",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral & Maxillofacial Pathology and Oral Microbiology",
+      "MDS Oral Medicine & Radiology",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge",
+      "MDS Public Health Dentistry"
+    ]
+  },
+  {
+    "name": "Bangalore Institute of Dental Sciences & Hospital",
+    "district": "Bangalore",
+    "state": "Karnataka",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral Medicine & Radiology",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge",
+      "MDS Public Health Dentistry"
+    ]
+  },
+  {
+    "name": "Bapuji Dental College & Hospital",
+    "district": "Davangere",
+    "state": "Karnataka",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral & Maxillofacial Pathology and Oral Microbiology",
+      "MDS Oral Medicine & Radiology",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge",
+      "MDS Public Health Dentistry"
+    ]
+  },
+  {
+    "name": "Best Dental Science College",
+    "district": "Madurai",
+    "state": "Tamil Nadu",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral & Maxillofacial Pathology and Oral Microbiology",
+      "MDS Oral Medicine & Radiology",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Periodontology",
+      "MDS Public Health Dentistry"
+    ]
+  },
+  {
+    "name": "Bhabha College of Dental Sciences",
+    "district": "Bhopal",
+    "state": "Madhya Pradesh",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral & Maxillofacial Pathology and Oral Microbiology",
+      "MDS Oral Medicine & Radiology",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge",
+      "MDS Public Health Dentistry"
+    ]
+  },
+  {
+    "name": "Bharati Vidyapeeth Dental College & Hospital",
+    "district": "Navi Mumbai",
+    "state": "Maharashtra",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge"
+    ]
+  },
+  {
+    "name": "Bharati Vidyapeeth Dental College & Hospital",
+    "district": "Pune",
+    "state": "Maharashtra",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral & Maxillofacial Pathology and Oral Microbiology",
+      "MDS Oral Medicine & Radiology",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge"
+    ]
+  },
+  {
+    "name": "Bharati Vidyapeeth Dental College & Hospital",
+    "district": "Sangli",
+    "state": "Maharashtra",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge"
+    ]
+  },
+  {
+    "name": "Bhojia Dental College & Hospital",
+    "district": "Nalagarh",
+    "state": "Himachal Pradesh",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral & Maxillofacial Pathology and Oral Microbiology",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge"
+    ]
+  },
+  {
+    "name": "Buddha Institute of Dental Sciences & Hospital, Kankarbagh",
+    "district": "Patna",
+    "state": "Bihar",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral & Maxillofacial Pathology and Oral Microbiology",
+      "MDS Oral Medicine & Radiology",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge",
+      "MDS Public Health Dentistry"
+    ]
+  },
+  {
+    "name": "C.K.S. Teja Institute of Dental Sciences & Research",
+    "district": "Tirupati",
+    "state": "Andhra Pradesh",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral & Maxillofacial Pathology and Oral Microbiology",
+      "MDS Oral Medicine & Radiology",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge"
+    ]
+  },
+  {
+    "name": "Care Dental College",
+    "district": "Guntur",
+    "state": "Andhra Pradesh",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Prosthodontics and Crown & Bridge"
+    ]
+  },
+  {
+    "name": "Career Institute of Dental Sciences & Hospital",
+    "district": "Lucknow",
+    "state": "Uttar Pradesh",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral & Maxillofacial Pathology and Oral Microbiology",
+      "MDS Oral Medicine & Radiology",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge",
+      "MDS Public Health Dentistry"
+    ]
+  },
+  {
+    "name": "Chandra Dental College & Hospital",
+    "district": "safedabad",
+    "state": "Uttar Pradesh",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral & Maxillofacial Pathology and Oral Microbiology",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge"
+    ]
+  },
+  {
+    "name": "Chatrapati Shahu Maharaj Shikshan Sanstha’s Dental College & Hospital",
+    "district": "Aurangabad",
+    "state": "Maharashtra",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral Medicine & Radiology",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge"
+    ]
+  },
+  {
+    "name": "Chattisgarh Dental College & Research Institute",
+    "district": "Rajnandgaon",
+    "state": "Chhattisgarh",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral Medicine & Radiology",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge"
+    ]
+  },
+  {
+    "name": "Chettinad Dental College & Research Institute",
+    "district": "Kancheepuram",
+    "state": "Tamil Nadu",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral & Maxillofacial Pathology and Oral Microbiology",
+      "MDS Oral Medicine & Radiology",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge",
+      "MDS Public Health Dentistry"
+    ]
+  },
+  {
+    "name": "Christian Dental College",
+    "district": "Ludhiana",
+    "state": "Punjab",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Prosthodontics and Crown & Bridge"
+    ]
+  },
+  {
+    "name": "College of Dental Sciences &",
+    "district": "Indore",
+    "state": "Madhya Pradesh",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge"
+    ]
+  },
+  {
+    "name": "College of Dental Sciences and Research Centre",
+    "district": "Ahmedabad",
+    "state": "Gujarat",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral & Maxillofacial Pathology and Oral Microbiology",
+      "MDS Oral Medicine & Radiology",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge"
+    ]
+  },
+  {
+    "name": "College of Dental Sciences",
+    "district": "Amargadh",
+    "state": "Gujarat",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral Medicine & Radiology",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge"
+    ]
+  },
+  {
+    "name": "College of Dental Sciences",
+    "district": "Davangere",
+    "state": "Karnataka",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral & Maxillofacial Pathology and Oral Microbiology",
+      "MDS Oral Medicine & Radiology",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge",
+      "MDS Public Health Dentistry"
+    ]
+  },
+  {
+    "name": "College of Dentistry-",
+    "district": "Indore",
+    "state": "Madhya Pradesh",
+    "type": "GOVERNMENT",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral & Maxillofacial Pathology and Oral Microbiology",
+      "MDS Oral Medicine & Radiology",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge",
+      "MDS Public Health Dentistry"
+    ]
+  },
+  {
+    "name": "Coorg Institute of Dental Sciences",
+    "district": "Virajpat",
+    "state": "Karnataka",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral & Maxillofacial Pathology and Oral Microbiology",
+      "MDS Oral Medicine & Radiology",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge",
+      "MDS Public Health Dentistry"
+    ]
+  },
+  {
+    "name": "CSI College of Dental Sciences & Research",
+    "district": "Madurai",
+    "state": "Tamil Nadu",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral & Maxillofacial Pathology and Oral Microbiology",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge"
+    ]
+  },
+  {
+    "name": "D.A. Pandu Memorial R.V. Dental College",
+    "district": "Bangalore",
+    "state": "Karnataka",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral & Maxillofacial Pathology and Oral Microbiology",
+      "MDS Oral Medicine & Radiology",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge",
+      "MDS Public Health Dentistry"
+    ]
+  },
+  {
+    "name": "D.A.V. Centenary Dental College",
+    "district": "Yamuna nagar",
+    "state": "Haryana",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge"
+    ]
+  },
+  {
+    "name": "D.J. College of Dental Sciences & Research",
+    "district": "Modi Nagar",
+    "state": "Uttar Pradesh",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral & Maxillofacial Pathology and Oral Microbiology",
+      "MDS Oral Medicine & Radiology",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge",
+      "MDS Public Health Dentistry"
+    ]
+  },
+  {
+    "name": "D.Y. Patil Dental School",
+    "district": "Pune",
+    "state": "Maharashtra",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Prosthodontics and Crown & Bridge"
+    ]
+  },
+  {
+    "name": "Darshan Dental College & Hospital",
+    "district": "Udaipur",
+    "state": "Rajasthan",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral Medicine & Radiology",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge",
+      "MDS Public Health Dentistry"
+    ]
+  },
+  {
+    "name": "Dasmesh Institute of Research & Dental Sciences",
+    "district": "Faridkot",
+    "state": "Punjab",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral Medicine & Radiology",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge"
+    ]
+  },
+  {
+    "name": "Daswani Dental College & Research Centre",
+    "district": "Kota",
+    "state": "Rajasthan",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral & Maxillofacial Pathology and Oral Microbiology",
+      "MDS Oral Medicine & Radiology",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge"
+    ]
+  },
+  {
+    "name": "Dayanand Sagar College of Dental Sciences",
+    "district": "Bangalore",
+    "state": "Karnataka",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge"
+    ]
+  },
+  {
+    "name": "Dental College, RIMS",
+    "district": "Imphal",
+    "state": "Manipur",
+    "type": "GOVERNMENT",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral & Maxillofacial Pathology and Oral Microbiology",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge"
+    ]
+  },
+  {
+    "name": "Dental College",
+    "district": "Azamgarh",
+    "state": "Uttar Pradesh",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral Medicine & Radiology",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge"
+    ]
+  },
+  {
+    "name": "Dental Institute Rajendra Institute of Medical Sciences",
+    "district": "Ranchi",
+    "state": "Jharkhand",
+    "type": "GOVERNMENT",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral & Maxillofacial Pathology and Oral Microbiology",
+      "MDS Oral Medicine & Radiology",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge",
+      "MDS Public Health Dentistry"
+    ]
+  },
+  {
+    "name": "Desh Bhagat Dental College & Hospital",
+    "district": "Mandi Gobindgarh",
+    "state": "Punjab",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge"
+    ]
+  },
+  {
+    "name": "Dr. D.Y. Patil Dental College & Hospital",
+    "district": "Pune",
+    "state": "Maharashtra",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral & Maxillofacial Pathology and Oral Microbiology",
+      "MDS Oral Medicine & Radiology",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge",
+      "MDS Public Health Dentistry"
+    ]
+  },
+  {
+    "name": "Dr. Harvansh Singh Judge Institute of Dental Sciences & Hospital",
+    "district": "Chandigarh",
+    "state": "Chandigarh",
+    "type": "GOVERNMENT",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral & Maxillofacial Pathology and Oral Microbiology",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge"
+    ]
+  },
+  {
+    "name": "Dr. Hedgewar Smruti Rugna Seva Mandals Dental College & Hospital",
+    "district": "Hingoli",
+    "state": "Maharashtra",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge"
+    ]
+  },
+  {
+    "name": "Dr. R. Ahmed Dental College & Hospital",
+    "district": "Calcutta",
+    "state": "West Bengal",
+    "type": "GOVERNMENT",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral & Maxillofacial Pathology and Oral Microbiology",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge"
+    ]
+  },
+  {
+    "name": "Dr. Rajesh Ramdasji Kambe Dental College & Hospital",
+    "district": "Akola",
+    "state": "Maharashtra",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Prosthodontics and Crown & Bridge"
+    ]
+  },
+  {
+    "name": "Dr. Syamala Reddy Dental College, Hospital & Research Centre",
+    "district": "Bangalore",
+    "state": "Karnataka",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral & Maxillofacial Pathology and Oral Microbiology",
+      "MDS Oral Medicine & Radiology",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge",
+      "MDS Public Health Dentistry"
+    ]
+  },
+  {
+    "name": "Dr. Ziauddin Ahmad Dental College",
+    "district": "Aligarh",
+    "state": "Uttar Pradesh",
+    "type": "GOVERNMENT",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral Medicine & Radiology",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge",
+      "MDS Public Health Dentistry"
+    ]
+  },
+  {
+    "name": "Drs. Sudha & Nageswara Rao Siddhartha Institute of Dental Sciences",
+    "district": "Gannavaram Mandalam",
+    "state": "Andhra Pradesh",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge"
+    ]
+  },
+  {
+    "name": "Educare Institute of Dental Sciences",
+    "district": "Malappuram",
+    "state": "Kerala",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge"
+    ]
+  },
+  {
+    "name": "ESIC Dental College, Rohini",
+    "district": "New Delhi",
+    "state": "Delhi",
+    "type": "GOVERNMENT",
+    "specializations": [
+      "MDS Oral and Maxillofacial Surgery"
+    ]
+  },
+  {
+    "name": "ESIC Dental College",
+    "district": "Gulbarga",
+    "state": "Karnataka",
+    "type": "GOVERNMENT",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Prosthodontics and Crown & Bridge"
+    ]
+  },
+  {
+    "name": "Faculty of Dental Science, Dharmsinh Desai University",
+    "district": "Nadiad",
+    "state": "Gujarat",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral & Maxillofacial Pathology and Oral Microbiology",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge"
+    ]
+  },
+  {
+    "name": "Faculty of Dental Sciences, Banaras Hindu University",
+    "district": "Varanasi",
+    "state": "Uttar Pradesh",
+    "type": "GOVERNMENT",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral & Maxillofacial Pathology and Oral Microbiology",
+      "MDS Oral Medicine & Radiology",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge",
+      "MDS Public Health Dentistry"
+    ]
+  },
+  {
+    "name": "Faculty of Dental Sciences",
+    "district": "Lucknow",
+    "state": "Uttar Pradesh",
+    "type": "GOVERNMENT",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral & Maxillofacial Pathology and Oral Microbiology",
+      "MDS Oral Medicine & Radiology",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge",
+      "MDS Public Health Dentistry"
+    ]
+  },
+  {
+    "name": "Faculty of Dentistry, Jamia Millia Islamia",
+    "district": "New Delhi",
+    "state": "Delhi",
+    "type": "GOVERNMENT",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral & Maxillofacial Pathology and Oral Microbiology",
+      "MDS Oral Medicine & Radiology",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge",
+      "MDS Public Health Dentistry"
+    ]
+  },
+  {
+    "name": "Farooqia Dental College & Hospital",
+    "district": "Mysore",
+    "state": "Karnataka",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral & Maxillofacial Pathology and Oral Microbiology",
+      "MDS Oral Medicine & Radiology",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge"
+    ]
+  },
+  {
+    "name": "G. Pulla Reddy Dental College & Hospital",
+    "district": "Kurnool",
+    "state": "Andhra Pradesh",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral & Maxillofacial Pathology and Oral Microbiology",
+      "MDS Oral Medicine & Radiology",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge"
+    ]
+  },
+  {
+    "name": "Geetanjali Dental & Research Institute",
+    "district": "Udaipur",
+    "state": "Rajasthan",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Prosthodontics and Crown & Bridge"
+    ]
+  },
+  {
+    "name": "Genesis Institute of Dental Sciences & Research",
+    "district": "Ferozepur",
+    "state": "Punjab",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral & Maxillofacial Pathology and Oral Microbiology",
+      "MDS Oral Medicine & Radiology",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge"
+    ]
+  },
+  {
+    "name": "Gitam Dental College & Hospital",
+    "district": "Vishakhapatnam",
+    "state": "Andhra Pradesh",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral & Maxillofacial Pathology and Oral Microbiology",
+      "MDS Oral Medicine & Radiology",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge"
+    ]
+  },
+  {
+    "name": "Goa Dental College & Hospital",
+    "district": "Goa",
+    "state": "Goa",
+    "type": "GOVERNMENT",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral & Maxillofacial Pathology and Oral Microbiology",
+      "MDS Oral Medicine & Radiology",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge",
+      "MDS Public Health Dentistry"
+    ]
+  },
+  {
+    "name": "Goenka Research Institute of Dental Sciences",
+    "district": "Gandhinagar",
+    "state": "Gujarat",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge"
+    ]
+  },
+  {
+    "name": "Government Dental College and Hospital",
+    "district": "Hyderabad",
+    "state": "Telangana",
+    "type": "GOVERNMENT",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral & Maxillofacial Pathology and Oral Microbiology",
+      "MDS Oral Medicine & Radiology",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge",
+      "MDS Public Health Dentistry"
+    ]
+  },
+  {
+    "name": "Govt. Dental College & Hospital",
+    "district": "Ahmedabad",
+    "state": "Gujarat",
+    "type": "GOVERNMENT",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral & Maxillofacial Pathology and Oral Microbiology",
+      "MDS Oral Medicine & Radiology",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge",
+      "MDS Public Health Dentistry"
+    ]
+  },
+  {
+    "name": "Govt. Dental College & Hospital",
+    "district": "Aurangabad",
+    "state": "Maharashtra",
+    "type": "GOVERNMENT",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral & Maxillofacial Pathology and Oral Microbiology",
+      "MDS Oral Medicine & Radiology",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge",
+      "MDS Public Health Dentistry"
+    ]
+  },
+  {
+    "name": "Govt. Dental College & Hospital",
+    "district": "Cuddalore",
+    "state": "Tamil Nadu",
+    "type": "GOVERNMENT",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral & Maxillofacial Pathology and Oral Microbiology",
+      "MDS Oral Medicine & Radiology",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge"
+    ]
+  },
+  {
+    "name": "Govt. Dental College & Hospital",
+    "district": "Jaipur",
+    "state": "Rajasthan",
+    "type": "GOVERNMENT",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral & Maxillofacial Pathology and Oral Microbiology",
+      "MDS Oral Medicine & Radiology",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge",
+      "MDS Public Health Dentistry"
+    ]
+  },
+  {
+    "name": "Govt. Dental College & Hospital",
+    "district": "Mumbai",
+    "state": "Maharashtra",
+    "type": "GOVERNMENT",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral & Maxillofacial Pathology and Oral Microbiology",
+      "MDS Oral Medicine & Radiology",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge"
+    ]
+  },
+  {
+    "name": "Govt. Dental College & Hospital",
+    "district": "Nagpur",
+    "state": "Maharashtra",
+    "type": "GOVERNMENT",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral & Maxillofacial Pathology and Oral Microbiology",
+      "MDS Oral Medicine & Radiology",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge"
+    ]
+  },
+  {
+    "name": "Govt. Dental College & Hospital",
+    "district": "Patiala",
+    "state": "Punjab",
+    "type": "GOVERNMENT",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge"
+    ]
+  },
+  {
+    "name": "Govt. Dental College & Hospital",
+    "district": "Vijayawada",
+    "state": "Andhra Pradesh",
+    "type": "GOVERNMENT",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral & Maxillofacial Pathology and Oral Microbiology",
+      "MDS Oral Medicine & Radiology",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge"
+    ]
+  },
+  {
+    "name": "Govt. Dental College Hospital",
+    "district": "Jamnagar",
+    "state": "Gujarat",
+    "type": "GOVERNMENT",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral & Maxillofacial Pathology and Oral Microbiology",
+      "MDS Oral Medicine & Radiology",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge",
+      "MDS Public Health Dentistry"
+    ]
+  },
+  {
+    "name": "Govt. Dental College, Raipur",
+    "district": "Chhattisgarh",
+    "state": "Chhattisgarh",
+    "type": "GOVERNMENT",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral & Maxillofacial Pathology and Oral Microbiology",
+      "MDS Oral Medicine & Radiology",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge",
+      "MDS Public Health Dentistry"
+    ]
+  },
+  {
+    "name": "Govt. Dental College, RIMS",
+    "district": "Kadapa",
+    "state": "Andhra Pradesh",
+    "type": "GOVERNMENT",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral & Maxillofacial Pathology and Oral Microbiology",
+      "MDS Oral Medicine & Radiology",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge"
+    ]
+  },
+  {
+    "name": "Govt. Dental College",
+    "district": "Bangalore",
+    "state": "Karnataka",
+    "type": "GOVERNMENT",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral & Maxillofacial Pathology and Oral Microbiology",
+      "MDS Oral Medicine & Radiology",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge",
+      "MDS Public Health Dentistry"
+    ]
+  },
+  {
+    "name": "Govt. Dental College",
+    "district": "Kottayam",
+    "state": "Kerala",
+    "type": "GOVERNMENT",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral & Maxillofacial Pathology and Oral Microbiology",
+      "MDS Oral Medicine & Radiology",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge",
+      "MDS Public Health Dentistry"
+    ]
+  },
+  {
+    "name": "Govt. Dental College",
+    "district": "Kozhikode",
+    "state": "Kerala",
+    "type": "GOVERNMENT",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral & Maxillofacial Pathology and Oral Microbiology",
+      "MDS Oral Medicine & Radiology",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge"
+    ]
+  },
+  {
+    "name": "Govt. Dental College",
+    "district": "Srinagar",
+    "state": "Jammu and Kashmir",
+    "type": "GOVERNMENT",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral & Maxillofacial Pathology and Oral Microbiology",
+      "MDS Oral Medicine & Radiology",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge",
+      "MDS Public Health Dentistry"
+    ]
+  },
+  {
+    "name": "Govt. Dental College",
+    "district": "Trivandrum",
+    "state": "Kerala",
+    "type": "GOVERNMENT",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral & Maxillofacial Pathology and Oral Microbiology",
+      "MDS Oral Medicine & Radiology",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge"
+    ]
+  },
+  {
+    "name": "GSL Dental College & Hospital",
+    "district": "Rajahmundry",
+    "state": "Andhra Pradesh",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral & Maxillofacial Pathology and Oral Microbiology",
+      "MDS Oral Medicine & Radiology",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge"
+    ]
+  },
+  {
+    "name": "Guru Nanak Dev Dental College & Research Institute",
+    "district": "Sunam",
+    "state": "Punjab",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral Medicine & Radiology",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge"
+    ]
+  },
+  {
+    "name": "Gurunanak Institute of Dental Science & Research",
+    "district": "Kolkatta",
+    "state": "West Bengal",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral & Maxillofacial Pathology and Oral Microbiology",
+      "MDS Oral Medicine & Radiology",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge",
+      "MDS Public Health Dentistry"
+    ]
+  },
+  {
+    "name": "H.K.E. Society's",
+    "district": "S. Nijalingappa Institute of Dental Sciences & Research",
+    "state": "Karnataka",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral & Maxillofacial Pathology and Oral Microbiology",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge"
+    ]
+  },
+  {
+    "name": "H.P. Govt. Dental College & Hospital",
+    "district": "Shimla",
+    "state": "Himachal Pradesh",
+    "type": "GOVERNMENT",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral Medicine & Radiology",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge",
+      "MDS Public Health Dentistry"
+    ]
+  },
+  {
+    "name": "Haldia Institute of Dental Sciences and Research",
+    "district": "Banbishnupur",
+    "state": "West Bengal",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral Medicine & Radiology",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge"
+    ]
+  },
+  {
+    "name": "Hazaribag College of Dental Sciences and Hospital",
+    "district": "Hazaribag",
+    "state": "Jharkhand",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral Medicine & Radiology",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge"
+    ]
+  },
+  {
+    "name": "Hi-Tech Dental College & hospital",
+    "district": "Bhubaneswar",
+    "state": "Odisha",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Prosthodontics and Crown & Bridge"
+    ]
+  },
+  {
+    "name": "Himachal Dental College",
+    "district": "Sunder Nagar",
+    "state": "Himachal Pradesh",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge"
+    ]
+  },
+  {
+    "name": "Himachal Institute of Dental Sciences",
+    "district": "Poanta Sahib",
+    "state": "Himachal Pradesh",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral & Maxillofacial Pathology and Oral Microbiology",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge"
+    ]
+  },
+  {
+    "name": "Hitkarini Dental College & Hospital",
+    "district": "Jabalpur",
+    "state": "Madhya Pradesh",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral Medicine & Radiology",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge"
+    ]
+  },
+  {
+    "name": "I.T.S. Centre for Dental Studies & Research",
+    "district": "Ghaziabad",
+    "state": "Uttar Pradesh",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral & Maxillofacial Pathology and Oral Microbiology",
+      "MDS Oral Medicine & Radiology",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge",
+      "MDS Public Health Dentistry"
+    ]
+  },
+  {
+    "name": "I.T.S. Dental College, Hospital & Research Centre",
+    "district": "Gr. Noida",
+    "state": "Uttar Pradesh",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral Medicine & Radiology",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge"
+    ]
+  },
+  {
+    "name": "Inderprastha Dental College & Hospital",
+    "district": "Ghaziabad",
+    "state": "Uttar Pradesh",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge"
+    ]
+  },
+  {
+    "name": "Index Institute of Dental Sciences",
+    "district": "Indore",
+    "state": "Madhya Pradesh",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral & Maxillofacial Pathology and Oral Microbiology",
+      "MDS Oral Medicine & Radiology",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge",
+      "MDS Public Health Dentistry"
+    ]
+  },
+  {
+    "name": "Indira Gandhi Government Dental College",
+    "district": "Jammu",
+    "state": "Jammu and Kashmir",
+    "type": "GOVERNMENT",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral & Maxillofacial Pathology and Oral Microbiology",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge",
+      "MDS Public Health Dentistry"
+    ]
+  },
+  {
+    "name": "Indira Gandhi Institute of Dental Sciences",
+    "district": "Kothamangalam",
+    "state": "Kerala",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Orthodontics & Dentofacial Orthopedics"
+    ]
+  },
+  {
+    "name": "Indira Gandhi Institute of Dental Sciences",
+    "district": "Pondicherry",
+    "state": "Puducherry",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral & Maxillofacial Pathology and Oral Microbiology",
+      "MDS Oral Medicine & Radiology",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge",
+      "MDS Public Health Dentistry"
+    ]
+  },
+  {
+    "name": "Institute of Dental Sciences",
+    "district": "Bareilly",
+    "state": "Uttar Pradesh",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral & Maxillofacial Pathology and Oral Microbiology",
+      "MDS Oral Medicine & Radiology",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge",
+      "MDS Public Health Dentistry"
+    ]
+  },
+  {
+    "name": "Institute of Dental Sciences",
+    "district": "Bhubaneswar",
+    "state": "Odisha",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral & Maxillofacial Pathology and Oral Microbiology",
+      "MDS Oral Medicine & Radiology",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge",
+      "MDS Public Health Dentistry"
+    ]
+  },
+  {
+    "name": "Institute of Dental Studies & Technology",
+    "district": "Modinagar",
+    "state": "Uttar Pradesh",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral & Maxillofacial Pathology and Oral Microbiology",
+      "MDS Oral Medicine & Radiology",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge"
+    ]
+  },
+  {
+    "name": "Jaipur Dental College",
+    "district": "Jaipur",
+    "state": "Rajasthan",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral & Maxillofacial Pathology and Oral Microbiology",
+      "MDS Oral Medicine & Radiology",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge",
+      "MDS Public Health Dentistry"
+    ]
+  },
+  {
+    "name": "Jan Nayak Ch. Devi Lal Dental College",
+    "district": "Sirsa",
+    "state": "Haryana",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge"
+    ]
+  },
+  {
+    "name": "JKK Natrajah Dental College & Hospital",
+    "district": "Komarapalayam",
+    "state": "Tamil Nadu",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral Medicine & Radiology",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge"
+    ]
+  },
+  {
+    "name": "Jodhpur Dental College General Hospital",
+    "district": "Jodhpur",
+    "state": "Rajasthan",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral Medicine & Radiology",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge"
+    ]
+  },
+  {
+    "name": "JSS Dental College & Hospital",
+    "district": "Mysore",
+    "state": "Karnataka",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral & Maxillofacial Pathology and Oral Microbiology",
+      "MDS Oral Medicine & Radiology",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge",
+      "MDS Public Health Dentistry"
+    ]
+  },
+  {
+    "name": "K.D. Dental College",
+    "district": "Mathura",
+    "state": "Uttar Pradesh",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral & Maxillofacial Pathology and Oral Microbiology",
+      "MDS Oral Medicine & Radiology",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge",
+      "MDS Public Health Dentistry"
+    ]
+  },
+  {
+    "name": "K.G.F. College of Dental Sciences & Hospital",
+    "district": "KGF",
+    "state": "Karnataka",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Orthodontics & Dentofacial Orthopedics"
+    ]
+  },
+  {
+    "name": "K.M. Shah Dental College & Hospital",
+    "district": "Vadodara",
+    "state": "Gujarat",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral & Maxillofacial Pathology and Oral Microbiology",
+      "MDS Oral Medicine & Radiology",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge",
+      "MDS Public Health Dentistry"
+    ]
+  },
+  {
+    "name": "K.S.R. Institute of Dental Science & Research",
+    "district": "Tiruchengode",
+    "state": "Tamil Nadu",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral & Maxillofacial Pathology and Oral Microbiology",
+      "MDS Oral Medicine & Radiology",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge"
+    ]
+  },
+  {
+    "name": "K.V.G. Dental College & Hospital",
+    "district": "Sullia",
+    "state": "Karnataka",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral & Maxillofacial Pathology and Oral Microbiology",
+      "MDS Oral Medicine & Radiology",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge",
+      "MDS Public Health Dentistry"
+    ]
+  },
+  {
+    "name": "Kalinga Institute of Dental Sciences",
+    "district": "Bhubaneswar",
+    "state": "Odisha",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral & Maxillofacial Pathology and Oral Microbiology",
+      "MDS Oral Medicine & Radiology",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge",
+      "MDS Public Health Dentistry"
+    ]
+  },
+  {
+    "name": "Kalka Dental College & Hospital",
+    "district": "Meerut",
+    "state": "Uttar Pradesh",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge"
+    ]
+  },
+  {
+    "name": "Kamineni Institute of Dental Sciences",
+    "district": "Nalgonda",
+    "state": "Telangana",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral Medicine & Radiology",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge"
+    ]
+  },
+  {
+    "name": "Kannur Dental College",
+    "district": "kannur",
+    "state": "Kerala",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral & Maxillofacial Pathology and Oral Microbiology",
+      "MDS Oral Medicine & Radiology",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge"
+    ]
+  },
+  {
+    "name": "Karnavati School of Dentistry",
+    "district": "Gandhinagar",
+    "state": "Gujarat",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral Medicine & Radiology",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge"
+    ]
+  },
+  {
+    "name": "Karpaga Vinayaga Institute of Dental Sciences",
+    "district": "Kanchipuram",
+    "state": "Tamil Nadu",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral & Maxillofacial Pathology and Oral Microbiology",
+      "MDS Oral Medicine & Radiology",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge",
+      "MDS Public Health Dentistry"
+    ]
+  },
+  {
+    "name": "KIMS Dental College",
+    "district": "Amalapuram",
+    "state": "Andhra Pradesh",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Prosthodontics and Crown & Bridge"
+    ]
+  },
+  {
+    "name": "KLE Society’s Institute of Dental Sciences",
+    "district": "Bangalore",
+    "state": "Karnataka",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral Medicine & Radiology",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge",
+      "MDS Public Health Dentistry"
+    ]
+  },
+  {
+    "name": "KLE Vishwanath Katti Institute of Dental Sciences",
+    "district": "Belgaum",
+    "state": "Karnataka",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral Medicine & Radiology",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge",
+      "MDS Public Health Dentistry"
+    ]
+  },
+  {
+    "name": "KMCT Dental College",
+    "district": "Calicut",
+    "state": "Kerala",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral & Maxillofacial Pathology and Oral Microbiology",
+      "MDS Oral Medicine & Radiology",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge",
+      "MDS Public Health Dentistry"
+    ]
+  },
+  {
+    "name": "Kothiwal Dental College & Research Centre",
+    "district": "Moradabad",
+    "state": "Uttar Pradesh",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral & Maxillofacial Pathology and Oral Microbiology",
+      "MDS Oral Medicine & Radiology",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge",
+      "MDS Public Health Dentistry"
+    ]
+  },
+  {
+    "name": "Krishnadevaraya College of Dental Sciences & Hospital",
+    "district": "Bangalore",
+    "state": "Karnataka",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral & Maxillofacial Pathology and Oral Microbiology",
+      "MDS Oral Medicine & Radiology",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge",
+      "MDS Public Health Dentistry"
+    ]
+  },
+  {
+    "name": "Kusum Devi Sunderlal Dugar Jain Dental College & Hospital",
+    "district": "Kolkata",
+    "state": "West Bengal",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral & Maxillofacial Pathology and Oral Microbiology",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge"
+    ]
+  },
+  {
+    "name": "Lady Hardinge Medical College & Smt. Sucheta Kriplani Hospital",
+    "district": "New Delhi",
+    "state": "Delhi",
+    "type": "GOVERNMENT",
+    "specializations": [
+      "MDS Oral and Maxillofacial Surgery"
+    ]
+  },
+  {
+    "name": "Late Shri Yashwantrao Chavan Memorial Medical & Rural Development Foundation's Dental College & Hospital",
+    "district": "Ahmednagar",
+    "state": "Maharashtra",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge"
+    ]
+  },
+  {
+    "name": "Lenora Institute of Dental Sciences",
+    "district": "Rajahmundry",
+    "state": "Andhra Pradesh",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral Medicine & Radiology",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge",
+      "MDS Public Health Dentistry"
+    ]
+  },
+  {
+    "name": "Luxmi Bai Institute of Dental Sciences & Hospital",
+    "district": "Patiala",
+    "state": "Punjab",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge"
+    ]
+  },
+  {
+    "name": "M.A. Rangoonwala College of Dental Sciences & Research Centre",
+    "district": "Pune",
+    "state": "Maharashtra",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral & Maxillofacial Pathology and Oral Microbiology",
+      "MDS Oral Medicine & Radiology",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge"
+    ]
+  },
+  {
+    "name": "M.R. Ambedkar Dental College & Hospital",
+    "district": "Bangalore",
+    "state": "Karnataka",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral & Maxillofacial Pathology and Oral Microbiology",
+      "MDS Oral Medicine & Radiology",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge",
+      "MDS Public Health Dentistry"
+    ]
+  },
+  {
+    "name": "M.S. Ramaiah Dental College",
+    "district": "Bangalore",
+    "state": "Karnataka",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral & Maxillofacial Pathology and Oral Microbiology",
+      "MDS Oral Medicine & Radiology",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge",
+      "MDS Public Health Dentistry"
+    ]
+  },
+  {
+    "name": "Madha Dental College & Hospital",
+    "district": "Kundrathur",
+    "state": "Tamil Nadu",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral & Maxillofacial Pathology and Oral Microbiology",
+      "MDS Oral Medicine & Radiology",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge",
+      "MDS Public Health Dentistry"
+    ]
+  },
+  {
+    "name": "Maharaja Ganga Singh Dental College & Research Centre",
+    "district": "Sri Ganganagar",
+    "state": "Rajasthan",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral & Maxillofacial Pathology and Oral Microbiology",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge"
+    ]
+  },
+  {
+    "name": "Maharana Pratap College of Dentistry & Research Centre",
+    "district": "Gwalior",
+    "state": "Madhya Pradesh",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral & Maxillofacial Pathology and Oral Microbiology",
+      "MDS Oral Medicine & Radiology",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge"
+    ]
+  },
+  {
+    "name": "Maharashtra Institute of Dental Sciences & Research (Dental College)",
+    "district": "",
+    "state": "Maharashtra",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge"
+    ]
+  },
+  {
+    "name": "Maharishi Markandeshwar College of Dental Sciences & Research",
+    "district": "Mullana",
+    "state": "Haryana",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral & Maxillofacial Pathology and Oral Microbiology",
+      "MDS Oral Medicine & Radiology",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge",
+      "MDS Public Health Dentistry"
+    ]
+  },
+  {
+    "name": "Mahatma Gandhi Dental College & Hospital, Sitapura",
+    "district": "Jaipur",
+    "state": "Rajasthan",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral Medicine & Radiology",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge"
+    ]
+  },
+  {
+    "name": "Mahatma Gandhi Missions Dental College & Hospital, Kamothe",
+    "district": "Navi Mumbai",
+    "state": "Maharashtra",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral & Maxillofacial Pathology and Oral Microbiology",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge"
+    ]
+  },
+  {
+    "name": "Mahatma Gandhi Post Graduate Institute of Dental Sciences",
+    "district": "Puducherry",
+    "state": "Puducherry",
+    "type": "GOVERNMENT",
+    "specializations": [
+      "MDS Oral & Maxillofacial Pathology and Oral Microbiology",
+      "MDS Oral Medicine & Radiology",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge",
+      "MDS Public Health Dentistry"
+    ]
+  },
+  {
+    "name": "Mahatma Gandhi Vidya Mandir’s Dental College & Hospital",
+    "district": "Nashik",
+    "state": "Maharashtra",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral & Maxillofacial Pathology and Oral Microbiology",
+      "MDS Oral Medicine & Radiology",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge"
+    ]
+  },
+  {
+    "name": "Mahe Institute of Dental Sciences & Hospital",
+    "district": "Mahe",
+    "state": "Puducherry",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge"
+    ]
+  },
+  {
+    "name": "Maitri College of Dentistry and Research Centre",
+    "district": "Durg",
+    "state": "Chhattisgarh",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral & Maxillofacial Pathology and Oral Microbiology",
+      "MDS Oral Medicine & Radiology",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge"
+    ]
+  },
+  {
+    "name": "Malabar Dental College & Research Centre",
+    "district": "Malappuram",
+    "state": "Kerala",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral & Maxillofacial Pathology and Oral Microbiology",
+      "MDS Oral Medicine & Radiology",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge"
+    ]
+  },
+  {
+    "name": "Malla Reddy Dental College for Women",
+    "district": "Hyderabad",
+    "state": "Telangana",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge"
+    ]
+  },
+  {
+    "name": "Malla Reddy Institute of Dental Sciences",
+    "district": "Hyderabad",
+    "state": "Telangana",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge"
+    ]
+  },
+  {
+    "name": "Mamata Dental College",
+    "district": "Khamam",
+    "state": "Telangana",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral & Maxillofacial Pathology and Oral Microbiology",
+      "MDS Oral Medicine & Radiology",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge",
+      "MDS Public Health Dentistry"
+    ]
+  },
+  {
+    "name": "Manav Rachana Dental College",
+    "district": "Faridabad",
+    "state": "Haryana",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge"
+    ]
+  },
+  {
+    "name": "Manipal College of Dental Sciences",
+    "district": "Mangalore",
+    "state": "Karnataka",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral & Maxillofacial Pathology and Oral Microbiology",
+      "MDS Oral Medicine & Radiology",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge",
+      "MDS Public Health Dentistry"
+    ]
+  },
+  {
+    "name": "Manipal College of Dental Sciences",
+    "district": "Manipal",
+    "state": "Karnataka",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral & Maxillofacial Pathology and Oral Microbiology",
+      "MDS Oral Medicine & Radiology",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge",
+      "MDS Public Health Dentistry"
+    ]
+  },
+  {
+    "name": "Mansarover Dental College",
+    "district": "Bhopal",
+    "state": "Madhya Pradesh",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge"
+    ]
+  },
+  {
+    "name": "Manubhai Patel Dental College & Dental Hospital & SSR General Hospital",
+    "district": "Vadodara",
+    "state": "Gujarat",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral & Maxillofacial Pathology and Oral Microbiology",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge"
+    ]
+  },
+  {
+    "name": "Mar Baselios Dental College",
+    "district": "Kothamangalam",
+    "state": "Kerala",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral Medicine & Radiology",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge"
+    ]
+  },
+  {
+    "name": "Maratha Mandal’s Dental College & Research Centre",
+    "district": "Belgaum",
+    "state": "Karnataka",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge"
+    ]
+  },
+  {
+    "name": "Maulana Azad Dental College & Hospital",
+    "district": "New Delhi",
+    "state": "Delhi",
+    "type": "GOVERNMENT",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral & Maxillofacial Pathology and Oral Microbiology",
+      "MDS Oral Medicine & Radiology",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge",
+      "MDS Public Health Dentistry"
+    ]
+  },
+  {
+    "name": "Meenakshi Ammal Dental College & Hospital",
+    "district": "Chennai",
+    "state": "Tamil Nadu",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral & Maxillofacial Pathology and Oral Microbiology",
+      "MDS Oral Medicine & Radiology",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge",
+      "MDS Public Health Dentistry"
+    ]
+  },
+  {
+    "name": "Meghna Institute of Dental Sciences",
+    "district": "Nizamabad",
+    "state": "Telangana",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral Medicine & Radiology",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge"
+    ]
+  },
+  {
+    "name": "MES Dental College",
+    "district": "Malappuram",
+    "state": "Kerala",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge"
+    ]
+  },
+  {
+    "name": "Mithila Minority Dental College & Hospital",
+    "district": "Darbhanga",
+    "state": "Bihar",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral Medicine & Radiology",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge",
+      "MDS Public Health Dentistry"
+    ]
+  },
+  {
+    "name": "MNR DENTAL COLLEGE & HOSPITAL",
+    "district": "MEDAK",
+    "state": "Telangana",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral & Maxillofacial Pathology and Oral Microbiology",
+      "MDS Oral Medicine & Radiology",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge"
+    ]
+  },
+  {
+    "name": "Modern Dental College & Research Centre",
+    "district": "Indore",
+    "state": "Madhya Pradesh",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge"
+    ]
+  },
+  {
+    "name": "Nair Hospital Dental College",
+    "district": "Mumbai",
+    "state": "Maharashtra",
+    "type": "GOVERNMENT",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral & Maxillofacial Pathology and Oral Microbiology",
+      "MDS Oral Medicine & Radiology",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge"
+    ]
+  },
+  {
+    "name": "Nanded Rural Dental College & Research Center",
+    "district": "Nanded",
+    "state": "Maharashtra",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge"
+    ]
+  },
+  {
+    "name": "Narayana Dental College & Hospital",
+    "district": "Nellore",
+    "state": "Andhra Pradesh",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral & Maxillofacial Pathology and Oral Microbiology",
+      "MDS Oral Medicine & Radiology",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge",
+      "MDS Public Health Dentistry"
+    ]
+  },
+  {
+    "name": "Narsinhbhai Patel Dental College & Hospital",
+    "district": "Visnagar",
+    "state": "Gujarat",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral & Maxillofacial Pathology and Oral Microbiology",
+      "MDS Oral Medicine & Radiology",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge",
+      "MDS Public Health Dentistry"
+    ]
+  },
+  {
+    "name": "National Dental College & Hospital",
+    "district": "Gulabgarh",
+    "state": "Punjab",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge"
+    ]
+  },
+  {
+    "name": "Navodaya Dental College",
+    "district": "Raichur",
+    "state": "Karnataka",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral & Maxillofacial Pathology and Oral Microbiology",
+      "MDS Oral Medicine & Radiology",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge",
+      "MDS Public Health Dentistry"
+    ]
+  },
+  {
+    "name": "New Horizon Dental College & Research Instiute",
+    "district": "Bilaspur",
+    "state": "Chhattisgarh",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral Medicine & Radiology",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge"
+    ]
+  },
+  {
+    "name": "NIMS Dental College",
+    "district": "Jaipur",
+    "state": "Rajasthan",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral & Maxillofacial Pathology and Oral Microbiology",
+      "MDS Oral Medicine & Radiology",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge",
+      "MDS Public Health Dentistry"
+    ]
+  },
+  {
+    "name": "Noorul Islam College of Dental Sciences",
+    "district": "Trivandrum",
+    "state": "Kerala",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Orthodontics & Dentofacial Orthopedics"
+    ]
+  },
+  {
+    "name": "P.M.N.M. Dental College & Hospital",
+    "district": "Bagalkot",
+    "state": "Karnataka",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral & Maxillofacial Pathology and Oral Microbiology",
+      "MDS Oral Medicine & Radiology",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge"
+    ]
+  },
+  {
+    "name": "Pacific Dental College & Research Centre",
+    "district": "",
+    "state": "Rajasthan",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral & Maxillofacial Pathology and Oral Microbiology",
+      "MDS Oral Medicine & Radiology",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge",
+      "MDS Public Health Dentistry"
+    ]
+  },
+  {
+    "name": "Pacific Dental College",
+    "district": "udaipur",
+    "state": "Rajasthan",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral & Maxillofacial Pathology and Oral Microbiology",
+      "MDS Oral Medicine & Radiology",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge",
+      "MDS Public Health Dentistry"
+    ]
+  },
+  {
+    "name": "Padmashree Dr. D.Y. Patil Dental College & Hospital",
+    "district": "Navi Mumbai",
+    "state": "Maharashtra",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral & Maxillofacial Pathology and Oral Microbiology",
+      "MDS Oral Medicine & Radiology",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge"
+    ]
+  },
+  {
+    "name": "Pandit Deendayal Upadhyay Dental College",
+    "district": "Solapur",
+    "state": "Maharashtra",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral Medicine & Radiology",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge"
+    ]
+  },
+  {
+    "name": "Panineeya Mahavidyalaya Institute of Dental Sciences & Research Centre",
+    "district": "Hyderabad",
+    "state": "Telangana",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral & Maxillofacial Pathology and Oral Microbiology",
+      "MDS Oral Medicine & Radiology",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge",
+      "MDS Public Health Dentistry"
+    ]
+  },
+  {
+    "name": "Patna Dental College & Hospital",
+    "district": "Patna",
+    "state": "Bihar",
+    "type": "GOVERNMENT",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral & Maxillofacial Pathology and Oral Microbiology",
+      "MDS Oral Medicine & Radiology",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Prosthodontics and Crown & Bridge"
+    ]
+  },
+  {
+    "name": "Pb. Govt. Dental College & Hospital",
+    "district": "Amritsar",
+    "state": "Punjab",
+    "type": "GOVERNMENT",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge"
+    ]
+  },
+  {
+    "name": "PDM Dental College & Research Institute",
+    "district": "Jhajjar",
+    "state": "Haryana",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral & Maxillofacial Pathology and Oral Microbiology",
+      "MDS Oral Medicine & Radiology",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge"
+    ]
+  },
+  {
+    "name": "Peoples College of Dental Sciences & Research Centre",
+    "district": "Bhopal",
+    "state": "Madhya Pradesh",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral Medicine & Radiology",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge",
+      "MDS Public Health Dentistry"
+    ]
+  },
+  {
+    "name": "People’s Dental Academy",
+    "district": "Bhopal",
+    "state": "Madhya Pradesh",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral & Maxillofacial Pathology and Oral Microbiology",
+      "MDS Oral Medicine & Radiology",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge",
+      "MDS Public Health Dentistry"
+    ]
+  },
+  {
+    "name": "PMS College of Dental Science & Research",
+    "district": "Thiruvananthpuram",
+    "state": "Kerala",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral & Maxillofacial Pathology and Oral Microbiology",
+      "MDS Oral Medicine & Radiology",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge"
+    ]
+  },
+  {
+    "name": "Post Graduate Institute of Dental Sciences",
+    "district": "Rohtak",
+    "state": "Haryana",
+    "type": "GOVERNMENT",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral & Maxillofacial Pathology and Oral Microbiology",
+      "MDS Oral Medicine & Radiology",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge",
+      "MDS Public Health Dentistry"
+    ]
+  },
+  {
+    "name": "Priyadarshini Dental College & Hospital",
+    "district": "Pandur",
+    "state": "Tamil Nadu",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge"
+    ]
+  },
+  {
+    "name": "PSM College of Dental Sciences & Research",
+    "district": "Trichur",
+    "state": "Kerala",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral & Maxillofacial Pathology and Oral Microbiology",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge"
+    ]
+  },
+  {
+    "name": "Pushpagiri College of Dental Sciences",
+    "district": "Tiruvalla",
+    "state": "Kerala",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge"
+    ]
+  },
+  {
+    "name": "R.V.S. Dental College & Hospital",
+    "district": "Sulur",
+    "state": "Tamil Nadu",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge"
+    ]
+  },
+  {
+    "name": "Ragas Dental College & Hospital",
+    "district": "Chennai",
+    "state": "Tamil Nadu",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral & Maxillofacial Pathology and Oral Microbiology",
+      "MDS Oral Medicine & Radiology",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge",
+      "MDS Public Health Dentistry"
+    ]
+  },
+  {
+    "name": "Rajarajeswari Dental College & Hospital",
+    "district": "Bangalore",
+    "state": "Karnataka",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral & Maxillofacial Pathology and Oral Microbiology",
+      "MDS Oral Medicine & Radiology",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge",
+      "MDS Public Health Dentistry"
+    ]
+  },
+  {
+    "name": "Rajas Dental College & Hospital",
+    "district": "Kavalkinaru Jn",
+    "state": "Tamil Nadu",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral & Maxillofacial Pathology and Oral Microbiology",
+      "MDS Oral Medicine & Radiology",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge"
+    ]
+  },
+  {
+    "name": "Rajasthan Dental College & Hospital",
+    "district": "Jaipur",
+    "state": "Rajasthan",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral & Maxillofacial Pathology and Oral Microbiology",
+      "MDS Oral Medicine & Radiology",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge",
+      "MDS Public Health Dentistry"
+    ]
+  },
+  {
+    "name": "Rama Dental College, Hospital & Research Centre",
+    "district": "Kanpur",
+    "state": "Uttar Pradesh",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral & Maxillofacial Pathology and Oral Microbiology",
+      "MDS Oral Medicine & Radiology",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge",
+      "MDS Public Health Dentistry"
+    ]
+  },
+  {
+    "name": "Ranjeet Deshmukh Dental College and Research Centre",
+    "district": "Nagpur",
+    "state": "Maharashtra",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral & Maxillofacial Pathology and Oral Microbiology",
+      "MDS Oral Medicine & Radiology",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge"
+    ]
+  },
+  {
+    "name": "Regional Dental College",
+    "district": "Guwahati",
+    "state": "Assam",
+    "type": "GOVERNMENT",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge"
+    ]
+  },
+  {
+    "name": "Rishiraj College of Dental Sciences & Research Centre",
+    "district": "Bhopal",
+    "state": "Madhya Pradesh",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral & Maxillofacial Pathology and Oral Microbiology",
+      "MDS Oral Medicine & Radiology",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge"
+    ]
+  },
+  {
+    "name": "RKDF Dental College & Research Centre",
+    "district": "Bhopal",
+    "state": "Madhya Pradesh",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral & Maxillofacial Pathology and Oral Microbiology",
+      "MDS Oral Medicine & Radiology",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge",
+      "MDS Public Health Dentistry"
+    ]
+  },
+  {
+    "name": "Royal Dental College",
+    "district": "kerala",
+    "state": "Kerala",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral & Maxillofacial Pathology and Oral Microbiology",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge"
+    ]
+  },
+  {
+    "name": "Rungta College of Dental Sciences & Research",
+    "district": "Bhilai",
+    "state": "Chhattisgarh",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral & Maxillofacial Pathology and Oral Microbiology",
+      "MDS Oral Medicine & Radiology",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge",
+      "MDS Public Health Dentistry"
+    ]
+  },
+  {
+    "name": "Rural Dental College",
+    "district": "Loni",
+    "state": "Maharashtra",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral & Maxillofacial Pathology and Oral Microbiology",
+      "MDS Oral Medicine & Radiology",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge"
+    ]
+  },
+  {
+    "name": "S.B. Patil Dental College & Hospital",
+    "district": "Bidar",
+    "state": "Karnataka",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge"
+    ]
+  },
+  {
+    "name": "S.C.B. Dental College & Hospital",
+    "district": "Cuttack",
+    "state": "Odisha",
+    "type": "GOVERNMENT",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral & Maxillofacial Pathology and Oral Microbiology",
+      "MDS Oral Medicine & Radiology",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge",
+      "MDS Public Health Dentistry"
+    ]
+  },
+  {
+    "name": "S.J.M. Dental College & Hospital",
+    "district": "Chitradurga",
+    "state": "Karnataka",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics"
+    ]
+  },
+  {
+    "name": "S.M.B.T. Dental College & Hospital",
+    "district": "Amrutnagar",
+    "state": "Maharashtra",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral & Maxillofacial Pathology and Oral Microbiology",
+      "MDS Oral Medicine & Radiology",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge"
+    ]
+  },
+  {
+    "name": "S.R.M. Dental College, Ramapuram",
+    "district": "Chennai",
+    "state": "Tamil Nadu",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral Medicine & Radiology",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge",
+      "MDS Public Health Dentistry"
+    ]
+  },
+  {
+    "name": "Santosh Dental College & Hospital",
+    "district": "Ghaziabad",
+    "state": "Uttar Pradesh",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral & Maxillofacial Pathology and Oral Microbiology",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge"
+    ]
+  },
+  {
+    "name": "Saraswati Danwantri Dental College & Hospital",
+    "district": "Parbhani",
+    "state": "Maharashtra",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral & Maxillofacial Pathology and Oral Microbiology",
+      "MDS Oral Medicine & Radiology",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge"
+    ]
+  },
+  {
+    "name": "Saraswati Dental College",
+    "district": "Lucknow",
+    "state": "Uttar Pradesh",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral & Maxillofacial Pathology and Oral Microbiology",
+      "MDS Oral Medicine & Radiology",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge"
+    ]
+  },
+  {
+    "name": "Sardar Patel Post Graduate Institute of Dental & Medical Sciences",
+    "district": "Lucknow",
+    "state": "Uttar Pradesh",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral & Maxillofacial Pathology and Oral Microbiology",
+      "MDS Oral Medicine & Radiology",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge",
+      "MDS Public Health Dentistry"
+    ]
+  },
+  {
+    "name": "Sathyabama University Dental College and Hospital",
+    "district": "Chennai",
+    "state": "Tamil Nadu",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry"
+    ]
+  },
+  {
+    "name": "Saveetha Dental College & Hospital",
+    "district": "Chennai",
+    "state": "Tamil Nadu",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral & Maxillofacial Pathology and Oral Microbiology",
+      "MDS Oral Medicine & Radiology",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge",
+      "MDS Public Health Dentistry"
+    ]
+  },
+  {
+    "name": "School of Dental Sciences, Krishna Institute of Medical Sciences",
+    "district": "Karad",
+    "state": "Maharashtra",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral & Maxillofacial Pathology and Oral Microbiology",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge"
+    ]
+  },
+  {
+    "name": "School of Dental Sciences",
+    "district": "Greater Noida",
+    "state": "Uttar Pradesh",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral & Maxillofacial Pathology and Oral Microbiology",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge"
+    ]
+  },
+  {
+    "name": "SDM College of Dental Sciences & Hospital",
+    "district": "Dharwad",
+    "state": "Karnataka",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral & Maxillofacial Pathology and Oral Microbiology",
+      "MDS Oral Medicine & Radiology",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge",
+      "MDS Public Health Dentistry"
+    ]
+  },
+  {
+    "name": "Seema Dental College & Hospital",
+    "district": "Rishikesh",
+    "state": "Uttarakhand",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral & Maxillofacial Pathology and Oral Microbiology",
+      "MDS Oral Medicine & Radiology",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge"
+    ]
+  },
+  {
+    "name": "Sharad Pawar Dental College & Hospital",
+    "district": "Wardha",
+    "state": "Maharashtra",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral & Maxillofacial Pathology and Oral Microbiology",
+      "MDS Oral Medicine & Radiology",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge"
+    ]
+  },
+  {
+    "name": "Sharavathi Dental College & Hospital",
+    "district": "Shimoga",
+    "state": "Karnataka",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge"
+    ]
+  },
+  {
+    "name": "Shree Bankey Bihari Dental College & Research Centre",
+    "district": "Masuri",
+    "state": "Uttar Pradesh",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral & Maxillofacial Pathology and Oral Microbiology",
+      "MDS Oral Medicine & Radiology",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge"
+    ]
+  },
+  {
+    "name": "Sibar Institute of Dental Sciences",
+    "district": "Guntur",
+    "state": "Andhra Pradesh",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral & Maxillofacial Pathology and Oral Microbiology",
+      "MDS Oral Medicine & Radiology",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge",
+      "MDS Public Health Dentistry"
+    ]
+  },
+  {
+    "name": "Sinhgad Dental College & Hospital",
+    "district": "Pune",
+    "state": "Maharashtra",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral & Maxillofacial Pathology and Oral Microbiology",
+      "MDS Oral Medicine & Radiology",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge",
+      "MDS Public Health Dentistry"
+    ]
+  },
+  {
+    "name": "SMBT Institute of Dental Sciences and Research, Nandihills",
+    "district": "Nashik",
+    "state": "Maharashtra",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge"
+    ]
+  },
+  {
+    "name": "Sree Anjaneya Medical Trust",
+    "district": "Calicut",
+    "state": "Kerala",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Prosthodontics and Crown & Bridge"
+    ]
+  },
+  {
+    "name": "Sree Balaji Dental College & Hospital",
+    "district": "Narayanpuram",
+    "state": "Tamil Nadu",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral & Maxillofacial Pathology and Oral Microbiology",
+      "MDS Oral Medicine & Radiology",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge"
+    ]
+  },
+  {
+    "name": "Sree Mookambika Institute of Dental Sciences",
+    "district": "Kulasekharam",
+    "state": "Tamil Nadu",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral & Maxillofacial Pathology and Oral Microbiology",
+      "MDS Oral Medicine & Radiology",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge"
+    ]
+  },
+  {
+    "name": "Sree Sai Dental College & Research Institute",
+    "district": "Srikakulam",
+    "state": "Andhra Pradesh",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge"
+    ]
+  },
+  {
+    "name": "Sri Aurobindo College of Dentistry",
+    "district": "Indore",
+    "state": "Madhya Pradesh",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral & Maxillofacial Pathology and Oral Microbiology",
+      "MDS Oral Medicine & Radiology",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge",
+      "MDS Public Health Dentistry"
+    ]
+  },
+  {
+    "name": "Sri Balaji Dental College",
+    "district": "Hyderabad",
+    "state": "Telangana",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge"
+    ]
+  },
+  {
+    "name": "Sri Govind Tricentenary Dental College",
+    "district": "Hospital & Research Institute",
+    "state": "Haryana",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral & Maxillofacial Pathology and Oral Microbiology",
+      "MDS Oral Medicine & Radiology",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge",
+      "MDS Public Health Dentistry"
+    ]
+  },
+  {
+    "name": "Sri Guru Ram Das Institute of Dental Sciences & Research",
+    "district": "Amritsar",
+    "state": "Punjab",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge"
+    ]
+  },
+  {
+    "name": "Sri Hasanamba Dental College & Hospital",
+    "district": "Hassan",
+    "state": "Karnataka",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral & Maxillofacial Pathology and Oral Microbiology",
+      "MDS Oral Medicine & Radiology",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge"
+    ]
+  },
+  {
+    "name": "Sri Rajiv Gandhi College of Dental Sciences & Hospital",
+    "district": "Bangalore",
+    "state": "Karnataka",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral & Maxillofacial Pathology and Oral Microbiology",
+      "MDS Oral Medicine & Radiology",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge"
+    ]
+  },
+  {
+    "name": "Sri Ramachandra Dental College & Hospital",
+    "district": "Porur",
+    "state": "Tamil Nadu",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral & Maxillofacial Pathology and Oral Microbiology",
+      "MDS Oral Medicine & Radiology",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge"
+    ]
+  },
+  {
+    "name": "Sri Ramakrishna Dental College & Hospital",
+    "district": "Coimbatore",
+    "state": "Tamil Nadu",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge"
+    ]
+  },
+  {
+    "name": "Sri Sai College of Dental Surgery",
+    "district": "Vikarabad",
+    "state": "Telangana",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral & Maxillofacial Pathology and Oral Microbiology",
+      "MDS Oral Medicine & Radiology",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge",
+      "MDS Public Health Dentistry"
+    ]
+  },
+  {
+    "name": "Sri Sankara Dental College",
+    "district": "Thiruvananthapuram",
+    "state": "Kerala",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge"
+    ]
+  },
+  {
+    "name": "Sri Siddhartha Dental College",
+    "district": "Tumkur",
+    "state": "Karnataka",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral & Maxillofacial Pathology and Oral Microbiology",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge"
+    ]
+  },
+  {
+    "name": "Sri Venkata Sai Institute of Dental Sciences",
+    "district": "Hyderabad",
+    "state": "Telangana",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral & Maxillofacial Pathology and Oral Microbiology",
+      "MDS Oral Medicine & Radiology",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge"
+    ]
+  },
+  {
+    "name": "Sri Venkateshwaraa Dental College",
+    "district": "Puducherry",
+    "state": "Puducherry",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge"
+    ]
+  },
+  {
+    "name": "Sri Venkateswara Dental College & Hospital",
+    "district": "Kancheepuram",
+    "state": "Tamil Nadu",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge"
+    ]
+  },
+  {
+    "name": "Srinivas Institute of Dental Sciences",
+    "district": "Mangalore",
+    "state": "Karnataka",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Prosthodontics and Crown & Bridge"
+    ]
+  },
+  {
+    "name": "SRM Kattankulathur Dental College & Hospital",
+    "district": "Kanchipuram",
+    "state": "Tamil Nadu",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge"
+    ]
+  },
+  {
+    "name": "St. Gregorios Dental College",
+    "district": "Ernakulam",
+    "state": "Kerala",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Prosthodontics and Crown & Bridge"
+    ]
+  },
+  {
+    "name": "St. Joseph Dental College",
+    "district": "Duggirala",
+    "state": "Andhra Pradesh",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral & Maxillofacial Pathology and Oral Microbiology",
+      "MDS Oral Medicine & Radiology",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge"
+    ]
+  },
+  {
+    "name": "Subbaiah Institute of Dental Sciences, Purale",
+    "district": "Shimoga",
+    "state": "Karnataka",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral & Maxillofacial Pathology and Oral Microbiology",
+      "MDS Oral Medicine & Radiology",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge",
+      "MDS Public Health Dentistry"
+    ]
+  },
+  {
+    "name": "Subharati Dental College",
+    "district": "Meerut",
+    "state": "Uttar Pradesh",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral & Maxillofacial Pathology and Oral Microbiology",
+      "MDS Oral Medicine & Radiology",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge"
+    ]
+  },
+  {
+    "name": "Sudha Rustagi College of Dental Sciences & Research",
+    "district": "Faridabad",
+    "state": "Haryana",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral & Maxillofacial Pathology and Oral Microbiology",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge",
+      "MDS Public Health Dentistry"
+    ]
+  },
+  {
+    "name": "Surendera Dental College & Research Institute",
+    "district": "Sri Ganganagar",
+    "state": "Rajasthan",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral & Maxillofacial Pathology and Oral Microbiology",
+      "MDS Oral Medicine & Radiology",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge",
+      "MDS Public Health Dentistry"
+    ]
+  },
+  {
+    "name": "Swami Devi Dyal Hospital & Dental College",
+    "district": "Panchkula",
+    "state": "Haryana",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral & Maxillofacial Pathology and Oral Microbiology",
+      "MDS Oral Medicine & Radiology",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge",
+      "MDS Public Health Dentistry"
+    ]
+  },
+  {
+    "name": "Swargiya Dadasaheb Kalmegh Smruti Dental College & Hospital",
+    "district": "Nagpur",
+    "state": "Maharashtra",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral & Maxillofacial Pathology and Oral Microbiology",
+      "MDS Oral Medicine & Radiology",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge"
+    ]
+  },
+  {
+    "name": "Tagore Dental College & Hospital",
+    "district": "Chennai",
+    "state": "Tamil Nadu",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Prosthodontics and Crown & Bridge"
+    ]
+  },
+  {
+    "name": "Tamil Nadu Government Dental College & Hospital",
+    "district": "Chennai",
+    "state": "Tamil Nadu",
+    "type": "GOVERNMENT",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral & Maxillofacial Pathology and Oral Microbiology",
+      "MDS Oral Medicine & Radiology",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge",
+      "MDS Public Health Dentistry"
+    ]
+  },
+  {
+    "name": "Tatyasaheb Kore Dental College & Research Centre",
+    "district": "New Pargaon",
+    "state": "Maharashtra",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge"
+    ]
+  },
+  {
+    "name": "Teerthanker Mahaveer Dental College & Research Centre",
+    "district": "Moradabad",
+    "state": "Uttar Pradesh",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral & Maxillofacial Pathology and Oral Microbiology",
+      "MDS Oral Medicine & Radiology",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge",
+      "MDS Public Health Dentistry"
+    ]
+  },
+  {
+    "name": "Terna Dental College & Hospital",
+    "district": "Navi Mumbai",
+    "state": "Maharashtra",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge"
+    ]
+  },
+  {
+    "name": "Thai Moogambigai Dental College & Hospital",
+    "district": "Chennai",
+    "state": "Tamil Nadu",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral & Maxillofacial Pathology and Oral Microbiology",
+      "MDS Oral Medicine & Radiology",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge"
+    ]
+  },
+  {
+    "name": "The Oxford Dental College",
+    "district": "Bangalore",
+    "state": "Karnataka",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral & Maxillofacial Pathology and Oral Microbiology",
+      "MDS Oral Medicine & Radiology",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge",
+      "MDS Public Health Dentistry"
+    ]
+  },
+  {
+    "name": "Triveni Institute of Dental Sciences, Hosptial & Research Centre",
+    "district": "Bilaspur",
+    "state": "Chhattisgarh",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral & Maxillofacial Pathology and Oral Microbiology",
+      "MDS Oral Medicine & Radiology",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge"
+    ]
+  },
+  {
+    "name": "U.P. Rural Institute of Medical Sciences & Research",
+    "district": "Saifai",
+    "state": "Uttar Pradesh",
+    "type": "GOVERNMENT",
+    "specializations": [
+      "MDS Periodontology"
+    ]
+  },
+  {
+    "name": "University College of Medical Sciences",
+    "district": "Dilshad Garden",
+    "state": "Delhi",
+    "type": "GOVERNMENT",
+    "specializations": [
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry"
+    ]
+  },
+  {
+    "name": "Uttaranchal Dental College & Medical Research Institute",
+    "district": "Dehradun",
+    "state": "Uttarakhand",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge"
+    ]
+  },
+  {
+    "name": "V.S. Dental College",
+    "district": "Bangalore",
+    "state": "Karnataka",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral & Maxillofacial Pathology and Oral Microbiology",
+      "MDS Oral Medicine & Radiology",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge",
+      "MDS Public Health Dentistry"
+    ]
+  },
+  {
+    "name": "Vananchal Dental College & Hospital",
+    "district": "Garhwa",
+    "state": "Jharkhand",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral & Maxillofacial Pathology and Oral Microbiology",
+      "MDS Oral Medicine & Radiology",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge"
+    ]
+  },
+  {
+    "name": "Vasantdada Patil Dental College and Hospital",
+    "district": "Sangli",
+    "state": "Maharashtra",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral & Maxillofacial Pathology and Oral Microbiology",
+      "MDS Oral Medicine & Radiology",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge"
+    ]
+  },
+  {
+    "name": "Vidarbha Youth Welfare Society’s Dental College & Hospital",
+    "district": "Amravati",
+    "state": "Maharashtra",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge"
+    ]
+  },
+  {
+    "name": "Vinayaka Mission’s Sankarachariyar Dental College",
+    "district": "Salem",
+    "state": "Tamil Nadu",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral & Maxillofacial Pathology and Oral Microbiology",
+      "MDS Oral Medicine & Radiology",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge",
+      "MDS Public Health Dentistry"
+    ]
+  },
+  {
+    "name": "Vishnu Dental College",
+    "district": "Bhimavaram",
+    "state": "Andhra Pradesh",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral & Maxillofacial Pathology and Oral Microbiology",
+      "MDS Oral Medicine & Radiology",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge"
+    ]
+  },
+  {
+    "name": "Vivekanandha Dental College for Women",
+    "district": "Elayampalayam",
+    "state": "Tamil Nadu",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral & Maxillofacial Pathology and Oral Microbiology",
+      "MDS Oral Medicine & Radiology",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge",
+      "MDS Public Health Dentistry"
+    ]
+  },
+  {
+    "name": "Vyas Dental College & Hospital",
+    "district": "Jodhpur",
+    "state": "Rajasthan",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral & Maxillofacial Pathology and Oral Microbiology",
+      "MDS Oral Medicine & Radiology",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge",
+      "MDS Public Health Dentistry"
+    ]
+  },
+  {
+    "name": "Vydehi Institute of Dental Sciences & Research",
+    "district": "Bangalore",
+    "state": "Karnataka",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral & Maxillofacial Pathology and Oral Microbiology",
+      "MDS Oral Medicine & Radiology",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge",
+      "MDS Public Health Dentistry"
+    ]
+  },
+  {
+    "name": "Yenepoya Dental College & Hospital",
+    "district": "Mangalore",
+    "state": "Karnataka",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral & Maxillofacial Pathology and Oral Microbiology",
+      "MDS Oral Medicine & Radiology",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge",
+      "MDS Public Health Dentistry"
+    ]
+  },
+  {
+    "name": "Yerala Medical Trust & Research Centre’s Dental College & Hospital",
+    "district": "Navi Mumbai",
+    "state": "Maharashtra",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Oral & Maxillofacial Pathology and Oral Microbiology",
+      "MDS Oral Medicine & Radiology",
+      "MDS Oral and Maxillofacial Surgery",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge"
+    ]
+  },
+  {
+    "name": "Yogita Dental College & Hospital",
+    "district": "Ratnagiri",
+    "state": "Maharashtra",
+    "type": "PRIVATE",
+    "specializations": [
+      "MDS Conservative Dentistry & Endodontics",
+      "MDS Orthodontics & Dentofacial Orthopedics",
+      "MDS Pediatric and Preventive Dentistry",
+      "MDS Periodontology",
+      "MDS Prosthodontics and Crown & Bridge"
+    ]
+  }
+]

@@ -82,35 +82,54 @@ const EMPTY: FormState = {
 
 const OTHER_COLLEGE = "__OTHER__";
 
-// Maps a selected Degree to the canonical value the curated-colleges
-// endpoint is queried with. PG and Doctorate have no data of their own —
-// NMC's source dataset is specifically MD/MS, so PG/MD-MS/Doctorate/Others
-// all share it rather than staying empty until real PG-, Doctorate-, or
-// Others-specific data exists. DM/MCh and Diploma each have their own
-// separate NBEMS/NMC dataset, so neither is merged into the MD/MS bucket.
-// UG is the only Medical-stream degree not listed here — it keeps the old
-// free-text CollegeSearch + global specialization picklist.
-const CURATED_DEGREE_MAP: Record<string, string> = {
-  DNB: "DNB",
-  PG: "MD/MS",
-  "MD/MS": "MD/MS",
-  Doctorate: "MD/MS",
-  Others: "MD/MS",
-  "DM/MCh": "DM/MCh",
-  Diploma: "Diploma",
+// Maps a selected Stream+Degree to the canonical degree value the
+// curated-colleges endpoint is queried with. Medical: PG and Doctorate
+// have no data of their own — NMC's source dataset is specifically
+// MD/MS, so PG/MD-MS/Doctorate/Others all share it rather than staying
+// empty until real PG-, Doctorate-, or Others-specific data exists.
+// DM/MCh and Diploma each have their own separate NBEMS/NMC dataset, so
+// neither is merged into the MD/MS bucket. UG is the only Medical-stream
+// degree not listed here — it keeps the old free-text CollegeSearch +
+// global specialization picklist. Dental: MDS has its own specialization
+// dataset (see seed-mds-colleges.mjs); BDS has no specialization data at
+// all (it's the base dental degree, not a postgrad specialty program —
+// see STREAMS_WITH_COLLEGE_DATA below) so it's deliberately absent here.
+const CURATED_DEGREE_MAP_BY_STREAM: Record<string, Record<string, string>> = {
+  Medical: {
+    DNB: "DNB",
+    PG: "MD/MS",
+    "MD/MS": "MD/MS",
+    Doctorate: "MD/MS",
+    Others: "MD/MS",
+    "DM/MCh": "DM/MCh",
+    Diploma: "Diploma",
+  },
+  Dental: {
+    MDS: "MDS",
+  },
 };
 
 // Degrees whose curated data is small/complete enough to browse in full +
 // type-to-search (CuratedCollegeSearch/SearchableCombobox), rather than the
 // original curated-top-30-+-"Other" pattern.
-const BROWSE_DEGREES = new Set(["MD/MS", "DNB", "Diploma", "DM/MCh"]);
+const BROWSE_DEGREES = new Set(["MD/MS", "DNB", "Diploma", "DM/MCh", "MDS"]);
 
-// Non-Medical streams that have real seeded college data (see
-// seed-bds-colleges.mjs) — these use CollegeSearch with a stream filter,
-// same browse+search UX as Medical, instead of the plain free-text
-// fallback every other non-Medical stream still uses until their own
-// data is uploaded.
-const STREAMS_WITH_COLLEGE_DATA = new Set(["Dental"]);
+// Non-Medical streams that have real seeded college data with no
+// specialization concept (see seed-bds-colleges.mjs — BDS is the base
+// dental degree, not a postgrad specialty) — these use CollegeSearch
+// with a stream filter, same browse+search UX as Medical's UG, instead
+// of the plain free-text fallback every other stream/degree combo still
+// uses until their own data is uploaded. A stream+degree with curated
+// specialization data (e.g. Dental+MDS, see CURATED_DEGREE_MAP_BY_STREAM)
+// doesn't need to be listed here — it's handled by the curated path.
+const STREAMS_WITH_COLLEGE_DATA = new Set(["Dental", "Engineering"]);
+
+// Streams whose College field has real data (STREAMS_WITH_COLLEGE_DATA)
+// but no specialization dataset uploaded yet — per explicit request, the
+// Specialization field still shows (so the field exists, distinguishing
+// "we don't have this yet" from BDS's "this degree has no concept of
+// specializations at all"), just empty/disabled until real data arrives.
+const STREAMS_WITH_EMPTY_SPECIALIZATION = new Set(["Engineering"]);
 
 export function MentorForm({ onExit }: { onExit: () => void }) {
   const wizard = useMultiStep(5);
@@ -135,7 +154,7 @@ export function MentorForm({ onExit }: { onExit: () => void }) {
   // back to the generic UG/PG/Doctorate/Others list.
   const degreeOptions: readonly string[] =
     form.stream === "Medical" ? DEGREES : (DEGREES_BY_STREAM[form.stream] ?? DEFAULT_NON_MEDICAL_DEGREES);
-  const curatedDegree = form.stream === "Medical" ? CURATED_DEGREE_MAP[form.degree] : undefined;
+  const curatedDegree = CURATED_DEGREE_MAP_BY_STREAM[form.stream]?.[form.degree];
   const hasCuratedData = curatedDegree !== undefined;
   // See BROWSE_DEGREES — these use the full browse+search picker (see
   // UniversitiesService.findCurated's browse mode) rather than the
@@ -159,7 +178,7 @@ export function MentorForm({ onExit }: { onExit: () => void }) {
       return;
     }
     let cancelled = false;
-    fetchCuratedColleges("Medical", curatedDegree, { browse: true })
+    fetchCuratedColleges(form.stream, curatedDegree, { browse: true })
       .then((data) => {
         if (cancelled) return;
         const all = Array.from(new Set(data.flatMap((c) => c.specializations))).sort();
@@ -171,14 +190,14 @@ export function MentorForm({ onExit }: { onExit: () => void }) {
     return () => {
       cancelled = true;
     };
-  }, [curatedDegree, isBrowseDegree]);
+  }, [form.stream, curatedDegree, isBrowseDegree]);
 
   useEffect(() => {
     if (!curatedDegree || isBrowseDegree) return;
     let cancelled = false;
     // eslint-disable-next-line react-hooks/set-state-in-effect -- loading flag for the fetch this effect performs
     setLoadingCurated(true);
-    fetchCuratedColleges("Medical", curatedDegree)
+    fetchCuratedColleges(form.stream, curatedDegree)
       .then((data) => {
         if (!cancelled) setCuratedColleges(data);
       })
@@ -191,7 +210,7 @@ export function MentorForm({ onExit }: { onExit: () => void }) {
     return () => {
       cancelled = true;
     };
-  }, [curatedDegree, isBrowseDegree]);
+  }, [form.stream, curatedDegree, isBrowseDegree]);
 
   const set = <K extends keyof FormState>(key: K, value: FormState[K]) =>
     setForm((f) => ({ ...f, [key]: value }));
@@ -215,7 +234,7 @@ export function MentorForm({ onExit }: { onExit: () => void }) {
       if (!form.degree) return "Select your degree.";
       if (form.degree === "Others" && !form.degreeOther.trim()) return "Enter your degree.";
       if (!form.collegeName.trim()) return "Enter your college.";
-      if (form.stream === "Medical" && form.degree && form.degree !== "UG" && !form.specialization.trim()) {
+      if (hasCuratedData && !form.specialization.trim()) {
         return "Enter your specialization.";
       }
     }
@@ -259,10 +278,7 @@ export function MentorForm({ onExit }: { onExit: () => void }) {
         universityId: form.universityId || undefined,
         stream: (form.stream === "Others" ? form.streamOther.trim() : form.stream) || undefined,
         degree: (form.degree === "Others" ? form.degreeOther.trim() : form.degree) || undefined,
-        specialization:
-          form.stream === "Medical" && form.degree && form.degree !== "UG"
-            ? form.specialization.trim() || undefined
-            : undefined,
+        specialization: hasCuratedData ? form.specialization.trim() || undefined : undefined,
         currentStatus: form.currentStatus || undefined,
         yearOfStudy:
           form.currentStatus === "Currently Studying" && form.yearOfStudy
@@ -506,7 +522,7 @@ export function MentorForm({ onExit }: { onExit: () => void }) {
             <Field label="College / university">
               <CuratedCollegeSearch
                 gold
-                stream="Medical"
+                stream={form.stream}
                 degree={curatedDegree!}
                 value={form.collegeName}
                 onPick={(college, name) => {
@@ -621,7 +637,7 @@ export function MentorForm({ onExit }: { onExit: () => void }) {
               />
             </Field>
           )}
-          {form.stream === "Medical" && form.degree && form.degree !== "UG" && (
+          {hasCuratedData && (
             <Field label="Specialization">
               {isBrowseDegree ? (
                 <SearchableCombobox
@@ -674,6 +690,13 @@ export function MentorForm({ onExit }: { onExit: () => void }) {
                   ))}
                 </Select>
               )}
+            </Field>
+          )}
+          {STREAMS_WITH_EMPTY_SPECIALIZATION.has(form.stream) && (
+            <Field label="Specialization" hint="Coming soon — specialization data for this stream is being added">
+              <Select gold value="" disabled onChange={() => {}}>
+                <option value="">Coming soon</option>
+              </Select>
             </Field>
           )}
         </div>
