@@ -594,6 +594,61 @@ sent in the payload), but the field still renders as a disabled
 placeholder so mentors can see it's coming rather than it being wholly
 absent the way it is for BDS.
 
+## `pg-engineering-colleges.json` — M.Tech/M.E (Engineering PG) colleges
+
+Input to `../seed-pg-engineering-colleges.mjs`. Source:
+`PG_Engineering_Colleges_Clean.xlsx`, same "Clean Data" shape as
+`btech-colleges.json` (S.No/College/District/State — no ownership
+column). **116 raw rows → 114 unique (College, District, State)
+colleges**, `type` defaulted to `PRIVATE` for the same reason as
+`btech-colleges.json`.
+
+**No specialization data, same as B.Tech.** M.Tech/M.E is still the
+base engineering postgraduate degree here — no NBA/AICTE-style
+specialization list came with this source — so this seed script only
+creates/updates `University` rows, no `Program` row.
+
+**6 rows dropped for having no state at all** (matches the source's own
+"No District in Source" sheet count). District goes on `University.city`.
+
+**Address-bleed fixed, same lesson as `btech-colleges.json`** — 17 of 26
+comma-containing names had district text duplicated after the comma.
+**One additional wrinkle this source needed that `btech-colleges.json`
+didn't**: several names have a `"(Formerly ...)"` / `"(Erstwhile ...)"`
+parenthetical aside that itself contains a comma (e.g. `"National
+Institute of Technology (Formerly Regional Engineering College,
+Kurukshetra)"`) — naive first-comma truncation would cut mid-
+parenthetical and leave an unbalanced `"("`. Fixed by stripping all
+`"(...)"` parenthetical groups *before* truncating at the first
+remaining comma, rather than truncating first.
+
+**One explicit name override** for a single row whose real legal name
+itself contains commas that aren't address bleed (`"Shanmugha Arts,
+Science, Technology & Research Academy (SASTRA) Deemed to be
+University, (Erstwhile Shanmugha College of Engineering)"` — blind
+truncation would have produced the nonsensical `"Shanmugha Arts"`).
+Kept as `"Shanmugha Arts, Science, Technology & Research Academy
+(SASTRA) Deemed to be University"` (dropping only the erstwhile-name
+parenthetical) via a one-off override map in the generation script,
+same convention as the PG/MD-MS dataset's one-off garbled-name and
+over-length-name fixes.
+
+**Many of these colleges already exist as `University` rows from the
+B.Tech seed** (same physical college now also offering a PG program) —
+the district-aware `claimed`-set matching correctly reuses those rows
+and pushes `"PG"` onto their `levels` (already `["UG"]`) rather than
+creating duplicates, same pattern as MDS reusing BDS-seeded rows.
+`seed-pg-engineering-colleges.mjs` mirrors `seed-btech-colleges.mjs`
+exactly except for this: it adds `"PG"` (not `"UG"`) to `levels`, and
+creates new rows with `levels: ['PG']` when no B.Tech row exists yet.
+
+**No frontend changes needed.** `MentorForm.tsx`'s
+`STREAMS_WITH_COLLEGE_DATA` and `STREAMS_WITH_EMPTY_SPECIALIZATION` sets
+are gated by `form.stream` (`"Engineering"`), not by degree — so
+M.Tech/M.E automatically gets the same real `CollegeSearch` (stream
+filter) and disabled "Coming soon" Specialization field that B.Tech/B.E
+already has, with zero code changes.
+
 ## A casing bug worth knowing about — `Program.name` must be UPPERCASE
 
 `UniversitiesService.findCurated` queries `Program.name: degree.toUpperCase()`.
