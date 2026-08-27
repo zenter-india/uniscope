@@ -722,6 +722,49 @@ mechanism supports. Law's `Degree` dropdown wasn't given its own
 `DEFAULT_NON_MEDICAL_DEGREES` (`UG`/`PG`/`Doctorate`/`Others`), and this
 dataset is UG-only, so no options-list change was needed either.
 
+## `pg-law-colleges.json` — PG Law (LL.M. / M.L.) colleges
+
+Input to `../seed-pg-law-colleges.mjs`. Source:
+`PG_Law_Programmes_Clean.xlsx`, same shape/pipeline as
+`law-ug-colleges.json` — a "Clean Data" AISHE programme-level sheet (867
+rows, 2 programme names: `"L.L.M.-Master of Law"` / `"M.L.-Master of
+Laws"`, `Level` always `"Post Graduate"`) pre-collapsed by the source
+into a **"Unique Colleges"** sheet (806 rows), used directly. `type`
+defaulted to `PRIVATE`, same as every other no-ownership-column dataset
+here.
+
+**Same conservative locality-only comma-truncation rule as
+`law-ug-colleges.json`** (parenthetical asides stripped first, then
+truncate only if the comma tail is a bare ≤4-word locality with no
+institutional/connector words) — this source has the same messy raw
+AISHE-name character as the UG Law export (embedded addresses,
+trust/society name prefixes). 417 of 806 names had a comma; 389
+truncated, 28 kept in full for the same reasons as UG Law (e.g.
+`"Institute of Law, Nirma University"` kept whole rather than reduced
+to `"Institute of Law"`).
+
+**No duplicates at all after normalized-key grouping** — 806 raw rows
+→ 806 unique (College, District, State), no case-variant or
+address-bleed collisions found. No name over `University.name`'s
+VARCHAR(200) limit. No state-name normalization needed this time (all
+31 raw state values already match `INDIAN_STATES` verbatim, unlike the
+Engineering refresh and UG Law's one `"The Dadra and Nagar Haveli..."`
+fix).
+
+**Many of these colleges already exist as `University` rows from the
+UG Law seed** (same physical college now also offering a PG program) —
+`seed-pg-law-colleges.mjs` mirrors `seed-pg-engineering-colleges.mjs`
+exactly: the district-aware `claimed`-set matching reuses those rows
+and pushes `"PG"` onto their `levels` (already `["UG"]`) rather than
+creating duplicates, and creates new rows with `levels: ['PG']` when no
+UG Law row exists yet.
+
+**No frontend changes needed**, same reasoning as M.Tech/M.E: `Law` was
+already in `STREAMS_WITH_COLLEGE_DATA` (added for UG Law) and gated by
+stream, not degree, and `"PG"` was already a valid Law degree option
+via the `DEFAULT_NON_MEDICAL_DEGREES` fallback. No Specialization field
+for Law/PG either, same as Law/UG (not requested).
+
 ## A casing bug worth knowing about — `Program.name` must be UPPERCASE
 
 `UniversitiesService.findCurated` queries `Program.name: degree.toUpperCase()`.
