@@ -1094,6 +1094,60 @@ matched rows are the cross-stream matching gap (see the general note
 near the end of this file), colleges that already existed under a
 different stream and stayed there. Left as-is, same as BDS's 2.
 
+## `pg-law-programmes-colleges.json` — PG Law colleges + real per-college specializations
+
+Input to `../seed-pg-law-programmes-colleges.mjs`. Source:
+`PG_Law_Specialization_Clean.xlsx` — the **same underlying data** as
+`pg-law-colleges.json` (867 raw rows, 806 unique colleges), but with
+an explicit **Specialization** column this time (derived from
+`Programme (Source)`, e.g. `"LL.M. -Master of Law"` → `"LL.M."`, with
+a few rows further specialized to `"LL.M. - Constitutional Law"`
+etc.). **Same upgrade as Law UG** — replaces
+`pg-law-colleges.json`'s no-specialization University-only pattern
+with the curated University+Program pattern. `type` defaulted to
+`PRIVATE`. `stream: 'Law'`.
+
+**Specialization labels are the specific PG law programme type** —
+**7 distinct labels**: `"LL.M."`, `"M.L."`, `"LL.M. - Constitutional
+Law"`, `"M.L. - Constitutional Law"`, `"LL.M. - Cyber Crime"`,
+`"LL.M. - International Law"`, `"LL.M. - Civil Law"` — matching the
+source's own `By Specialization` sheet count exactly.
+
+**Applied the Law UG Programmes lesson proactively this time — no bug
+found, because the fix was made before generating, not after**:
+generated using `pg-law-colleges.json`'s own original `locality_like`
+truncation heuristic from the start (not the stricter district-exact
+rule), specifically to keep names aligned with the already-seeded
+sibling dataset. Verified **zero** name+state mismatches against
+`pg-law-colleges.json` in either direction before ever writing the
+seed script — 806 colleges both sides, exact 1:1 match. Also checked
+and clean: no name over `University.name`'s VARCHAR(200) limit, zero
+branch-key (name+district+state) collisions, no state-name
+normalization needed (all 30 states already match `INDIAN_STATES`
+verbatim).
+
+**`seed-pg-law-programmes-colleges.mjs` mirrors
+`seed-law-ug-programmes-colleges.mjs` exactly**: district-aware
+`claimed`-set matching, stream-aware candidate filtering,
+`normalizeForMatch()` for punctuation-insensitive matching,
+`Program.name = 'LAW-PG'` (uppercase), `Program.description` carries
+the district. Reuses `University` rows already created by
+`pg-law-colleges.json`'s seed, matched by name+state+district —
+pushes `"PG"` onto `levels` if somehow missing.
+
+**Frontend**: `CURATED_DEGREE_MAP_BY_STREAM.Law["PG"] = "Law-PG"`,
+`"Law-PG"` added to `BROWSE_DEGREES`. Removed `Law` entirely from
+`COLLEGE_SEARCH_LEVEL_MAP` (both `UG` and `PG` are now curated;
+Doctorate/Others fall back to the unfiltered `STREAMS_WITH_COLLEGE_DATA`
+plain search, same as before).
+
+Verified live in browser: Law/PG now shows `CuratedCollegeSearch` and a
+Specialization field reading "Select a college first" (pre-seed);
+Law/UG confirmed still correctly curated (unaffected by this change);
+Law/Doctorate confirmed still falls back to the plain unfiltered search
++ disabled placeholder. tsc/eslint clean. Not yet seeded against
+production.
+
 ## `pg-law-colleges.json` — PG Law (LL.M. / M.L.) colleges
 
 Input to `../seed-pg-law-colleges.mjs`. Source:

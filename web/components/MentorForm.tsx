@@ -119,21 +119,34 @@ const CURATED_DEGREE_MAP_BY_STREAM: Record<string, Record<string, string>> = {
     "B.Tech/B.E": "B.Tech",
     "M.Tech/M.E": "M.Tech",
   },
-  // UG Law has real per-college specialization data too (Specialization
-  // column of an AISHE programme export — the specific UG law programme
-  // type each college offers: B.A. LL.B., LL.B., BBA LL.B., etc., see
-  // seed-law-ug-programmes-colleges.mjs). PG Law, Doctorate, and Others
-  // stay on the non-curated paths until/if they get their own
-  // per-college specialization datasets.
+  // UG and PG Law both have real per-college specialization data too
+  // (Specialization column of an AISHE programme export — the specific
+  // law programme type each college offers: UG's B.A. LL.B., LL.B., BBA
+  // LL.B., etc.; PG's LL.M./M.L. and super-specialty like "LL.M. -
+  // Constitutional Law", see seed-law-ug-programmes-colleges.mjs /
+  // seed-pg-law-programmes-colleges.mjs). Doctorate and Others stay on
+  // the non-curated paths until/if they get their own per-college
+  // specialization datasets.
   Law: {
     UG: "Law-UG",
+    PG: "Law-PG",
   },
 };
 
 // Degrees whose curated data is small/complete enough to browse in full +
 // type-to-search (CuratedCollegeSearch/SearchableCombobox), rather than the
 // original curated-top-30-+-"Other" pattern.
-const BROWSE_DEGREES = new Set(["MD/MS", "DNB", "Diploma", "DM/MCh", "MDS", "B.Tech", "M.Tech", "Law-UG"]);
+const BROWSE_DEGREES = new Set([
+  "MD/MS",
+  "DNB",
+  "Diploma",
+  "DM/MCh",
+  "MDS",
+  "B.Tech",
+  "M.Tech",
+  "Law-UG",
+  "Law-PG",
+]);
 
 // Non-Medical streams that have real seeded college data with no
 // specialization concept (see seed-bds-colleges.mjs — BDS is the base
@@ -153,14 +166,13 @@ const STREAMS_WITH_COLLEGE_DATA = new Set(["Dental", "Engineering", "Law"]);
 // combined pool (same reasoning as Medical's UG-only level filter). A
 // degree not listed here (Doctorate/Others — no dataset of their own)
 // falls back to the unfiltered combined list for the whole stream, same
-// as before this map existed. B.Tech/B.E, M.Tech/M.E, and Law's UG are
-// deliberately absent — all three moved to the curated
+// as before this map existed. B.Tech/B.E, M.Tech/M.E, and both of Law's
+// degrees are deliberately absent — all four moved to the curated
 // CuratedCollegeSearch path above (see CURATED_DEGREE_MAP_BY_STREAM),
 // which doesn't use CollegeSearch or this map at all.
 const COLLEGE_SEARCH_LEVEL_MAP: Record<string, Record<string, string>> = {
   Dental: { BDS: "UG" },
   Engineering: { Diploma: "Diploma" },
-  Law: { PG: "PG" },
 };
 
 // Streams whose College field has real data (STREAMS_WITH_COLLEGE_DATA)
