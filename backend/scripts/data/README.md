@@ -935,13 +935,14 @@ cleanly on the first real run.
 
 Input to `../seed-law-ug-programmes-colleges.mjs`. Source: `ug law
 clean.xlsx` — the **same underlying data** as `law-ug-colleges.json`
-(3,250 raw rows, 2,085 unique colleges), but with an explicit
-**Specialization** column this time (derived from `Programme (Source)`,
-e.g. `"B.A. L.L.B.-Bachelor of Arts, Bachelor of Law or Laws"` →
-`"B.A. LL.B."`). **Same upgrade as B.Tech/M.Tech** — replaces
-`law-ug-colleges.json`'s no-specialization University-only pattern with
-the curated University+Program pattern. `type` defaulted to `PRIVATE`
-(no ownership column, same as before). `stream: 'Law'`.
+(3,250 raw rows, 2,083 unique colleges — see below for why this isn't
+2,085), but with an explicit **Specialization** column this time
+(derived from `Programme (Source)`, e.g. `"B.A. L.L.B.-Bachelor of
+Arts, Bachelor of Law or Laws"` → `"B.A. LL.B."`). **Same upgrade as
+B.Tech/M.Tech** — replaces `law-ug-colleges.json`'s no-specialization
+University-only pattern with the curated University+Program pattern.
+`type` defaulted to `PRIVATE` (no ownership column, same as before).
+`stream: 'Law'`.
 
 **Specialization labels are the specific UG law programme type each
 college offers** — not academic "disciplines" like Engineering's, but
@@ -952,18 +953,37 @@ LL.B."`, `"B.Com LL.B."`, `"B.L. (Bachelor of Law)"`, `"LL.B.
 labels**, matching the source's own `By Specialization` sheet count
 exactly, no normalization needed.
 
-**Every lesson from the B.Tech/M.Tech Programmes refreshes applied
-proactively, and this time it seeded clean too**: precise
-last-comma-segment-only truncation (checked directly against the
-known `"MIT Art..."`-style over-truncation risk and the known
-`"BLDE"` short-acronym case — both handled correctly), generation key
-matching the seed script's `normalizeForMatch()` exactly (checked for
-collisions before generating — found zero; 2,085 raw normalized keys,
-2,085 unique, exactly matching the source's own "Unique Colleges"
-sheet count), no name over `University.name`'s VARCHAR(200) limit
-(checked directly, none found), and one state-name normalization (the
+**A real bug found via the dry-run before this ever touched
+production — not a truncation-precision bug this time, a
+cross-file naming-consistency bug.** First generation attempt applied
+the precise last-comma-segment-only truncation rule (proactively,
+same as B.Tech/M.Tech, to avoid the "Government Polytechnic"-style
+over-merging risk) and produced 2,085 unique colleges with **512
+"created" instead of "matched"** in the dry-run — an unexpectedly low
+match rate against the already-seeded `law-ug-colleges.json`. Spot-
+checking the 512 showed real colleges (`"...Anantapur"`,
+`"...Bellary"`, `"...Bangalore"`, `"...Hubli"`) whose town-name suffix
+the stricter rule correctly left attached (since it didn't exactly
+match the District column, same reasoning as before), while
+`law-ug-colleges.json`'s **original, looser** `locality_like`
+word-count heuristic *had* stripped that same suffix when it was
+generated — two different truncation rules applied to the same
+underlying source data, producing two different name strings for the
+same real college. Running the seed as generated would have created
+512 duplicate University rows instead of attaching specializations to
+the existing ones. **Fixed by regenerating with `law-ug-colleges.json`'s
+own original `locality_like` heuristic instead** — consistency with
+the already-seeded sibling dataset matters more here than which
+truncation rule is theoretically more precise. Result: **2,083**
+unique colleges, verified **zero** name+state mismatches in either
+direction against `law-ug-colleges.json` (every college in one file
+now has an exact match in the other). Known cases re-verified correct
+under this heuristic: `"BLDE"` (legitimate short acronym, kept), no
+name over `University.name`'s VARCHAR(200) limit, zero branch-key
+(name+district+state) collisions. One state-name normalization (the
 same `"The Dadra and Nagar Haveli and Daman and Diu"` → `"Dadra and
-Nagar Haveli and Daman and Diu"` fix as the original `law-ug-colleges.json`).
+Nagar Haveli and Daman and Diu"` fix as the original
+`law-ug-colleges.json`).
 
 **`seed-law-ug-programmes-colleges.mjs` mirrors
 `seed-btech-programmes-colleges.mjs`/`seed-mtech-programmes-colleges.mjs`
