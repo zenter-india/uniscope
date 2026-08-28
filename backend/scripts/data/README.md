@@ -472,24 +472,13 @@ text the way DNB's/diploma's address-bleed did.
 
 **Known gap, found seeding this against production: 2 of 329 BDS
 colleges matched a pre-existing University row under a different
-stream and are invisible to a `stream = 'Dental'` filter.**
-`University.stream` is a single scalar column, not an array, so a
-real-world institution that legitimately runs both a Medical and a
-Dental program (University College of Medical Sciences, Delhi; Armed
-Forces Medical College, Maharashtra — both genuinely do) can only ever
-be tagged with whichever stream's seed script created that row first
-— every later stream's seed script correctly reuses the row (no
-duplicate created, `levels` gets `UG` added) but never claims it for
-its own stream, since only `create` sets `stream`, `update` never
-touches it. Both rows stayed `stream = 'Medical'`. **Deliberately left
-as-is** rather than force a schema change (`stream` → array, touching
-every backend query, mobile picklist, and every seed script here) for
-a 0.6% edge case — a mentor from one of these 2 colleges selecting
-Stream=Dental just won't find their college in the curated search and
-uses "Other" instead. This will recur for any future dataset whose
-colleges overlap with an already-seeded different stream; worth a real
-multi-stream schema change if it turns out to affect more than a
-handful of colleges across the whole pipeline.
+stream and are invisible to a `stream = 'Dental'` filter.** See the
+general "cross-stream matching gap" note near the end of this file for
+the full explanation — this dataset's specific 2 rows are University
+College of Medical Sciences (Delhi) and Armed Forces Medical College
+(Maharashtra), both genuinely real dual Medical+Dental institutions,
+both left as `stream = 'Medical'` deliberately rather than forcing a
+schema change for a 0.6% edge case.
 
 ## `mds-colleges.json` — MDS (Dental PG) colleges + specializations
 
@@ -615,6 +604,17 @@ sent in the payload), but the field still renders as a disabled
 placeholder so mentors can see it's coming rather than it being wholly
 absent the way it is for BDS.
 
+**Seeded against production: 1,256 total, all newly created (0
+matched) — but `stream = 'Engineering'` returns 1,257.** The extra row
+is unrelated to this dataset: a pre-existing "IIT Bombay" University
+row (created ~4 weeks before this seed run, from earlier generic seed
+data) already had `stream = 'Engineering'` set. Verified directly
+against `btech-colleges.json` — IIT Bombay doesn't appear in it at all,
+under any spelling — this AICTE-style dataset covers private/
+state-affiliated engineering colleges, not the IIT system, so this
+isn't a match-miss bug, just an unrelated pre-existing row inflating
+the count by 1. Left as-is.
+
 ## `pg-engineering-colleges.json` — M.Tech/M.E (Engineering PG) colleges
 
 Input to `../seed-pg-engineering-colleges.mjs`. Source:
@@ -669,6 +669,63 @@ are gated by `form.stream` (`"Engineering"`), not by degree — so
 M.Tech/M.E automatically gets the same real `CollegeSearch` (stream
 filter) and disabled "Coming soon" Specialization field that B.Tech/B.E
 already has, with zero code changes.
+
+## `diploma-engineering-colleges.json` — Diploma Engineering (polytechnic) colleges
+
+Input to `../seed-diploma-engineering-colleges.mjs`. Source:
+`Diploma_Engineering_Colleges_Clean.xlsx`, same "Clean Data" shape as
+`btech-colleges.json` (S.No/College/District/State — no ownership
+column). **370 raw rows → 366 after dropping 4 no-state rows → 364
+unique (College, District, State) colleges**, `type` defaulted to
+`PRIVATE`. No specialization data, same as B.Tech/M.Tech — University
+rows only, no `Program` row.
+
+**A different, stricter comma-truncation rule than every prior
+Engineering/Law dataset was needed here — truncate only when the
+comma tail literally matches the District column's text, not merely
+when it "looks like" a locality.** This source has a pattern the
+others didn't: dozens of colleges share the exact generic name
+`"Government Polytechnic"` (or `"Government Polytechnic for Women"`),
+and the only thing distinguishing multiple real, distinct polytechnics
+within the *same district* is a **town name** appended after a comma
+(e.g. `"GOVERNMENT POLYTECHNIC, KALYANDURG"` and `"GOVERNMENT
+POLYTECHNIC, JAMMALAMADUGU"` are two different real colleges, both in
+Andhra Pradesh's Cuddapah-adjacent districts, both reduced to the exact
+same generic name if truncated) — the town isn't in the District
+column at all, so it's the *only* disambiguating text available, not
+address bleed. **First attempt used the Law datasets' locality-word-count
+heuristic and silently merged multiple genuinely distinct polytechnics
+into one row** (caught before generating the seed script, not after
+seeding — e.g. 5 different "Government Polytechnic" branches across 5
+different Cuddapah-district towns would have collapsed to a single
+entry). Fixed by reverting to the original DNB/BDS/B.Tech rule for this
+dataset: only truncate when `district.lower() in tail.lower()` is
+literally true. Two names that would have been badly mangled by the
+locality heuristic are correctly kept whole under this stricter rule:
+`"DKTES,TEXTILE & ENGG. INSTITUTE"` (comma separates an acronym from
+its own name, not an address) and `"Polytechnic, The Maharaja Sayajirao
+University of Baroda"` (already backwards-ordered, truncating would
+have left just `"Polytechnic"`). Only 2 genuine duplicate pairs found
+after this fix (one case-variant, one true district-match bleed) — 366
+→ 364.
+
+**Many of these colleges already exist as `University` rows from the
+B.Tech/M.Tech seeds** — the district-aware `claimed`-set matching
+reuses those rows and pushes a new `"Diploma"` value onto `levels`
+rather than creating duplicates, same pattern as PG reusing UG rows
+elsewhere. This is also the **first dataset to add anything other than
+`"UG"`/`"PG"` to `University.levels`** — the column is a free-form
+string array, not an enum (see its doc comment in `schema.prisma`), so
+`"Diploma"` is a valid value; nothing elsewhere reads `levels` in a way
+that would break from a third distinct value.
+
+**No frontend changes needed** — `"Diploma"` was already added as an
+Engineering degree option (`DEGREES_BY_STREAM.Engineering` in
+`web/lib/options.ts`) before this dataset existed, and
+`STREAMS_WITH_COLLEGE_DATA`/`STREAMS_WITH_EMPTY_SPECIALIZATION` are
+stream-gated, not degree-gated — so Diploma already had the real
+`CollegeSearch` and disabled Specialization placeholder, just searching
+the combined B.Tech+M.Tech list until this dataset was seeded.
 
 ## `law-ug-colleges.json` — UG Law (B.A. LL.B. / LL.B. / integrated) colleges
 
@@ -743,6 +800,12 @@ mechanism supports. Law's `Degree` dropdown wasn't given its own
 `DEFAULT_NON_MEDICAL_DEGREES` (`UG`/`PG`/`Doctorate`/`Others`), and this
 dataset is UG-only, so no options-list change was needed either.
 
+**Seeded against production: 2,083 total (12 matched existing + 2,071
+created), but only 2,072 satisfy `stream = 'Law'`** — 11 of the 12
+matched rows are the cross-stream matching gap (see the general note
+near the end of this file), colleges that already existed under a
+different stream and stayed there. Left as-is, same as BDS's 2.
+
 ## `pg-law-colleges.json` — PG Law (LL.M. / M.L.) colleges
 
 Input to `../seed-pg-law-colleges.mjs`. Source:
@@ -785,6 +848,48 @@ already in `STREAMS_WITH_COLLEGE_DATA` (added for UG Law) and gated by
 stream, not degree, and `"PG"` was already a valid Law degree option
 via the `DEFAULT_NON_MEDICAL_DEGREES` fallback. No Specialization field
 for Law/PG either, same as Law/UG (not requested).
+
+**Seeded against production: 806 total (733 matched existing + 73
+created), but only 796 satisfy `stream = 'Law' AND 'PG' = ANY(levels)`**
+— 733 matched the UG-Law-seeded rows as expected (`PG` correctly added
+to `levels` for 729 of them), but 10 of those matches are the
+cross-stream matching gap (see the general note near the end of this
+file). Left as-is, same as BDS/UG-Law.
+
+## A recurring gap worth knowing about — cross-stream University matching never reclassifies `stream`
+
+`University.stream` is a single scalar column, not an array. Every
+seed script here matches an incoming college to a pre-existing
+`University` row by **name+state only** (not stream) — this is
+correct and necessary, since it's what prevents creating duplicate
+rows for the same real-world institution across datasets. But when
+the matched row was originally created by a *different* stream's seed
+script, only the `create` branch ever sets `stream`; the `update`
+branch (the one that runs on a match) only ever touches `levels`
+(pushing `UG`/`PG`) — it never reclassifies `stream` to the matching
+degree's own stream. So a real institution that legitimately spans two
+streams (a Medical college that also runs a Dental program; a college
+that shows up in both an Engineering-adjacent list and a Law list)
+keeps whichever stream its *first-ever* seed run gave it, and becomes
+invisible to a strict `stream = '<other>'` filter even though it now
+correctly carries that other stream's program/level data.
+
+**Found and deliberately left as-is three times so far** (see each
+dataset's own section above for the specific counts and colleges):
+BDS (2 of 329), UG Law (11 of 2,083), PG Law (10 of 806). Each case:
+verified via direct cross-reference against the source JSON (never
+assumed from a "matched" count alone) that the shortfall is a genuine
+cross-stream overlap, not a data-quality or matching-key bug. Not
+fixed because the real fix — `University.stream` → an array, or a
+separate per-stream junction table — means touching every backend
+query that filters by `stream`, the mobile stream picklists, and every
+seed script in this file, for what has consistently been under 1% of
+each dataset. Worth revisiting for real if this fraction grows
+meaningfully as more datasets are added, or if a future stream's data
+turns out to overlap far more with an existing one (e.g. a
+Commerce & Business dataset would likely share many colleges with Law
+and Arts & Humanities, given how common combined-faculty colleges are
+in India).
 
 ## A casing bug worth knowing about — `Program.name` must be UPPERCASE
 
