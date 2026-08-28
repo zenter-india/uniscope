@@ -129,7 +129,15 @@ const STREAMS_WITH_COLLEGE_DATA = new Set(["Dental", "Engineering", "Law"]);
 // Specialization field still shows (so the field exists, distinguishing
 // "we don't have this yet" from BDS's "this degree has no concept of
 // specializations at all"), just empty/disabled until real data arrives.
-const STREAMS_WITH_EMPTY_SPECIALIZATION = new Set(["Engineering"]);
+// Applies to every degree within the stream EXCEPT: (a) a degree that
+// already has real curated data (hasCuratedData — e.g. Dental+MDS —
+// guarded below so the two Specialization renderers never both fire for
+// the same degree), and (b) BDS specifically (see
+// EMPTY_SPECIALIZATION_EXCLUDED_DEGREES), which — like the original
+// Engineering-only version of this set — has no specialization concept
+// at all, not just "not uploaded yet".
+const STREAMS_WITH_EMPTY_SPECIALIZATION = new Set(["Engineering", "Law", "Dental"]);
+const EMPTY_SPECIALIZATION_EXCLUDED_DEGREES = new Set(["BDS"]);
 
 export function MentorForm({ onExit }: { onExit: () => void }) {
   const wizard = useMultiStep(5);
@@ -692,13 +700,15 @@ export function MentorForm({ onExit }: { onExit: () => void }) {
               )}
             </Field>
           )}
-          {STREAMS_WITH_EMPTY_SPECIALIZATION.has(form.stream) && (
-            <Field label="Specialization" hint="Coming soon — specialization data for this stream is being added">
-              <Select gold value="" disabled onChange={() => {}}>
-                <option value="">Coming soon</option>
-              </Select>
-            </Field>
-          )}
+          {STREAMS_WITH_EMPTY_SPECIALIZATION.has(form.stream) &&
+            !hasCuratedData &&
+            !EMPTY_SPECIALIZATION_EXCLUDED_DEGREES.has(form.degree) && (
+              <Field label="Specialization" hint="Coming soon — specialization data for this stream is being added">
+                <Select gold value="" disabled onChange={() => {}}>
+                  <option value="">Coming soon</option>
+                </Select>
+              </Field>
+            )}
         </div>
       )}
 
