@@ -917,7 +917,19 @@ Engineering's Doctorate/Others static fallback later.
 Verified live in browser: M.Tech/M.E now shows `CuratedCollegeSearch`
 and a Specialization field reading "Select a college first" (pre-seed);
 Diploma confirmed unaffected (still the disabled "Coming soon"
-placeholder). tsc/eslint clean. Not yet seeded against production.
+placeholder). tsc/eslint clean.
+
+**Seeded against production: 1,991 matched existing + 71 created =
+2,062 universities, 2,062 `M.TECH` Program rows created (0 updated) —
+exact match, verified via `SELECT count(*) FROM programs WHERE name =
+'M.TECH' AND is_active = true` = 2,062.** The high 1,991/2,062 match
+rate (vs. B.Tech's 421/3,411) is expected — this run matches against
+the whole combined Engineering pool (B.Tech + Diploma + the original
+M.Tech dataset, ~4,700+ rows by this point), not just one smaller
+prior dataset. No new bugs found this session — every lesson from the
+B.Tech Programmes refresh (truncation precision, generation/seed key
+matching) was applied proactively at generation time, and it seeded
+cleanly on the first real run.
 
 ## `law-ug-colleges.json` — UG Law (B.A. LL.B. / LL.B. / integrated) colleges
 
