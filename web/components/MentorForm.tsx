@@ -126,6 +126,21 @@ const BROWSE_DEGREES = new Set(["MD/MS", "DNB", "Diploma", "DM/MCh", "MDS"]);
 // doesn't need to be listed here — it's handled by the curated path.
 const STREAMS_WITH_COLLEGE_DATA = new Set(["Dental", "Engineering", "Law"]);
 
+// Maps a STREAMS_WITH_COLLEGE_DATA stream+degree to the `levels` value
+// its own dataset was seeded with (see seed-btech-colleges.mjs et al —
+// each pushes "UG"/"PG"/"Diploma" onto University.levels), passed as
+// CollegeSearch's `level` prop so e.g. selecting M.Tech/M.E only
+// searches colleges that actually offer an M.Tech, not the whole
+// stream's combined pool (same reasoning as Medical's UG-only level
+// filter). A degree not listed here (Doctorate/Others — no dataset of
+// their own) falls back to the unfiltered combined list for the whole
+// stream, same as before this map existed.
+const COLLEGE_SEARCH_LEVEL_MAP: Record<string, Record<string, string>> = {
+  Dental: { BDS: "UG" },
+  Engineering: { "B.Tech/B.E": "UG", "M.Tech/M.E": "PG", Diploma: "Diploma" },
+  Law: { UG: "UG", PG: "PG" },
+};
+
 // Streams whose College field has real data (STREAMS_WITH_COLLEGE_DATA)
 // but no specialization dataset uploaded yet — per explicit request, the
 // Specialization field still shows (so the field exists, distinguishing
@@ -622,6 +637,7 @@ export function MentorForm({ onExit }: { onExit: () => void }) {
                 gold
                 value={form.collegeName}
                 stream={form.stream}
+                level={COLLEGE_SEARCH_LEVEL_MAP[form.stream]?.[form.degree]}
                 onPick={(name, id) => {
                   set("collegeName", name);
                   set("universityId", id ?? "");

@@ -916,6 +916,41 @@ value not in the list (`onChange` fires with the raw text); Diploma
 (not in the map) still shows the disabled placeholder, confirming no
 regression each time a new degree was added.
 
+## A real bug found and fixed — `STREAMS_WITH_COLLEGE_DATA`'s College field never filtered by level
+
+Found via a direct user question ("does every degree in Engineering
+use the same college data, or different — I gave different files").
+It didn't: **every degree within Dental, Engineering, or Law was
+searching the exact same combined pool of colleges for that stream**,
+regardless of which degree was selected — `CollegeSearch` was only
+ever called with `stream={form.stream}`, never a `level` filter, even
+though the component and the backend (`UniversitiesService.findAll`'s
+`levels: { has: query.level }`) both already fully supported one (used
+for Medical's UG-only filter since early in this session). This wasn't
+a deliberate design choice — the code was written when each stream had
+only one dataset (BDS-only, B.Tech-only) and just never got updated as
+more degree-specific datasets were added on top.
+
+**Fixed with `COLLEGE_SEARCH_LEVEL_MAP: Record<stream, Record<degree,
+level>>`** in `MentorForm.tsx`, passed as `CollegeSearch`'s `level`
+prop:
+```
+Dental: { BDS: "UG" },
+Engineering: { "B.Tech/B.E": "UG", "M.Tech/M.E": "PG", Diploma: "Diploma" },
+Law: { UG: "UG", PG: "PG" },
+```
+A degree not listed (Doctorate/Others — no dataset of its own) falls
+back to the unfiltered combined list, same as before this fix — that
+part was and still is correct, since there's genuinely nothing more
+specific to filter to for those two catch-all degrees.
+
+**Verified live, comparing College field result counts by degree**
+(Engineering): B.Tech/B.E → 1,259 (real B.Tech pool), M.Tech/M.E → 117
+(real M.Tech pool, was previously showing B.Tech's colleges too),
+Diploma → 364 (exact match to its seeded count), Doctorate → 1,659
+(full combined pool, correctly unfiltered/unchanged). Before this fix
+every one of those four would have shown 1,659.
+
 ## A recurring gap worth knowing about — cross-stream University matching never reclassifies `stream`
 
 `University.stream` is a single scalar column, not an array. Every
