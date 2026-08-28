@@ -15,7 +15,22 @@
  * University rows from the law-ug seed — matching correctly pushes
  * "PG" onto their `levels` (already `["UG"]`) rather than duplicating,
  * same as how seed-pg-engineering-colleges.mjs reuses B.Tech-seeded
- * rows.
+ * rows. **Must run after a real seed-law-ug-colleges.mjs run for this
+ * to work as intended** — see that reasoning in this script's own
+ * header history; still true after the stream-aware fix below.
+ *
+ * STREAM-AWARE MATCHING (added after this script's first run — see
+ * scripts/data/README.md's cross-stream matching gap section): matching
+ * candidates are restricted to rows whose `stream` is already 'Law' or
+ * unset. The original (name+state-only, no stream check) version of
+ * this script silently pushed 'PG' onto pre-existing Engineering-stream
+ * rows for colleges that legitimately appear in both an Engineering
+ * and a Law dataset (e.g. IILM University), inflating those Engineering
+ * rows' `levels` with data that doesn't belong there. This fix stops it
+ * from happening again on a re-run — it does not retroactively clean
+ * the rows already polluted by the first run; that's a separate
+ * one-time SQL remediation (see the README section for the affected
+ * list).
  *
  * Idempotent — re-running just ensures each college's University row
  * exists and has `levels` including "PG" (pushed if missing), rather
@@ -68,10 +83,11 @@ async function main() {
   });
 
   const existing = await prisma.university.findMany({
-    select: { id: true, name: true, state: true, slug: true, levels: true },
+    select: { id: true, name: true, state: true, slug: true, levels: true, stream: true },
   });
+  const eligible = existing.filter((u) => u.stream === 'Law' || u.stream === null);
   const existingByNameState = new Map();
-  for (const u of existing) {
+  for (const u of eligible) {
     const key = `${u.name.toLowerCase().trim()}|${u.state.toLowerCase().trim()}`;
     const list = existingByNameState.get(key);
     if (list) list.push(u);
