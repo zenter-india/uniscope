@@ -470,6 +470,27 @@ comma-containing names, all genuine institutional name components
 (hospital/institute affiliations), none matching the District column's
 text the way DNB's/diploma's address-bleed did.
 
+**Known gap, found seeding this against production: 2 of 329 BDS
+colleges matched a pre-existing University row under a different
+stream and are invisible to a `stream = 'Dental'` filter.**
+`University.stream` is a single scalar column, not an array, so a
+real-world institution that legitimately runs both a Medical and a
+Dental program (University College of Medical Sciences, Delhi; Armed
+Forces Medical College, Maharashtra — both genuinely do) can only ever
+be tagged with whichever stream's seed script created that row first
+— every later stream's seed script correctly reuses the row (no
+duplicate created, `levels` gets `UG` added) but never claims it for
+its own stream, since only `create` sets `stream`, `update` never
+touches it. Both rows stayed `stream = 'Medical'`. **Deliberately left
+as-is** rather than force a schema change (`stream` → array, touching
+every backend query, mobile picklist, and every seed script here) for
+a 0.6% edge case — a mentor from one of these 2 colleges selecting
+Stream=Dental just won't find their college in the curated search and
+uses "Other" instead. This will recur for any future dataset whose
+colleges overlap with an already-seeded different stream; worth a real
+multi-stream schema change if it turns out to affect more than a
+handful of colleges across the whole pipeline.
+
 ## `mds-colleges.json` — MDS (Dental PG) colleges + specializations
 
 Input to `../seed-mds-colleges.mjs`. Source: `MDS_Colleges_Clean.xlsx`
