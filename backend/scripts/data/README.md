@@ -727,6 +727,13 @@ stream-gated, not degree-gated — so Diploma already had the real
 `CollegeSearch` and disabled Specialization placeholder, just searching
 the combined B.Tech+M.Tech list until this dataset was seeded.
 
+**Seeded against production: 364 total (13 matched existing + 351
+created), and all 364 satisfy `stream = 'Engineering' AND 'Diploma' =
+ANY(levels)`** — no cross-stream overlap this time (all 13 matched
+rows were already `stream = 'Engineering'` from the B.Tech/M.Tech
+seeds), unlike BDS/UG-Law/PG-Law's shortfalls (see the general
+cross-stream matching note near the end of this file).
+
 ## `law-ug-colleges.json` — UG Law (B.A. LL.B. / LL.B. / integrated) colleges
 
 Input to `../seed-law-ug-colleges.mjs`. Source:
