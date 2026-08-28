@@ -12,6 +12,7 @@ class UserProfile {
     required this.verificationStatus,
     required this.isActive,
     required this.createdAt,
+    this.uniqueId,
     this.bio,
     this.specialty,
     this.languages = const [],
@@ -42,6 +43,10 @@ class UserProfile {
   final String verificationStatus;
   final bool isActive;
   final String createdAt;
+  /// Permanent registration number (e.g. "A1100000001" / "M2200000001") —
+  /// null until the user's stream is set, since the stream determines the
+  /// id's bucket. Never changes once assigned, even if stream later changes.
+  final String? uniqueId;
   final String? avatarUrl;
   final String? bio;
   final String? specialty;
@@ -72,6 +77,7 @@ class UserProfile {
         verificationStatus: (json['verificationStatus'] as String?) ?? '',
         isActive: (json['isActive'] as bool?) ?? true,
         createdAt: (json['createdAt'] as String?) ?? '',
+        uniqueId: json['uniqueId'] as String?,
         bio: json['bio'] as String?,
         specialty: json['specialty'] as String?,
         languages: (json['languages'] as List<dynamic>? ?? [])
