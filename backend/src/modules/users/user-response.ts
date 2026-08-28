@@ -10,6 +10,9 @@ import { isCallAvailable } from '../mentors/availability.js';
 export interface PublicUser {
   id: string;
   displayName: string;
+  /** Client-facing registration number (e.g. "A1100000001"), null until
+   * profile.stream is known — see UsersService.ensureUniqueId. */
+  uniqueId: string | null;
   role: User['role'];
   verificationStatus: User['verificationStatus'];
   isActive: boolean;
@@ -56,6 +59,7 @@ export function toPublicUser(
   return {
     id: user.id,
     displayName: user.displayName,
+    uniqueId: user.uniqueId,
     role: user.role,
     verificationStatus: user.verificationStatus,
     isActive: user.isActive,

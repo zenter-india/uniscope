@@ -9,6 +9,7 @@ import {
 import { Prisma, User, UserRole, VerificationStatus } from '@prisma/client';
 import { generatePseudonym } from '../../common/helpers/pseudonym.helper.js';
 import { encryptRealName } from '../../common/helpers/profile-encryption.helper.js';
+import { buildUniqueId, streamCodeFor } from '../../common/helpers/unique-id.helper.js';
 import { PrismaService } from '../../database/prisma/prisma.service.js';
 import { AvatarConfig } from '../avatar/avatar.constants.js';
 import { AvatarService } from '../avatar/avatar.service.js';
@@ -110,6 +111,61 @@ export class UsersService {
     });
   }
 
+  /** Assigns User.uniqueId the first time it's needed — called from the
+   * self-service GET/PATCH /users/me paths only (never for viewing someone
+   * else's profile), so this write side effect is confined to a user acting
+   * on their own account. A no-op once uniqueId is already set, so it's
+   * safe to call on every request. Requires profile.stream to be known;
+   * returns the user unchanged (uniqueId still null) if it isn't yet —
+   * the aspirant/mentor onboarding wizard always sets stream, so this
+   * resolves itself the moment onboarding completes.
+   *
+   * The sequence number is claimed with a single atomic
+   * INSERT ... ON CONFLICT DO UPDATE ... RETURNING against
+   * IdSequenceCounter, so two concurrent requests (extremely unlikely for
+   * the same user, but cheap to guard) can never be handed the same
+   * number. */
+  async ensureUniqueId(userId: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      include: { profile: { include: { university: true } } },
+    });
+    // Matches findById's contract (null, not a throw) so callers like
+    // UsersController.getMe can turn a missing user into a clean 404.
+    if (!user) return null;
+    if (user.uniqueId || !user.profile?.stream || user.role === UserRole.ADMIN) {
+      return user;
+    }
+
+    const prefix = user.role === UserRole.MENTOR ? 'M' : 'A';
+    const streamCode = streamCodeFor(user.profile.stream);
+    const bucketKey = `${prefix}${streamCode}`;
+
+    const rows = await this.prisma.$queryRaw<{ assigned: number }[]>`
+      INSERT INTO id_sequence_counters (bucket_key, next_value)
+      VALUES (${bucketKey}, 2)
+      ON CONFLICT (bucket_key)
+      DO UPDATE SET next_value = id_sequence_counters.next_value + 1
+      RETURNING next_value - 1 AS assigned
+    `;
+    const uniqueId = buildUniqueId(prefix, streamCode, rows[0].assigned);
+
+    try {
+      return await this.prisma.user.update({
+        where: { id: userId },
+        data: { uniqueId },
+        include: { profile: { include: { university: true } } },
+      });
+    } catch (err) {
+      // The counter is atomic, so a real collision here would mean a
+      // uniqueId got hand-edited outside this code path — vanishingly
+      // unlikely. Don't fail the profile read/update over it; the user
+      // just tries again on their next request.
+      if (this.isUniqueConstraintViolation(err)) return user;
+      throw err;
+    }
+  }
+
   /** Derives the public avatar URL from a loaded user+profile row.
    * Public so controllers can decorate their response projections. */
   avatarUrlFor(row: {
@@ -208,14 +264,14 @@ export class UsersService {
         },
       });
     } catch (err) {
-      if (this.isUniqueDisplayNameViolation(err) && attempt < 5) {
+      if (this.isUniqueConstraintViolation(err) && attempt < 5) {
         return this.createUserWithUniquePseudonym(phoneHash, attempt + 1);
       }
       throw err;
     }
   }
 
-  private isUniqueDisplayNameViolation(err: unknown): boolean {
+  private isUniqueConstraintViolation(err: unknown): boolean {
     return (
       typeof err === 'object' &&
       err !== null &&
@@ -276,7 +332,7 @@ export class UsersService {
     };
 
     try {
-      return await this.prisma.user.update({
+      await this.prisma.user.update({
         where: { id: userId },
         data: {
           ...(dto.displayName !== undefined && { displayName: dto.displayName }),
@@ -284,18 +340,29 @@ export class UsersService {
             profile: { update: profileUpdate },
           }),
         },
-        include: { profile: { include: { university: true } } },
       });
     } catch (err) {
       // The live check-display-name call the wizard makes as you type is
       // only a UX hint — this is the actual guarantee (DB-level, so a race
       // between two people checking the same free name at once still can't
       // let both through).
-      if (dto.displayName !== undefined && this.isUniqueDisplayNameViolation(err)) {
+      if (dto.displayName !== undefined && this.isUniqueConstraintViolation(err)) {
         throw new ConflictException('That name is already taken — try another.');
       }
       throw err;
     }
+
+    // If this update is what just set profile.stream (e.g. onboarding's
+    // final step, or an EditProfileScreen change), this is also the
+    // moment uniqueId first becomes assignable — no separate trigger
+    // needed, ensureUniqueId is a no-op once already assigned. The row we
+    // just updated above always exists, so a null here would mean it was
+    // deleted in the instant between that update and this read.
+    const updated = await this.ensureUniqueId(userId);
+    if (!updated) {
+      throw new NotFoundException('User not found');
+    }
+    return updated;
   }
 
   /** Admin-only search/list — deliberately excludes ADMIN-role rows from

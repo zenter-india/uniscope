@@ -55,7 +55,10 @@ export class UsersController {
 
   @Get('me')
   async getMe(@CurrentUser() user: JwtPayload) {
-    const found = await this.usersService.findById(user.sub);
+    // ensureUniqueId (not findById) so an existing user without one yet
+    // gets backfilled the moment they load their own profile, as long as
+    // profile.stream is already set.
+    const found = await this.usersService.ensureUniqueId(user.sub);
     if (!found) {
       throw new NotFoundException('User not found');
     }
