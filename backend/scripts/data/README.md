@@ -1112,6 +1112,60 @@ the same fix to the remaining scripts, and remediating the 8 already-
 affected rows, if this class of bug needs to stop recurring rather
 than being caught dataset-by-dataset.
 
+## Another real bug found and fixed — punctuation-insensitive matching, before `seed-btech-programmes-colleges.mjs` ever touched production
+
+Found via a dry-run sanity check the user requested before confirming
+the real B.Tech Programmes run: only 316 of 3,412 colleges matched the
+already-seeded `btech-colleges.json` rows, an unexpectedly low rate.
+A spot-check across the **already-seeded** Engineering rows (normalized
+name+state grouping over all 1,659 rows from the B.Tech/M.Tech/Diploma
+seeds already run) found **61 groups with more than one row (151 rows
+involved)** — a real mix of two very different things:
+
+1. **Genuine near-duplicate rows** — same real institution, split into
+   2–3 `University` rows purely because of a punctuation/spacing
+   difference between sources (`"SHRI G.S. INSTITUTE..."` vs `"Shri
+   G.S Institute..."`, `"...& TECHNOLOGY"` vs `"...AND TECHNOLOGY"`,
+   `"A. D. PATEL..."` vs `"A.D. PATEL..."`) — conservatively ~20–30
+   rows. **Root cause**: every seed script in this pipeline (including
+   this one, until fixed) matches an incoming college to a pre-existing
+   `University` row using `name.toLowerCase().trim()` as the key — this
+   strips case and surrounding whitespace but nothing else, so two
+   independently-sourced files spelling the same college with a
+   different period, space, or `"&"`/`"AND"` produce different keys and
+   the seed script creates a duplicate row instead of matching the
+   existing one. The `slugify()` function every script already has
+   (used only for generating the URL slug) would have caught all of
+   these, since it strips all non-alphanumeric characters — it just was
+   never reused for the *matching* key.
+2. **Likely-genuine distinct colleges sharing a generic name** — e.g.
+   `"Government Engineering College"` (4× Kerala, 5× Gujarat),
+   `"Government College of Engineering"` (3× Maharashtra) — India
+   genuinely has one per district in several states, and none of these
+   source files carry enough disambiguating detail to tell them apart
+   with confidence. Left alone — not a matching bug, a real data
+   limitation (same class of issue as the DNB/Diploma "same name,
+   different real branches" cases documented earlier in this file).
+
+**Fixed in `seed-btech-programmes-colleges.mjs`** with a new
+`normalizeForMatch()` — not the same as `slugify()` — that expands
+`"&"` to `"and"` first, then collapses all remaining punctuation/
+spacing to single spaces (kept space-separated, not concatenated, to
+avoid an unrelated false match across a word boundary), used for both
+the pre-existing-candidate key and the incoming JSON entry's key.
+Verified directly against all 9 known near-duplicate pairs found in
+the DB — all 9 now normalize to identical keys.
+
+**Not retroactively fixed in the six seed scripts already run** (same
+reasoning as the cross-stream gap above — a pipeline-wide fix is a
+larger change than this session's per-dataset scope) **and the ~20–30
+already-existing near-duplicate rows are not yet remediated** — this
+fix only prevents `seed-btech-programmes-colleges.mjs`'s own run from
+adding *more* of them; it doesn't merge the ones already in production.
+Flagged to the user, pending a decision on whether/when to clean up
+the existing near-duplicates and apply the same matching fix to the
+other scripts.
+
 ## A casing bug worth knowing about — `Program.name` must be UPPERCASE
 
 `UniversitiesService.findCurated` queries `Program.name: degree.toUpperCase()`.
