@@ -636,14 +636,21 @@ colleges**, `type` defaulted to `PRIVATE` (no ownership column).
 fix described further down this section merged one real duplicate
 pair.)
 
-**Specialization labels prefixed `"B.Tech - <Discipline>"`** (per
-explicit request, e.g. `"B.Tech - Information Technology"`) — 48
-distinct labels, matching the source's own Discipline count exactly
-(one all-caps variant, `"FOOD PROCESSING TECHNOLOGY"`, normalized to
-Title Case for display consistency; not merged into the separately
-distinct `"Food Technology"`/`"Food Processing and Preservation"`
-labels, since there's no way to verify from the data alone whether
-they're the same specialty).
+**Specialization labels are the plain Discipline name** (e.g.
+`"Information Technology"`) — 48 distinct labels, matching the
+source's own Discipline count exactly (one all-caps variant,
+`"FOOD PROCESSING TECHNOLOGY"`, normalized to Title Case for display
+consistency; not merged into the separately distinct `"Food
+Technology"`/`"Food Processing and Preservation"` labels, since
+there's no way to verify from the data alone whether they're the same
+specialty). Initially prefixed `"B.Tech - <Discipline>"` per the
+original request; the prefix was removed in a follow-up request —
+17,196 label occurrences stripped across all 3,411 colleges, 48
+distinct labels confirmed unchanged after stripping. Re-seeding
+against production (re-running `seed-btech-programmes-colleges.mjs`
+will `Program.upsert` each college's `specializations` in place — no
+University/Program rows added or removed, matches everything by the
+same key as before) is still pending as of this note.
 
 **Same messy AISHE-name character as the Law datasets, but a truncation
 bug found and fixed before generating this file (not after seeding)**:
@@ -1102,37 +1109,55 @@ to a *different* stream:
    `levels` by `seed-pg-law-colleges.mjs`/`seed-law-ug-colleges.mjs`
    matching them as if they were the same institution's Law offering,
    inflating the M.Tech/M.E search from 114 to 117 results (3 wrong
-   colleges included). Full scope, found by cross-referencing every
-   dataset's (name, state) keys pairwise across streams: **8 real
-   institutions affected**, all Engineering↔Law (Annamalai University,
-   IILM University, Integral University, Sri Manakula Vinayagar
-   Engineering College, Girijananda Chowdhury University, Kalasalingam
-   Academy of Research and Education, Siksha 'O' Anusandhan, Maulana
-   Abul Kalam Azad University of Technology) — no Dental overlaps
-   found.
+   colleges included). Initial scope estimate, from cross-referencing
+   every *new* dataset's (name, state) keys pairwise across streams:
+   8 real institutions, all Engineering↔Law — **this undercounted the
+   true scope**, since it only compared this session's own datasets
+   against each other and never checked against the original,
+   pre-existing Medical seed data.
 
-**Remediation plan, code fix applied — execution against production
-pending.** `seed-law-ug-colleges.mjs` and `seed-pg-law-colleges.mjs`
-were both given the same stream-aware matching fix
+**Remediated — fully executed against production, verified.**
+`seed-law-ug-colleges.mjs` and `seed-pg-law-colleges.mjs` were both
+given the same stream-aware matching fix
 `seed-btech-programmes-colleges.mjs` pioneered (candidates restricted
-to rows whose `stream` is already `'Law'` or unset). Re-running both
-(idempotent — every already-correctly-matched Law college is
-untouched) will give each of the 8 affected colleges a proper new
-`stream = 'Law'` University row instead of continuing to share the
-Engineering-stream row. Pulling the exact live state of all 8 before
-touching anything showed only **5 of the 8 actually have a wrong value
-in `levels`** — the other 3 (Sri Manakula Vinayagar, Annamalai
-University, Maulana Abul Kalam Azad University of Technology) happened
-to have the "wrong" stream's push coincide with a level value that was
-already correct from their own real Engineering data, so nothing needs
-removing from those. The 5 with a genuinely wrong value (`IILM
-University`, `Integral University`, `Siksha 'O' Anusandhan`,
-`Kalasalingam Academy of Research and Education`, `Girijananda
-Chowdhury University`) need that specific value removed via
-`array_remove(levels, '<value>')`, verified against each row's *own*
-real dataset membership first (e.g. IILM has no genuine M.Tech data —
-no `Engineering/PG` entry — so its `'PG'` is definitely the
-Law-derived pollution, not legitimate Engineering data).
+to rows whose `stream` is already `'Law'` or unset), then re-run for
+real (idempotent — every already-correctly-matched Law college was
+untouched). **The re-run's actual "created" counts (11 for UG, 2 more
+for PG — 13 total, not the file-estimate's 8) revealed 5 additional
+affected institutions the file-based estimate missed entirely** —
+Jamia Hamdard, Aligarh Muslim University, and Banaras Hindu University
+(all pre-existing `stream = 'Medical'` rows from before this session),
+plus Kalinga Institute of Industrial Technology and Saveetha Institute
+of Medical and Technical Sciences. **Final true scope: 13 real
+institutions** (not 8) — Annamalai University, IILM University,
+Integral University, Sri Manakula Vinayagar Engineering College,
+Girijananda Chowdhury University, Kalasalingam Academy of Research and
+Education, Siksha 'O' Anusandhan, Maulana Abul Kalam Azad University
+of Technology, Jamia Hamdard, Aligarh Muslim University, Banaras Hindu
+University, Kalinga Institute of Industrial Technology, Saveetha
+Institute of Medical and Technical Sciences. Each "created" name was
+verified via a temporary diagnostic print in the dry-run before
+confirming the real run, not assumed from the stats alone.
+
+Pulling the exact live state of all 13 (cross-referenced against each
+row's *own* real dataset membership — e.g. IILM has no genuine M.Tech
+data, no `Engineering/PG` entry, so its `'PG'` was definitely
+Law-derived pollution, not legitimate Engineering data) found only
+**5 of the 13 actually had a wrong value in `levels`**: `IILM
+University` (removed `'PG'`), `Integral University` (removed `'PG'`),
+`Kalasalingam Academy of Research and Education` (removed `'UG'`),
+`Siksha 'O' Anusandhan` (removed `'UG'`), `Girijananda Chowdhury
+University` (removed `'PG'`) — each via `array_remove(levels,
+'<value>')`, each verified 1-row-affected before moving to the next.
+The other 8 (Annamalai University, Sri Manakula Vinayagar, Maulana
+Abul Kalam Azad University of Technology, Jamia Hamdard, Aligarh
+Muslim University, Banaras Hindu University, Kalinga Institute of
+Industrial Technology, Saveetha Institute) needed no `levels` change —
+their pre-existing values already happened to be correct for their own
+stream. **Final verification**: all 13 institutions now have a proper
+separate `stream = 'Law'` University row (29 total rows checked across
+both verification queries), and every one of the 5 cleaned rows
+confirmed to no longer carry the wrong value.
 
 **Neither script's older, name+state-only matching is fixed
 retroactively elsewhere in this pipeline** (`seed-bds-colleges.mjs`,
