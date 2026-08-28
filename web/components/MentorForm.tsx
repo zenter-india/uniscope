@@ -14,7 +14,6 @@ import {
   DEGREES_BY_STREAM,
   DEFAULT_NON_MEDICAL_DEGREES,
   MEDICAL_SPECIALIZATIONS,
-  PG_ENGINEERING_SPECIALIZATIONS,
   CURRENT_STATUSES,
   LANGUAGES,
   YEARS_OF_STUDY,
@@ -108,23 +107,24 @@ const CURATED_DEGREE_MAP_BY_STREAM: Record<string, Record<string, string>> = {
   Dental: {
     MDS: "MDS",
   },
-  // B.Tech/B.E has real per-college specialization data (Discipline
-  // column of an AISHE programme export, see
-  // seed-btech-programmes-colleges.mjs) — same curated University+Program
-  // pattern as Medical/MDS, picking a college shows that college's own
-  // specialization list. M.Tech/M.E, Diploma, Doctorate, and Others stay
-  // on the non-curated paths (COLLEGE_SEARCH_LEVEL_MAP /
-  // STREAMS_WITH_EMPTY_SPECIALIZATION) until/if they get their own
-  // per-college specialization datasets.
+  // B.Tech/B.E and M.Tech/M.E both have real per-college specialization
+  // data (Discipline column of an AISHE programme export, see
+  // seed-btech-programmes-colleges.mjs / seed-mtech-programmes-colleges.mjs)
+  // — same curated University+Program pattern as Medical/MDS, picking a
+  // college shows that college's own specialization list. Diploma,
+  // Doctorate, and Others stay on the non-curated paths
+  // (COLLEGE_SEARCH_LEVEL_MAP / STREAMS_WITH_EMPTY_SPECIALIZATION)
+  // until/if they get their own per-college specialization datasets.
   Engineering: {
     "B.Tech/B.E": "B.Tech",
+    "M.Tech/M.E": "M.Tech",
   },
 };
 
 // Degrees whose curated data is small/complete enough to browse in full +
 // type-to-search (CuratedCollegeSearch/SearchableCombobox), rather than the
 // original curated-top-30-+-"Other" pattern.
-const BROWSE_DEGREES = new Set(["MD/MS", "DNB", "Diploma", "DM/MCh", "MDS", "B.Tech"]);
+const BROWSE_DEGREES = new Set(["MD/MS", "DNB", "Diploma", "DM/MCh", "MDS", "B.Tech", "M.Tech"]);
 
 // Non-Medical streams that have real seeded college data with no
 // specialization concept (see seed-bds-colleges.mjs — BDS is the base
@@ -139,18 +139,18 @@ const STREAMS_WITH_COLLEGE_DATA = new Set(["Dental", "Engineering", "Law"]);
 // Maps a STREAMS_WITH_COLLEGE_DATA stream+degree to the `levels` value
 // its own dataset was seeded with (see seed-btech-colleges.mjs et al —
 // each pushes "UG"/"PG"/"Diploma" onto University.levels), passed as
-// CollegeSearch's `level` prop so e.g. selecting M.Tech/M.E only
-// searches colleges that actually offer an M.Tech, not the whole
-// stream's combined pool (same reasoning as Medical's UG-only level
-// filter). A degree not listed here (Doctorate/Others — no dataset of
-// their own) falls back to the unfiltered combined list for the whole
-// stream, same as before this map existed. B.Tech/B.E is deliberately
-// absent — it moved to the curated CuratedCollegeSearch path above (see
-// CURATED_DEGREE_MAP_BY_STREAM.Engineering), which doesn't use
+// CollegeSearch's `level` prop so e.g. selecting Diploma only searches
+// colleges that actually offer a Diploma, not the whole stream's
+// combined pool (same reasoning as Medical's UG-only level filter). A
+// degree not listed here (Doctorate/Others — no dataset of their own)
+// falls back to the unfiltered combined list for the whole stream, same
+// as before this map existed. B.Tech/B.E and M.Tech/M.E are deliberately
+// absent — both moved to the curated CuratedCollegeSearch path above
+// (see CURATED_DEGREE_MAP_BY_STREAM.Engineering), which doesn't use
 // CollegeSearch or this map at all.
 const COLLEGE_SEARCH_LEVEL_MAP: Record<string, Record<string, string>> = {
   Dental: { BDS: "UG" },
-  Engineering: { "M.Tech/M.E": "PG", Diploma: "Diploma" },
+  Engineering: { Diploma: "Diploma" },
   Law: { UG: "UG", PG: "PG" },
 };
 
@@ -177,17 +177,15 @@ const EMPTY_SPECIALIZATION_EXCLUDED_DEGREES = new Set(["BDS"]);
 // priority over STREAMS_WITH_EMPTY_SPECIALIZATION's disabled
 // placeholder for whichever degree is listed here — every other degree
 // in that stream still falls back to the empty placeholder until it
-// gets its own list. B.Tech/B.E is deliberately absent — it moved to
-// the curated per-college pattern (CURATED_DEGREE_MAP_BY_STREAM) once
-// real per-college specialization data arrived; ENGINEERING_SPECIALIZATIONS
-// stays defined in lib/options.ts (unused here now) in case it's wanted
-// as Engineering's Doctorate/Others static fallback later, same as
-// Medical's MEDICAL_SPECIALIZATIONS is for its Doctorate/Others.
-const FLAT_SPECIALIZATION_LISTS: Record<string, Record<string, readonly string[]>> = {
-  Engineering: {
-    "M.Tech/M.E": PG_ENGINEERING_SPECIALIZATIONS,
-  },
-};
+// gets its own list. B.Tech/B.E and M.Tech/M.E are both deliberately
+// absent — both moved to the curated per-college pattern
+// (CURATED_DEGREE_MAP_BY_STREAM) once real per-college specialization
+// data arrived for each; ENGINEERING_SPECIALIZATIONS and
+// PG_ENGINEERING_SPECIALIZATIONS stay defined in lib/options.ts (unused
+// here now) in case either is wanted as Engineering's Doctorate/Others
+// static fallback later, same as Medical's MEDICAL_SPECIALIZATIONS is
+// for its Doctorate/Others.
+const FLAT_SPECIALIZATION_LISTS: Record<string, Record<string, readonly string[]>> = {};
 
 export function MentorForm({ onExit }: { onExit: () => void }) {
   const wizard = useMultiStep(5);
