@@ -1,0 +1,686 @@
+[
+  {
+    "name": "SHRI VISHNU ENGINEERING COLLEGE FOR WOMEN",
+    "district": "Bhimavaram",
+    "state": "Andhra Pradesh",
+    "type": "PRIVATE"
+  },
+  {
+    "name": "Sri Venkateswara University College of Engineering",
+    "district": "Chittoor",
+    "state": "Andhra Pradesh",
+    "type": "PRIVATE"
+  },
+  {
+    "name": "UNIVERSITY COLLEGE OF ENGINEERING",
+    "district": "Kakinada",
+    "state": "Andhra Pradesh",
+    "type": "PRIVATE"
+  },
+  {
+    "name": "SREE VIDYANIKETHAN ENGG.COLLEGE",
+    "district": "Tirupati",
+    "state": "Andhra Pradesh",
+    "type": "PRIVATE"
+  },
+  {
+    "name": "ANDHRA UNIVERSITY COLLEGE OF ENGINEERING",
+    "district": "Visakhapatnam",
+    "state": "Andhra Pradesh",
+    "type": "PRIVATE"
+  },
+  {
+    "name": "National Institute of Technology Silchar",
+    "district": "Cachar",
+    "state": "Assam",
+    "type": "PRIVATE"
+  },
+  {
+    "name": "National Institute of Technology Patna",
+    "district": "Patna",
+    "state": "Bihar",
+    "type": "PRIVATE"
+  },
+  {
+    "name": "National Institute of Technical Teachers Training and Research",
+    "district": "Chandigarh",
+    "state": "Chandigarh",
+    "type": "PRIVATE"
+  },
+  {
+    "name": "Punjab Engineering College",
+    "district": "Chandigarh",
+    "state": "Chandigarh",
+    "type": "PRIVATE"
+  },
+  {
+    "name": "UNIVERSITY INSTITUTE OF ENGINEERING AND TECHNOLOGY",
+    "district": "Chandigarh",
+    "state": "Chandigarh",
+    "type": "PRIVATE"
+  },
+  {
+    "name": "National Institute of Technology",
+    "district": "Raipur",
+    "state": "Chhattisgarh",
+    "type": "PRIVATE"
+  },
+  {
+    "name": "DELHI TECHNOLOGICAL UNIVERSITY",
+    "district": "Delhi",
+    "state": "Delhi",
+    "type": "PRIVATE"
+  },
+  {
+    "name": "Jamia Millia Islamia",
+    "district": "New Delhi",
+    "state": "Delhi",
+    "type": "PRIVATE"
+  },
+  {
+    "name": "Indraprastha Institute of Information Technology",
+    "district": "South West Delhi",
+    "state": "Delhi",
+    "type": "PRIVATE"
+  },
+  {
+    "name": "Gujarat Technological University - Graduate School of Engineering and Technology",
+    "district": "Ahmedabad",
+    "state": "Gujarat",
+    "type": "PRIVATE"
+  },
+  {
+    "name": "Dharamsinh Desai Institute of Technology",
+    "district": "Nadiad, Kheda",
+    "state": "Gujarat",
+    "type": "PRIVATE"
+  },
+  {
+    "name": "J.C. BOSE UNIVERSITY OF SCIENCE AND TECHNOLOGY",
+    "district": "Faridabad",
+    "state": "Haryana",
+    "type": "PRIVATE"
+  },
+  {
+    "name": "Guru Jambheshwar University of Science and Technology",
+    "district": "Hissar",
+    "state": "Haryana",
+    "type": "PRIVATE"
+  },
+  {
+    "name": "National Institute of Technology",
+    "district": "Kurukshetra",
+    "state": "Haryana",
+    "type": "PRIVATE"
+  },
+  {
+    "name": "Deenbandhu Chhotu Ram University of Science and Technology",
+    "district": "Sonipat",
+    "state": "Haryana",
+    "type": "PRIVATE"
+  },
+  {
+    "name": "BIRLA INSTITUTE OF TECHNOLOGY",
+    "district": "Ranchi",
+    "state": "Jharkhand",
+    "type": "PRIVATE"
+  },
+  {
+    "name": "National Institute of Foundry and Forge Technology",
+    "district": "Ranchi",
+    "state": "Jharkhand",
+    "type": "PRIVATE"
+  },
+  {
+    "name": "BASAVESHWAR ENGG. COLLEGE",
+    "district": "Bagalkot",
+    "state": "Karnataka",
+    "type": "PRIVATE"
+  },
+  {
+    "name": "B.M.S.COLLEGE OF ENGG.",
+    "district": "Bangalore",
+    "state": "Karnataka",
+    "type": "PRIVATE"
+  },
+  {
+    "name": "DR.AMBEDKAR INSTITUTE OF TECHNOLOGY",
+    "district": "Bangalore",
+    "state": "Karnataka",
+    "type": "PRIVATE"
+  },
+  {
+    "name": "M.S. RAMAIAH INSTITUTE OF TECHNOLOGY",
+    "district": "Bangalore",
+    "state": "Karnataka",
+    "type": "PRIVATE"
+  },
+  {
+    "name": "R.V. COLLEGE OF ENGG.",
+    "district": "Bangalore",
+    "state": "Karnataka",
+    "type": "PRIVATE"
+  },
+  {
+    "name": "BMS Institute of Technology and Management",
+    "district": "Bangalore Urban",
+    "state": "Karnataka",
+    "type": "PRIVATE"
+  },
+  {
+    "name": "KLS GOGTE INSTITUTE OF TECHNOLOGY",
+    "district": "Belgaum",
+    "state": "Karnataka",
+    "type": "PRIVATE"
+  },
+  {
+    "name": "NMAM Institute of Technology",
+    "district": "Karkala, Udupi",
+    "state": "Karnataka",
+    "type": "PRIVATE"
+  },
+  {
+    "name": "MANIPAL INSTITUTE OF TECHNOLOGY",
+    "district": "Manipal, Udupi",
+    "state": "Karnataka",
+    "type": "PRIVATE"
+  },
+  {
+    "name": "THE NATIONAL INSTITUTE OF ENGG.",
+    "district": "Mysore",
+    "state": "Karnataka",
+    "type": "PRIVATE"
+  },
+  {
+    "name": "NATIONAL INSTITUTE OF TECHNOLOGY Karnataka",
+    "district": "Srinivasnagar, Surathkal",
+    "state": "Karnataka",
+    "type": "PRIVATE"
+  },
+  {
+    "name": "SCHOOL OF ENGINEERING",
+    "district": "Ernakulam",
+    "state": "Kerala",
+    "type": "PRIVATE"
+  },
+  {
+    "name": "GOVT.COLLEGE OF ENGG",
+    "district": "Kannur",
+    "state": "Kerala",
+    "type": "PRIVATE"
+  },
+  {
+    "name": "GOVERNMENT ENGINEERING COLLEGE",
+    "district": "Kozhikode",
+    "state": "Kerala",
+    "type": "PRIVATE"
+  },
+  {
+    "name": "National Institute of Technology Calicut",
+    "district": "Kozhikode",
+    "state": "Kerala",
+    "type": "PRIVATE"
+  },
+  {
+    "name": "GOVERNMENT ENGINEERING COLLEGE",
+    "district": "Thrissur",
+    "state": "Kerala",
+    "type": "PRIVATE"
+  },
+  {
+    "name": "COLLEGE OF ENGINEERING",
+    "district": "Trivandrum",
+    "state": "Kerala",
+    "type": "PRIVATE"
+  },
+  {
+    "name": "MAULANA AZAD NATIONAL INSTITUTE OF TECHNOLOGY",
+    "district": "Bhopal",
+    "state": "Madhya Pradesh",
+    "type": "PRIVATE"
+  },
+  {
+    "name": "MADHAV INSTITUTE OF TECHNOLOGY & SCIENCE",
+    "district": "Gwalior",
+    "state": "Madhya Pradesh",
+    "type": "PRIVATE"
+  },
+  {
+    "name": "SHRI G.S. INSTITUTE OF TECHNOLOGY & SCIENCE",
+    "district": "Indore",
+    "state": "Madhya Pradesh",
+    "type": "PRIVATE"
+  },
+  {
+    "name": "Shri G.S Institute of Technology & Science",
+    "district": "Indore",
+    "state": "Madhya Pradesh",
+    "type": "PRIVATE"
+  },
+  {
+    "name": "Government College of Engineering",
+    "district": "Amravati",
+    "state": "Maharashtra",
+    "type": "PRIVATE"
+  },
+  {
+    "name": "GOVERNMENT COLLEGE OF ENGG. AURANGABAD",
+    "district": "Aurangabad",
+    "state": "Maharashtra",
+    "type": "PRIVATE"
+  },
+  {
+    "name": "GOVERNMENT COLLEGE OF ENGINEERING",
+    "district": "Karad, Satara",
+    "state": "Maharashtra",
+    "type": "PRIVATE"
+  },
+  {
+    "name": "Institute of Chemical Technology",
+    "district": "Mumbai",
+    "state": "Maharashtra",
+    "type": "PRIVATE"
+  },
+  {
+    "name": "Sardar Patel College of Engineering",
+    "district": "Mumbai",
+    "state": "Maharashtra",
+    "type": "PRIVATE"
+  },
+  {
+    "name": "University Department of Chemical Technology",
+    "district": "Mumbai",
+    "state": "Maharashtra",
+    "type": "PRIVATE"
+  },
+  {
+    "name": "VEERMATA JIJABAI TECHNOLOGICAL INSTITUTE",
+    "district": "Mumbai",
+    "state": "Maharashtra",
+    "type": "PRIVATE"
+  },
+  {
+    "name": "G.H.RAISONI COLLEGE OF ENGG",
+    "district": "Nagpur",
+    "state": "Maharashtra",
+    "type": "PRIVATE"
+  },
+  {
+    "name": "Shri Ramdeobaba College of Engineering and Management",
+    "district": "Nagpur",
+    "state": "Maharashtra",
+    "type": "PRIVATE"
+  },
+  {
+    "name": "VISVESVARAYA NATIONAL INSTITUTE OF TECHNOLOGY",
+    "district": "Nagpur",
+    "state": "Maharashtra",
+    "type": "PRIVATE"
+  },
+  {
+    "name": "Yeshwantrao Chavan College of Engineering",
+    "district": "Nagpur",
+    "state": "Maharashtra",
+    "type": "PRIVATE"
+  },
+  {
+    "name": "SGGS INSTITUTE OF ENGG AND TECHNOLOGY VISHNUPURI NANDED",
+    "district": "Nanded",
+    "state": "Maharashtra",
+    "type": "PRIVATE"
+  },
+  {
+    "name": "COEP Technological University",
+    "district": "Pune",
+    "state": "Maharashtra",
+    "type": "PRIVATE"
+  },
+  {
+    "name": "Defence institute of advanced technology",
+    "district": "Pune",
+    "state": "Maharashtra",
+    "type": "PRIVATE"
+  },
+  {
+    "name": "JAYAWANT SHIKSHAN PRASARAK MANDAL S RAJARSHI SHAHU COLLEGE OF ENGG S.NO.80.PUNE -MUMBAI BY PASS HIGHWAY TATHAWADE PUNE",
+    "district": "Pune",
+    "state": "Maharashtra",
+    "type": "PRIVATE"
+  },
+  {
+    "name": "PIMPRI CHINCHWAD EDUCATION TRUST's PIMPRI CHINCHWAD COLLEGE OF ENGINEERING",
+    "district": "Pune",
+    "state": "Maharashtra",
+    "type": "PRIVATE"
+  },
+  {
+    "name": "Walchand College of Engineering",
+    "district": "Sangli",
+    "state": "Maharashtra",
+    "type": "PRIVATE"
+  },
+  {
+    "name": "Siksha 'O' Anusandhan",
+    "district": "Khurda",
+    "state": "Odisha",
+    "type": "PRIVATE"
+  },
+  {
+    "name": "NATIONAL INSTITUTE OF TECHNOLOGY",
+    "district": "Rourkela, Sundargarh",
+    "state": "Odisha",
+    "type": "PRIVATE"
+  },
+  {
+    "name": "VEER SURENDRA SAI UNIVERSITY OF TECHNOLOGY",
+    "district": "Sambalpur",
+    "state": "Odisha",
+    "type": "PRIVATE"
+  },
+  {
+    "name": "PUDUCHERRY TECHNOLOGICAL UNIVERSITY",
+    "district": "Puducherry",
+    "state": "Puducherry",
+    "type": "PRIVATE"
+  },
+  {
+    "name": "Dr. B R Ambedkar National Institute of Technology",
+    "district": "Jalandhar",
+    "state": "Punjab",
+    "type": "PRIVATE"
+  },
+  {
+    "name": "GURUNANAK DEV ENGINEERING COLLEGE",
+    "district": "Ludhiana",
+    "state": "Punjab",
+    "type": "PRIVATE"
+  },
+  {
+    "name": "SANT LONGOWAL INSTITUTE OF ENGINEERING AND TECHNOLOGY",
+    "district": "Sangrur",
+    "state": "Punjab",
+    "type": "PRIVATE"
+  },
+  {
+    "name": "Malaviya National Institute of Technology",
+    "district": "Jaipur",
+    "state": "Rajasthan",
+    "type": "PRIVATE"
+  },
+  {
+    "name": "RAJASTHAN TECHNICAL UNIVERSITY KOTA",
+    "district": "Kota",
+    "state": "Rajasthan",
+    "type": "PRIVATE"
+  },
+  {
+    "name": "College of Technology and Engineering",
+    "district": "Udaipur",
+    "state": "Rajasthan",
+    "type": "PRIVATE"
+  },
+  {
+    "name": "Annamalai University",
+    "district": "Annamalai Nagar, Cuddalore",
+    "state": "Tamil Nadu",
+    "type": "PRIVATE"
+  },
+  {
+    "name": "A.C. COLLEGE OF TECHNOLOGY",
+    "district": "Chennai",
+    "state": "Tamil Nadu",
+    "type": "PRIVATE"
+  },
+  {
+    "name": "B.S. ABDUR RAHMAN CRESCENT INSTITUTE OF SCIENCE AND TECHNOLOGY",
+    "district": "Chennai",
+    "state": "Tamil Nadu",
+    "type": "PRIVATE"
+  },
+  {
+    "name": "College of Engineering",
+    "district": "Chennai",
+    "state": "Tamil Nadu",
+    "type": "PRIVATE"
+  },
+  {
+    "name": "RAJALAKSHMI ENGINEERING COLLEGE",
+    "district": "Chennai",
+    "state": "Tamil Nadu",
+    "type": "PRIVATE"
+  },
+  {
+    "name": "COIMBATORE INSTITUTE OF TECHNOLOGY",
+    "district": "Coimbatore",
+    "state": "Tamil Nadu",
+    "type": "PRIVATE"
+  },
+  {
+    "name": "GOVERNMENT COLLEGE OF TECHNOLOGY",
+    "district": "Coimbatore",
+    "state": "Tamil Nadu",
+    "type": "PRIVATE"
+  },
+  {
+    "name": "KUMARAGURU COLLEGE OF TECHNOLOGY",
+    "district": "Coimbatore",
+    "state": "Tamil Nadu",
+    "type": "PRIVATE"
+  },
+  {
+    "name": "PSG College of Technology",
+    "district": "Coimbatore",
+    "state": "Tamil Nadu",
+    "type": "PRIVATE"
+  },
+  {
+    "name": "Chennai Institute of Technology",
+    "district": "Kancheepuram",
+    "state": "Tamil Nadu",
+    "type": "PRIVATE"
+  },
+  {
+    "name": "S.R.M INSTITUTE OF SCIENCE AND TECHNOLOGY",
+    "district": "Kancheepuram",
+    "state": "Tamil Nadu",
+    "type": "PRIVATE"
+  },
+  {
+    "name": "Sri Sivasubramaniya Nadar College of Engineering",
+    "district": "Kancheepuram",
+    "state": "Tamil Nadu",
+    "type": "PRIVATE"
+  },
+  {
+    "name": "SETHU INSTITUTE OF TECHNOLOGY",
+    "district": "Madurai",
+    "state": "Tamil Nadu",
+    "type": "PRIVATE"
+  },
+  {
+    "name": "THIAGARAJAR COLLEGE OF ENGINEERING",
+    "district": "Madurai",
+    "state": "Tamil Nadu",
+    "type": "PRIVATE"
+  },
+  {
+    "name": "GOVERNMENT COLLEGE OF ENGINEERING",
+    "district": "Salem",
+    "state": "Tamil Nadu",
+    "type": "PRIVATE"
+  },
+  {
+    "name": "MEPCO SCHLENK ENGINEERING COLLEGE",
+    "district": "Sivakasi",
+    "state": "Tamil Nadu",
+    "type": "PRIVATE"
+  },
+  {
+    "name": "Shanmugha Arts, Science, Technology & Research Academy (SASTRA) Deemed to be University",
+    "district": "Thanjavur",
+    "state": "Tamil Nadu",
+    "type": "PRIVATE"
+  },
+  {
+    "name": "National Institute of Technology",
+    "district": "Tiruchirappalli",
+    "state": "Tamil Nadu",
+    "type": "PRIVATE"
+  },
+  {
+    "name": "Kalasalingam Academy of Research and Education",
+    "district": "Virudhunagar",
+    "state": "Tamil Nadu",
+    "type": "PRIVATE"
+  },
+  {
+    "name": "CHAITANYA BHARATHI INSTITUTE OF TECHNOLOGY",
+    "district": "Hyderabad",
+    "state": "Telangana",
+    "type": "PRIVATE"
+  },
+  {
+    "name": "G.NARAYANAMMA INSTITUTE OF TECHNOLOGY & SCIENCE",
+    "district": "Hyderabad",
+    "state": "Telangana",
+    "type": "PRIVATE"
+  },
+  {
+    "name": "GOKARAJU RANGARAJU INSTITUTE OF ENGG. & TECHNOLOGY",
+    "district": "Hyderabad",
+    "state": "Telangana",
+    "type": "PRIVATE"
+  },
+  {
+    "name": "Institute of Aeronautical Engineering",
+    "district": "Hyderabad",
+    "state": "Telangana",
+    "type": "PRIVATE"
+  },
+  {
+    "name": "JNTUH INSTITUTE OF SCI. & TECH.",
+    "district": "Hyderabad",
+    "state": "Telangana",
+    "type": "PRIVATE"
+  },
+  {
+    "name": "MALLA REDDY ENGINEERING COLLEGE",
+    "district": "Hyderabad",
+    "state": "Telangana",
+    "type": "PRIVATE"
+  },
+  {
+    "name": "SREENIDHI INSTITUTE OF SCIENCE AND TECHNOLOGY",
+    "district": "Hyderabad",
+    "state": "Telangana",
+    "type": "PRIVATE"
+  },
+  {
+    "name": "UNIVERSITY COLLEGE OF ENGINEERING",
+    "district": "Hyderabad",
+    "state": "Telangana",
+    "type": "PRIVATE"
+  },
+  {
+    "name": "VALLURUPALLI NAGESWARA RAO VIGNANA JY0THI INSTITUTE OF ENGINEERING AND TECHNOLOGY",
+    "district": "Hyderabad",
+    "state": "Telangana",
+    "type": "PRIVATE"
+  },
+  {
+    "name": "VASAVI COLLEGE OF ENGINEERING",
+    "district": "Hyderabad",
+    "state": "Telangana",
+    "type": "PRIVATE"
+  },
+  {
+    "name": "CVR COLLEGE OF ENGINEERING",
+    "district": "Hyderabad Urban",
+    "state": "Telangana",
+    "type": "PRIVATE"
+  },
+  {
+    "name": "UNIVERSITY COLLEGE OF ENGINEERING",
+    "district": "Hyderabad Urban",
+    "state": "Telangana",
+    "type": "PRIVATE"
+  },
+  {
+    "name": "University College of Technology",
+    "district": "Hyderabad Urban",
+    "state": "Telangana",
+    "type": "PRIVATE"
+  },
+  {
+    "name": "MALLA REDDY COLLEGE OF ENGINEERING & TECHNOLOGY",
+    "district": "Secunderabad",
+    "state": "Telangana",
+    "type": "PRIVATE"
+  },
+  {
+    "name": "KAKATIYA INSTITUTE OF TECHNOLOGY & SCIENCE",
+    "district": "Warangal",
+    "state": "Telangana",
+    "type": "PRIVATE"
+  },
+  {
+    "name": "NATIONAL INSTITUTE OF TECHNOLOGY",
+    "district": "Warangal",
+    "state": "Telangana",
+    "type": "PRIVATE"
+  },
+  {
+    "name": "Zakir Husain College of Engineering & Technology",
+    "district": "Aligarh",
+    "state": "Uttar Pradesh",
+    "type": "PRIVATE"
+  },
+  {
+    "name": "MOTILAL NEHRU NATIONAL INSTITUTE OF TECHNOLOGY",
+    "district": "Allahabad",
+    "state": "Uttar Pradesh",
+    "type": "PRIVATE"
+  },
+  {
+    "name": "NATIONAL INSTITUTE OF ELECTRONICS AND INFORMATION TECHNOLOGY",
+    "district": "Gorakhpur",
+    "state": "Uttar Pradesh",
+    "type": "PRIVATE"
+  },
+  {
+    "name": "Bundelkhand Institute of Engineering and Technology",
+    "district": "Jhansi",
+    "state": "Uttar Pradesh",
+    "type": "PRIVATE"
+  },
+  {
+    "name": "MEERUT INSTITUTE OF ENGG. & TECH.",
+    "district": "Meerut",
+    "state": "Uttar Pradesh",
+    "type": "PRIVATE"
+  },
+  {
+    "name": "NATIONAL INSTITUTE OF TECHNOLOGY DURGAPUR",
+    "district": "Bardhaman",
+    "state": "West Bengal",
+    "type": "PRIVATE"
+  },
+  {
+    "name": "HERITAGE INSTITUTE OF TECHNOLOGY",
+    "district": "Kolkata",
+    "state": "West Bengal",
+    "type": "PRIVATE"
+  },
+  {
+    "name": "NARULA INSTITUTE OF TECHNOLOGY",
+    "district": "Kolkata",
+    "state": "West Bengal",
+    "type": "PRIVATE"
+  },
+  {
+    "name": "Maulana Abul Kalam Azad University of Technology",
+    "district": "North 24 Parganas",
+    "state": "West Bengal",
+    "type": "PRIVATE"
+  }
+]

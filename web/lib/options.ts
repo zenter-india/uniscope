@@ -349,7 +349,7 @@ export const DEGREES = ["UG", "PG", "MD/MS", "DNB", "Diploma", "Doctorate", "DM/
  * falls back to the generic UG/PG list. */
 export const DEGREES_BY_STREAM: Record<string, readonly string[]> = {
   Dental: ["BDS", "MDS", "Doctorate", "Others"],
-  Engineering: ["B.Tech/B.E", "M.Tech/M.E", "Doctorate", "Others"],
+  Engineering: ["B.Tech/B.E", "M.Tech/M.E", "Diploma", "Doctorate", "Others"],
 };
 export const DEFAULT_NON_MEDICAL_DEGREES = ["UG", "PG", "Doctorate", "Others"] as const;
 
