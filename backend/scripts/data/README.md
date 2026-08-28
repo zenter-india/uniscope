@@ -709,7 +709,24 @@ Verified live in browser: B.Tech/B.E now shows `CuratedCollegeSearch`
 "Select a college first" (pre-seed — matches the exact MDS-before-
 seeding verification pattern from earlier this session); M.Tech/M.E
 confirmed unaffected (still plain search + the 283-item flat list).
-tsc/eslint clean. Not yet seeded against production.
+tsc/eslint clean.
+
+**Seeded against production: 421 matched existing + 2,990 created =
+3,411 universities, 3,411 `B.TECH` Program rows created (0 updated) —
+exact match, verified via `SELECT count(*) FROM programs WHERE name =
+'B.TECH' AND is_active = true` = 3,411.** Two real bugs were caught
+and fixed via the dry-run process before this touched production —
+see the two dedicated sections further down this file
+("punctuation-insensitive matching" and the generation-key/dry-run
+crash that followed it) for the full writeup. The 421/3,411 match
+rate against the already-seeded 1,257 `btech-colleges.json` rows is
+lower than initially expected but was investigated and accepted as
+plausible: AISHE (this file's source) is a much broader national
+survey than NBA (`btech-colleges.json`'s source), and the remaining
+gap is consistent with genuinely-new AISHE-only colleges plus a small
+number of generic-name colleges (`"Government Engineering College"`
+etc.) that can't be safely auto-merged without more disambiguating
+data — not a further matching bug.
 
 ## `pg-engineering-colleges.json` — M.Tech/M.E (Engineering PG) colleges
 
@@ -1092,27 +1109,52 @@ to a *different* stream:
    Engineering College, Girijananda Chowdhury University, Kalasalingam
    Academy of Research and Education, Siksha 'O' Anusandhan, Maulana
    Abul Kalam Azad University of Technology) — no Dental overlaps
-   found. Not yet remediated in production (would need each affected
-   row's `levels` cleaned of the wrongly-added value, plus a proper
-   separate row created for the other stream) — flagged to the user,
-   remediation plan pending confirmation before executing against prod.
+   found.
 
-**Neither consequence has been fixed retroactively in the seed scripts
-already run** (`seed-bds-colleges.mjs`, `seed-mds-colleges.mjs`,
-`seed-btech-colleges.mjs`, `seed-pg-engineering-colleges.mjs`,
-`seed-diploma-engineering-colleges.mjs`, `seed-law-ug-colleges.mjs`,
-`seed-pg-law-colleges.mjs`) — the real fix (`University.stream` → an
-array, or a separate per-stream junction table, or at minimum making
-every script's matching stream-aware) means touching every backend
-query that filters by `stream`, the mobile stream picklists, and every
-seed script in this file. **`seed-btech-programmes-colleges.mjs` is
-the first script in this pipeline to apply the stream-aware fix** —
-its candidate pool for matching excludes any University row whose
-`stream` is already set to something other than `'Engineering'`, so it
-creates a separate row instead of repeating this bug. Worth applying
-the same fix to the remaining scripts, and remediating the 8 already-
-affected rows, if this class of bug needs to stop recurring rather
-than being caught dataset-by-dataset.
+**Remediation plan, code fix applied — execution against production
+pending.** `seed-law-ug-colleges.mjs` and `seed-pg-law-colleges.mjs`
+were both given the same stream-aware matching fix
+`seed-btech-programmes-colleges.mjs` pioneered (candidates restricted
+to rows whose `stream` is already `'Law'` or unset). Re-running both
+(idempotent — every already-correctly-matched Law college is
+untouched) will give each of the 8 affected colleges a proper new
+`stream = 'Law'` University row instead of continuing to share the
+Engineering-stream row. Pulling the exact live state of all 8 before
+touching anything showed only **5 of the 8 actually have a wrong value
+in `levels`** — the other 3 (Sri Manakula Vinayagar, Annamalai
+University, Maulana Abul Kalam Azad University of Technology) happened
+to have the "wrong" stream's push coincide with a level value that was
+already correct from their own real Engineering data, so nothing needs
+removing from those. The 5 with a genuinely wrong value (`IILM
+University`, `Integral University`, `Siksha 'O' Anusandhan`,
+`Kalasalingam Academy of Research and Education`, `Girijananda
+Chowdhury University`) need that specific value removed via
+`array_remove(levels, '<value>')`, verified against each row's *own*
+real dataset membership first (e.g. IILM has no genuine M.Tech data —
+no `Engineering/PG` entry — so its `'PG'` is definitely the
+Law-derived pollution, not legitimate Engineering data).
+
+**Neither script's older, name+state-only matching is fixed
+retroactively elsewhere in this pipeline** (`seed-bds-colleges.mjs`,
+`seed-mds-colleges.mjs`, `seed-btech-colleges.mjs`,
+`seed-pg-engineering-colleges.mjs`,
+`seed-diploma-engineering-colleges.mjs`) — the real, general fix
+(`University.stream` → an array, or a separate per-stream junction
+table) means touching every backend query that filters by `stream` and
+the mobile stream picklists, a larger change than this session's
+per-dataset scope. Three scripts now have the stream-aware fix
+(`seed-btech-programmes-colleges.mjs`, `seed-law-ug-colleges.mjs`,
+`seed-pg-law-colleges.mjs`); worth applying to the remaining five if
+this class of bug resurfaces with a future dataset.
+
+**A separate, unrelated finding surfaced while patching the two Law
+scripts**: `law-ug-colleges.json` has 20 within-file punctuation-
+collision groups and `pg-law-colleges.json` has 6 — the same class of
+bug as the Engineering near-duplicates documented above, but entirely
+independent of the cross-stream fix (these are same-stream, same-file
+collisions). Not fixed as part of this remediation — flagged for a
+separate decision on whether/when to apply `normalizeForMatch()` there
+too and clean up the resulting near-duplicates.
 
 ## Another real bug found and fixed — punctuation-insensitive matching, before `seed-btech-programmes-colleges.mjs` ever touched production
 
