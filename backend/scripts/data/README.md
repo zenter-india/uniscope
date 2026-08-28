@@ -1670,29 +1670,144 @@ literal `"` (or smart-quote variant) and strip it — add this to the
 same pre-generation checklist as the truncation-heuristic-alignment
 check (see the Law UG Programmes naming-mismatch section above).
 
-**Live-DB implication, not yet applied**: `btech-programmes-colleges.json`
-and `mtech-programmes-colleges.json` are already seeded for real —
-of the 15 MP colleges, 5 (Jai Narain, both Lakshmi Narain variants,
-Ujjain Engineering College, Samrat Ashok Technological Institute)
-matched pre-existing `University` rows from the narrower
-`btech-colleges.json` seed and so already have a clean name in the DB
-(seed scripts never update `name` on a matched row); the other 10 were
-newly created directly from this file's own (then-broken) `name` and so
-still carry the literal `"` in production right now. Similarly the one
-Maharashtra Law college is already live (from the earlier
-`law-ug-colleges.json`/`pg-law-colleges.json` seeds) with the broken
-name. `law-ug-programmes-colleges.json` was seeded after that, matched
-the already-broken row, and didn't change it either.
-`pg-law-programmes-colleges.json` was pushed but not yet merged/seeded,
-so no live-DB fix is needed for it — the corrected JSON is enough.
-Fixing the 11 already-live rows needs a one-line SQL update run by
-whichever session has real DB access (not this one):
+**Live-DB implication — applied and verified.** Run by the DB-owning
+session against production (raw SQL uses the actual mapped table/column
+names from `@@map`/`@@map` in `schema.prisma` — `universities` /
+`programs`, not the Prisma model names `"University"`/`"Program"`):
 ```sql
-UPDATE "University" SET name = REPLACE(name, '"', '')
+UPDATE universities SET name = REPLACE(name, '"', '')
 WHERE name LIKE '%"%' AND stream IN ('Engineering', 'Law');
 ```
-(scoped to Engineering/Law only, so it can never touch a Medical/Dental
-row even if one somehow matched — none do today, per the scan above).
+Predicted 11 affected rows beforehand (reasoned by hand-checking which
+of the 15 MP colleges already had a clean pre-existing row from
+`btech-colleges.json`) — **the real number was 16**, all Engineering
+(15, all Madhya Pradesh) or Law (1), none Medical/Dental (the
+`stream IN (...)` guard held as designed either way). Investigating
+*why* the hand-count was wrong (5 of the "should already be clean"
+colleges — Jai Narain, both Lakshmi Narain variants, Ujjain Engineering
+College, Samrat Ashok Technological Institute — turned out to be
+broken too) surfaced a much larger, separate bug — see the next
+section. `SELECT count(*) FROM universities WHERE name LIKE '%"%'`
+confirmed 0 remaining after the fix.
+
+## A much larger bug found while investigating the quote fix — duplicate `University` rows in B.Tech/M.Tech Programmes
+
+The 5 unexpectedly-broken MP colleges above (Jai Narain, both Lakshmi
+Narain variants, Ujjain Engineering College, Samrat Ashok Technological
+Institute — all present, clean, unquoted, in `btech-colleges.json`)
+shouldn't have been affected by the quote bug at all if the real seed
+run had matched them to their pre-existing rows like it should have.
+Checking why revealed the quote character was never the real bug — it
+was just an incidental symptom on some rows.
+
+**Root cause**: AISHE's `College Name` export cell bakes a full street
+address into the name for a large fraction of rows (not just a
+district/city mention — a full `Street, Area, PIN` tail), e.g.
+`"Jai Narain College of Technology, New Chouksey Nagar, Berasia Road"`.
+The truncation heuristic used to generate `btech-programmes-colleges
+.json` / `mtech-programmes-colleges.json` was the "strict" rule (see
+the two-heuristics section above) — it only strips a trailing comma
+segment when it's a *literal, exact* match for the District column.
+`"Berasia Road"` is not literally `"Bhopal"`, so the strict rule
+correctly declines to touch it — the heuristic itself has no bug, it
+just doesn't cover the "full street address, not a bare district
+repeat" case, which turns out to be common in this source. The result:
+these rows never `normalizeForMatch()` against the clean, already-
+seeded row, so `seed-btech-programmes-colleges.mjs` /
+`seed-mtech-programmes-colleges.mjs` **created a second, duplicate
+`University` row** for each one instead of matching — exactly the kind
+of thing that inflated the "421 matched + 2,990 created = 3,411" B.Tech
+seed result (see the "Applied every lesson..." section far above); at
+the time that gap was attributed entirely to AISHE-vs-NBA coverage
+breadth, which is real but wasn't the whole story.
+
+**True scope, found by re-diffing every `btech-programmes-colleges
+.json` / `mtech-programmes-colleges.json` row against the clean sources
+(`btech-colleges.json`, `pg-engineering-colleges.json`,
+`diploma-engineering-colleges.json`) using just the first comma segment
+of the name as a candidate match, then requiring the row's own District
+column to agree with the candidate's**: 248 rows confirmed likely
+duplicates (name + state + district all agree once the address tail is
+dropped), plus 228 more ambiguous cases that needed the district check
+to rule out being a genuine second branch sharing a base name (a real
+concern — see `dnb-colleges.json`'s "Ankura Hospital"/"Area Hospital"
+precedent above — so this was never a blind strip-everything-after-the-
+first-comma operation).
+
+**Also checked, found clean**: the Law Programmes files (0/2083 and
+0/806 unmatched against their sibling plain files) and Diploma
+Engineering Programmes (2/367 unmatched, both the already-individually-
+verified genuine new branches — CIPET, Thiagarajar Polytechnic Kerala
+campus) — this bug is isolated to `btech-programmes-colleges.json` /
+`mtech-programmes-colleges.json` only. Law used the looser
+`locality_like` heuristic (already verified aligned, see above) and
+Diploma Engineering's AISHE export apparently doesn't bake addresses
+into its name cells the way this source does.
+
+**Fix applied to both files**: for every comma-containing name whose
+first comma segment + state combination maps to exactly one District
+value across the *entire file* (i.e. safe to truncate — no other row
+shares that base name in a different district, so no disambiguation is
+lost), truncate `name` down to just that first segment. Left untouched
+wherever a base name legitimately spans multiple districts (a real
+second branch — e.g. two distinct "Lakshmi Narain College of
+Technology" entries in Jabalpur and Indore, correctly kept with their
+address intact to stay distinguishable). 1,135 names truncated in
+`btech-programmes-colleges.json`, 733 in `mtech-programmes-colleges
+.json`.
+
+**A second-order bug from that same fix, caught before committing**:
+truncating created 4 (B.Tech) / 2 (M.Tech) *new* within-file collisions
+— two rows that used to have different (address-laden) names now
+sharing the same truncated name + district (the source genuinely listed
+the same college twice under two different address strings). Left as
+two entries, this would have hit the exact "second entry's Program
+upsert silently overwrites the first's specializations" bug already
+fixed once for `dnb-colleges.json`/`diploma-colleges.json` (see above).
+Fixed by merging: grouped by (normalized name, state, district),
+unioned the specializations of any colliding entries into one record.
+`btech-programmes-colleges.json`: 3,411 → 3,407 records.
+`mtech-programmes-colleges.json`: 2,062 → 2,060 records.
+
+**Remediation for the rows already live in production** (created before
+this fix, so they still carry the broken address-laden name and a
+`B.TECH`/`M.TECH` Program record of their own):
+`scripts/fix-btech-mtech-programmes-duplicates.mjs`, driven by
+`scripts/data/btech-mtech-programmes-dedup-mapping.json` (a recovered
+old-name → new-name mapping, generated by replaying the exact same
+truncation decision against the pre-fix committed JSON so it doesn't
+depend on the live DB's row order). For every group of one or more
+broken names that collapse to the same corrected (name, state,
+district):
+- If no clean pre-existing row exists for that college at all, it was
+  never a duplicate — just a genuinely AISHE-only college with a messy
+  name — so the broken row is renamed in place, nothing merged or
+  deactivated.
+- If a clean pre-existing row does exist, every Program on every broken
+  row is upserted onto the canonical row (specializations unioned, not
+  overwritten, if the canonical already had a same-named Program from
+  some other path), the old row's Program is deactivated (not deleted),
+  any `levels` entries the broken row had are pushed onto canonical if
+  missing, and the broken `University` row itself is deactivated (not
+  deleted — consistent with this project's non-destructive data model;
+  see the DNB remediation precedent above for the same pattern).
+- A college could have gotten broken independently in *both* the
+  B.Tech and the M.Tech seed runs (each reads its own file's `name`),
+  producing up to two separate duplicate rows for one real college —
+  the script groups both files' mappings together first so a single
+  run resolves every broken row for a group onto one canonical target,
+  not just the first one found.
+
+Ships with `--dry-run` like every other script here. **Must be run
+before re-running `seed-btech-programmes-colleges.mjs` /
+`seed-mtech-programmes-colleges.mjs` against the corrected JSON** —
+otherwise the corrected seed would just match one of the (now
+ambiguous, still-duplicated) existing rows arbitrarily and leave the
+other duplicate dangling, active, and still visible in search. Order:
+dedup/remediation script first, then re-seed both Programmes files
+(refreshes any specializations affected by the within-file merge fix
+above), then verify no new `University` row count regression for
+Engineering.
 
 ## Refreshing on demand — `refresh_ug.py` / `refresh_pg.py`
 
