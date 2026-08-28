@@ -1006,8 +1006,14 @@ fully to the curated path, PG/Doctorate/Others unaffected.
 Verified live in browser: Law/UG now shows `CuratedCollegeSearch` and a
 Specialization field reading "Select a college first" (pre-seed);
 Law/PG confirmed unaffected (still plain `CollegeSearch` + the disabled
-"Coming soon" placeholder). tsc/eslint clean. Not yet seeded against
-production.
+"Coming soon" placeholder). tsc/eslint clean.
+
+**Seeded against production: 2,083 matched existing + 0 created = all
+2,083 universities reused (name-alignment fix confirmed working
+perfectly — 0 duplicates), 2,083 `LAW-UG` Program rows created (0
+updated, since this is the first-ever seed of this Program type) —
+exact match, verified via `SELECT count(*) FROM programs WHERE name =
+'LAW-UG' AND is_active = true` = 2,083.**
 
 ## `law-ug-colleges.json` — UG Law (B.A. LL.B. / LL.B. / integrated) colleges
 
