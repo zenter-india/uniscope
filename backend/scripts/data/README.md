@@ -931,6 +931,64 @@ B.Tech Programmes refresh (truncation precision, generation/seed key
 matching) was applied proactively at generation time, and it seeded
 cleanly on the first real run.
 
+## `law-ug-programmes-colleges.json` — UG Law colleges + real per-college specializations
+
+Input to `../seed-law-ug-programmes-colleges.mjs`. Source: `ug law
+clean.xlsx` — the **same underlying data** as `law-ug-colleges.json`
+(3,250 raw rows, 2,085 unique colleges), but with an explicit
+**Specialization** column this time (derived from `Programme (Source)`,
+e.g. `"B.A. L.L.B.-Bachelor of Arts, Bachelor of Law or Laws"` →
+`"B.A. LL.B."`). **Same upgrade as B.Tech/M.Tech** — replaces
+`law-ug-colleges.json`'s no-specialization University-only pattern with
+the curated University+Program pattern. `type` defaulted to `PRIVATE`
+(no ownership column, same as before). `stream: 'Law'`.
+
+**Specialization labels are the specific UG law programme type each
+college offers** — not academic "disciplines" like Engineering's, but
+the actual degree-combination names: `"B.A. LL.B."`, `"LL.B."`, `"BBA
+LL.B."`, `"B.Com LL.B."`, `"B.L. (Bachelor of Law)"`, `"LL.B.
+(Hons.)"`, `"B.G.L. (Bachelor of General Law)"`, `"BBA LL.B.
+(Hons.)"`, `"B.Sc. LL.B."`, `"B.A. LL.B. (Hons.)"` — **10 distinct
+labels**, matching the source's own `By Specialization` sheet count
+exactly, no normalization needed.
+
+**Every lesson from the B.Tech/M.Tech Programmes refreshes applied
+proactively, and this time it seeded clean too**: precise
+last-comma-segment-only truncation (checked directly against the
+known `"MIT Art..."`-style over-truncation risk and the known
+`"BLDE"` short-acronym case — both handled correctly), generation key
+matching the seed script's `normalizeForMatch()` exactly (checked for
+collisions before generating — found zero; 2,085 raw normalized keys,
+2,085 unique, exactly matching the source's own "Unique Colleges"
+sheet count), no name over `University.name`'s VARCHAR(200) limit
+(checked directly, none found), and one state-name normalization (the
+same `"The Dadra and Nagar Haveli and Daman and Diu"` → `"Dadra and
+Nagar Haveli and Daman and Diu"` fix as the original `law-ug-colleges.json`).
+
+**`seed-law-ug-programmes-colleges.mjs` mirrors
+`seed-btech-programmes-colleges.mjs`/`seed-mtech-programmes-colleges.mjs`
+exactly**: district-aware `claimed`-set matching, stream-aware
+candidate filtering (only matches rows already `stream = 'Law'` or
+unset — same fix already applied to `seed-law-ug-colleges.mjs` and
+`seed-pg-law-colleges.mjs`), `normalizeForMatch()` for
+punctuation-insensitive matching, `Program.description` carries the
+district. `Program.name` is `'LAW-UG'` (uppercase — see the casing-bug
+note below), deliberately not just `'UG'`, to avoid any ambiguity with
+the Degree option value of the same literal name. Reuses `University`
+rows already created by `law-ug-colleges.json`'s seed, matched by
+name+state+district — pushes `"UG"` onto `levels` if somehow missing.
+
+**Frontend**: `CURATED_DEGREE_MAP_BY_STREAM.Law["UG"] = "Law-UG"`,
+`"Law-UG"` added to `BROWSE_DEGREES`. Removed Law's `UG` entry from
+`COLLEGE_SEARCH_LEVEL_MAP` (Law's map now covers only `PG`) — UG moved
+fully to the curated path, PG/Doctorate/Others unaffected.
+
+Verified live in browser: Law/UG now shows `CuratedCollegeSearch` and a
+Specialization field reading "Select a college first" (pre-seed);
+Law/PG confirmed unaffected (still plain `CollegeSearch` + the disabled
+"Coming soon" placeholder). tsc/eslint clean. Not yet seeded against
+production.
+
 ## `law-ug-colleges.json` — UG Law (B.A. LL.B. / LL.B. / integrated) colleges
 
 Input to `../seed-law-ug-colleges.mjs`. Source:
