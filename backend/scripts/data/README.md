@@ -709,7 +709,24 @@ Verified live in browser: B.Tech/B.E now shows `CuratedCollegeSearch`
 "Select a college first" (pre-seed — matches the exact MDS-before-
 seeding verification pattern from earlier this session); M.Tech/M.E
 confirmed unaffected (still plain search + the 283-item flat list).
-tsc/eslint clean. Not yet seeded against production.
+tsc/eslint clean.
+
+**Seeded against production: 421 matched existing + 2,990 created =
+3,411 universities, 3,411 `B.TECH` Program rows created (0 updated) —
+exact match, verified via `SELECT count(*) FROM programs WHERE name =
+'B.TECH' AND is_active = true` = 3,411.** Two real bugs were caught
+and fixed via the dry-run process before this touched production —
+see the two dedicated sections further down this file
+("punctuation-insensitive matching" and the generation-key/dry-run
+crash that followed it) for the full writeup. The 421/3,411 match
+rate against the already-seeded 1,257 `btech-colleges.json` rows is
+lower than initially expected but was investigated and accepted as
+plausible: AISHE (this file's source) is a much broader national
+survey than NBA (`btech-colleges.json`'s source), and the remaining
+gap is consistent with genuinely-new AISHE-only colleges plus a small
+number of generic-name colleges (`"Government Engineering College"`
+etc.) that can't be safely auto-merged without more disambiguating
+data — not a further matching bug.
 
 ## `pg-engineering-colleges.json` — M.Tech/M.E (Engineering PG) colleges
 
