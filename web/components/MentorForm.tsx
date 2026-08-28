@@ -14,6 +14,7 @@ import {
   DEGREES_BY_STREAM,
   DEFAULT_NON_MEDICAL_DEGREES,
   MEDICAL_SPECIALIZATIONS,
+  ENGINEERING_SPECIALIZATIONS,
   CURRENT_STATUSES,
   LANGUAGES,
   YEARS_OF_STUDY,
@@ -139,6 +140,21 @@ const STREAMS_WITH_COLLEGE_DATA = new Set(["Dental", "Engineering", "Law"]);
 const STREAMS_WITH_EMPTY_SPECIALIZATION = new Set(["Engineering", "Law", "Dental"]);
 const EMPTY_SPECIALIZATION_EXCLUDED_DEGREES = new Set(["BDS"]);
 
+// Stream+degree combos with a real, flat specialization list (not tied
+// to any particular college — unlike CURATED_DEGREE_MAP_BY_STREAM's
+// per-college specialization data). Same UX as Medical's Doctorate/
+// Others (see MEDICAL_SPECIALIZATIONS below): a SearchableCombobox lets
+// the mentor pick from the list or type one that isn't in it. Takes
+// priority over STREAMS_WITH_EMPTY_SPECIALIZATION's disabled
+// placeholder for whichever degree is listed here — every other degree
+// in that stream still falls back to the empty placeholder until it
+// gets its own list.
+const FLAT_SPECIALIZATION_LISTS: Record<string, Record<string, readonly string[]>> = {
+  Engineering: {
+    "B.Tech/B.E": ENGINEERING_SPECIALIZATIONS,
+  },
+};
+
 export function MentorForm({ onExit }: { onExit: () => void }) {
   const wizard = useMultiStep(5);
   const [form, setForm] = useState<FormState>(EMPTY);
@@ -164,6 +180,8 @@ export function MentorForm({ onExit }: { onExit: () => void }) {
     form.stream === "Medical" ? DEGREES : (DEGREES_BY_STREAM[form.stream] ?? DEFAULT_NON_MEDICAL_DEGREES);
   const curatedDegree = CURATED_DEGREE_MAP_BY_STREAM[form.stream]?.[form.degree];
   const hasCuratedData = curatedDegree !== undefined;
+  const flatSpecializationOptions = FLAT_SPECIALIZATION_LISTS[form.stream]?.[form.degree];
+  const hasFlatSpecializationList = flatSpecializationOptions !== undefined;
   // See BROWSE_DEGREES — these use the full browse+search picker (see
   // UniversitiesService.findCurated's browse mode) rather than the
   // curated-top-30-+-Other pattern DM-MCh/Diploma still use.
@@ -242,7 +260,7 @@ export function MentorForm({ onExit }: { onExit: () => void }) {
       if (!form.degree) return "Select your degree.";
       if (form.degree === "Others" && !form.degreeOther.trim()) return "Enter your degree.";
       if (!form.collegeName.trim()) return "Enter your college.";
-      if (hasCuratedData && !form.specialization.trim()) {
+      if ((hasCuratedData || hasFlatSpecializationList) && !form.specialization.trim()) {
         return "Enter your specialization.";
       }
     }
@@ -286,7 +304,8 @@ export function MentorForm({ onExit }: { onExit: () => void }) {
         universityId: form.universityId || undefined,
         stream: (form.stream === "Others" ? form.streamOther.trim() : form.stream) || undefined,
         degree: (form.degree === "Others" ? form.degreeOther.trim() : form.degree) || undefined,
-        specialization: hasCuratedData ? form.specialization.trim() || undefined : undefined,
+        specialization:
+          hasCuratedData || hasFlatSpecializationList ? form.specialization.trim() || undefined : undefined,
         currentStatus: form.currentStatus || undefined,
         yearOfStudy:
           form.currentStatus === "Currently Studying" && form.yearOfStudy
@@ -700,8 +719,20 @@ export function MentorForm({ onExit }: { onExit: () => void }) {
               )}
             </Field>
           )}
+          {hasFlatSpecializationList && (
+            <Field label="Specialization">
+              <SearchableCombobox
+                gold
+                value={form.specialization}
+                options={[...flatSpecializationOptions!]}
+                placeholder="Select or type to search…"
+                onChange={(v) => set("specialization", v)}
+              />
+            </Field>
+          )}
           {STREAMS_WITH_EMPTY_SPECIALIZATION.has(form.stream) &&
             !hasCuratedData &&
+            !hasFlatSpecializationList &&
             !EMPTY_SPECIALIZATION_EXCLUDED_DEGREES.has(form.degree) && (
               <Field label="Specialization" hint="Coming soon — specialization data for this stream is being added">
                 <Select gold value="" disabled onChange={() => {}}>

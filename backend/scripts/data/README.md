@@ -863,6 +863,49 @@ to `levels` for 729 of them), but 10 of those matches are the
 cross-stream matching gap (see the general note near the end of this
 file). Left as-is, same as BDS/UG-Law.
 
+## `ENGINEERING_SPECIALIZATIONS` — B.Tech/B.E specialization picklist (frontend-only, no seed script)
+
+Unlike every dataset above, this one isn't a college list and has no
+seed script — it's a flat picklist of specialization *names*, not
+tied to any specific college. Source: `NBA_Specializations_List.xlsx`
+(148 rows, one column, no duplicates exact or normalized). Lives as
+`ENGINEERING_SPECIALIZATIONS` in `web/lib/options.ts`, right after
+`MEDICAL_SPECIALIZATIONS`, and is wired into `MentorForm.tsx` via a
+new `FLAT_SPECIALIZATION_LISTS: Record<stream, Record<degree, string[]>>`
+map — currently just `{ Engineering: { "B.Tech/B.E":
+ENGINEERING_SPECIALIZATIONS } }`.
+
+**Same UX as Medical's Doctorate/Others treatment of
+`MEDICAL_SPECIALIZATIONS`** — a `SearchableCombobox` lets the mentor
+browse/search the 148 options or type one that isn't in the list (the
+component already supports free text via `onChange`, no extra work
+needed there). This is a different mechanism from the curated
+per-college specialization data (`CURATED_DEGREE_MAP_BY_STREAM`,
+`BROWSE_DEGREES`) — there's no "which college offers which
+specialization" mapping here, just one flat list for the whole degree,
+same as Medical's Doctorate/Others.
+
+**Only wired up for B.Tech/B.E** (per explicit request — "this is
+specialization list for b.e/b.tech"), not M.Tech/M.E, Diploma, or
+Engineering's Doctorate/Others, which still show the disabled "Coming
+soon" placeholder from `STREAMS_WITH_EMPTY_SPECIALIZATION` pending
+their own lists. `FLAT_SPECIALIZATION_LISTS` takes priority over that
+placeholder for whichever degree it lists — extend it the same way
+(add a `Record<degree, string[]>` entry under the stream) when a list
+for another degree arrives.
+
+`hasFlatSpecializationList` is now OR'd alongside `hasCuratedData`
+everywhere specialization used to be gated solely by the latter
+(validation's required check, the submit payload) — so B.Tech/B.E's
+specialization is required at submit time and included in the
+payload, same as every curated-data degree, unlike the still-optional/
+still-`undefined`-in-payload empty-placeholder degrees.
+
+Verified live in browser: B.Tech/B.E shows the full 148-item list on
+focus, filters while typing, and accepts a typed value not in the list
+(`onChange` fires with the raw text); M.Tech/M.E (not in the map)
+still shows the disabled placeholder, confirming no regression.
+
 ## A recurring gap worth knowing about — cross-stream University matching never reclassifies `stream`
 
 `University.stream` is a single scalar column, not an array. Every
