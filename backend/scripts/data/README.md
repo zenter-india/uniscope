@@ -1622,6 +1622,78 @@ third refresh got the non-district-aware version of the same fix (a
 either) applied proactively for the same reason, plus `isActive: true`
 on upsert.
 
+## Stray quotation marks in `name` (found + fixed, non-Medical only)
+
+A source CSV/Excel export can carry a literal `"` character inside a
+`College Name` cell — an artifact of the original file quoting a
+comma-containing field (`"Some College", City, District`) where the
+upstream cleaning step kept the opening quote but truncated the string
+before reaching the matching closing quote (or, in one case, kept both
+quotes around the institution name with the address trailing outside
+them unquoted). Found via a direct scan of every non-Medical JSON file
+here for a literal `"` in `name`:
+
+- `btech-programmes-colleges.json` / `mtech-programmes-colleges.json`
+  (same 15 Madhya Pradesh colleges in both — same underlying source
+  rows): opening `"` with no closing quote, e.g.
+  `"All Saints College of Technology, Jaipur Jabalpur, NH-12, Gandhi Nagar`.
+- `law-ug-colleges.json` / `pg-law-colleges.json` /
+  `law-ug-programmes-colleges.json` / `pg-law-programmes-colleges.json`
+  (same single Maharashtra college in all four — same underlying
+  source row): matched opening+closing quotes around just the
+  institution name, e.g.
+  `"Mangaon Shikshan Prasarak Mandal's Ashokdada Sable Law College" Near Dist. Court, ...`.
+
+**This is also the root cause of names appearing "out of alphabetical
+order"** in the browse/search dropdown — the backend already sorts
+every list via `a.name.localeCompare(b.name)` (`findAll` and
+`findCurated` in `universities.service.ts`), but `"` sorts before every
+letter, so any name starting with a stray quote floats to the top of an
+otherwise-correctly-sorted list. Fixing the quote fixes both symptoms;
+no separate ordering bug exists.
+
+Fixed by stripping every literal `"` from `name` (not replacing with
+anything, then collapsing/trimming whitespace) in all 6 files above —
+21 names changed total (15 shared MP colleges × 2 files + 1 shared
+Maharashtra college × 4 files), record counts unchanged in every file
+(no accidental merges). Scanned every other non-Medical file in this
+directory (`btech-colleges.json`, `pg-engineering-colleges.json`,
+`diploma-engineering-colleges.json`,
+`diploma-engineering-programmes-colleges.json`) — zero hits, nothing
+else to fix. Also checked for smart/curly quote variants (`“` `”` `‘`
+`’`) — none found anywhere. Deliberately did not touch any Medical or
+Dental file, per explicit instruction.
+
+**Standing convention for any future dataset generation from here on**:
+before writing a new `*-colleges.json`, check every `name` for a
+literal `"` (or smart-quote variant) and strip it — add this to the
+same pre-generation checklist as the truncation-heuristic-alignment
+check (see the Law UG Programmes naming-mismatch section above).
+
+**Live-DB implication, not yet applied**: `btech-programmes-colleges.json`
+and `mtech-programmes-colleges.json` are already seeded for real —
+of the 15 MP colleges, 5 (Jai Narain, both Lakshmi Narain variants,
+Ujjain Engineering College, Samrat Ashok Technological Institute)
+matched pre-existing `University` rows from the narrower
+`btech-colleges.json` seed and so already have a clean name in the DB
+(seed scripts never update `name` on a matched row); the other 10 were
+newly created directly from this file's own (then-broken) `name` and so
+still carry the literal `"` in production right now. Similarly the one
+Maharashtra Law college is already live (from the earlier
+`law-ug-colleges.json`/`pg-law-colleges.json` seeds) with the broken
+name. `law-ug-programmes-colleges.json` was seeded after that, matched
+the already-broken row, and didn't change it either.
+`pg-law-programmes-colleges.json` was pushed but not yet merged/seeded,
+so no live-DB fix is needed for it — the corrected JSON is enough.
+Fixing the 11 already-live rows needs a one-line SQL update run by
+whichever session has real DB access (not this one):
+```sql
+UPDATE "University" SET name = REPLACE(name, '"', '')
+WHERE name LIKE '%"%' AND stream IN ('Engineering', 'Law');
+```
+(scoped to Engineering/Law only, so it can never touch a Medical/Dental
+row even if one somehow matched — none do today, per the scan above).
+
 ## Refreshing on demand — `refresh_ug.py` / `refresh_pg.py`
 
 The steps above are also available as two standalone, re-runnable scripts
