@@ -854,6 +854,71 @@ rows were already `stream = 'Engineering'` from the B.Tech/M.Tech
 seeds), unlike BDS/UG-Law/PG-Law's shortfalls (see the general
 cross-stream matching note near the end of this file).
 
+## `mtech-programmes-colleges.json` — M.Tech/M.E colleges + real per-college specializations
+
+Input to `../seed-mtech-programmes-colleges.mjs`. Source:
+`ME_MTech_Programmes_Clean.xlsx`, the same AISHE programme-level shape
+as `btech-programmes-colleges.json` (6,544 rows: College Name/District/
+State/Discipline/Programme/Level/Mode/AISHE Code — `Programme` values
+`"M.Tech. -Master of Technology"` / `"M.E.-Master of Engineering"` / a
+small dual `"M.Tech. -...and Ph.D...."`, all treated the same since the
+app's single `"M.Tech/M.E"` degree option covers both terms). **Same
+upgrade as B.Tech/B.E** — replaces `pg-engineering-colleges.json`'s
+flat `PG_ENGINEERING_SPECIALIZATIONS`-driven field with the curated
+University+Program pattern. 6,544 raw rows → **2,062 unique (College,
+District, State) colleges**, `type` defaulted to `PRIVATE`.
+`stream: 'Engineering'`.
+
+**Specialization labels are the plain Discipline name** (no
+`"M.Tech - "` prefix — matches the current B.Tech convention after its
+own prefix was removed in a follow-up request; never added a prefix
+here to begin with) — **25 distinct labels**, matching the source's
+own Discipline count exactly, no normalization needed (no all-caps
+variants, no case-variant collisions).
+
+**Applied every lesson learned from the B.Tech Programmes refresh
+proactively, before generating this file** (not discovered after the
+fact this time):
+- Truncation uses the precise "only the *last* comma segment, checked
+  against the district" rule (not the looser Law-datasets heuristic),
+  avoiding the `"MIT Art, Design and Technology University, Pune"`-
+  style over-truncation risk — verified this exact college appears in
+  this file too and is handled correctly.
+- Generation-time grouping key matches the seed script's
+  `normalizeForMatch()` exactly (punctuation/spacing/`"&"`-vs-`"and"`
+  insensitive) — checked for collisions before generating; found
+  **zero** (2,062 raw normalized keys, 2,062 unique — a cleaner source
+  export than B.Tech's, which had one such collision).
+- No name over `University.name`'s VARCHAR(200) limit (checked
+  directly, none found — no one-off override needed this time).
+
+**`seed-mtech-programmes-colleges.mjs` mirrors
+`seed-btech-programmes-colleges.mjs` exactly**: district-aware
+`claimed`-set matching, stream-aware candidate filtering (only matches
+rows already `stream = 'Engineering'` or unset — same reasoning as the
+cross-stream matching gap section), `normalizeForMatch()` for
+punctuation-insensitive matching, `Program.name = 'M.TECH'`
+(uppercase), `Program.description` carries the district. Reuses
+`University` rows already created by `pg-engineering-colleges.json`'s
+seed, matched by name+state+district — pushes `"PG"` onto `levels` if
+somehow missing.
+
+**Frontend**: `CURATED_DEGREE_MAP_BY_STREAM.Engineering["M.Tech/M.E"] =
+"M.Tech"`, `"M.Tech"` added to `BROWSE_DEGREES`. Removed from
+`COLLEGE_SEARCH_LEVEL_MAP` and `FLAT_SPECIALIZATION_LISTS` (both maps'
+Engineering entries are now empty/Diploma-only — B.Tech/B.E and
+M.Tech/M.E have both fully moved to the curated path; Diploma,
+Doctorate, and Others are the only Engineering degrees still on the
+older mechanisms). `PG_ENGINEERING_SPECIALIZATIONS` stays defined in
+`web/lib/options.ts`, now entirely unused by the form, same status as
+`ENGINEERING_SPECIALIZATIONS` — both kept in case either is wanted as
+Engineering's Doctorate/Others static fallback later.
+
+Verified live in browser: M.Tech/M.E now shows `CuratedCollegeSearch`
+and a Specialization field reading "Select a college first" (pre-seed);
+Diploma confirmed unaffected (still the disabled "Coming soon"
+placeholder). tsc/eslint clean. Not yet seeded against production.
+
 ## `law-ug-colleges.json` — UG Law (B.A. LL.B. / LL.B. / integrated) colleges
 
 Input to `../seed-law-ug-colleges.mjs`. Source:
