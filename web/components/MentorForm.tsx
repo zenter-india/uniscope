@@ -14,6 +14,7 @@ import {
   DEGREES_BY_STREAM,
   DEFAULT_NON_MEDICAL_DEGREES,
   MEDICAL_SPECIALIZATIONS,
+  PG_ENGINEERING_SPECIALIZATIONS,
   CURRENT_STATUSES,
   LANGUAGES,
   YEARS_OF_STUDY,
@@ -107,12 +108,23 @@ const CURATED_DEGREE_MAP_BY_STREAM: Record<string, Record<string, string>> = {
   Dental: {
     MDS: "MDS",
   },
+  // B.Tech/B.E has real per-college specialization data (Discipline
+  // column of an AISHE programme export, see
+  // seed-btech-programmes-colleges.mjs) — same curated University+Program
+  // pattern as Medical/MDS, picking a college shows that college's own
+  // specialization list. M.Tech/M.E, Diploma, Doctorate, and Others stay
+  // on the non-curated paths (COLLEGE_SEARCH_LEVEL_MAP /
+  // STREAMS_WITH_EMPTY_SPECIALIZATION) until/if they get their own
+  // per-college specialization datasets.
+  Engineering: {
+    "B.Tech/B.E": "B.Tech",
+  },
 };
 
 // Degrees whose curated data is small/complete enough to browse in full +
 // type-to-search (CuratedCollegeSearch/SearchableCombobox), rather than the
 // original curated-top-30-+-"Other" pattern.
-const BROWSE_DEGREES = new Set(["MD/MS", "DNB", "Diploma", "DM/MCh", "MDS"]);
+const BROWSE_DEGREES = new Set(["MD/MS", "DNB", "Diploma", "DM/MCh", "MDS", "B.Tech"]);
 
 // Non-Medical streams that have real seeded college data with no
 // specialization concept (see seed-bds-colleges.mjs — BDS is the base
@@ -123,6 +135,24 @@ const BROWSE_DEGREES = new Set(["MD/MS", "DNB", "Diploma", "DM/MCh", "MDS"]);
 // specialization data (e.g. Dental+MDS, see CURATED_DEGREE_MAP_BY_STREAM)
 // doesn't need to be listed here — it's handled by the curated path.
 const STREAMS_WITH_COLLEGE_DATA = new Set(["Dental", "Engineering", "Law"]);
+
+// Maps a STREAMS_WITH_COLLEGE_DATA stream+degree to the `levels` value
+// its own dataset was seeded with (see seed-btech-colleges.mjs et al —
+// each pushes "UG"/"PG"/"Diploma" onto University.levels), passed as
+// CollegeSearch's `level` prop so e.g. selecting M.Tech/M.E only
+// searches colleges that actually offer an M.Tech, not the whole
+// stream's combined pool (same reasoning as Medical's UG-only level
+// filter). A degree not listed here (Doctorate/Others — no dataset of
+// their own) falls back to the unfiltered combined list for the whole
+// stream, same as before this map existed. B.Tech/B.E is deliberately
+// absent — it moved to the curated CuratedCollegeSearch path above (see
+// CURATED_DEGREE_MAP_BY_STREAM.Engineering), which doesn't use
+// CollegeSearch or this map at all.
+const COLLEGE_SEARCH_LEVEL_MAP: Record<string, Record<string, string>> = {
+  Dental: { BDS: "UG" },
+  Engineering: { "M.Tech/M.E": "PG", Diploma: "Diploma" },
+  Law: { UG: "UG", PG: "PG" },
+};
 
 // Streams whose College field has real data (STREAMS_WITH_COLLEGE_DATA)
 // but no specialization dataset uploaded yet — per explicit request, the
@@ -138,6 +168,26 @@ const STREAMS_WITH_COLLEGE_DATA = new Set(["Dental", "Engineering", "Law"]);
 // at all, not just "not uploaded yet".
 const STREAMS_WITH_EMPTY_SPECIALIZATION = new Set(["Engineering", "Law", "Dental"]);
 const EMPTY_SPECIALIZATION_EXCLUDED_DEGREES = new Set(["BDS"]);
+
+// Stream+degree combos with a real, flat specialization list (not tied
+// to any particular college — unlike CURATED_DEGREE_MAP_BY_STREAM's
+// per-college specialization data). Same UX as Medical's Doctorate/
+// Others (see MEDICAL_SPECIALIZATIONS below): a SearchableCombobox lets
+// the mentor pick from the list or type one that isn't in it. Takes
+// priority over STREAMS_WITH_EMPTY_SPECIALIZATION's disabled
+// placeholder for whichever degree is listed here — every other degree
+// in that stream still falls back to the empty placeholder until it
+// gets its own list. B.Tech/B.E is deliberately absent — it moved to
+// the curated per-college pattern (CURATED_DEGREE_MAP_BY_STREAM) once
+// real per-college specialization data arrived; ENGINEERING_SPECIALIZATIONS
+// stays defined in lib/options.ts (unused here now) in case it's wanted
+// as Engineering's Doctorate/Others static fallback later, same as
+// Medical's MEDICAL_SPECIALIZATIONS is for its Doctorate/Others.
+const FLAT_SPECIALIZATION_LISTS: Record<string, Record<string, readonly string[]>> = {
+  Engineering: {
+    "M.Tech/M.E": PG_ENGINEERING_SPECIALIZATIONS,
+  },
+};
 
 export function MentorForm({ onExit }: { onExit: () => void }) {
   const wizard = useMultiStep(5);
@@ -164,6 +214,8 @@ export function MentorForm({ onExit }: { onExit: () => void }) {
     form.stream === "Medical" ? DEGREES : (DEGREES_BY_STREAM[form.stream] ?? DEFAULT_NON_MEDICAL_DEGREES);
   const curatedDegree = CURATED_DEGREE_MAP_BY_STREAM[form.stream]?.[form.degree];
   const hasCuratedData = curatedDegree !== undefined;
+  const flatSpecializationOptions = FLAT_SPECIALIZATION_LISTS[form.stream]?.[form.degree];
+  const hasFlatSpecializationList = flatSpecializationOptions !== undefined;
   // See BROWSE_DEGREES — these use the full browse+search picker (see
   // UniversitiesService.findCurated's browse mode) rather than the
   // curated-top-30-+-Other pattern DM-MCh/Diploma still use.
@@ -242,7 +294,7 @@ export function MentorForm({ onExit }: { onExit: () => void }) {
       if (!form.degree) return "Select your degree.";
       if (form.degree === "Others" && !form.degreeOther.trim()) return "Enter your degree.";
       if (!form.collegeName.trim()) return "Enter your college.";
-      if (hasCuratedData && !form.specialization.trim()) {
+      if ((hasCuratedData || hasFlatSpecializationList) && !form.specialization.trim()) {
         return "Enter your specialization.";
       }
     }
@@ -286,7 +338,8 @@ export function MentorForm({ onExit }: { onExit: () => void }) {
         universityId: form.universityId || undefined,
         stream: (form.stream === "Others" ? form.streamOther.trim() : form.stream) || undefined,
         degree: (form.degree === "Others" ? form.degreeOther.trim() : form.degree) || undefined,
-        specialization: hasCuratedData ? form.specialization.trim() || undefined : undefined,
+        specialization:
+          hasCuratedData || hasFlatSpecializationList ? form.specialization.trim() || undefined : undefined,
         currentStatus: form.currentStatus || undefined,
         yearOfStudy:
           form.currentStatus === "Currently Studying" && form.yearOfStudy
@@ -601,6 +654,7 @@ export function MentorForm({ onExit }: { onExit: () => void }) {
                 gold
                 value={form.collegeName}
                 stream={form.stream}
+                level={COLLEGE_SEARCH_LEVEL_MAP[form.stream]?.[form.degree]}
                 onPick={(name, id) => {
                   set("collegeName", name);
                   set("universityId", id ?? "");
@@ -700,8 +754,20 @@ export function MentorForm({ onExit }: { onExit: () => void }) {
               )}
             </Field>
           )}
+          {hasFlatSpecializationList && (
+            <Field label="Specialization">
+              <SearchableCombobox
+                gold
+                value={form.specialization}
+                options={[...flatSpecializationOptions!]}
+                placeholder="Select or type to search…"
+                onChange={(v) => set("specialization", v)}
+              />
+            </Field>
+          )}
           {STREAMS_WITH_EMPTY_SPECIALIZATION.has(form.stream) &&
             !hasCuratedData &&
+            !hasFlatSpecializationList &&
             !EMPTY_SPECIALIZATION_EXCLUDED_DEGREES.has(form.degree) && (
               <Field label="Specialization" hint="Coming soon — specialization data for this stream is being added">
                 <Select gold value="" disabled onChange={() => {}}>
