@@ -67,6 +67,30 @@ function slugify(name) {
     .replace(/^-+|-+$/g, '');
 }
 
+/**
+ * Punctuation/spacing-insensitive normalization for cross-file matching —
+ * NOT the same as slugify() above. Found via a real duplication bug: this
+ * script's data comes from a different provider (AISHE) than the already-
+ * seeded btech-colleges.json (NBA), and the same real college is often
+ * spelled with different punctuation between the two ("SHRI G.S. INSTITUTE"
+ * vs "Shri G.S Institute", "...& TECHNOLOGY" vs "...AND TECHNOLOGY") — a
+ * plain `name.toLowerCase().trim()` comparison (what every other seed
+ * script in this pipeline uses) treats these as different colleges and
+ * creates a duplicate University row instead of matching the existing one.
+ * "&" is expanded to "and" before stripping remaining punctuation to a
+ * single space, so both spelling conventions collapse to the same key.
+ * Words stay space-separated (not fully concatenated) to avoid an
+ * unrelated false match across a word boundary.
+ */
+function normalizeForMatch(name) {
+  return name
+    .toLowerCase()
+    .replace(/&/g, ' and ')
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim()
+    .replace(/\s+/g, ' ');
+}
+
 async function uniqueSlug(name, taken) {
   const base = slugify(name) || 'university';
   let slug = base;
@@ -99,7 +123,7 @@ async function main() {
   const eligible = existing.filter((u) => u.stream === TARGET_STREAM || u.stream === null);
   const existingByNameState = new Map();
   for (const u of eligible) {
-    const key = `${u.name.toLowerCase().trim()}|${u.state.toLowerCase().trim()}`;
+    const key = `${normalizeForMatch(u.name)}|${u.state.toLowerCase().trim()}`;
     const list = existingByNameState.get(key);
     if (list) list.push(u);
     else existingByNameState.set(key, [u]);
@@ -111,7 +135,7 @@ async function main() {
   const stats = { matched: 0, created: 0, levelsUpdated: 0, programsCreated: 0, programsUpdated: 0 };
 
   for (const c of colleges) {
-    const nameStateKey = `${c.name.toLowerCase().trim()}|${c.state.toLowerCase().trim()}`;
+    const nameStateKey = `${normalizeForMatch(c.name)}|${c.state.toLowerCase().trim()}`;
     const branchKey = `${nameStateKey}|${c.district.toLowerCase().trim()}`;
     const candidates = existingByNameState.get(nameStateKey) ?? [];
     const unclaimedCandidate = candidates.find((u) => !claimed.has(u.id));
