@@ -586,9 +586,16 @@ model Session {
   agoraChannelName   String?       @map("agora_channel_name") @db.VarChar(100)
   streamChannelId    String?       @map("stream_channel_id") @db.VarChar(100)
   /// NORMAL | NO_ANSWER | DROPPED | MENTOR_DROPPED | BALANCE_EXHAUSTED |
-  /// CANCELLED | REJECTED. MENTOR_DROPPED still bills the full slot per
-  /// product decision — the aspirant gets a Report action, and any refund is
-  /// manual/admin-issued (LedgerEntryType.REFUND), never automatic.
+  /// CANCELLED | REJECTED | ASPIRANT_NO_SHOW | MENTOR_NO_SHOW.
+  /// MENTOR_DROPPED still bills the full slot per product decision — the
+  /// aspirant gets a Report action, and any refund is manual/admin-issued
+  /// (LedgerEntryType.REFUND), never automatic. ASPIRANT_NO_SHOW/
+  /// MENTOR_NO_SHOW/NO_ANSWER are set only by SessionsService.sweepCallNoShows
+  /// (status FAILED, grace period = CALL_GRACE_FRACTION of callSlotMinutes) —
+  /// distinct from MENTOR_DROPPED/DROPPED, which are for a call that
+  /// actually connected (status IN_PROGRESS) and then disconnected.
+  /// ASPIRANT_NO_SHOW bills a grace-period-sized fee, credited to the
+  /// mentor in full; MENTOR_NO_SHOW and mutual NO_ANSWER bill nobody.
   endReason          String?       @map("end_reason") @db.VarChar(30)
   createdAt          DateTime      @default(now()) @map("created_at") @db.Timestamptz
   updatedAt          DateTime      @updatedAt @map("updated_at") @db.Timestamptz

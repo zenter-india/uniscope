@@ -6,6 +6,7 @@ import {
   Logger,
   NotFoundException,
 } from '@nestjs/common';
+import { Interval } from '@nestjs/schedule';
 import {
   HoldStatus,
   LedgerEntryType,
@@ -37,6 +38,22 @@ const MAX_LIMIT = 50;
 
 /** Statuses a call may be joined/connected from. */
 const JOINABLE_STATUSES: SessionStatus[] = [SessionStatus.ACCEPTED, SessionStatus.RINGING];
+
+/** No-show grace period, as a fraction of the booked slot — product decision:
+ * exactly half the slot, for every slot size (5-min slot -> 2.5 min grace,
+ * 10-min -> 5 min, 20-min -> 10 min). Money math stays exact regardless of
+ * the fraction — everything is minor units (1000 minor = 1 Uniminute), so
+ * 2.5 minutes of fee is a clean 2500 minor, never a rounding problem. Only
+ * the cosmetic `billedMinutes` integer column would round awkwardly, which
+ * is why a no-show fee is recorded via `totalCostMinor` only, not
+ * `billedMinutes` (that column stays 0 — no call minutes were actually
+ * billed, this is a distinct no-show fee). */
+const CALL_GRACE_FRACTION = 0.5;
+
+/** How often the no-show sweep runs — frequent enough that even the
+ * shortest grace period (2.5 min on a 5-min slot) is caught within ~30s of
+ * expiring, not minutes late. */
+const NO_SHOW_SWEEP_INTERVAL_MS = 30_000;
 
 /** Statuses that represent an unresolved, still-live booking against a given
  * mentor — used to block an aspirant from spamming a second request at the
@@ -641,6 +658,168 @@ export class SessionsService {
     });
 
     return this.toResponseById(sessionId);
+  }
+
+  /**
+   * Sweeps AUDIO_CALL sessions sitting in ACCEPTED/RINGING past their grace
+   * deadline (respondedAt + CALL_GRACE_FRACTION of the booked slot) and
+   * resolves whichever side never joined as a no-show. Runs on a timer
+   * rather than being driven by a client request because a no-show is, by
+   * definition, a session nobody is actively polling from — there's no
+   * "joined" call to hang this off of the way confirmJoined settles a
+   * successful connect.
+   */
+  @Interval(NO_SHOW_SWEEP_INTERVAL_MS)
+  async sweepCallNoShows(): Promise<void> {
+    const candidates = await this.prisma.session.findMany({
+      where: {
+        type: SessionType.AUDIO_CALL,
+        status: { in: JOINABLE_STATUSES },
+        respondedAt: { not: null },
+      },
+      select: { id: true, respondedAt: true, callSlotMinutes: true },
+    });
+
+    const now = Date.now();
+    for (const candidate of candidates) {
+      if (!candidate.respondedAt || !candidate.callSlotMinutes) continue;
+      const graceMs = candidate.callSlotMinutes * CALL_GRACE_FRACTION * 60_000;
+      if (now < candidate.respondedAt.getTime() + graceMs) continue;
+
+      try {
+        await this.resolveNoShow(candidate.id);
+      } catch (err) {
+        // One session's resolution failing must not stop the sweep from
+        // reaching the rest of the batch — it'll simply be retried on the
+        // next tick.
+        this.logger.error(`[call] no-show resolution FAILED sessionId=${candidate.id}`, err);
+      }
+    }
+  }
+
+  /** Resolves a single session past its grace deadline — who no-showed,
+   * whether a fee applies, and notifying both sides. Guards its own status
+   * transition (updateMany + count check) so a late confirmJoined racing
+   * the sweep can't be double-resolved, the same pattern confirmJoined
+   * itself uses for the both-joined transition. */
+  private async resolveNoShow(sessionId: string): Promise<void> {
+    const session = await this.prisma.session.findUnique({ where: { id: sessionId } });
+    if (!session || !JOINABLE_STATUSES.includes(session.status)) return;
+
+    const aspirantShowed = session.aspirantJoinedAt !== null;
+    const mentorShowed = session.mentorJoinedAt !== null;
+    if (aspirantShowed && mentorShowed) return; // confirmJoined already handled this — nothing to do
+
+    const endReason = !aspirantShowed && !mentorShowed
+      ? 'NO_ANSWER'
+      : aspirantShowed
+        ? 'MENTOR_NO_SHOW'
+        : 'ASPIRANT_NO_SHOW';
+
+    const settled = await this.prisma.session.updateMany({
+      where: { id: sessionId, status: { in: JOINABLE_STATUSES } },
+      data: { status: SessionStatus.FAILED, endedAt: new Date(), endReason },
+    });
+    if (settled.count === 0) return; // lost the race — a concurrent tick or confirmJoined already resolved it
+
+    this.logger.log(`[call] no-show resolved sessionId=${sessionId} reason=${endReason}`);
+
+    const hold = await this.prisma.walletHold.findFirst({
+      where: { sessionId, status: HoldStatus.ACTIVE },
+    });
+
+    if (endReason === 'ASPIRANT_NO_SHOW' && hold) {
+      // Mentor showed up and waited the full grace period — charged the
+      // grace-period-equivalent fee, credited to the mentor in full (same
+      // zero-margin, same-amount debit/credit pattern as every other
+      // session billing path). Only the fee is taken from the hold; the
+      // rest of the originally-reserved slot amount was never debited from
+      // balanceMinor in the first place (a hold only affects the
+      // *available* balance calculation), so there's nothing further to
+      // release once the hold is marked settled.
+      const graceMinutes = (session.callSlotMinutes ?? 0) * CALL_GRACE_FRACTION;
+      const feeMinor = Math.round(graceMinutes * MENTOR_RATE_PER_MINUTE_MINOR);
+      const mentorWallet = await this.prisma.wallet.findUniqueOrThrow({
+        where: { userId: session.mentorId },
+      });
+
+      await this.prisma.walletHold.update({
+        where: { id: hold.id },
+        data: { status: HoldStatus.CONSUMED },
+      });
+      await this.walletService.applyLedgerEntry({
+        walletId: hold.walletId,
+        type: LedgerEntryType.SESSION_DEBIT,
+        amountMinor: -feeMinor,
+        idempotencyKey: `no-show-debit:${sessionId}`,
+        sessionId,
+        note: `No-show fee — your mentor waited, you didn't join`,
+      });
+      await this.walletService.applyLedgerEntry({
+        walletId: mentorWallet.id,
+        type: LedgerEntryType.SESSION_CREDIT,
+        amountMinor: feeMinor,
+        idempotencyKey: `no-show-credit:${sessionId}`,
+        sessionId,
+        note: `No-show compensation — aspirant didn't join`,
+      });
+      await this.prisma.session.update({
+        where: { id: sessionId },
+        data: { totalCostMinor: feeMinor },
+      });
+    } else if (endReason === 'ASPIRANT_NO_SHOW') {
+      // Free-tier booking (no hold) — nothing to bill the mentor's way
+      // through, since free-tier sessions never pay the mentor even on a
+      // normal connect (see confirmJoined). The aspirant still "spends"
+      // the grace-period minutes off their free tier, so it isn't
+      // consequence-free for them, just not mentor-compensated.
+      await this.prisma.userProfile.updateMany({
+        where: { userId: session.aspirantId },
+        data: {
+          freeCallSecondsRemaining: {
+            decrement: Math.round((session.callSlotMinutes ?? 0) * CALL_GRACE_FRACTION * 60),
+          },
+        },
+      });
+      await this.prisma.userProfile.updateMany({
+        where: { userId: session.aspirantId, freeCallSecondsRemaining: { lt: 0 } },
+        data: { freeCallSecondsRemaining: 0 },
+      });
+    } else if (hold) {
+      // Mentor no-show, or neither side showed — nothing billable
+      // happened, full release back to spendable balance.
+      await this.walletService.releaseHold(hold.id);
+    }
+
+    const body =
+      endReason === 'ASPIRANT_NO_SHOW'
+        ? 'You were charged a no-show fee for not joining in time.'
+        : endReason === 'MENTOR_NO_SHOW'
+          ? "Your mentor didn't join in time — nothing was charged."
+          : "Nobody joined in time — nothing was charged.";
+    const mentorBody =
+      endReason === 'ASPIRANT_NO_SHOW'
+        ? "The aspirant didn't join — you've been compensated for waiting."
+        : endReason === 'MENTOR_NO_SHOW'
+          ? "You didn't join in time — the call was marked a no-show."
+          : "Nobody joined in time — the call was marked a no-show.";
+
+    await Promise.all([
+      this.notificationsService.send({
+        userId: session.aspirantId,
+        type: NotificationType.SESSION_ENDED,
+        title: 'Call missed',
+        body,
+        metadata: { sessionId: session.id },
+      }),
+      this.notificationsService.send({
+        userId: session.mentorId,
+        type: NotificationType.SESSION_ENDED,
+        title: 'Call missed',
+        body: mentorBody,
+        metadata: { sessionId: session.id },
+      }),
+    ]);
   }
 
   /** Lists sessions where the current user is a party — as aspirant,

@@ -438,7 +438,25 @@ class _SessionActionsState extends ConsumerState<_SessionActions> {
 
   // Sentence-case, plain-language status instead of the raw wire enum
   // (e.g. "PENDING") — a status code isn't self-explanatory at a glance.
-  String _statusLabel(SessionStatus status) {
+  // FAILED is a generic bucket for several distinct no-show outcomes (see
+  // SessionsService.sweepCallNoShows) — endReason (+ which side is viewing)
+  // picks the specific label so "Failed" never shows up as a mystery to
+  // either party, and each side sees their own outcome, not the other's.
+  String _statusLabel(SessionStatus status, String? endReason, bool isMentor) {
+    if (status == SessionStatus.failed) {
+      switch (endReason) {
+        case 'ASPIRANT_NO_SHOW':
+          return isMentor
+              ? 'Aspirant no-show — you were paid'
+              : 'No-show — you were charged';
+        case 'MENTOR_NO_SHOW':
+          return isMentor ? 'You missed it — no charge' : 'Mentor no-show';
+        case 'NO_ANSWER':
+          return 'No answer';
+        default:
+          return 'Failed';
+      }
+    }
     switch (status) {
       case SessionStatus.pending:
         return 'Pending';
@@ -457,7 +475,7 @@ class _SessionActionsState extends ConsumerState<_SessionActions> {
       case SessionStatus.expired:
         return 'Expired';
       case SessionStatus.failed:
-        return 'Failed';
+        return 'Failed'; // unreachable — handled above
     }
   }
 
@@ -501,7 +519,11 @@ class _SessionActionsState extends ConsumerState<_SessionActions> {
               // noise. Only calls have a real status worth surfacing.
               if (isCall)
                 StatusChip(
-                  label: _statusLabel(session.status),
+                  label: _statusLabel(
+                    session.status,
+                    session.endReason,
+                    widget.isMentor,
+                  ),
                   color: _statusColor(session.status),
                 ),
             ],
@@ -538,7 +560,11 @@ class _SessionActionsState extends ConsumerState<_SessionActions> {
                     session.status == SessionStatus.accepted)) ...[
               widget.dense
                   ? _TappableStatusChip(
-                      label: _statusLabel(session.status),
+                      label: _statusLabel(
+                        session.status,
+                        session.endReason,
+                        widget.isMentor,
+                      ),
                       color: _statusColor(session.status),
                       onTap: _busy ? null : () => _cancelWithDeflection(api),
                     )
