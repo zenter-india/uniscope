@@ -630,9 +630,11 @@ University-only pattern (`btech-colleges.json`, no specialization
 concept) to the same curated University+Program pattern Medical's
 MD/MS/DNB/Diploma/DM-MCh and Dental's MDS use** — per explicit
 request ("map the college with their discipline like we do in
-medical"). 17,626 raw rows → **3,412 unique (College, District, State)
+medical"). 17,626 raw rows → **3,411 unique (College, District, State)
 colleges**, `type` defaulted to `PRIVATE` (no ownership column).
-`stream: 'Engineering'`.
+`stream: 'Engineering'`. (Was briefly 3,412 before a generation-key
+fix described further down this section merged one real duplicate
+pair.)
 
 **Specialization labels prefixed `"B.Tech - <Discipline>"`** (per
 explicit request, e.g. `"B.Tech - Information Technology"`) — 48
@@ -1166,7 +1168,33 @@ Flagged to the user, pending a decision on whether/when to clean up
 the existing near-duplicates and apply the same matching fix to the
 other scripts.
 
-## A casing bug worth knowing about — `Program.name` must be UPPERCASE
+**A second, related bug surfaced immediately by the tightened matching
+key — caught by re-running the dry-run, not by the real run.** The
+stricter `normalizeForMatch()` key above didn't just fix matching
+against *already-seeded* rows — it also exposed that
+`btech-programmes-colleges.json`'s own *generation* script still used
+the old, looser plain-lowercase dedup key, the exact "generation key
+must match the seed script's matching key" lesson from the diploma
+refresh's 746-vs-735 bug, recurring in a new form. One real pair
+slipped through: `"TRINITY COLLEGE OF ENGINEERING AND TECHNOLOGY"` vs
+`"Trinity College of Engineering & Technology"` (same district, same
+state, Telangana) — two separate JSON entries for the same real
+college, invisible to the old dedup key ("and" ≠ "&" without
+normalization) but colliding under the seed script's new one. The dry
+run's `--dry-run` placeholder objects (`{ id: 'dry-run:...' }`, no
+`levels` field) crashed reading `.levels` when the second entry hit
+this collision — a dry-run-only crash, confirmed not to affect a real
+run's correctness directly, but the *underlying* collision would have:
+a real run wouldn't crash (a genuine Prisma `create()` result has
+`levels`), but the second entry's `Program.upsert` `update` clause
+would have silently **overwritten** the first entry's specializations
+rather than merging them, permanently losing whichever discipline list
+lost the race — not caught by the dry-run's stats output at all.
+Fixed by regenerating `btech-programmes-colleges.json` with its
+grouping key changed to match `normalizeForMatch()` exactly: 3,412 →
+**3,411** unique colleges, the Trinity pair now one entry with the
+union of both sides' specializations. Verified zero remaining
+branch-key collisions across the whole file after the fix.
 
 `UniversitiesService.findCurated` queries `Program.name: degree.toUpperCase()`.
 Every seed script here must therefore store its `PROGRAM_NAME` fully
