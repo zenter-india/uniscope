@@ -790,6 +790,77 @@ M.Tech/M.E automatically gets the same real `CollegeSearch` (stream
 filter) and disabled "Coming soon" Specialization field that B.Tech/B.E
 already has, with zero code changes.
 
+## `diploma-engineering-programmes-colleges.json` — Diploma Engineering colleges + real per-college specializations
+
+Input to `../seed-diploma-engineering-programmes-colleges.mjs`. Source:
+`Diploma_Engineering_Specialization_Clean.xlsx` — the **same
+underlying data** as `diploma-engineering-colleges.json` (same 4
+no-state exclusions, same 1 no-district-but-has-state case, 375 total
+in the source's own "Unique Colleges" sheet), but with an explicit
+**Specialization** column this time (1,110 raw rows: one row per
+College×Specialization). **Same upgrade as B.Tech/M.Tech/Law** —
+replaces `diploma-engineering-colleges.json`'s no-specialization
+University-only pattern with the curated University+Program pattern.
+`type` defaulted to `PRIVATE`. `stream: 'Engineering'`.
+
+**Specialization labels are the plain discipline name** (e.g.
+`"Computer Engineering"`, `"Mechatronics"`) — **85 distinct labels**
+seeded (86 in the source's own `By Specialization` sheet; the 86th,
+`"Manufacturing Technology"`, only ever appears on a no-state row and
+is correctly excluded along with that row, same as every other
+no-state exclusion in this file).
+
+**Checked for the Law UG Programmes naming-mismatch class of bug
+*before* generating, and found this dataset needed the *opposite* fix
+direction** — a genuinely useful contrast worth remembering:
+`diploma-engineering-colleges.json` was originally generated with the
+**strict** district-exact-match truncation rule (specifically to avoid
+the "Government Polytechnic" over-merging bug — see that dataset's own
+section above), not the Law datasets' looser `locality_like` rule. So
+this Programmes refresh reused that same **strict** rule from the
+start, and verified alignment before writing any seed script: only 1
+name (out of 364) present in the old file but not the new, and 3 new
+names not in the old — all 4 investigated individually, not assumed.
+The 1 "old only" case was a state-name spelling difference (`"Andaman
+and Nicobar"` → normalized the same way as every other dataset this
+session to `"Andaman and Nicobar Islands"`, which then matched). The 3
+"new only" cases are genuinely new, real branches this source captures
+that the older one didn't — Thiagarajar Polytechnic College turns out
+to have both a Tamil Nadu and a Kerala campus (old file only had the
+Tamil Nadu one), and the Central Institute of Petrochemicals
+Engineering and Technology (CIPET, a real government multi-campus
+institute) has several more state campuses in this source than the
+old one captured. **Net: 367 colleges** (364 + 3 genuinely new
+branches), zero naming-consistency issues, no VARCHAR(200) overflow,
+zero branch-key collisions.
+
+**`seed-diploma-engineering-programmes-colleges.mjs` mirrors
+`seed-btech-programmes-colleges.mjs`/`seed-law-ug-programmes-colleges.mjs`
+exactly**: district-aware `claimed`-set matching, stream-aware
+candidate filtering, `normalizeForMatch()` for punctuation-insensitive
+matching, `Program.description` carries the district. `Program.name`
+is `'DIPLOMA-ENGG'` (uppercase — see the casing-bug note below),
+deliberately distinct from Medical's `'DIPLOMA'` Program name for
+clarity when browsing/debugging, even though Program uniqueness is
+scoped per-University so there's no technical collision risk. Reuses
+`University` rows already created by
+`diploma-engineering-colleges.json`'s seed, matched by
+name+state+district — pushes `"Diploma"` onto `levels` if somehow
+missing (this dataset's own level-value convention, not `"UG"`/`"PG"`).
+
+**Frontend**: `CURATED_DEGREE_MAP_BY_STREAM.Engineering["Diploma"] =
+"Diploma-Engg"`, `"Diploma-Engg"` added to `BROWSE_DEGREES`. Removed
+`Diploma` from `COLLEGE_SEARCH_LEVEL_MAP` (Engineering's entry is now
+empty — B.Tech/B.E, M.Tech/M.E, and Diploma have all fully moved to
+the curated path; only Doctorate/Others remain on the non-curated
+mechanisms).
+
+Verified live in browser: Diploma now shows `CuratedCollegeSearch` and
+a Specialization field reading "Select a college first" (pre-seed);
+B.Tech/M.Tech confirmed unaffected; Doctorate confirmed still falls
+back to plain unfiltered search + disabled placeholder. tsc/eslint
+clean. Not yet seeded against production.
+
 ## `diploma-engineering-colleges.json` — Diploma Engineering (polytechnic) colleges
 
 Input to `../seed-diploma-engineering-colleges.mjs`. Source:
@@ -1550,6 +1621,78 @@ third refresh got the non-district-aware version of the same fix (a
 `diploma-colleges.json` — this source has no address/district column
 either) applied proactively for the same reason, plus `isActive: true`
 on upsert.
+
+## Stray quotation marks in `name` (found + fixed, non-Medical only)
+
+A source CSV/Excel export can carry a literal `"` character inside a
+`College Name` cell — an artifact of the original file quoting a
+comma-containing field (`"Some College", City, District`) where the
+upstream cleaning step kept the opening quote but truncated the string
+before reaching the matching closing quote (or, in one case, kept both
+quotes around the institution name with the address trailing outside
+them unquoted). Found via a direct scan of every non-Medical JSON file
+here for a literal `"` in `name`:
+
+- `btech-programmes-colleges.json` / `mtech-programmes-colleges.json`
+  (same 15 Madhya Pradesh colleges in both — same underlying source
+  rows): opening `"` with no closing quote, e.g.
+  `"All Saints College of Technology, Jaipur Jabalpur, NH-12, Gandhi Nagar`.
+- `law-ug-colleges.json` / `pg-law-colleges.json` /
+  `law-ug-programmes-colleges.json` / `pg-law-programmes-colleges.json`
+  (same single Maharashtra college in all four — same underlying
+  source row): matched opening+closing quotes around just the
+  institution name, e.g.
+  `"Mangaon Shikshan Prasarak Mandal's Ashokdada Sable Law College" Near Dist. Court, ...`.
+
+**This is also the root cause of names appearing "out of alphabetical
+order"** in the browse/search dropdown — the backend already sorts
+every list via `a.name.localeCompare(b.name)` (`findAll` and
+`findCurated` in `universities.service.ts`), but `"` sorts before every
+letter, so any name starting with a stray quote floats to the top of an
+otherwise-correctly-sorted list. Fixing the quote fixes both symptoms;
+no separate ordering bug exists.
+
+Fixed by stripping every literal `"` from `name` (not replacing with
+anything, then collapsing/trimming whitespace) in all 6 files above —
+21 names changed total (15 shared MP colleges × 2 files + 1 shared
+Maharashtra college × 4 files), record counts unchanged in every file
+(no accidental merges). Scanned every other non-Medical file in this
+directory (`btech-colleges.json`, `pg-engineering-colleges.json`,
+`diploma-engineering-colleges.json`,
+`diploma-engineering-programmes-colleges.json`) — zero hits, nothing
+else to fix. Also checked for smart/curly quote variants (`“` `”` `‘`
+`’`) — none found anywhere. Deliberately did not touch any Medical or
+Dental file, per explicit instruction.
+
+**Standing convention for any future dataset generation from here on**:
+before writing a new `*-colleges.json`, check every `name` for a
+literal `"` (or smart-quote variant) and strip it — add this to the
+same pre-generation checklist as the truncation-heuristic-alignment
+check (see the Law UG Programmes naming-mismatch section above).
+
+**Live-DB implication, not yet applied**: `btech-programmes-colleges.json`
+and `mtech-programmes-colleges.json` are already seeded for real —
+of the 15 MP colleges, 5 (Jai Narain, both Lakshmi Narain variants,
+Ujjain Engineering College, Samrat Ashok Technological Institute)
+matched pre-existing `University` rows from the narrower
+`btech-colleges.json` seed and so already have a clean name in the DB
+(seed scripts never update `name` on a matched row); the other 10 were
+newly created directly from this file's own (then-broken) `name` and so
+still carry the literal `"` in production right now. Similarly the one
+Maharashtra Law college is already live (from the earlier
+`law-ug-colleges.json`/`pg-law-colleges.json` seeds) with the broken
+name. `law-ug-programmes-colleges.json` was seeded after that, matched
+the already-broken row, and didn't change it either.
+`pg-law-programmes-colleges.json` was pushed but not yet merged/seeded,
+so no live-DB fix is needed for it — the corrected JSON is enough.
+Fixing the 11 already-live rows needs a one-line SQL update run by
+whichever session has real DB access (not this one):
+```sql
+UPDATE "University" SET name = REPLACE(name, '"', '')
+WHERE name LIKE '%"%' AND stream IN ('Engineering', 'Law');
+```
+(scoped to Engineering/Law only, so it can never touch a Medical/Dental
+row even if one somehow matched — none do today, per the scan above).
 
 ## Refreshing on demand — `refresh_ug.py` / `refresh_pg.py`
 
