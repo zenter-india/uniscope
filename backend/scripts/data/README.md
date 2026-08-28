@@ -636,14 +636,21 @@ colleges**, `type` defaulted to `PRIVATE` (no ownership column).
 fix described further down this section merged one real duplicate
 pair.)
 
-**Specialization labels prefixed `"B.Tech - <Discipline>"`** (per
-explicit request, e.g. `"B.Tech - Information Technology"`) — 48
-distinct labels, matching the source's own Discipline count exactly
-(one all-caps variant, `"FOOD PROCESSING TECHNOLOGY"`, normalized to
-Title Case for display consistency; not merged into the separately
-distinct `"Food Technology"`/`"Food Processing and Preservation"`
-labels, since there's no way to verify from the data alone whether
-they're the same specialty).
+**Specialization labels are the plain Discipline name** (e.g.
+`"Information Technology"`) — 48 distinct labels, matching the
+source's own Discipline count exactly (one all-caps variant,
+`"FOOD PROCESSING TECHNOLOGY"`, normalized to Title Case for display
+consistency; not merged into the separately distinct `"Food
+Technology"`/`"Food Processing and Preservation"` labels, since
+there's no way to verify from the data alone whether they're the same
+specialty). Initially prefixed `"B.Tech - <Discipline>"` per the
+original request; the prefix was removed in a follow-up request —
+17,196 label occurrences stripped across all 3,411 colleges, 48
+distinct labels confirmed unchanged after stripping. Re-seeding
+against production (re-running `seed-btech-programmes-colleges.mjs`
+will `Program.upsert` each college's `specializations` in place — no
+University/Program rows added or removed, matches everything by the
+same key as before) is still pending as of this note.
 
 **Same messy AISHE-name character as the Law datasets, but a truncation
 bug found and fixed before generating this file (not after seeding)**:
