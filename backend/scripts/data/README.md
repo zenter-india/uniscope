@@ -670,6 +670,63 @@ M.Tech/M.E automatically gets the same real `CollegeSearch` (stream
 filter) and disabled "Coming soon" Specialization field that B.Tech/B.E
 already has, with zero code changes.
 
+## `diploma-engineering-colleges.json` — Diploma Engineering (polytechnic) colleges
+
+Input to `../seed-diploma-engineering-colleges.mjs`. Source:
+`Diploma_Engineering_Colleges_Clean.xlsx`, same "Clean Data" shape as
+`btech-colleges.json` (S.No/College/District/State — no ownership
+column). **370 raw rows → 366 after dropping 4 no-state rows → 364
+unique (College, District, State) colleges**, `type` defaulted to
+`PRIVATE`. No specialization data, same as B.Tech/M.Tech — University
+rows only, no `Program` row.
+
+**A different, stricter comma-truncation rule than every prior
+Engineering/Law dataset was needed here — truncate only when the
+comma tail literally matches the District column's text, not merely
+when it "looks like" a locality.** This source has a pattern the
+others didn't: dozens of colleges share the exact generic name
+`"Government Polytechnic"` (or `"Government Polytechnic for Women"`),
+and the only thing distinguishing multiple real, distinct polytechnics
+within the *same district* is a **town name** appended after a comma
+(e.g. `"GOVERNMENT POLYTECHNIC, KALYANDURG"` and `"GOVERNMENT
+POLYTECHNIC, JAMMALAMADUGU"` are two different real colleges, both in
+Andhra Pradesh's Cuddapah-adjacent districts, both reduced to the exact
+same generic name if truncated) — the town isn't in the District
+column at all, so it's the *only* disambiguating text available, not
+address bleed. **First attempt used the Law datasets' locality-word-count
+heuristic and silently merged multiple genuinely distinct polytechnics
+into one row** (caught before generating the seed script, not after
+seeding — e.g. 5 different "Government Polytechnic" branches across 5
+different Cuddapah-district towns would have collapsed to a single
+entry). Fixed by reverting to the original DNB/BDS/B.Tech rule for this
+dataset: only truncate when `district.lower() in tail.lower()` is
+literally true. Two names that would have been badly mangled by the
+locality heuristic are correctly kept whole under this stricter rule:
+`"DKTES,TEXTILE & ENGG. INSTITUTE"` (comma separates an acronym from
+its own name, not an address) and `"Polytechnic, The Maharaja Sayajirao
+University of Baroda"` (already backwards-ordered, truncating would
+have left just `"Polytechnic"`). Only 2 genuine duplicate pairs found
+after this fix (one case-variant, one true district-match bleed) — 366
+→ 364.
+
+**Many of these colleges already exist as `University` rows from the
+B.Tech/M.Tech seeds** — the district-aware `claimed`-set matching
+reuses those rows and pushes a new `"Diploma"` value onto `levels`
+rather than creating duplicates, same pattern as PG reusing UG rows
+elsewhere. This is also the **first dataset to add anything other than
+`"UG"`/`"PG"` to `University.levels`** — the column is a free-form
+string array, not an enum (see its doc comment in `schema.prisma`), so
+`"Diploma"` is a valid value; nothing elsewhere reads `levels` in a way
+that would break from a third distinct value.
+
+**No frontend changes needed** — `"Diploma"` was already added as an
+Engineering degree option (`DEGREES_BY_STREAM.Engineering` in
+`web/lib/options.ts`) before this dataset existed, and
+`STREAMS_WITH_COLLEGE_DATA`/`STREAMS_WITH_EMPTY_SPECIALIZATION` are
+stream-gated, not degree-gated — so Diploma already had the real
+`CollegeSearch` and disabled Specialization placeholder, just searching
+the combined B.Tech+M.Tech list until this dataset was seeded.
+
 ## `law-ug-colleges.json` — UG Law (B.A. LL.B. / LL.B. / integrated) colleges
 
 Input to `../seed-law-ug-colleges.mjs`. Source:
