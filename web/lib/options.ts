@@ -1,7 +1,7 @@
 /**
  * Picklists for the enrollment forms.
  *
- * These deliberately mirror `mobile_flutter/lib/features/onboarding/
+ * These deliberately mirror `mobile_flutter/lib/features/profile/
  * profile_options.dart` value-for-value. A lead is meant to convert into a
  * real UserProfile later by copying columns across, so if the website offers
  * "Commerce and Business" while the app stores "Commerce & Business", every

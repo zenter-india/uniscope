@@ -60,7 +60,7 @@ class _MentorOnboardingScreenState extends ConsumerState<MentorOnboardingScreen>
   String? _stream;
   final _streamOtherController = TextEditingController();
   String? _degree;
-  final _specializationController = TextEditingController();
+  String? _specialization;
 
   String? _currentStatus;
   String? _yearOfStudyLabel;
@@ -97,7 +97,6 @@ class _MentorOnboardingScreenState extends ConsumerState<MentorOnboardingScreen>
     _cityOtherController.dispose();
     _collegeNameController.dispose();
     _streamOtherController.dispose();
-    _specializationController.dispose();
     _graduationYearController.dispose();
     _languagesOtherController.dispose();
     super.dispose();
@@ -131,8 +130,7 @@ class _MentorOnboardingScreenState extends ConsumerState<MentorOnboardingScreen>
         final streamOk = _stream != null &&
             (_stream != 'Others' || _streamOtherController.text.trim().isNotEmpty);
         final collegeOk = _collegeNameController.text.trim().isNotEmpty;
-        final specializationOk = !_needsSpecialization ||
-            _specializationController.text.trim().isNotEmpty;
+        final specializationOk = !_needsSpecialization || _specialization != null;
         return _degree != null && streamOk && collegeOk && specializationOk;
       default:
         return true;
@@ -244,9 +242,7 @@ class _MentorOnboardingScreenState extends ConsumerState<MentorOnboardingScreen>
             state: _state,
             city: _resolvedCity.isEmpty ? null : _resolvedCity,
             qualification: _degree,
-            specialization: _needsSpecialization
-                ? _specializationController.text.trim()
-                : null,
+            specialization: _needsSpecialization ? _specialization : null,
             stream: resolvedStream,
             yearOfStudy: _currentStatus == 'Currently Studying'
                 ? _yearOfStudyValue()
@@ -485,11 +481,11 @@ class _MentorOnboardingScreenState extends ConsumerState<MentorOnboardingScreen>
                     children: [
                       const OnboardingFieldLabel('Degree'),
                       OnboardingSingleChipGroup(
-                        options: kDegrees,
+                        options: degreesForStream(_stream),
                         selected: _degree,
                         onSelect: (v) => setState(() {
                           _degree = v;
-                          _specializationController.clear();
+                          _specialization = null;
                         }),
                       ),
                       const SizedBox(height: AppSpacing.md),
@@ -498,12 +494,15 @@ class _MentorOnboardingScreenState extends ConsumerState<MentorOnboardingScreen>
                         options: kStreamOptions,
                         selected: _stream,
                         // Switching streams invalidates whichever college
-                        // was picked/typed for the previous one.
+                        // was picked/typed for the previous one, and the
+                        // previously chosen degree/specialization may no
+                        // longer be a valid option for the new stream.
                         onSelect: (v) => setState(() {
                           _stream = v;
                           _university = null;
                           _collegeNameController.clear();
-                          _specializationController.clear();
+                          _degree = null;
+                          _specialization = null;
                         }),
                       ),
                       if (_stream == 'Others') ...[
@@ -527,11 +526,11 @@ class _MentorOnboardingScreenState extends ConsumerState<MentorOnboardingScreen>
                       if (_needsSpecialization) ...[
                         const SizedBox(height: AppSpacing.md),
                         const OnboardingFieldLabel('Specialization'),
-                        TextFormField(
-                          controller: _specializationController,
-                          onChanged: (_) => setState(() {}),
-                          decoration:
-                              const InputDecoration(hintText: 'e.g. Paediatrics'),
+                        OnboardingDropdown(
+                          value: _specialization,
+                          hint: 'Select specialization',
+                          options: kMedicalSpecializations,
+                          onChanged: (v) => setState(() => _specialization = v),
                         ),
                       ],
                     ],

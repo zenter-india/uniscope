@@ -337,16 +337,6 @@ const kTimeSlots = [
   'Night (8 PM - 11 PM)',
 ];
 
-const kWeekdays = [
-  'Monday',
-  'Tuesday',
-  'Wednesday',
-  'Thursday',
-  'Friday',
-  'Saturday',
-  'Sunday',
-];
-
 // UserProfile.stream — a mentor's college field of study, or an aspirant's
 // field of interest ("used for mentor matching"). Same list either way since
 // Uniscope spans every academic field now, not just medical; "Others" pairs
@@ -362,10 +352,135 @@ const kStreamOptions = [
   'Others',
 ];
 
-// Mentor's "Degree" field reuses the same merged list as kQualifications —
-// kept as a separate name since the two screens label the field differently
-// (aspirant: "Current qualification", mentor: "Degree").
-const kDegrees = kQualifications;
+// Mentor's "Degree" field options depend on stream — mirrors
+// web/lib/options.ts DEGREES / DEGREES_BY_STREAM / DEFAULT_NON_MEDICAL_DEGREES
+// exactly. Medical keeps the full qualification list minus "Higher Secondary
+// (12th)" (not a real degree for a mentor); Dental and Engineering get their
+// own degree names; every other stream falls back to a generic UG/PG list.
+const kMedicalDegrees = [
+  'UG',
+  'PG',
+  'MD/MS',
+  'DNB',
+  'Diploma',
+  'Doctorate',
+  'DM/MCh',
+  'Others',
+];
+const kDegreesByStream = <String, List<String>>{
+  'Dental': ['BDS', 'MDS', 'Doctorate', 'Others'],
+  'Engineering': ['B.Tech/B.E', 'M.Tech/M.E', 'Doctorate', 'Others'],
+};
+const kDefaultNonMedicalDegrees = ['UG', 'PG', 'Doctorate', 'Others'];
+
+List<String> degreesForStream(String? stream) {
+  if (stream == 'Medical') return kMedicalDegrees;
+  return kDegreesByStream[stream] ?? kDefaultNonMedicalDegrees;
+}
+
+/// Shown for Medical-stream mentors on any degree except UG (which has no
+/// specialization yet) — ported 1:1 from web/lib/options.ts
+/// MEDICAL_SPECIALIZATIONS, kept in sync manually.
+const kMedicalSpecializations = [
+  'General Medicine',
+  'Anaesthesiology',
+  'General Surgery',
+  'Orthopaedics',
+  'Paediatrics',
+  'Obstetrics and Gynaecology',
+  'Cardiology',
+  'Radio Diagnosis',
+  'Critical Care Medicine',
+  'Ophthalmology',
+  'Emergency Medicine',
+  'Neurology',
+  'Urology',
+  'Medical Gastroenterology',
+  'Nephrology',
+  'Medical Oncology',
+  'Respiratory Medicine',
+  'Pathology',
+  'Surgical Oncology',
+  'Radiation Oncology',
+  'Otorhinolaryngology (ENT)',
+  'Family Medicine',
+  'Neuro Surgery',
+  'Surgical Gastroenterology',
+  'Cardio Vascular & Thoracic Surgery (Direct 6 Years Course)',
+  'Neuro Surgery (Direct 6 Years Course)',
+  'Reproductive Medicine',
+  'Minimal Access Surgery',
+  'Arthroplasty',
+  'Dermatology, Venereology and Leprosy',
+  'Psychiatry',
+  'Cardiac Anaesthesia',
+  'Spine Surgery',
+  'Interventional Cardiology',
+  'Clinical Haematology',
+  'Endocrinology',
+  'Microbiology',
+  'Nuclear Medicine',
+  'Vascular Surgery',
+  'Neonatology',
+  'Paediatric Cardiology',
+  'Interventional Radiology',
+  'Plastic & Reconstructive Surgery',
+  'Head & Neck Oncology',
+  'Paediatric Hemato-Oncology',
+  'Clinical Immunology and Rheumatology',
+  'Onco-Anaesthesia',
+  'Paediatric Critical Care',
+  'Gynaecological Oncology',
+  'Biochemistry',
+  'Immunohematology and Blood Transfusion',
+  'Maternal & Foetal Medicine',
+  'Plastic & Reconstructive Surgery (Direct 6 Years Course)',
+  'Cardio Vascular & Thoracic Surgery',
+  'Neuro Anaesthesia',
+  'Cardiac Electrophysiology',
+  'Paediatric Surgery (Direct 6 Years Course)',
+  'Transplant Anaesthesia',
+  'Palliative Medicine',
+  'Vitreo Retinal Surgery',
+  'Community Medicine',
+  'Neurovascular Intervention',
+  'Paediatric Anaesthesia',
+  'Hand & Micro Surgery',
+  'Paediatric Gastroenterology',
+  'Pain Medicine',
+  'Renal Transplant',
+  'Thoracic Surgery',
+  'Trauma & Acute Care Surgery',
+  'Hospital Administration',
+  'Paediatric Nephrology',
+  'Paediatric Neurology',
+  'Physiology',
+  'Sports Medicine',
+  'Anatomy',
+  'Infectious Diseases',
+  'Minimally Invasive Gynaecologic Surgery',
+  'Pharmacology',
+  'Colorectal Surgery',
+  'Forensic Medicine',
+  'Minimal Access Urology',
+  'Paediatric Surgery',
+  'Paediatric Urology',
+  'Trauma Anaesthesia & Critical Care',
+  'Addiction Psychiatry',
+  'Liver Transplantation',
+  'Physical Medicine and Rehabilitation',
+  'Stroke Medicine',
+  'Bariatric Surgery',
+  'Breast Imaging',
+  'Fetal Radiology',
+  'Geriatric Medicine',
+  'Medical Genetics',
+  'Musculoskeletal Radiology (MSK Radiology)',
+  'Paediatric Endocrinology',
+  'Child and Adolescent Psychiatry',
+  'Paediatric Emergency Medicine',
+  'Paediatric Orthopaedics',
+];
 
 const kCurrentStatuses = ['Currently Studying', 'Graduated'];
 
