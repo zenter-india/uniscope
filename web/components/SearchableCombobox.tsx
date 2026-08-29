@@ -8,7 +8,15 @@ import { TextInput } from "./form-bits";
  * list) — no network call per keystroke, filtering happens locally.
  * Focusing with no query shows the full option list; typing narrows it,
  * same UX as CollegeSearch/CuratedCollegeSearch. A typed value matching
- * nothing in the list is still accepted as free text via onChange. */
+ * nothing in the list is still accepted as free text via onChange.
+ *
+ * Matching is keyword-based, not a single whole-phrase substring: the
+ * typed value is split on whitespace into words, and an option matches
+ * if EVERY typed word appears somewhere in it (each independently, any
+ * order, any position) — so e.g. "medicine emergency" still matches
+ * "Emergency Medicine" even though that's not literally the typed
+ * substring, and a specialization can be found by any word inside it,
+ * not just its beginning. Per explicit request. */
 export function SearchableCombobox({
   value,
   options,
@@ -25,8 +33,12 @@ export function SearchableCombobox({
   disabled?: boolean;
 }) {
   const [open, setOpen] = useState(false);
-  const filtered = value.trim()
-    ? options.filter((o) => o.toLowerCase().includes(value.trim().toLowerCase()))
+  const words = value.trim().toLowerCase().split(/\s+/).filter(Boolean);
+  const filtered = words.length
+    ? options.filter((o) => {
+        const lower = o.toLowerCase();
+        return words.every((w) => lower.includes(w));
+      })
     : options;
 
   return (

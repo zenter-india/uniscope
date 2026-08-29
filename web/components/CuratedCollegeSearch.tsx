@@ -33,6 +33,26 @@ export function CuratedCollegeSearch({
   const [open, setOpen] = useState(false);
   const requestId = useRef(0);
 
+  // Keeps the visible text in sync when the parent resets `value` out from
+  // under this component without the mentor typing anything themselves --
+  // most notably MentorForm.tsx clearing collegeName when Degree changes
+  // (different degrees can have different curated college data). Without
+  // this, `query`'s initial useState(value) only ever reflects the very
+  // first value this component mounted with: switching Degree while
+  // staying on the same curated stream (e.g. Medical PG -> Doctorate, both
+  // rendering this same component instance, not remounted) reset the real
+  // form.collegeName to "" but left this box still showing the old
+  // college name -- looking selected while actually being empty,
+  // including passing the input's own HTML5 "required" validity check, so
+  // a mentor could submit believing their college was saved when it
+  // wasn't. Harmless to also fire on every keystroke/pick (onChange and
+  // onPick both already set `value` to the same string being written
+  // here, so this becomes a same-value no-op re-render, not a loop).
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- syncing the visible text to a `value` reset the parent made, not an internal state transition
+    setQuery(value);
+  }, [value]);
+
   // Same "search on every value including empty" approach as CollegeSearch,
   // for the same reason: focusing the field should show a browsable list
   // immediately, not only once the mentor starts typing.

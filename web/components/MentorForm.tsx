@@ -730,6 +730,7 @@ export function MentorForm({ onExit }: { onExit: () => void }) {
               <CollegeSearch
                 gold
                 value={form.collegeName}
+                stream="Medical"
                 level={form.degree === "UG" ? "UG" : undefined}
                 onPick={(name, id) => {
                   set("collegeName", name);
