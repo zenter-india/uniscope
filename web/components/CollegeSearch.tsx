@@ -15,10 +15,18 @@ import { TextInput } from "./form-bits";
  * `level` (e.g. "UG") restricts the list to colleges offering that level —
  * pass it for a degree-specific picker so PG-only accreditation sites don't
  * show up as UG options (see UniversitiesService.findAll's `level` filter).
- * `stream` (e.g. "Dental") restricts to that stream's colleges — omit it
- * for a stream with no seeded data yet, since an unfiltered search would
- * otherwise surface irrelevant colleges from whichever stream does have
- * data (currently Medical). */
+ * `stream` (e.g. "Dental") restricts to that stream's colleges — always
+ * pass it when the stream has seeded data of its own (every stream with
+ * a College field backed by real data does, as of Medical/Dental/
+ * Engineering/Law). Omitting it used to be safe for Medical specifically
+ * back when it was the only stream with any seeded colleges at all (an
+ * unfiltered search could only ever resolve to Medical anyway) -- that
+ * stopped being true once Dental/Engineering/Law got their own data, and
+ * an unfiltered Medical search started surfacing their colleges too (a
+ * real bug, caught live -- see MentorForm.tsx's own CollegeSearch call
+ * for Medical, which now always passes stream="Medical"). Only omit
+ * `stream` for a stream with no seeded college data of its own at
+ * all -- there every candidate would be wrong regardless of stream. */
 export function CollegeSearch({
   value,
   onPick,
