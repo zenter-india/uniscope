@@ -29,15 +29,11 @@ fi
 # --- C5: OTP_PROVIDER_TYPE must never be hardcoded to "mock" in a committed
 # deploy config — that's a fixed, publicly-known login code (111111) for
 # every phone number on whatever's reachable at that config's URL.
-for f in render.yaml; do
-  if [ -f "$f" ] && grep -A1 'OTP_PROVIDER_TYPE' "$f" | grep -q 'value: mock'; then
-    echo "FAIL: $f hardcodes OTP_PROVIDER_TYPE: mock for a deployed service."
-    echo "      Per RISK_RULES.md this is CRITICAL — it means anyone who can reach that service"
-    echo "      can log in as any phone number with the fixed code 111111. Set it to 'twilio' (or"
-    echo "      leave unset with sync: false) and configure the real value in the host's dashboard."
-    fail=1
-  fi
-done
+# No such committed config exists anymore: production is Railway, whose
+# environment variables are dashboard-managed only, never committed to
+# git (render.yaml — the one committed config this used to check — was
+# deleted; see ai/SECURITY.md § S-1). Nothing to mechanically check here
+# unless a committed deploy config reappears.
 
 # --- C4: no obviously-hardcoded secrets in tracked source (a coarse net, not
 # a replacement for a real secret scanner — catches the easy, common cases).

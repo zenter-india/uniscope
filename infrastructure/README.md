@@ -13,7 +13,7 @@ Uniscope infrastructure documentation.
 | Cache / Sessions | Upstash Redis | OTP storage, session data, presence |
 | OTP Delivery | Twilio Verify API | SMS-based one-time passwords |
 | File Storage | Supabase Storage | Verification docs, avatars, media |
-| Backend Hosting | Render | Auto-deploy from GitHub |
+| Backend Hosting | Railway | Auto-deploy from GitHub |
 | Mobile | Expo + EAS Build | iOS and Android app builds |
 
 ## Contents
@@ -39,12 +39,11 @@ Developers do **not** run local infrastructure. All services are cloud-hosted.
 | Environment | Branch | Backend URL | Notes |
 |-------------|--------|-------------|-------|
 | Development | `develop` | localhost:3000 | Uses dev Supabase project |
-| Staging | `develop` | Render staging | Auto-deploy on push |
-| Production | `main` | Render production | Auto-deploy on merge |
+| Production | `feature/flutter-migration` | Railway production (`uniscope` service) | Auto-deploy on push |
 
 ## Infrastructure Ownership
 
-All cloud resources (Supabase, Upstash, Twilio, Render) are owned and managed by **Kiran Raj**.
+All cloud resources (Supabase, Upstash, Twilio, Railway) are owned and managed by **Kiran Raj**.
 Developers consume services via environment variables only — no direct infrastructure access required.
 
 For access to credentials, contact the infrastructure owner.

@@ -21,7 +21,7 @@ flowchart TB
     end
 
     subgraph hosting [Hosting]
-        Render["Render\n(Backend API)"]
+        Railway["Railway\n(Backend API)"]
         EAS["Expo EAS Build\n(iOS / Android)"]
     end
 
@@ -55,10 +55,10 @@ flowchart TB
         APNS["APNs\n(Push — iOS)"]
     end
 
-    Mobile -->|HTTPS REST| Render
-    Mobile -->|WSS| Render
-    AdminPortal -->|HTTPS REST| Render
-    Render --> Gateway & WS
+    Mobile -->|HTTPS REST| Railway
+    Mobile -->|WSS| Railway
+    AdminPortal -->|HTTPS REST| Railway
+    Railway --> Gateway & WS
     Gateway --> AuthSvc & UserSvc & UnivSvc & QASvc & ReviewSvc & ChatSvc & VerifSvc & NotifSvc & ModerationSvc & StorageSvc
     WS --> ChatSvc & NotifSvc
     AuthSvc --> Upstash
@@ -125,7 +125,7 @@ mobile/src/
 ## 3. Backend API
 
 **Technology:** NestJS (TypeScript), strict mode  
-**Hosting:** Render (auto-deploy from GitHub)
+**Hosting:** Railway (auto-deploy from GitHub)
 
 ### REST API conventions
 
@@ -343,9 +343,9 @@ flowchart TB
         Admins[Admin Browser]
     end
 
-    subgraph hosting [Hosting — Render]
-        API[NestJS API\nRender Web Service]
-        AdminApp[Admin Next.js\nRender Static / Serverless]
+    subgraph hosting [Hosting — Railway]
+        API[NestJS API\nRailway Service]
+        AdminApp[Admin Next.js\nRailway Service]
     end
 
     subgraph supabase [Supabase]
@@ -397,5 +397,11 @@ flowchart TB
 | Object storage | Supabase Storage | AWS S3 (extra account), Cloudinary (cost at scale) |
 | Push | FCM + APNs via backend | Expo Push (abstraction loss at scale) |
 | OTP provider | Twilio Verify | AWS SNS (higher latency in IN region), Firebase Phone Auth (mobile SDK lock-in) |
-| Backend hosting | Render | Railway (pricing), Fly.io (ops complexity for MVP) |
+| Backend hosting | ~~Render~~ → **Railway** (superseded, see below) | Railway (pricing), Fly.io (ops complexity for MVP) |
 | Database | Supabase PostgreSQL | AWS RDS (ops overhead), PlanetScale (MySQL only) |
+
+> **Backend hosting superseded:** the project actually deployed on Render
+> only briefly (or never fully) before moving to Railway — production has
+> been Railway (project "Uniscope Mobile", service `uniscope`) for some
+> time now. The stale `render.yaml` service descriptor this left behind in
+> the repo root was deleted; see `ai/SECURITY.md` § S-1.

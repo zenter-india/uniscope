@@ -30,7 +30,8 @@ export const firebaseProvider: Provider = {
     const projectId = configService.getOrThrow<string>('firebase.projectId');
 
     // Prefer an inline base64 key (works on hosts with no "secret files"
-    // feature, e.g. Railway) over the mounted-file path (Render, local dev).
+    // feature, e.g. Railway, which is production) over the mounted-file
+    // path (local dev only now — Render is no longer used).
     const keyBase64 = configService.get<string>('firebase.serviceAccountKeyBase64');
     let serviceAccountJson: Record<string, unknown>;
 

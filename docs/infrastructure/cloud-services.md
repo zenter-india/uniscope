@@ -30,11 +30,13 @@
   - `message-media` — Chat images/files (private, pre-signed URLs, 90-day retention)
 - **Access:** service-role key (server-side only — never exposed to clients)
 
-## Backend Hosting: Render
+## Backend Hosting: Railway
 
-- Auto-deploy from GitHub (`develop` → staging, `main` → production)
-- Environment variables managed in Render dashboard
-- **Dashboard:** [dashboard.render.com](https://dashboard.render.com)
+- Project "Uniscope Mobile", service `uniscope`, environment `production`
+- Auto-deploy from GitHub
+- Environment variables managed directly in the Railway dashboard — not
+  committed to git; build/deploy commands come from `backend/railway.toml`
+- **Dashboard:** [railway.app](https://railway.app)
 
 ## Mobile: Expo + EAS Build
 

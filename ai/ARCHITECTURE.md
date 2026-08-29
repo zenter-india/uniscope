@@ -20,7 +20,6 @@ uniscope/                    npm workspaces monorepo
 ├── docs/                    architecture / ADRs / standards
 ├── infrastructure/          docker-compose (local), deployment placeholder
 ├── ai/                      this context package
-├── render.yaml              Render service descriptor (see § Infrastructure)
 ├── CLAUDE.md / AGENTS.md    long-form project history (near-duplicates)
 └── package.json             workspaces: backend, admin, web
 ```
@@ -428,14 +427,17 @@ cost field stale while the ledger is correct; the ledger is the source of truth.
 
 **Backend hosting (production)** — Railway, project "Uniscope Mobile",
 service `uniscope`, environment `production`, public domain
-`uniscope-production.up.railway.app`. Deploys from Git.
+`uniscope-production.up.railway.app`. Deploys from Git, build/deploy
+commands from `backend/railway.toml`. Environment variables are managed
+directly in the Railway dashboard — not committed to git.
 
-**`render.yaml` (repository root)** — a Render service descriptor is committed
-and configured for a `uniscope-backend` web service with health check
-`/health`. Whether Render is still in use, or is vestigial from an earlier
-migration, is UNKNOWN — HUMAN INPUT REQUIRED.
-**It pins `OTP_PROVIDER_TYPE: mock` as a literal value under
-`NODE_ENV: production`.** See `SECURITY.md` § Finding S-1.
+**`render.yaml` (repository root) — REMOVED.** A stale Render service
+descriptor was committed here, left over from before the project moved to
+Railway. It pinned `OTP_PROVIDER_TYPE: mock` as a literal value under
+`NODE_ENV: production` (see `SECURITY.md` § Finding S-1, now resolved) —
+harmless only because Render was never actually the deploy target, but
+confusing and risky to leave in place. Deleted rather than fixed, since
+Render isn't used at all.
 
 **Public web hosting** — Vercel, team `uniscope2`, project `uniscope`,
 production branch `prod/web-enrollment-site`, Root Directory `web`, serving

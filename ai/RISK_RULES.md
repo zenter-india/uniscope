@@ -70,8 +70,8 @@ Do not merge on an agent's own judgement.
   Podfile/SPM changes
 - **Permissions**: adding, removing, or changing any runtime permission or its
   usage-description string
-- **Production configuration**: environment variables, `render.yaml`,
-  Railway/Vercel project settings, domain routing
+- **Production configuration**: environment variables, Railway project
+  settings, domain routing
 - **Rate limiting and throttling** thresholds
 - Dependency **major** upgrades, or any change touching the Agora, Firebase,
   Stream, or Razorpay SDKs

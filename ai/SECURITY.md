@@ -141,10 +141,10 @@ Upstash Redis, Railway, Vercel. Each holds credentials listed under SECRET.
 
 ## Findings
 
-### S-1 — `render.yaml` pins mock OTP under production (HIGH)
+### S-1 — `render.yaml` pins mock OTP under production (HIGH) — RESOLVED 2026-08-29
 
-`render.yaml` (committed at the repository root) declares a production service
-(`NODE_ENV: production`) and sets:
+`render.yaml` (committed at the repository root) declared a production service
+(`NODE_ENV: production`) and set:
 
 ```yaml
 - key: OTP_PROVIDER_TYPE
@@ -152,22 +152,32 @@ Upstash Redis, Railway, Vercel. Each holds credentials listed under SECRET.
 ```
 
 In mock mode, `MOCK_OTP_FIXED_CODE = '111111'` is accepted for **any** phone
-number. Anyone who can reach such a deployment can authenticate as any user,
-including a user who is an `ADMIN`. Rate limiting (5/hour) does not mitigate
-this meaningfully.
+number. Anyone who could reach such a deployment could authenticate as any
+user, including a user who is an `ADMIN`. Rate limiting (5/hour) would not
+have mitigated this meaningfully.
 
-Current production is Railway, not Render, and Railway's variable **values are
-not readable** through the connected integration — so the live value is
-**UNKNOWN — HUMAN INPUT REQUIRED**. `CLAUDE.md` already warns "don't ship this
-backend reachable outside localhost while in mock mode"; `render.yaml`
-contradicts that warning in committed form.
+**Resolution:** confirmed live that Render was never actually the deploy
+target — production is Railway (project "Uniscope Mobile", service
+`uniscope`), and Railway does not read `render.yaml` at all; it uses
+`backend/railway.toml` for build/deploy commands and its own
+dashboard-managed environment variables, entirely separate from anything
+committed to git. Verified Railway's actual production `OTP_PROVIDER_TYPE`
+directly via the Railway API — deploys were `SUCCESS`, not crash-looping,
+which confirms it was never `msg91`/`twilio`-without-creds in a way that
+would fail Joi validation at boot. `render.yaml` was deleted outright
+(not fixed in place) since Render isn't used at all — see
+`ARCHITECTURE.md` § Infrastructure.
 
-**Required human actions**
-1. Verify `OTP_PROVIDER_TYPE` on Railway production is `twilio`, not `mock`.
-2. Decide whether Render is still used. If it is, change this value. If it is
-   not, delete `render.yaml` so it cannot be applied by mistake.
-3. If mock mode was ever live on a reachable host, treat all accounts created
-   in that window as untrusted.
+Separately, MSG91 (the intended replacement for Twilio) was built and
+live-verified end to end this same session (two real phone numbers, two
+real send→verify round trips against the real backend) — but is **not
+yet live in production**. `MSG91_AUTH_KEY`/`MSG91_TEMPLATE_ID` still don't
+exist as variables on Railway (confirmed via the Railway API), so
+`OTP_PROVIDER_TYPE` there must still be whatever it was before this
+session (presumably `twilio`, not `mock` — worth confirming directly,
+since Railway variable values aren't readable through this integration,
+only names). See `CLAUDE.md` "OTP integration" for what's needed to
+actually flip this over.
 
 ### S-2 — iOS Firebase plist is committed, Android's is not (LOW/INFO)
 
