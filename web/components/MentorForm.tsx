@@ -268,6 +268,13 @@ export function MentorForm({ onExit }: { onExit: () => void }) {
   // back to the generic UG/PG/Doctorate/Others list.
   const degreeOptions: readonly string[] =
     form.stream === "Medical" ? DEGREES : (DEGREES_BY_STREAM[form.stream] ?? DEFAULT_NON_MEDICAL_DEGREES);
+  // Doctorate and Others have no real college dataset of their own yet in
+  // any stream (a dropdown/search list for them is planned once that data
+  // exists — see the College field's STREAMS_WITH_COLLEGE_DATA branch
+  // below), so both fall back to a plain free-text College field even in
+  // Engineering/Law/Dental, which otherwise have real seeded college data
+  // for their other degrees.
+  const isDoctorateOrOthersDegree = form.degree === "Doctorate" || form.degree === "Others";
   const curatedDegree = CURATED_DEGREE_MAP_BY_STREAM[form.stream]?.[form.degree];
   const hasCuratedData = curatedDegree !== undefined;
   const flatSpecializationOptions = FLAT_SPECIALIZATION_LISTS[form.stream]?.[form.degree];
@@ -717,7 +724,7 @@ export function MentorForm({ onExit }: { onExit: () => void }) {
                 }}
               />
             </Field>
-          ) : STREAMS_WITH_COLLEGE_DATA.has(form.stream) ? (
+          ) : STREAMS_WITH_COLLEGE_DATA.has(form.stream) && !isDoctorateOrOthersDegree ? (
             <Field label="College / university">
               <CollegeSearch
                 gold
@@ -731,11 +738,16 @@ export function MentorForm({ onExit }: { onExit: () => void }) {
               />
             </Field>
           ) : (
-            // No seeded college data exists yet for this stream (to be
-            // uploaded later, per the user), so this is a plain free-text
-            // field with no dropdown/autocomplete list, rather than
-            // CollegeSearch (which without a stream filter would surface
-            // irrelevant colleges from whichever stream does have data).
+            // No seeded college data exists yet for this stream+degree --
+            // either the whole stream has none uploaded yet (to be added
+            // later, per the user), or (Engineering/Law/Dental
+            // specifically) it's Doctorate/Others, which have no college
+            // dataset of their own even though this stream's other
+            // degrees do (see isDoctorateOrOthersDegree above) -- so this
+            // is a plain free-text field with no dropdown/autocomplete
+            // list, rather than CollegeSearch (which without a stream
+            // filter would surface irrelevant colleges from whichever
+            // stream does have data).
             <Field label="College / university">
               <TextInput
                 gold
@@ -802,7 +814,7 @@ export function MentorForm({ onExit }: { onExit: () => void }) {
                   // "search = everything" distinction instead of losing
                   // it to a single always-merged list.
                   options={
-                    form.degree === "Doctorate" || form.degree === "Others"
+                    isDoctorateOrOthersDegree
                       ? [...MEDICAL_SPECIALIZATIONS]
                       : SPECIALIZATION_SUGGESTION_STREAMS.has(form.stream) && form.specialization.trim()
                         ? Array.from(new Set([...browseSpecializations, ...allSpecializationsForDegree])).sort()
