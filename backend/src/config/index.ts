@@ -19,6 +19,9 @@ export type { RedisConfig } from './redis.config.js';
 export { twilioConfig } from './twilio.config.js';
 export type { TwilioConfig } from './twilio.config.js';
 
+export { msg91Config } from './msg91.config.js';
+export type { Msg91Config } from './msg91.config.js';
+
 export { razorpayConfig } from './razorpay.config.js';
 export type { RazorpayConfig } from './razorpay.config.js';
 

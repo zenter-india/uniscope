@@ -8,7 +8,7 @@ import { AuthController } from './auth.controller.js';
 import { AuthService } from './auth.service.js';
 import { JwtAuthGuard } from './guards/jwt-auth.guard.js';
 import { RolesGuard } from './guards/roles.guard.js';
-import { MockOtpProvider, OTP_PROVIDER, TwilioOtpProvider } from './otp/index.js';
+import { MockOtpProvider, Msg91OtpProvider, OTP_PROVIDER, TwilioOtpProvider } from './otp/index.js';
 import { OtpService } from './otp.service.js';
 import { TokenService } from './token.service.js';
 import { JwtStrategy } from './strategies/jwt.strategy.js';
@@ -31,17 +31,21 @@ import { JwtStrategy } from './strategies/jwt.strategy.js';
     JwtAuthGuard,
     RolesGuard,
     TwilioOtpProvider,
+    Msg91OtpProvider,
     MockOtpProvider,
     {
       provide: OTP_PROVIDER,
-      inject: [ConfigService, TwilioOtpProvider, MockOtpProvider],
+      inject: [ConfigService, TwilioOtpProvider, Msg91OtpProvider, MockOtpProvider],
       useFactory: (
         config: ConfigService,
         twilio: TwilioOtpProvider,
+        msg91: Msg91OtpProvider,
         mock: MockOtpProvider,
       ) => {
         const type = config.get<string>('OTP_PROVIDER_TYPE') ?? 'mock';
-        return type === 'twilio' ? twilio : mock;
+        if (type === 'twilio') return twilio;
+        if (type === 'msg91') return msg91;
+        return mock;
       },
     },
   ],

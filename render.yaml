@@ -32,6 +32,11 @@ services:
         sync: false
       - key: REDIS_URL
         sync: false
+      # Still `mock` deliberately — flip to `twilio` or `msg91` only once
+      # that provider's creds below are the real, live-tested values (see
+      # CLAUDE.md "OTP integration"). Changing this value alone doesn't
+      # touch a value already set directly in the Render dashboard for the
+      # same key — update it there too, not just here.
       - key: OTP_PROVIDER_TYPE
         value: mock
       - key: TWILIO_ACCOUNT_SID
@@ -39,6 +44,10 @@ services:
       - key: TWILIO_AUTH_TOKEN
         sync: false
       - key: TWILIO_VERIFY_SERVICE_SID
+        sync: false
+      - key: MSG91_AUTH_KEY
+        sync: false
+      - key: MSG91_TEMPLATE_ID
         sync: false
       - key: STREAM_API_KEY
         sync: false

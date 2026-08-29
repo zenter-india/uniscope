@@ -42,7 +42,7 @@ export const validationSchema = Joi.object({
   REDIS_OTP_TTL: Joi.number().integer().positive().default(600),
 
   // OTP provider
-  OTP_PROVIDER_TYPE: Joi.string().valid('twilio', 'mock').default('mock'),
+  OTP_PROVIDER_TYPE: Joi.string().valid('twilio', 'msg91', 'mock').default('mock'),
 
   // Twilio Verify (required when OTP_PROVIDER_TYPE=twilio)
   TWILIO_ACCOUNT_SID: Joi.string().when('OTP_PROVIDER_TYPE', {
@@ -63,6 +63,20 @@ export const validationSchema = Joi.object({
   // Delivery channel for Twilio Verify OTPs ('whatsapp' requires the
   // Verify service to have a WhatsApp sender/sandbox configured).
   OTP_CHANNEL: Joi.string().valid('sms', 'whatsapp').default('sms'),
+
+  // MSG91 OTP (required when OTP_PROVIDER_TYPE=msg91) — templateId must be
+  // a DLT-approved OTP template from the MSG91 panel, an India SMS
+  // regulatory requirement independent of MSG91 itself.
+  MSG91_AUTH_KEY: Joi.string().when('OTP_PROVIDER_TYPE', {
+    is: 'msg91',
+    then: Joi.required(),
+    otherwise: Joi.optional(),
+  }),
+  MSG91_TEMPLATE_ID: Joi.string().when('OTP_PROVIDER_TYPE', {
+    is: 'msg91',
+    then: Joi.required(),
+    otherwise: Joi.optional(),
+  }),
 
   // Razorpay — wallet topups
   RAZORPAY_KEY_ID: Joi.string().default(''),
