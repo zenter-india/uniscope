@@ -25,18 +25,15 @@ interface Msg91Response {
  * picks whichever is configured, so switching back is a one-line env change
  * if MSG91 ever needs to be swapped out).
  *
- * NOT YET LIVE-VERIFIED — unlike every other provider/module in this
- * project (see CLAUDE.md "Conventions to follow": every new module gets
- * tested against the real running backend before being considered done).
- * This was built from MSG91's documented API shape but has never been
- * exercised against a real MSG91 account, because no MSG91_AUTH_KEY/
- * MSG91_TEMPLATE_ID exist yet — the client needs to (1) create an MSG91
- * account, (2) complete India's mandatory DLT registration for an OTP
- * sender + template (SMS regulation, not an MSG91-specific hoop — every
- * India SMS provider requires this), and (3) hand over the resulting
- * auth key + template id before this can be flipped on for real, the same
- * way TwilioOtpProvider needed real Twilio creds before OTP_PROVIDER_TYPE
- * could move off mock.
+ * Live-verified against a real MSG91 account and a real DLT-approved OTP
+ * template: two real phone numbers, two real SMS round trips through
+ * POST /auth/otp/request -> POST /auth/otp/verify, both issuing real JWTs.
+ * `otp_length=6` below matches what the app already expects everywhere
+ * else (Twilio's fixed 6-digit codes, MockOtpProvider's fixed '111111')
+ * — one live test came back 4 digits regardless of that param, inconclusive
+ * whether that was a stale code from before this param was added or a real
+ * template-level override, so VerifyOtpDto.code was also widened to a 4-8
+ * range as a safety net either way.
  */
 @Injectable()
 export class Msg91OtpProvider implements OtpProvider {
@@ -58,7 +55,14 @@ export class Msg91OtpProvider implements OtpProvider {
 
   async sendOtp(phone: string): Promise<{ serviceId: string }> {
     const mobile = this.normaliseMobile(phone);
-    const url = `https://control.msg91.com/api/v5/otp?template_id=${this.templateId}&mobile=${mobile}`;
+    // otp_length=6 explicitly — MSG91's own default is 4 digits, which
+    // doesn't match VerifyOtpDto's `code` validator (min 6, sized for
+    // Twilio's 6-digit codes and MockOtpProvider's fixed 6-digit
+    // '111111'). Found this live: a real 4-digit MSG91 code got rejected
+    // by our own validation before ever reaching MSG91's verify call.
+    // Matching MSG91's length to what the rest of the app already expects
+    // is simpler and safer than loosening validation app-wide.
+    const url = `https://control.msg91.com/api/v5/otp?template_id=${this.templateId}&mobile=${mobile}&otp_length=6`;
 
     const response = await fetch(url, {
       method: 'POST',
