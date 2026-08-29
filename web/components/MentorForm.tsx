@@ -177,20 +177,39 @@ const COLLEGE_SEARCH_LEVEL_MAP: Record<string, Record<string, string>> = {
   Dental: { BDS: "UG" },
 };
 
-// Streams whose College field has real data (STREAMS_WITH_COLLEGE_DATA)
-// but no specialization dataset uploaded yet — per explicit request, the
-// Specialization field still shows (so the field exists, distinguishing
-// "we don't have this yet" from BDS's "this degree has no concept of
-// specializations at all"), just empty/disabled until real data arrives.
-// Applies to every degree within the stream EXCEPT: (a) a degree that
-// already has real curated data (hasCuratedData — e.g. Dental+MDS —
-// guarded below so the two Specialization renderers never both fire for
-// the same degree), and (b) BDS specifically (see
-// EMPTY_SPECIALIZATION_EXCLUDED_DEGREES), which — like the original
-// Engineering-only version of this set — has no specialization concept
-// at all, not just "not uploaded yet".
-const STREAMS_WITH_EMPTY_SPECIALIZATION = new Set(["Engineering", "Law", "Dental"]);
-const EMPTY_SPECIALIZATION_EXCLUDED_DEGREES = new Set(["BDS"]);
+// Streams whose Specialization field falls back to a plain free-text
+// input (see hasFreeTextSpecialization) for any degree with no curated
+// or flat specialization dataset of its own. Originally just
+// Engineering/Law/Dental (whose College field has real data via
+// STREAMS_WITH_COLLEGE_DATA but not every degree has specialization
+// data yet); extended to Commerce & Business, Design, and Others per
+// explicit request — these three have no College data either (plain
+// free-text College field too, same as any other stream absent from
+// STREAMS_WITH_COLLEGE_DATA), but should still collect a typed
+// specialization for every degree except UG. Applies to every degree in
+// the stream EXCEPT: (a) a degree that already has real curated data
+// (hasCuratedData — e.g. Dental+MDS — guarded below so the two
+// Specialization renderers never both fire for the same degree), and
+// (b) whatever's in EMPTY_SPECIALIZATION_EXCLUDED_DEGREES, which — like
+// BDS — has no specialization concept at all, not just "not uploaded
+// yet". "UG" is degree-name-keyed rather than stream-keyed because
+// every non-Medical, non-Dental, non-Engineering stream shares the same
+// literal "UG" option (DEFAULT_NON_MEDICAL_DEGREES) — this is also
+// consistent with Medical's own UG (MEDICAL_SPECIALIZATIONS is
+// documented as "any degree except UG") and Law's UG (already excluded
+// automatically since it has real curated data, never reaching this
+// fallback at all) — UG having no specialization concept is already the
+// rule everywhere else in this form, this just makes it explicit for
+// the three streams being added here too, rather than a new one.
+const STREAMS_WITH_EMPTY_SPECIALIZATION = new Set([
+  "Engineering",
+  "Law",
+  "Dental",
+  "Commerce & Business",
+  "Design",
+  "Others",
+]);
+const EMPTY_SPECIALIZATION_EXCLUDED_DEGREES = new Set(["BDS", "UG"]);
 
 // Stream+degree combos with a real, flat specialization list (not tied
 // to any particular college — unlike CURATED_DEGREE_MAP_BY_STREAM's
