@@ -184,14 +184,19 @@ export class EnrollmentsService {
   /**
    * Mirrors SPECIALIZATION_SUGGESTION_STREAMS in
    * web/components/MentorForm.tsx -- must be kept in sync by hand, same
-   * caveat as CURATED_PROGRAM_NAME_BY_STREAM_DEGREE below. Deliberately
-   * Medical-only for now, per explicit request: every other curated
-   * stream (Dental, Engineering, Law) already has real per-college
-   * specialization data (see scripts/data/README.md) and could be added
-   * here later, but only once asked to extend this to it -- not on this
-   * function's own judgment that the data would support it.
+   * caveat as CURATED_PROGRAM_NAME_BY_STREAM_DEGREE below. Started
+   * Medical-only (verified live end to end, including that Dental/
+   * Engineering/Law stayed on the old "college's own list only"
+   * behavior while this was Medical-scoped); now extended to every
+   * stream with a curated per-college specialization dataset (see
+   * scripts/data/README.md), per explicit request.
    */
-  private static readonly SPECIALIZATION_SUGGESTION_STREAMS = new Set(['Medical']);
+  private static readonly SPECIALIZATION_SUGGESTION_STREAMS = new Set([
+    'Medical',
+    'Dental',
+    'Engineering',
+    'Law',
+  ]);
 
   private static readonly CURATED_PROGRAM_NAME_BY_STREAM_DEGREE: Record<string, Record<string, string>> = {
     Medical: {
