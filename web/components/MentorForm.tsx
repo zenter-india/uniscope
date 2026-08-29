@@ -251,6 +251,17 @@ export function MentorForm({ onExit }: { onExit: () => void }) {
   const hasCuratedData = curatedDegree !== undefined;
   const flatSpecializationOptions = FLAT_SPECIALIZATION_LISTS[form.stream]?.[form.degree];
   const hasFlatSpecializationList = flatSpecializationOptions !== undefined;
+  // Mirrors the JSX condition below that renders the plain free-text
+  // Specialization field for a STREAMS_WITH_EMPTY_SPECIALIZATION
+  // stream+degree with no curated or flat dataset of its own (today:
+  // only Engineering's and Law's Doctorate/Others) -- computed once here
+  // so validateStep() and the submit payload agree with what's actually
+  // rendered, instead of drifting from a copy of the same condition.
+  const hasFreeTextSpecialization =
+    STREAMS_WITH_EMPTY_SPECIALIZATION.has(form.stream) &&
+    !hasCuratedData &&
+    !hasFlatSpecializationList &&
+    !EMPTY_SPECIALIZATION_EXCLUDED_DEGREES.has(form.degree);
   // See BROWSE_DEGREES — these use the full browse+search picker (see
   // UniversitiesService.findCurated's browse mode) rather than the
   // curated-top-30-+-Other pattern DM-MCh/Diploma still use.
@@ -374,7 +385,9 @@ export function MentorForm({ onExit }: { onExit: () => void }) {
         stream: (form.stream === "Others" ? form.streamOther.trim() : form.stream) || undefined,
         degree: (form.degree === "Others" ? form.degreeOther.trim() : form.degree) || undefined,
         specialization:
-          hasCuratedData || hasFlatSpecializationList ? form.specialization.trim() || undefined : undefined,
+          hasCuratedData || hasFlatSpecializationList || hasFreeTextSpecialization
+            ? form.specialization.trim() || undefined
+            : undefined,
         currentStatus: form.currentStatus || undefined,
         yearOfStudy:
           form.currentStatus === "Currently Studying" && form.yearOfStudy
@@ -821,16 +834,26 @@ export function MentorForm({ onExit }: { onExit: () => void }) {
               />
             </Field>
           )}
-          {STREAMS_WITH_EMPTY_SPECIALIZATION.has(form.stream) &&
-            !hasCuratedData &&
-            !hasFlatSpecializationList &&
-            !EMPTY_SPECIALIZATION_EXCLUDED_DEGREES.has(form.degree) && (
-              <Field label="Specialization" hint="Coming soon — specialization data for this stream is being added">
-                <Select gold value="" disabled onChange={() => {}}>
-                  <option value="">Coming soon</option>
-                </Select>
-              </Field>
-            )}
+          {hasFreeTextSpecialization && (
+            // No curated or flat specialization dataset exists for this
+            // stream+degree (today: only Engineering's and Law's
+            // Doctorate/Others -- every other degree in
+            // STREAMS_WITH_EMPTY_SPECIALIZATION's streams now has real
+            // data). Was previously a disabled "Coming soon" select with
+            // nothing pickable; per explicit request, replaced with a
+            // plain free-text input instead -- same pattern as the
+            // curated "Other college" TextInput above -- so the mentor
+            // can still record their specialization rather than being
+            // blocked or shown a dead end.
+            <Field label="Specialization">
+              <TextInput
+                gold
+                placeholder="Enter your specialization"
+                value={form.specialization}
+                onChange={(e) => set("specialization", e.target.value)}
+              />
+            </Field>
+          )}
         </div>
       )}
 
