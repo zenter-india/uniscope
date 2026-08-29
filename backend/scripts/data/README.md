@@ -1809,6 +1809,55 @@ dedup/remediation script first, then re-seed both Programmes files
 above), then verify no new `University` row count regression for
 Engineering.
 
+**Remediated against production — verified.** `fix-btech-mtech-
+programmes-duplicates.mjs` real run: 1,154 groups processed, 921 renamed
+in place (no duplicate existed, just a messy AISHE-only name), 235
+confirmed duplicates merged (specializations unioned, never
+overwritten) + deactivated, 413 `Program` rows migrated in total (some
+colleges had both `B.TECH` and `M.TECH` to migrate off the same
+duplicate row — e.g. Sree Rama Engineering College, Bonam Venkata
+Chalamayya Institute). Matched the dry-run exactly.
+
+Both Programmes files re-seeded against the corrected data straight
+after: B.Tech 3,403 matched + 4 created = 3,407 (exactly the corrected
+file's record count — the earlier 3,411→3,407 merge accounted for);
+M.Tech 2,059 matched + 1 created = 2,060 (M.Tech's real run landed one
+fewer "created" than its own dry-run predicted, because B.Tech's real
+run — which ran first — had already created 3 of the 4 colleges M.Tech
+also needed, so M.Tech matched those instead of re-creating them; a
+sequencing detail, not a bug). The 5 total newly-created rows across
+both real runs were individually checked, not just counted: 3 are
+genuinely distinct NIT campuses that all share the exact same official
+name "National Institute of Technology" with only city/state to tell
+them apart (Cachar/Assam, Dakshina Kannada/Karnataka, Kozhikode/Kerala
+— the same "identical official name, different real campus" pattern
+already seen with "Government Engineering College"), 1 is Dairy Science
+College (Bangalore, Karnataka), and 1 — "University Institute of
+Technology" (Bhopal) — turned out to be a genuine near-duplicate of the
+already-existing `"UNIVERSITY INSTITUTE OF TECHNOLOGY RGPV"` (Bhopal)
+row, missed by the automated fix because it had no comma to truncate in
+the first place (the automated fix only ever looked at comma-containing
+names). Fixed by hand the same way: the duplicate's sole `M.TECH`
+program (5 specializations, already an exact-match subset of the
+canonical row's own `M.TECH` program) deactivated, the duplicate
+`University` row deactivated. A separate, similarly-spelled
+`"UNIVERSITY INSTITUTE OF TECHNOLOGY, RGPV"` row in Shahdol was checked
+and correctly left alone — RGPV genuinely runs multiple UIT campuses
+across MP, so that one's a real distinct branch, not a duplicate.
+
+Final verified counts:
+`SELECT count(*) FROM universities WHERE stream = 'Engineering' AND is_active = true` = 4,494;
+`SELECT count(*) FROM programs WHERE name = 'B.TECH' AND is_active = true` = 3,424;
+`SELECT count(*) FROM programs WHERE name = 'M.TECH' AND is_active = true` = 2,078.
+Spot-checked two of the original 16 quote-fixed rows (Jai Narain
+College of Technology, Samrat Ashok Technological Institute) directly:
+each now has exactly one active row (the canonical, clean-named one)
+and one deactivated row (the former duplicate, name now also
+quote-fixed but otherwise untouched) — confirming the dedup and the
+quote fix compose correctly together, and that an unrelated
+same-name-different-institution row (Jai Narain *Vyas University*,
+Jodhpur) was correctly left alone throughout.
+
 ## Refreshing on demand — `refresh_ug.py` / `refresh_pg.py`
 
 The steps above are also available as two standalone, re-runnable scripts
