@@ -210,6 +210,21 @@ const EMPTY_SPECIALIZATION_EXCLUDED_DEGREES = new Set(["BDS"]);
 // for its Doctorate/Others.
 const FLAT_SPECIALIZATION_LISTS: Record<string, Record<string, readonly string[]>> = {};
 
+// Streams where the Specialization field, once a mentor starts typing,
+// widens its search to every specialization known anywhere in that
+// stream+degree's dataset (not just the picked college's own list) --
+// and where picking one of those "not on this college's own list yet"
+// options gets it added to that college's own list on submit (see
+// backend EnrollmentsService.mapSpecializationToCollege(), gated by its
+// own matching SPECIALIZATION_SUGGESTION_STREAMS constant -- the two
+// must be kept in sync by hand, nothing enforces it). Deliberately
+// Medical-only for now, per explicit request -- every other curated
+// stream (Dental, Engineering, Law) keeps the plain "picked college's
+// own list only, always" behavior this whole mechanism replaced for
+// Medical. Add a stream here (and to the backend's matching set) only
+// when asked to extend this to it.
+const SPECIALIZATION_SUGGESTION_STREAMS = new Set(["Medical"]);
+
 export function MentorForm({ onExit }: { onExit: () => void }) {
   const wizard = useMultiStep(5);
   const [form, setForm] = useState<FormState>(EMPTY);
@@ -731,15 +746,36 @@ export function MentorForm({ onExit }: { onExit: () => void }) {
                   // MD/MS dataset), always in full regardless of which
                   // college is picked, per explicit request. Every other
                   // browse degree (MD/MS, PG, DNB, Diploma, DM/MCh) keeps
-                  // the normal behavior: the picked college's own list,
-                  // falling back to the full curated-dataset list only
-                  // when no college matched.
+                  // showing ONLY the picked college's own list by default
+                  // (untouched — same as before) so opening the field with
+                  // nothing typed still reads as "this college's real
+                  // specializations", not a mixed bag. Only once the
+                  // mentor actually starts typing does the option list
+                  // widen to include every other specialization known
+                  // anywhere in this stream+degree's dataset
+                  // (allSpecializationsForDegree) too — the curated
+                  // per-college data is necessarily incomplete, so a real
+                  // specialization their college just isn't mapped to yet
+                  // should still be searchable/pickable once they're
+                  // typing, not just accepted as unlisted free text.
+                  // Picking one of those "not on this college's own list
+                  // yet" options is what backend EnrollmentsService
+                  // .mapSpecializationToCollege() maps onto the college's
+                  // own Program on submit, so it's pre-populated next
+                  // time. SearchableCombobox shows `options` in full when
+                  // its own value is empty and filters it once there's
+                  // text (see that component) — mirroring that split here
+                  // is what keeps the "browse = college only" /
+                  // "search = everything" distinction instead of losing
+                  // it to a single always-merged list.
                   options={
                     form.degree === "Doctorate" || form.degree === "Others"
                       ? [...MEDICAL_SPECIALIZATIONS]
-                      : browseSpecializations.length > 0
-                        ? browseSpecializations
-                        : allSpecializationsForDegree
+                      : SPECIALIZATION_SUGGESTION_STREAMS.has(form.stream) && form.specialization.trim()
+                        ? Array.from(new Set([...browseSpecializations, ...allSpecializationsForDegree])).sort()
+                        : browseSpecializations.length > 0
+                          ? browseSpecializations
+                          : allSpecializationsForDegree
                   }
                   disabled={!form.collegeName}
                   placeholder={form.collegeName ? "Select or type to search…" : "Select a college first"}

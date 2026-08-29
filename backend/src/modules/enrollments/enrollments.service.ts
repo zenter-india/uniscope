@@ -169,10 +169,121 @@ export class EnrollmentsService {
     });
   }
 
+  /**
+   * Mirrors CURATED_DEGREE_MAP_BY_STREAM in web/components/MentorForm.tsx
+   * -- the form's raw degree label (what dto.degree actually carries,
+   * e.g. "PG", "B.Tech/B.E", "UG") is NOT the same string as the
+   * Program.name that degree's curated dataset was seeded under (e.g.
+   * "MD/MS", "B.Tech", "Law-UG") -- only a few of the ten curated degrees
+   * happen to coincide (DNB, Medical's "Diploma", MDS, DM/MCh). Needed
+   * here so mapSpecializationToCollege looks up the *actual* Program row
+   * instead of silently finding nothing for most streams. There is
+   * nothing that enforces these two maps stay identical -- if
+   * MentorForm.tsx's map changes, this one needs the same edit by hand.
+   */
+  /**
+   * Mirrors SPECIALIZATION_SUGGESTION_STREAMS in
+   * web/components/MentorForm.tsx -- must be kept in sync by hand, same
+   * caveat as CURATED_PROGRAM_NAME_BY_STREAM_DEGREE below. Deliberately
+   * Medical-only for now, per explicit request: every other curated
+   * stream (Dental, Engineering, Law) already has real per-college
+   * specialization data (see scripts/data/README.md) and could be added
+   * here later, but only once asked to extend this to it -- not on this
+   * function's own judgment that the data would support it.
+   */
+  private static readonly SPECIALIZATION_SUGGESTION_STREAMS = new Set(['Medical']);
+
+  private static readonly CURATED_PROGRAM_NAME_BY_STREAM_DEGREE: Record<string, Record<string, string>> = {
+    Medical: {
+      DNB: 'DNB',
+      PG: 'MD/MS',
+      'MD/MS': 'MD/MS',
+      Doctorate: 'MD/MS',
+      Others: 'MD/MS',
+      'DM/MCh': 'DM/MCh',
+      Diploma: 'Diploma',
+    },
+    Dental: { MDS: 'MDS' },
+    Engineering: {
+      'B.Tech/B.E': 'B.Tech',
+      'M.Tech/M.E': 'M.Tech',
+      Diploma: 'Diploma-Engg',
+    },
+    Law: { UG: 'Law-UG', PG: 'Law-PG' },
+  };
+
+  /**
+   * "Learn as you go" for the curated per-college specialization datasets
+   * (see scripts/data/README.md) — they're necessarily incomplete, so a
+   * mentor whose real specialization isn't yet mapped to their specific
+   * college has to type it. If what they typed exactly matches (case-
+   * insensitive) a specialization already known *somewhere* in this
+   * stream+degree's overall dataset — a real, recognized value, not a
+   * typo or something we've never seen — and the picked college's own
+   * Program doesn't have it yet, add it there too (in its existing
+   * canonical casing), so the next mentor who picks this same college
+   * sees it directly instead of having to search the full list. An
+   * unrecognized value is never added — it stays exactly what it was, a
+   * plain string on this lead, with zero effect on the curated dataset.
+   * Best-effort and silent: this is a side-effect of lead submission, not
+   * the point of it, so any failure here must never fail the submission
+   * itself. A no-op for any stream not in SPECIALIZATION_SUGGESTION_STREAMS
+   * (Medical only, for now -- see that constant), and for any stream or
+   * degree with no curated per-college dataset at all -- there's simply
+   * nothing to map onto.
+   */
+  private async mapSpecializationToCollege(
+    universityId: string,
+    degree: string,
+    stream: string,
+    specialization: string,
+  ): Promise<void> {
+    if (!EnrollmentsService.SPECIALIZATION_SUGGESTION_STREAMS.has(stream)) return;
+    try {
+      const curatedName =
+        EnrollmentsService.CURATED_PROGRAM_NAME_BY_STREAM_DEGREE[stream]?.[degree] ?? degree;
+      const programName = curatedName.toUpperCase();
+      const program = await this.prisma.program.findUnique({
+        where: { universityId_name: { universityId, name: programName } },
+      });
+      if (!program) return;
+
+      const alreadyMapped = program.specializations.some(
+        (s) => s.toLowerCase() === specialization.toLowerCase(),
+      );
+      if (alreadyMapped) return;
+
+      const siblingPrograms = await this.prisma.program.findMany({
+        where: { name: programName, university: { stream } },
+        select: { specializations: true },
+      });
+      const canonical = siblingPrograms
+        .flatMap((p) => p.specializations)
+        .find((s) => s.toLowerCase() === specialization.toLowerCase());
+      if (!canonical) return; // not a recognized value -- leave the curated dataset alone
+
+      await this.prisma.program.update({
+        where: { id: program.id },
+        data: { specializations: { push: canonical } },
+      });
+    } catch {
+      // Best-effort only -- never let this break lead submission.
+    }
+  }
+
   async createMentorLead(
     dto: CreateMentorLeadDto,
   ): Promise<EnrollmentLeadAcknowledgement> {
     const universityId = await this.resolveUniversityId(dto.universityId);
+
+    if (universityId && dto.degree && dto.stream && dto.specialization?.trim()) {
+      await this.mapSpecializationToCollege(
+        universityId,
+        dto.degree,
+        dto.stream,
+        dto.specialization.trim(),
+      );
+    }
 
     const documentKey = dto.documentBase64
       ? await this.uploadDocument(dto.documentBase64)
