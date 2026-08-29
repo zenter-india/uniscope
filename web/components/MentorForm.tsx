@@ -182,11 +182,12 @@ const COLLEGE_SEARCH_LEVEL_MAP: Record<string, Record<string, string>> = {
 // or flat specialization dataset of its own. Originally just
 // Engineering/Law/Dental (whose College field has real data via
 // STREAMS_WITH_COLLEGE_DATA but not every degree has specialization
-// data yet); extended to Commerce & Business, Design, and Others per
-// explicit request — these three have no College data either (plain
-// free-text College field too, same as any other stream absent from
-// STREAMS_WITH_COLLEGE_DATA), but should still collect a typed
-// specialization for every degree except UG. Applies to every degree in
+// data yet); extended to Commerce & Business, Design, and Others, then
+// Arts & Humanities, per explicit request — these four have no College
+// data either (plain free-text College field too, same as any other
+// stream absent from STREAMS_WITH_COLLEGE_DATA), but should still
+// collect a typed specialization for every degree except UG. Applies to
+// every degree in
 // the stream EXCEPT: (a) a degree that already has real curated data
 // (hasCuratedData — e.g. Dental+MDS — guarded below so the two
 // Specialization renderers never both fire for the same degree), and
@@ -200,7 +201,7 @@ const COLLEGE_SEARCH_LEVEL_MAP: Record<string, Record<string, string>> = {
 // automatically since it has real curated data, never reaching this
 // fallback at all) — UG having no specialization concept is already the
 // rule everywhere else in this form, this just makes it explicit for
-// the three streams being added here too, rather than a new one.
+// the streams being added here too, rather than a new one.
 const STREAMS_WITH_EMPTY_SPECIALIZATION = new Set([
   "Engineering",
   "Law",
@@ -208,6 +209,7 @@ const STREAMS_WITH_EMPTY_SPECIALIZATION = new Set([
   "Commerce & Business",
   "Design",
   "Others",
+  "Arts & Humanities",
 ]);
 const EMPTY_SPECIALIZATION_EXCLUDED_DEGREES = new Set(["BDS", "UG"]);
 
