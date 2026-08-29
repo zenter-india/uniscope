@@ -217,13 +217,12 @@ const FLAT_SPECIALIZATION_LISTS: Record<string, Record<string, readonly string[]
 // options gets it added to that college's own list on submit (see
 // backend EnrollmentsService.mapSpecializationToCollege(), gated by its
 // own matching SPECIALIZATION_SUGGESTION_STREAMS constant -- the two
-// must be kept in sync by hand, nothing enforces it). Deliberately
-// Medical-only for now, per explicit request -- every other curated
-// stream (Dental, Engineering, Law) keeps the plain "picked college's
-// own list only, always" behavior this whole mechanism replaced for
-// Medical. Add a stream here (and to the backend's matching set) only
-// when asked to extend this to it.
-const SPECIALIZATION_SUGGESTION_STREAMS = new Set(["Medical"]);
+// must be kept in sync by hand, nothing enforces it). Started
+// Medical-only (verified live end to end, including that Dental/
+// Engineering/Law stayed on the old "college's own list only" behavior
+// while this was Medical-scoped); now extended to every stream with a
+// curated per-college specialization dataset, per explicit request.
+const SPECIALIZATION_SUGGESTION_STREAMS = new Set(["Medical", "Dental", "Engineering", "Law"]);
 
 export function MentorForm({ onExit }: { onExit: () => void }) {
   const wizard = useMultiStep(5);
