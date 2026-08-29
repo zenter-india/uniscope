@@ -201,7 +201,11 @@ const COLLEGE_SEARCH_LEVEL_MAP: Record<string, Record<string, string>> = {
 // automatically since it has real curated data, never reaching this
 // fallback at all) — UG having no specialization concept is already the
 // rule everywhere else in this form, this just makes it explicit for
-// the streams being added here too, rather than a new one.
+// the streams being added here too, rather than a new one. Arts &
+// Humanities' UG is the one exception — see
+// isExcludedSpecializationDegree's carve-out below, per explicit
+// request — so this set alone doesn't fully decide the outcome for UG
+// anymore, only combined with that per-stream override.
 const STREAMS_WITH_EMPTY_SPECIALIZATION = new Set([
   "Engineering",
   "Law",
@@ -279,6 +283,15 @@ export function MentorForm({ onExit }: { onExit: () => void }) {
   const hasCuratedData = curatedDegree !== undefined;
   const flatSpecializationOptions = FLAT_SPECIALIZATION_LISTS[form.stream]?.[form.degree];
   const hasFlatSpecializationList = flatSpecializationOptions !== undefined;
+  // UG has no specialization concept in every stream that reaches
+  // EMPTY_SPECIALIZATION_EXCLUDED_DEGREES (see that constant) — except
+  // Arts & Humanities, which per explicit request gets a Specialization
+  // field on UG too, unlike every other stream. A one-off carve-out
+  // rather than removing "UG" from the shared set entirely, since the
+  // set's exclusion is meant to stay the default for every other stream.
+  const isExcludedSpecializationDegree =
+    EMPTY_SPECIALIZATION_EXCLUDED_DEGREES.has(form.degree) &&
+    !(form.stream === "Arts & Humanities" && form.degree === "UG");
   // Mirrors the JSX condition below that renders the plain free-text
   // Specialization field for a STREAMS_WITH_EMPTY_SPECIALIZATION
   // stream+degree with no curated or flat dataset of its own (today:
@@ -289,7 +302,7 @@ export function MentorForm({ onExit }: { onExit: () => void }) {
     STREAMS_WITH_EMPTY_SPECIALIZATION.has(form.stream) &&
     !hasCuratedData &&
     !hasFlatSpecializationList &&
-    !EMPTY_SPECIALIZATION_EXCLUDED_DEGREES.has(form.degree);
+    !isExcludedSpecializationDegree;
   // See BROWSE_DEGREES — these use the full browse+search picker (see
   // UniversitiesService.findCurated's browse mode) rather than the
   // curated-top-30-+-Other pattern DM-MCh/Diploma still use.
