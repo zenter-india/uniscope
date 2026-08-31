@@ -137,8 +137,20 @@ class HomeScreen extends ConsumerWidget {
                               Flexible(
                                 child: Row(
                                   children: [
+                                    // White reverse-mark, not the full-color
+                                    // icon — the icon's navy portions
+                                    // vanished into the new navy canopy
+                                    // (navy-on-navy), confirmed live on a
+                                    // real device. A plain white silhouette,
+                                    // generated from the same alpha mask, is
+                                    // the standard fix for a logo on a dark
+                                    // brand color — every other usage of the
+                                    // full-color icon (splash, login,
+                                    // welcome, mentor dashboard, profile)
+                                    // still sits on a light background and
+                                    // is untouched.
                                     Image.asset(
-                                      'assets/logo/uniscope_icon.png',
+                                      'assets/logo/uniscope_icon_white.png',
                                       width: 44,
                                       height: 44,
                                       fit: BoxFit.contain,
