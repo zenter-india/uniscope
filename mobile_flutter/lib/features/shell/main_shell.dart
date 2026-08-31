@@ -35,12 +35,15 @@ class MainShell extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           const ActiveSessionDock(),
+          // Navy, matching the Home header — the same "Option B" duotone
+          // brand block, not just a one-off on the Home screen. Shared
+          // across every tab since MainShell is the app-wide bottom nav.
           Container(
             decoration: const BoxDecoration(
-              color: AppColors.surface,
+              color: AppColors.textPrimary,
               boxShadow: [
                 BoxShadow(
-                  color: Color(0x0D0F1D17),
+                  color: Color(0x33001A46),
                   blurRadius: 20,
                   offset: Offset(0, -4),
                 ),
@@ -94,7 +97,14 @@ class _TabButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = focused ? AppColors.primary : AppColors.textMuted;
+    // The active icon sits inside its own primaryLight pill, so `primary`
+    // still reads fine there (it's contrasting against that pale chip, not
+    // navy). The active *label*, though, sits directly on the navy bar with
+    // nothing behind it — plain `primary` there measures only 3.67:1 on
+    // navy (fails AA); `mintAccent` clears 9.56:1 (checked, not guessed).
+    // Inactive state keeps textMuted for both — 6.63:1 on navy, still fine.
+    final iconColor = focused ? AppColors.primary : AppColors.textMuted;
+    final labelColor = focused ? AppColors.mintAccent : AppColors.textMuted;
     return GestureDetector(
       onTap: onTap,
       behavior: HitTestBehavior.opaque,
@@ -112,7 +122,7 @@ class _TabButton extends StatelessWidget {
             child: Icon(
               focused ? item.activeIcon : item.icon,
               size: 24,
-              color: color,
+              color: iconColor,
             ),
           ),
           const SizedBox(height: 3),
@@ -120,7 +130,7 @@ class _TabButton extends StatelessWidget {
             item.label,
             style: TextStyle(
               fontSize: 11,
-              color: color,
+              color: labelColor,
               fontWeight: focused ? AppFont.bold : AppFont.medium,
             ),
           ),
