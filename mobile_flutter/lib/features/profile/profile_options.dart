@@ -369,7 +369,7 @@ const kMedicalDegrees = [
 ];
 const kDegreesByStream = <String, List<String>>{
   'Dental': ['BDS', 'MDS', 'Doctorate', 'Others'],
-  'Engineering': ['B.Tech/B.E', 'M.Tech/M.E', 'Doctorate', 'Others'],
+  'Engineering': ['B.Tech/B.E', 'M.Tech/M.E', 'Diploma', 'Doctorate', 'Others'],
 };
 const kDefaultNonMedicalDegrees = ['UG', 'PG', 'Doctorate', 'Others'];
 
