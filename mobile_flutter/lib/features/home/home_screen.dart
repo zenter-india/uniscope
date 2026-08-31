@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/network/mentors_api.dart';
@@ -39,12 +40,12 @@ class _CurvedTopClipper extends CustomClipper<Path> {
   bool shouldReclip(covariant _CurvedTopClipper oldClipper) => false;
 }
 
-/// Soft emerald halo traced along the exact same wave path as
-/// [_CurvedTopClipper], painted underneath the sheet, right at the seam
-/// where the solid navy canopy meets the white sheet below — the color
-/// change alone is already a hard, obvious edge now (navy vs white), so
-/// this is a finishing glow at that boundary rather than the load-bearing
-/// zone-marker it was when header and sheet used to be the same flat color.
+/// Soft teal halo traced along the exact same wave path as
+/// [_CurvedTopClipper], painted underneath the sheet. Since the header and
+/// sheet are now the same flat color, this stroke is the only thing that
+/// actually marks where one zone ends and the other begins — the portion
+/// above the curve line stays visible as a haze in the canopy area; the
+/// portion at/below it gets covered by the opaque sheet painted on top.
 class _WaveGlowPainter extends CustomPainter {
   const _WaveGlowPainter();
 
@@ -53,6 +54,9 @@ class _WaveGlowPainter extends CustomPainter {
     final path = Path()
       ..moveTo(0, _sheetCurveHeight)
       ..quadraticBezierTo(size.width / 2, 0, size.width, _sheetCurveHeight);
+    // Softer than the teal-wash version — a near-white page needs a much
+    // gentler cue than a strong teal glow, which would look like a stray
+    // colored smear rather than a subtle seam.
     final paint = Paint()
       ..color = AppColors.primary.withValues(alpha: 0.18)
       ..style = PaintingStyle.stroke
@@ -98,13 +102,24 @@ class HomeScreen extends ConsumerWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // ─── Canopy ─────────────────────────────────────────────
-              // Solid navy block (AppGradients.canopy) — the client-approved
-              // "Option B" direction: a real navy color block up top,
-              // pulled from the actual logo pixels, rather than the earlier
-              // light teal-tinted wash that read as "light and dull".
+              // The gradient is scoped to this container (not the whole
+              // screen) so the full teal→blue run resolves inside the
+              // canopy's own height — stretched screen-wide, the blue
+              // stop lands below the fold and only flat teal shows.
               Container(
                 width: double.infinity,
-                decoration: const BoxDecoration(gradient: AppGradients.canopy),
+                // Soft green wash concentrated behind the illustration
+                // (top-right), fading to plain background toward the
+                // bottom-left — not a full-page tint, just enough to seat
+                // the illustration in a sky-like backdrop like the
+                // reference, before the sheet below goes flat again.
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.bottomLeft,
+                    end: Alignment.topRight,
+                    colors: [AppColors.background, AppColors.primaryLight],
+                  ),
+                ),
                 padding: EdgeInsets.only(
                   top: MediaQuery.of(context).padding.top,
                   // Tightened from AppSpacing.md + AppRadius.xl — that much
@@ -114,13 +129,26 @@ class HomeScreen extends ConsumerWidget {
                 ),
                 child: Stack(
                   children: [
-                    // The decorative building illustration that used to sit
-                    // here was drawn in navy/teal for the old light "sky
-                    // wash" background — on the solid navy canopy (Option B)
-                    // it would render essentially invisible against its own
-                    // background color. Removed rather than recolored:
-                    // Option B's approved direction is a clean navy block,
-                    // no illustration.
+                    // Decorative only — sits behind the real header content
+                    // below, clipped to the canopy so it never bleeds into
+                    // the search bar or the sheet underneath.
+                    Positioned(
+                      // Below the logo/avatar row, not overlapping it —
+                      // the first attempt sat right on top of the avatar
+                      // and notification bell.
+                      top: MediaQuery.of(context).padding.top + 78,
+                      right: -40,
+                      child: IgnorePointer(
+                        child: Opacity(
+                          opacity: 0.85,
+                          child: SvgPicture.asset(
+                            'assets/illustrations/home_header.svg',
+                            width: 150,
+                            height: 103,
+                          ),
+                        ),
+                      ),
+                    ),
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -137,20 +165,8 @@ class HomeScreen extends ConsumerWidget {
                               Flexible(
                                 child: Row(
                                   children: [
-                                    // White reverse-mark, not the full-color
-                                    // icon — the icon's navy portions
-                                    // vanished into the new navy canopy
-                                    // (navy-on-navy), confirmed live on a
-                                    // real device. A plain white silhouette,
-                                    // generated from the same alpha mask, is
-                                    // the standard fix for a logo on a dark
-                                    // brand color — every other usage of the
-                                    // full-color icon (splash, login,
-                                    // welcome, mentor dashboard, profile)
-                                    // still sits on a light background and
-                                    // is untouched.
                                     Image.asset(
-                                      'assets/logo/uniscope_icon_white.png',
+                                      'assets/logo/uniscope_icon.png',
                                       width: 44,
                                       height: 44,
                                       fit: BoxFit.contain,
@@ -163,17 +179,16 @@ class HomeScreen extends ConsumerWidget {
                                         style: TextStyle(
                                           fontSize: AppFont.display,
                                           fontWeight: AppFont.extraBold,
-                                          color: AppColors.textInverse,
+                                          color: AppColors.textPrimary,
                                         ),
                                       ),
                                     ),
                                     const SizedBox(width: AppSpacing.sm),
                                     // Moved here from the greeting row —
                                     // top-left, next to the wordmark,
-                                    // instead of top-right. White on the
-                                    // navy canopy now, not textPrimary.
+                                    // instead of top-right.
                                     const NotificationBell(
-                                      color: AppColors.textInverse,
+                                      color: AppColors.textPrimary,
                                     ),
                                   ],
                                 ),
@@ -189,12 +204,8 @@ class HomeScreen extends ConsumerWidget {
                                       padding: const EdgeInsets.all(2),
                                       decoration: BoxDecoration(
                                         shape: BoxShape.circle,
-                                        // Translucent white, not
-                                        // AppColors.border — that's a light
-                                        // grey, invisible against navy.
                                         border: Border.all(
-                                          color: AppColors.textInverse
-                                              .withValues(alpha: 0.4),
+                                          color: AppColors.border,
                                           width: 2,
                                         ),
                                       ),
@@ -228,33 +239,32 @@ class HomeScreen extends ConsumerWidget {
                                   style: const TextStyle(
                                     fontSize: AppFont.xl,
                                     fontWeight: AppFont.extraBold,
-                                    color: AppColors.textInverse,
+                                    color: AppColors.textPrimary,
                                   ),
                                   children: firstName == null
                                       ? null
                                       : [
                                           TextSpan(
                                             text: firstName,
-                                            // mintAccent, not primary —
-                                            // plain emerald primary only
-                                            // measures ~3:1 on the navy
-                                            // canopy; mintAccent clears
-                                            // 9.5:1 (checked, not guessed).
+                                            // primaryDark, not primary —
+                                            // plain primary-on-background
+                                            // measures 2.73:1 contrast
+                                            // (fails WCAG AA's 4.5:1);
+                                            // primaryDark clears it at
+                                            // 4.85:1.
                                             style: const TextStyle(
-                                              color: AppColors.mintAccent,
+                                              color: AppColors.primaryDark,
                                             ),
                                           ),
                                         ],
                                 ),
                               ),
                               const SizedBox(height: 2),
-                              Text(
+                              const Text(
                                 'What are you looking for today?',
                                 style: TextStyle(
                                   fontSize: AppFont.sm,
-                                  color: AppColors.textInverse.withValues(
-                                    alpha: 0.75,
-                                  ),
+                                  color: AppColors.textSecondary,
                                 ),
                               ),
                             ],
@@ -272,18 +282,7 @@ class HomeScreen extends ConsumerWidget {
                                 vertical: 14,
                               ),
                               decoration: BoxDecoration(
-                                // Translucent white on the navy canopy,
-                                // not a solid opaque surface — reads as
-                                // "part of the header", the sheet below
-                                // is where opaque white cards start.
-                                color: AppColors.textInverse.withValues(
-                                  alpha: 0.14,
-                                ),
-                                border: Border.all(
-                                  color: AppColors.textInverse.withValues(
-                                    alpha: 0.2,
-                                  ),
-                                ),
+                                color: AppColors.surface,
                                 borderRadius: BorderRadius.circular(
                                   AppRadius.full,
                                 ),
@@ -293,17 +292,15 @@ class HomeScreen extends ConsumerWidget {
                                   Icon(
                                     Icons.search_rounded,
                                     size: 20,
-                                    color: AppColors.mintAccent,
+                                    color: authBrandTeal,
                                   ),
                                   const SizedBox(width: AppSpacing.sm),
-                                  Expanded(
+                                  const Expanded(
                                     child: Text(
                                       'Search colleges, courses, or mentors...',
                                       style: TextStyle(
                                         fontSize: AppFont.sm,
-                                        color: AppColors.textInverse.withValues(
-                                          alpha: 0.75,
-                                        ),
+                                        color: AppColors.textMuted,
                                       ),
                                       overflow: TextOverflow.ellipsis,
                                     ),

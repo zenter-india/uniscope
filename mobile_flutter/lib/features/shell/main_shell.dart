@@ -35,11 +35,6 @@ class MainShell extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           const ActiveSessionDock(),
-          // White bar (not a navy block, unlike the Home header) — the
-          // client's preferred variant: keep the bottom nav's background
-          // as-is, only recolor the active tab's icon/label from emerald to
-          // navy, so the navy half of the brand duo shows up here too
-          // without turning the whole bar into another dark block.
           Container(
             decoration: const BoxDecoration(
               color: AppColors.surface,
@@ -99,12 +94,7 @@ class _TabButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Active state is navy now, not emerald — both icon and label, on a
-    // white bar this is a plain dark-on-light combo so there's no contrast
-    // concern to check (unlike the navy-bar variant this replaced). The
-    // pill background moves to a pale navy wash to match, instead of the
-    // pale mint it used with the emerald icon.
-    final color = focused ? AppColors.textPrimary : AppColors.textMuted;
+    final color = focused ? AppColors.primary : AppColors.textMuted;
     return GestureDetector(
       onTap: onTap,
       behavior: HitTestBehavior.opaque,
@@ -116,9 +106,7 @@ class _TabButton extends StatelessWidget {
             curve: Curves.easeOut,
             padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 5),
             decoration: BoxDecoration(
-              color: focused
-                  ? AppColors.textPrimary.withValues(alpha: 0.08)
-                  : Colors.transparent,
+              color: focused ? AppColors.primaryLight : Colors.transparent,
               borderRadius: BorderRadius.circular(AppRadius.full),
             ),
             child: Icon(
