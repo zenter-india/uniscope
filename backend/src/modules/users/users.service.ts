@@ -9,7 +9,11 @@ import {
 import { Prisma, User, UserRole, VerificationStatus } from '@prisma/client';
 import { generatePseudonym } from '../../common/helpers/pseudonym.helper.js';
 import { encryptRealName } from '../../common/helpers/profile-encryption.helper.js';
-import { buildUniqueId, streamCodeFor } from '../../common/helpers/unique-id.helper.js';
+import {
+  bucketKeyFor,
+  buildUniqueId,
+  streamCodeFor,
+} from '../../common/helpers/unique-id.helper.js';
 import { PrismaService } from '../../database/prisma/prisma.service.js';
 import { AvatarConfig } from '../avatar/avatar.constants.js';
 import { AvatarService } from '../avatar/avatar.service.js';
@@ -139,7 +143,13 @@ export class UsersService {
 
     const prefix = user.role === UserRole.MENTOR ? 'M' : 'A';
     const streamCode = streamCodeFor(user.profile.stream);
-    const bucketKey = `${prefix}${streamCode}`;
+    // Enrolment date is "now" — a uniqueId is assigned the moment
+    // profile.stream first becomes known, which is the natural enrolment
+    // moment for this purpose. The bucket (and so the daily sequence) is
+    // scoped to this exact day, so it resets to 1 every new day per stream
+    // instead of running across the stream's entire history.
+    const enrolledAt = new Date();
+    const bucketKey = bucketKeyFor(prefix, streamCode, enrolledAt);
 
     const rows = await this.prisma.$queryRaw<{ assigned: number }[]>`
       INSERT INTO id_sequence_counters (bucket_key, next_value)
@@ -148,7 +158,12 @@ export class UsersService {
       DO UPDATE SET next_value = id_sequence_counters.next_value + 1
       RETURNING next_value - 1 AS assigned
     `;
-    const uniqueId = buildUniqueId(prefix, streamCode, rows[0].assigned);
+    const uniqueId = buildUniqueId(
+      prefix,
+      streamCode,
+      enrolledAt,
+      rows[0].assigned,
+    );
 
     try {
       return await this.prisma.user.update({

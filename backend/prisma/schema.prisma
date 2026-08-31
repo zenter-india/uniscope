@@ -194,7 +194,7 @@ model User {
   /// UsersService.ensureUniqueId), and permanent once assigned even if the
   /// stream is edited later — this is meant to read as a registry number,
   /// not a live-updating label.
-  uniqueId           String?            @unique @map("unique_id") @db.VarChar(11)
+  uniqueId           String?            @unique @map("unique_id") @db.VarChar(12)
   verificationStatus VerificationStatus @default(DRAFT) @map("verification_status")
   isActive           Boolean            @default(true) @map("is_active")
   isBanned           Boolean            @default(false) @map("is_banned")
@@ -898,7 +898,11 @@ model EnrollmentLead {
 /// INSERT ... ON CONFLICT DO UPDATE ... RETURNING, so two concurrent
 /// requests can never be handed the same number.
 model IdSequenceCounter {
-  bucketKey String @id @map("bucket_key") @db.VarChar(3)
+  /// Was VARCHAR(3) (role + 2-digit stream) — widened to fit the
+  /// role+stream+YYMMDD bucket the date-scoped sequence now uses (9 chars),
+  /// so the daily count resets to 1 each day per stream instead of running
+  /// across the stream's entire history.
+  bucketKey String @id @map("bucket_key") @db.VarChar(9)
   nextValue Int    @default(1) @map("next_value")
 
   @@map("id_sequence_counters")
