@@ -15,7 +15,15 @@ import '../../state/auth_controller.dart';
 /// the permission_handler plugin.
 const _permissionsChannel = MethodChannel('uniscope/permissions');
 
-enum _Phase { requestingPermission, permissionDenied, connecting, waiting, active, ended, error }
+enum _Phase {
+  requestingPermission,
+  permissionDenied,
+  connecting,
+  waiting,
+  active,
+  ended,
+  error,
+}
 
 /// Full lifecycle audio-call screen: mic permission -> join Agora channel ->
 /// wait for the other party's dual-confirm (see SessionsService.confirmJoined)
@@ -51,7 +59,8 @@ class _CallScreenState extends ConsumerState<CallScreen> {
   SessionStatus? _lastLoggedStatus;
 
   bool get _isAspirant =>
-      _session != null && ref.read(authControllerProvider).user?.id == _session!.aspirantId;
+      _session != null &&
+      ref.read(authControllerProvider).user?.id == _session!.aspirantId;
 
   @override
   void initState() {
@@ -75,7 +84,8 @@ class _CallScreenState extends ConsumerState<CallScreen> {
     debugPrint('[call] CallScreen started sessionId=${widget.sessionId}');
 
     final granted =
-        await _permissionsChannel.invokeMethod<bool>('requestMicrophone') ?? false;
+        await _permissionsChannel.invokeMethod<bool>('requestMicrophone') ??
+        false;
     debugPrint('[call] microphone permission granted=$granted');
     if (!granted) {
       if (!mounted) return;
@@ -112,7 +122,9 @@ class _CallScreenState extends ConsumerState<CallScreen> {
       await _joinAgoraChannel(creds).timeout(
         const Duration(seconds: 20),
         onTimeout: () {
-          debugPrint('[call] Agora join TIMED OUT after 20s sessionId=${widget.sessionId}');
+          debugPrint(
+            '[call] Agora join TIMED OUT after 20s sessionId=${widget.sessionId}',
+          );
           throw Exception(
             'Could not connect to the call — check your connection and try again.',
           );
@@ -144,12 +156,29 @@ class _CallScreenState extends ConsumerState<CallScreen> {
     debugPrint('[call] Agora engine initializing channel=${creds.channelName}');
     final engine = createAgoraRtcEngine();
     await engine.initialize(RtcEngineContext(appId: creds.appId));
+    // TEMP DIAGNOSTIC — pinpointing exactly which awaited Agora call hangs on
+    // iOS (never confirmed working on this platform before — see CLAUDE.md
+    // "Android Agora native-call crash", which this print trail is extending
+    // to iOS). Live iOS log showed the join sequence hanging for the full
+    // 20s timeout with none of these prints appearing after "initializing" —
+    // narrowing which single call it is, rather than the whole sequence.
+    debugPrint(
+      '[call] Agora engine.initialize() completed channel=${creds.channelName}',
+    );
     await engine.enableAudio();
+    debugPrint(
+      '[call] Agora enableAudio() completed channel=${creds.channelName}',
+    );
     await engine.setDefaultAudioRouteToSpeakerphone(true);
+    debugPrint(
+      '[call] Agora setDefaultAudioRouteToSpeakerphone() completed channel=${creds.channelName}',
+    );
     engine.registerEventHandler(
       RtcEngineEventHandler(
         onUserJoined: (connection, remoteUid, elapsed) {
-          debugPrint('[call] Agora onUserJoined channel=${creds.channelName} remoteUid=$remoteUid');
+          debugPrint(
+            '[call] Agora onUserJoined channel=${creds.channelName} remoteUid=$remoteUid',
+          );
           if (mounted) setState(() => _remoteJoinedChannel = true);
         },
         onUserOffline: (connection, remoteUid, reason) {
@@ -159,11 +188,15 @@ class _CallScreenState extends ConsumerState<CallScreen> {
           if (mounted) setState(() => _remoteJoinedChannel = false);
         },
         onError: (err, msg) {
-          debugPrint('[call] Agora onError channel=${creds.channelName} err=$err msg=$msg');
+          debugPrint(
+            '[call] Agora onError channel=${creds.channelName} err=$err msg=$msg',
+          );
         },
       ),
     );
-    debugPrint('[call] Agora joinChannelWithUserAccount channel=${creds.channelName} uid=${creds.uid}');
+    debugPrint(
+      '[call] Agora joinChannelWithUserAccount channel=${creds.channelName} uid=${creds.uid}',
+    );
     await engine.joinChannelWithUserAccount(
       token: creds.token,
       channelId: creds.channelName,
@@ -179,7 +212,9 @@ class _CallScreenState extends ConsumerState<CallScreen> {
   Future<void> _poll() async {
     if (!mounted || _phase == _Phase.ended) return;
     try {
-      final updated = await ref.read(sessionsApiProvider).findById(widget.sessionId);
+      final updated = await ref
+          .read(sessionsApiProvider)
+          .findById(widget.sessionId);
       if (!mounted) return;
       setState(() => _session = updated);
       _applySessionUpdate(updated);
@@ -220,7 +255,10 @@ class _CallScreenState extends ConsumerState<CallScreen> {
       _noAnswerTimer = null;
       if (_phase != _Phase.active) {
         setState(() => _phase = _Phase.active);
-        _tickTimer ??= Timer.periodic(const Duration(seconds: 1), (_) => _tick());
+        _tickTimer ??= Timer.periodic(
+          const Duration(seconds: 1),
+          (_) => _tick(),
+        );
       }
       _checkSlotCutoff(session);
     } else {
@@ -243,7 +281,11 @@ class _CallScreenState extends ConsumerState<CallScreen> {
   void _tick() {
     final startedAt = _session?.startedAt;
     if (startedAt == null || !mounted) return;
-    setState(() => _elapsed = DateTime.now().toUtc().difference(DateTime.parse(startedAt).toUtc()));
+    setState(
+      () => _elapsed = DateTime.now().toUtc().difference(
+        DateTime.parse(startedAt).toUtc(),
+      ),
+    );
   }
 
   void _checkSlotCutoff(Session session) {
@@ -251,7 +293,9 @@ class _CallScreenState extends ConsumerState<CallScreen> {
     final startedAt = session.startedAt;
     if (startedAt == null || slotSeconds <= 0) return;
 
-    final elapsed = DateTime.now().toUtc().difference(DateTime.parse(startedAt).toUtc());
+    final elapsed = DateTime.now().toUtc().difference(
+      DateTime.parse(startedAt).toUtc(),
+    );
     final remaining = Duration(seconds: slotSeconds) - elapsed;
 
     if (remaining.isNegative) {
@@ -264,7 +308,9 @@ class _CallScreenState extends ConsumerState<CallScreen> {
       // expiry, end the call automatically — see product decision on
       // "hard cut off with a popup to continue".
       final graceElapsed = DateTime.now().difference(_slotExpiredAt!);
-      if (_isAspirant && graceElapsed > const Duration(seconds: 20) && _phase == _Phase.active) {
+      if (_isAspirant &&
+          graceElapsed > const Duration(seconds: 20) &&
+          _phase == _Phase.active) {
         _endCall(reason: 'SLOT_EXPIRED');
       }
     } else {
@@ -302,13 +348,16 @@ class _CallScreenState extends ConsumerState<CallScreen> {
     if (!mounted) return;
     if (continue_ == true) {
       try {
-        final updated = await ref.read(sessionsApiProvider).extendCall(widget.sessionId);
+        final updated = await ref
+            .read(sessionsApiProvider)
+            .extendCall(widget.sessionId);
         if (!mounted) return;
         setState(() => _session = updated);
       } catch (e) {
         if (!mounted) return;
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('Could not extend call: $e')));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Could not extend call: $e')));
         _endCall(reason: 'SLOT_EXPIRED');
       }
     } else {
@@ -317,9 +366,13 @@ class _CallScreenState extends ConsumerState<CallScreen> {
   }
 
   Future<void> _endCall({String reason = 'NORMAL'}) async {
-    debugPrint('[call] endCall requested reason=$reason sessionId=${widget.sessionId}');
+    debugPrint(
+      '[call] endCall requested reason=$reason sessionId=${widget.sessionId}',
+    );
     try {
-      await ref.read(sessionsApiProvider).endCall(widget.sessionId, endReason: reason);
+      await ref
+          .read(sessionsApiProvider)
+          .endCall(widget.sessionId, endReason: reason);
     } catch (e) {
       // Other party may have already ended it — fall through to local end.
       debugPrint(
@@ -347,7 +400,10 @@ class _CallScreenState extends ConsumerState<CallScreen> {
   @override
   Widget build(BuildContext context) {
     return PopScope(
-      canPop: _phase == _Phase.ended || _phase == _Phase.error || _phase == _Phase.permissionDenied,
+      canPop:
+          _phase == _Phase.ended ||
+          _phase == _Phase.error ||
+          _phase == _Phase.permissionDenied,
       child: Scaffold(
         backgroundColor: AppColors.primaryDark,
         body: SafeArea(child: _buildBody(context)),
@@ -395,7 +451,10 @@ class _CallScreenState extends ConsumerState<CallScreen> {
           ],
         );
       case _Phase.waiting:
-        return _WaitingView(remoteJoined: _remoteJoinedChannel, onEnd: () => _endCall());
+        return _WaitingView(
+          remoteJoined: _remoteJoinedChannel,
+          onEnd: () => _endCall(),
+        );
       case _Phase.active:
         return _ActiveCallView(
           elapsed: _fmt(_elapsed),
@@ -414,7 +473,10 @@ class _CallScreenState extends ConsumerState<CallScreen> {
           onEnd: () => _endCall(),
         );
       case _Phase.ended:
-        return _EndedView(session: _session, onDone: () => context.go('/chats'));
+        return _EndedView(
+          session: _session,
+          onDone: () => context.go('/chats'),
+        );
     }
   }
 }
@@ -442,13 +504,23 @@ class _MessageScreen extends StatelessWidget {
           children: [
             Text(icon, style: const TextStyle(fontSize: 48)),
             const SizedBox(height: AppSpacing.md),
-            Text(title,
-                style: const TextStyle(
-                    color: Colors.white, fontSize: AppFont.lg, fontWeight: AppFont.bold)),
+            Text(
+              title,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: AppFont.lg,
+                fontWeight: AppFont.bold,
+              ),
+            ),
             const SizedBox(height: AppSpacing.sm),
-            Text(message,
-                textAlign: TextAlign.center,
-                style: const TextStyle(color: Colors.white70, fontSize: AppFont.sm)),
+            Text(
+              message,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                color: Colors.white70,
+                fontSize: AppFont.sm,
+              ),
+            ),
             const SizedBox(height: AppSpacing.xl),
             ...actions,
           ],
@@ -471,14 +543,21 @@ class _WaitingView extends StatelessWidget {
         Container(
           width: 96,
           height: 96,
-          decoration: const BoxDecoration(color: Colors.white24, shape: BoxShape.circle),
+          decoration: const BoxDecoration(
+            color: Colors.white24,
+            shape: BoxShape.circle,
+          ),
           alignment: Alignment.center,
           child: const Text('👤', style: TextStyle(fontSize: 40)),
         ),
         const SizedBox(height: AppSpacing.lg),
         Text(
           remoteJoined ? 'Connecting call…' : 'Calling…',
-          style: const TextStyle(color: Colors.white, fontSize: AppFont.xl, fontWeight: AppFont.bold),
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: AppFont.xl,
+            fontWeight: AppFont.bold,
+          ),
         ),
         const SizedBox(height: AppSpacing.sm),
         const Text(
@@ -517,15 +596,27 @@ class _ActiveCallView extends StatelessWidget {
         Container(
           width: 96,
           height: 96,
-          decoration: const BoxDecoration(color: Colors.white24, shape: BoxShape.circle),
+          decoration: const BoxDecoration(
+            color: Colors.white24,
+            shape: BoxShape.circle,
+          ),
           alignment: Alignment.center,
           child: const Text('👤', style: TextStyle(fontSize: 40)),
         ),
         const SizedBox(height: AppSpacing.lg),
-        const Text('In call',
-            style: TextStyle(color: Colors.white, fontSize: AppFont.xl, fontWeight: AppFont.bold)),
+        const Text(
+          'In call',
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: AppFont.xl,
+            fontWeight: AppFont.bold,
+          ),
+        ),
         const SizedBox(height: AppSpacing.sm),
-        Text(elapsed, style: const TextStyle(color: Colors.white70, fontSize: AppFont.md)),
+        Text(
+          elapsed,
+          style: const TextStyle(color: Colors.white70, fontSize: AppFont.md),
+        ),
         const Spacer(),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xl),
@@ -585,9 +676,14 @@ class _EndedView extends StatelessWidget {
           children: [
             const Text('📞', style: TextStyle(fontSize: 48)),
             const SizedBox(height: AppSpacing.md),
-            Text(_reasonLabel(session?.endReason),
-                style: const TextStyle(
-                    color: Colors.white, fontSize: AppFont.xl, fontWeight: AppFont.bold)),
+            Text(
+              _reasonLabel(session?.endReason),
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: AppFont.xl,
+                fontWeight: AppFont.bold,
+              ),
+            ),
             const SizedBox(height: AppSpacing.lg),
             _SummaryRow(label: 'Duration', value: '$minutes min'),
             const SizedBox(height: AppSpacing.sm),
@@ -596,7 +692,9 @@ class _EndedView extends StatelessWidget {
             SizedBox(
               width: double.infinity,
               child: FilledButton(
-                style: FilledButton.styleFrom(backgroundColor: AppColors.primary),
+                style: FilledButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                ),
                 onPressed: onDone,
                 child: const Text('Done'),
               ),
@@ -619,15 +717,24 @@ class _SummaryRow extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Text(label, style: const TextStyle(color: Colors.white70)),
-        Text(value,
-            style: const TextStyle(color: Colors.white, fontWeight: AppFont.semibold)),
+        Text(
+          value,
+          style: const TextStyle(
+            color: Colors.white,
+            fontWeight: AppFont.semibold,
+          ),
+        ),
       ],
     );
   }
 }
 
 class _RoundIconButton extends StatelessWidget {
-  const _RoundIconButton({required this.icon, required this.active, required this.onPressed});
+  const _RoundIconButton({
+    required this.icon,
+    required this.active,
+    required this.onPressed,
+  });
   final IconData icon;
   final bool active;
   final VoidCallback onPressed;
@@ -662,7 +769,10 @@ class _EndCallButton extends StatelessWidget {
       child: Container(
         width: 64,
         height: 64,
-        decoration: const BoxDecoration(color: AppColors.error, shape: BoxShape.circle),
+        decoration: const BoxDecoration(
+          color: AppColors.error,
+          shape: BoxShape.circle,
+        ),
         child: const Icon(Icons.call_end, color: Colors.white, size: 28),
       ),
     );
