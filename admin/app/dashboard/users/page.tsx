@@ -2,17 +2,8 @@ import Link from 'next/link';
 import { backendFetch } from '../../../lib/backend';
 import { getAdminEmail } from '../../../lib/adminAuth';
 import { DashboardShell } from '../DashboardShell';
-import { UserRow } from './UserRow';
-
-interface UserRowData {
-  id: string;
-  displayName: string;
-  role: string;
-  verificationStatus: string;
-  isBanned: boolean;
-  isActive: boolean;
-  createdAt: string;
-}
+import type { UserRowData } from './UserRow';
+import { UsersList } from './UsersList';
 
 const ROLE_TABS = ['ALL', 'ASPIRANT', 'MENTOR'] as const;
 const VERIFICATION_TABS = [
@@ -148,15 +139,12 @@ export default async function UsersPage({
         </Link>
       </div>
 
-      {page.data.length === 0 ? (
-        <p className="text-sm text-zinc-500">No users match this filter.</p>
-      ) : (
-        <div className="flex flex-col gap-3">
-          {page.data.map((user) => (
-            <UserRow key={user.id} user={user} />
-          ))}
-        </div>
-      )}
+      <UsersList
+        key={`${role}|${verificationStatus}|${banned}|${search ?? ''}`}
+        initialItems={page.data}
+        initialCursor={page.nextCursor}
+        filters={{ role, search, verificationStatus, banned }}
+      />
     </DashboardShell>
   );
 }

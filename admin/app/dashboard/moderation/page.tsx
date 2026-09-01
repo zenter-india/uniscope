@@ -2,19 +2,8 @@ import Link from 'next/link';
 import { backendFetch } from '../../../lib/backend';
 import { getAdminEmail } from '../../../lib/adminAuth';
 import { DashboardShell } from '../DashboardShell';
-import { ReportRow } from './ReportRow';
-
-interface ReportRowData {
-  id: string;
-  reporterId: string;
-  reporterDisplayName?: string;
-  targetType: string;
-  targetId: string;
-  reason: string;
-  description: string | null;
-  status: string;
-  createdAt: string;
-}
+import type { ReportRowData } from './ReportRow';
+import { ReportsList } from './ReportsList';
 
 const STATUS_TABS = ['OPEN', 'UNDER_REVIEW', 'RESOLVED', 'DISMISSED'] as const;
 
@@ -25,7 +14,7 @@ export default async function ModerationPage({
 }) {
   const { status: rawStatus } = await searchParams;
   const status = STATUS_TABS.includes(rawStatus as (typeof STATUS_TABS)[number])
-    ? rawStatus
+    ? rawStatus!
     : 'OPEN';
 
   const [email, page] = await Promise.all([
@@ -53,19 +42,13 @@ export default async function ModerationPage({
         ))}
       </div>
 
-      {page.data.length === 0 ? (
-        <p className="text-sm text-zinc-500">No reports in this status.</p>
-      ) : (
-        <div className="flex flex-col gap-4">
-          {page.data.map((report) => (
-            <ReportRow
-              key={report.id}
-              report={report}
-              readOnly={status === 'RESOLVED' || status === 'DISMISSED'}
-            />
-          ))}
-        </div>
-      )}
+      <ReportsList
+        key={status}
+        initialItems={page.data}
+        initialCursor={page.nextCursor}
+        status={status}
+        readOnly={status === 'RESOLVED' || status === 'DISMISSED'}
+      />
     </DashboardShell>
   );
 }
