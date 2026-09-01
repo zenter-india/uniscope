@@ -17,6 +17,14 @@ class AppColors {
   static const Color primaryLight = Color(0xFFE3F3EC);
   static const Color primaryDark = Color(0xFF005E44);
 
+  /// Deeper green for the very top of the Home canopy fade — plain [primary]
+  /// only measures 3.75:1 against [textPrimary] sitting on top of it (fails
+  /// AA), so this is a step lighter than [primary] specifically to keep the
+  /// "Uniscope" wordmark/bell readable while still landing as a real green,
+  /// not the washed-out pastel [primaryLight] reads as on its own. 4.97:1
+  /// against textPrimary, verified before committing.
+  static const Color canopyTop = Color(0xFF1C9B78);
+
   static const Color accent = Color(0xFFF4A261);
 
   // Neutrals — slate scale (cooler and richer than plain grays).

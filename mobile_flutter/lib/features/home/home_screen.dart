@@ -116,7 +116,12 @@ class HomeScreen extends ConsumerWidget {
                   gradient: LinearGradient(
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
-                    colors: [AppColors.primaryLight, AppColors.surface],
+                    colors: [
+                      AppColors.canopyTop,
+                      AppColors.primaryLight,
+                      AppColors.surface,
+                    ],
+                    stops: [0.0, 0.55, 1.0],
                   ),
                 ),
                 padding: EdgeInsets.only(
