@@ -34,10 +34,10 @@
       "runtimeExecutable": "bash",
       "runtimeArgs": [
         "-lc",
-        "cd /Users/kiranrajr/uniscope/mobile_flutter/build/web && exec python3 ../../scripts/no_cache_server.py 8080"
+        "cd /Users/kiranrajr/uniscope/mobile_flutter/build/web && exec python3 ../../scripts/no_cache_server.py ${PORT:-8080}"
       ],
       "port": 8080,
-      "autoPort": false
+      "autoPort": true
     }
   ],
   "autoVerify": false
