@@ -108,16 +108,15 @@ class HomeScreen extends ConsumerWidget {
               // stop lands below the fold and only flat teal shows.
               Container(
                 width: double.infinity,
-                // Soft green wash concentrated behind the illustration
-                // (top-right), fading to plain background toward the
-                // bottom-left — not a full-page tint, just enough to seat
-                // the illustration in a sky-like backdrop like the
-                // reference, before the sheet below goes flat again.
+                // Green wash at the top, fading in a straight line down to
+                // white by the canopy's own bottom edge — so it blends into
+                // the white sheet below instead of cutting off abruptly at
+                // the wave seam.
                 decoration: const BoxDecoration(
                   gradient: LinearGradient(
-                    begin: Alignment.bottomLeft,
-                    end: Alignment.topRight,
-                    colors: [AppColors.background, AppColors.primaryLight],
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [AppColors.primaryLight, AppColors.surface],
                   ),
                 ),
                 padding: EdgeInsets.only(
@@ -177,7 +176,7 @@ class HomeScreen extends ConsumerWidget {
                                         'Uniscope',
                                         overflow: TextOverflow.ellipsis,
                                         style: TextStyle(
-                                          fontSize: AppFont.display,
+                                          fontSize: AppFont.xxl,
                                           fontWeight: AppFont.extraBold,
                                           color: AppColors.textPrimary,
                                         ),
@@ -237,7 +236,7 @@ class HomeScreen extends ConsumerWidget {
                                       ? _greeting
                                       : '$_greeting, ',
                                   style: const TextStyle(
-                                    fontSize: AppFont.xl,
+                                    fontSize: AppFont.lg,
                                     fontWeight: AppFont.extraBold,
                                     color: AppColors.textPrimary,
                                   ),
@@ -263,7 +262,7 @@ class HomeScreen extends ConsumerWidget {
                               const Text(
                                 'What are you looking for today?',
                                 style: TextStyle(
-                                  fontSize: AppFont.sm,
+                                  fontSize: AppFont.xs,
                                   color: AppColors.textSecondary,
                                 ),
                               ),
