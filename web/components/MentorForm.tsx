@@ -272,12 +272,13 @@ export function MentorForm({ onExit }: { onExit: () => void }) {
   // back to the generic UG/PG/Doctorate/Others list.
   const degreeOptions: readonly string[] =
     form.stream === "Medical" ? DEGREES : (DEGREES_BY_STREAM[form.stream] ?? DEFAULT_NON_MEDICAL_DEGREES);
-  // Doctorate and Others have no real college dataset of their own yet in
-  // any stream (a dropdown/search list for them is planned once that data
-  // exists — see the College field's STREAMS_WITH_COLLEGE_DATA branch
-  // below), so both fall back to a plain free-text College field even in
-  // Engineering/Law/Dental, which otherwise have real seeded college data
-  // for their other degrees.
+  // Doctorate/Others have no curated per-college dataset of their own in
+  // any stream, so hasCuratedData is always false for them -- used below
+  // to (a) reuse Medical's static MEDICAL_SPECIALIZATIONS full list for
+  // its own Doctorate/Others (unchanged, a hasCuratedData=true special
+  // case), and (b) decide whether Engineering/Law/Dental's Doctorate/
+  // Others get the stream-wide specialization list (see
+  // hasStreamWideSpecialization below).
   const isDoctorateOrOthersDegree = form.degree === "Doctorate" || form.degree === "Others";
   const curatedDegree = CURATED_DEGREE_MAP_BY_STREAM[form.stream]?.[form.degree];
   const hasCuratedData = curatedDegree !== undefined;
@@ -292,17 +293,34 @@ export function MentorForm({ onExit }: { onExit: () => void }) {
   const isExcludedSpecializationDegree =
     EMPTY_SPECIALIZATION_EXCLUDED_DEGREES.has(form.degree) &&
     !(form.stream === "Arts & Humanities" && form.degree === "UG");
+  // Doctorate/Others in a stream with real curated college data
+  // (Engineering/Law/Dental) get a searchable Specialization field
+  // listing every specialization known anywhere across that whole
+  // stream's curated datasets (e.g. Engineering: the union of B.Tech +
+  // M.Tech + Diploma-Engg's specializations) -- per explicit request,
+  // the same "show everything this stream has" idea as Medical's own
+  // Doctorate/Others (MEDICAL_SPECIALIZATIONS), just built from the
+  // curated data itself rather than a hand-maintained static list (see
+  // streamWideSpecializations' fetch effect below). Commerce & Business/
+  // Design/Arts & Humanities/Others have no curated data at all
+  // (!STREAMS_WITH_COLLEGE_DATA.has(form.stream)), so they're excluded
+  // here and keep the plain free-text field via hasFreeTextSpecialization
+  // below.
+  const hasStreamWideSpecialization = isDoctorateOrOthersDegree && STREAMS_WITH_COLLEGE_DATA.has(form.stream);
   // Mirrors the JSX condition below that renders the plain free-text
   // Specialization field for a STREAMS_WITH_EMPTY_SPECIALIZATION
-  // stream+degree with no curated or flat dataset of its own (today:
-  // only Engineering's and Law's Doctorate/Others) -- computed once here
-  // so validateStep() and the submit payload agree with what's actually
-  // rendered, instead of drifting from a copy of the same condition.
+  // stream+degree with no curated, flat, or stream-wide dataset of its
+  // own (today: Commerce & Business/Design/Arts & Humanities/Others'
+  // Doctorate/Others/PG/etc, and Arts & Humanities' UG) -- computed once
+  // here so validateStep() and the submit payload agree with what's
+  // actually rendered, instead of drifting from a copy of the same
+  // condition.
   const hasFreeTextSpecialization =
     STREAMS_WITH_EMPTY_SPECIALIZATION.has(form.stream) &&
     !hasCuratedData &&
     !hasFlatSpecializationList &&
-    !isExcludedSpecializationDegree;
+    !isExcludedSpecializationDegree &&
+    !hasStreamWideSpecialization;
   // See BROWSE_DEGREES — these use the full browse+search picker (see
   // UniversitiesService.findCurated's browse mode) rather than the
   // curated-top-30-+-Other pattern DM-MCh/Diploma still use.
@@ -338,6 +356,40 @@ export function MentorForm({ onExit }: { onExit: () => void }) {
       cancelled = true;
     };
   }, [form.stream, curatedDegree, isBrowseDegree]);
+
+  // Every specialization known across ALL of this stream's curated
+  // degrees combined (not just one degree's own dataset like
+  // allSpecializationsForDegree above) -- backs the Specialization field
+  // for Doctorate/Others in Engineering/Law/Dental (see
+  // hasStreamWideSpecialization). Fetches each of the stream's curated
+  // degrees' full browse list in parallel and unions their
+  // specializations. CURATED_DEGREE_MAP_BY_STREAM[form.stream]'s values
+  // can repeat (Medical's several raw degree keys all map to "MD/MS",
+  // for instance) -- deduped via Set before fetching so each curated
+  // degree is only ever fetched once per stream.
+  const [streamWideSpecializations, setStreamWideSpecializations] = useState<string[]>([]);
+
+  useEffect(() => {
+    if (!hasStreamWideSpecialization) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- resets the list when leaving a stream-wide-specialization degree
+      setStreamWideSpecializations([]);
+      return;
+    }
+    let cancelled = false;
+    const curatedDegreesForStream = Array.from(new Set(Object.values(CURATED_DEGREE_MAP_BY_STREAM[form.stream] ?? {})));
+    Promise.all(curatedDegreesForStream.map((degree) => fetchCuratedColleges(form.stream, degree, { browse: true })))
+      .then((results) => {
+        if (cancelled) return;
+        const all = Array.from(new Set(results.flatMap((colleges) => colleges.flatMap((c) => c.specializations)))).sort();
+        setStreamWideSpecializations(all);
+      })
+      .catch(() => {
+        if (!cancelled) setStreamWideSpecializations([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [form.stream, hasStreamWideSpecialization]);
 
   useEffect(() => {
     if (!curatedDegree || isBrowseDegree) return;
@@ -426,7 +478,7 @@ export function MentorForm({ onExit }: { onExit: () => void }) {
         stream: (form.stream === "Others" ? form.streamOther.trim() : form.stream) || undefined,
         degree: (form.degree === "Others" ? form.degreeOther.trim() : form.degree) || undefined,
         specialization:
-          hasCuratedData || hasFlatSpecializationList || hasFreeTextSpecialization
+          hasCuratedData || hasFlatSpecializationList || hasFreeTextSpecialization || hasStreamWideSpecialization
             ? form.specialization.trim() || undefined
             : undefined,
         currentStatus: form.currentStatus || undefined,
@@ -738,7 +790,19 @@ export function MentorForm({ onExit }: { onExit: () => void }) {
                 }}
               />
             </Field>
-          ) : STREAMS_WITH_COLLEGE_DATA.has(form.stream) && !isDoctorateOrOthersDegree ? (
+          ) : STREAMS_WITH_COLLEGE_DATA.has(form.stream) ? (
+            // Covers every degree in Engineering/Dental/Law, including
+            // Doctorate/Others -- per explicit request, Doctorate/Others
+            // reuse this same stream-wide college search (the same list
+            // every other degree in the stream browses/searches) rather
+            // than a separate empty field, since a Doctorate student
+            // would realistically attend the same universities. (Earlier
+            // this session Doctorate/Others were carved out into a
+            // separate empty free-text field -- reverted here per
+            // explicit follow-up request; COLLEGE_SEARCH_LEVEL_MAP simply
+            // has no entry for Doctorate/Others so `level` is undefined
+            // for them, same as it already is for any other degree not
+            // listed there.)
             <Field label="College / university">
               <CollegeSearch
                 gold
@@ -752,16 +816,12 @@ export function MentorForm({ onExit }: { onExit: () => void }) {
               />
             </Field>
           ) : (
-            // No seeded college data exists yet for this stream+degree --
-            // either the whole stream has none uploaded yet (to be added
-            // later, per the user), or (Engineering/Law/Dental
-            // specifically) it's Doctorate/Others, which have no college
-            // dataset of their own even though this stream's other
-            // degrees do (see isDoctorateOrOthersDegree above) -- so this
-            // is a plain free-text field with no dropdown/autocomplete
-            // list, rather than CollegeSearch (which without a stream
-            // filter would surface irrelevant colleges from whichever
-            // stream does have data).
+            // No seeded college data exists yet for this stream at all
+            // (Commerce & Business, Design, Arts & Humanities, Others --
+            // to be added later, per the user) -- plain free-text field,
+            // no dropdown/autocomplete list, rather than CollegeSearch
+            // (which without a stream filter would surface irrelevant
+            // colleges from whichever stream does have data).
             <Field label="College / university">
               <TextInput
                 gold
@@ -881,14 +941,35 @@ export function MentorForm({ onExit }: { onExit: () => void }) {
               />
             </Field>
           )}
+          {hasStreamWideSpecialization && (
+            // Doctorate/Others in Engineering/Law/Dental -- see
+            // hasStreamWideSpecialization and streamWideSpecializations
+            // above. A searchable list of every specialization known
+            // anywhere across this whole stream's curated data (not
+            // scoped to any one college, since the College field here
+            // reuses the stream-wide search too, not a specific
+            // curated degree's own list), still accepting a typed value
+            // that isn't in the list as free text like every other
+            // SearchableCombobox here.
+            <Field label="Specialization">
+              <SearchableCombobox
+                gold
+                value={form.specialization}
+                options={streamWideSpecializations}
+                placeholder="Select or type to search…"
+                onChange={(v) => set("specialization", v)}
+              />
+            </Field>
+          )}
           {hasFreeTextSpecialization && (
-            // No curated or flat specialization dataset exists for this
-            // stream+degree (today: only Engineering's and Law's
-            // Doctorate/Others -- every other degree in
-            // STREAMS_WITH_EMPTY_SPECIALIZATION's streams now has real
-            // data). Was previously a disabled "Coming soon" select with
-            // nothing pickable; per explicit request, replaced with a
-            // plain free-text input instead -- same pattern as the
+            // No curated, flat, or stream-wide specialization dataset
+            // exists for this stream+degree (today: Commerce & Business/
+            // Design/Arts & Humanities/Others' Doctorate/Others/PG/etc,
+            // and Arts & Humanities' UG -- Engineering/Law/Dental's
+            // Doctorate/Others moved to hasStreamWideSpecialization
+            // above). Was previously a disabled "Coming soon" select
+            // with nothing pickable; per explicit request, replaced with
+            // a plain free-text input instead -- same pattern as the
             // curated "Other college" TextInput above -- so the mentor
             // can still record their specialization rather than being
             // blocked or shown a dead end.
