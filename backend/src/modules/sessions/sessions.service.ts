@@ -17,7 +17,7 @@ import {
   SessionType,
 } from '@prisma/client';
 import { PrismaService } from '../../database/prisma/prisma.service.js';
-import { LivekitService } from '../livekit/livekit.service.js';
+import { AgoraService } from '../agora/agora.service.js';
 import { AvatarService } from '../avatar/avatar.service.js';
 import { BlocksService } from '../blocks/blocks.service.js';
 import { ChatService } from '../chat/chat.service.js';
@@ -69,11 +69,11 @@ const ACTIVE_STATUSES: SessionStatus[] = [
  * SessionsService owns the booking lifecycle: request -> accept/reject ->
  * (ring ->) connect -> bill -> end. This module implements the request/
  * respond/cancel legs of the state machine. The connect/bill/end legs
- * (RINGING -> IN_PROGRESS -> COMPLETED) are driven by the dual-client
- * connect confirmation (see confirmJoined below — both parties' own clients
- * report "I joined", independent of which call SDK/vendor is underneath)
- * and a BullMQ billing clock. Billing must NEVER be started by a single
- * client's request to this service.
+ * (RINGING -> IN_PROGRESS -> COMPLETED) are driven by server-confirmed
+ * provider events (Agora webhooks for AUDIO_CALL) and a BullMQ billing
+ * clock — deliberately not implemented here; see docs on the call+billing
+ * state machine before wiring those in. Billing must NEVER be started by a
+ * client request to this service.
  */
 @Injectable()
 export class SessionsService {
@@ -86,7 +86,7 @@ export class SessionsService {
     private readonly mentorsService: MentorsService,
     private readonly chatService: ChatService,
     private readonly walletService: WalletService,
-    private readonly livekitService: LivekitService,
+    private readonly agoraService: AgoraService,
     private readonly notificationsService: NotificationsService,
     private readonly blocksService: BlocksService,
     private readonly avatarService: AvatarService,
@@ -105,8 +105,8 @@ export class SessionsService {
    * covered by the aspirant's free-call-minutes tier if there's enough left,
    * otherwise a WalletHold for the slot cost is placed here at BOOKING time
    * (so the mentor never accepts a request the aspirant can't afford) — the
-   * hold is only converted into an actual debit once both parties'
-   * clients report a confirmed connection (see confirmJoined below).
+   * hold is only converted into an actual debit once the call server-
+   * confirms a connection (Agora webhook, not implemented here yet).
    */
   async create(
     aspirantId: string,
@@ -274,7 +274,7 @@ export class SessionsService {
 
     // For CHAT sessions the Stream channel is the messaging surface itself,
     // so it's provisioned right on accept (AUDIO_CALL sessions provision
-    // their call room later, at the connect leg). In practice CHAT
+    // their Agora channel later, at the connect leg). In practice CHAT
     // sessions no longer pass through PENDING at all (see create() — they
     // open immediately), so this branch is dead for CHAT today; kept for
     // type-correctness and as a defensive fallback if that ever changes.
@@ -412,19 +412,15 @@ export class SessionsService {
   }
 
   /**
-   * Issues a LiveKit access token for an AUDIO_CALL session. Lazily
-   * provisions the session's call room name on first request (mirrors
-   * ChatService's ensureChannelForSession pattern) — a party can call this
-   * repeatedly to refresh their token. `channelName` is the LiveKit room
-   * name — kept as `agoraChannelName` on the Session row (no schema
-   * migration for a pure rename; the column just holds "the call's room
-   * name," vendor-agnostic in practice) and as `channelName` on the wire,
-   * since mobile already speaks that field name.
+   * Issues an Agora RTC token for an AUDIO_CALL session. Lazily provisions
+   * agoraChannelName on first request (mirrors ChatService's
+   * ensureChannelForSession pattern) — a party can call this repeatedly to
+   * refresh their token.
    */
   async getCallCredentials(
     sessionId: string,
     userId: string,
-  ): Promise<{ serverUrl: string; channelName: string; token: string; uid: string }> {
+  ): Promise<{ appId: string; channelName: string; token: string; uid: string }> {
     const session = await this.requireSessionForParty(sessionId, userId);
 
     if (session.type !== SessionType.AUDIO_CALL) {
@@ -450,9 +446,9 @@ export class SessionsService {
       `[call] token issued sessionId=${sessionId} userId=${userId} channel=${channelName}`,
     );
     return {
-      serverUrl: this.livekitService.getServerUrl(),
+      appId: this.agoraService.getAppId(),
       channelName,
-      token: await this.livekitService.generateAccessToken(channelName, userId),
+      token: this.agoraService.generateRtcToken(channelName, userId),
       uid: userId,
     };
   }

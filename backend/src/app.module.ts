@@ -20,7 +20,7 @@ import {
   msg91Config,
   razorpayConfig,
   streamConfig,
-  livekitConfig,
+  agoraConfig,
   validationSchema,
 } from './config/index.js';
 
@@ -45,7 +45,7 @@ import { ReviewsModule } from './modules/reviews/reviews.module.js';
 import { ChatModule } from './modules/chat/chat.module.js';
 import { ReportsModule } from './modules/reports/reports.module.js';
 import { NotificationsModule } from './modules/notifications/notifications.module.js';
-import { LivekitModule } from './modules/livekit/livekit.module.js';
+import { AgoraModule } from './modules/agora/agora.module.js';
 import { PayoutsModule } from './modules/payouts/payouts.module.js';
 import { WishlistModule } from './modules/wishlist/wishlist.module.js';
 import { UniversityReviewsModule } from './modules/university-reviews/university-reviews.module.js';
@@ -69,7 +69,7 @@ import { EnrollmentsModule } from './modules/enrollments/enrollments.module.js';
         msg91Config,
         razorpayConfig,
         streamConfig,
-        livekitConfig,
+        agoraConfig,
       ],
       validationSchema,
       validationOptions: { abortEarly: true },
@@ -114,7 +114,7 @@ import { EnrollmentsModule } from './modules/enrollments/enrollments.module.js';
     ChatModule,
     ReportsModule,
     NotificationsModule,
-    LivekitModule,
+    AgoraModule,
     PayoutsModule,
     WishlistModule,
     UniversityReviewsModule,

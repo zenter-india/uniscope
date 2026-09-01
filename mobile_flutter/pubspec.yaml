@@ -40,7 +40,7 @@ dependencies:
   flutter_secure_storage: ^10.3.1
   stream_chat_flutter: ^9.5.0
   razorpay_flutter: ^1.4.0
-  livekit_client: ^2.11.0
+  agora_rtc_engine: 6.5.4
   image_picker: ^1.2.3
   firebase_core: ^4.12.1
   firebase_messaging: ^16.4.3

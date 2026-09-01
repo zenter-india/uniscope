@@ -100,24 +100,21 @@ class Session {
       );
 }
 
-/// serverUrl is LiveKit's wss:// project URL (Mumbai/ap-south) — the
-/// equivalent of Agora's old appId, but a connection endpoint rather than an
-/// app identifier. channelName is the LiveKit room name.
 class CallCredentials {
   const CallCredentials({
-    required this.serverUrl,
+    required this.appId,
     required this.channelName,
     required this.token,
     required this.uid,
   });
 
-  final String serverUrl;
+  final String appId;
   final String channelName;
   final String token;
   final String uid;
 
   factory CallCredentials.fromJson(Map<String, dynamic> json) => CallCredentials(
-        serverUrl: json['serverUrl'] as String,
+        appId: json['appId'] as String,
         channelName: json['channelName'] as String,
         token: json['token'] as String,
         uid: json['uid'] as String,

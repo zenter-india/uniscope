@@ -59,7 +59,7 @@ export class SessionsController {
     return this.sessionsService.cancel(id, user.sub);
   }
 
-  /** LiveKit access token for an AUDIO_CALL session — either party, once
+  /** Agora RTC token for an AUDIO_CALL session — either party, once
    * ACCEPTED (or already IN_PROGRESS, for a token refresh mid-call). */
   @Get(':id/call/token')
   getCallToken(@CurrentUser() user: JwtPayload, @Param('id') id: string) {

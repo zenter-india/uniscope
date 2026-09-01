@@ -1,10 +1,10 @@
 import 'dart:async';
 
+import 'package:agora_rtc_engine/agora_rtc_engine.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:livekit_client/livekit_client.dart' as lk;
 
 import '../../core/network/sessions_api.dart';
 import '../../core/network/wallet_api.dart';
@@ -25,7 +25,7 @@ enum _Phase {
   error,
 }
 
-/// Full lifecycle audio-call screen: mic permission -> join LiveKit room ->
+/// Full lifecycle audio-call screen: mic permission -> join Agora channel ->
 /// wait for the other party's dual-confirm (see SessionsService.confirmJoined)
 /// -> live call with a slot timer and a +5min continue prompt at cutoff ->
 /// ended summary. One screen, one state machine — matches how short-lived
@@ -43,8 +43,7 @@ class _CallScreenState extends ConsumerState<CallScreen> {
   _Phase _phase = _Phase.requestingPermission;
   String? _errorMessage;
   Session? _session;
-  lk.Room? _room;
-  lk.EventsListener<lk.RoomEvent>? _roomListener;
+  RtcEngine? _engine;
   Timer? _pollTimer;
   Timer? _tickTimer;
   Duration _elapsed = Duration.zero;
@@ -74,9 +73,8 @@ class _CallScreenState extends ConsumerState<CallScreen> {
     _pollTimer?.cancel();
     _tickTimer?.cancel();
     _noAnswerTimer?.cancel();
-    _roomListener?.dispose();
-    _room?.disconnect();
-    _room?.dispose();
+    _engine?.leaveChannel();
+    _engine?.release();
     super.dispose();
   }
 
@@ -115,23 +113,24 @@ class _CallScreenState extends ConsumerState<CallScreen> {
         '[call] token acquired sessionId=${widget.sessionId} '
         'channel=${creds.channelName} uid=${creds.uid}',
       );
-      // A native-layer stall here would otherwise leave this screen spinning
-      // on _Phase.connecting forever with no error, which looks identical to
-      // the "stuck ringing" symptom from the other party's side. A bounded
-      // timeout turns a silent hang into a visible error — same safeguard
-      // that was needed for the previous Agora integration.
-      await _joinLiveKitRoom(creds).timeout(
+      // Agora's native join has a documented-but-unconfirmed hang risk on
+      // some Android builds (see CLAUDE.md's Agora native-call note) — an
+      // uncaught native-layer stall here would otherwise leave this screen
+      // spinning on _Phase.connecting forever with no error, which looks
+      // identical to the "stuck ringing" symptom from the other party's
+      // side. A bounded timeout turns a silent hang into a visible error.
+      await _joinAgoraChannel(creds).timeout(
         const Duration(seconds: 20),
         onTimeout: () {
           debugPrint(
-            '[call] LiveKit join TIMED OUT after 20s sessionId=${widget.sessionId}',
+            '[call] Agora join TIMED OUT after 20s sessionId=${widget.sessionId}',
           );
           throw Exception(
             'Could not connect to the call — check your connection and try again.',
           );
         },
       );
-      debugPrint('[call] LiveKit join completed sessionId=${widget.sessionId}');
+      debugPrint('[call] Agora join completed sessionId=${widget.sessionId}');
 
       final confirmed = await api.confirmJoined(widget.sessionId);
       debugPrint(
@@ -153,51 +152,61 @@ class _CallScreenState extends ConsumerState<CallScreen> {
     }
   }
 
-  Future<void> _joinLiveKitRoom(CallCredentials creds) async {
-    debugPrint('[call] LiveKit room connecting room=${creds.channelName}');
-    final room = lk.Room();
-    final listener = room.createListener();
-    listener
-      ..on<lk.ParticipantConnectedEvent>((event) {
-        debugPrint(
-          '[call] LiveKit ParticipantConnected room=${creds.channelName} '
-          'identity=${event.participant.identity}',
-        );
-        if (mounted) setState(() => _remoteJoinedChannel = true);
-      })
-      ..on<lk.ParticipantDisconnectedEvent>((event) {
-        debugPrint(
-          '[call] LiveKit ParticipantDisconnected room=${creds.channelName} '
-          'identity=${event.participant.identity}',
-        );
-        if (mounted) setState(() => _remoteJoinedChannel = false);
-      })
-      ..on<lk.RoomDisconnectedEvent>((event) {
-        debugPrint(
-          '[call] LiveKit RoomDisconnected room=${creds.channelName} reason=${event.reason}',
-        );
-      });
-    _roomListener = listener;
-
-    await room.connect(creds.serverUrl, creds.token);
+  Future<void> _joinAgoraChannel(CallCredentials creds) async {
+    debugPrint('[call] Agora engine initializing channel=${creds.channelName}');
+    final engine = createAgoraRtcEngine();
+    await engine.initialize(RtcEngineContext(appId: creds.appId));
+    // TEMP DIAGNOSTIC — pinpointing exactly which awaited Agora call hangs on
+    // iOS (never confirmed working on this platform before — see CLAUDE.md
+    // "Android Agora native-call crash", which this print trail is extending
+    // to iOS). Live iOS log showed the join sequence hanging for the full
+    // 20s timeout with none of these prints appearing after "initializing" —
+    // narrowing which single call it is, rather than the whole sequence.
     debugPrint(
-      '[call] LiveKit room.connect() completed room=${creds.channelName}',
+      '[call] Agora engine.initialize() completed channel=${creds.channelName}',
     );
-
-    await room.localParticipant?.setMicrophoneEnabled(true);
-    debugPrint('[call] LiveKit microphone enabled room=${creds.channelName}');
-    await lk.AudioManager.instance.setSpeakerOutputPreferred(true);
-    debugPrint('[call] LiveKit speaker enabled room=${creds.channelName}');
-
-    // The other party may already be in the room by the time this client's
-    // listener attaches (e.g. rejoining after a token refresh) — the
-    // ParticipantConnectedEvent won't fire again for them, so check the
-    // room's current participant list directly too.
-    if (room.remoteParticipants.isNotEmpty) {
-      _remoteJoinedChannel = true;
-    }
-
-    _room = room;
+    await engine.enableAudio();
+    debugPrint(
+      '[call] Agora enableAudio() completed channel=${creds.channelName}',
+    );
+    await engine.setDefaultAudioRouteToSpeakerphone(true);
+    debugPrint(
+      '[call] Agora setDefaultAudioRouteToSpeakerphone() completed channel=${creds.channelName}',
+    );
+    engine.registerEventHandler(
+      RtcEngineEventHandler(
+        onUserJoined: (connection, remoteUid, elapsed) {
+          debugPrint(
+            '[call] Agora onUserJoined channel=${creds.channelName} remoteUid=$remoteUid',
+          );
+          if (mounted) setState(() => _remoteJoinedChannel = true);
+        },
+        onUserOffline: (connection, remoteUid, reason) {
+          debugPrint(
+            '[call] Agora onUserOffline channel=${creds.channelName} remoteUid=$remoteUid reason=$reason',
+          );
+          if (mounted) setState(() => _remoteJoinedChannel = false);
+        },
+        onError: (err, msg) {
+          debugPrint(
+            '[call] Agora onError channel=${creds.channelName} err=$err msg=$msg',
+          );
+        },
+      ),
+    );
+    debugPrint(
+      '[call] Agora joinChannelWithUserAccount channel=${creds.channelName} uid=${creds.uid}',
+    );
+    await engine.joinChannelWithUserAccount(
+      token: creds.token,
+      channelId: creds.channelName,
+      userAccount: creds.uid,
+      options: const ChannelMediaOptions(
+        channelProfile: ChannelProfileType.channelProfileCommunication,
+        clientRoleType: ClientRoleType.clientRoleBroadcaster,
+      ),
+    );
+    _engine = engine;
   }
 
   Future<void> _poll() async {
@@ -378,7 +387,7 @@ class _CallScreenState extends ConsumerState<CallScreen> {
     debugPrint('[call] ending locally sessionId=${widget.sessionId}');
     _pollTimer?.cancel();
     _tickTimer?.cancel();
-    _room?.disconnect();
+    _engine?.leaveChannel();
     if (mounted) setState(() => _phase = _Phase.ended);
   }
 
@@ -453,12 +462,12 @@ class _CallScreenState extends ConsumerState<CallScreen> {
           speakerOn: _speakerOn,
           onToggleMute: () async {
             final next = !_muted;
-            await _room?.localParticipant?.setMicrophoneEnabled(!next);
+            await _engine?.muteLocalAudioStream(next);
             setState(() => _muted = next);
           },
           onToggleSpeaker: () async {
             final next = !_speakerOn;
-            await lk.AudioManager.instance.setSpeakerOutputPreferred(next);
+            await _engine?.setEnableSpeakerphone(next);
             setState(() => _speakerOn = next);
           },
           onEnd: () => _endCall(),
