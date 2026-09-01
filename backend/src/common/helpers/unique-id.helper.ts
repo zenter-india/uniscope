@@ -3,7 +3,7 @@
  *
  * Format: "{A|M}{2-digit stream code}{2-digit enrolment year}
  * {7-digit yearly sequence}" — 12 characters, e.g. "A44260000001"
- * (aspirant, Arts & Humanities, enrolled in 2026, 1st in that stream that
+ * (aspirant, Others stream, enrolled in 2026, 1st in that stream that
  * year). The sequence is scoped to prefix+streamCode+year and claimed
  * atomically — see UsersService.ensureUniqueId and IdSequenceCounter —
  * and only resets when the year rolls over, never daily: the visible ID
@@ -25,25 +25,23 @@
  * Nothing rewrites old IDs; User.uniqueId's VARCHAR(12) already fits every
  * format above without a new migration.
  *
- * STREAM_CODES below is only partially client-confirmed. The client
- * specified Medical=11, Dental=22, Engineering=33, and Others=26 — note
- * that break from the obvious 44/55/66/77 doubling pattern, which is
- * exactly why the remaining four codes are NOT guessed with confidence.
- * Everything marked "UNCONFIRMED" below is a placeholder so the feature
- * can ship and be demoed now; swap in the client's real codes before this
- * is treated as final for any profile that already has one assigned,
- * since — by design — a uniqueId never changes once given out.
+ * STREAM_CODES below is now fully client-confirmed — the simple +11
+ * doubling pattern across all eight streams, Medical through Design:
+ * 11/22/33/44/55/66/77/88. This supersedes an earlier partial spec where
+ * Others was a deliberate break from the pattern at 26 (never shipped
+ * broadly enough to matter) — any already-assigned row using that old
+ * Others=26 code is left as-is, since a uniqueId never changes once given
+ * out; 26 is simply retired for all new assignments.
  */
 export const STREAM_CODES: Record<string, string> = {
   Medical: '11',
   Dental: '22',
   Engineering: '33',
-  // UNCONFIRMED — placeholder codes only, pending the client's actual list.
-  'Arts & Humanities': '44',
-  'Commerce & Business': '55',
-  Law: '66',
-  Design: '77',
-  Others: '26',
+  Others: '44',
+  'Arts & Humanities': '55',
+  'Commerce & Business': '66',
+  Law: '77',
+  Design: '88',
 };
 
 const FALLBACK_STREAM_CODE = STREAM_CODES.Others;
