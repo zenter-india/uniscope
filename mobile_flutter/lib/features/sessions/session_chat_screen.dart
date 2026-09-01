@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:stream_chat_flutter/stream_chat_flutter.dart';
 
 import '../../core/network/chat_api.dart';
 import '../../core/network/sessions_api.dart';
@@ -13,6 +12,7 @@ import '../reports/safety_menu_sheet.dart';
 import '../wallet/low_balance_sheet.dart';
 import '../wallet/wallet_screen.dart' show walletBalanceProvider;
 import 'call_request_sheet.dart';
+import 'chat_thread_view.dart';
 
 /// Shortest bookable call slot, in Uniminutes — mirrors the backend's
 /// CreateSessionDto.CALL_SLOT_MINUTES. Below this balance, booking any
@@ -37,8 +37,7 @@ class SessionChatScreen extends ConsumerStatefulWidget {
 }
 
 class _SessionChatScreenState extends ConsumerState<SessionChatScreen> {
-  StreamChatClient? _client;
-  Channel? _channel;
+  ChatConnection? _connection;
   Object? _error;
   Session? _session;
   Timer? _pollTimer;
@@ -83,22 +82,12 @@ class _SessionChatScreenState extends ConsumerState<SessionChatScreen> {
   Future<void> _connect() async {
     _pollTimer?.cancel();
     try {
-      final userId = ref.read(authControllerProvider).user!.id;
-      final chatToken = await ref
+      final connection = await ref
           .read(chatApiProvider)
-          .getToken(widget.sessionId);
-
-      final client = StreamChatClient(chatToken.apiKey);
-      await client.connectUser(User(id: userId), chatToken.token);
-
-      final channel = client.channel('messaging', id: chatToken.channelId);
-      await channel.watch();
+          .getMessages(widget.sessionId);
 
       if (!mounted) return;
-      setState(() {
-        _client = client;
-        _channel = channel;
-      });
+      setState(() => _connection = connection);
     } catch (e) {
       if (!mounted) return;
       setState(() => _error = e);
@@ -108,7 +97,6 @@ class _SessionChatScreenState extends ConsumerState<SessionChatScreen> {
   @override
   void dispose() {
     _pollTimer?.cancel();
-    _client?.disconnectUser();
     super.dispose();
   }
 
@@ -165,7 +153,7 @@ class _SessionChatScreenState extends ConsumerState<SessionChatScreen> {
       );
     }
 
-    if (_client == null || _channel == null) {
+    if (_connection == null) {
       return const Scaffold(
         backgroundColor: AppColors.background,
         body: Center(
@@ -174,100 +162,76 @@ class _SessionChatScreenState extends ConsumerState<SessionChatScreen> {
       );
     }
 
-    return StreamChat(
-      client: _client!,
-      child: StreamChannel(
-        channel: _channel!,
-        child: Scaffold(
-          appBar: StreamChannelHeader(
-            // Stream's default header avatar comes from its own
-            // StreamChannelAvatar in the `actions` slot — but we replace
-            // `actions` below (call + report/block buttons), which drops
-            // it. It also can't render our SVG avatars anyway, so this
-            // title override uses the app's own AppAvatar (same widget
-            // used everywhere else a mentor/aspirant is shown) instead.
-            title: Builder(
-              builder: (context) {
-                final currentUserId = ref.read(authControllerProvider).user!.id;
-                final isAspirant = currentUserId == _session!.aspirantId;
-                final otherName = isAspirant
-                    ? _session!.mentorName
-                    : _session!.aspirantName;
-                final otherAvatarUrl = isAspirant
-                    ? _session!.mentorAvatarUrl
-                    : _session!.aspirantAvatarUrl;
-                return Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    AppAvatar(
-                      name: otherName,
-                      avatarUrl: otherAvatarUrl,
-                      size: 32,
-                    ),
-                    const SizedBox(width: AppSpacing.sm),
-                    Expanded(child: StreamChannelName(channel: _channel!)),
-                  ],
-                );
-              },
+    final currentUserId = ref.read(authControllerProvider).user!.id;
+    final isAspirant = currentUserId == _session!.aspirantId;
+    final otherName = isAspirant ? _session!.mentorName : _session!.aspirantName;
+    final otherAvatarUrl = isAspirant
+        ? _session!.mentorAvatarUrl
+        : _session!.aspirantAvatarUrl;
+    final otherUserId = isAspirant ? _session!.mentorId : _session!.aspirantId;
+
+    return Scaffold(
+      backgroundColor: AppColors.background,
+      appBar: AppBar(
+        titleSpacing: 0,
+        title: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            AppAvatar(name: otherName, avatarUrl: otherAvatarUrl, size: 32),
+            const SizedBox(width: AppSpacing.sm),
+            Expanded(
+              child: Text(otherName, overflow: TextOverflow.ellipsis),
             ),
-            actions: [
-              IconButton(
-                icon: const Icon(Icons.call_rounded, color: AppColors.primary),
-                tooltip: 'Request a call',
-                onPressed: () async {
-                  final wallet = await ref.read(walletBalanceProvider.future);
-                  if (!context.mounted) return;
-                  if (wallet.balanceUniminutes < _minCallSlotUniminutes) {
-                    await showLowBalanceSheet(
-                      context,
-                      balanceUniminutes: wallet.balanceUniminutes,
-                    );
-                    return;
-                  }
-                  if (!context.mounted) return;
-                  await showCallRequestSheet(
-                    context,
-                    ref,
-                    mentorId: _session!.mentorId,
-                  );
-                },
-              ),
-              Builder(
-                builder: (context) {
-                  final currentUserId = ref
-                      .read(authControllerProvider)
-                      .user!
-                      .id;
-                  final otherUserId = currentUserId == _session!.aspirantId
-                      ? _session!.mentorId
-                      : _session!.aspirantId;
-                  return IconButton(
-                    icon: const Icon(
-                      Icons.more_vert_rounded,
-                      color: AppColors.textSecondary,
-                    ),
-                    tooltip: 'Report or block',
-                    onPressed: () => showSafetyMenuSheet(
-                      context,
-                      ref,
-                      userId: otherUserId,
-                      userLabel: 'this user',
-                    ),
-                  );
-                },
-              ),
-            ],
-          ),
-          body: const Column(
-            children: [
-              Expanded(child: StreamMessageListView()),
-              StreamMessageInput(
-                showCommandsButton: false,
-                disableAttachments: true,
-              ),
-            ],
-          ),
+          ],
         ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.call_rounded, color: AppColors.primary),
+            tooltip: 'Request a call',
+            onPressed: () async {
+              final wallet = await ref.read(walletBalanceProvider.future);
+              if (!context.mounted) return;
+              if (wallet.balanceUniminutes < _minCallSlotUniminutes) {
+                await showLowBalanceSheet(
+                  context,
+                  balanceUniminutes: wallet.balanceUniminutes,
+                );
+                return;
+              }
+              if (!context.mounted) return;
+              await showCallRequestSheet(
+                context,
+                ref,
+                mentorId: _session!.mentorId,
+              );
+            },
+          ),
+          IconButton(
+            icon: const Icon(
+              Icons.more_vert_rounded,
+              color: AppColors.textSecondary,
+            ),
+            tooltip: 'Report or block',
+            onPressed: () => showSafetyMenuSheet(
+              context,
+              ref,
+              userId: otherUserId,
+              userLabel: 'this user',
+            ),
+          ),
+        ],
+      ),
+      body: ChatThreadView(
+        connection: _connection!,
+        currentUserId: currentUserId,
+        onSend: (text) =>
+            ref.read(chatApiProvider).sendMessage(widget.sessionId, text),
+        onRefetch: () async {
+          final refreshed = await ref
+              .read(chatApiProvider)
+              .getMessages(widget.sessionId);
+          return refreshed.messages;
+        },
       ),
     );
   }

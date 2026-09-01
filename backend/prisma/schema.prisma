@@ -584,6 +584,11 @@ model Session {
   billedMinutes      Int           @default(0) @map("billed_minutes")
   totalCostMinor     Int           @default(0) @map("total_cost_minor")
   agoraChannelName   String?       @map("agora_channel_name") @db.VarChar(100)
+  /// Superseded by ChatChannel (see migration/chat-supabase-realtime) — kept
+  /// only so already-created Stream channel ids on old rows aren't lost;
+  /// never written for a new CHAT session. New sessions get a ChatChannel
+  /// row instead (ChatChannel.sessionId), created lazily the same way this
+  /// field used to be.
   streamChannelId    String?       @map("stream_channel_id") @db.VarChar(100)
   /// NORMAL | NO_ANSWER | DROPPED | MENTOR_DROPPED | BALANCE_EXHAUSTED |
   /// CANCELLED | REJECTED | ASPIRANT_NO_SHOW | MENTOR_NO_SHOW.
@@ -605,11 +610,58 @@ model Session {
   holds         WalletHold[]
   ledgerEntries LedgerEntry[]
   mentorReview  MentorReview?
+  chatChannel   ChatChannel?
 
   @@index([aspirantId, status])
   @@index([mentorId, status])
   @@index([status, requestedAt])
   @@map("sessions")
+}
+
+enum ChatChannelType {
+  /// A CHAT-type Session's message thread — one channel per session.
+  SESSION
+  /// The persistent, session-independent "chat with UniScope" channel —
+  /// one per user, always available, mirrors the old Stream Chat
+  /// SUPPORT_ACCOUNT_ID pattern (see ChatService).
+  SUPPORT
+}
+
+/// Replaces Stream Chat as the message-thread backing store (see
+/// migration/chat-supabase-realtime) — messages persist here in Postgres;
+/// live delivery is Supabase Realtime Broadcast (a content-free "new
+/// message" ping on a per-channel topic, never the message body itself —
+/// see ChatService.publishNewMessage). Exactly one of sessionId/
+/// supportUserId is set, matching the channel's type.
+model ChatChannel {
+  id            String          @id @default(uuid())
+  type          ChatChannelType
+  sessionId     String?         @unique @map("session_id")
+  supportUserId String?         @unique @map("support_user_id")
+  createdAt     DateTime        @default(now()) @map("created_at") @db.Timestamptz
+
+  session  Session?      @relation(fields: [sessionId], references: [id])
+  messages ChatMessage[]
+
+  @@map("chat_channels")
+}
+
+/// senderId is a real User.id for SESSION channels; for SUPPORT channels
+/// it's either the channel's own supportUserId or the fixed
+/// SUPPORT_ACCOUNT_ID sentinel (see ChatService) — never a foreign key,
+/// since the support identity isn't a real User row, same as it wasn't
+/// under Stream Chat.
+model ChatMessage {
+  id        String      @id @default(uuid())
+  channelId String      @map("channel_id")
+  senderId  String      @map("sender_id")
+  text      String
+  createdAt DateTime    @default(now()) @map("created_at") @db.Timestamptz
+
+  channel ChatChannel @relation(fields: [channelId], references: [id])
+
+  @@index([channelId, createdAt])
+  @@map("chat_messages")
 }
 
 /// One wallet per user. balanceMinor is a CACHE derived from LedgerEntry rows —

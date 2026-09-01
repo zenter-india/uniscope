@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:stream_chat_flutter/stream_chat_flutter.dart';
 
 import '../../core/network/chat_api.dart';
 import '../../core/theme/app_theme.dart';
 import '../../state/auth_controller.dart';
+import 'chat_thread_view.dart';
 
 /// Persistent "chat with UniScope" support channel — available any time,
 /// independent of any session (unlike SessionChatScreen). Backed by
-/// GET /chat/support/token, which lazily provisions the channel.
+/// GET /chat/support/messages, which lazily provisions the channel.
 class SupportChatScreen extends ConsumerStatefulWidget {
   const SupportChatScreen({super.key});
 
@@ -17,8 +17,7 @@ class SupportChatScreen extends ConsumerStatefulWidget {
 }
 
 class _SupportChatScreenState extends ConsumerState<SupportChatScreen> {
-  StreamChatClient? _client;
-  Channel? _channel;
+  ChatConnection? _connection;
   Object? _error;
 
   @override
@@ -29,30 +28,13 @@ class _SupportChatScreenState extends ConsumerState<SupportChatScreen> {
 
   Future<void> _connect() async {
     try {
-      final userId = ref.read(authControllerProvider).user!.id;
-      final chatToken = await ref.read(chatApiProvider).getSupportToken();
-
-      final client = StreamChatClient(chatToken.apiKey);
-      await client.connectUser(User(id: userId), chatToken.token);
-
-      final channel = client.channel('messaging', id: chatToken.channelId);
-      await channel.watch();
-
+      final connection = await ref.read(chatApiProvider).getSupportMessages();
       if (!mounted) return;
-      setState(() {
-        _client = client;
-        _channel = channel;
-      });
+      setState(() => _connection = connection);
     } catch (e) {
       if (!mounted) return;
       setState(() => _error = e);
     }
-  }
-
-  @override
-  void dispose() {
-    _client?.disconnectUser();
-    super.dispose();
   }
 
   @override
@@ -73,7 +55,7 @@ class _SupportChatScreenState extends ConsumerState<SupportChatScreen> {
       );
     }
 
-    if (_client == null || _channel == null) {
+    if (_connection == null) {
       return const Scaffold(
         backgroundColor: AppColors.background,
         body: Center(
@@ -82,22 +64,17 @@ class _SupportChatScreenState extends ConsumerState<SupportChatScreen> {
       );
     }
 
-    return StreamChat(
-      client: _client!,
-      child: StreamChannel(
-        channel: _channel!,
-        child: Scaffold(
-          appBar: const StreamChannelHeader(),
-          body: const Column(
-            children: [
-              Expanded(child: StreamMessageListView()),
-              StreamMessageInput(
-                showCommandsButton: false,
-                disableAttachments: true,
-              ),
-            ],
-          ),
-        ),
+    return Scaffold(
+      backgroundColor: AppColors.background,
+      appBar: AppBar(title: const Text('UniScope Support')),
+      body: ChatThreadView(
+        connection: _connection!,
+        currentUserId: ref.read(authControllerProvider).user!.id,
+        onSend: (text) => ref.read(chatApiProvider).sendSupportMessage(text),
+        onRefetch: () async {
+          final refreshed = await ref.read(chatApiProvider).getSupportMessages();
+          return refreshed.messages;
+        },
       ),
     );
   }

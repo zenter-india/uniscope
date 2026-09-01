@@ -1,9 +1,11 @@
 import {
+  Body,
   Controller,
   ForbiddenException,
   Get,
   NotFoundException,
   Param,
+  Post,
   UseGuards,
 } from '@nestjs/common';
 import { SessionStatus, SessionType } from '@prisma/client';
@@ -12,6 +14,7 @@ import type { JwtPayload } from '../../auth/decorators/current-user.decorator.js
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard.js';
 import { PrismaService } from '../../database/prisma/prisma.service.js';
 import { ChatService } from './chat.service.js';
+import { SendMessageDto } from './dto/send-message.dto.js';
 
 /** Chat is readable/writable once the mentor has accepted, through session
  * completion (so either party can still read history afterward). */
@@ -21,6 +24,7 @@ const CHATTABLE_STATUSES: SessionStatus[] = [
   SessionStatus.COMPLETED,
 ];
 
+@UseGuards(JwtAuthGuard)
 @Controller('sessions/:sessionId/chat')
 export class ChatController {
   constructor(
@@ -28,18 +32,14 @@ export class ChatController {
     private readonly prisma: PrismaService,
   ) {}
 
-  @UseGuards(JwtAuthGuard)
-  @Get('token')
-  async getToken(
-    @Param('sessionId') sessionId: string,
-    @CurrentUser() user: JwtPayload,
-  ) {
-    // 404 (not 403) for a session the user isn't party to — same privacy
-    // pattern as SessionsService.findById, avoids existence-leak.
+  /** Same authorization shape as the pre-migration Stream Chat token
+   * endpoint — 404 (not 403) for a session the user isn't party to, avoids
+   * existence-leak. Lazily provisions the ChatChannel on first request. */
+  private async requireChannel(sessionId: string, userId: string) {
     const session = await this.prisma.session.findFirst({
       where: {
         id: sessionId,
-        OR: [{ aspirantId: user.sub }, { mentorId: user.sub }],
+        OR: [{ aspirantId: userId }, { mentorId: userId }],
       },
     });
     if (!session) {
@@ -53,14 +53,29 @@ export class ChatController {
         `Chat is not available while the session is ${session.status}`,
       );
     }
-    if (!session.streamChannelId) {
-      throw new NotFoundException('Chat channel has not been created yet');
-    }
+    return this.chatService.ensureChannelForSession(sessionId);
+  }
 
+  @Get('messages')
+  async listMessages(
+    @Param('sessionId') sessionId: string,
+    @CurrentUser() user: JwtPayload,
+  ) {
+    const channel = await this.requireChannel(sessionId, user.sub);
     return {
-      token: this.chatService.generateUserToken(user.sub),
-      channelId: session.streamChannelId,
-      apiKey: this.chatService.getApiKey(),
+      ...this.chatService.connectionInfo(channel.id),
+      channelId: channel.id,
+      messages: await this.chatService.listMessages(channel.id),
     };
+  }
+
+  @Post('messages')
+  async sendMessage(
+    @Param('sessionId') sessionId: string,
+    @CurrentUser() user: JwtPayload,
+    @Body() dto: SendMessageDto,
+  ) {
+    const channel = await this.requireChannel(sessionId, user.sub);
+    return this.chatService.sendMessage(channel.id, user.sub, dto.text);
   }
 }

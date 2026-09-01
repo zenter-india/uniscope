@@ -216,31 +216,12 @@ export class SessionsService {
     // involves a wallet hold and the mentor's scheduling availability, so a
     // deliberate accept still makes sense there).
     if (!isAudioCall) {
-      const aspirant = await this.prisma.user.findUniqueOrThrow({
-        where: { id: aspirantId },
-        select: { displayName: true, profile: { select: { avatarKey: true, updatedAt: true } } },
-      });
-      const streamChannelId = await this.chatService.ensureChannelForSession({
-        sessionId: session.id,
-        aspirantId,
-        aspirantName: aspirant.displayName,
-        aspirantAvatarUrl: aspirant.profile
-          ? this.avatarService.publicUrl(
-              aspirantId,
-              aspirant.profile.avatarKey,
-              aspirant.profile.updatedAt,
-            )
-          : null,
-        mentorId: dto.mentorId,
-        mentorName: mentor.displayName,
-        mentorAvatarUrl: mentor.avatarUrl,
-      });
+      await this.chatService.ensureChannelForSession(session.id);
       await this.prisma.session.update({
         where: { id: session.id },
         data: {
           status: SessionStatus.ACCEPTED,
           respondedAt: new Date(),
-          streamChannelId,
         },
       });
     }
@@ -272,45 +253,14 @@ export class SessionsService {
       );
     }
 
-    // For CHAT sessions the Stream channel is the messaging surface itself,
+    // For CHAT sessions the chat channel is the messaging surface itself,
     // so it's provisioned right on accept (AUDIO_CALL sessions provision
-    // their Agora channel later, at the connect leg). In practice CHAT
+    // their call room later, at the connect leg). In practice CHAT
     // sessions no longer pass through PENDING at all (see create() — they
     // open immediately), so this branch is dead for CHAT today; kept for
     // type-correctness and as a defensive fallback if that ever changes.
-    let streamChannelId: string | undefined;
     if (session.type === SessionType.CHAT) {
-      const [aspirant, mentor] = await Promise.all([
-        this.prisma.user.findUniqueOrThrow({
-          where: { id: session.aspirantId },
-          select: { displayName: true, profile: { select: { avatarKey: true, updatedAt: true } } },
-        }),
-        this.prisma.user.findUniqueOrThrow({
-          where: { id: session.mentorId },
-          select: { displayName: true, profile: { select: { avatarKey: true, updatedAt: true } } },
-        }),
-      ]);
-      streamChannelId = await this.chatService.ensureChannelForSession({
-        sessionId: session.id,
-        aspirantId: session.aspirantId,
-        aspirantName: aspirant.displayName,
-        aspirantAvatarUrl: aspirant.profile
-          ? this.avatarService.publicUrl(
-              session.aspirantId,
-              aspirant.profile.avatarKey,
-              aspirant.profile.updatedAt,
-            )
-          : null,
-        mentorId: session.mentorId,
-        mentorName: mentor.displayName,
-        mentorAvatarUrl: mentor.profile
-          ? this.avatarService.publicUrl(
-              session.mentorId,
-              mentor.profile.avatarKey,
-              mentor.profile.updatedAt,
-            )
-          : null,
-      });
+      await this.chatService.ensureChannelForSession(session.id);
     }
 
     await this.prisma.session.update({
@@ -318,7 +268,6 @@ export class SessionsService {
       data: {
         status: SessionStatus.ACCEPTED,
         respondedAt: new Date(),
-        ...(streamChannelId && { streamChannelId }),
       },
     });
 
