@@ -17,7 +17,7 @@ import {
   SessionType,
 } from '@prisma/client';
 import { PrismaService } from '../../database/prisma/prisma.service.js';
-import { AgoraService } from '../agora/agora.service.js';
+import { StreamVideoService } from '../stream-video/stream-video.service.js';
 import { AvatarService } from '../avatar/avatar.service.js';
 import { BlocksService } from '../blocks/blocks.service.js';
 import { ChatService } from '../chat/chat.service.js';
@@ -86,7 +86,7 @@ export class SessionsService {
     private readonly mentorsService: MentorsService,
     private readonly chatService: ChatService,
     private readonly walletService: WalletService,
-    private readonly agoraService: AgoraService,
+    private readonly streamVideoService: StreamVideoService,
     private readonly notificationsService: NotificationsService,
     private readonly blocksService: BlocksService,
     private readonly avatarService: AvatarService,
@@ -412,15 +412,20 @@ export class SessionsService {
   }
 
   /**
-   * Issues an Agora RTC token for an AUDIO_CALL session. Lazily provisions
-   * agoraChannelName on first request (mirrors ChatService's
-   * ensureChannelForSession pattern) — a party can call this repeatedly to
-   * refresh their token.
+   * Issues a Stream Video call token for an AUDIO_CALL session (audio_room
+   * call type — video permanently disabled, see StreamVideoService).
+   * Lazily provisions the session's call id on first request (mirrors
+   * ChatService's ensureChannelForSession pattern) — a party can call this
+   * repeatedly to refresh their token. `channelName` is kept as the wire
+   * field name (mobile already speaks it) and as `agoraChannelName` on the
+   * Session row (no schema migration for a pure rename — the column just
+   * holds "the call's room id," vendor-agnostic in practice, same as it
+   * was through the Agora→LiveKit→Stream Video history of this field).
    */
   async getCallCredentials(
     sessionId: string,
     userId: string,
-  ): Promise<{ appId: string; channelName: string; token: string; uid: string }> {
+  ): Promise<{ apiKey: string; channelName: string; token: string; uid: string }> {
     const session = await this.requireSessionForParty(sessionId, userId);
 
     if (session.type !== SessionType.AUDIO_CALL) {
@@ -442,13 +447,31 @@ export class SessionsService {
       });
     }
 
+    const [aspirant, mentor] = await Promise.all([
+      this.prisma.user.findUniqueOrThrow({
+        where: { id: session.aspirantId },
+        select: { displayName: true },
+      }),
+      this.prisma.user.findUniqueOrThrow({
+        where: { id: session.mentorId },
+        select: { displayName: true },
+      }),
+    ]);
+    await this.streamVideoService.ensureCall({
+      callId: channelName,
+      aspirantId: session.aspirantId,
+      aspirantName: aspirant.displayName,
+      mentorId: session.mentorId,
+      mentorName: mentor.displayName,
+    });
+
     this.logger.log(
       `[call] token issued sessionId=${sessionId} userId=${userId} channel=${channelName}`,
     );
     return {
-      appId: this.agoraService.getAppId(),
+      apiKey: this.streamVideoService.getApiKey(),
       channelName,
-      token: this.agoraService.generateRtcToken(channelName, userId),
+      token: this.streamVideoService.generateCallToken(userId, channelName),
       uid: userId,
     };
   }

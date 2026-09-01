@@ -87,9 +87,6 @@ export const validationSchema = Joi.object({
   STREAM_API_KEY: Joi.string().default(''),
   STREAM_API_SECRET: Joi.string().default(''),
 
-  // Agora — audio calls
-  AGORA_APP_ID: Joi.string().default(''),
-  AGORA_APP_CERTIFICATE: Joi.string().default(''),
 
   // Ops alerts (Slack incoming webhook) — optional. Unset means alerts
   // are silently skipped rather than the app failing to start; see

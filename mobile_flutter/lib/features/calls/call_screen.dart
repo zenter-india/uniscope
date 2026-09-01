@@ -1,10 +1,10 @@
 import 'dart:async';
 
-import 'package:agora_rtc_engine/agora_rtc_engine.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:stream_video/stream_video.dart' as sv;
 
 import '../../core/network/sessions_api.dart';
 import '../../core/network/wallet_api.dart';
@@ -25,7 +25,9 @@ enum _Phase {
   error,
 }
 
-/// Full lifecycle audio-call screen: mic permission -> join Agora channel ->
+/// Full lifecycle audio-call screen: mic permission -> join Stream Video
+/// call (audio_room type — video is permanently disabled on that call type,
+/// see StreamVideoService on the backend) ->
 /// wait for the other party's dual-confirm (see SessionsService.confirmJoined)
 /// -> live call with a slot timer and a +5min continue prompt at cutoff ->
 /// ended summary. One screen, one state machine — matches how short-lived
@@ -43,7 +45,9 @@ class _CallScreenState extends ConsumerState<CallScreen> {
   _Phase _phase = _Phase.requestingPermission;
   String? _errorMessage;
   Session? _session;
-  RtcEngine? _engine;
+  sv.StreamVideo? _client;
+  sv.Call? _call;
+  StreamSubscription<sv.CallState>? _callStateSub;
   Timer? _pollTimer;
   Timer? _tickTimer;
   Duration _elapsed = Duration.zero;
@@ -73,8 +77,9 @@ class _CallScreenState extends ConsumerState<CallScreen> {
     _pollTimer?.cancel();
     _tickTimer?.cancel();
     _noAnswerTimer?.cancel();
-    _engine?.leaveChannel();
-    _engine?.release();
+    _callStateSub?.cancel();
+    _call?.leave();
+    _client?.dispose();
     super.dispose();
   }
 
@@ -113,24 +118,25 @@ class _CallScreenState extends ConsumerState<CallScreen> {
         '[call] token acquired sessionId=${widget.sessionId} '
         'channel=${creds.channelName} uid=${creds.uid}',
       );
-      // Agora's native join has a documented-but-unconfirmed hang risk on
-      // some Android builds (see CLAUDE.md's Agora native-call note) — an
-      // uncaught native-layer stall here would otherwise leave this screen
-      // spinning on _Phase.connecting forever with no error, which looks
-      // identical to the "stuck ringing" symptom from the other party's
-      // side. A bounded timeout turns a silent hang into a visible error.
-      await _joinAgoraChannel(creds).timeout(
+      // A native-layer stall here would otherwise leave this screen spinning
+      // on _Phase.connecting forever with no error, which looks identical to
+      // the "stuck ringing" symptom from the other party's side. A bounded
+      // timeout turns a silent hang into a visible error — same safeguard
+      // that was needed for the previous Agora integration.
+      await _joinStreamCall(creds).timeout(
         const Duration(seconds: 20),
         onTimeout: () {
           debugPrint(
-            '[call] Agora join TIMED OUT after 20s sessionId=${widget.sessionId}',
+            '[call] Stream Video join TIMED OUT after 20s sessionId=${widget.sessionId}',
           );
           throw Exception(
             'Could not connect to the call — check your connection and try again.',
           );
         },
       );
-      debugPrint('[call] Agora join completed sessionId=${widget.sessionId}');
+      debugPrint(
+        '[call] Stream Video join completed sessionId=${widget.sessionId}',
+      );
 
       final confirmed = await api.confirmJoined(widget.sessionId);
       debugPrint(
@@ -152,61 +158,86 @@ class _CallScreenState extends ConsumerState<CallScreen> {
     }
   }
 
-  Future<void> _joinAgoraChannel(CallCredentials creds) async {
-    debugPrint('[call] Agora engine initializing channel=${creds.channelName}');
-    final engine = createAgoraRtcEngine();
-    await engine.initialize(RtcEngineContext(appId: creds.appId));
-    // TEMP DIAGNOSTIC — pinpointing exactly which awaited Agora call hangs on
-    // iOS (never confirmed working on this platform before — see CLAUDE.md
-    // "Android Agora native-call crash", which this print trail is extending
-    // to iOS). Live iOS log showed the join sequence hanging for the full
-    // 20s timeout with none of these prints appearing after "initializing" —
-    // narrowing which single call it is, rather than the whole sequence.
+  Future<void> _joinStreamCall(CallCredentials creds) async {
+    debugPrint('[call] Stream Video client connecting call=${creds.channelName}');
+    final client = sv.StreamVideo(
+      creds.apiKey,
+      user: sv.User.regular(userId: creds.uid),
+      userToken: creds.token,
+    );
+    // Push notifications for Stream Video calls aren't wired up (this app's
+    // existing in-app ringing/notification flow is what actually alerts the
+    // other party — see SessionsService/NotificationsService) — registering
+    // a push device here would be inert infrastructure, not a real feature.
+    final connectResult = await client.connect(registerPushDevice: false);
+    if (connectResult.isFailure) {
+      throw Exception(
+        'Could not connect to the call — ${connectResult.getErrorOrNull()?.message}',
+      );
+    }
     debugPrint(
-      '[call] Agora engine.initialize() completed channel=${creds.channelName}',
+      '[call] Stream Video client.connect() completed call=${creds.channelName}',
     );
-    await engine.enableAudio();
+
+    // audio_room call type — video is disabled at the call-type level (see
+    // StreamVideoService on the backend), so this is audio-only by
+    // construction, not by convention on the client side.
+    final call = client.makeCall(
+      callType: sv.StreamCallType.audioRoom(),
+      id: creds.channelName,
+    );
+    final joinResult = await call.join();
+    if (joinResult.isFailure) {
+      throw Exception(
+        'Could not connect to the call — ${joinResult.getErrorOrNull()?.message}',
+      );
+    }
+    debugPrint('[call] Stream Video call.join() completed call=${creds.channelName}');
+
+    await call.setMicrophoneEnabled(enabled: true);
     debugPrint(
-      '[call] Agora enableAudio() completed channel=${creds.channelName}',
+      '[call] Stream Video microphone enabled call=${creds.channelName}',
     );
-    await engine.setDefaultAudioRouteToSpeakerphone(true);
-    debugPrint(
-      '[call] Agora setDefaultAudioRouteToSpeakerphone() completed channel=${creds.channelName}',
-    );
-    engine.registerEventHandler(
-      RtcEngineEventHandler(
-        onUserJoined: (connection, remoteUid, elapsed) {
-          debugPrint(
-            '[call] Agora onUserJoined channel=${creds.channelName} remoteUid=$remoteUid',
-          );
-          if (mounted) setState(() => _remoteJoinedChannel = true);
-        },
-        onUserOffline: (connection, remoteUid, reason) {
-          debugPrint(
-            '[call] Agora onUserOffline channel=${creds.channelName} remoteUid=$remoteUid reason=$reason',
-          );
-          if (mounted) setState(() => _remoteJoinedChannel = false);
-        },
-        onError: (err, msg) {
-          debugPrint(
-            '[call] Agora onError channel=${creds.channelName} err=$err msg=$msg',
-          );
-        },
-      ),
-    );
-    debugPrint(
-      '[call] Agora joinChannelWithUserAccount channel=${creds.channelName} uid=${creds.uid}',
-    );
-    await engine.joinChannelWithUserAccount(
-      token: creds.token,
-      channelId: creds.channelName,
-      userAccount: creds.uid,
-      options: const ChannelMediaOptions(
-        channelProfile: ChannelProfileType.channelProfileCommunication,
-        clientRoleType: ClientRoleType.clientRoleBroadcaster,
-      ),
-    );
-    _engine = engine;
+
+    if (call.state.value.otherParticipants.isNotEmpty) {
+      _remoteJoinedChannel = true;
+    }
+    _callStateSub = call.state.listen((state) {
+      final joined = state.otherParticipants.isNotEmpty;
+      debugPrint(
+        '[call] Stream Video otherParticipants=${state.otherParticipants.length} '
+        'call=${creds.channelName}',
+      );
+      if (mounted) setState(() => _remoteJoinedChannel = joined);
+    });
+
+    _client = client;
+    _call = call;
+  }
+
+  /// Best-effort speaker toggle — Stream Video's Flutter SDK exposes audio
+  /// output only as device enumeration + selection (no plain on/off
+  /// speakerphone switch), so this matches by device label. Label strings
+  /// are platform/OEM-native text ("Speaker", "Earpiece", etc.) — this is
+  /// the one part of this integration most worth re-checking on a real
+  /// device across a couple of Android OEMs before trusting it fully.
+  Future<void> _setSpeaker(bool on) async {
+    try {
+      final result = await sv.RtcMediaDeviceNotifier.instance.enumerateDevices(
+        kind: sv.RtcMediaDeviceKind.audioOutput,
+      );
+      final devices = result.getDataOrNull();
+      if (devices == null || devices.isEmpty) return;
+      final match = devices.firstWhere(
+        (d) => on
+            ? d.label.toLowerCase().contains('speaker')
+            : !d.label.toLowerCase().contains('speaker'),
+        orElse: () => devices.first,
+      );
+      await _call?.setAudioOutputDevice(match);
+    } catch (e) {
+      debugPrint('[call] speaker toggle failed — $e');
+    }
   }
 
   Future<void> _poll() async {
@@ -387,7 +418,8 @@ class _CallScreenState extends ConsumerState<CallScreen> {
     debugPrint('[call] ending locally sessionId=${widget.sessionId}');
     _pollTimer?.cancel();
     _tickTimer?.cancel();
-    _engine?.leaveChannel();
+    _callStateSub?.cancel();
+    _call?.leave();
     if (mounted) setState(() => _phase = _Phase.ended);
   }
 
@@ -462,12 +494,12 @@ class _CallScreenState extends ConsumerState<CallScreen> {
           speakerOn: _speakerOn,
           onToggleMute: () async {
             final next = !_muted;
-            await _engine?.muteLocalAudioStream(next);
+            await _call?.setMicrophoneEnabled(enabled: !next);
             setState(() => _muted = next);
           },
           onToggleSpeaker: () async {
             final next = !_speakerOn;
-            await _engine?.setEnableSpeakerphone(next);
+            await _setSpeaker(next);
             setState(() => _speakerOn = next);
           },
           onEnd: () => _endCall(),

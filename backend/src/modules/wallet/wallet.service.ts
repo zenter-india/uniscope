@@ -66,7 +66,7 @@ function computeTopupCredit(paidAmountMinor: number): {
  *      rolls back, and the caller treats it as "already applied" — this is
  *      what makes retried Razorpay webhooks and retried billing ticks safe.
  * Session billing (holds, per-minute debits, credits, refunds) will call
- * this same method once the Agora/BullMQ billing clock is wired in —
+ * this same method once the Stream Video/BullMQ billing clock is wired in —
  * deliberately not duplicating this logic elsewhere.
  */
 @Injectable()
