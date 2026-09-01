@@ -108,10 +108,14 @@ class HomeScreen extends ConsumerWidget {
               // stop lands below the fold and only flat teal shows.
               Container(
                 width: double.infinity,
-                // Green wash at the top, fading in a straight line down to
-                // white by the canopy's own bottom edge — so it blends into
-                // the white sheet below instead of cutting off abruptly at
-                // the wave seam.
+                // Darker green at the very top settling into a flat
+                // primaryLight tint by ~35% of the canopy's height, then
+                // held flat the rest of the way down. A full fade to white
+                // washed out before it reached the search bar, so the whole
+                // canopy read as barely-there and blended straight into
+                // "Quick actions" below with no visible seam. Staying
+                // green-tinted through the canopy's own bottom edge gives it
+                // a real boundary against the white/gray body content.
                 decoration: const BoxDecoration(
                   gradient: LinearGradient(
                     begin: Alignment.topCenter,
@@ -119,9 +123,9 @@ class HomeScreen extends ConsumerWidget {
                     colors: [
                       AppColors.canopyTop,
                       AppColors.primaryLight,
-                      AppColors.surface,
+                      AppColors.primaryLight,
                     ],
-                    stops: [0.0, 0.55, 1.0],
+                    stops: [0.0, 0.35, 1.0],
                   ),
                 ),
                 padding: EdgeInsets.only(
