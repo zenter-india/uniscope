@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useState, useTransition } from 'react';
 import { getLeadDocumentUrl, updateLead } from './actions';
 
@@ -26,6 +27,7 @@ export interface LeadRowData {
   fullName: string;
   phone: string;
   email: string | null;
+  dateOfBirth: string | null;
   gender: string | null;
   state: string | null;
   city: string | null;
@@ -48,8 +50,10 @@ export interface LeadRowData {
   availableDays: string[];
   documentType: string;
   hasDocument: boolean;
+  convertedUserId: string | null;
   adminNote: string | null;
   createdAt: string;
+  updatedAt: string;
 }
 
 function Field({ label, value }: { label: string; value: React.ReactNode }) {
@@ -154,6 +158,11 @@ export function LeadRow({ lead }: { lead: LeadRowData }) {
 
       {expanded && (
         <div className="mt-4 grid grid-cols-2 gap-x-6 gap-y-3 border-t border-zinc-100 pt-4 sm:grid-cols-3">
+          <Field label="Email" value={lead.email} />
+          <Field
+            label="Date of birth"
+            value={lead.dateOfBirth ? new Date(lead.dateOfBirth).toLocaleDateString() : null}
+          />
           <Field label="Gender" value={lead.gender} />
           <Field label="State" value={lead.state} />
           <Field label="City" value={lead.city} />
@@ -162,11 +171,13 @@ export function LeadRow({ lead }: { lead: LeadRowData }) {
             <>
               <Field label="Qualification" value={lead.qualification} />
               <Field label="Course interested" value={lead.courseInterested} />
+              <Field label="Specialization" value={lead.specialization} />
               <Field label="Preferred language" value={lead.preferredLanguage} />
-              <Field label="Preferred timing" value={lead.preferredMentorshipTiming} />
+              <Field label="Preferred mentorship timing" value={lead.preferredMentorshipTiming} />
             </>
           ) : (
             <>
+              <Field label="Alias" value={lead.alias} />
               <Field label="College" value={lead.universityName ?? lead.collegeName} />
               <Field label="Degree" value={lead.degree} />
               <Field label="Specialization" value={lead.specialization} />
@@ -184,10 +195,24 @@ export function LeadRow({ lead }: { lead: LeadRowData }) {
                 }
               />
               <Field label="Languages" value={lead.languages.join(', ')} />
-              <Field label="Preferred timing" value={lead.availableDays.join(', ')} />
+              <Field label="Available days" value={lead.availableDays.join(', ')} />
               <Field label="Document type" value={DOCUMENT_TYPE_LABELS[lead.documentType]} />
             </>
           )}
+          <Field
+            label="Converted account"
+            value={
+              lead.convertedUserId ? (
+                <Link
+                  href={`/dashboard/users/${lead.convertedUserId}`}
+                  className="text-zinc-900 underline decoration-zinc-300 underline-offset-2 hover:decoration-zinc-600"
+                >
+                  View user
+                </Link>
+              ) : null
+            }
+          />
+          <Field label="Last updated" value={new Date(lead.updatedAt).toLocaleString()} />
         </div>
       )}
 

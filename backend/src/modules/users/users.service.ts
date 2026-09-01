@@ -6,7 +6,13 @@ import {
   Logger,
   NotFoundException,
 } from '@nestjs/common';
-import { Prisma, User, UserRole, VerificationStatus } from '@prisma/client';
+import {
+  Prisma,
+  ReportTargetType,
+  User,
+  UserRole,
+  VerificationStatus,
+} from '@prisma/client';
 import { generatePseudonym } from '../../common/helpers/pseudonym.helper.js';
 import { encryptRealName } from '../../common/helpers/profile-encryption.helper.js';
 import {
@@ -410,6 +416,60 @@ export class UsersService {
     const nextCursor = hasMore ? data[data.length - 1].id : null;
 
     return { data, nextCursor };
+  }
+
+  /** Admin-only full detail for one user — every onboarding field, decrypted
+   * real name, wallet balance, verification history and activity counters.
+   * Returns the raw row + counters; the controller projects it via
+   * {@link toAdminUserDetail}. */
+  async findDetailAdmin(userId: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      include: {
+        profile: { include: { university: true } },
+        wallet: true,
+        verificationRequests: {
+          orderBy: { createdAt: 'desc' },
+          include: {
+            university: { select: { name: true } },
+            reviewer: { select: { displayName: true } },
+          },
+        },
+      },
+    });
+    if (!user) {
+      throw new NotFoundException(`User '${userId}' not found`);
+    }
+
+    const [
+      sessionsAsAspirant,
+      sessionsAsMentor,
+      reportsFiled,
+      reportsAgainst,
+      mentorReviewsReceived,
+      universityReviewsWritten,
+    ] = await Promise.all([
+      this.prisma.session.count({ where: { aspirantId: userId } }),
+      this.prisma.session.count({ where: { mentorId: userId } }),
+      this.prisma.report.count({ where: { reporterId: userId } }),
+      this.prisma.report.count({
+        where: { targetType: ReportTargetType.USER, targetId: userId },
+      }),
+      this.prisma.mentorReview.count({ where: { mentorId: userId } }),
+      this.prisma.review.count({ where: { authorId: userId } }),
+    ]);
+
+    return {
+      user,
+      activity: {
+        sessionsAsAspirant,
+        sessionsAsMentor,
+        reportsFiled,
+        reportsAgainst,
+        mentorReviewsReceived,
+        universityReviewsWritten,
+      },
+    };
   }
 
   /**
