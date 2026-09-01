@@ -21,6 +21,23 @@ const _levelFilters = ['All', 'UG', 'PG'];
 // narrow to any state — not just the aspirant's own (see the quick "my
 // state" toggle pill below for that shortcut).
 const _stateFilters = ['All', ...kIndianStates];
+// Unlike the other three pills, this one's options come from the loaded
+// colleges themselves (see _specializationOptions below), not a fixed
+// picklist — real specialization strings carry their accrediting degree as
+// a prefix ("MD - Anaesthesiology" vs "DNB- Anaesthesiology" vs "DNB-
+// General Medicine"), which the mentor wizard's plain kMedicalSpecializations
+// list ("Anaesthesiology") doesn't match at all. Building the options from
+// the real data guarantees every option actually filters something, at the
+// cost of a longer, less tidy list. Only meaningful for Medical (see
+// University.specializations doc comment — every other stream's colleges
+// have none), so the pill only appears when the Stream filter is Medical.
+List<String> _specializationOptions(List<University> universities) {
+  final values = <String>{
+    for (final u in universities)
+      if (u.stream == 'Medical') ...u.specializations,
+  }.toList()..sort();
+  return ['All', ...values];
+}
 
 /// Whether the college list is currently narrowed to the aspirant's own
 /// state. Lives outside the screen so Home's `Colleges in <state>` card can
@@ -52,8 +69,14 @@ class UniversityListScreen extends ConsumerStatefulWidget {
 
 class _UniversityListScreenState extends ConsumerState<UniversityListScreen> {
   String _query = '';
-  String _streamFilter = 'All';
   String _levelFilter = 'All';
+  // null until the aspirant explicitly picks a stream from the sheet —
+  // until then, the pill defaults to the profile's own stream (whatever
+  // was chosen during onboarding), same deferred-until-touched pattern as
+  // _explicitStateFilter below. 'All' is itself a valid explicit choice
+  // (clears back to unfiltered), so this can't just be a plain String.
+  String? _explicitStreamFilter;
+  String _specializationFilter = 'All';
   // null until the aspirant explicitly picks a state from the sheet —
   // until then, the pill defers to the ambient collegeStateFilterProvider
   // toggle (Home's "Colleges in <state>" quick action) so the two controls
@@ -114,7 +137,11 @@ class _UniversityListScreenState extends ConsumerState<UniversityListScreen> {
   @override
   Widget build(BuildContext context) {
     final universitiesAsync = ref.watch(universitiesListProvider);
-    final myState = ref.watch(myProfileProvider).asData?.value.state;
+    final specializationOptions = _specializationOptions(
+      universitiesAsync.asData?.value ?? const [],
+    );
+    final myProfile = ref.watch(myProfileProvider).asData?.value;
+    final myState = myProfile?.state;
     final stateOnly = ref.watch(collegeStateFilterProvider);
     // Explicit sheet pick wins; otherwise fall back to the ambient "my
     // state" toggle (only meaningful once the profile's state is known).
@@ -122,6 +149,18 @@ class _UniversityListScreenState extends ConsumerState<UniversityListScreen> {
     final effectiveState = explicit != null
         ? (explicit == 'All' ? null : explicit)
         : (stateOnly && myState != null && myState.isNotEmpty ? myState : null);
+
+    // Same deferred-default pattern as state: nothing explicitly picked yet
+    // defaults to the stream chosen at signup, as long as it's one of the
+    // picklist values this filter actually understands — an older/free-text
+    // stream value falls back to unfiltered rather than silently matching
+    // nothing.
+    final myStream = myProfile?.stream;
+    final effectiveStream =
+        _explicitStreamFilter ??
+        (myStream != null && kStreamOptions.contains(myStream)
+            ? myStream
+            : 'All');
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -189,15 +228,18 @@ class _UniversityListScreenState extends ConsumerState<UniversityListScreen> {
                     padding: const EdgeInsets.only(right: AppSpacing.sm),
                     child: _FilterPill(
                       icon: Icons.menu_book_rounded,
-                      label: _streamFilter == 'All' ? 'Stream' : _streamFilter,
-                      active: _streamFilter != 'All',
+                      label: effectiveStream == 'All'
+                          ? 'Stream'
+                          : effectiveStream,
+                      active: effectiveStream != 'All',
                       trailing: Icons.keyboard_arrow_down_rounded,
                       onTap: () => _pickOption(
                         title: 'Stream',
                         options: _streamFilters,
                         optionLabel: (v) => v,
-                        selected: _streamFilter,
-                        onSelected: (v) => setState(() => _streamFilter = v),
+                        selected: effectiveStream,
+                        onSelected: (v) =>
+                            setState(() => _explicitStreamFilter = v),
                       ),
                     ),
                   ),
@@ -217,6 +259,30 @@ class _UniversityListScreenState extends ConsumerState<UniversityListScreen> {
                       ),
                     ),
                   ),
+                  // Only Medical colleges have any specialization data (see
+                  // University.specializations doc comment) — showing this
+                  // pill for every stream would offer a picker that always
+                  // returns zero results outside Medical.
+                  if (effectiveStream == 'Medical')
+                    Padding(
+                      padding: const EdgeInsets.only(right: AppSpacing.sm),
+                      child: _FilterPill(
+                        icon: Icons.local_hospital_rounded,
+                        label: _specializationFilter == 'All'
+                            ? 'Specialization'
+                            : _specializationFilter,
+                        active: _specializationFilter != 'All',
+                        trailing: Icons.keyboard_arrow_down_rounded,
+                        onTap: () => _pickOption(
+                          title: 'Specialization',
+                          options: specializationOptions,
+                          optionLabel: (v) => v,
+                          selected: _specializationFilter,
+                          onSelected: (v) =>
+                              setState(() => _specializationFilter = v),
+                        ),
+                      ),
+                    ),
                   const SizedBox(width: AppSpacing.md),
                 ],
               ),
@@ -253,17 +319,23 @@ class _UniversityListScreenState extends ConsumerState<UniversityListScreen> {
                         _query.toLowerCase(),
                       );
                       final matchesStream =
-                          _streamFilter == 'All' || u.stream == _streamFilter;
+                          effectiveStream == 'All' ||
+                          u.stream == effectiveStream;
                       final matchesState =
                           effectiveState == null ||
                           u.state.toLowerCase() == effectiveState.toLowerCase();
                       final matchesLevel =
                           _levelFilter == 'All' ||
                           u.levels.contains(_levelFilter);
+                      final matchesSpecialization =
+                          effectiveStream != 'Medical' ||
+                          _specializationFilter == 'All' ||
+                          u.specializations.contains(_specializationFilter);
                       return matchesQuery &&
                           matchesStream &&
                           matchesState &&
-                          matchesLevel;
+                          matchesLevel &&
+                          matchesSpecialization;
                     }).toList();
 
                     if (filtered.isEmpty) {

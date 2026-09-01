@@ -9,10 +9,8 @@ class UniversityProgram {
   final String id;
   final String name;
 
-  factory UniversityProgram.fromJson(Map<String, dynamic> json) => UniversityProgram(
-        id: json['id'] as String,
-        name: json['name'] as String,
-      );
+  factory UniversityProgram.fromJson(Map<String, dynamic> json) =>
+      UniversityProgram(id: json['id'] as String, name: json['name'] as String);
 }
 
 class University {
@@ -34,6 +32,7 @@ class University {
     this.programs,
     this.rating,
     this.reviewCount = 0,
+    this.specializations = const [],
   });
 
   final String id;
@@ -41,12 +40,15 @@ class University {
   final String slug;
   final String type;
   final String state;
+
   /// Nullable: the NMC seat matrix the medical colleges were seeded from
   /// has no city column, so bulk-loaded rows may have only a state.
   final String? city;
+
   /// Academic field (Medical/Engineering/Law/etc) — null for older rows
   /// seeded before the multi-stream pivot.
   final String? stream;
+
   /// Degree levels offered — "UG" and/or "PG". Every college in the app
   /// today is UG-only: the imported source (NMC's MBBS seat matrix) only
   /// covers undergraduate intake, no PG data has been imported yet.
@@ -61,28 +63,41 @@ class University {
   final double? rating;
   final int reviewCount;
 
+  /// Union of every accredited program's specializations at this college
+  /// (see backend Program.specializations doc comment) — today only
+  /// populated for Medical DNB/MD-MS/DM-MCh/Diploma/MDS programs, empty for
+  /// every other college. Discover's Specialization filter only shows for
+  /// the Medical stream because of this gap.
+  final List<String> specializations;
+
   factory University.fromJson(Map<String, dynamic> json) => University(
-        id: json['id'] as String,
-        name: json['name'] as String,
-        slug: json['slug'] as String,
-        type: json['type'] as String,
-        state: json['state'] as String,
-        city: json['city'] as String?,
-        stream: json['stream'] as String?,
-        levels: (json['levels'] as List<dynamic>?)?.map((e) => e as String).toList() ??
-            const ['UG'],
-        nirfRank: (json['nirfRank'] as num?)?.toInt(),
-        mbbsSeats: (json['mbbsSeats'] as num?)?.toInt(),
-        establishedYear: (json['establishedYear'] as num?)?.toInt(),
-        website: json['website'] as String?,
-        description: json['description'] as String?,
-        imageUrl: json['imageUrl'] as String?,
-        programs: (json['programs'] as List<dynamic>?)
-            ?.map((e) => UniversityProgram.fromJson(e as Map<String, dynamic>))
-            .toList(),
-        rating: (json['rating'] as num?)?.toDouble(),
-        reviewCount: (json['reviewCount'] as num?)?.toInt() ?? 0,
-      );
+    id: json['id'] as String,
+    name: json['name'] as String,
+    slug: json['slug'] as String,
+    type: json['type'] as String,
+    state: json['state'] as String,
+    city: json['city'] as String?,
+    stream: json['stream'] as String?,
+    levels:
+        (json['levels'] as List<dynamic>?)?.map((e) => e as String).toList() ??
+        const ['UG'],
+    nirfRank: (json['nirfRank'] as num?)?.toInt(),
+    mbbsSeats: (json['mbbsSeats'] as num?)?.toInt(),
+    establishedYear: (json['establishedYear'] as num?)?.toInt(),
+    website: json['website'] as String?,
+    description: json['description'] as String?,
+    imageUrl: json['imageUrl'] as String?,
+    programs: (json['programs'] as List<dynamic>?)
+        ?.map((e) => UniversityProgram.fromJson(e as Map<String, dynamic>))
+        .toList(),
+    rating: (json['rating'] as num?)?.toDouble(),
+    reviewCount: (json['reviewCount'] as num?)?.toInt() ?? 0,
+    specializations:
+        (json['specializations'] as List<dynamic>?)
+            ?.map((e) => e as String)
+            .toList() ??
+        const [],
+  );
 }
 
 class UniversitiesApi {
@@ -112,7 +127,9 @@ class UniversitiesApi {
         },
       );
       final data = res.data!['data'] as List<dynamic>;
-      results.addAll(data.map((e) => University.fromJson(e as Map<String, dynamic>)));
+      results.addAll(
+        data.map((e) => University.fromJson(e as Map<String, dynamic>)),
+      );
       cursor = res.data!['nextCursor'] as String?;
       if (cursor == null) break;
     }
@@ -130,7 +147,9 @@ class UniversitiesApi {
       queryParameters: {'search': query, 'limit': 8},
     );
     final data = res.data!['data'] as List<dynamic>;
-    return data.map((e) => University.fromJson(e as Map<String, dynamic>)).toList();
+    return data
+        .map((e) => University.fromJson(e as Map<String, dynamic>))
+        .toList();
   }
 
   Future<University> getBySlug(String slug) async {

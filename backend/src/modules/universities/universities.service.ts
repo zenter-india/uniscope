@@ -39,6 +39,36 @@ function slugify(name: string): string {
     .replace(/^-+|-+$/g, '');
 }
 
+// Shared by every findAll query path (paginated, search, browse) so the
+// Discover screen's Specialization filter has real data to match against —
+// today that's only the accredited DNB/MD-MS/DM-MCh/Diploma/MDS medical
+// programs (see Program.specializations doc comment); every other
+// college/program has none, which is why the mobile filter only surfaces
+// for the Medical stream rather than showing an always-empty picker.
+const UNIVERSITY_SPECIALIZATIONS_INCLUDE = {
+  programs: {
+    where: { isActive: true },
+    select: { specializations: true },
+  },
+} satisfies Prisma.UniversityInclude;
+
+type UniversityWithPrograms = University & {
+  programs: { specializations: string[] }[];
+};
+
+/** Flattens+dedupes+sorts a university's per-program specializations into
+ * one list, and drops the `programs` relation from the response — callers
+ * only need the union, not the underlying program rows. */
+function withSpecializations(
+  university: UniversityWithPrograms,
+): University & { specializations: string[] } {
+  const { programs, ...rest } = university;
+  const specializations = [
+    ...new Set(programs.flatMap((program) => program.specializations)),
+  ].sort();
+  return { ...rest, specializations };
+}
+
 @Injectable()
 export class UniversitiesService {
   constructor(
@@ -82,7 +112,10 @@ export class UniversitiesService {
    */
   async findAll(
     query: ListUniversitiesDto,
-  ): Promise<{ data: University[]; nextCursor: string | null }> {
+  ): Promise<{
+    data: Array<University & { specializations: string[] }>;
+    nextCursor: string | null;
+  }> {
     const take = Math.min(query.limit ?? DEFAULT_LIMIT, MAX_LIMIT);
     const browse = query.browse === 'true';
 
@@ -99,7 +132,10 @@ export class UniversitiesService {
 
     if (browse || query.search) {
       const search = query.search?.toLowerCase();
-      const rows = await this.prisma.university.findMany({ where });
+      const rows = await this.prisma.university.findMany({
+        where,
+        include: UNIVERSITY_SPECIALIZATIONS_INCLUDE,
+      });
       const sorted = rows.sort((a, b) => {
         if (search) {
           const aStarts = a.name.toLowerCase().startsWith(search) ? 0 : 1;
@@ -108,11 +144,15 @@ export class UniversitiesService {
         }
         return a.name.localeCompare(b.name);
       });
-      return { data: browse ? sorted : sorted.slice(0, take), nextCursor: null };
+      const data = (browse ? sorted : sorted.slice(0, take)).map(
+        withSpecializations,
+      );
+      return { data, nextCursor: null };
     }
 
     const rows = await this.prisma.university.findMany({
       where,
+      include: UNIVERSITY_SPECIALIZATIONS_INCLUDE,
       // Plain alphabetical — NIRF rank isn't shown in the UI anymore
       // (it only covers the top 50 medical colleges nationally, so ~94%
       // of rows had no rank anyway), id as a stable tiebreaker for the cursor.
@@ -122,10 +162,10 @@ export class UniversitiesService {
     });
 
     const hasMore = rows.length > take;
-    const data = hasMore ? rows.slice(0, take) : rows;
-    const nextCursor = hasMore ? data[data.length - 1].id : null;
+    const sliced = hasMore ? rows.slice(0, take) : rows;
+    const nextCursor = hasMore ? sliced[sliced.length - 1].id : null;
 
-    return { data, nextCursor };
+    return { data: sliced.map(withSpecializations), nextCursor };
   }
 
   /**
