@@ -47,9 +47,22 @@ export default async function DashboardPage() {
         ))}
       </div>
 
-      <p className="mt-8 text-sm text-zinc-500">
-        User management and university management tooling are not built yet.
-      </p>
+      <div className="mt-8 flex flex-wrap gap-3">
+        {[
+          { label: 'Users', href: '/dashboard/users' },
+          { label: 'Universities', href: '/dashboard/universities' },
+          { label: 'Enrollment leads', href: '/dashboard/leads' },
+          { label: 'Data import', href: '/dashboard/data-import' },
+        ].map((link) => (
+          <Link
+            key={link.href}
+            href={link.href}
+            className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm font-medium text-zinc-700 hover:bg-zinc-50"
+          >
+            {link.label} →
+          </Link>
+        ))}
+      </div>
     </DashboardShell>
   );
 }

@@ -26,7 +26,7 @@ import { ListUsersDto } from './dto/list-users.dto.js';
 import { SetBannedDto } from './dto/set-banned.dto.js';
 import { UpdateProfileDto } from './dto/update-profile.dto.js';
 import { UpdateRoleDto } from './dto/update-role.dto.js';
-import { toPublicUser } from './user-response.js';
+import { toAdminUserDetail, toPublicUser } from './user-response.js';
 import { UsersService } from './users.service.js';
 
 @UseGuards(JwtAuthGuard)
@@ -141,6 +141,14 @@ export class UsersController {
   async findAll(@Query() query: ListUsersDto) {
     const { data, nextCursor } = await this.usersService.findAllAdmin(query);
     return { data: data.map((u) => toPublicUser(u)), nextCursor };
+  }
+
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @Get(':id')
+  async findOneAdmin(@Param('id') id: string) {
+    const { user, activity } = await this.usersService.findDetailAdmin(id);
+    return toAdminUserDetail(user, activity, this.usersService.avatarUrlFor(user));
   }
 
   @UseGuards(RolesGuard)

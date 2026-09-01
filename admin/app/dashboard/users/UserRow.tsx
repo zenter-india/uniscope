@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useState, useTransition } from 'react';
 import { setUserBanned } from './actions';
 
@@ -70,17 +71,25 @@ export function UserRow({ user }: { user: UserRowData }) {
         </p>
         {error && <p className="mt-1 text-xs text-red-600">{error}</p>}
       </div>
-      <button
-        onClick={toggleBan}
-        disabled={isPending}
-        className={`rounded-lg px-3 py-1.5 text-sm font-medium disabled:opacity-50 ${
-          user.isBanned
-            ? 'border border-zinc-300 text-zinc-700 hover:bg-zinc-50'
-            : 'bg-red-600 text-white hover:bg-red-700'
-        }`}
-      >
-        {user.isBanned ? 'Unban' : 'Ban'}
-      </button>
+      <div className="flex items-center gap-2">
+        <Link
+          href={`/dashboard/users/${user.id}`}
+          className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm font-medium text-zinc-700 hover:bg-zinc-50"
+        >
+          View details
+        </Link>
+        <button
+          onClick={toggleBan}
+          disabled={isPending}
+          className={`rounded-lg px-3 py-1.5 text-sm font-medium disabled:opacity-50 ${
+            user.isBanned
+              ? 'border border-zinc-300 text-zinc-700 hover:bg-zinc-50'
+              : 'bg-red-600 text-white hover:bg-red-700'
+          }`}
+        >
+          {user.isBanned ? 'Unban' : 'Ban'}
+        </button>
+      </div>
     </div>
   );
 }
