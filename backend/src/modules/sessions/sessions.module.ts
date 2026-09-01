@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 import { PrismaModule } from '../../database/prisma/prisma.module.js';
-import { AgoraModule } from '../agora/agora.module.js';
+import { LivekitModule } from '../livekit/livekit.module.js';
 import { BlocksModule } from '../blocks/blocks.module.js';
 import { ChatModule } from '../chat/chat.module.js';
 import { MentorsModule } from '../mentors/mentors.module.js';
@@ -14,7 +14,7 @@ import { SessionsService } from './sessions.service.js';
  * to reuse the single source of truth for "is this mentor bookable," on
  * ChatModule to provision the Stream channel for CHAT-type sessions on
  * accept, on WalletModule to place/consume/release the Uniminute holds that
- * back AUDIO_CALL slot billing, on AgoraModule for RTC token issuance, and
+ * back AUDIO_CALL slot billing, on LivekitModule for access-token issuance, and
  * on NotificationsModule to push-notify the other party on request/accept/
  * reject (a marketplace where mentors only find out about requests by
  * opening the app doesn't actually function).
@@ -25,7 +25,7 @@ import { SessionsService } from './sessions.service.js';
     MentorsModule,
     ChatModule,
     WalletModule,
-    AgoraModule,
+    LivekitModule,
     NotificationsModule,
     BlocksModule,
   ],

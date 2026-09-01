@@ -105,7 +105,7 @@ enum ReportStatus {
   DISMISSED
 }
 
-/// Chat = Stream Chat text session. AudioCall = Agora voice session.
+/// Chat = Stream Chat text session. AudioCall = LiveKit voice session.
 /// Video is out of scope by deliberate product decision (anonymity model).
 enum SessionType {
   CHAT
@@ -119,7 +119,7 @@ enum SessionStatus {
   ACCEPTED // mentor accepted; audio calls move to RINGING, chat moves to IN_PROGRESS
   REJECTED // mentor declined
   RINGING // audio call only: callee is being rung (FCM data push sent)
-  IN_PROGRESS // active — chat ongoing, or call connected (server-confirmed via Agora webhook)
+  IN_PROGRESS // active — chat ongoing, or call connected (server-confirmed via dual-client join)
   COMPLETED // ended normally, final billing true-up applied
   CANCELLED // aspirant cancelled before mentor responded / before start
   EXPIRED // mentor never responded within the response window
@@ -549,10 +549,11 @@ model SavedUniversity {
 /// connect → bill → end. One Session row per attempt — a re-request after a
 /// FAILED/EXPIRED/REJECTED session creates a NEW row, never reuses one.
 ///
-/// Billing invariant: only a server-observed connection event (Agora webhook
-/// for AUDIO_CALL; explicit start-ack for CHAT) may transition status into
-/// IN_PROGRESS, and only that transition starts the BullMQ billing clock.
-/// Never trust a client-reported "call connected" message for billing.
+/// Billing invariant: only a server-observed connection event (the
+/// dual-client join confirmation for AUDIO_CALL; explicit start-ack for
+/// CHAT) may transition status into IN_PROGRESS, and only that transition
+/// starts the BullMQ billing clock. Never trust a single client-reported
+/// "call connected" message for billing.
 model Session {
   id                 String        @id @default(uuid())
   aspirantId         String        @map("aspirant_id")
@@ -571,10 +572,10 @@ model Session {
   /// Set only on a server-confirmed connection event — never client-reported.
   startedAt          DateTime?     @map("started_at") @db.Timestamptz
   endedAt            DateTime?     @map("ended_at") @db.Timestamptz
-  /// Dual-client connect confirmation (interim measure until a real Agora
-  /// server-side "user joined channel" webhook is configured — see
-  /// SessionsService.confirmJoined). Billing only fires once BOTH are set,
-  /// so neither party alone can trigger a charge.
+  /// Dual-client connect confirmation (interim measure until a real
+  /// server-side "user joined room" webhook is configured for whichever call
+  /// vendor is underneath — see SessionsService.confirmJoined). Billing only
+  /// fires once BOTH are set, so neither party alone can trigger a charge.
   aspirantJoinedAt   DateTime?     @map("aspirant_joined_at") @db.Timestamptz
   mentorJoinedAt     DateTime?     @map("mentor_joined_at") @db.Timestamptz
   /// AUDIO_CALL: sum of committed/paid slot minutes (5/10/20, plus any +5
@@ -583,6 +584,10 @@ model Session {
   /// mid-call cutoff still bills the full committed slot).
   billedMinutes      Int           @default(0) @map("billed_minutes")
   totalCostMinor     Int           @default(0) @map("total_cost_minor")
+  /// The call's LiveKit room name. Field/column name kept as "agora..." to
+  /// avoid a pure-rename migration — this now just holds "the call's room
+  /// name," vendor-agnostic in practice (see LivekitService, which replaced
+  /// AgoraService on the migration/supabase-chat-livekit-calls branch).
   agoraChannelName   String?       @map("agora_channel_name") @db.VarChar(100)
   streamChannelId    String?       @map("stream_channel_id") @db.VarChar(100)
   /// NORMAL | NO_ANSWER | DROPPED | MENTOR_DROPPED | BALANCE_EXHAUSTED |
