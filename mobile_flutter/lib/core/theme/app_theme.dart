@@ -8,14 +8,14 @@ import 'package:flutter/material.dart';
 /// mass rename. New concepts (shadows, gradients, text styles) get their
 /// own token classes below.
 class AppColors {
-  // Brand — teal only. Blue was removed from the brand identity (it used
-  // to anchor the dark end of AppGradients.canopy/brand); everything now
-  // stays within the teal family. (Also superseded the earlier emerald
-  // green — nothing in the app should be green except the semantic
-  // `success` token below.)
-  static const Color primary = Color(0xFF12A9A3);
-  static const Color primaryLight = Color(0xFFE3F5F4);
-  static const Color primaryDark = Color(0xFF0C7A76);
+  // Brand — the real logo green, picked from the app icon's own pixels
+  // (#008562), replacing the earlier teal (#12A9A3). Client's choice from
+  // a contrast-checked shortlist. Scoped to just this hue swap — no navy,
+  // no structural changes to the canopy/header (that exploration was
+  // reverted separately).
+  static const Color primary = Color(0xFF008562);
+  static const Color primaryLight = Color(0xFFE3F3EC);
+  static const Color primaryDark = Color(0xFF005E44);
 
   static const Color accent = Color(0xFFF4A261);
 
@@ -29,10 +29,12 @@ class AppColors {
   static const Color textMuted = Color(0xFF97A59E);
   static const Color textInverse = Color(0xFFFFFFFF);
 
-  /// Semantic status colours. `success` stays green on purpose — it marks
-  /// wallet credits, completed sessions, and confirmation ticks, and those
-  /// have to stay visually distinct from the teal brand (a credit rendered
-  /// in brand teal would read as a button, not as money in).
+  /// Semantic status colours. `success` marks wallet credits, completed
+  /// sessions, and confirmation ticks. Now that `primary` is itself green
+  /// (#008562, not the old teal), these two are closer in hue than before
+  /// — still distinguishable (brighter/yellower vs. the brand's deeper,
+  /// teal-leaning green), but worth revisiting if a credit ever reads as
+  /// "just another button" in practice.
   static const Color success = Color(0xFF12A150);
   static const Color error = Color(0xFFE5484D);
   static const Color warning = Color(0xFFF5A524);
@@ -79,57 +81,46 @@ class AppFont {
 /// elevation cue. Cards float; they don't outline.
 class AppShadows {
   static const List<BoxShadow> card = [
-    BoxShadow(
-      color: Color(0x0A0F1D17),
-      blurRadius: 16,
-      offset: Offset(0, 4),
-    ),
-    BoxShadow(
-      color: Color(0x050F1D17),
-      blurRadius: 4,
-      offset: Offset(0, 1),
-    ),
+    BoxShadow(color: Color(0x0A0F1D17), blurRadius: 16, offset: Offset(0, 4)),
+    BoxShadow(color: Color(0x050F1D17), blurRadius: 4, offset: Offset(0, 1)),
   ];
 
   static const List<BoxShadow> raised = [
-    BoxShadow(
-      color: Color(0x1412A9A3),
-      blurRadius: 24,
-      offset: Offset(0, 8),
-    ),
+    BoxShadow(color: Color(0x14008562), blurRadius: 24, offset: Offset(0, 8)),
   ];
 }
 
 class AppGradients {
   /// Compact brand fill for buttons, FABs, and banner cards. Same two
-  /// endpoints as [canopy] — both teal, light to dark.
+  /// endpoints as [canopy] — both the new brand green, light to dark.
   static const LinearGradient brand = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    colors: [Color(0xFF12A9A3), Color(0xFF0C7A76)],
+    colors: [Color(0xFF008562), Color(0xFF005E44)],
   );
 
-  /// Barely-there teal wash for full-screen backgrounds behind cards.
+  /// Barely-there green wash for full-screen backgrounds behind cards.
   static const LinearGradient hero = LinearGradient(
     begin: Alignment.topCenter,
     end: Alignment.bottomCenter,
-    colors: [Color(0xFFE3F5F4), Color(0xFFF6F8F9)],
+    colors: [Color(0xFFE3F3EC), Color(0xFFF6F8F9)],
   );
 
-  /// Teal-only brand gradient (blue removed) — same light-to-dark travel
-  /// as before, just without the blue foot.
+  /// Same light-to-dark travel as before, just in the new brand green
+  /// instead of the old teal — interpolated between primary/primaryDark at
+  /// the same stop positions, not a fresh guess.
   ///
   /// Apply this to the canopy container itself, never to a full-screen
   /// background: stretched over a whole screen the dark stop falls below
-  /// the fold and only flat teal is visible.
+  /// the fold and only flat green is visible.
   static const LinearGradient canopy = LinearGradient(
     begin: Alignment.topCenter,
     end: Alignment.bottomCenter,
     colors: [
-      Color(0xFF12A9A3),
-      Color(0xFF0FA09A),
-      Color(0xFF0D8C87),
-      Color(0xFF0C7A76),
+      Color(0xFF008562),
+      Color(0xFF007354),
+      Color(0xFF00664A),
+      Color(0xFF005E44),
     ],
     stops: [0.0, 0.46, 0.80, 1.0],
   );
@@ -167,7 +158,7 @@ ThemeData buildAppTheme() {
           borderRadius: BorderRadius.circular(AppRadius.md),
         ),
         textStyle: const TextStyle(
-        fontFamily: 'Manrope',
+          fontFamily: 'Manrope',
           fontSize: AppFont.md,
           fontWeight: AppFont.bold,
         ),
@@ -182,7 +173,7 @@ ThemeData buildAppTheme() {
           borderRadius: BorderRadius.circular(AppRadius.md),
         ),
         textStyle: const TextStyle(
-        fontFamily: 'Manrope',
+          fontFamily: 'Manrope',
           fontSize: AppFont.md,
           fontWeight: AppFont.bold,
         ),
