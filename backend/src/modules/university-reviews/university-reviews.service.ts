@@ -94,6 +94,51 @@ export class UniversityReviewsService {
     }
   }
 
+  /**
+   * Edits the caller's own existing review — same eligibility shape as
+   * create (still verified, still tied to the same college for a mentor),
+   * just against the row the unique (authorId, universityId) constraint
+   * already guarantees is unique. 404s (not 403) if there's nothing to
+   * edit yet, matching this app's usual non-party/non-existent handling —
+   * the mobile client always checks `findMine` first and only shows an
+   * edit form when a review already exists, so reaching this 404 means a
+   * genuinely stale client state, not a normal path.
+   */
+  async update(
+    authorId: string,
+    universityId: string,
+    dto: CreateUniversityReviewDto,
+  ): Promise<UniversityReviewResponse> {
+    const existing = await this.prisma.review.findUnique({
+      where: { authorId_universityId: { authorId, universityId } },
+    });
+    if (!existing) {
+      throw new NotFoundException('No review to update — post one first');
+    }
+
+    const review = await this.prisma.review.update({
+      where: { id: existing.id },
+      data: { ...dto },
+      include: { author: { select: { role: true } } },
+    });
+    return toUniversityReviewResponse(review);
+  }
+
+  /** Full content of the caller's own review for this university, or null
+   * if they haven't posted one — backs the mobile edit form's prefill.
+   * Distinct from `hasReviewed` (which only ever returns a boolean) so
+   * that endpoint's existing response shape/callers are untouched. */
+  async findMine(
+    authorId: string,
+    universityId: string,
+  ): Promise<UniversityReviewResponse | null> {
+    const review = await this.prisma.review.findUnique({
+      where: { authorId_universityId: { authorId, universityId } },
+      include: { author: { select: { role: true } } },
+    });
+    return review ? toUniversityReviewResponse(review) : null;
+  }
+
   async findForUniversity(
     universityId: string,
     query: ListUniversityReviewsDto,

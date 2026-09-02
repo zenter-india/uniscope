@@ -4,11 +4,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/network/college_wishlist_api.dart';
+import '../../core/network/university_reviews_api.dart';
 import '../../core/network/users_api.dart';
 import '../../core/network/wishlist_api.dart';
 import '../../core/theme/app_theme.dart';
 import '../../state/auth_controller.dart';
 import '../../widgets/app_widgets.dart';
+import '../universities/review_widgets.dart' show WriteReviewSheet;
 
 (String, Color) _verificationPresentation(String? status) {
   switch (status) {
@@ -21,6 +23,40 @@ import '../../widgets/app_widgets.dart';
       return ('Resubmit needed', AppColors.error);
     default:
       return ('Unverified', AppColors.warning);
+  }
+}
+
+/// Opens the same WriteReviewSheet the college detail screen uses, prefilled
+/// for an edit if the mentor already reviewed their own college. Lets a
+/// mentor post/update that review straight from their own Profile tab
+/// instead of having to browse to their college's own detail screen first.
+Future<void> _openCollegeReview(
+  BuildContext context,
+  WidgetRef ref, {
+  required String universityId,
+}) async {
+  final hasReviewed = await ref.read(
+    hasReviewedUniversityProvider(universityId).future,
+  );
+  final existing = hasReviewed
+      ? await ref.read(myUniversityReviewProvider(universityId).future)
+      : null;
+  if (!context.mounted) return;
+  final posted = await showModalBottomSheet<bool>(
+    context: context,
+    backgroundColor: AppColors.surface,
+    isScrollControlled: true,
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.xl)),
+    ),
+    builder: (_) =>
+        WriteReviewSheet(universityId: universityId, existingReview: existing),
+  );
+  if (posted == true) {
+    ref.invalidate(universityReviewsListProvider(universityId));
+    ref.invalidate(hasReviewedUniversityProvider(universityId));
+    ref.invalidate(universityReviewSummaryProvider(universityId));
+    ref.invalidate(myUniversityReviewProvider(universityId));
   }
 }
 
@@ -88,8 +124,11 @@ class ProfileHomeScreen extends ConsumerWidget {
                               onTap: () => context.push('/profile/avatar'),
                               child: const Padding(
                                 padding: EdgeInsets.all(6),
-                                child: Icon(Icons.edit_rounded,
-                                    size: 14, color: Colors.white),
+                                child: Icon(
+                                  Icons.edit_rounded,
+                                  size: 14,
+                                  color: Colors.white,
+                                ),
                               ),
                             ),
                           ),
@@ -172,6 +211,25 @@ class ProfileHomeScreen extends ConsumerWidget {
                         icon: Icons.verified_user_rounded,
                         label: 'Verification',
                         onTap: () => context.go('/profile/verification'),
+                      ),
+                    // Only a VERIFIED mentor has a real, id-checked
+                    // universityId (see VerificationService.review's link) —
+                    // that's also exactly the same eligibility the backend
+                    // enforces for posting a review of it (see
+                    // UniversityReviewsService.create), so gating the entry
+                    // point on it here just avoids a dead tap that 403s.
+                    if (isMentor &&
+                        isVerified &&
+                        myProfileAsync.asData?.value.universityId != null)
+                      _MenuRow(
+                        icon: Icons.rate_review_rounded,
+                        label: 'Rate Your College',
+                        onTap: () => _openCollegeReview(
+                          context,
+                          ref,
+                          universityId:
+                              myProfileAsync.asData!.value.universityId!,
+                        ),
                       ),
                     // Mentors already have Wallet as the top-level "Earnings"
                     // tab — this row is aspirant-only, since the Mentors tab
@@ -316,10 +374,10 @@ class _MentorAvailabilityCardState
           Text(
             isVerified
                 ? 'Students can always message you. This only controls whether '
-                    'they can book a paid call. It switches itself off after 24 '
-                    'hours so your profile never promises a call you forgot about.'
+                      'they can book a paid call. It switches itself off after 24 '
+                      'hours so your profile never promises a call you forgot about.'
                 : 'Students can already find and message you. Verify your '
-                    'identity to start accepting paid calls and earning too.',
+                      'identity to start accepting paid calls and earning too.',
             style: const TextStyle(
               fontSize: AppFont.xs,
               color: AppColors.textSecondary,

@@ -161,9 +161,17 @@ class ReviewBreakdownScreen extends ConsumerWidget {
                         fontWeight: AppFont.extraBold,
                       ),
                     ),
-                    if (hasReviewedAsync.value == false && canReview)
+                    if (canReview)
                       TextButton.icon(
                         onPressed: () async {
+                          final existing = hasReviewedAsync.value == true
+                              ? await ref.read(
+                                  myUniversityReviewProvider(
+                                    universityId,
+                                  ).future,
+                                )
+                              : null;
+                          if (!context.mounted) return;
                           final posted = await showModalBottomSheet<bool>(
                             context: context,
                             backgroundColor: AppColors.surface,
@@ -173,8 +181,10 @@ class ReviewBreakdownScreen extends ConsumerWidget {
                                 top: Radius.circular(AppRadius.xl),
                               ),
                             ),
-                            builder: (_) =>
-                                WriteReviewSheet(universityId: universityId),
+                            builder: (_) => WriteReviewSheet(
+                              universityId: universityId,
+                              existingReview: existing,
+                            ),
                           );
                           if (posted == true) {
                             ref.invalidate(
@@ -186,10 +196,17 @@ class ReviewBreakdownScreen extends ConsumerWidget {
                             ref.invalidate(
                               hasReviewedUniversityProvider(universityId),
                             );
+                            ref.invalidate(
+                              myUniversityReviewProvider(universityId),
+                            );
                           }
                         },
                         icon: const Icon(Icons.edit_rounded, size: 16),
-                        label: const Text('Write a review'),
+                        label: Text(
+                          hasReviewedAsync.value == true
+                              ? 'Edit your review'
+                              : 'Write a review',
+                        ),
                       ),
                   ],
                 ),

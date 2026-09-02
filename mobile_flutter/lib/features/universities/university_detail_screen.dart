@@ -637,11 +637,17 @@ class _ReviewsTab extends ConsumerWidget {
             ),
             const SizedBox(height: AppSpacing.md),
           ],
-          if (hasReviewedAsync.value == false && canReview)
+          if (canReview)
             SizedBox(
               width: double.infinity,
               child: OutlinedButton.icon(
                 onPressed: () async {
+                  final existing = hasReviewedAsync.value == true
+                      ? await ref.read(
+                          myUniversityReviewProvider(university.id).future,
+                        )
+                      : null;
+                  if (!context.mounted) return;
                   final posted = await showModalBottomSheet<bool>(
                     context: context,
                     backgroundColor: AppColors.surface,
@@ -651,8 +657,10 @@ class _ReviewsTab extends ConsumerWidget {
                         top: Radius.circular(AppRadius.xl),
                       ),
                     ),
-                    builder: (_) =>
-                        WriteReviewSheet(universityId: university.id),
+                    builder: (_) => WriteReviewSheet(
+                      universityId: university.id,
+                      existingReview: existing,
+                    ),
                   );
                   if (posted == true) {
                     ref.invalidate(
@@ -665,20 +673,14 @@ class _ReviewsTab extends ConsumerWidget {
                     ref.invalidate(
                       universityReviewSummaryProvider(university.id),
                     );
+                    ref.invalidate(myUniversityReviewProvider(university.id));
                   }
                 },
                 icon: const Icon(Icons.edit_rounded, size: 18),
-                label: const Text('Write a review'),
-              ),
-            ),
-          if (hasReviewedAsync.value == true)
-            const Padding(
-              padding: EdgeInsets.only(bottom: AppSpacing.sm),
-              child: Text(
-                'You\'ve already reviewed this college.',
-                style: TextStyle(
-                  fontSize: AppFont.sm,
-                  color: AppColors.textSecondary,
+                label: Text(
+                  hasReviewedAsync.value == true
+                      ? 'Edit your review'
+                      : 'Write a review',
                 ),
               ),
             ),

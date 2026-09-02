@@ -336,26 +336,56 @@ class _ProsConsLine extends StatelessWidget {
 /// summary card's category bars / recommend % / tag counts real instead of
 /// empty for every future review.
 class WriteReviewSheet extends ConsumerStatefulWidget {
-  const WriteReviewSheet({super.key, required this.universityId});
+  const WriteReviewSheet({
+    super.key,
+    required this.universityId,
+    this.existingReview,
+  });
   final String universityId;
+
+  /// When set, the sheet opens pre-filled with this review's values and
+  /// submits via update instead of create — same form either way, since
+  /// the fields are identical, just a different verb at the end.
+  final UniversityReview? existingReview;
 
   @override
   ConsumerState<WriteReviewSheet> createState() => _WriteReviewSheetState();
 }
 
 class _WriteReviewSheetState extends ConsumerState<WriteReviewSheet> {
-  int _overallRating = 5;
+  late int _overallRating;
   int? _academicsRating;
   int? _campusLifeRating;
   int? _workloadRating;
   int? _careerValueRating;
   bool? _wouldRecommend;
   final Set<String> _tags = {};
-  final _bodyController = TextEditingController();
-  final _prosController = TextEditingController();
-  final _consController = TextEditingController();
+  late final _bodyController = TextEditingController(
+    text: widget.existingReview?.body ?? '',
+  );
+  late final _prosController = TextEditingController(
+    text: widget.existingReview?.pros ?? '',
+  );
+  late final _consController = TextEditingController(
+    text: widget.existingReview?.cons ?? '',
+  );
   bool _submitting = false;
   String? _error;
+
+  bool get _isEditing => widget.existingReview != null;
+
+  @override
+  void initState() {
+    super.initState();
+    final existing = widget.existingReview;
+    _overallRating = existing?.overallRating ?? 5;
+    _academicsRating = existing?.clinicalExposureRating;
+    _campusLifeRating = existing?.campusLifeRating;
+    _workloadRating = existing?.workloadRating;
+    _careerValueRating = existing?.placementsRating;
+    _wouldRecommend = existing?.wouldRecommend;
+    if (existing != null) _tags.addAll(existing.tags);
+  }
 
   @override
   void dispose() {
@@ -371,21 +401,36 @@ class _WriteReviewSheetState extends ConsumerState<WriteReviewSheet> {
       _error = null;
     });
     try {
-      await ref
-          .read(universityReviewsApiProvider)
-          .create(
-            widget.universityId,
-            overallRating: _overallRating,
-            clinicalExposureRating: _academicsRating,
-            campusLifeRating: _campusLifeRating,
-            workloadRating: _workloadRating,
-            placementsRating: _careerValueRating,
-            wouldRecommend: _wouldRecommend,
-            tags: _tags.toList(),
-            body: _bodyController.text.trim(),
-            pros: _prosController.text.trim(),
-            cons: _consController.text.trim(),
-          );
+      final api = ref.read(universityReviewsApiProvider);
+      if (_isEditing) {
+        await api.update(
+          widget.universityId,
+          overallRating: _overallRating,
+          clinicalExposureRating: _academicsRating,
+          campusLifeRating: _campusLifeRating,
+          workloadRating: _workloadRating,
+          placementsRating: _careerValueRating,
+          wouldRecommend: _wouldRecommend,
+          tags: _tags.toList(),
+          body: _bodyController.text.trim(),
+          pros: _prosController.text.trim(),
+          cons: _consController.text.trim(),
+        );
+      } else {
+        await api.create(
+          widget.universityId,
+          overallRating: _overallRating,
+          clinicalExposureRating: _academicsRating,
+          campusLifeRating: _campusLifeRating,
+          workloadRating: _workloadRating,
+          placementsRating: _careerValueRating,
+          wouldRecommend: _wouldRecommend,
+          tags: _tags.toList(),
+          body: _bodyController.text.trim(),
+          pros: _prosController.text.trim(),
+          cons: _consController.text.trim(),
+        );
+      }
       if (!mounted) return;
       Navigator.of(context).pop(true);
     } catch (e) {
@@ -448,9 +493,9 @@ class _WriteReviewSheetState extends ConsumerState<WriteReviewSheet> {
                 ),
               ),
             ),
-            const Text(
-              'Write a review',
-              style: TextStyle(
+            Text(
+              _isEditing ? 'Edit your review' : 'Write a review',
+              style: const TextStyle(
                 fontSize: AppFont.lg,
                 fontWeight: AppFont.extraBold,
               ),
@@ -594,7 +639,7 @@ class _WriteReviewSheetState extends ConsumerState<WriteReviewSheet> {
                           color: Colors.white,
                         ),
                       )
-                    : const Text('Post review'),
+                    : Text(_isEditing ? 'Save changes' : 'Post review'),
               ),
             ),
           ],

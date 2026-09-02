@@ -44,18 +44,22 @@ class UniversityReview {
 
   bool get authorIsMentor => authorRole == 'MENTOR';
 
-  factory UniversityReview.fromJson(Map<String, dynamic> json) => UniversityReview(
+  factory UniversityReview.fromJson(Map<String, dynamic> json) =>
+      UniversityReview(
         id: json['id'] as String,
         universityId: json['universityId'] as String,
         overallRating: (json['overallRating'] as num).toInt(),
         facultyRating: (json['facultyRating'] as num?)?.toInt(),
         infrastructureRating: (json['infrastructureRating'] as num?)?.toInt(),
-        clinicalExposureRating: (json['clinicalExposureRating'] as num?)?.toInt(),
+        clinicalExposureRating: (json['clinicalExposureRating'] as num?)
+            ?.toInt(),
         campusLifeRating: (json['campusLifeRating'] as num?)?.toInt(),
         placementsRating: (json['placementsRating'] as num?)?.toInt(),
         workloadRating: (json['workloadRating'] as num?)?.toInt(),
         wouldRecommend: json['wouldRecommend'] as bool?,
-        tags: (json['tags'] as List<dynamic>? ?? []).map((e) => e as String).toList(),
+        tags: (json['tags'] as List<dynamic>? ?? [])
+            .map((e) => e as String)
+            .toList(),
         pros: json['pros'] as String?,
         cons: json['cons'] as String?,
         body: json['body'] as String?,
@@ -111,19 +115,36 @@ class UniversityReviewsApi {
   final Dio _dio;
 
   Future<List<UniversityReview>> listForUniversity(String universityId) async {
-    final res = await _dio.get<Map<String, dynamic>>('/universities/$universityId/reviews');
+    final res = await _dio.get<Map<String, dynamic>>(
+      '/universities/$universityId/reviews',
+    );
     final data = res.data!['data'] as List<dynamic>;
-    return data.map((e) => UniversityReview.fromJson(e as Map<String, dynamic>)).toList();
+    return data
+        .map((e) => UniversityReview.fromJson(e as Map<String, dynamic>))
+        .toList();
   }
 
   Future<bool> hasReviewed(String universityId) async {
-    final res = await _dio.get<bool>('/universities/$universityId/reviews/mine');
+    final res = await _dio.get<bool>(
+      '/universities/$universityId/reviews/mine',
+    );
     return res.data ?? false;
   }
 
+  /// Full content of the caller's own review for this university, or null
+  /// if they haven't posted one — backs the edit form's prefill. Separate
+  /// from [hasReviewed] so that call's plain-boolean shape stays untouched.
+  Future<UniversityReview?> findMine(String universityId) async {
+    final res = await _dio.get<Map<String, dynamic>?>(
+      '/universities/$universityId/reviews/mine/detail',
+    );
+    return res.data == null ? null : UniversityReview.fromJson(res.data!);
+  }
+
   Future<UniversityReviewSummary> summary(String universityId) async {
-    final res =
-        await _dio.get<Map<String, dynamic>>('/universities/$universityId/reviews/summary');
+    final res = await _dio.get<Map<String, dynamic>>(
+      '/universities/$universityId/reviews/summary',
+    );
     return UniversityReviewSummary.fromJson(res.data!);
   }
 
@@ -144,40 +165,118 @@ class UniversityReviewsApi {
   }) async {
     final res = await _dio.post<Map<String, dynamic>>(
       '/universities/$universityId/reviews',
-      data: {
-        'overallRating': overallRating,
-        if (facultyRating != null) 'facultyRating': facultyRating,
-        if (infrastructureRating != null) 'infrastructureRating': infrastructureRating,
-        if (clinicalExposureRating != null) 'clinicalExposureRating': clinicalExposureRating,
-        if (campusLifeRating != null) 'campusLifeRating': campusLifeRating,
-        if (placementsRating != null) 'placementsRating': placementsRating,
-        if (workloadRating != null) 'workloadRating': workloadRating,
-        if (wouldRecommend != null) 'wouldRecommend': wouldRecommend,
-        if (tags != null && tags.isNotEmpty) 'tags': tags,
-        if (pros != null && pros.isNotEmpty) 'pros': pros,
-        if (cons != null && cons.isNotEmpty) 'cons': cons,
-        if (body != null && body.isNotEmpty) 'body': body,
-      },
+      data: _reviewPayload(
+        overallRating: overallRating,
+        facultyRating: facultyRating,
+        infrastructureRating: infrastructureRating,
+        clinicalExposureRating: clinicalExposureRating,
+        campusLifeRating: campusLifeRating,
+        placementsRating: placementsRating,
+        workloadRating: workloadRating,
+        wouldRecommend: wouldRecommend,
+        tags: tags,
+        pros: pros,
+        cons: cons,
+        body: body,
+      ),
     );
     return UniversityReview.fromJson(res.data!);
   }
+
+  /// Edits the caller's own existing review — 404s if there isn't one yet
+  /// (the mobile UI always checks [findMine] first and only offers this
+  /// path when a review already exists).
+  Future<UniversityReview> update(
+    String universityId, {
+    required int overallRating,
+    int? facultyRating,
+    int? infrastructureRating,
+    int? clinicalExposureRating,
+    int? campusLifeRating,
+    int? placementsRating,
+    int? workloadRating,
+    bool? wouldRecommend,
+    List<String>? tags,
+    String? pros,
+    String? cons,
+    String? body,
+  }) async {
+    final res = await _dio.patch<Map<String, dynamic>>(
+      '/universities/$universityId/reviews',
+      data: _reviewPayload(
+        overallRating: overallRating,
+        facultyRating: facultyRating,
+        infrastructureRating: infrastructureRating,
+        clinicalExposureRating: clinicalExposureRating,
+        campusLifeRating: campusLifeRating,
+        placementsRating: placementsRating,
+        workloadRating: workloadRating,
+        wouldRecommend: wouldRecommend,
+        tags: tags,
+        pros: pros,
+        cons: cons,
+        body: body,
+      ),
+    );
+    return UniversityReview.fromJson(res.data!);
+  }
+
+  Map<String, dynamic> _reviewPayload({
+    required int overallRating,
+    int? facultyRating,
+    int? infrastructureRating,
+    int? clinicalExposureRating,
+    int? campusLifeRating,
+    int? placementsRating,
+    int? workloadRating,
+    bool? wouldRecommend,
+    List<String>? tags,
+    String? pros,
+    String? cons,
+    String? body,
+  }) => {
+    'overallRating': overallRating,
+    if (facultyRating != null) 'facultyRating': facultyRating,
+    if (infrastructureRating != null)
+      'infrastructureRating': infrastructureRating,
+    if (clinicalExposureRating != null)
+      'clinicalExposureRating': clinicalExposureRating,
+    if (campusLifeRating != null) 'campusLifeRating': campusLifeRating,
+    if (placementsRating != null) 'placementsRating': placementsRating,
+    if (workloadRating != null) 'workloadRating': workloadRating,
+    if (wouldRecommend != null) 'wouldRecommend': wouldRecommend,
+    if (tags != null && tags.isNotEmpty) 'tags': tags,
+    if (pros != null && pros.isNotEmpty) 'pros': pros,
+    if (cons != null && cons.isNotEmpty) 'cons': cons,
+    if (body != null && body.isNotEmpty) 'body': body,
+  };
 }
 
 final universityReviewsApiProvider = Provider<UniversityReviewsApi>(
   (ref) => UniversityReviewsApi(ref.watch(dioProvider)),
 );
 
-final universityReviewsListProvider =
-    FutureProvider.autoDispose.family<List<UniversityReview>, String>(
-  (ref, universityId) => ref.watch(universityReviewsApiProvider).listForUniversity(universityId),
-);
+final universityReviewsListProvider = FutureProvider.autoDispose
+    .family<List<UniversityReview>, String>(
+      (ref, universityId) => ref
+          .watch(universityReviewsApiProvider)
+          .listForUniversity(universityId),
+    );
 
-final hasReviewedUniversityProvider =
-    FutureProvider.autoDispose.family<bool, String>(
-  (ref, universityId) => ref.watch(universityReviewsApiProvider).hasReviewed(universityId),
-);
+final hasReviewedUniversityProvider = FutureProvider.autoDispose
+    .family<bool, String>(
+      (ref, universityId) =>
+          ref.watch(universityReviewsApiProvider).hasReviewed(universityId),
+    );
 
-final universityReviewSummaryProvider =
-    FutureProvider.autoDispose.family<UniversityReviewSummary, String>(
-  (ref, universityId) => ref.watch(universityReviewsApiProvider).summary(universityId),
-);
+final myUniversityReviewProvider = FutureProvider.autoDispose
+    .family<UniversityReview?, String>(
+      (ref, universityId) =>
+          ref.watch(universityReviewsApiProvider).findMine(universityId),
+    );
+
+final universityReviewSummaryProvider = FutureProvider.autoDispose
+    .family<UniversityReviewSummary, String>(
+      (ref, universityId) =>
+          ref.watch(universityReviewsApiProvider).summary(universityId),
+    );
