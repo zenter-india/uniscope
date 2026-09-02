@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/theme/app_theme.dart';
+import '../../state/auth_controller.dart';
 import '../sessions/active_session_dock.dart';
 
 /// Bottom navigation shell — tab set is role-dependent (see app_router.dart),
@@ -27,14 +29,28 @@ class MainShell extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       body: navigationShell,
-      // Pinned above the tab bar on every tab so a call request never gets
-      // lost — previously the only way to reach /call/:id was remembering
-      // to open Messages and tap Join Call, which is why real calls were
-      // never actually connecting.
+      // Pinned above the tab bar on every tab so a mentor never loses track
+      // of an incoming request — previously the only way to reach
+      // /call/:id was remembering to open Messages and tap Join Call,
+      // which is why real calls were never actually connecting. Mentor
+      // accounts only: an aspirant's own pending-call status now shows
+      // inline inside that specific mentor's chat screen instead (see
+      // ActiveSessionDock's doc comment) — a mentor manages many
+      // different students at once and still needs this global view, but
+      // a student's one relationship per mentor doesn't.
       bottomNavigationBar: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const ActiveSessionDock(),
+          Consumer(
+            builder: (context, ref, _) {
+              final isMentor =
+                  ref.watch(authControllerProvider).user?.role ==
+                  UserRole.mentor;
+              return isMentor
+                  ? const ActiveSessionDock()
+                  : const SizedBox.shrink();
+            },
+          ),
           Container(
             decoration: const BoxDecoration(
               color: AppColors.surface,

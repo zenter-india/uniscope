@@ -11,14 +11,20 @@ import '../../widgets/app_widgets.dart';
 import '../reports/safety_menu_sheet.dart';
 import '../wallet/low_balance_sheet.dart';
 import '../wallet/wallet_screen.dart' show walletBalanceProvider;
+import 'active_session_dock.dart';
 import 'call_request_sheet.dart';
 import 'chat_thread_view.dart';
+import 'session_list_screen.dart'
+    show sessionsListProvider, showMentorSessionHistory;
 
-/// Shortest bookable call slot, in Uniminutes — mirrors the backend's
-/// CreateSessionDto.CALL_SLOT_MINUTES. Below this balance, booking any
-/// slot is impossible, so the call-request action is gated here instead
-/// of letting the sheet open and fail at submit time.
-const _minCallSlotUniminutes = 5;
+/// Shortest bookable call slot, in Uniminutes — derived from
+/// kCallSlotMinutes (itself mirroring the backend's
+/// CreateSessionDto.CALL_SLOT_MINUTES) rather than a separate literal, so
+/// this can't drift out of sync the next time the slot sizes change.
+/// Below this balance, booking any slot is impossible, so the
+/// call-request action is gated here instead of letting the sheet open
+/// and fail at submit time.
+final _minCallSlotUniminutes = kCallSlotMinutes.first;
 
 /// Chat UI for a CHAT session (Postgres + Supabase Realtime — see
 /// ChatThreadView). Chat is free and has no pricing or timing shown
@@ -209,6 +215,34 @@ class _SessionChatScreenState extends ConsumerState<SessionChatScreen> {
               );
             },
           ),
+          // Aspirant-only: the Sessions tab now shows one collapsed row per
+          // mentor instead of every past session (see
+          // _groupAllSessionsByCounterpart's doc comment) — this is where
+          // that history actually lives now, reachable right from the
+          // relationship it belongs to instead of a separate tab. A mentor
+          // already sees every individual student's history distinctly on
+          // their own Sessions tab, so this icon is redundant there.
+          if (isAspirant)
+            IconButton(
+              icon: const Icon(
+                Icons.history_rounded,
+                color: AppColors.textSecondary,
+              ),
+              tooltip: 'Session history',
+              onPressed: () async {
+                final sessions = await ref.read(sessionsListProvider.future);
+                final withMentor = sessions
+                    .where((s) => s.mentorId == _session!.mentorId)
+                    .toList();
+                if (!context.mounted) return;
+                await showMentorSessionHistory(
+                  context,
+                  mentorId: _session!.mentorId,
+                  mentorName: otherName,
+                  sessions: withMentor,
+                );
+              },
+            ),
           IconButton(
             icon: const Icon(
               Icons.more_vert_rounded,
@@ -224,21 +258,32 @@ class _SessionChatScreenState extends ConsumerState<SessionChatScreen> {
           ),
         ],
       ),
-      body: ChatThreadView(
-        connection: _connection!,
-        currentUserId: currentUserId,
-        onSend: (text, clientMessageId) => ref
-            .read(chatApiProvider)
-            .sendMessage(
-              widget.sessionId,
-              text,
-              clientMessageId: clientMessageId,
+      body: Column(
+        children: [
+          // Aspirant-only scoped dock — see ActiveSessionDock's doc comment
+          // for why this replaced the old global-everywhere version for
+          // students specifically (mentors still get the global one in
+          // MainShell).
+          if (isAspirant) ActiveSessionDock(mentorId: _session!.mentorId),
+          Expanded(
+            child: ChatThreadView(
+              connection: _connection!,
+              currentUserId: currentUserId,
+              onSend: (text, clientMessageId) => ref
+                  .read(chatApiProvider)
+                  .sendMessage(
+                    widget.sessionId,
+                    text,
+                    clientMessageId: clientMessageId,
+                  ),
+              onRefetch: () =>
+                  ref.read(chatApiProvider).getMessages(widget.sessionId),
+              onLoadOlder: (before) => ref
+                  .read(chatApiProvider)
+                  .getMessages(widget.sessionId, before: before),
             ),
-        onRefetch: () =>
-            ref.read(chatApiProvider).getMessages(widget.sessionId),
-        onLoadOlder: (before) => ref
-            .read(chatApiProvider)
-            .getMessages(widget.sessionId, before: before),
+          ),
+        ],
       ),
     );
   }

@@ -9,17 +9,27 @@ import '../../widgets/app_widgets.dart';
 import 'cancel_deflection_sheet.dart';
 import 'session_list_screen.dart' show sessionsListProvider;
 
-/// Persistent band above the bottom nav, visible on every tab, surfacing
-/// any audio-call session that needs attention right now — request pending
-/// mentor acceptance, mentor decision needed, or ready to join. This is
-/// what actually closes the "stuck on ringing" failure mode: previously
-/// both sides only reached /call/:id by separately remembering to open
-/// Messages and tap in, which is why real-world calls never connected.
+/// Surfaces any audio-call session that needs attention right now — request
+/// pending mentor acceptance, mentor decision needed, or ready to join.
+/// This is what actually closes the "stuck on ringing" failure mode:
+/// previously both sides only reached /call/:id by separately remembering
+/// to open Messages and tap in, which is why real-world calls never
+/// connected.
 ///
 /// Chat sessions never appear here — chat opens instantly with no waiting
 /// period, so there's nothing to keep surfaced.
+///
+/// [mentorId]: when set, only that mentor's own sessions are shown — this
+/// is the aspirant-side usage, scoped inline into that specific mentor's
+/// SessionChatScreen instead of floating globally over every tab (per
+/// product decision: a student's pending-call status now lives inside the
+/// individual mentor's own chat, not as a cross-app banner). When null
+/// (the mentor-account usage in MainShell), every counterpart's active
+/// session shows, pinned above the bottom nav on every tab — mentors serve
+/// many different students at once and still need that global visibility.
 class ActiveSessionDock extends ConsumerWidget {
-  const ActiveSessionDock({super.key});
+  const ActiveSessionDock({super.key, this.mentorId});
+  final String? mentorId;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -31,6 +41,7 @@ class ActiveSessionDock extends ConsumerWidget {
         .where(
           (s) =>
               s.type == 'AUDIO_CALL' &&
+              (mentorId == null || s.mentorId == mentorId) &&
               (s.status == SessionStatus.pending ||
                   s.status == SessionStatus.accepted ||
                   s.status == SessionStatus.ringing ||

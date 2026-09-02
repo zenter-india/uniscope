@@ -8,6 +8,7 @@ import '../../core/network/wallet_api.dart';
 import '../../core/theme/app_theme.dart';
 import '../../state/auth_controller.dart';
 import '../../widgets/app_widgets.dart';
+import '../mentors/mentor_list_screen.dart' show startChatWithMentor;
 import 'cancel_deflection_sheet.dart';
 
 final sessionsListProvider = FutureProvider.autoDispose<List<Session>>(
@@ -27,6 +28,11 @@ bool _isActiveStatus(SessionStatus status) =>
 /// cards. Completed/cancelled/rejected/expired sessions are left as their
 /// own single-item entries — they're a record of a past event, not a
 /// current state to merge.
+///
+/// Used for the mentor's own Sessions tab — a mentor manages many distinct
+/// students and genuinely needs each one's individual request visible, so
+/// this deliberately does NOT collapse historical sessions the way
+/// [_groupAllSessionsByCounterpart] does for the aspirant side below.
 List<List<Session>> _groupActiveSessions(
   List<Session> sessions,
   String? myUserId,
@@ -47,6 +53,29 @@ List<List<Session>> _groupActiveSessions(
       result[existingIndex].add(session);
     } else {
       activeGroupIndex[counterpartId] = result.length;
+      result.add([session]);
+    }
+  }
+  return result;
+}
+
+/// Aspirant-side grouping: unlike [_groupActiveSessions], this collapses
+/// EVERY session with the same mentor into one group — active or not — so
+/// the Sessions tab shows a single row per mentor relationship instead of
+/// one row per historical chat/call. Per explicit product decision: a
+/// student doesn't need a scrolling list of every past session with the
+/// same mentor here; the full history for that relationship now lives
+/// inside that mentor's own chat screen (see SessionChatScreen's history
+/// action), reachable with one tap from the row this produces.
+List<List<Session>> _groupAllSessionsByCounterpart(List<Session> sessions) {
+  final result = <List<Session>>[];
+  final groupIndex = <String, int>{};
+  for (final session in sessions) {
+    final existingIndex = groupIndex[session.mentorId];
+    if (existingIndex != null) {
+      result[existingIndex].add(session);
+    } else {
+      groupIndex[session.mentorId] = result.length;
       result.add([session]);
     }
   }
@@ -122,7 +151,8 @@ class SessionListScreen extends ConsumerWidget {
                                   ),
                           ],
                         )
-                      : Builder(
+                      : isMentorAccount
+                      ? Builder(
                           builder: (context) {
                             final groups = _groupActiveSessions(
                               sessions,
@@ -145,6 +175,19 @@ class SessionListScreen extends ConsumerWidget {
                                         isMentor: isMentor,
                                       );
                               },
+                            );
+                          },
+                        )
+                      : Builder(
+                          builder: (context) {
+                            final groups = _groupAllSessionsByCounterpart(
+                              sessions,
+                            );
+                            return ListView.builder(
+                              padding: const EdgeInsets.all(AppSpacing.md),
+                              itemCount: groups.length,
+                              itemBuilder: (_, i) =>
+                                  _AspirantMentorRow(sessions: groups[i]),
                             );
                           },
                         ),
@@ -284,6 +327,210 @@ class _MergedSessionCard extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Sentence-case status for a single row's subtitle — a lighter-weight
+/// twin of `_SessionActionsState._statusLabel` (that one also needs
+/// `isMentor`/dual endReason phrasing for a card's own action area; a
+/// one-line summary row just needs something short and true).
+String _lastActivityLabel(Session session) {
+  switch (session.status) {
+    case SessionStatus.pending:
+      return session.type == 'AUDIO_CALL' ? 'Call requested' : 'Chat started';
+    case SessionStatus.accepted:
+      return 'Ready — accepted';
+    case SessionStatus.ringing:
+      return 'Call connecting…';
+    case SessionStatus.inProgress:
+      return session.type == 'AUDIO_CALL' ? 'Call in progress' : 'Chatting';
+    case SessionStatus.completed:
+      return session.type == 'AUDIO_CALL' ? 'Call completed' : 'Chat';
+    case SessionStatus.rejected:
+      return 'Declined';
+    case SessionStatus.cancelled:
+      return 'Cancelled';
+    case SessionStatus.expired:
+      return 'Expired';
+    case SessionStatus.failed:
+      return 'No answer';
+  }
+}
+
+/// One row per mentor relationship, aspirant Sessions tab only (see
+/// `_groupAllSessionsByCounterpart`'s doc comment for why this consolidates
+/// every session with that mentor instead of listing each one). Any
+/// currently-actionable session (pending/accepted/ringing/in progress)
+/// still gets its own inline action row here — that's live right now, not
+/// history — but everything else (completed/cancelled/rejected/expired)
+/// only shows as a "N earlier" count, tap-through to the full list via
+/// [showMentorSessionHistory]. Tapping the row itself (outside an action
+/// button) always opens this mentor's chat, same as tapping a mentor card
+/// anywhere else in the app.
+class _AspirantMentorRow extends ConsumerWidget {
+  const _AspirantMentorRow({required this.sessions});
+  final List<Session> sessions;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final active = sessions.where((s) => _isActiveStatus(s.status)).toList();
+    final historyCount = sessions.length - active.length;
+    final first = sessions.first;
+    final latest = sessions.reduce(
+      (a, b) => a.requestedAt.compareTo(b.requestedAt) >= 0 ? a : b,
+    );
+
+    return AppCard(
+      margin: const EdgeInsets.only(bottom: AppSpacing.sm),
+      onTap: () => startChatWithMentor(context, ref, first.mentorId),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              AppAvatar(
+                name: first.mentorName,
+                avatarUrl: first.mentorAvatarUrl,
+                size: 40,
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      first.mentorName,
+                      style: const TextStyle(
+                        fontWeight: AppFont.bold,
+                        fontSize: AppFont.md,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    Text(
+                      _lastActivityLabel(latest),
+                      style: const TextStyle(
+                        fontSize: AppFont.xs,
+                        color: AppColors.textSecondary,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          if (active.isNotEmpty) ...[
+            const SizedBox(height: AppSpacing.md),
+            for (final session in active)
+              Padding(
+                padding: const EdgeInsets.only(bottom: AppSpacing.xs),
+                child: _SessionActions(session: session, isMentor: false),
+              ),
+          ],
+          if (historyCount > 0) ...[
+            const SizedBox(height: AppSpacing.xs),
+            InkWell(
+              onTap: () => showMentorSessionHistory(
+                context,
+                mentorId: first.mentorId,
+                mentorName: first.mentorName,
+                sessions: sessions,
+              ),
+              child: Row(
+                children: [
+                  const Icon(
+                    Icons.history_rounded,
+                    size: 15,
+                    color: AppColors.textMuted,
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    active.isEmpty
+                        ? '$historyCount earlier session${historyCount == 1 ? '' : 's'}'
+                        : '+$historyCount earlier',
+                    style: const TextStyle(
+                      fontSize: AppFont.xs,
+                      color: AppColors.textSecondary,
+                      fontWeight: AppFont.semibold,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+/// Every past chat/call with one mentor, newest first — reuses the same
+/// `_SessionCard` rendering (cost, duration, review prompt, everything) the
+/// Sessions tab used to show inline for every session; now reached from
+/// either the Sessions tab's collapsed mentor row or directly from that
+/// mentor's own chat screen (see SessionChatScreen's history action),
+/// which is the actual "moved inside the mentor's chat" destination for
+/// this history per the product decision behind
+/// `_groupAllSessionsByCounterpart`.
+Future<void> showMentorSessionHistory(
+  BuildContext context, {
+  required String mentorId,
+  required String mentorName,
+  required List<Session> sessions,
+}) {
+  final sorted = [...sessions]
+    ..sort((a, b) => b.requestedAt.compareTo(a.requestedAt));
+  return showModalBottomSheet(
+    context: context,
+    backgroundColor: AppColors.surface,
+    isScrollControlled: true,
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.xl)),
+    ),
+    builder: (_) => DraggableScrollableSheet(
+      initialChildSize: 0.75,
+      minChildSize: 0.4,
+      maxChildSize: 0.95,
+      expand: false,
+      builder: (context, scrollController) => Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.lg,
+              AppSpacing.md,
+              AppSpacing.lg,
+              AppSpacing.sm,
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    'History with $mentorName',
+                    style: const TextStyle(
+                      fontSize: AppFont.lg,
+                      fontWeight: AppFont.extraBold,
+                    ),
+                  ),
+                ),
+                IconButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  icon: const Icon(Icons.close_rounded),
+                ),
+              ],
+            ),
+          ),
+          Expanded(
+            child: ListView.builder(
+              controller: scrollController,
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+              itemCount: sorted.length,
+              itemBuilder: (_, i) =>
+                  _SessionCard(session: sorted[i], isMentor: false),
+            ),
+          ),
+        ],
+      ),
+    ),
+  );
 }
 
 class _SessionHeader extends StatelessWidget {
