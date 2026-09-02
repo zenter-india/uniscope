@@ -94,7 +94,7 @@ const OTHER_COLLEGE = "__OTHER__";
 // dataset (see seed-mds-colleges.mjs); BDS has no specialization data at
 // all (it's the base dental degree, not a postgrad specialty program —
 // see STREAMS_WITH_COLLEGE_DATA below) so it's deliberately absent here.
-const CURATED_DEGREE_MAP_BY_STREAM: Record<string, Record<string, string>> = {
+export const CURATED_DEGREE_MAP_BY_STREAM: Record<string, Record<string, string>> = {
   Medical: {
     DNB: "DNB",
     PG: "MD/MS",
@@ -137,7 +137,7 @@ const CURATED_DEGREE_MAP_BY_STREAM: Record<string, Record<string, string>> = {
 // Degrees whose curated data is small/complete enough to browse in full +
 // type-to-search (CuratedCollegeSearch/SearchableCombobox), rather than the
 // original curated-top-30-+-"Other" pattern.
-const BROWSE_DEGREES = new Set([
+export const BROWSE_DEGREES = new Set([
   "MD/MS",
   "DNB",
   "Diploma",
@@ -158,7 +158,7 @@ const BROWSE_DEGREES = new Set([
 // uses until their own data is uploaded. A stream+degree with curated
 // specialization data (e.g. Dental+MDS, see CURATED_DEGREE_MAP_BY_STREAM)
 // doesn't need to be listed here — it's handled by the curated path.
-const STREAMS_WITH_COLLEGE_DATA = new Set(["Dental", "Engineering", "Law"]);
+export const STREAMS_WITH_COLLEGE_DATA = new Set(["Dental", "Engineering", "Law"]);
 
 // Maps a STREAMS_WITH_COLLEGE_DATA stream+degree to the `levels` value
 // its own dataset was seeded with (see seed-btech-colleges.mjs et al —
@@ -173,7 +173,7 @@ const STREAMS_WITH_COLLEGE_DATA = new Set(["Dental", "Engineering", "Law"]);
 // curated CuratedCollegeSearch path above (see
 // CURATED_DEGREE_MAP_BY_STREAM), which doesn't use CollegeSearch or
 // this map at all.
-const COLLEGE_SEARCH_LEVEL_MAP: Record<string, Record<string, string>> = {
+export const COLLEGE_SEARCH_LEVEL_MAP: Record<string, Record<string, string>> = {
   Dental: { BDS: "UG" },
 };
 
