@@ -29,6 +29,7 @@ class Mentor {
     required this.pricePerMinuteMinor,
     required this.university,
     this.isAvailable = false,
+    this.isVerified = false,
     this.availableDays = const [],
     this.rating,
     this.reviewCount = 0,
@@ -57,6 +58,12 @@ class Mentor {
   /// real-time presence: never label it "online". Doesn't affect whether
   /// they're listed, and chat is always allowed regardless.
   final bool isAvailable;
+
+  /// True only once an admin has approved this mentor's ID verification.
+  /// This is what the "Verified" badge must gate on — an unverified mentor
+  /// still appears in discovery and is still chat-reachable, just without
+  /// the badge (see backend MentorResponse.isVerified doc comment).
+  final bool isVerified;
 
   /// Days the mentor says they're generally free. Advisory only — booking is
   /// never blocked by it.
@@ -87,6 +94,7 @@ class Mentor {
             ? MentorUniversity.fromJson(json['university'] as Map<String, dynamic>)
             : null,
         isAvailable: json['isAvailable'] as bool? ?? false,
+        isVerified: json['isVerified'] as bool? ?? false,
         availableDays: (json['availableDays'] as List<dynamic>? ?? [])
             .map((e) => e as String)
             .toList(),

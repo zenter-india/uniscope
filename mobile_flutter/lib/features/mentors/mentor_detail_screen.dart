@@ -194,33 +194,33 @@ class _IdentityCard extends StatelessWidget {
                         height: 1.15,
                       ),
                     ),
-                    const SizedBox(height: 6),
-                    // Every mentor reachable through this screen has passed
-                    // ID verification — MentorsService filters on VERIFIED.
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 10, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: AppColors.primaryLight,
-                        borderRadius: BorderRadius.circular(AppRadius.full),
-                      ),
-                      child: const Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(Icons.verified_rounded,
-                              size: 14, color: AppColors.primary),
-                          SizedBox(width: 4),
-                          Text(
-                            'Verified student',
-                            style: TextStyle(
-                              fontSize: AppFont.xs,
-                              fontWeight: AppFont.bold,
-                              color: AppColors.primaryDark,
+                    if (mentor.isVerified) ...[
+                      const SizedBox(height: 6),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: AppColors.primaryLight,
+                          borderRadius: BorderRadius.circular(AppRadius.full),
+                        ),
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.verified_rounded,
+                                size: 14, color: AppColors.primary),
+                            SizedBox(width: 4),
+                            Text(
+                              'Verified student',
+                              style: TextStyle(
+                                fontSize: AppFont.xs,
+                                fontWeight: AppFont.bold,
+                                color: AppColors.primaryDark,
+                              ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
-                    ),
+                    ],
                     const SizedBox(height: 6),
                     Align(
                       alignment: Alignment.centerLeft,

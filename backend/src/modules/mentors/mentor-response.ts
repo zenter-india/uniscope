@@ -1,4 +1,4 @@
-import { University, User, UserProfile } from '@prisma/client';
+import { University, User, UserProfile, VerificationStatus } from '@prisma/client';
 import { isCallAvailable } from './availability.js';
 
 /**
@@ -20,6 +20,13 @@ export interface MentorResponse {
    * not affect discoverability: an unavailable mentor is still listed and
    * still reachable by chat. */
   isAvailable: boolean;
+  /** True only once an admin has approved this mentor's ID verification
+   * (User.verificationStatus === VERIFIED) — this is what the mobile
+   * "Verified" badge must gate on. An unverified mentor still appears in
+   * discovery and is still chat-reachable (see MentorsService.findAll);
+   * this field is what stops the badge from being shown to a mentor who
+   * hasn't earned it. */
+  isVerified: boolean;
   /** Days the mentor says they're generally free, e.g. ["Monday","Thursday"].
    * Purely advisory — booking is never blocked by it. */
   availableDays: string[];
@@ -58,9 +65,10 @@ type MentorRow = User & {
     | null;
 };
 
-/** Throws if called on a row whose mentor invariants aren't satisfied —
- * callers must filter (VERIFIED, active, not banned) at the query level;
- * this is a projection, not a guard. */
+/** Callers must filter (active, not banned, correct role) at the query
+ * level — this is a projection, not a guard. verificationStatus is
+ * deliberately NOT filtered upstream (see MentorsService.findAll): an
+ * unverified mentor still appears here, just with isVerified: false. */
 export function toMentorResponse(
   user: MentorRow,
   rating?: { average: number | null; count: number },
@@ -74,6 +82,7 @@ export function toMentorResponse(
     role: user.role,
     avatarUrl: avatarUrl ?? null,
     isAvailable: isCallAvailable(profile),
+    isVerified: user.verificationStatus === VerificationStatus.VERIFIED,
     availableDays: profile?.availableDays ?? [],
     specialty: profile?.specialty ?? null,
     stream: profile?.stream ?? null,
