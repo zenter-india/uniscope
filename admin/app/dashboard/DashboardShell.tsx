@@ -9,6 +9,7 @@ const NAV_ITEMS = [
   { label: 'Leads', href: '/dashboard/leads' },
   { label: 'Verification Queue', href: '/dashboard/verification' },
   { label: 'Moderation', href: '/dashboard/moderation' },
+  { label: 'Sessions', href: '/dashboard/sessions' },
   { label: 'Payouts', href: '/dashboard/payouts' },
   { label: 'Users', href: '/dashboard/users' },
   { label: 'Universities', href: '/dashboard/universities' },
