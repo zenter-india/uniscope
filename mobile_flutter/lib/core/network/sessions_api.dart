@@ -12,8 +12,9 @@ enum SessionKind {
   final String wire;
 }
 
-/// Fixed pre-paid call slots — mirrors backend CALL_SLOT_MINUTES.
-const List<int> kCallSlotMinutes = [5, 10, 20];
+/// Fixed pre-paid call slots — mirrors backend CALL_SLOT_MINUTES. Shortest
+/// slot is 6 min (was 5, per explicit client request).
+const List<int> kCallSlotMinutes = [6, 10, 20];
 
 /// Mirrors the backend `SessionStatus` enum.
 enum SessionStatus {
@@ -30,8 +31,8 @@ enum SessionStatus {
   const SessionStatus(this.wire);
   final String wire;
 
-  static SessionStatus fromWire(String value) =>
-      SessionStatus.values.firstWhere((s) => s.wire == value, orElse: () => SessionStatus.pending);
+  static SessionStatus fromWire(String value) => SessionStatus.values
+      .firstWhere((s) => s.wire == value, orElse: () => SessionStatus.pending);
 }
 
 class Session {
@@ -78,26 +79,26 @@ class Session {
   final String? mentorJoinedAt;
 
   factory Session.fromJson(Map<String, dynamic> json) => Session(
-        id: json['id'] as String,
-        aspirantId: json['aspirantId'] as String,
-        mentorId: json['mentorId'] as String,
-        aspirantName: json['aspirantName'] as String? ?? 'Aspirant',
-        mentorName: json['mentorName'] as String? ?? 'Mentor',
-        aspirantAvatarUrl: json['aspirantAvatarUrl'] as String?,
-        mentorAvatarUrl: json['mentorAvatarUrl'] as String?,
-        type: json['type'] as String,
-        status: SessionStatus.fromWire(json['status'] as String),
-        ratePerMinuteMinor: (json['ratePerMinuteMinor'] as num).toInt(),
-        requestedAt: json['requestedAt'] as String,
-        startedAt: json['startedAt'] as String?,
-        endedAt: json['endedAt'] as String?,
-        billedMinutes: (json['billedMinutes'] as num?)?.toInt() ?? 0,
-        totalCostMinor: (json['totalCostMinor'] as num?)?.toInt() ?? 0,
-        endReason: json['endReason'] as String?,
-        callSlotMinutes: (json['callSlotMinutes'] as num?)?.toInt(),
-        aspirantJoinedAt: json['aspirantJoinedAt'] as String?,
-        mentorJoinedAt: json['mentorJoinedAt'] as String?,
-      );
+    id: json['id'] as String,
+    aspirantId: json['aspirantId'] as String,
+    mentorId: json['mentorId'] as String,
+    aspirantName: json['aspirantName'] as String? ?? 'Aspirant',
+    mentorName: json['mentorName'] as String? ?? 'Mentor',
+    aspirantAvatarUrl: json['aspirantAvatarUrl'] as String?,
+    mentorAvatarUrl: json['mentorAvatarUrl'] as String?,
+    type: json['type'] as String,
+    status: SessionStatus.fromWire(json['status'] as String),
+    ratePerMinuteMinor: (json['ratePerMinuteMinor'] as num).toInt(),
+    requestedAt: json['requestedAt'] as String,
+    startedAt: json['startedAt'] as String?,
+    endedAt: json['endedAt'] as String?,
+    billedMinutes: (json['billedMinutes'] as num?)?.toInt() ?? 0,
+    totalCostMinor: (json['totalCostMinor'] as num?)?.toInt() ?? 0,
+    endReason: json['endReason'] as String?,
+    callSlotMinutes: (json['callSlotMinutes'] as num?)?.toInt(),
+    aspirantJoinedAt: json['aspirantJoinedAt'] as String?,
+    mentorJoinedAt: json['mentorJoinedAt'] as String?,
+  );
 }
 
 class CallCredentials {
@@ -113,7 +114,8 @@ class CallCredentials {
   final String token;
   final String uid;
 
-  factory CallCredentials.fromJson(Map<String, dynamic> json) => CallCredentials(
+  factory CallCredentials.fromJson(Map<String, dynamic> json) =>
+      CallCredentials(
         appId: json['appId'] as String,
         channelName: json['channelName'] as String,
         token: json['token'] as String,
@@ -126,7 +128,11 @@ class SessionsApi {
 
   final Dio _dio;
 
-  Future<Session> create(String mentorId, SessionKind type, {int? slotMinutes}) async {
+  Future<Session> create(
+    String mentorId,
+    SessionKind type, {
+    int? slotMinutes,
+  }) async {
     try {
       final res = await _dio.post<Map<String, dynamic>>(
         '/sessions',
@@ -160,7 +166,9 @@ class SessionsApi {
   Future<List<Session>> list() async {
     final res = await _dio.get<Map<String, dynamic>>('/sessions');
     final data = res.data!['data'] as List<dynamic>;
-    return data.map((e) => Session.fromJson(e as Map<String, dynamic>)).toList();
+    return data
+        .map((e) => Session.fromJson(e as Map<String, dynamic>))
+        .toList();
   }
 
   Future<Session> findById(String sessionId) async {
@@ -169,32 +177,44 @@ class SessionsApi {
   }
 
   Future<Session> accept(String sessionId) async {
-    final res = await _dio.post<Map<String, dynamic>>('/sessions/$sessionId/accept');
+    final res = await _dio.post<Map<String, dynamic>>(
+      '/sessions/$sessionId/accept',
+    );
     return Session.fromJson(res.data!);
   }
 
   Future<Session> reject(String sessionId) async {
-    final res = await _dio.post<Map<String, dynamic>>('/sessions/$sessionId/reject');
+    final res = await _dio.post<Map<String, dynamic>>(
+      '/sessions/$sessionId/reject',
+    );
     return Session.fromJson(res.data!);
   }
 
   Future<Session> cancel(String sessionId) async {
-    final res = await _dio.post<Map<String, dynamic>>('/sessions/$sessionId/cancel');
+    final res = await _dio.post<Map<String, dynamic>>(
+      '/sessions/$sessionId/cancel',
+    );
     return Session.fromJson(res.data!);
   }
 
   Future<CallCredentials> getCallToken(String sessionId) async {
-    final res = await _dio.get<Map<String, dynamic>>('/sessions/$sessionId/call/token');
+    final res = await _dio.get<Map<String, dynamic>>(
+      '/sessions/$sessionId/call/token',
+    );
     return CallCredentials.fromJson(res.data!);
   }
 
   Future<Session> confirmJoined(String sessionId) async {
-    final res = await _dio.post<Map<String, dynamic>>('/sessions/$sessionId/call/joined');
+    final res = await _dio.post<Map<String, dynamic>>(
+      '/sessions/$sessionId/call/joined',
+    );
     return Session.fromJson(res.data!);
   }
 
   Future<Session> extendCall(String sessionId) async {
-    final res = await _dio.post<Map<String, dynamic>>('/sessions/$sessionId/call/extend');
+    final res = await _dio.post<Map<String, dynamic>>(
+      '/sessions/$sessionId/call/extend',
+    );
     return Session.fromJson(res.data!);
   }
 

@@ -517,7 +517,7 @@ export class SessionsService {
       throw new ConflictException(`Cannot extend a call in status ${session.status}`);
     }
 
-    const extensionMinutes = CALL_SLOT_MINUTES[0]; // fixed +5 min, see product decision
+    const extensionMinutes = CALL_SLOT_MINUTES[0]; // fixed +6 min (shortest slot), see product decision
     const extensionCostMinor = extensionMinutes * MENTOR_RATE_PER_MINUTE_MINOR;
 
     const [aspirantWallet, mentorWallet] = await Promise.all([
