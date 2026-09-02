@@ -210,27 +210,35 @@ assets.
 
 ### Chat
 
-**Provider** — Stream Chat (`stream-chat` server SDK; `stream_chat_flutter`
-^9.5.0 client).
+**Provider** — Postgres (via Prisma — `ChatChannel`/`ChatMessage` models) for
+persistence, Supabase Realtime Broadcast for the live-delivery signal.
+Replaced Stream Chat 2026-09-02, cost-driven. Full design (idempotency,
+pagination, notification wiring, RLS/grants posture) is in `CLAUDE.md`'s
+"Chat architecture" section — not duplicated here.
 
 **Purpose** — free text messaging between an aspirant and a mentor, plus a
 persistent support channel.
 
-**Entry point** — `modules/chat/`; mobile connects directly to Stream using a
-backend-minted token.
+**Entry point** — `modules/chat/`. Every message read/write goes through the
+NestJS API; mobile additionally connects directly to Supabase Realtime with
+the public anon key, but only to receive a content-free "new message" ping,
+never the message body.
 
 **Data flow** — CHAT sessions **open immediately** on `create()` (status set
-straight to `ACCEPTED`, no mentor accept step) and a Stream channel is
+straight to `ACCEPTED`, no mentor accept step) and a `ChatChannel` row is
 provisioned via `ensureChannelForSession`. A separate persistent
 "UniScope Support" channel per user is lazily provisioned via
-`GET /chat/support/token`.
+`GET /chat/support/messages`.
 
-**Failure modes** — Stream outage breaks messaging entirely (no fallback
-transport). A failed channel provision surfaces as a failed session create.
+**Failure modes** — a Realtime Broadcast ping is best-effort (a failed
+`httpSend` never blocks the message's own persistence); a client that misses
+a ping catches up on its next app-resume, reconnect, or manual reopen — see
+`CLAUDE.md`. A Supabase outage degrades to "no live delivery," not "no
+chat" — history is still readable/writable via the plain REST API the whole
+time, since Postgres (not Supabase Realtime) is the actual source of truth.
 
-> Stream Chat's own "last seen" indicator in the chat header is a genuine
-> vendor-provided presence signal. It is **not** the same thing as
-> `isMentorAvailable`, and the two must never be conflated in UI copy.
+No presence/typing/read-receipts today — deliberately out of scope for this
+migration's v1 (see `CLAUDE.md`).
 
 ### Audio calling
 

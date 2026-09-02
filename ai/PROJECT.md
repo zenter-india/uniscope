@@ -50,7 +50,7 @@ no automated test or CI coverage.
 - Mentor discovery, mentor detail, mentor reviews
 - College (university) discovery, detail, reviews, saved colleges
 - Session lifecycle: request → accept/reject/cancel → connect → bill → end
-- Free chat via Stream Chat (session-scoped channels + a persistent support channel)
+- Free chat via Postgres + Supabase Realtime Broadcast (session-scoped channels + a persistent support channel; replaced Stream Chat 2026-09-02 — see `CLAUDE.md`'s "Chat architecture" section)
 - Paid audio calls via Agora (fixed 5/10/20-minute pre-paid slots)
 - Uniminutes wallet: Razorpay top-up, ledger, holds, mentor payouts
 - Mentor identity verification with admin review queue
@@ -151,8 +151,13 @@ interceptor on `401` (`mobile_flutter/lib/core/network/dio_client.dart`).
 
 Notable non-REST interactions:
 
-- **Stream Chat**: the mobile app connects directly to Stream using a token
-  minted by the backend; message traffic does not proxy through the API.
+- **Chat (Postgres + Supabase Realtime)**: message send/read proxies fully
+  through the API (unlike the other two items here) — the backend persists
+  every message and is the only path that can read one. The mobile app
+  additionally connects directly to Supabase Realtime with a public anon
+  key, but only to receive a content-free "new message" ping on a private
+  topic; it never carries message text. See `CLAUDE.md`'s "Chat
+  architecture" section.
 - **Agora RTC**: the mobile app joins an Agora channel directly using a
   short-lived token minted by the backend; media never transits the API.
 - **Razorpay**: checkout runs in the Razorpay SDK on-device; the backend
@@ -166,7 +171,7 @@ Notable non-REST interactions:
 | Supabase (PostgreSQL) | Primary database | Prisma via `DATABASE_URL` / `DIRECT_URL` |
 | Supabase Storage | Verification docs, avatars, university and web assets | `backend/src/supabase/` |
 | Twilio Verify | Phone OTP delivery | `auth/otp/twilio-otp.provider.ts` |
-| Stream Chat | Text chat | `modules/chat/` |
+| Supabase Realtime | Text chat live-delivery signal (persistence is Postgres via Prisma, same DB row above) | `modules/chat/` |
 | Agora | Audio call transport + RTC tokens | `modules/agora/` |
 | Razorpay | Wallet top-up payments | `modules/wallet/` |
 | Firebase Cloud Messaging | Push notifications | `firebase/`, `modules/notifications/` |

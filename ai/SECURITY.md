@@ -38,12 +38,16 @@ record, or a chat message.
 - Date of birth, gender, precise location (state/city)
 - Wallet balances, ledger entries, hold records, payout requests
 - Session history: who spoke to whom, when, for how long, at what cost
-- Chat message content (held by Stream Chat)
+- Chat message content (`ChatMessage.text`, Postgres — readable only via
+  the NestJS-authorized REST API; the Realtime Broadcast channel every
+  client subscribes to with the public anon key carries no message
+  content, only a "something changed" ping — see CLAUDE.md's "Chat
+  architecture" section)
 - Verification documents — college ID photos in a **private** Supabase
   Storage bucket, readable only via short-lived signed URLs
 - Report contents and moderation notes
 - FCM device tokens (`PushToken.token`)
-- Agora RTC tokens, Stream Chat user tokens (short-lived, per-user, per-channel)
+- Agora RTC tokens (short-lived, per-user, per-channel)
 - Internal user ids when correlated with any of the above
 
 ### SECRET — never commit, never log, never print, never place in a test record
@@ -59,7 +63,6 @@ and local files):
 | `JWT_ACCESS_SECRET`, `JWT_REFRESH_SECRET` | Forge any user session |
 | `PROFILE_ENCRYPTION_KEY` | Decrypt every stored real name |
 | `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_VERIFY_SERVICE_SID` | Send SMS / incur cost |
-| `STREAM_API_KEY`, `STREAM_API_SECRET` | Impersonate any chat user |
 | `AGORA_APP_ID`, `AGORA_APP_CERTIFICATE` | Mint call tokens for any channel |
 | `RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET`, `RAZORPAY_WEBHOOK_SECRET` | Payments; forge webhooks |
 | `FIREBASE_SERVICE_ACCOUNT_KEY_*` | Push to every device; Firebase admin |
@@ -222,6 +225,46 @@ No Sentry/Crashlytics/Bugsnag anywhere. A production authentication, payment,
 or call failure produces no alert and, on mobile, no trace at all. This is
 also the principal reason the audio-call issue is hard to diagnose
 (`ARCHITECTURE.md` § Diagnosability gaps).
+
+### S-6 — No RLS anywhere in this app, including the new chat tables (MEDIUM) — verified safe today, structurally fragile
+
+The Stream Chat → Supabase Realtime chat migration (2026-09-02) added
+`chat_channels`/`chat_messages`, and — like every other table in this
+app — Row Level Security is **disabled** on both (`relrowsecurity: false`,
+confirmed live via SQL against the real Supabase project). This app has
+never used Supabase RLS: it authenticates with its own phone-OTP+JWT
+scheme, not Supabase Auth, so there's no native session for RLS to key off
+anywhere, not just in chat.
+
+**Why this is safe today**: also confirmed live — the `anon` and
+`authenticated` Postgres roles have **zero GRANTs** on `chat_channels`,
+`chat_messages`, `users`, `wallets`, or `sessions` (checked
+`information_schema.role_table_grants`). Supabase's public REST API
+(PostgREST) auto-exposes the `public` schema, but with no GRANTs, an
+anon-key request to `/rest/v1/chat_messages` (or any of those tables) is
+denied regardless of RLS state. The chat migration deliberately leans on
+this: mobile clients receive the public Supabase anon key directly (to
+subscribe to Realtime Broadcast), which would be a real problem if these
+tables *were* exposed.
+
+**Why this is still a real finding**: the "no grants" state is incidental
+(these tables were created via Prisma migrations, not Supabase's table
+editor/dashboard flow, which is what normally auto-grants `anon`/
+`authenticated`), not a deliberately configured protection. Any future
+hands-on Supabase Studio session — someone using the table editor's
+"Enable API access" convenience, or running a dashboard action that
+touches these tables — could silently grant public read access to chat
+messages, wallet balances, and session data, with no RLS to stop it,
+since the anon key is already shipped to every mobile client.
+
+**Action**: re-check grants (`select table_name, grantee, privilege_type
+from information_schema.role_table_grants where table_schema='public' and
+grantee in ('anon','authenticated')`) after any hands-on Supabase Studio
+session, especially one touching these tables. Enabling RLS with a
+deny-by-default policy on the whole `public` schema would remove this
+fragility permanently but wasn't done as part of this migration — it's a
+bigger change than the chat feature itself and affects every table, not
+just chat's.
 
 ---
 
