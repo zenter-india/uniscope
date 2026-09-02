@@ -51,6 +51,7 @@ import { UniversityReviewsModule } from './modules/university-reviews/university
 import { UniversityWishlistModule } from './modules/university-wishlist/university-wishlist.module.js';
 import { DataImportModule } from './modules/data-import/data-import.module.js';
 import { EnrollmentsModule } from './modules/enrollments/enrollments.module.js';
+import { MetricsModule } from './modules/metrics/metrics.module.js';
 
 @Module({
   imports: [
@@ -119,6 +120,7 @@ import { EnrollmentsModule } from './modules/enrollments/enrollments.module.js';
     UniversityWishlistModule,
     DataImportModule,
     EnrollmentsModule,
+    MetricsModule,
   ],
   controllers: [AppController],
   providers: [
