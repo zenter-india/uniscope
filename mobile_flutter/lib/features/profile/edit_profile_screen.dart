@@ -22,7 +22,6 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   String? _qualification;
   String? _stream;
   String? _state;
-  final Set<String> _goals = {};
   final Set<String> _languages = {};
   bool _loaded = false;
   bool _saving = false;
@@ -37,7 +36,6 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     _qualification = profile.qualification;
     _stream = profile.stream;
     _state = profile.state;
-    _goals.addAll(profile.goals);
     _languages.addAll(profile.languages);
   }
 
@@ -56,31 +54,36 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
           ? null
           : _displayNameController.text.trim();
       if (role == UserRole.mentor) {
-        await ref.read(usersApiProvider).updateProfile(
+        await ref
+            .read(usersApiProvider)
+            .updateProfile(
               displayName: displayName,
               bio: _bioController.text.trim(),
               stream: _stream,
               languages: _languages.toList(),
             );
       } else {
-        await ref.read(usersApiProvider).updateProfile(
+        await ref
+            .read(usersApiProvider)
+            .updateProfile(
               displayName: displayName,
               gender: _gender,
               state: _state,
               city: _cityController.text.trim(),
               qualification: _qualification,
               stream: _stream,
-              goals: _goals.toList(),
             );
       }
       ref.invalidate(myProfileProvider);
       if (!mounted) return;
-      ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text('Profile updated')));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Profile updated')));
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text('Could not save: $e')));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Could not save: $e')));
     } finally {
       if (mounted) setState(() => _saving = false);
     }
@@ -95,7 +98,8 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
       appBar: AppBar(title: const Text('Edit Profile')),
       body: profileAsync.when(
         loading: () => const Center(
-            child: CircularProgressIndicator(color: AppColors.primary)),
+          child: CircularProgressIndicator(color: AppColors.primary),
+        ),
         error: (err, _) => EmptyState(
           icon: Icons.wifi_off_rounded,
           title: 'Could not load your profile',
@@ -111,22 +115,33 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('Display name',
-                    style: TextStyle(fontSize: AppFont.sm, fontWeight: AppFont.semibold)),
+                const Text(
+                  'Display name',
+                  style: TextStyle(
+                    fontSize: AppFont.sm,
+                    fontWeight: AppFont.semibold,
+                  ),
+                ),
                 const SizedBox(height: AppSpacing.xs),
                 TextField(controller: _displayNameController),
                 const SizedBox(height: AppSpacing.md),
                 if (isMentor) ...[
-                  const Text('Stream / Field',
-                      style: TextStyle(fontSize: AppFont.sm, fontWeight: AppFont.semibold)),
+                  const Text(
+                    'Stream / Field',
+                    style: TextStyle(
+                      fontSize: AppFont.sm,
+                      fontWeight: AppFont.semibold,
+                    ),
+                  ),
                   const SizedBox(height: AppSpacing.xs),
                   DropdownButtonFormField<String>(
                     // A value predating this fix (e.g. an old kGuidanceAreas
                     // entry stuck in `specialty`, or nothing at all) won't
                     // match kStreamOptions' exact strings — fall back to
                     // null rather than assert-crash on an unknown value.
-                    initialValue:
-                        kStreamOptions.contains(_stream) ? _stream : null,
+                    initialValue: kStreamOptions.contains(_stream)
+                        ? _stream
+                        : null,
                     isExpanded: true,
                     hint: const Text('What can you help aspirants with?'),
                     items: kStreamOptions
@@ -135,19 +150,30 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                     onChanged: (v) => setState(() => _stream = v),
                   ),
                   const SizedBox(height: AppSpacing.md),
-                  const Text('Bio',
-                      style: TextStyle(fontSize: AppFont.sm, fontWeight: AppFont.semibold)),
+                  const Text(
+                    'Bio',
+                    style: TextStyle(
+                      fontSize: AppFont.sm,
+                      fontWeight: AppFont.semibold,
+                    ),
+                  ),
                   const SizedBox(height: AppSpacing.xs),
                   TextField(
                     controller: _bioController,
                     maxLines: 3,
                     decoration: const InputDecoration(
-                      hintText: 'A short introduction for aspirants browsing mentors',
+                      hintText:
+                          'A short introduction for aspirants browsing mentors',
                     ),
                   ),
                   const SizedBox(height: AppSpacing.md),
-                  const Text('Languages',
-                      style: TextStyle(fontSize: AppFont.sm, fontWeight: AppFont.semibold)),
+                  const Text(
+                    'Languages',
+                    style: TextStyle(
+                      fontSize: AppFont.sm,
+                      fontWeight: AppFont.semibold,
+                    ),
+                  ),
                   const SizedBox(height: AppSpacing.xs),
                   Wrap(
                     spacing: AppSpacing.sm,
@@ -157,23 +183,38 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                       return FilterChip(
                         label: Text(language),
                         selected: selected,
-                        onSelected: (v) => setState(() =>
-                            v ? _languages.add(language) : _languages.remove(language)),
+                        onSelected: (v) => setState(
+                          () => v
+                              ? _languages.add(language)
+                              : _languages.remove(language),
+                        ),
                         selectedColor: AppColors.primaryLight,
                         checkmarkColor: AppColors.primary,
                         labelStyle: TextStyle(
                           fontSize: AppFont.sm,
-                          color: selected ? AppColors.primaryDark : AppColors.textSecondary,
-                          fontWeight: selected ? AppFont.semibold : AppFont.medium,
+                          color: selected
+                              ? AppColors.primaryDark
+                              : AppColors.textSecondary,
+                          fontWeight: selected
+                              ? AppFont.semibold
+                              : AppFont.medium,
                         ),
                         side: BorderSide(
-                            color: selected ? AppColors.primary : AppColors.border),
+                          color: selected
+                              ? AppColors.primary
+                              : AppColors.border,
+                        ),
                       );
                     }).toList(),
                   ),
                 ] else ...[
-                  const Text('Gender',
-                      style: TextStyle(fontSize: AppFont.sm, fontWeight: AppFont.semibold)),
+                  const Text(
+                    'Gender',
+                    style: TextStyle(
+                      fontSize: AppFont.sm,
+                      fontWeight: AppFont.semibold,
+                    ),
+                  ),
                   const SizedBox(height: AppSpacing.xs),
                   DropdownButtonFormField<String>(
                     initialValue: _gender,
@@ -185,8 +226,13 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                     onChanged: (v) => setState(() => _gender = v),
                   ),
                   const SizedBox(height: AppSpacing.md),
-                  const Text('Qualification',
-                      style: TextStyle(fontSize: AppFont.sm, fontWeight: AppFont.semibold)),
+                  const Text(
+                    'Qualification',
+                    style: TextStyle(
+                      fontSize: AppFont.sm,
+                      fontWeight: AppFont.semibold,
+                    ),
+                  ),
                   const SizedBox(height: AppSpacing.xs),
                   DropdownButtonFormField<String>(
                     initialValue: _qualification,
@@ -198,16 +244,22 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                     onChanged: (v) => setState(() => _qualification = v),
                   ),
                   const SizedBox(height: AppSpacing.md),
-                  const Text('Stream / Field of Interest',
-                      style: TextStyle(fontSize: AppFont.sm, fontWeight: AppFont.semibold)),
+                  const Text(
+                    'Stream / Field of Interest',
+                    style: TextStyle(
+                      fontSize: AppFont.sm,
+                      fontWeight: AppFont.semibold,
+                    ),
+                  ),
                   const SizedBox(height: AppSpacing.xs),
                   DropdownButtonFormField<String>(
                     // A value saved via the onboarding wizard (e.g. "Engineering")
                     // won't match if it's not one of kStreamOptions' exact
                     // strings — fall back to null rather than let
                     // DropdownButtonFormField assert-crash on an unknown value.
-                    initialValue:
-                        kStreamOptions.contains(_stream) ? _stream : null,
+                    initialValue: kStreamOptions.contains(_stream)
+                        ? _stream
+                        : null,
                     isExpanded: true,
                     hint: const Text('Select stream / field'),
                     items: kStreamOptions
@@ -216,8 +268,13 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                     onChanged: (v) => setState(() => _stream = v),
                   ),
                   const SizedBox(height: AppSpacing.md),
-                  const Text('State',
-                      style: TextStyle(fontSize: AppFont.sm, fontWeight: AppFont.semibold)),
+                  const Text(
+                    'State',
+                    style: TextStyle(
+                      fontSize: AppFont.sm,
+                      fontWeight: AppFont.semibold,
+                    ),
+                  ),
                   const SizedBox(height: AppSpacing.xs),
                   DropdownButtonFormField<String>(
                     initialValue: _state,
@@ -229,38 +286,19 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                     onChanged: (v) => setState(() => _state = v),
                   ),
                   const SizedBox(height: AppSpacing.md),
-                  const Text('City',
-                      style: TextStyle(fontSize: AppFont.sm, fontWeight: AppFont.semibold)),
+                  const Text(
+                    'City',
+                    style: TextStyle(
+                      fontSize: AppFont.sm,
+                      fontWeight: AppFont.semibold,
+                    ),
+                  ),
                   const SizedBox(height: AppSpacing.xs),
                   TextField(
                     controller: _cityController,
-                    decoration: const InputDecoration(hintText: 'Enter your city'),
-                  ),
-                  const SizedBox(height: AppSpacing.md),
-                  const Text('Goals',
-                      style: TextStyle(fontSize: AppFont.sm, fontWeight: AppFont.semibold)),
-                  const SizedBox(height: AppSpacing.xs),
-                  Wrap(
-                    spacing: AppSpacing.sm,
-                    runSpacing: AppSpacing.sm,
-                    children: kGoalOptions.map((goal) {
-                      final selected = _goals.contains(goal);
-                      return FilterChip(
-                        label: Text(goal),
-                        selected: selected,
-                        onSelected: (v) => setState(
-                            () => v ? _goals.add(goal) : _goals.remove(goal)),
-                        selectedColor: AppColors.primaryLight,
-                        checkmarkColor: AppColors.primary,
-                        labelStyle: TextStyle(
-                          fontSize: AppFont.sm,
-                          color: selected ? AppColors.primaryDark : AppColors.textSecondary,
-                          fontWeight: selected ? AppFont.semibold : AppFont.medium,
-                        ),
-                        side: BorderSide(
-                            color: selected ? AppColors.primary : AppColors.border),
-                      );
-                    }).toList(),
+                    decoration: const InputDecoration(
+                      hintText: 'Enter your city',
+                    ),
                   ),
                 ],
                 const SizedBox(height: AppSpacing.xl),
@@ -273,7 +311,9 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                             width: 18,
                             height: 18,
                             child: CircularProgressIndicator(
-                                strokeWidth: 2, color: Colors.white),
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
                           )
                         : const Text('Save'),
                   ),
