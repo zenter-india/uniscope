@@ -118,7 +118,7 @@ function Row({
 }
 
 const inputCls =
-  'rounded-lg border border-zinc-300 px-3 py-1.5 text-sm outline-none focus:border-zinc-500';
+  'rounded-lg border border-zinc-300 bg-white px-3 py-1.5 text-sm text-zinc-900 outline-none placeholder:text-zinc-400 focus:border-zinc-500';
 
 export function EditUserPanel({ user }: { user: EditableUser }) {
   const router = useRouter();
