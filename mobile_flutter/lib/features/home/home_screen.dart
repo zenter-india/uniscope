@@ -13,27 +13,6 @@ import '../mentors/mentor_list_screen.dart';
 import '../universities/university_list_screen.dart'
     show collegeStateFilterProvider;
 
-/// Brought back at the client's request — the original teal→blue canopy
-/// from before the green rebrand (see AppColors.primary's own comment for
-/// that rebrand). Deliberately literal/local to this file rather than
-/// touching AppColors or the shared AppGradients.canopy: those are now the
-/// new brand green and used elsewhere (mentor_home_screen, wallet_screen,
-/// etc.) — this reverts the Home screen's canopy only, not the app-wide
-/// brand. Values match the original AppGradients.canopy/AppColors exactly
-/// (see git history prior to the rebrand), not a fresh approximation.
-const _legacyTeal = Color(0xFF12A9A3);
-const _legacyBlue = Color(0xFF2A72DC);
-
-/// Teal-dominant, same weighting as the original: the blue only lands at
-/// the very foot, reading as a shadow under the teal rather than an equal
-/// partner.
-const _legacyCanopyGradient = LinearGradient(
-  begin: Alignment.topCenter,
-  end: Alignment.bottomCenter,
-  colors: [_legacyTeal, Color(0xFF15A2A9), Color(0xFF1B8BC7), _legacyBlue],
-  stops: [0.0, 0.46, 0.80, 1.0],
-);
-
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
 
@@ -73,9 +52,7 @@ class HomeScreen extends ConsumerWidget {
               // stop lands below the fold and only flat teal shows.
               Container(
                 width: double.infinity,
-                decoration: const BoxDecoration(
-                  gradient: _legacyCanopyGradient,
-                ),
+                decoration: const BoxDecoration(gradient: AppGradients.canopy),
                 padding: EdgeInsets.only(
                   top: MediaQuery.of(context).padding.top,
                   // Trailing space the sheet is pulled up over, so the
@@ -209,7 +186,7 @@ class HomeScreen extends ConsumerWidget {
                               const Icon(
                                 Icons.search_rounded,
                                 size: 20,
-                                color: _legacyTeal,
+                                color: authBrandTeal,
                               ),
                               const SizedBox(width: AppSpacing.sm),
                               const Expanded(
