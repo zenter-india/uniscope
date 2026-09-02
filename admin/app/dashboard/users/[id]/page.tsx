@@ -4,6 +4,7 @@ import { backendFetch, BackendApiError } from '../../../../lib/backend';
 import { getAdminEmail } from '../../../../lib/adminAuth';
 import { DashboardShell } from '../../DashboardShell';
 import { BanToggle, VerificationDocButton } from './interactive';
+import { EditUserPanel } from './EditUserPanel';
 import { WalletPanel } from './WalletPanel';
 import type { LedgerPage } from './actions';
 
@@ -230,6 +231,39 @@ export default async function UserDetailPage({
       </div>
 
       <div className="flex flex-col gap-4">
+        {p && user.role !== 'ADMIN' && (
+          <EditUserPanel
+            user={{
+              id: user.id,
+              displayName: user.displayName,
+              role: user.role,
+              verificationStatus: user.verificationStatus,
+              realName: user.realName,
+              dateOfBirth: p.dateOfBirth,
+              gender: p.gender,
+              state: p.state,
+              city: p.city,
+              qualification: p.qualification,
+              stream: p.stream,
+              specialization: p.specialization,
+              courseInterested: p.courseInterested,
+              yearOfStudy: p.yearOfStudy,
+              graduationYear: p.graduationYear,
+              yearInfoPrivate: p.yearInfoPrivate,
+              bio: p.bio,
+              specialty: p.specialty,
+              languages: p.languages,
+              availableDays: p.availableDays,
+              goals: p.goals,
+              preferredLanguage: p.preferredLanguage,
+              preferredMentorshipTiming: p.preferredMentorshipTiming,
+              isMentorAvailable: p.isMentorAvailableRaw,
+              freeChatsRemaining: p.freeChatsRemaining,
+              freeCallSecondsRemaining: p.freeCallSecondsRemaining,
+            }}
+          />
+        )}
+
         <Section title="Identity">
           <Field label="Display name / alias" value={user.displayName} />
           <Field label="Real name" value={user.realName} />

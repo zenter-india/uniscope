@@ -23,6 +23,7 @@ import {
 import { PrismaService } from '../../database/prisma/prisma.service.js';
 import { AvatarConfig } from '../avatar/avatar.constants.js';
 import { AvatarService } from '../avatar/avatar.service.js';
+import { AdminUpdateUserDto } from './dto/admin-update-user.dto.js';
 import { ListUsersDto } from './dto/list-users.dto.js';
 import { SetBannedDto } from './dto/set-banned.dto.js';
 import { UpdateProfileDto } from './dto/update-profile.dto.js';
@@ -470,6 +471,82 @@ export class UsersService {
         universityReviewsWritten,
       },
     };
+  }
+
+  /**
+   * ADMIN edit of any non-admin user. Writes the User-level fields
+   * (displayName, role, verificationStatus) and the profile fields directly,
+   * without the self-service guards `updateProfile` applies — an admin
+   * setting a mentor's availability isn't gated on verification, a role
+   * change isn't restricted to the ASPIRANT→MENTOR transition, etc. Returns
+   * the same shape as {@link findDetailAdmin} so the panel re-renders with
+   * fresh data in one round-trip.
+   */
+  async adminUpdateUser(userId: string, dto: AdminUpdateUserDto) {
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!user) {
+      throw new NotFoundException(`User '${userId}' not found`);
+    }
+    if (user.role === UserRole.ADMIN) {
+      throw new BadRequestException('Admin accounts cannot be edited from here');
+    }
+
+    const profileUpdate: Prisma.UserProfileUpdateInput = {
+      ...(dto.bio !== undefined && { bio: dto.bio }),
+      ...(dto.specialty !== undefined && { specialty: dto.specialty }),
+      ...(dto.languages !== undefined && { languages: dto.languages }),
+      ...(dto.availableDays !== undefined && { availableDays: dto.availableDays }),
+      ...(dto.isMentorAvailable !== undefined && {
+        isMentorAvailable: dto.isMentorAvailable,
+        availabilitySetAt: new Date(),
+      }),
+      ...(dto.gender !== undefined && { gender: dto.gender }),
+      ...(dto.state !== undefined && { state: dto.state }),
+      ...(dto.city !== undefined && { city: dto.city }),
+      ...(dto.qualification !== undefined && { qualification: dto.qualification }),
+      ...(dto.specialization !== undefined && { specialization: dto.specialization }),
+      ...(dto.stream !== undefined && { stream: dto.stream }),
+      ...(dto.goals !== undefined && { goals: dto.goals }),
+      ...(dto.dateOfBirth !== undefined && { dateOfBirth: new Date(dto.dateOfBirth) }),
+      ...(dto.courseInterested !== undefined && { courseInterested: dto.courseInterested }),
+      ...(dto.preferredLanguage !== undefined && { preferredLanguage: dto.preferredLanguage }),
+      ...(dto.preferredMentorshipTiming !== undefined && {
+        preferredMentorshipTiming: dto.preferredMentorshipTiming,
+      }),
+      ...(dto.realName !== undefined && {
+        realNameEncrypted: dto.realName ? encryptRealName(dto.realName) : null,
+      }),
+      ...(dto.yearOfStudy !== undefined && { yearOfStudy: dto.yearOfStudy }),
+      ...(dto.graduationYear !== undefined && { graduationYear: dto.graduationYear }),
+      ...(dto.yearInfoPrivate !== undefined && { yearInfoPrivate: dto.yearInfoPrivate }),
+      ...(dto.freeChatsRemaining !== undefined && { freeChatsRemaining: dto.freeChatsRemaining }),
+      ...(dto.freeCallSecondsRemaining !== undefined && {
+        freeCallSecondsRemaining: dto.freeCallSecondsRemaining,
+      }),
+    };
+
+    try {
+      await this.prisma.user.update({
+        where: { id: userId },
+        data: {
+          ...(dto.displayName !== undefined && { displayName: dto.displayName }),
+          ...(dto.role !== undefined && { role: dto.role }),
+          ...(dto.verificationStatus !== undefined && {
+            verificationStatus: dto.verificationStatus,
+          }),
+          ...(Object.keys(profileUpdate).length > 0 && {
+            profile: { update: profileUpdate },
+          }),
+        },
+      });
+    } catch (err) {
+      if (dto.displayName !== undefined && this.isUniqueConstraintViolation(err)) {
+        throw new ConflictException('That display name is already taken.');
+      }
+      throw err;
+    }
+
+    return this.findDetailAdmin(userId);
   }
 
   /**

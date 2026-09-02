@@ -12,6 +12,31 @@ export async function setUserBanned(userId: string, banned: boolean): Promise<vo
   revalidatePath('/dashboard/users');
 }
 
+type SaveResult = { ok: true } | { ok: false; error: string };
+
+/** Admin edit of a user's profile / role / verification / free-tier fields.
+ * `patch` carries only the changed fields. Returns the failure reason rather
+ * than throwing so it can be shown in the form. */
+export async function updateUserProfile(
+  userId: string,
+  patch: Record<string, unknown>,
+): Promise<SaveResult> {
+  try {
+    await backendFetch(`/users/${userId}`, {
+      method: 'PATCH',
+      body: JSON.stringify(patch),
+    });
+    revalidatePath(`/dashboard/users/${userId}`);
+    revalidatePath('/dashboard/users');
+    return { ok: true };
+  } catch (e) {
+    return {
+      ok: false,
+      error: e instanceof Error ? e.message : 'Could not save the changes',
+    };
+  }
+}
+
 /** Short-lived signed URL for a verification document, by request id. Reuses
  * the same ADMIN endpoint the Verification Queue uses. */
 export async function getVerificationDocumentUrl(requestId: string): Promise<string> {
