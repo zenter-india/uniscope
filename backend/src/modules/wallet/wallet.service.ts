@@ -8,10 +8,11 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { HoldStatus, LedgerEntryType, Prisma } from '@prisma/client';
-import { createHmac, timingSafeEqual } from 'crypto';
+import { createHmac, randomUUID, timingSafeEqual } from 'crypto';
 import Razorpay from 'razorpay';
 import type { RazorpayConfig } from '../../config/index.js';
 import { PrismaService } from '../../database/prisma/prisma.service.js';
+import { AdjustWalletDto } from './dto/adjust-wallet.dto.js';
 import { CreateTopupDto } from './dto/create-topup.dto.js';
 import { ListLedgerDto } from './dto/list-ledger.dto.js';
 import { VerifyTopupDto } from './dto/verify-topup.dto.js';
@@ -111,6 +112,66 @@ export class WalletService {
     const nextCursor = hasMore ? rowsPage[rowsPage.length - 1].id : null;
 
     return { data, nextCursor };
+  }
+
+  // ── ADMIN ──────────────────────────────────────────────────────────────
+
+  /** ADMIN — a specific user's ledger plus their current balance, in one
+   * call so the panel doesn't need a second round-trip. Cursor-paginated,
+   * newest first. */
+  async getLedgerAdmin(
+    userId: string,
+    query: ListLedgerDto,
+  ): Promise<{
+    balanceMinor: number;
+    data: LedgerEntryResponse[];
+    nextCursor: string | null;
+  }> {
+    const wallet = await this.requireWallet(userId);
+    const take = Math.min(query.limit ?? DEFAULT_LIMIT, MAX_LIMIT);
+
+    const rows = await this.prisma.ledgerEntry.findMany({
+      where: { walletId: wallet.id },
+      orderBy: [{ createdAt: 'desc' }, { id: 'asc' }],
+      take: take + 1,
+      ...(query.cursor && { cursor: { id: query.cursor }, skip: 1 }),
+    });
+
+    const hasMore = rows.length > take;
+    const rowsPage = hasMore ? rows.slice(0, take) : rows;
+    return {
+      balanceMinor: wallet.balanceMinor,
+      data: rowsPage.map(toLedgerEntryResponse),
+      nextCursor: hasMore ? rowsPage[rowsPage.length - 1].id : null,
+    };
+  }
+
+  /** ADMIN — manual balance correction. Writes an `ADJUSTMENT` ledger entry
+   * (the reason becomes its audit note) through the same `applyLedgerEntry`
+   * path every other balance change uses, so the running `balanceAfterMinor`
+   * stays consistent. Refuses a debit that would push the balance below
+   * zero. */
+  async adjustBalanceAdmin(
+    userId: string,
+    dto: AdjustWalletDto,
+  ): Promise<WalletResponse> {
+    const wallet = await this.requireWallet(userId);
+
+    if (dto.amountMinor < 0 && wallet.balanceMinor + dto.amountMinor < 0) {
+      throw new BadRequestException(
+        `That debit would push the balance below zero — current balance is ${wallet.balanceMinor} minor.`,
+      );
+    }
+
+    await this.applyLedgerEntry({
+      walletId: wallet.id,
+      type: LedgerEntryType.ADJUSTMENT,
+      amountMinor: dto.amountMinor,
+      idempotencyKey: `admin-adjust:${randomUUID()}`,
+      note: `Admin adjustment — ${dto.reason.trim()}`,
+    });
+
+    return toWalletResponse(await this.requireWallet(userId));
   }
 
   /**
