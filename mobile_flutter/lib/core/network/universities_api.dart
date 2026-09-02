@@ -109,31 +109,31 @@ class UniversitiesApi {
   /// whatever this returns (see UniversityListScreen), so a single
   /// server-paginated page (default 20, max 50 — see ListUniversitiesDto)
   /// would silently filter against a random slice of the catalogue instead
-  /// of the whole thing. Follows `nextCursor` until exhausted. ~830 medical
-  /// colleges is ~17 requests, acceptable for a screen loaded once and
-  /// cached by the autoDispose provider; the 40-page cap is a runaway guard,
-  /// not an expected ceiling.
+  /// of the whole thing. Uses the backend's `browse=true` mode (the same
+  /// one the web app's college search uses) to fetch the whole matching
+  /// catalogue in a single request, uncapped — the catalogue has grown to
+  /// ~10,500 universities across all streams, so the previous "loop
+  /// cursor-pagination up to 40 pages" approach (a leftover from when the
+  /// catalogue was ~830 medical-only colleges) silently capped Discover at
+  /// the alphabetically-first 2,000 rows, permanently hiding roughly 80%
+  /// of colleges from every filter, state included. One `browse=true`
+  /// request for the full catalogue took ~3s / ~5.5MB in testing —
+  /// slower per-request but far fewer round trips than 40+ paginated
+  /// calls, and it's a screen loaded once and cached by the autoDispose
+  /// provider, not refetched per filter change.
   Future<List<University>> list({String? search, String? stream}) async {
-    final results = <University>[];
-    String? cursor;
-    for (var page = 0; page < 40; page++) {
-      final res = await _dio.get<Map<String, dynamic>>(
-        '/universities',
-        queryParameters: {
-          if (search != null && search.isNotEmpty) 'search': search,
-          if (stream != null) 'stream': stream,
-          'limit': 50,
-          if (cursor != null) 'cursor': cursor,
-        },
-      );
-      final data = res.data!['data'] as List<dynamic>;
-      results.addAll(
-        data.map((e) => University.fromJson(e as Map<String, dynamic>)),
-      );
-      cursor = res.data!['nextCursor'] as String?;
-      if (cursor == null) break;
-    }
-    return results;
+    final res = await _dio.get<Map<String, dynamic>>(
+      '/universities',
+      queryParameters: {
+        'browse': 'true',
+        if (search != null && search.isNotEmpty) 'search': search,
+        if (stream != null) 'stream': stream,
+      },
+    );
+    final data = res.data!['data'] as List<dynamic>;
+    return data
+        .map((e) => University.fromJson(e as Map<String, dynamic>))
+        .toList();
   }
 
   /// Single-page, top-8 typeahead search — unlike [list], this does NOT
