@@ -10,7 +10,31 @@ const DOCUMENT_TYPE_LABELS: Record<string, string> = {
   NMC_REGISTRATION: 'NMC registration',
 };
 
-interface VerificationRequestRow {
+interface Applicant {
+  displayName: string;
+  realName: string | null;
+  role: string;
+  gender: string | null;
+  state: string | null;
+  city: string | null;
+  stream: string | null;
+  qualification: string | null;
+  specialization: string | null;
+  courseInterested: string | null;
+  yearOfStudy: number | null;
+  graduationYear: number | null;
+  yearInfoPrivate: boolean;
+  dateOfBirth: string | null;
+  languages: string[];
+  availableDays: string[];
+  goals: string[];
+  bio: string | null;
+  specialty: string | null;
+  preferredLanguage: string | null;
+  preferredMentorshipTiming: string | null;
+}
+
+export interface VerificationRequestRow {
   id: string;
   userId: string;
   userDisplayName?: string;
@@ -19,9 +43,21 @@ interface VerificationRequestRow {
   documentType: string;
   status: string;
   submittedAt: string | null;
+  applicant?: Applicant;
+}
+
+function Field({ label, value }: { label: string; value: React.ReactNode }) {
+  if (value === null || value === undefined || value === '') return null;
+  return (
+    <div>
+      <p className="text-xs font-medium uppercase tracking-wide text-zinc-400">{label}</p>
+      <p className="text-sm text-zinc-800">{value}</p>
+    </div>
+  );
 }
 
 export function VerificationRow({ request }: { request: VerificationRequestRow }) {
+  const [expanded, setExpanded] = useState(false);
   const [note, setNote] = useState('');
   const [docUrl, setDocUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -32,8 +68,7 @@ export function VerificationRow({ request }: { request: VerificationRequestRow }
     setError(null);
     startTransition(async () => {
       try {
-        const url = await getVerificationDocumentUrl(request.id);
-        setDocUrl(url);
+        setDocUrl(await getVerificationDocumentUrl(request.id));
       } catch (e) {
         setError(e instanceof Error ? e.message : 'Could not load document');
       }
@@ -54,12 +89,29 @@ export function VerificationRow({ request }: { request: VerificationRequestRow }
 
   if (resolved) return null;
 
+  const a = request.applicant;
+  const year =
+    a?.yearOfStudy != null
+      ? `Year ${a.yearOfStudy}${a.yearInfoPrivate ? ' (private)' : ''}`
+      : a?.graduationYear != null
+        ? `Graduating ${a.graduationYear}${a.yearInfoPrivate ? ' (private)' : ''}`
+        : null;
+
   return (
     <div className="rounded-xl border border-zinc-200 bg-white p-5">
       <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
+        <button
+          type="button"
+          onClick={() => setExpanded((v) => !v)}
+          className="flex-1 text-left"
+        >
           <p className="font-medium text-zinc-900">
             {request.userDisplayName ?? request.userId}
+            {a && (
+              <span className="ml-2 rounded-full bg-zinc-100 px-2 py-0.5 text-xs font-medium text-zinc-600">
+                {a.role}
+              </span>
+            )}
           </p>
           <p className="mt-0.5 text-sm text-zinc-500">
             {request.universityName ?? request.universityId} ·{' '}
@@ -67,11 +119,10 @@ export function VerificationRow({ request }: { request: VerificationRequestRow }
           </p>
           <p className="mt-0.5 text-xs text-zinc-400">
             Submitted{' '}
-            {request.submittedAt
-              ? new Date(request.submittedAt).toLocaleString()
-              : '—'}
+            {request.submittedAt ? new Date(request.submittedAt).toLocaleString() : '—'}
+            {a ? ` · ${expanded ? 'hide details' : 'show details'}` : ''}
           </p>
-        </div>
+        </button>
         <button
           onClick={viewDocument}
           disabled={isPending}
@@ -80,6 +131,35 @@ export function VerificationRow({ request }: { request: VerificationRequestRow }
           View document
         </button>
       </div>
+
+      {expanded && a && (
+        <div className="mt-4 grid grid-cols-2 gap-x-6 gap-y-3 border-t border-zinc-100 pt-4 sm:grid-cols-3">
+          <Field label="Real name" value={a.realName} />
+          <Field
+            label="Date of birth"
+            value={a.dateOfBirth ? new Date(a.dateOfBirth).toLocaleDateString() : null}
+          />
+          <Field label="Gender" value={a.gender} />
+          <Field label="State" value={a.state} />
+          <Field label="City" value={a.city} />
+          <Field label="Stream / Field" value={a.stream} />
+          <Field label="Qualification / Degree" value={a.qualification} />
+          <Field label="Specialization" value={a.specialization} />
+          <Field label="Course interested" value={a.courseInterested} />
+          <Field label="Year" value={year} />
+          <Field label="Languages" value={a.languages.join(', ')} />
+          <Field label="Available days" value={a.availableDays.join(', ')} />
+          <Field label="Goals" value={a.goals.join(', ')} />
+          <Field label="Specialty" value={a.specialty} />
+          <Field label="Preferred language" value={a.preferredLanguage} />
+          <Field label="Preferred mentorship timing" value={a.preferredMentorshipTiming} />
+          {a.bio && (
+            <div className="col-span-2 sm:col-span-3">
+              <Field label="Bio" value={a.bio} />
+            </div>
+          )}
+        </div>
+      )}
 
       {docUrl && (
         <a
@@ -98,7 +178,7 @@ export function VerificationRow({ request }: { request: VerificationRequestRow }
         value={note}
         onChange={(e) => setNote(e.target.value)}
         placeholder="Optional note (shown to the user if rejected)"
-        className="mt-3 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm outline-none focus:border-zinc-500"
+        className="mt-3 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-900 outline-none placeholder:text-zinc-400 focus:border-zinc-500"
       />
 
       {error && <p className="mt-2 text-sm text-red-600">{error}</p>}

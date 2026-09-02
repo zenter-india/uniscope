@@ -1,18 +1,7 @@
 import { backendFetch } from '../../../lib/backend';
 import { getAdminEmail } from '../../../lib/adminAuth';
 import { DashboardShell } from '../DashboardShell';
-import { VerificationRow } from './VerificationRow';
-
-interface VerificationRequestRow {
-  id: string;
-  userId: string;
-  userDisplayName?: string;
-  universityId: string;
-  universityName?: string;
-  documentType: string;
-  status: string;
-  submittedAt: string | null;
-}
+import { VerificationRow, type VerificationRequestRow } from './VerificationRow';
 
 export default async function VerificationQueuePage() {
   const [email, queue] = await Promise.all([

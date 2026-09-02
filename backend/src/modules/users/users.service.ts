@@ -507,7 +507,9 @@ export class UsersService {
       ...(dto.specialization !== undefined && { specialization: dto.specialization }),
       ...(dto.stream !== undefined && { stream: dto.stream }),
       ...(dto.goals !== undefined && { goals: dto.goals }),
-      ...(dto.dateOfBirth !== undefined && { dateOfBirth: new Date(dto.dateOfBirth) }),
+      ...(dto.dateOfBirth !== undefined && {
+        dateOfBirth: dto.dateOfBirth ? new Date(dto.dateOfBirth) : null,
+      }),
       ...(dto.courseInterested !== undefined && { courseInterested: dto.courseInterested }),
       ...(dto.preferredLanguage !== undefined && { preferredLanguage: dto.preferredLanguage }),
       ...(dto.preferredMentorshipTiming !== undefined && {
