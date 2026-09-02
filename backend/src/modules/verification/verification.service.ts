@@ -101,7 +101,35 @@ export class VerificationService {
       where: { status: { in: [VerificationStatus.SUBMITTED, VerificationStatus.UNDER_REVIEW] } },
       orderBy: { submittedAt: 'asc' },
       include: {
-        user: { select: { displayName: true } },
+        user: {
+          select: {
+            displayName: true,
+            role: true,
+            profile: {
+              select: {
+                realNameEncrypted: true,
+                gender: true,
+                state: true,
+                city: true,
+                stream: true,
+                qualification: true,
+                specialization: true,
+                courseInterested: true,
+                yearOfStudy: true,
+                graduationYear: true,
+                yearInfoPrivate: true,
+                dateOfBirth: true,
+                languages: true,
+                availableDays: true,
+                goals: true,
+                bio: true,
+                specialty: true,
+                preferredLanguage: true,
+                preferredMentorshipTiming: true,
+              },
+            },
+          },
+        },
         university: { select: { name: true } },
       },
     });
