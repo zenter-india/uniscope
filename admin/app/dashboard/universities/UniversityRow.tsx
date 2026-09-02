@@ -5,7 +5,7 @@ import { updateUniversity, uploadUniversityPhoto } from './actions';
 
 const TYPES = ['GOVERNMENT', 'PRIVATE', 'DEEMED', 'CENTRAL'];
 
-interface UniversityRowData {
+export interface UniversityRowData {
   id: string;
   name: string;
   slug: string;

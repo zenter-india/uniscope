@@ -3,23 +3,8 @@ import { backendFetch } from '../../../lib/backend';
 import { getAdminEmail } from '../../../lib/adminAuth';
 import { DashboardShell } from '../DashboardShell';
 import { AddUniversityForm } from './AddUniversityForm';
-import { UniversityRow } from './UniversityRow';
-
-interface UniversityRowData {
-  id: string;
-  name: string;
-  slug: string;
-  type: string;
-  state: string;
-  city: string;
-  nirfRank: number | null;
-  mbbsSeats: number | null;
-  establishedYear: number | null;
-  website: string | null;
-  description: string | null;
-  imageUrl: string | null;
-  isActive: boolean;
-}
+import type { UniversityRowData } from './UniversityRow';
+import { UniversitiesList } from './UniversitiesList';
 
 const TYPE_TABS = ['ALL', 'GOVERNMENT', 'PRIVATE', 'DEEMED', 'CENTRAL'] as const;
 
@@ -80,15 +65,12 @@ export default async function UniversitiesPage({
         ))}
       </div>
 
-      {page.data.length === 0 ? (
-        <p className="text-sm text-zinc-500">No universities match this filter.</p>
-      ) : (
-        <div className="flex flex-col gap-3">
-          {page.data.map((university) => (
-            <UniversityRow key={university.id} university={university} />
-          ))}
-        </div>
-      )}
+      <UniversitiesList
+        key={`${type}|${search ?? ''}`}
+        initialItems={page.data}
+        initialCursor={page.nextCursor}
+        filters={{ type, search }}
+      />
     </DashboardShell>
   );
 }

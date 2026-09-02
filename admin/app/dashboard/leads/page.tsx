@@ -2,7 +2,8 @@ import Link from 'next/link';
 import { backendFetch } from '../../../lib/backend';
 import { getAdminEmail } from '../../../lib/adminAuth';
 import { DashboardShell } from '../DashboardShell';
-import { LeadRow, type LeadRowData } from './LeadRow';
+import type { LeadRowData } from './LeadRow';
+import { LeadsList } from './LeadsList';
 
 const ROLE_TABS = ['ALL', 'ASPIRANT', 'MENTOR'] as const;
 const STATUS_TABS = ['ALL', 'NEW', 'CONTACTED', 'CONVERTED', 'REJECTED'] as const;
@@ -128,15 +129,12 @@ export default async function LeadsPage({
         ))}
       </div>
 
-      {page.data.length === 0 ? (
-        <p className="text-sm text-zinc-500">No leads match this filter.</p>
-      ) : (
-        <div className="flex flex-col gap-3">
-          {page.data.map((lead) => (
-            <LeadRow key={lead.id} lead={lead} />
-          ))}
-        </div>
-      )}
+      <LeadsList
+        key={`${role}|${status}|${search ?? ''}`}
+        initialItems={page.data}
+        initialCursor={page.nextCursor}
+        filters={{ role, status, search }}
+      />
     </DashboardShell>
   );
 }
