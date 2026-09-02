@@ -340,7 +340,13 @@ export const STREAMS = [
   "Others",
 ] as const;
 
-export const DEGREES = ["UG", "PG", "MD/MS", "DNB", "Diploma", "Doctorate", "DM/MCh", "Others"] as const;
+// "MBBS" per explicit request -- was "UG" (Medical's undergraduate degree
+// is specifically MBBS, unlike every other stream's generic "UG"). Only
+// affects Medical: DEGREES is never used for any other stream (see its
+// two consumers, MentorForm.tsx/AspirantForm.tsx's own "Medical gets the
+// full DEGREES list" branch) -- DEFAULT_NON_MEDICAL_DEGREES below keeps
+// its own generic "UG" for every other stream, untouched.
+export const DEGREES = ["MBBS", "PG", "MD/MS", "DNB", "Diploma", "Doctorate", "DM/MCh", "Others"] as const;
 
 /** Degree dropdown options for a stream other than Medical, which keeps
  * the full DEGREES list above. Dental and Engineering each get their own
@@ -354,7 +360,7 @@ export const DEGREES_BY_STREAM: Record<string, readonly string[]> = {
 export const DEFAULT_NON_MEDICAL_DEGREES = ["UG", "PG", "Doctorate", "Others"] as const;
 
 /** UserProfile.specialization picklist — shown for Medical-stream mentors on
- * any degree except UG (which has no specialization yet). */
+ * any degree except MBBS (which has no specialization yet). */
 export const MEDICAL_SPECIALIZATIONS = [
   "General Medicine",
   "Anaesthesiology",

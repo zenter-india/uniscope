@@ -86,12 +86,12 @@ export function AspirantForm({ onExit }: { onExit: () => void }) {
   // any stream-specific degree track yet -- that option needs to exist no
   // matter what Field of interest is picked, unlike every other
   // qualification which is genuinely stream-specific. For Medical this
-  // reproduces the exact same list the old flat QUALIFICATIONS constant
-  // had (Higher Secondary + all of DEGREES) -- so Medical aspirants see no
-  // change at all, only Dental/Engineering (now their own narrower,
-  // correct subset) and every other stream (now DEFAULT_NON_MEDICAL_DEGREES
-  // instead of the full Medical-shaped list, which never made sense for a
-  // Law or Design aspirant to begin with).
+  // reproduces the same list the old flat QUALIFICATIONS constant had
+  // (Higher Secondary + all of DEGREES), aside from DEGREES' own "UG" ->
+  // "MBBS" rename (see that constant) -- Dental/Engineering now get their
+  // own narrower, correct subset, and every other stream gets
+  // DEFAULT_NON_MEDICAL_DEGREES instead of the full Medical-shaped list,
+  // which never made sense for a Law or Design aspirant to begin with.
   const qualificationOptions: readonly string[] = [
     "Higher Secondary (12th)",
     ...(form.stream === "Medical" ? DEGREES : (DEGREES_BY_STREAM[form.stream] ?? DEFAULT_NON_MEDICAL_DEGREES)),
@@ -482,7 +482,12 @@ export function AspirantForm({ onExit }: { onExit: () => void }) {
                 <CollegeSearch
                   value={form.collegeName}
                   stream="Medical"
-                  level={form.qualification === "UG" ? "UG" : undefined}
+                  // form.qualification is "MBBS" (the renamed display
+                  // value), but the actual data-level tag on
+                  // University.levels is still "UG" -- a separate,
+                  // unrelated concept (same note as MentorForm.tsx's own
+                  // copy of this).
+                  level={form.qualification === "MBBS" ? "UG" : undefined}
                   onPick={(name, id) => {
                     set("collegeName", name);
                     set("universityId", id ?? "");
