@@ -1,5 +1,7 @@
 import { Module } from '@nestjs/common';
 import { PrismaModule } from '../../database/prisma/prisma.module.js';
+import { BlocksModule } from '../blocks/blocks.module.js';
+import { NotificationsModule } from '../notifications/notifications.module.js';
 import { ChatController } from './chat.controller.js';
 import { ChatService } from './chat.service.js';
 import { SupportChatController } from './support-chat.controller.js';
@@ -13,9 +15,11 @@ import { SupportChatController } from './support-chat.controller.js';
  * truth for messages; Supabase Realtime Broadcast carries only a
  * content-free "new message" signal — see ChatService for why. Replaces
  * the earlier Stream Chat integration (migration/chat-supabase-realtime).
+ * BlocksModule backs the block check in ChatController.sendMessage;
+ * NotificationsModule backs ChatService's push+in-app "new message" ping.
  */
 @Module({
-  imports: [PrismaModule],
+  imports: [PrismaModule, BlocksModule, NotificationsModule],
   controllers: [ChatController, SupportChatController],
   providers: [ChatService],
   exports: [ChatService],

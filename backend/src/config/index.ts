@@ -25,8 +25,6 @@ export type { Msg91Config } from './msg91.config.js';
 export { razorpayConfig } from './razorpay.config.js';
 export type { RazorpayConfig } from './razorpay.config.js';
 
-export { streamConfig } from './stream.config.js';
-export type { StreamConfig } from './stream.config.js';
 
 export { agoraConfig } from './agora.config.js';
 export type { AgoraConfig } from './agora.config.js';

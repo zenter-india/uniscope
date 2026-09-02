@@ -6,14 +6,17 @@ import {
   NotFoundException,
   Param,
   Post,
+  Query,
   UseGuards,
 } from '@nestjs/common';
-import { SessionStatus, SessionType } from '@prisma/client';
+import { Session, SessionStatus, SessionType } from '@prisma/client';
 import { CurrentUser } from '../../auth/decorators/current-user.decorator.js';
 import type { JwtPayload } from '../../auth/decorators/current-user.decorator.js';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard.js';
+import { BlocksService } from '../blocks/blocks.service.js';
 import { PrismaService } from '../../database/prisma/prisma.service.js';
 import { ChatService } from './chat.service.js';
+import { ListMessagesDto } from './dto/list-messages.dto.js';
 import { SendMessageDto } from './dto/send-message.dto.js';
 
 /** Chat is readable/writable once the mentor has accepted, through session
@@ -29,6 +32,7 @@ const CHATTABLE_STATUSES: SessionStatus[] = [
 export class ChatController {
   constructor(
     private readonly chatService: ChatService,
+    private readonly blocksService: BlocksService,
     private readonly prisma: PrismaService,
   ) {}
 
@@ -53,19 +57,26 @@ export class ChatController {
         `Chat is not available while the session is ${session.status}`,
       );
     }
-    return this.chatService.ensureChannelForSession(sessionId);
+    const channel = await this.chatService.ensureChannelForSession(sessionId);
+    return { channel, session };
   }
 
+  /** Reading history stays available even if either party has since
+   * blocked the other (matches the rest of the app: a block never erases
+   * existing access to something already shared, only stops new activity —
+   * see BlocksModule doc comment) — only sendMessage is gated. */
   @Get('messages')
   async listMessages(
     @Param('sessionId') sessionId: string,
     @CurrentUser() user: JwtPayload,
+    @Query() query: ListMessagesDto,
   ) {
-    const channel = await this.requireChannel(sessionId, user.sub);
+    const { channel } = await this.requireChannel(sessionId, user.sub);
+    const page = await this.chatService.listMessages(channel.id, query.before);
     return {
       ...this.chatService.connectionInfo(channel.id),
       channelId: channel.id,
-      messages: await this.chatService.listMessages(channel.id),
+      ...page,
     };
   }
 
@@ -75,7 +86,30 @@ export class ChatController {
     @CurrentUser() user: JwtPayload,
     @Body() dto: SendMessageDto,
   ) {
-    const channel = await this.requireChannel(sessionId, user.sub);
-    return this.chatService.sendMessage(channel.id, user.sub, dto.text);
+    const { channel, session } = await this.requireChannel(sessionId, user.sub);
+    await this.forbidIfBlocked(session, user.sub);
+    return this.chatService.sendMessage(
+      channel.id,
+      user.sub,
+      dto.text,
+      dto.clientMessageId,
+    );
+  }
+
+  /** A session's two parties are always exactly the aspirant and the
+   * mentor, so "the other party" is just whichever of those isn't the
+   * caller — no separate participant lookup needed. */
+  private async forbidIfBlocked(session: Session, callerId: string): Promise<void> {
+    const otherPartyId =
+      callerId === session.aspirantId ? session.mentorId : session.aspirantId;
+    const blocked = await this.blocksService.isBlockedEitherDirection(
+      callerId,
+      otherPartyId,
+    );
+    if (blocked) {
+      throw new ForbiddenException(
+        'You cannot message this user — one of you has blocked the other',
+      );
+    }
   }
 }

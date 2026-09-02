@@ -70,11 +70,12 @@ class _SupportChatScreenState extends ConsumerState<SupportChatScreen> {
       body: ChatThreadView(
         connection: _connection!,
         currentUserId: ref.read(authControllerProvider).user!.id,
-        onSend: (text) => ref.read(chatApiProvider).sendSupportMessage(text),
-        onRefetch: () async {
-          final refreshed = await ref.read(chatApiProvider).getSupportMessages();
-          return refreshed.messages;
-        },
+        onSend: (text, clientMessageId) => ref
+            .read(chatApiProvider)
+            .sendSupportMessage(text, clientMessageId: clientMessageId),
+        onRefetch: () => ref.read(chatApiProvider).getSupportMessages(),
+        onLoadOlder: (before) =>
+            ref.read(chatApiProvider).getSupportMessages(before: before),
       ),
     );
   }

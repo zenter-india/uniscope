@@ -656,10 +656,18 @@ model ChatMessage {
   channelId String      @map("channel_id")
   senderId  String      @map("sender_id")
   text      String
+  /// Client-generated id (a UUID minted on-device at compose time), sent
+  /// once per logical send attempt — lets ChatService.sendMessage dedupe a
+  /// retried/double-tapped POST into the original row instead of creating a
+  /// second message. Null for any row inserted without one (defensive —
+  /// nothing currently omits it), so the unique constraint below is scoped
+  /// per-channel and Postgres treats NULLs as distinct from each other.
+  clientMessageId String? @map("client_message_id")
   createdAt DateTime    @default(now()) @map("created_at") @db.Timestamptz
 
   channel ChatChannel @relation(fields: [channelId], references: [id])
 
+  @@unique([channelId, clientMessageId])
   @@index([channelId, createdAt])
   @@map("chat_messages")
 }

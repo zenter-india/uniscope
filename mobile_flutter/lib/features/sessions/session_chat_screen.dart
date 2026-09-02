@@ -20,13 +20,16 @@ import 'chat_thread_view.dart';
 /// of letting the sheet open and fail at submit time.
 const _minCallSlotUniminutes = 5;
 
-/// Real Stream Chat UI for a CHAT session. Chat is free and has no pricing
-/// or timing shown anywhere in this screen — the only place a cost ever
-/// appears is the "Request a call" sheet, since only calls are billed.
+/// Chat UI for a CHAT session (Postgres + Supabase Realtime — see
+/// ChatThreadView). Chat is free and has no pricing or timing shown
+/// anywhere in this screen — the only place a cost ever appears is the
+/// "Request a call" sheet, since only calls are billed.
 ///
-/// A session isn't chat-ready until the mentor accepts (the Stream channel
-/// itself is only created on accept — see SessionsService.accept()), so
-/// this polls the session status first and shows a waiting state until then.
+/// Polls the session status before connecting and shows a waiting state
+/// for anything short of ACCEPTED — defensive: CHAT sessions open
+/// immediately today (see SessionsService.create()), so this branch isn't
+/// normally reached, but is kept in case that ever changes back to a real
+/// accept step.
 class SessionChatScreen extends ConsumerStatefulWidget {
   const SessionChatScreen({super.key, required this.sessionId});
 
@@ -164,7 +167,9 @@ class _SessionChatScreenState extends ConsumerState<SessionChatScreen> {
 
     final currentUserId = ref.read(authControllerProvider).user!.id;
     final isAspirant = currentUserId == _session!.aspirantId;
-    final otherName = isAspirant ? _session!.mentorName : _session!.aspirantName;
+    final otherName = isAspirant
+        ? _session!.mentorName
+        : _session!.aspirantName;
     final otherAvatarUrl = isAspirant
         ? _session!.mentorAvatarUrl
         : _session!.aspirantAvatarUrl;
@@ -179,9 +184,7 @@ class _SessionChatScreenState extends ConsumerState<SessionChatScreen> {
           children: [
             AppAvatar(name: otherName, avatarUrl: otherAvatarUrl, size: 32),
             const SizedBox(width: AppSpacing.sm),
-            Expanded(
-              child: Text(otherName, overflow: TextOverflow.ellipsis),
-            ),
+            Expanded(child: Text(otherName, overflow: TextOverflow.ellipsis)),
           ],
         ),
         actions: [
@@ -224,14 +227,18 @@ class _SessionChatScreenState extends ConsumerState<SessionChatScreen> {
       body: ChatThreadView(
         connection: _connection!,
         currentUserId: currentUserId,
-        onSend: (text) =>
-            ref.read(chatApiProvider).sendMessage(widget.sessionId, text),
-        onRefetch: () async {
-          final refreshed = await ref
-              .read(chatApiProvider)
-              .getMessages(widget.sessionId);
-          return refreshed.messages;
-        },
+        onSend: (text, clientMessageId) => ref
+            .read(chatApiProvider)
+            .sendMessage(
+              widget.sessionId,
+              text,
+              clientMessageId: clientMessageId,
+            ),
+        onRefetch: () =>
+            ref.read(chatApiProvider).getMessages(widget.sessionId),
+        onLoadOlder: (before) => ref
+            .read(chatApiProvider)
+            .getMessages(widget.sessionId, before: before),
       ),
     );
   }

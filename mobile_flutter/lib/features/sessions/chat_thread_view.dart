@@ -2,9 +2,12 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' as sb;
+import 'package:uuid/uuid.dart';
 
 import '../../core/network/chat_api.dart';
 import '../../core/theme/app_theme.dart';
+
+const _uuid = Uuid();
 
 /// Shared message list + composer for both SessionChatScreen and
 /// SupportChatScreen — replaces Stream Chat's StreamMessageListView /
@@ -22,30 +25,39 @@ class ChatThreadView extends StatefulWidget {
     required this.currentUserId,
     required this.onSend,
     required this.onRefetch,
+    required this.onLoadOlder,
   });
 
   final ChatConnection connection;
   final String currentUserId;
-  final Future<void> Function(String text) onSend;
-  final Future<List<ChatMessage>> Function() onRefetch;
+  final Future<void> Function(String text, String clientMessageId) onSend;
+  final Future<ChatConnection> Function() onRefetch;
+  final Future<ChatConnection> Function(String beforeMessageId) onLoadOlder;
 
   @override
   State<ChatThreadView> createState() => _ChatThreadViewState();
 }
 
-class _ChatThreadViewState extends State<ChatThreadView> {
+class _ChatThreadViewState extends State<ChatThreadView>
+    with WidgetsBindingObserver {
   late List<ChatMessage> _messages;
+  late bool _hasMore;
   sb.SupabaseClient? _realtime;
   sb.RealtimeChannel? _channel;
   final _composerController = TextEditingController();
   final _scrollController = ScrollController();
   bool _sending = false;
+  bool _loadingMore = false;
+  bool _disposed = false;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _messages = List.of(widget.connection.messages);
+    _hasMore = widget.connection.hasMore;
     _subscribe();
+    _scrollController.addListener(_maybeLoadMore);
     WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
   }
 
@@ -60,21 +72,108 @@ class _ChatThreadViewState extends State<ChatThreadView> {
           event: 'new_message',
           callback: (payload) => _onNewMessagePing(),
         )
-        .subscribe();
+        .subscribe(_onSubscribeStatusChanged);
     _realtime = realtime;
     _channel = channel;
+  }
+
+  /// A dropped/failed subscription (network hiccup, backgrounded app,
+  /// token/session churn) needs a fresh channel instance — the underlying
+  /// package throws if `subscribe()` is called twice on the same one. Also
+  /// refetches on the initial successful `subscribed` status, since a
+  /// message can land in the gap between the REST history fetch and the
+  /// subscription actually taking effect.
+  void _onSubscribeStatusChanged(
+    sb.RealtimeSubscribeStatus status,
+    Object? error,
+  ) {
+    if (_disposed) return;
+    switch (status) {
+      case sb.RealtimeSubscribeStatus.subscribed:
+        _onNewMessagePing();
+      case sb.RealtimeSubscribeStatus.channelError:
+      case sb.RealtimeSubscribeStatus.timedOut:
+      case sb.RealtimeSubscribeStatus.closed:
+        _scheduleResubscribe();
+    }
+  }
+
+  void _scheduleResubscribe() {
+    _channel?.unsubscribe();
+    _realtime?.dispose();
+    _channel = null;
+    _realtime = null;
+    Future.delayed(const Duration(seconds: 3), () {
+      if (_disposed) return;
+      _subscribe();
+    });
+  }
+
+  /// Independent of the Realtime channel's own reconnect handling above —
+  /// resuming from background is exactly when a channel is most likely to
+  /// have silently dropped, so this is a second, simpler safety net that
+  /// doesn't depend on the channel's own error callback having fired.
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _onNewMessagePing();
+    }
   }
 
   Future<void> _onNewMessagePing() async {
     try {
       final refreshed = await widget.onRefetch();
       if (!mounted) return;
-      setState(() => _messages = refreshed);
+      setState(() {
+        _messages = refreshed.messages;
+        _hasMore = refreshed.hasMore;
+      });
       WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
     } catch (_) {
       // transient network hiccup — next ping (or the user reopening the
       // screen) will catch up; nothing to show the user for a missed live
       // update when history is still correct on next real fetch.
+    }
+  }
+
+  void _maybeLoadMore() {
+    if (!_hasMore || _loadingMore || !_scrollController.hasClients) return;
+    // Within 200px of the top edge — load the next page before the user
+    // actually hits the end, so it feels continuous rather than a visible
+    // stall-then-append.
+    if (_scrollController.position.pixels <=
+        _scrollController.position.minScrollExtent + 200) {
+      _loadOlder();
+    }
+  }
+
+  Future<void> _loadOlder() async {
+    if (_messages.isEmpty) return;
+    setState(() => _loadingMore = true);
+    final oldestId = _messages.first.id;
+    final oldOffset = _scrollController.offset;
+    final oldMaxExtent = _scrollController.position.maxScrollExtent;
+    try {
+      final page = await widget.onLoadOlder(oldestId);
+      if (!mounted) return;
+      setState(() {
+        _messages = [...page.messages, ..._messages];
+        _hasMore = page.hasMore;
+        _loadingMore = false;
+      });
+      // Keep the visual scroll position stable after prepending older rows
+      // above it — without this the list jumps to wherever the new content
+      // pushed the viewport.
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!_scrollController.hasClients) return;
+        final delta = _scrollController.position.maxScrollExtent - oldMaxExtent;
+        _scrollController.jumpTo(oldOffset + delta);
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _loadingMore = false);
+      // Silent — the user can just keep scrolling to retry; a snackbar for
+      // a background pagination fetch would be noisier than useful.
     }
   }
 
@@ -86,19 +185,36 @@ class _ChatThreadViewState extends State<ChatThreadView> {
   Future<void> _send() async {
     final text = _composerController.text.trim();
     if (text.isEmpty || _sending) return;
-    setState(() => _sending = true);
     _composerController.clear();
+    await _sendWithRetryId(text, _uuid.v4());
+  }
+
+  /// Shared by a fresh send and a manual retry — a retry MUST reuse the
+  /// same [clientMessageId] as the original attempt, not mint a new one,
+  /// or the backend's idempotency dedup can't tell it apart from a genuine
+  /// second message (see ChatService.sendMessage).
+  Future<void> _sendWithRetryId(String text, String clientMessageId) async {
+    setState(() => _sending = true);
     try {
-      await widget.onSend(text);
+      await widget.onSend(text, clientMessageId);
       final refreshed = await widget.onRefetch();
       if (!mounted) return;
-      setState(() => _messages = refreshed);
+      setState(() {
+        _messages = refreshed.messages;
+        _hasMore = refreshed.hasMore;
+      });
       WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Could not send: $e')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Could not send: $e'),
+          action: SnackBarAction(
+            label: 'Retry',
+            onPressed: () => _sendWithRetryId(text, clientMessageId),
+          ),
+        ),
+      );
     } finally {
       if (mounted) setState(() => _sending = false);
     }
@@ -106,6 +222,9 @@ class _ChatThreadViewState extends State<ChatThreadView> {
 
   @override
   void dispose() {
+    _disposed = true;
+    WidgetsBinding.instance.removeObserver(this);
+    _scrollController.removeListener(_maybeLoadMore);
     _channel?.unsubscribe();
     _realtime?.dispose();
     _composerController.dispose();
@@ -131,12 +250,26 @@ class _ChatThreadViewState extends State<ChatThreadView> {
                     horizontal: AppSpacing.md,
                     vertical: AppSpacing.md,
                   ),
-                  itemCount: _messages.length,
-                  itemBuilder: (context, index) =>
-                      _MessageBubble(
-                        message: _messages[index],
-                        isMine: _messages[index].senderId == widget.currentUserId,
-                      ),
+                  itemCount: _messages.length + (_loadingMore ? 1 : 0),
+                  itemBuilder: (context, index) {
+                    if (_loadingMore && index == 0) {
+                      return const Padding(
+                        padding: EdgeInsets.symmetric(vertical: AppSpacing.sm),
+                        child: Center(
+                          child: SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          ),
+                        ),
+                      );
+                    }
+                    final message = _messages[index - (_loadingMore ? 1 : 0)];
+                    return _MessageBubble(
+                      message: message,
+                      isMine: message.senderId == widget.currentUserId,
+                    );
+                  },
                 ),
         ),
         SafeArea(
@@ -179,7 +312,10 @@ class _ChatThreadViewState extends State<ChatThreadView> {
                           height: 20,
                           child: CircularProgressIndicator(strokeWidth: 2),
                         )
-                      : const Icon(Icons.send_rounded, color: AppColors.primary),
+                      : const Icon(
+                          Icons.send_rounded,
+                          color: AppColors.primary,
+                        ),
                 ),
               ],
             ),

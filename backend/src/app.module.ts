@@ -19,7 +19,6 @@ import {
   twilioConfig,
   msg91Config,
   razorpayConfig,
-  streamConfig,
   agoraConfig,
   validationSchema,
 } from './config/index.js';
@@ -68,7 +67,6 @@ import { EnrollmentsModule } from './modules/enrollments/enrollments.module.js';
         twilioConfig,
         msg91Config,
         razorpayConfig,
-        streamConfig,
         agoraConfig,
       ],
       validationSchema,

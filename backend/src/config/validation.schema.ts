@@ -83,10 +83,6 @@ export const validationSchema = Joi.object({
   RAZORPAY_KEY_SECRET: Joi.string().default(''),
   RAZORPAY_WEBHOOK_SECRET: Joi.string().default(''),
 
-  // Stream Chat — session messaging
-  STREAM_API_KEY: Joi.string().default(''),
-  STREAM_API_SECRET: Joi.string().default(''),
-
   // Agora — audio calls
   AGORA_APP_ID: Joi.string().default(''),
   AGORA_APP_CERTIFICATE: Joi.string().default(''),

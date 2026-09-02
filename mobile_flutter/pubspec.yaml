@@ -46,6 +46,7 @@ dependencies:
   firebase_messaging: ^16.4.3
   flutter_svg: ^2.2.1
   webview_flutter: ^4.13.0
+  uuid: ^4.5.3
 dev_dependencies:
   flutter_test:
     sdk: flutter
