@@ -189,34 +189,42 @@ class _Hero extends StatelessWidget {
               ),
             ),
           ),
-          SafeArea(
-            bottom: false,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
-              child: Row(
-                children: [
-                  _CircleIconButton(
-                    icon: Icons.arrow_back_rounded,
-                    onTap: () => Navigator.of(context).maybePop(),
-                  ),
-                  const Spacer(),
-                  Consumer(
-                    builder: (context, ref, _) {
-                      final savedIds = ref.watch(savedCollegeIdsProvider).value;
-                      final saved = savedIds?.contains(university.id) ?? false;
-                      return _CircleIconButton(
-                        icon: saved
-                            ? Icons.favorite_rounded
-                            : Icons.favorite_border_rounded,
-                        iconColor: saved ? AppColors.error : Colors.white,
-                        onTap: () => ref
-                            .read(savedCollegeIdsProvider.notifier)
-                            .toggle(university.id),
-                      );
-                    },
-                  ),
-                ],
-              ),
+          Padding(
+            // Hugs the true top edge instead of the full device safe-area
+            // inset — these are translucent circular buttons floating over
+            // the hero photo, not content that needs to clear a notch/status
+            // bar, so a small fixed gap reads better than however much
+            // MediaQuery.padding.top happens to report (client-requested:
+            // was sitting well below the top edge on some devices).
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.md,
+              AppSpacing.sm,
+              AppSpacing.md,
+              0,
+            ),
+            child: Row(
+              children: [
+                _CircleIconButton(
+                  icon: Icons.arrow_back_rounded,
+                  onTap: () => Navigator.of(context).maybePop(),
+                ),
+                const Spacer(),
+                Consumer(
+                  builder: (context, ref, _) {
+                    final savedIds = ref.watch(savedCollegeIdsProvider).value;
+                    final saved = savedIds?.contains(university.id) ?? false;
+                    return _CircleIconButton(
+                      icon: saved
+                          ? Icons.favorite_rounded
+                          : Icons.favorite_border_rounded,
+                      iconColor: saved ? AppColors.error : Colors.white,
+                      onTap: () => ref
+                          .read(savedCollegeIdsProvider.notifier)
+                          .toggle(university.id),
+                    );
+                  },
+                ),
+              ],
             ),
           ),
           Positioned(
