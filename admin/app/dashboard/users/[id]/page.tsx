@@ -233,6 +233,7 @@ export default async function UserDetailPage({
       <div className="flex flex-col gap-4">
         {p && user.role !== 'ADMIN' && (
           <EditUserPanel
+            key={user.updatedAt}
             user={{
               id: user.id,
               displayName: user.displayName,

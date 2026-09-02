@@ -81,8 +81,12 @@ const INT_FIELDS = new Set([
   'freeChatsRemaining',
   'freeCallSecondsRemaining',
 ]);
+/** Fields that must never be sent as null (non-nullable columns / enums). */
+const NEVER_NULL = new Set(['displayName', 'role', 'verificationStatus']);
 
-/** Build the patch: only fields whose form value differs from the original. */
+/** Build the patch: only fields whose form value differs from the original.
+ * A cleared text field is sent as null so the column is actually blanked
+ * (rather than stored as an empty string). */
 function diff(current: FormState, original: FormState): Record<string, unknown> {
   const patch: Record<string, unknown> = {};
   for (const key of Object.keys(current)) {
@@ -93,10 +97,10 @@ function diff(current: FormState, original: FormState): Record<string, unknown> 
     } else if (ARRAY_FIELDS.has(key)) {
       patch[key] = v.split(',').map((s) => s.trim()).filter(Boolean);
     } else if (INT_FIELDS.has(key)) {
-      if (v === '') continue; // don't send a cleared number field
+      if (v === '') continue; // a cleared number field is left unchanged
       patch[key] = Number(v);
     } else {
-      patch[key] = v;
+      patch[key] = v === '' && !NEVER_NULL.has(key) ? null : v;
     }
   }
   return patch;
@@ -147,6 +151,10 @@ export function EditUserPanel({ user }: { user: EditableUser }) {
     const patch = diff(form, original);
     if (Object.keys(patch).length === 0) {
       setError('Nothing changed.');
+      return;
+    }
+    if ('displayName' in patch && !String(patch.displayName ?? '').trim()) {
+      setError('Display name cannot be empty.');
       return;
     }
     startTransition(async () => {
