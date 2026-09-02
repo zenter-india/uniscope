@@ -6,8 +6,10 @@ import {
   GENDERS,
   INDIAN_STATES,
   STATE_DISTRICTS,
-  QUALIFICATIONS,
   STREAMS,
+  DEGREES,
+  DEGREES_BY_STREAM,
+  DEFAULT_NON_MEDICAL_DEGREES,
   MENTORSHIP_TIMINGS,
   LANGUAGES,
 } from "../lib/options";
@@ -63,6 +65,28 @@ export function AspirantForm({ onExit }: { onExit: () => void }) {
 
   const set = <K extends keyof FormState>(key: K, value: FormState[K]) =>
     setForm((f) => ({ ...f, [key]: value }));
+
+  // Current qualification's options now depend on Field of interest, the
+  // same way MentorForm.tsx's Degree options depend on Stream (same three
+  // source constants, same Medical-gets-the-full-list / Dental+Engineering-
+  // get-their-own-subset / everything-else-gets-the-default-UG-PG-Doctorate-
+  // Others fallback shape) -- per explicit request, "Field of interest" is
+  // this form's Stream and "Current qualification" is this form's Degree.
+  // The one difference: "Higher Secondary (12th)" is always prepended
+  // regardless of stream, since a 12th-grade aspirant hasn't committed to
+  // any stream-specific degree track yet -- that option needs to exist no
+  // matter what Field of interest is picked, unlike every other
+  // qualification which is genuinely stream-specific. For Medical this
+  // reproduces the exact same list the old flat QUALIFICATIONS constant
+  // had (Higher Secondary + all of DEGREES) -- so Medical aspirants see no
+  // change at all, only Dental/Engineering (now their own narrower,
+  // correct subset) and every other stream (now DEFAULT_NON_MEDICAL_DEGREES
+  // instead of the full Medical-shaped list, which never made sense for a
+  // Law or Design aspirant to begin with).
+  const qualificationOptions: readonly string[] = [
+    "Higher Secondary (12th)",
+    ...(form.stream === "Medical" ? DEGREES : (DEGREES_BY_STREAM[form.stream] ?? DEFAULT_NON_MEDICAL_DEGREES)),
+  ];
 
   function validateStep(): string | null {
     if (wizard.step === 1) {
@@ -313,6 +337,12 @@ export function AspirantForm({ onExit }: { onExit: () => void }) {
               value={form.stream}
               onChange={(e) => {
                 set("stream", e.target.value);
+                // Current qualification's options are stream-specific (see
+                // qualificationOptions) — the previously-picked
+                // qualification may not be valid for the newly-picked
+                // stream, so reset it too (same reasoning MentorForm.tsx
+                // uses when Stream changes there).
+                set("qualification", "");
                 set("specialization", "");
               }}
             >
@@ -331,7 +361,7 @@ export function AspirantForm({ onExit }: { onExit: () => void }) {
               }}
             >
               <option value="">Select</option>
-              {QUALIFICATIONS.map((q) => (
+              {qualificationOptions.map((q) => (
                 <option key={q}>{q}</option>
               ))}
             </Select>
