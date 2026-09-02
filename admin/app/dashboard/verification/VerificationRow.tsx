@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useState, useTransition } from 'react';
 import { getVerificationDocumentUrl, reviewVerificationRequest } from './actions';
 
@@ -58,9 +59,12 @@ export function VerificationRow({ request }: { request: VerificationRequestRow }
     <div className="rounded-xl border border-zinc-200 bg-white p-5">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <p className="font-medium text-zinc-900">
+          <Link
+            href={`/dashboard/users/${request.userId}`}
+            className="font-medium text-zinc-900 underline decoration-zinc-300 underline-offset-2 hover:decoration-zinc-600"
+          >
             {request.userDisplayName ?? request.userId}
-          </p>
+          </Link>
           <p className="mt-0.5 text-sm text-zinc-500">
             {request.universityName ?? request.universityId} ·{' '}
             {DOCUMENT_TYPE_LABELS[request.documentType] ?? request.documentType}
@@ -71,6 +75,12 @@ export function VerificationRow({ request }: { request: VerificationRequestRow }
               ? new Date(request.submittedAt).toLocaleString()
               : '—'}
           </p>
+          <Link
+            href={`/dashboard/users/${request.userId}`}
+            className="mt-1 inline-block text-xs font-medium text-zinc-500 hover:text-zinc-800"
+          >
+            View full profile →
+          </Link>
         </div>
         <button
           onClick={viewDocument}
