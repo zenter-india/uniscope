@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { submitAspirantLead, ApiError } from "../lib/api";
+import { useEffect, useState } from "react";
+import { submitAspirantLead, fetchCuratedColleges, ApiError } from "../lib/api";
 import {
   GENDERS,
   INDIAN_STATES,
@@ -10,11 +10,16 @@ import {
   DEGREES,
   DEGREES_BY_STREAM,
   DEFAULT_NON_MEDICAL_DEGREES,
+  MEDICAL_SPECIALIZATIONS,
   MENTORSHIP_TIMINGS,
   LANGUAGES,
 } from "../lib/options";
 import { useMultiStep } from "../lib/useMultiStep";
 import { Field, TextInput, Select, ChipGroup, toggleInArray, ProgressBar, ErrorText } from "./form-bits";
+import { CollegeSearch } from "./CollegeSearch";
+import { CuratedCollegeSearch } from "./CuratedCollegeSearch";
+import { SearchableCombobox } from "./SearchableCombobox";
+import { CURATED_DEGREE_MAP_BY_STREAM, STREAMS_WITH_COLLEGE_DATA, COLLEGE_SEARCH_LEVEL_MAP } from "./MentorForm";
 
 type FormState = {
   fullName: string;
@@ -28,6 +33,8 @@ type FormState = {
   qualificationOther: string;
   stream: string;
   streamOther: string;
+  collegeName: string;
+  universityId: string;
   specialization: string;
   courseInterested: string;
   preferredLanguages: string[];
@@ -48,6 +55,8 @@ const EMPTY: FormState = {
   qualificationOther: "",
   stream: "",
   streamOther: "",
+  collegeName: "",
+  universityId: "",
   specialization: "",
   courseInterested: "",
   preferredLanguages: [],
@@ -88,6 +97,76 @@ export function AspirantForm({ onExit }: { onExit: () => void }) {
     ...(form.stream === "Medical" ? DEGREES : (DEGREES_BY_STREAM[form.stream] ?? DEFAULT_NON_MEDICAL_DEGREES)),
   ];
 
+  // College and Specialization show for any qualification except Higher
+  // Secondary (12th) -- a 12th-grade aspirant hasn't started a degree yet,
+  // so there's nothing to ask. Per explicit request, reuses the exact same
+  // curated-per-stream mechanism as MentorForm.tsx's own College field
+  // (same CURATED_DEGREE_MAP_BY_STREAM / STREAMS_WITH_COLLEGE_DATA /
+  // COLLEGE_SEARCH_LEVEL_MAP, imported from there rather than duplicated,
+  // since "Current qualification" carries the same literal degree strings
+  // as MentorForm's "Degree" — see qualificationOptions above).
+  const showCollegeAndSpecialization = !!form.qualification && form.qualification !== "Higher Secondary (12th)";
+  const curatedDegree = CURATED_DEGREE_MAP_BY_STREAM[form.stream]?.[form.qualification];
+  const hasCuratedData = curatedDegree !== undefined;
+  const isDoctorateOrOthersQualification = form.qualification === "Doctorate" || form.qualification === "Others";
+  // One deliberate difference from MentorForm.tsx: Specialization here is
+  // never scoped to the picked college — per explicit request, it always
+  // shows every specialization known for the whole picked degree (not
+  // "that college's own list, widened only once typing" like the mentor
+  // form). For a specific curated degree (MD/MS, MDS, B.Tech, Law-UG,
+  // etc.) that's the union across every college offering it
+  // (allSpecializationsForDegree below); for Doctorate/Others in a stream
+  // with real curated data (Engineering/Law/Dental) it's the union across
+  // every curated degree in that whole stream (streamWideSpecializations
+  // below, same mechanism as MentorForm's own hasStreamWideSpecialization
+  // for the same case).
+  const hasStreamWideSpecialization = isDoctorateOrOthersQualification && STREAMS_WITH_COLLEGE_DATA.has(form.stream);
+
+  const [allSpecializationsForDegree, setAllSpecializationsForDegree] = useState<string[]>([]);
+  useEffect(() => {
+    if (!hasCuratedData) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- resets the list when leaving a curated degree
+      setAllSpecializationsForDegree([]);
+      return;
+    }
+    let cancelled = false;
+    fetchCuratedColleges(form.stream, curatedDegree!, { browse: true })
+      .then((data) => {
+        if (cancelled) return;
+        const all = Array.from(new Set(data.flatMap((c) => c.specializations))).sort();
+        setAllSpecializationsForDegree(all);
+      })
+      .catch(() => {
+        if (!cancelled) setAllSpecializationsForDegree([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [form.stream, curatedDegree, hasCuratedData]);
+
+  const [streamWideSpecializations, setStreamWideSpecializations] = useState<string[]>([]);
+  useEffect(() => {
+    if (!hasStreamWideSpecialization) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- resets the list when leaving a stream-wide-specialization qualification
+      setStreamWideSpecializations([]);
+      return;
+    }
+    let cancelled = false;
+    const curatedDegreesForStream = Array.from(new Set(Object.values(CURATED_DEGREE_MAP_BY_STREAM[form.stream] ?? {})));
+    Promise.all(curatedDegreesForStream.map((degree) => fetchCuratedColleges(form.stream, degree, { browse: true })))
+      .then((results) => {
+        if (cancelled) return;
+        const all = Array.from(new Set(results.flatMap((colleges) => colleges.flatMap((c) => c.specializations)))).sort();
+        setStreamWideSpecializations(all);
+      })
+      .catch(() => {
+        if (!cancelled) setStreamWideSpecializations([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [form.stream, hasStreamWideSpecialization]);
+
   function validateStep(): string | null {
     if (wizard.step === 1) {
       if (!form.fullName.trim()) return "Enter your full name.";
@@ -105,15 +184,12 @@ export function AspirantForm({ onExit }: { onExit: () => void }) {
       if (form.stream === "Others" && !form.streamOther.trim()) return "Enter your field of interest.";
       if (!form.qualification) return "Select your current qualification.";
       if (form.qualification === "Others" && !form.qualificationOther.trim()) return "Enter your qualification.";
-      if (
-        form.stream === "Medical" &&
-        form.qualification &&
-        form.qualification !== "Higher Secondary (12th)" &&
-        form.qualification !== "UG" &&
-        !form.specialization.trim()
-      ) {
-        return "Enter your specialization.";
-      }
+      if (showCollegeAndSpecialization && !form.collegeName.trim()) return "Enter your college.";
+      // Mirrors MentorForm.tsx's own validateStep: specialization is
+      // required exactly when it's a specific curated degree's own list
+      // (hasCuratedData) -- the stream-wide and plain-free-text cases stay
+      // optional there too.
+      if (hasCuratedData && !form.specialization.trim()) return "Enter your specialization.";
     }
     if (wizard.step === 4) {
       if (form.preferredLanguages.length === 0) return "Select at least one preferred language.";
@@ -148,13 +224,9 @@ export function AspirantForm({ onExit }: { onExit: () => void }) {
         qualification:
           (form.qualification === "Others" ? form.qualificationOther.trim() : form.qualification) || undefined,
         stream: (form.stream === "Others" ? form.streamOther.trim() : form.stream) || undefined,
-        specialization:
-          form.stream === "Medical" &&
-          form.qualification &&
-          form.qualification !== "Higher Secondary (12th)" &&
-          form.qualification !== "UG"
-            ? form.specialization.trim() || undefined
-            : undefined,
+        universityId: showCollegeAndSpecialization ? form.universityId || undefined : undefined,
+        collegeName: showCollegeAndSpecialization ? form.collegeName.trim() || undefined : undefined,
+        specialization: showCollegeAndSpecialization ? form.specialization.trim() || undefined : undefined,
         courseInterested: form.courseInterested.trim() || undefined,
         // Backend columns are single free-text strings (see CreateAspirantLeadDto)
         // — multiple picks join into one readable value rather than needing a
@@ -338,11 +410,14 @@ export function AspirantForm({ onExit }: { onExit: () => void }) {
               onChange={(e) => {
                 set("stream", e.target.value);
                 // Current qualification's options are stream-specific (see
-                // qualificationOptions) — the previously-picked
-                // qualification may not be valid for the newly-picked
-                // stream, so reset it too (same reasoning MentorForm.tsx
-                // uses when Stream changes there).
+                // qualificationOptions), and College/Specialization's data
+                // is stream-specific too (see CURATED_DEGREE_MAP_BY_STREAM)
+                // — the previously-picked values may not be valid for the
+                // newly-picked stream, so reset them all (same reasoning
+                // MentorForm.tsx uses when Stream changes there).
                 set("qualification", "");
+                set("collegeName", "");
+                set("universityId", "");
                 set("specialization", "");
               }}
             >
@@ -357,6 +432,11 @@ export function AspirantForm({ onExit }: { onExit: () => void }) {
               value={form.qualification}
               onChange={(e) => {
                 set("qualification", e.target.value);
+                // College's curated dataset is qualification-specific too
+                // (see CURATED_DEGREE_MAP_BY_STREAM) — same reset reasoning
+                // as MentorForm.tsx's own Degree change handler.
+                set("collegeName", "");
+                set("universityId", "");
                 set("specialization", "");
               }}
             >
@@ -386,18 +466,86 @@ export function AspirantForm({ onExit }: { onExit: () => void }) {
               />
             </Field>
           )}
-          {form.stream === "Medical" &&
-            form.qualification &&
-            form.qualification !== "Higher Secondary (12th)" &&
-            form.qualification !== "UG" && (
-              <Field label="Specialization">
+          {showCollegeAndSpecialization && (
+            <Field label="College / university">
+              {hasCuratedData ? (
+                <CuratedCollegeSearch
+                  stream={form.stream}
+                  degree={curatedDegree!}
+                  value={form.collegeName}
+                  onPick={(college, name) => {
+                    set("collegeName", name);
+                    set("universityId", college?.id ?? "");
+                  }}
+                />
+              ) : form.stream === "Medical" ? (
+                <CollegeSearch
+                  value={form.collegeName}
+                  stream="Medical"
+                  level={form.qualification === "UG" ? "UG" : undefined}
+                  onPick={(name, id) => {
+                    set("collegeName", name);
+                    set("universityId", id ?? "");
+                  }}
+                />
+              ) : STREAMS_WITH_COLLEGE_DATA.has(form.stream) ? (
+                <CollegeSearch
+                  value={form.collegeName}
+                  stream={form.stream}
+                  level={COLLEGE_SEARCH_LEVEL_MAP[form.stream]?.[form.qualification]}
+                  onPick={(name, id) => {
+                    set("collegeName", name);
+                    set("universityId", id ?? "");
+                  }}
+                />
+              ) : (
+                // No seeded college data exists yet for this stream at all
+                // (Commerce & Business, Design, Arts & Humanities, Others).
+                <TextInput
+                  required
+                  placeholder="College/university name"
+                  value={form.collegeName}
+                  onChange={(e) => set("collegeName", e.target.value)}
+                />
+              )}
+            </Field>
+          )}
+          {showCollegeAndSpecialization && (
+            <Field label="Specialization">
+              {isDoctorateOrOthersQualification && form.stream === "Medical" ? (
+                // Same static full list Medical's own Doctorate/Others use
+                // on the mentor form -- MD/MS-scoped data doesn't apply to
+                // Doctorate/Others, so this hand-curated list stands in as
+                // "every specialization" for that case.
+                <SearchableCombobox
+                  value={form.specialization}
+                  options={[...MEDICAL_SPECIALIZATIONS]}
+                  placeholder="Select or type to search…"
+                  onChange={(v) => set("specialization", v)}
+                />
+              ) : hasCuratedData ? (
+                <SearchableCombobox
+                  value={form.specialization}
+                  options={allSpecializationsForDegree}
+                  placeholder="Select or type to search…"
+                  onChange={(v) => set("specialization", v)}
+                />
+              ) : hasStreamWideSpecialization ? (
+                <SearchableCombobox
+                  value={form.specialization}
+                  options={streamWideSpecializations}
+                  placeholder="Select or type to search…"
+                  onChange={(v) => set("specialization", v)}
+                />
+              ) : (
                 <TextInput
                   placeholder="e.g. Cardiology"
                   value={form.specialization}
                   onChange={(e) => set("specialization", e.target.value)}
                 />
-              </Field>
-            )}
+              )}
+            </Field>
+          )}
           <Field label="Course you're aiming for" hint="(optional)">
             <TextInput
               placeholder="e.g. MBBS, B.Tech, BL"

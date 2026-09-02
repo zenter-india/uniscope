@@ -900,19 +900,24 @@ model EnrollmentLead {
   preferredLanguage         String?  @map("preferred_language") @db.VarChar(150)
   preferredMentorshipTiming String?  @map("preferred_mentorship_timing") @db.VarChar(150)
 
-  /// Mentor-only. `universityId` is set when the person picked an existing
-  /// college from the dropdown; `collegeName` always holds the raw text so a
-  /// college missing from the University table doesn't lose the answer.
+  /// Mentor-only.
   alias          String?  @db.VarChar(60)
+  /// `universityId` is set when the person picked an existing college from
+  /// the dropdown; `collegeName` always holds the raw text so a college
+  /// missing from the University table doesn't lose the answer. Shared by
+  /// both roles -- originally mentor-only, extended to aspirants once they
+  /// got their own curated College field (shown whenever `qualification`
+  /// isn't "Higher Secondary (12th)", same mechanism as the mentor form's).
   universityId   String?  @map("university_id")
   collegeName    String?  @map("college_name") @db.VarChar(200)
-  /// Widened from VARCHAR(20): a picklist value fits easily, but "Others"
-  /// reveals a free-text field on the form (same pattern as `stream`), and
-  /// a typed degree name can run well past 20 characters.
+  /// Mentor-only. Widened from VARCHAR(20): a picklist value fits easily,
+  /// but "Others" reveals a free-text field on the form (same pattern as
+  /// `stream`), and a typed degree name can run well past 20 characters.
   degree         String?  @db.VarChar(50)
-  /// Free text, not FK'd to any picklist — only meaningful (and only shown
-  /// on the form) for a Medical-stream mentor whose degree isn't UG, e.g.
-  /// "Paediatrics" for an MD/MS. Building a real specialization-per-degree
+  /// Shared by both roles. Free text, not FK'd to any picklist -- for a
+  /// mentor, only meaningful when degree isn't UG (e.g. "Paediatrics" for
+  /// an MD/MS); for an aspirant, shown whenever qualification isn't
+  /// "Higher Secondary (12th)". Building a real specialization-per-degree
   /// taxonomy was deliberately deferred (see the automation-roadmap
   /// discussion); this captures the answer either way.
   specialization String?  @db.VarChar(100)
