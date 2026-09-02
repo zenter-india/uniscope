@@ -9,10 +9,14 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
+import { UserRole } from '@prisma/client';
 import { CurrentUser } from '../../auth/decorators/current-user.decorator.js';
 import type { JwtPayload } from '../../auth/decorators/current-user.decorator.js';
+import { Roles } from '../../auth/decorators/roles.decorator.js';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard.js';
+import { RolesGuard } from '../../auth/guards/roles.guard.js';
 import { CreateSessionDto } from './dto/create-session.dto.js';
+import { ListSessionsAdminDto } from './dto/list-sessions-admin.dto.js';
 import { ListSessionsDto } from './dto/list-sessions.dto.js';
 import { SessionsService } from './sessions.service.js';
 
@@ -25,6 +29,34 @@ import { SessionsService } from './sessions.service.js';
 @Controller('sessions')
 export class SessionsController {
   constructor(private readonly sessionsService: SessionsService) {}
+
+  // ── ADMIN session browser ──────────────────────────────────────────────
+  // Declared before the party-scoped `@Get(':id')` so `/sessions/admin/...`
+  // (3 path segments) is unambiguous, and `admin/all` before `admin/:id`.
+
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @Get('admin/all')
+  listAdmin(@Query() query: ListSessionsAdminDto) {
+    return this.sessionsService.findAllAdmin(query);
+  }
+
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @Get('admin/:id')
+  detailAdmin(@Param('id') id: string) {
+    return this.sessionsService.findByIdAdmin(id);
+  }
+
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @Post('admin/:id/force-end')
+  @HttpCode(HttpStatus.OK)
+  forceEndAdmin(@Param('id') id: string) {
+    return this.sessionsService.forceEndAdmin(id);
+  }
+
+  // ── party-facing endpoints ─────────────────────────────────────────────
 
   @Post()
   create(@CurrentUser() user: JwtPayload, @Body() dto: CreateSessionDto) {

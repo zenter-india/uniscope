@@ -22,6 +22,7 @@ import { AVATAR_OPTION_CATALOG } from '../avatar/avatar.constants.js';
 import { AvatarService } from '../avatar/avatar.service.js';
 import { StorePushTokenDto } from '../notifications/dto/list-notifications.dto.js';
 import { NotificationsService } from '../notifications/notifications.service.js';
+import { AdminUpdateUserDto } from './dto/admin-update-user.dto.js';
 import { ListUsersDto } from './dto/list-users.dto.js';
 import { SetBannedDto } from './dto/set-banned.dto.js';
 import { UpdateProfileDto } from './dto/update-profile.dto.js';
@@ -151,6 +152,15 @@ export class UsersController {
   @Get(':id')
   async findOneAdmin(@Param('id') id: string) {
     const { user, activity } = await this.usersService.findDetailAdmin(id);
+    return toAdminUserDetail(user, activity, this.usersService.avatarUrlFor(user));
+  }
+
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @Patch(':id')
+  @HttpCode(HttpStatus.OK)
+  async adminUpdate(@Param('id') id: string, @Body() dto: AdminUpdateUserDto) {
+    const { user, activity } = await this.usersService.adminUpdateUser(id, dto);
     return toAdminUserDetail(user, activity, this.usersService.avatarUrlFor(user));
   }
 

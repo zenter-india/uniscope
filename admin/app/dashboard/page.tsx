@@ -4,17 +4,21 @@ import { getAdminEmail } from '../../lib/adminAuth';
 import { DashboardShell } from './DashboardShell';
 
 export default async function DashboardPage() {
-  const [email, queue, openReports, leadStats, pendingPayouts] = await Promise.all([
-    getAdminEmail(),
-    backendFetch<unknown[]>('/verification/queue').catch(() => []),
-    backendFetch<{ data: unknown[] }>('/reports?status=OPEN&limit=50')
-      .then((r) => r.data)
-      .catch(() => []),
-    backendFetch<{ byStatus: Record<string, number> }>('/enrollments/stats').catch(() => null),
-    backendFetch<{ amountMinor: number }[]>('/payouts?status=PENDING').catch(
-      () => [] as { amountMinor: number }[],
-    ),
-  ]);
+  const [email, queue, openReports, leadStats, pendingPayouts, liveSessions] =
+    await Promise.all([
+      getAdminEmail(),
+      backendFetch<unknown[]>('/verification/queue').catch(() => []),
+      backendFetch<{ data: unknown[] }>('/reports?status=OPEN&limit=50')
+        .then((r) => r.data)
+        .catch(() => []),
+      backendFetch<{ byStatus: Record<string, number> }>('/enrollments/stats').catch(() => null),
+      backendFetch<{ amountMinor: number }[]>('/payouts?status=PENDING').catch(
+        () => [] as { amountMinor: number }[],
+      ),
+      backendFetch<{ data: unknown[] }>('/sessions/admin/all?status=IN_PROGRESS&limit=50')
+        .then((r) => r.data)
+        .catch(() => []),
+    ]);
 
   const payoutTotalMinor = pendingPayouts.reduce((s, p) => s + p.amountMinor, 0);
 
@@ -35,6 +39,12 @@ export default async function DashboardPage() {
       href: '/dashboard/moderation',
     },
     {
+      label: 'Sessions in progress',
+      value: liveSessions.length,
+      href: '/dashboard/sessions?status=IN_PROGRESS',
+      hint: 'View sessions →',
+    },
+    {
       label: 'Payouts to process',
       value: pendingPayouts.length,
       href: '/dashboard/payouts',
@@ -50,7 +60,7 @@ export default async function DashboardPage() {
 
   return (
     <DashboardShell title="Overview" email={email}>
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
         {statCards.map((card) => (
           <Link
             key={card.label}

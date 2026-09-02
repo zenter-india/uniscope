@@ -25,6 +25,7 @@ import { MentorsService } from '../mentors/mentors.service.js';
 import { NotificationsService } from '../notifications/notifications.service.js';
 import { MENTOR_RATE_PER_MINUTE_MINOR, WalletService } from '../wallet/wallet.service.js';
 import { CALL_SLOT_MINUTES, CreateSessionDto } from './dto/create-session.dto.js';
+import { ListSessionsAdminDto } from './dto/list-sessions-admin.dto.js';
 import { ListSessionsDto } from './dto/list-sessions.dto.js';
 import {
   AvatarUrlResolver,
@@ -823,6 +824,99 @@ export class SessionsService {
     }
 
     return toSessionResponse(session, this.resolveAvatarUrl);
+  }
+
+  // ── ADMIN session browser ──────────────────────────────────────────────
+
+  /** ADMIN — every session in the system, newest first, filterable by
+   * status, type, and either party's display name. Not party-scoped. */
+  async findAllAdmin(
+    query: ListSessionsAdminDto,
+  ): Promise<{ data: SessionResponse[]; nextCursor: string | null }> {
+    const take = Math.min(query.limit ?? DEFAULT_LIMIT, MAX_LIMIT);
+
+    const where: Prisma.SessionWhereInput = {
+      ...(query.status && { status: query.status }),
+      ...(query.type && { type: query.type }),
+      ...(query.search && {
+        OR: [
+          { aspirant: { displayName: { contains: query.search, mode: 'insensitive' } } },
+          { mentor: { displayName: { contains: query.search, mode: 'insensitive' } } },
+        ],
+      }),
+    };
+
+    const rows = await this.prisma.session.findMany({
+      where,
+      include: SESSION_WITH_NAMES_INCLUDE,
+      orderBy: [{ requestedAt: 'desc' }, { id: 'asc' }],
+      take: take + 1,
+      ...(query.cursor && { cursor: { id: query.cursor }, skip: 1 }),
+    });
+
+    const hasMore = rows.length > take;
+    const rowsPage = hasMore ? rows.slice(0, take) : rows;
+    return {
+      data: rowsPage.map((row) => toSessionResponse(row, this.resolveAvatarUrl)),
+      nextCursor: hasMore ? rowsPage[rowsPage.length - 1].id : null,
+    };
+  }
+
+  /** ADMIN — one session, unscoped (any session id, not just ones the
+   * caller is party to). */
+  async findByIdAdmin(sessionId: string): Promise<SessionResponse> {
+    const session = await this.prisma.session.findUnique({
+      where: { id: sessionId },
+      include: SESSION_WITH_NAMES_INCLUDE,
+    });
+    if (!session) {
+      throw new NotFoundException(`Session '${sessionId}' not found`);
+    }
+    return toSessionResponse(session, this.resolveAvatarUrl);
+  }
+
+  /** ADMIN escape hatch for a session stuck in a non-terminal state — a call
+   * that connected and never received an end event, or a request a mentor
+   * never answered. Sets a terminal status + `ADMIN_CLOSED` reason and
+   * releases any still-ACTIVE wallet hold, so an aspirant isn't left paying
+   * for a call an admin had to kill before it connected. Deliberately does
+   * NOT move already-settled money — a call that billed at connect stays
+   * billed; use the reports / manual-refund flow for that. */
+  async forceEndAdmin(sessionId: string): Promise<SessionResponse> {
+    const session = await this.requireSession(sessionId);
+
+    const TERMINAL: SessionStatus[] = [
+      SessionStatus.COMPLETED,
+      SessionStatus.REJECTED,
+      SessionStatus.CANCELLED,
+      SessionStatus.EXPIRED,
+      SessionStatus.FAILED,
+    ];
+    if (TERMINAL.includes(session.status)) {
+      throw new ConflictException(
+        `Session is already finished (${session.status}) — nothing to force-end`,
+      );
+    }
+
+    const nextStatus =
+      session.status === SessionStatus.IN_PROGRESS
+        ? SessionStatus.COMPLETED
+        : SessionStatus.CANCELLED;
+
+    await this.prisma.session.update({
+      where: { id: sessionId },
+      data: {
+        status: nextStatus,
+        endedAt: new Date(),
+        endReason: 'ADMIN_CLOSED',
+      },
+    });
+    await this.releaseHoldsForSession(sessionId);
+    this.logger.log(
+      `[admin] force-ended session ${sessionId} (was ${session.status}) -> ${nextStatus}`,
+    );
+
+    return this.toResponseById(sessionId);
   }
 
   /** Re-fetches a session with the aspirant/mentor names included — used
