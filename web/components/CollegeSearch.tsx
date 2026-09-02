@@ -45,6 +45,19 @@ export function CollegeSearch({
   const [open, setOpen] = useState(false);
   const requestId = useRef(0);
 
+  // Keeps the visible text in sync when the parent resets `value` out from
+  // under this component without the mentor/aspirant typing anything
+  // themselves -- e.g. MentorForm.tsx/AspirantForm.tsx both clear
+  // collegeName when Stream or Degree/Qualification changes. Same fix as
+  // CuratedCollegeSearch.tsx's own version of this -- see that component's
+  // comment for the full writeup of why this matters (a stale-but-
+  // HTML5-valid display that could let someone submit believing their
+  // college was saved when it wasn't).
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- syncing the visible text to a `value` reset the parent made, not an internal state transition
+    setQuery(value);
+  }, [value]);
+
   // Deliberately does NOT compare `query` against the `value` prop to decide
   // whether to search: onPick fires on every keystroke to keep the parent's
   // collegeName in sync as free text, which lands `value` back at `query` on
@@ -93,6 +106,13 @@ export function CollegeSearch({
             <li key={u.id}>
               <button
                 type="button"
+                // Same fix as CuratedCollegeSearch.tsx's own version --
+                // prevents the TextInput above from ever blurring when
+                // this is tapped, so onBlur's setTimeout close can't win
+                // the race against this button's own click on a real
+                // touch device and silently swallow the pick. See that
+                // component's comment for the full writeup.
+                onMouseDown={(e) => e.preventDefault()}
                 onClick={() => {
                   setQuery(u.name);
                   onPick(u.name, u.id);

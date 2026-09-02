@@ -91,6 +91,18 @@ export function CuratedCollegeSearch({
             <li key={college.id}>
               <button
                 type="button"
+                // Prevents the TextInput above from ever blurring when this
+                // is tapped/clicked -- without this, onBlur's setTimeout
+                // close can win the race against this button's own click on
+                // a real touch device (tap fires blur before the click/tap
+                // finishes registering), silently swallowing the pick and
+                // leaving the field looking empty. Found live on a real
+                // mobile device -- not reproducible with a desktop mouse or
+                // a synthetic .click(), which is why this shipped once
+                // already unnoticed. mousedown fires before blur in every
+                // browser (desktop and mobile), so preventDefault() here
+                // stops the blur from ever happening at all.
+                onMouseDown={(e) => e.preventDefault()}
                 onClick={() => {
                   setQuery(college.label);
                   onPick(college, college.label);
