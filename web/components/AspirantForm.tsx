@@ -105,7 +105,14 @@ export function AspirantForm({ onExit }: { onExit: () => void }) {
   // COLLEGE_SEARCH_LEVEL_MAP, imported from there rather than duplicated,
   // since "Current qualification" carries the same literal degree strings
   // as MentorForm's "Degree" — see qualificationOptions above).
-  const showCollegeAndSpecialization = !!form.qualification && form.qualification !== "Higher Secondary (12th)";
+  const showCollege = !!form.qualification && form.qualification !== "Higher Secondary (12th)";
+  // Specialization is hidden for MBBS specifically (Medical's UG-
+  // equivalent) per explicit request, matching MentorForm.tsx's own
+  // longstanding rule that MBBS/UG has no specialization concept --
+  // College still shows for MBBS (a mentor's own MBBS college is a real,
+  // curated-searchable answer), just not Specialization. "MBBS" is
+  // unique to Medical (see DEGREES), so no stream check is needed here.
+  const showSpecialization = showCollege && form.qualification !== "MBBS";
   const curatedDegree = CURATED_DEGREE_MAP_BY_STREAM[form.stream]?.[form.qualification];
   const hasCuratedData = curatedDegree !== undefined;
   const isDoctorateOrOthersQualification = form.qualification === "Doctorate" || form.qualification === "Others";
@@ -184,12 +191,14 @@ export function AspirantForm({ onExit }: { onExit: () => void }) {
       if (form.stream === "Others" && !form.streamOther.trim()) return "Enter your field of interest.";
       if (!form.qualification) return "Select your current qualification.";
       if (form.qualification === "Others" && !form.qualificationOther.trim()) return "Enter your qualification.";
-      if (showCollegeAndSpecialization && !form.collegeName.trim()) return "Enter your college.";
+      if (showCollege && !form.collegeName.trim()) return "Enter your college.";
       // Mirrors MentorForm.tsx's own validateStep: specialization is
       // required exactly when it's a specific curated degree's own list
       // (hasCuratedData) -- the stream-wide and plain-free-text cases stay
-      // optional there too.
-      if (hasCuratedData && !form.specialization.trim()) return "Enter your specialization.";
+      // optional there too. showSpecialization guards against MBBS, whose
+      // hasCuratedData is already false anyway (no curated data exists
+      // for it), but included for clarity/safety.
+      if (showSpecialization && hasCuratedData && !form.specialization.trim()) return "Enter your specialization.";
     }
     if (wizard.step === 4) {
       if (form.preferredLanguages.length === 0) return "Select at least one preferred language.";
@@ -224,9 +233,9 @@ export function AspirantForm({ onExit }: { onExit: () => void }) {
         qualification:
           (form.qualification === "Others" ? form.qualificationOther.trim() : form.qualification) || undefined,
         stream: (form.stream === "Others" ? form.streamOther.trim() : form.stream) || undefined,
-        universityId: showCollegeAndSpecialization ? form.universityId || undefined : undefined,
-        collegeName: showCollegeAndSpecialization ? form.collegeName.trim() || undefined : undefined,
-        specialization: showCollegeAndSpecialization ? form.specialization.trim() || undefined : undefined,
+        universityId: showCollege ? form.universityId || undefined : undefined,
+        collegeName: showCollege ? form.collegeName.trim() || undefined : undefined,
+        specialization: showSpecialization ? form.specialization.trim() || undefined : undefined,
         courseInterested: form.courseInterested.trim() || undefined,
         // Backend columns are single free-text strings (see CreateAspirantLeadDto)
         // — multiple picks join into one readable value rather than needing a
@@ -466,7 +475,7 @@ export function AspirantForm({ onExit }: { onExit: () => void }) {
               />
             </Field>
           )}
-          {showCollegeAndSpecialization && (
+          {showCollege && (
             <Field label="College / university">
               {hasCuratedData ? (
                 <CuratedCollegeSearch
@@ -515,7 +524,7 @@ export function AspirantForm({ onExit }: { onExit: () => void }) {
               )}
             </Field>
           )}
-          {showCollegeAndSpecialization && (
+          {showSpecialization && (
             <Field label="Specialization">
               {isDoctorateOrOthersQualification && form.stream === "Medical" ? (
                 // Same static full list Medical's own Doctorate/Others use
