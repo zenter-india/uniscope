@@ -482,6 +482,10 @@ model MentorReview {
   aspirantId String   @map("aspirant_id")
   rating     Int      @db.SmallInt
   comment    String?  @db.VarChar(500)
+  /// Admin moderation state — same enum the university `Review` model uses.
+  /// Only ACTIVE reviews are shown on the mentor's profile or counted toward
+  /// their rating (see ReviewsService.findForMentor / ratingSummaries).
+  status     ReviewStatus @default(ACTIVE)
   createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz
   updatedAt  DateTime @updatedAt @map("updated_at") @db.Timestamptz
 

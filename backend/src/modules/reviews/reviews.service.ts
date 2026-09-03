@@ -4,7 +4,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { NotificationType, SessionStatus } from '@prisma/client';
+import { NotificationType, ReviewStatus, SessionStatus } from '@prisma/client';
 import { PrismaService } from '../../database/prisma/prisma.service.js';
 import { NotificationsService } from '../notifications/notifications.service.js';
 import { CreateReviewDto } from './dto/create-review.dto.js';
@@ -79,7 +79,7 @@ export class ReviewsService {
     const take = Math.min(query.limit ?? DEFAULT_LIMIT, MAX_LIMIT);
 
     const rows = await this.prisma.mentorReview.findMany({
-      where: { mentorId },
+      where: { mentorId, status: ReviewStatus.ACTIVE },
       orderBy: [{ createdAt: 'desc' }, { id: 'asc' }],
       take: take + 1,
       ...(query.cursor && { cursor: { id: query.cursor }, skip: 1 }),
@@ -100,7 +100,7 @@ export class ReviewsService {
 
     const grouped = await this.prisma.mentorReview.groupBy({
       by: ['mentorId'],
-      where: { mentorId: { in: mentorIds } },
+      where: { mentorId: { in: mentorIds }, status: ReviewStatus.ACTIVE },
       _avg: { rating: true },
       _count: { rating: true },
     });
