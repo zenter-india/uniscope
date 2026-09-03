@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useTransition, type ReactNode } from 'react';
-import { Button, EmptyState } from './ui';
+import { Button, EmptyState, Table } from './ui';
 
 interface Page<T> {
   data: T[];
@@ -25,6 +25,8 @@ export function InfiniteList<T>({
   renderItem,
   emptyText = 'Nothing here yet.',
   gapClass = 'gap-3',
+  variant = 'stack',
+  tableHead,
 }: {
   initialItems: T[];
   initialCursor: string | null;
@@ -32,6 +34,10 @@ export function InfiniteList<T>({
   renderItem: (item: T) => ReactNode;
   emptyText?: string;
   gapClass?: string;
+  /** 'table' renders rows inside a framed <table> — `renderItem` must return
+   * a <tr> and `tableHead` supplies the <tr> of column headers. */
+  variant?: 'stack' | 'table';
+  tableHead?: ReactNode;
 }) {
   const [items, setItems] = useState(initialItems);
   const [cursor, setCursor] = useState(initialCursor);
@@ -58,7 +64,11 @@ export function InfiniteList<T>({
 
   return (
     <div className="flex flex-col gap-4">
-      <div className={`flex flex-col ${gapClass}`}>{items.map(renderItem)}</div>
+      {variant === 'table' ? (
+        <Table head={tableHead}>{items.map(renderItem)}</Table>
+      ) : (
+        <div className={`flex flex-col ${gapClass}`}>{items.map(renderItem)}</div>
+      )}
 
       {error && <p className="text-sm text-red-600">{error}</p>}
 

@@ -111,11 +111,64 @@ export function toneFor(status: string): Tone {
 export function Card({ className, ...props }: ComponentProps<'div'>) {
   return (
     <div
-      className={cx('rounded-lg border border-zinc-200 bg-white', className)}
+      className={cx(
+        'rounded-xl border border-zinc-200/80 bg-white shadow-[0_1px_2px_rgb(0_0_0/0.04),0_1px_1px_rgb(0_0_0/0.03)]',
+        className,
+      )}
       {...props}
     />
   );
 }
+
+// ---- Table --------------------------------------------------------------
+
+/** A framed, horizontally-scrollable data table. Pass `<Table.Head>` rows in
+ * `head` and `<Table.Row>`/`<Table.Cell>` in children. */
+export function Table({
+  head,
+  children,
+  className,
+}: {
+  head?: ReactNode;
+  children: ReactNode;
+  className?: string;
+}) {
+  return (
+    <div
+      className={cx(
+        'overflow-x-auto rounded-xl border border-zinc-200/80 bg-white shadow-[0_1px_2px_rgb(0_0_0/0.04),0_1px_1px_rgb(0_0_0/0.03)]',
+        className,
+      )}
+    >
+      <table className="w-full border-collapse text-sm">
+        {head && (
+          <thead className="border-b border-zinc-200 bg-zinc-50/60 text-left">{head}</thead>
+        )}
+        <tbody className="divide-y divide-zinc-100">{children}</tbody>
+      </table>
+    </div>
+  );
+}
+
+Table.HeadCell = function HeadCell({ className, ...props }: ComponentProps<'th'>) {
+  return (
+    <th
+      className={cx(
+        'px-4 py-2.5 text-xs font-medium uppercase tracking-wide text-zinc-500',
+        className,
+      )}
+      {...props}
+    />
+  );
+};
+
+Table.Row = function Row({ className, ...props }: ComponentProps<'tr'>) {
+  return <tr className={cx('transition-colors hover:bg-zinc-50/70', className)} {...props} />;
+};
+
+Table.Cell = function Cell({ className, ...props }: ComponentProps<'td'>) {
+  return <td className={cx('px-4 py-3 align-middle text-zinc-700', className)} {...props} />;
+};
 
 // ---- Form fields ----------------------------------------------------------
 
@@ -171,7 +224,7 @@ export function PageHeader({
 
 // ---- Filter tabs ------------------------------------------------------
 
-export function FilterTabs<T extends string>({
+export function FilterTabs<T extends string | number>({
   items,
   current,
   hrefFor,

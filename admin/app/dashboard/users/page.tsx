@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { backendFetch } from '../../../lib/backend';
 import { getAdminEmail } from '../../../lib/adminAuth';
+import { FilterTabs } from '../../../components/ui';
 import { DashboardShell } from '../DashboardShell';
 import type { UserRowData } from './UserRow';
 import { UsersList } from './UsersList';
@@ -73,70 +74,56 @@ export default async function UsersPage({
 
   return (
     <DashboardShell title="Users" email={email}>
-      <form className="mb-4 flex gap-2" action="/dashboard/users">
-        {role && role !== 'ALL' && <input type="hidden" name="role" value={role} />}
-        {verificationStatus !== 'ALL' && (
-          <input type="hidden" name="verificationStatus" value={verificationStatus} />
-        )}
-        {banned && <input type="hidden" name="banned" value="1" />}
-        <input
-          type="text"
-          name="search"
-          defaultValue={search ?? ''}
-          placeholder="Search by display name..."
-          className="w-72 rounded-lg border border-zinc-300 px-3 py-1.5 text-sm outline-none focus:border-zinc-500"
-        />
-        <button
-          type="submit"
-          className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm font-medium text-zinc-700 hover:bg-zinc-50"
-        >
-          Search
-        </button>
-      </form>
-
-      <div className="mb-2 flex flex-wrap gap-2">
-        {ROLE_TABS.map((tab) => (
-          <Link
-            key={tab}
-            href={buildHref({ role: tab, verificationStatus, banned: banned ? '1' : undefined, search })}
-            className={`rounded-lg px-3 py-1.5 text-sm font-medium ${
-              role === tab
-                ? 'bg-zinc-900 text-white'
-                : 'border border-zinc-300 text-zinc-600 hover:bg-zinc-100'
-            }`}
+      <div className="mb-5 flex flex-col gap-3">
+        <form className="flex gap-2" action="/dashboard/users">
+          {role && role !== 'ALL' && <input type="hidden" name="role" value={role} />}
+          {verificationStatus !== 'ALL' && (
+            <input type="hidden" name="verificationStatus" value={verificationStatus} />
+          )}
+          {banned && <input type="hidden" name="banned" value="1" />}
+          <input
+            type="text"
+            name="search"
+            defaultValue={search ?? ''}
+            placeholder="Search by display name…"
+            className="w-72 rounded-md border border-zinc-300 bg-white px-3 py-1.5 text-sm text-zinc-900 shadow-sm outline-none transition-colors placeholder:text-zinc-400 focus:border-zinc-400 focus:ring-2 focus:ring-zinc-400/40"
+          />
+          <button
+            type="submit"
+            className="inline-flex h-9 items-center rounded-md border border-zinc-300 bg-white px-3.5 text-sm font-medium text-zinc-700 shadow-sm transition-colors hover:bg-zinc-50"
           >
-            {tab}
-          </Link>
-        ))}
-      </div>
+            Search
+          </button>
+        </form>
 
-      <div className="mb-2 flex flex-wrap gap-2">
-        {VERIFICATION_TABS.map((tab) => (
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+          <FilterTabs
+            items={ROLE_TABS}
+            current={role as (typeof ROLE_TABS)[number]}
+            hrefFor={(tab) =>
+              buildHref({ role: tab, verificationStatus, banned: banned ? '1' : undefined, search })
+            }
+          />
+          <FilterTabs
+            size="sm"
+            items={VERIFICATION_TABS}
+            current={verificationStatus as (typeof VERIFICATION_TABS)[number]}
+            hrefFor={(tab) =>
+              buildHref({ role, verificationStatus: tab, banned: banned ? '1' : undefined, search })
+            }
+            labelFor={(tab) => (tab === 'ALL' ? 'Any verification' : tab.replace('_', ' '))}
+          />
           <Link
-            key={tab}
-            href={buildHref({ role, verificationStatus: tab, banned: banned ? '1' : undefined, search })}
-            className={`rounded-lg px-3 py-1 text-xs font-medium ${
-              verificationStatus === tab
-                ? 'bg-zinc-700 text-white'
+            href={buildHref({ role, verificationStatus, banned: banned ? undefined : '1', search })}
+            className={`rounded-md px-2.5 py-1 text-xs font-medium transition-colors ${
+              banned
+                ? 'bg-red-600 text-white'
                 : 'border border-zinc-200 text-zinc-500 hover:bg-zinc-100'
             }`}
           >
-            {tab === 'ALL' ? 'Any verification' : tab.replace('_', ' ')}
+            {banned ? '✓ Banned only' : 'Banned only'}
           </Link>
-        ))}
-      </div>
-
-      <div className="mb-4">
-        <Link
-          href={buildHref({ role, verificationStatus, banned: banned ? undefined : '1', search })}
-          className={`rounded-lg px-3 py-1 text-xs font-medium ${
-            banned
-              ? 'bg-red-600 text-white'
-              : 'border border-zinc-200 text-zinc-500 hover:bg-zinc-100'
-          }`}
-        >
-          {banned ? '✓ Banned only' : 'Banned only'}
-        </Link>
+        </div>
       </div>
 
       <UsersList

@@ -1,6 +1,8 @@
 import Link from 'next/link';
 import { backendFetch } from '../../lib/backend';
 import { getAdminEmail } from '../../lib/adminAuth';
+import { Card, FilterTabs } from '../../components/ui';
+import { Icon, type IconName } from '../../components/icons';
 import { DashboardShell } from './DashboardShell';
 import { MiniBarChart } from './MiniBarChart';
 
@@ -60,9 +62,15 @@ function Trend({ current, previous }: { current: number; previous: number }) {
   const pct = Math.round(((current - previous) / previous) * 100);
   if (pct === 0) return <span className="text-xs text-zinc-400">flat vs prev</span>;
   const up = pct > 0;
+  const TrendIcon = up ? Icon.trendUp : Icon.trendDown;
   return (
-    <span className={`text-xs font-medium ${up ? 'text-emerald-600' : 'text-red-600'}`}>
-      {up ? '▲' : '▼'} {Math.abs(pct)}% vs prev
+    <span
+      className={`inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-xs font-medium ${
+        up ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'
+      }`}
+    >
+      <TrendIcon className="h-3 w-3" />
+      {Math.abs(pct)}%
     </span>
   );
 }
@@ -72,38 +80,64 @@ function StatCard({
   value,
   href,
   hint,
+  icon,
+  alert,
 }: {
   label: string;
   value: React.ReactNode;
   href: string;
   hint?: string;
+  icon: IconName;
+  alert?: boolean;
 }) {
+  const IconCmp = Icon[icon];
   return (
     <Link
       href={href}
-      className="rounded-lg border border-zinc-200 bg-white p-4 transition hover:border-zinc-300 hover:shadow-sm"
+      className="group rounded-xl border border-zinc-200/80 bg-white p-4 shadow-[0_1px_2px_rgb(0_0_0/0.04)] transition hover:border-zinc-300 hover:shadow-md"
     >
-      <p className="text-sm font-medium text-zinc-700">{label}</p>
-      <p className="mt-1 text-2xl font-bold text-zinc-900">{value}</p>
+      <div className="flex items-center justify-between">
+        <p className="text-sm font-medium text-zinc-600">{label}</p>
+        <span
+          className={`flex h-7 w-7 items-center justify-center rounded-lg ${
+            alert ? 'bg-amber-50 text-amber-600' : 'bg-zinc-100 text-zinc-500'
+          }`}
+        >
+          <IconCmp className="h-4 w-4" />
+        </span>
+      </div>
+      <p className="mt-2 text-2xl font-semibold tracking-tight text-zinc-900">{value}</p>
       {hint && <p className="mt-0.5 text-xs text-zinc-400">{hint}</p>}
     </Link>
   );
 }
 
-function Panel({ title, children }: { title: string; children: React.ReactNode }) {
+function Panel({
+  title,
+  icon,
+  children,
+}: {
+  title: string;
+  icon?: IconName;
+  children: React.ReactNode;
+}) {
+  const IconCmp = icon ? Icon[icon] : null;
   return (
-    <section className="rounded-lg border border-zinc-200 bg-white p-5">
-      <h2 className="mb-3 text-sm font-semibold text-zinc-900">{title}</h2>
+    <Card className="p-5">
+      <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold text-zinc-900">
+        {IconCmp && <IconCmp className="h-4 w-4 text-zinc-400" />}
+        {title}
+      </h2>
       {children}
-    </section>
+    </Card>
   );
 }
 
 function Stat({ label, value, sub }: { label: string; value: React.ReactNode; sub?: React.ReactNode }) {
   return (
     <div>
-      <p className="text-xs font-medium uppercase tracking-wide text-zinc-400">{label}</p>
-      <p className="mt-0.5 text-lg font-semibold text-zinc-900">{value}</p>
+      <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">{label}</p>
+      <p className="mt-1 text-lg font-semibold tracking-tight text-zinc-900">{value}</p>
       {sub}
     </div>
   );
@@ -127,20 +161,13 @@ export default async function DashboardPage({
   return (
     <DashboardShell title="Overview" email={email}>
       <div className="mb-5 flex flex-wrap items-center gap-2">
-        <span className="text-xs font-medium uppercase tracking-wide text-zinc-400">Range</span>
-        {RANGES.map((r) => (
-          <Link
-            key={r}
-            href={`/dashboard?days=${r}`}
-            className={`rounded-lg px-3 py-1 text-sm font-medium ${
-              days === r
-                ? 'bg-zinc-900 text-white'
-                : 'border border-zinc-300 text-zinc-600 hover:bg-zinc-100'
-            }`}
-          >
-            {r}d
-          </Link>
-        ))}
+        <span className="text-xs font-medium uppercase tracking-wide text-zinc-500">Range</span>
+        <FilterTabs
+          items={RANGES}
+          current={days as (typeof RANGES)[number]}
+          hrefFor={(r) => `/dashboard?days=${r}`}
+          labelFor={(r) => `${r}d`}
+        />
       </div>
 
       {!m ? (
@@ -155,18 +182,24 @@ export default async function DashboardPage({
               value={m.queues.newLeads}
               href="/dashboard/leads?status=NEW"
               hint="Enrollment funnel"
+              icon="users"
+              alert={m.queues.newLeads > 0}
             />
             <StatCard
               label="Pending verifications"
               value={m.queues.pendingVerifications}
               href="/dashboard/verification"
               hint="Awaiting review"
+              icon="shieldCheck"
+              alert={m.queues.pendingVerifications > 0}
             />
             <StatCard
               label="Open reports"
               value={m.queues.openReports}
               href="/dashboard/moderation"
               hint="Unresolved"
+              icon="flag"
+              alert={m.queues.openReports > 0}
             />
             <StatCard
               label="Payouts to process"
@@ -177,13 +210,15 @@ export default async function DashboardPage({
                   ? `${inr(m.revenue.payoutBacklogMinor)} owed`
                   : 'Nothing pending'
               }
+              icon="wallet"
+              alert={m.queues.pendingPayouts > 0}
             />
           </div>
 
           <div className="grid gap-4 lg:grid-cols-2">
-            <Panel title={`Signups · last ${days} days`}>
+            <Panel title={`Signups · last ${days} days`} icon="users">
               <div className="flex items-baseline gap-3">
-                <p className="text-3xl font-bold text-zinc-900">{m.signups.total}</p>
+                <p className="text-3xl font-semibold tracking-tight text-zinc-900">{m.signups.total}</p>
                 <Trend current={m.signups.total} previous={m.signups.prevTotal} />
               </div>
               <p className="mt-1 text-xs text-zinc-500">
@@ -206,9 +241,9 @@ export default async function DashboardPage({
               </div>
             </Panel>
 
-            <Panel title={`Sessions · last ${days} days`}>
+            <Panel title={`Sessions · last ${days} days`} icon="message">
               <div className="flex items-baseline gap-3">
-                <p className="text-3xl font-bold text-zinc-900">{m.sessions.total}</p>
+                <p className="text-3xl font-semibold tracking-tight text-zinc-900">{m.sessions.total}</p>
                 <Trend current={m.sessions.total} previous={m.sessions.prevTotal} />
               </div>
               <p className="mt-1 text-xs text-zinc-500">
@@ -232,7 +267,7 @@ export default async function DashboardPage({
             </Panel>
           </div>
 
-          <Panel title={`Money · last ${days} days`}>
+          <Panel title={`Money · last ${days} days`} icon="wallet">
             <div className="grid grid-cols-2 gap-x-6 gap-y-4 sm:grid-cols-3 lg:grid-cols-5">
               <Stat label="Top-ups collected" value={inr(m.revenue.topupMinor)} />
               <Stat label="Mentor earnings" value={inr(m.revenue.mentorEarningsMinor)} />
@@ -242,7 +277,7 @@ export default async function DashboardPage({
             </div>
           </Panel>
 
-          <Panel title="All time">
+          <Panel title="All time" icon="gauge">
             <div className="grid grid-cols-2 gap-x-6 gap-y-4 sm:grid-cols-4">
               <Stat
                 label={`Active users (${days}d)`}

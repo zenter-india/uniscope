@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useTransition } from 'react';
-import { Badge, Button, ButtonLink, Card, toneFor } from '../../../components/ui';
+import { Badge, Button, ButtonLink, Table, toneFor } from '../../../components/ui';
 import { setUserBanned } from './actions';
 
 export interface UserRowData {
@@ -34,12 +34,10 @@ export function UserRow({ user }: { user: UserRowData }) {
   };
 
   return (
-    <Card className="flex items-center justify-between gap-3 p-4">
-      <div className="min-w-0">
+    <Table.Row>
+      <Table.Cell>
         <div className="flex flex-wrap items-center gap-1.5">
-          <p className="font-medium text-zinc-900">{user.displayName}</p>
-          <Badge>{user.role}</Badge>
-          <Badge tone={toneFor(user.verificationStatus)}>{user.verificationStatus}</Badge>
+          <span className="font-medium text-zinc-900">{user.displayName}</span>
           {isBanned && <Badge tone="danger">Banned</Badge>}
           {!user.isActive && !isBanned && (
             <span title="Self-deleted their account — reactivates automatically if they log in again">
@@ -47,24 +45,32 @@ export function UserRow({ user }: { user: UserRowData }) {
             </span>
           )}
         </div>
-        <p className="mt-1 text-xs text-zinc-400">
-          Joined {new Date(user.createdAt).toLocaleDateString()}
-        </p>
         {error && <p className="mt-1 text-xs text-red-600">{error}</p>}
-      </div>
-      <div className="flex shrink-0 items-center gap-2">
-        <ButtonLink href={`/dashboard/users/${user.id}`} size="sm">
-          View details
-        </ButtonLink>
-        <Button
-          onClick={toggleBan}
-          disabled={isPending}
-          size="sm"
-          variant={isBanned ? 'secondary' : 'dangerSolid'}
-        >
-          {isBanned ? 'Unban' : 'Ban'}
-        </Button>
-      </div>
-    </Card>
+      </Table.Cell>
+      <Table.Cell>
+        <Badge>{user.role}</Badge>
+      </Table.Cell>
+      <Table.Cell>
+        <Badge tone={toneFor(user.verificationStatus)}>{user.verificationStatus}</Badge>
+      </Table.Cell>
+      <Table.Cell className="whitespace-nowrap text-zinc-500">
+        {new Date(user.createdAt).toLocaleDateString()}
+      </Table.Cell>
+      <Table.Cell>
+        <div className="flex shrink-0 items-center justify-end gap-2">
+          <ButtonLink href={`/dashboard/users/${user.id}`} size="sm">
+            View details
+          </ButtonLink>
+          <Button
+            onClick={toggleBan}
+            disabled={isPending}
+            size="sm"
+            variant={isBanned ? 'secondary' : 'danger'}
+          >
+            {isBanned ? 'Unban' : 'Ban'}
+          </Button>
+        </div>
+      </Table.Cell>
+    </Table.Row>
   );
 }
