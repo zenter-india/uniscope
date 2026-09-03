@@ -15,6 +15,7 @@ const NAV_SECTIONS: { heading: string; items: { label: string; href: string }[] 
       { label: 'Reviews', href: '/dashboard/reviews' },
       { label: 'Sessions', href: '/dashboard/sessions' },
       { label: 'Payouts', href: '/dashboard/payouts' },
+      { label: 'Announcements', href: '/dashboard/broadcasts' },
     ],
   },
   {

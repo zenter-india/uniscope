@@ -53,6 +53,7 @@ import { DataImportModule } from './modules/data-import/data-import.module.js';
 import { EnrollmentsModule } from './modules/enrollments/enrollments.module.js';
 import { MetricsModule } from './modules/metrics/metrics.module.js';
 import { ReviewModerationModule } from './modules/review-moderation/review-moderation.module.js';
+import { BroadcastsModule } from './modules/broadcasts/broadcasts.module.js';
 
 @Module({
   imports: [
@@ -123,6 +124,7 @@ import { ReviewModerationModule } from './modules/review-moderation/review-moder
     EnrollmentsModule,
     MetricsModule,
     ReviewModerationModule,
+    BroadcastsModule,
   ],
   controllers: [AppController],
   providers: [

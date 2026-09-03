@@ -70,6 +70,89 @@ export class NotificationsService {
     return toNotificationResponse(notification);
   }
 
+  /**
+   * Fan-out variant of `send` for admin broadcasts: writes one in-app
+   * Notification row per user in a single `createMany`, then fires a
+   * best-effort push in batches (FCM multicast caps at 500 tokens/call).
+   * Never throws on push failure — same contract as `send`.
+   */
+  async sendBulk(
+    userIds: string[],
+    params: { type: NotificationType; title: string; body?: string; metadata?: Record<string, string> },
+  ): Promise<void> {
+    if (userIds.length === 0) return;
+
+    await this.prisma.notification.createMany({
+      data: userIds.map((userId) => ({
+        userId,
+        type: params.type,
+        title: params.title,
+        body: params.body,
+        metadata: params.metadata,
+      })),
+    });
+    this.logger.log(
+      `[notify] bulk created count=${userIds.length} type=${params.type} title="${params.title}"`,
+    );
+
+    await this.pushBulk(userIds, params).catch((err) => {
+      this.logger.warn(`[notify] bulk push failed: ${err}`);
+    });
+  }
+
+  private async pushBulk(
+    userIds: string[],
+    params: { type: NotificationType; title: string; body?: string; metadata?: Record<string, string> },
+  ): Promise<void> {
+    if (!this.firebaseApp) {
+      this.logger.log(`[notify] bulk push SKIPPED (Firebase not configured) type=${params.type}`);
+      return;
+    }
+    const tokens = await this.prisma.pushToken.findMany({
+      where: { userId: { in: userIds } },
+      select: { id: true, token: true },
+    });
+    if (tokens.length === 0) {
+      this.logger.log(`[notify] bulk push SKIPPED (no registered devices) type=${params.type}`);
+      return;
+    }
+
+    const messaging = getMessaging(this.firebaseApp);
+    const dataPayload = { type: params.type, ...(params.metadata ?? {}) };
+    const CHUNK = 500;
+    const staleTokenIds: string[] = [];
+    let success = 0;
+    let failure = 0;
+
+    for (let i = 0; i < tokens.length; i += CHUNK) {
+      const batch = tokens.slice(i, i + CHUNK);
+      const response = await messaging.sendEachForMulticast({
+        tokens: batch.map((t) => t.token),
+        notification: { title: params.title, body: params.body },
+        data: dataPayload,
+      });
+      success += response.successCount;
+      failure += response.failureCount;
+      response.responses.forEach((r, j) => {
+        if (
+          !r.success &&
+          (r.error?.code === 'messaging/registration-token-not-registered' ||
+            r.error?.code === 'messaging/invalid-registration-token')
+        ) {
+          staleTokenIds.push(batch[j].id);
+        }
+      });
+    }
+
+    this.logger.log(
+      `[notify] bulk push result type=${params.type} devices=${tokens.length} ` +
+        `success=${success} failure=${failure}`,
+    );
+    if (staleTokenIds.length > 0) {
+      await this.prisma.pushToken.deleteMany({ where: { id: { in: staleTokenIds } } });
+    }
+  }
+
   private async pushToDevices(params: SendNotificationParams): Promise<void> {
     if (!this.firebaseApp) {
       this.logger.log(

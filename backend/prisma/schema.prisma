@@ -813,6 +813,25 @@ model Notification {
   @@map("notifications")
 }
 
+/// One admin-sent broadcast announcement. Fans out to a Notification row
+/// per recipient (type SYSTEM) plus a best-effort push at send time; this
+/// row is just the audit trail of what was sent, to whom, and by whom —
+/// editing or deleting it does not touch the notifications already
+/// delivered. `audience` is one of ALL | ASPIRANT | MENTOR (ADMIN accounts
+/// are never a recipient, including under ALL).
+model Broadcast {
+  id             String   @id @default(uuid())
+  title          String   @db.VarChar(120)
+  body           String?  @db.Text
+  audience       String   @db.VarChar(16)
+  recipientCount Int      @map("recipient_count")
+  sentBy         String   @map("sent_by")
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  @@index([createdAt(sort: Desc)])
+  @@map("broadcasts")
+}
+
 /// One run of the "refresh college data" admin tool (see universities/data-import
 /// module). Re-runs the same capture pipeline used to originally seed the
 /// dataset — NMC's MBBS seat-matrix PDF for UG, MCC's PG institute list for
