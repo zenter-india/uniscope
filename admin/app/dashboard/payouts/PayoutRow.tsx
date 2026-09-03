@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useTransition } from 'react';
+import { Badge, Button, Card, toneFor } from '../../../components/ui';
 import { processPayout } from './actions';
 
 export interface PayoutRowData {
@@ -17,13 +18,6 @@ export interface PayoutRowData {
   isOverdue: boolean;
   mentorWalletBalanceMinor?: number | null;
 }
-
-const STATUS_STYLES: Record<string, string> = {
-  PENDING: 'bg-amber-100 text-amber-700',
-  PROCESSING: 'bg-blue-100 text-blue-700',
-  COMPLETED: 'bg-emerald-100 text-emerald-700',
-  FAILED: 'bg-red-100 text-red-700',
-};
 
 function rupees(minor: number): string {
   return (minor / 100).toLocaleString('en-IN', { style: 'currency', currency: 'INR' });
@@ -63,25 +57,15 @@ export function PayoutRow({ payout }: { payout: PayoutRowData }) {
   };
 
   return (
-    <div className="rounded-xl border border-zinc-200 bg-white p-5">
+    <Card className="p-5">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <div className="flex flex-wrap items-center gap-2">
             <p className="text-base font-semibold text-zinc-900">
               {payout.mentorName ?? payout.mentorId}
             </p>
-            <span
-              className={`rounded-full px-2 py-0.5 text-xs font-medium ${
-                STATUS_STYLES[status] ?? 'bg-zinc-100 text-zinc-600'
-              }`}
-            >
-              {status}
-            </span>
-            {payout.isOverdue && open && (
-              <span className="rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-700">
-                Overdue
-              </span>
-            )}
+            <Badge tone={toneFor(status)}>{status}</Badge>
+            {payout.isOverdue && open && <Badge tone="danger">Overdue</Badge>}
           </div>
           <p className="mt-1 text-sm text-zinc-500">
             Earnings {fmtDate(payout.periodStart)} – {fmtDate(payout.periodEnd)} · requested{' '}
@@ -131,54 +115,48 @@ export function PayoutRow({ payout }: { payout: PayoutRowData }) {
                 value={refInput}
                 onChange={(e) => setRefInput(e.target.value)}
                 placeholder="Bank / UTR reference (optional)"
-                className="w-72 rounded-lg border border-zinc-300 px-3 py-1.5 text-sm outline-none focus:border-zinc-500"
+                className="w-72 rounded-md border border-zinc-300 bg-white px-3 py-1.5 text-sm text-zinc-900 shadow-sm outline-none transition-colors placeholder:text-zinc-400 focus:border-zinc-400 focus:ring-2 focus:ring-zinc-400/40"
               />
               <div className="flex gap-2">
-                <button
+                <Button
+                  variant="successSolid"
                   onClick={() => move('COMPLETED', refInput)}
                   disabled={isPending}
-                  className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700 disabled:opacity-50"
                 >
                   {isPending ? 'Saving…' : 'Confirm paid'}
-                </button>
-                <button
-                  onClick={() => setConfirmingPaid(false)}
-                  disabled={isPending}
-                  className="rounded-lg border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50 disabled:opacity-50"
-                >
+                </Button>
+                <Button onClick={() => setConfirmingPaid(false)} disabled={isPending}>
                   Cancel
-                </button>
+                </Button>
               </div>
             </div>
           ) : (
             <div className="flex flex-wrap gap-2">
               {status === 'PENDING' && (
-                <button
-                  onClick={() => move('PROCESSING')}
-                  disabled={isPending}
-                  className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm font-medium text-zinc-700 hover:bg-zinc-50 disabled:opacity-50"
-                >
+                <Button size="sm" onClick={() => move('PROCESSING')} disabled={isPending}>
                   Mark processing
-                </button>
+                </Button>
               )}
-              <button
+              <Button
+                size="sm"
+                variant="successSolid"
                 onClick={() => setConfirmingPaid(true)}
                 disabled={isPending}
-                className="rounded-lg bg-emerald-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-emerald-700 disabled:opacity-50"
               >
                 Mark paid
-              </button>
-              <button
+              </Button>
+              <Button
+                size="sm"
+                variant="danger"
                 onClick={() => move('FAILED')}
                 disabled={isPending}
-                className="rounded-lg border border-red-300 px-3 py-1.5 text-sm font-medium text-red-700 hover:bg-red-50 disabled:opacity-50"
               >
                 Mark failed
-              </button>
+              </Button>
             </div>
           )}
         </div>
       )}
-    </div>
+    </Card>
   );
 }

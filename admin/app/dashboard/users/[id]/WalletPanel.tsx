@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useTransition } from 'react';
+import { Button, Card, fieldClass } from '../../../../components/ui';
 import { adjustBalance, loadMoreLedger, type LedgerEntryData } from './actions';
 
 const TYPE_LABELS: Record<string, string> = {
@@ -107,22 +108,22 @@ export function WalletPanel({
   };
 
   return (
-    <section className="rounded-xl border border-zinc-200 bg-white p-5">
+    <Card className="p-5">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <div>
           <h2 className="text-sm font-semibold text-zinc-900">Wallet</h2>
           <p className="mt-1 text-lg font-semibold text-zinc-900">{balance(balanceMinor)}</p>
         </div>
-        <button
+        <Button
+          size="sm"
           onClick={() => {
             setFormOpen((v) => !v);
             setAdjustErr(null);
             setDone(null);
           }}
-          className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm font-medium text-zinc-700 hover:bg-zinc-50"
         >
           {formOpen ? 'Cancel' : 'Adjust balance'}
-        </button>
+        </Button>
       </div>
 
       {done && <p className="mb-3 text-sm text-emerald-600">{done}</p>}
@@ -157,7 +158,7 @@ export function WalletPanel({
                 value={rupees}
                 onChange={(e) => setRupees(e.target.value)}
                 placeholder="0.00"
-                className="w-28 rounded-lg border border-zinc-300 px-2 py-1.5 text-sm outline-none focus:border-zinc-500"
+                className={`${fieldClass} w-28`}
               />
             </div>
             {Number(rupees) > 0 && (
@@ -171,17 +172,13 @@ export function WalletPanel({
             onChange={(e) => setReason(e.target.value)}
             rows={2}
             placeholder="Reason (recorded on the ledger entry) — e.g. goodwill credit for dropped call #…"
-            className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm outline-none focus:border-zinc-500"
+            className={fieldClass}
           />
           {adjustErr && <p className="text-sm text-red-600">{adjustErr}</p>}
           <div>
-            <button
-              onClick={submit}
-              disabled={isPending}
-              className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800 disabled:opacity-50"
-            >
+            <Button variant="primary" onClick={submit} disabled={isPending}>
               {isPending ? 'Applying…' : 'Apply adjustment'}
-            </button>
+            </Button>
           </div>
         </div>
       )}
@@ -228,14 +225,10 @@ export function WalletPanel({
 
       {loadErr && <p className="mt-2 text-sm text-red-600">{loadErr}</p>}
       {cursor && (
-        <button
-          onClick={more}
-          disabled={isPending}
-          className="mt-3 rounded-lg border border-zinc-300 px-3 py-1.5 text-sm font-medium text-zinc-700 hover:bg-zinc-50 disabled:opacity-50"
-        >
+        <Button size="sm" onClick={more} disabled={isPending} className="mt-3">
           {isPending ? 'Loading…' : 'Load more'}
-        </button>
+        </Button>
       )}
-    </section>
+    </Card>
   );
 }

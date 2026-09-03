@@ -146,7 +146,7 @@ function JobCard({ job: initialJob }: { job: DataImportJob }) {
   const diff = job.diffJson;
 
   return (
-    <div className="rounded-xl border border-zinc-200 bg-white p-4">
+    <div className="rounded-lg border border-zinc-200 bg-white p-4">
       <div className="flex items-center justify-between">
         <div>
           <span className="font-medium text-zinc-900">{TYPE_LABEL[job.type]}</span>
@@ -212,7 +212,7 @@ export function DataImportPanel({ initialJobs }: { initialJobs: DataImportJob[] 
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="rounded-xl border border-zinc-200 bg-white p-4">
+      <div className="rounded-lg border border-zinc-200 bg-white p-4">
         <p className="mb-1 text-sm font-semibold text-zinc-900">Refresh college data</p>
         <p className="mb-3 text-xs text-zinc-500">
           Re-runs the same capture pipeline the dataset was originally seeded from and shows a

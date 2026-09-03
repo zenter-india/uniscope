@@ -81,7 +81,7 @@ function StatCard({
   return (
     <Link
       href={href}
-      className="rounded-xl border border-zinc-200 bg-white p-4 transition hover:border-zinc-300 hover:shadow-sm"
+      className="rounded-lg border border-zinc-200 bg-white p-4 transition hover:border-zinc-300 hover:shadow-sm"
     >
       <p className="text-sm font-medium text-zinc-700">{label}</p>
       <p className="mt-1 text-2xl font-bold text-zinc-900">{value}</p>
@@ -92,7 +92,7 @@ function StatCard({
 
 function Panel({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <section className="rounded-xl border border-zinc-200 bg-white p-5">
+    <section className="rounded-lg border border-zinc-200 bg-white p-5">
       <h2 className="mb-3 text-sm font-semibold text-zinc-900">{title}</h2>
       {children}
     </section>

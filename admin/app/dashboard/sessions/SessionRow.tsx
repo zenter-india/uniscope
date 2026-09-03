@@ -2,19 +2,8 @@
 
 import Link from 'next/link';
 import { useState, useTransition } from 'react';
+import { Badge, Button, Card, toneFor } from '../../../components/ui';
 import { forceEndSession, type SessionRowData } from './actions';
-
-const STATUS_STYLES: Record<string, string> = {
-  PENDING: 'bg-amber-100 text-amber-700',
-  ACCEPTED: 'bg-sky-100 text-sky-700',
-  RINGING: 'bg-sky-100 text-sky-700',
-  IN_PROGRESS: 'bg-blue-100 text-blue-700',
-  COMPLETED: 'bg-emerald-100 text-emerald-700',
-  CANCELLED: 'bg-zinc-100 text-zinc-600',
-  REJECTED: 'bg-zinc-100 text-zinc-600',
-  EXPIRED: 'bg-zinc-100 text-zinc-600',
-  FAILED: 'bg-red-100 text-red-700',
-};
 
 const TERMINAL = new Set(['COMPLETED', 'CANCELLED', 'REJECTED', 'EXPIRED', 'FAILED']);
 
@@ -65,26 +54,14 @@ export function SessionRow({ session }: { session: SessionRowData }) {
   };
 
   return (
-    <div className="rounded-xl border border-zinc-200 bg-white p-4">
+    <Card className="p-4">
       <button type="button" onClick={() => setExpanded((v) => !v)} className="w-full text-left">
         <div className="flex flex-wrap items-center gap-2">
           <span className="font-medium text-zinc-900">{session.aspirantName}</span>
           <span className="text-zinc-400">→</span>
           <span className="font-medium text-zinc-900">{session.mentorName}</span>
-          <span
-            className={`rounded-full px-2 py-0.5 text-xs font-medium ${
-              isCall ? 'bg-violet-100 text-violet-700' : 'bg-teal-100 text-teal-700'
-            }`}
-          >
-            {isCall ? 'Call' : 'Chat'}
-          </span>
-          <span
-            className={`rounded-full px-2 py-0.5 text-xs font-medium ${
-              STATUS_STYLES[status] ?? 'bg-zinc-100 text-zinc-600'
-            }`}
-          >
-            {status.replace('_', ' ')}
-          </span>
+          <Badge tone={isCall ? 'info' : 'neutral'}>{isCall ? 'Call' : 'Chat'}</Badge>
+          <Badge tone={toneFor(status)}>{status.replace('_', ' ')}</Badge>
         </div>
         <p className="mt-1 text-xs text-zinc-400">
           Requested {fmt(session.requestedAt)}
@@ -138,19 +115,15 @@ export function SessionRow({ session }: { session: SessionRowData }) {
           <div className="col-span-2 sm:col-span-3">
             {error && <p className="mb-2 text-sm text-red-600">{error}</p>}
             {canForceEnd ? (
-              <button
-                onClick={forceEnd}
-                disabled={isPending}
-                className="rounded-lg border border-red-300 px-3 py-1.5 text-sm font-medium text-red-700 hover:bg-red-50 disabled:opacity-50"
-              >
+              <Button size="sm" variant="danger" onClick={forceEnd} disabled={isPending}>
                 {isPending ? 'Ending…' : 'Force end session'}
-              </button>
+              </Button>
             ) : (
               <p className="text-xs text-zinc-400">Session is finished — nothing to force-end.</p>
             )}
           </div>
         </div>
       )}
-    </div>
+    </Card>
   );
 }

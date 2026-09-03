@@ -2,13 +2,8 @@
 
 import Link from 'next/link';
 import { useState, useTransition } from 'react';
+import { Badge, Button, Card, toneFor } from '../../../components/ui';
 import { setReviewStatus, type ModeratedReview } from './actions';
-
-const STATUS_STYLES: Record<string, string> = {
-  ACTIVE: 'bg-emerald-100 text-emerald-700',
-  HIDDEN: 'bg-amber-100 text-amber-700',
-  REMOVED: 'bg-red-100 text-red-700',
-};
 
 function stars(n: number): string {
   const r = Math.max(0, Math.min(5, Math.round(n)));
@@ -38,23 +33,15 @@ export function ReviewRow({ review }: { review: ModeratedReview }) {
       : `/dashboard/universities?search=${encodeURIComponent(review.subjectName)}`;
 
   return (
-    <div className="rounded-xl border border-zinc-200 bg-white p-4">
+    <Card className="p-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
-            <span className="text-amber-500" title={`${review.rating} / 5`}>
+            <span className="text-sm text-amber-500" title={`${review.rating} / 5`}>
               {stars(review.rating)}
             </span>
-            <span
-              className={`rounded-full px-2 py-0.5 text-xs font-medium ${
-                STATUS_STYLES[status] ?? 'bg-zinc-100 text-zinc-600'
-              }`}
-            >
-              {status}
-            </span>
-            <span className="rounded-full bg-zinc-100 px-2 py-0.5 text-xs font-medium text-zinc-600">
-              {review.kind === 'mentor' ? 'Mentor' : 'College'}
-            </span>
+            <Badge tone={toneFor(status)}>{status}</Badge>
+            <Badge>{review.kind === 'mentor' ? 'Mentor' : 'College'}</Badge>
           </div>
           {review.text && (
             <p className="mt-2 text-sm text-zinc-800">{review.text}</p>
@@ -78,38 +65,31 @@ export function ReviewRow({ review }: { review: ModeratedReview }) {
           </p>
         </div>
 
-        <div className="flex flex-wrap gap-2">
+        <div className="flex shrink-0 flex-wrap gap-2">
           {status !== 'ACTIVE' && (
-            <button
-              onClick={() => move('ACTIVE')}
-              disabled={isPending}
-              className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm font-medium text-zinc-700 hover:bg-zinc-50 disabled:opacity-50"
-            >
+            <Button size="sm" onClick={() => move('ACTIVE')} disabled={isPending}>
               Restore
-            </button>
+            </Button>
           )}
           {status !== 'HIDDEN' && status !== 'REMOVED' && (
-            <button
+            <Button
+              size="sm"
               onClick={() => move('HIDDEN')}
               disabled={isPending}
-              className="rounded-lg border border-amber-300 px-3 py-1.5 text-sm font-medium text-amber-700 hover:bg-amber-50 disabled:opacity-50"
+              className="border-amber-200 text-amber-700 hover:bg-amber-50"
             >
               Hide
-            </button>
+            </Button>
           )}
           {status !== 'REMOVED' && (
-            <button
-              onClick={() => move('REMOVED')}
-              disabled={isPending}
-              className="rounded-lg border border-red-300 px-3 py-1.5 text-sm font-medium text-red-700 hover:bg-red-50 disabled:opacity-50"
-            >
+            <Button size="sm" variant="danger" onClick={() => move('REMOVED')} disabled={isPending}>
               Remove
-            </button>
+            </Button>
           )}
         </div>
       </div>
 
       {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
-    </div>
+    </Card>
   );
 }

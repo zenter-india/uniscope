@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useTransition, type ReactNode } from 'react';
+import { Button, EmptyState } from './ui';
 
 interface Page<T> {
   data: T[];
@@ -52,7 +53,7 @@ export function InfiniteList<T>({
   };
 
   if (items.length === 0) {
-    return <p className="text-sm text-zinc-500">{emptyText}</p>;
+    return <EmptyState>{emptyText}</EmptyState>;
   }
 
   return (
@@ -63,13 +64,9 @@ export function InfiniteList<T>({
 
       <div className="flex items-center gap-3">
         {cursor ? (
-          <button
-            onClick={more}
-            disabled={isPending}
-            className="rounded-lg border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50 disabled:opacity-50"
-          >
+          <Button onClick={more} disabled={isPending}>
             {isPending ? 'Loading…' : 'Load more'}
-          </button>
+          </Button>
         ) : null}
         <span className="text-xs text-zinc-400">
           {items.length} shown{cursor ? '' : ' · end of list'}

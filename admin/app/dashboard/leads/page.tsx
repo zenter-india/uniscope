@@ -51,23 +51,23 @@ export default async function LeadsPage({
     <DashboardShell title="Enrollment Leads" email={email}>
       {stats && (
         <div className="mb-5 flex flex-wrap gap-3">
-          <div className="rounded-xl border border-zinc-200 bg-white px-4 py-3">
+          <div className="rounded-lg border border-zinc-200 bg-white px-4 py-3">
             <p className="text-xs text-zinc-400">Total</p>
             <p className="text-lg font-semibold text-zinc-900">{stats.total}</p>
           </div>
-          <div className="rounded-xl border border-zinc-200 bg-white px-4 py-3">
+          <div className="rounded-lg border border-zinc-200 bg-white px-4 py-3">
             <p className="text-xs text-zinc-400">Students</p>
             <p className="text-lg font-semibold text-zinc-900">{stats.byRole.ASPIRANT ?? 0}</p>
           </div>
-          <div className="rounded-xl border border-zinc-200 bg-white px-4 py-3">
+          <div className="rounded-lg border border-zinc-200 bg-white px-4 py-3">
             <p className="text-xs text-zinc-400">Mentors</p>
             <p className="text-lg font-semibold text-zinc-900">{stats.byRole.MENTOR ?? 0}</p>
           </div>
-          <div className="rounded-xl border border-zinc-200 bg-white px-4 py-3">
+          <div className="rounded-lg border border-zinc-200 bg-white px-4 py-3">
             <p className="text-xs text-zinc-400">New</p>
             <p className="text-lg font-semibold text-zinc-900">{stats.byStatus.NEW ?? 0}</p>
           </div>
-          <div className="rounded-xl border border-zinc-200 bg-white px-4 py-3">
+          <div className="rounded-lg border border-zinc-200 bg-white px-4 py-3">
             <p className="text-xs text-zinc-400">Converted</p>
             <p className="text-lg font-semibold text-zinc-900">{stats.byStatus.CONVERTED ?? 0}</p>
           </div>

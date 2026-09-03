@@ -1,6 +1,7 @@
 'use client';
 
 import { useRef, useState, useTransition } from 'react';
+import { Badge, Button, Card, fieldClass } from '../../../components/ui';
 import { updateUniversity, uploadUniversityPhoto } from './actions';
 
 const TYPES = ['GOVERNMENT', 'PRIVATE', 'DEEMED', 'CENTRAL'];
@@ -101,18 +102,18 @@ export function UniversityRow({ university }: { university: UniversityRowData })
 
   if (editing) {
     return (
-      <div className="rounded-xl border border-zinc-200 bg-white p-4">
+      <Card className="p-4">
         <div className="grid grid-cols-2 gap-2">
           <input
             value={form.name}
             onChange={(e) => setForm({ ...form, name: e.target.value })}
             placeholder="Name"
-            className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm outline-none focus:border-zinc-500"
+            className={fieldClass}
           />
           <select
             value={form.type}
             onChange={(e) => setForm({ ...form, type: e.target.value })}
-            className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm outline-none focus:border-zinc-500"
+            className={fieldClass}
           >
             {TYPES.map((t) => (
               <option key={t} value={t}>
@@ -124,64 +125,57 @@ export function UniversityRow({ university }: { university: UniversityRowData })
             value={form.state}
             onChange={(e) => setForm({ ...form, state: e.target.value })}
             placeholder="State"
-            className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm outline-none focus:border-zinc-500"
+            className={fieldClass}
           />
           <input
             value={form.city}
             onChange={(e) => setForm({ ...form, city: e.target.value })}
             placeholder="City"
-            className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm outline-none focus:border-zinc-500"
+            className={fieldClass}
           />
           <input
             value={form.nirfRank}
             onChange={(e) => setForm({ ...form, nirfRank: e.target.value })}
             placeholder="NIRF rank"
             type="number"
-            className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm outline-none focus:border-zinc-500"
+            className={fieldClass}
           />
           <input
             value={form.mbbsSeats}
             onChange={(e) => setForm({ ...form, mbbsSeats: e.target.value })}
             placeholder="MBBS seats"
             type="number"
-            className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm outline-none focus:border-zinc-500"
+            className={fieldClass}
           />
           <input
             value={form.establishedYear}
             onChange={(e) => setForm({ ...form, establishedYear: e.target.value })}
             placeholder="Established year"
             type="number"
-            className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm outline-none focus:border-zinc-500"
+            className={fieldClass}
           />
           <input
             value={form.website}
             onChange={(e) => setForm({ ...form, website: e.target.value })}
             placeholder="Website URL"
-            className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm outline-none focus:border-zinc-500"
+            className={fieldClass}
           />
         </div>
         {error && <p className="mt-2 text-xs text-red-600">{error}</p>}
         <div className="mt-3 flex gap-2">
-          <button
-            onClick={save}
-            disabled={isPending}
-            className="rounded-lg bg-emerald-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-emerald-700 disabled:opacity-50"
-          >
+          <Button variant="successSolid" size="sm" onClick={save} disabled={isPending}>
             Save
-          </button>
-          <button
-            onClick={() => setEditing(false)}
-            className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm font-medium text-zinc-700 hover:bg-zinc-50"
-          >
+          </Button>
+          <Button size="sm" onClick={() => setEditing(false)}>
             Cancel
-          </button>
+          </Button>
         </div>
-      </div>
+      </Card>
     );
   }
 
   return (
-    <div className="flex items-center justify-between rounded-xl border border-zinc-200 bg-white p-4">
+    <Card className="flex items-center justify-between p-4">
       <div className="flex items-center gap-3">
         <input
           ref={fileInputRef}
@@ -212,14 +206,8 @@ export function UniversityRow({ university }: { university: UniversityRowData })
         <div>
           <div className="flex items-center gap-2">
             <p className="font-medium text-zinc-900">{university.name}</p>
-            <span className="rounded-full bg-zinc-100 px-2 py-0.5 text-xs font-medium text-zinc-600">
-              {university.type}
-            </span>
-            {!university.isActive && (
-              <span className="rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-700">
-                Inactive
-              </span>
-            )}
+            <Badge>{university.type}</Badge>
+            {!university.isActive && <Badge tone="danger">Inactive</Badge>}
           </div>
           <p className="mt-1 text-xs text-zinc-500">
             {[university.city, university.state].filter(Boolean).join(', ')}
@@ -231,24 +219,18 @@ export function UniversityRow({ university }: { university: UniversityRowData })
         </div>
       </div>
       <div className="flex gap-2">
-        <button
-          onClick={() => setEditing(true)}
-          className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm font-medium text-zinc-700 hover:bg-zinc-50"
-        >
+        <Button size="sm" onClick={() => setEditing(true)}>
           Edit
-        </button>
-        <button
+        </Button>
+        <Button
+          size="sm"
+          variant={university.isActive ? 'dangerSolid' : 'secondary'}
           onClick={toggleActive}
           disabled={isPending}
-          className={`rounded-lg px-3 py-1.5 text-sm font-medium disabled:opacity-50 ${
-            university.isActive
-              ? 'bg-red-600 text-white hover:bg-red-700'
-              : 'border border-zinc-300 text-zinc-700 hover:bg-zinc-50'
-          }`}
         >
           {university.isActive ? 'Deactivate' : 'Activate'}
-        </button>
+        </Button>
       </div>
-    </div>
+    </Card>
   );
 }

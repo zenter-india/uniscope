@@ -1,7 +1,7 @@
 'use client';
 
-import Link from 'next/link';
 import { useState, useTransition } from 'react';
+import { Badge, Button, ButtonLink, Card, toneFor } from '../../../components/ui';
 import { setUserBanned } from './actions';
 
 export interface UserRowData {
@@ -13,14 +13,6 @@ export interface UserRowData {
   isActive: boolean;
   createdAt: string;
 }
-
-const STATUS_COLORS: Record<string, string> = {
-  VERIFIED: 'bg-emerald-100 text-emerald-700',
-  SUBMITTED: 'bg-amber-100 text-amber-700',
-  UNDER_REVIEW: 'bg-amber-100 text-amber-700',
-  REJECTED: 'bg-red-100 text-red-700',
-  DRAFT: 'bg-zinc-100 text-zinc-600',
-};
 
 export function UserRow({ user }: { user: UserRowData }) {
   const [error, setError] = useState<string | null>(null);
@@ -42,31 +34,16 @@ export function UserRow({ user }: { user: UserRowData }) {
   };
 
   return (
-    <div className="flex items-center justify-between rounded-xl border border-zinc-200 bg-white p-4">
-      <div>
-        <div className="flex items-center gap-2">
+    <Card className="flex items-center justify-between gap-3 p-4">
+      <div className="min-w-0">
+        <div className="flex flex-wrap items-center gap-1.5">
           <p className="font-medium text-zinc-900">{user.displayName}</p>
-          <span className="rounded-full bg-zinc-100 px-2 py-0.5 text-xs font-medium text-zinc-600">
-            {user.role}
-          </span>
-          <span
-            className={`rounded-full px-2 py-0.5 text-xs font-medium ${
-              STATUS_COLORS[user.verificationStatus] ?? 'bg-zinc-100 text-zinc-600'
-            }`}
-          >
-            {user.verificationStatus}
-          </span>
-          {isBanned && (
-            <span className="rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-700">
-              Banned
-            </span>
-          )}
+          <Badge>{user.role}</Badge>
+          <Badge tone={toneFor(user.verificationStatus)}>{user.verificationStatus}</Badge>
+          {isBanned && <Badge tone="danger">Banned</Badge>}
           {!user.isActive && !isBanned && (
-            <span
-              className="rounded-full bg-zinc-200 px-2 py-0.5 text-xs font-medium text-zinc-600"
-              title="Self-deleted their account — reactivates automatically if they log in again"
-            >
-              Deleted
+            <span title="Self-deleted their account — reactivates automatically if they log in again">
+              <Badge>Deleted</Badge>
             </span>
           )}
         </div>
@@ -75,25 +52,19 @@ export function UserRow({ user }: { user: UserRowData }) {
         </p>
         {error && <p className="mt-1 text-xs text-red-600">{error}</p>}
       </div>
-      <div className="flex items-center gap-2">
-        <Link
-          href={`/dashboard/users/${user.id}`}
-          className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm font-medium text-zinc-700 hover:bg-zinc-50"
-        >
+      <div className="flex shrink-0 items-center gap-2">
+        <ButtonLink href={`/dashboard/users/${user.id}`} size="sm">
           View details
-        </Link>
-        <button
+        </ButtonLink>
+        <Button
           onClick={toggleBan}
           disabled={isPending}
-          className={`rounded-lg px-3 py-1.5 text-sm font-medium disabled:opacity-50 ${
-            isBanned
-              ? 'border border-zinc-300 text-zinc-700 hover:bg-zinc-50'
-              : 'bg-red-600 text-white hover:bg-red-700'
-          }`}
+          size="sm"
+          variant={isBanned ? 'secondary' : 'dangerSolid'}
         >
           {isBanned ? 'Unban' : 'Ban'}
-        </button>
+        </Button>
       </div>
-    </div>
+    </Card>
   );
 }

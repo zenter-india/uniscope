@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useTransition } from 'react';
+import { Button } from '../../../../components/ui';
 import { getVerificationDocumentUrl, setUserBanned } from './actions';
 
 export function BanToggle({
@@ -28,17 +29,14 @@ export function BanToggle({
 
   return (
     <div className="flex flex-col items-end gap-1">
-      <button
+      <Button
         onClick={toggle}
         disabled={isPending || disabled}
-        className={`rounded-lg px-3 py-1.5 text-sm font-medium disabled:opacity-50 ${
-          isBanned
-            ? 'border border-zinc-300 text-zinc-700 hover:bg-zinc-50'
-            : 'bg-red-600 text-white hover:bg-red-700'
-        }`}
+        size="sm"
+        variant={isBanned ? 'secondary' : 'dangerSolid'}
       >
         {isBanned ? 'Unban user' : 'Ban user'}
-      </button>
+      </Button>
       {error && <p className="text-xs text-red-600">{error}</p>}
     </div>
   );
@@ -62,13 +60,9 @@ export function VerificationDocButton({ requestId }: { requestId: string }) {
 
   return (
     <div>
-      <button
-        onClick={view}
-        disabled={isPending}
-        className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm font-medium text-zinc-700 hover:bg-zinc-50 disabled:opacity-50"
-      >
+      <Button onClick={view} disabled={isPending} size="sm">
         View document
-      </button>
+      </Button>
       {error && <p className="mt-1 text-xs text-red-600">{error}</p>}
       {url && (
         <a

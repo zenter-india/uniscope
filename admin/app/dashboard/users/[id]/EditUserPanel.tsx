@@ -2,6 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { useState, useTransition } from 'react';
+import { Button, Card, fieldClass } from '../../../../components/ui';
 import { updateUserProfile } from './actions';
 
 export interface EditableUser {
@@ -121,8 +122,7 @@ function Row({
   );
 }
 
-const inputCls =
-  'rounded-lg border border-zinc-300 bg-white px-3 py-1.5 text-sm text-zinc-900 outline-none placeholder:text-zinc-400 focus:border-zinc-500';
+const inputCls = fieldClass;
 
 export function EditUserPanel({ user }: { user: EditableUser }) {
   const router = useRouter();
@@ -172,20 +172,20 @@ export function EditUserPanel({ user }: { user: EditableUser }) {
   if (user.role === 'ADMIN') return null;
 
   return (
-    <section className="rounded-xl border border-zinc-200 bg-white p-5">
+    <Card className="p-5">
       <div className="flex items-center justify-between">
         <h2 className="text-sm font-semibold text-zinc-900">Edit profile</h2>
-        <button
+        <Button
+          size="sm"
           onClick={() => {
             setOpen((v) => !v);
             setError(null);
             setSaved(false);
             if (open) setForm(original);
           }}
-          className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm font-medium text-zinc-700 hover:bg-zinc-50"
         >
           {open ? 'Cancel' : 'Edit'}
-        </button>
+        </Button>
       </div>
 
       {saved && !open && (
@@ -300,27 +300,22 @@ export function EditUserPanel({ user }: { user: EditableUser }) {
           {error && <p className="text-sm text-red-600">{error}</p>}
 
           <div className="flex gap-2">
-            <button
-              onClick={save}
-              disabled={isPending}
-              className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800 disabled:opacity-50"
-            >
+            <Button variant="primary" onClick={save} disabled={isPending}>
               {isPending ? 'Saving…' : 'Save changes'}
-            </button>
-            <button
+            </Button>
+            <Button
               onClick={() => {
                 setForm(original);
                 setOpen(false);
                 setError(null);
               }}
               disabled={isPending}
-              className="rounded-lg border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50 disabled:opacity-50"
             >
               Cancel
-            </button>
+            </Button>
           </div>
         </div>
       )}
-    </section>
+    </Card>
   );
 }

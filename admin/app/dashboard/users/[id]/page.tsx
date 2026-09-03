@@ -134,7 +134,7 @@ function Section({
   children: React.ReactNode;
 }) {
   return (
-    <section className="rounded-xl border border-zinc-200 bg-white p-5">
+    <section className="rounded-lg border border-zinc-200 bg-white p-5">
       <h2 className="mb-4 text-sm font-semibold text-zinc-900">{title}</h2>
       <div className="grid grid-cols-2 gap-x-6 gap-y-4 sm:grid-cols-3">{children}</div>
     </section>
@@ -176,7 +176,7 @@ export default async function UserDetailPage({
       </Link>
 
       {/* Header */}
-      <div className="mb-6 flex flex-wrap items-start justify-between gap-4 rounded-xl border border-zinc-200 bg-white p-5">
+      <div className="mb-6 flex flex-wrap items-start justify-between gap-4 rounded-lg border border-zinc-200 bg-white p-5">
         <div className="flex items-start gap-4">
           {user.avatarUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
@@ -378,7 +378,7 @@ export default async function UserDetailPage({
           />
         </Section>
 
-        <section className="rounded-xl border border-zinc-200 bg-white p-5">
+        <section className="rounded-lg border border-zinc-200 bg-white p-5">
           <h2 className="mb-4 text-sm font-semibold text-zinc-900">
             Verification requests ({user.verificationRequests.length})
           </h2>

@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useState, useTransition } from 'react';
+import { Badge, Button, Card, toneFor } from '../../../components/ui';
 import { getLeadDocumentUrl, updateLead } from './actions';
 
 const DOCUMENT_TYPE_LABELS: Record<string, string> = {
@@ -9,13 +10,6 @@ const DOCUMENT_TYPE_LABELS: Record<string, string> = {
   STUDENT_PORTAL_SCREENSHOT: 'Admission order',
   DEGREE_CERTIFICATE: 'Degree certificate',
   NMC_REGISTRATION: 'Registration certificate',
-};
-
-const STATUS_STYLES: Record<string, string> = {
-  NEW: 'bg-blue-100 text-blue-700',
-  CONTACTED: 'bg-amber-100 text-amber-700',
-  CONVERTED: 'bg-emerald-100 text-emerald-700',
-  REJECTED: 'bg-red-100 text-red-700',
 };
 
 const STATUS_OPTIONS = ['NEW', 'CONTACTED', 'CONVERTED', 'REJECTED'] as const;
@@ -104,7 +98,7 @@ export function LeadRow({ lead }: { lead: LeadRowData }) {
   };
 
   return (
-    <div className="rounded-xl border border-zinc-200 bg-white p-5">
+    <Card className="p-5">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <button
           type="button"
@@ -113,16 +107,10 @@ export function LeadRow({ lead }: { lead: LeadRowData }) {
         >
           <div className="flex flex-wrap items-center gap-2">
             <p className="font-medium text-zinc-900">{lead.fullName}</p>
-            <span
-              className={`rounded-full px-2 py-0.5 text-xs font-medium ${
-                lead.role === 'MENTOR' ? 'bg-purple-100 text-purple-700' : 'bg-sky-100 text-sky-700'
-              }`}
-            >
+            <Badge tone={lead.role === 'MENTOR' ? 'info' : 'neutral'}>
               {lead.role === 'MENTOR' ? 'Mentor' : 'Student'}
-            </span>
-            <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_STYLES[status]}`}>
-              {status}
-            </span>
+            </Badge>
+            <Badge tone={toneFor(status)}>{status}</Badge>
           </div>
           <p className="mt-0.5 text-sm text-zinc-500">
             {lead.phone}
@@ -134,13 +122,9 @@ export function LeadRow({ lead }: { lead: LeadRowData }) {
           </p>
         </button>
         {lead.hasDocument && (
-          <button
-            onClick={viewDocument}
-            disabled={isPending}
-            className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm font-medium text-zinc-700 hover:bg-zinc-50 disabled:opacity-50"
-          >
+          <Button size="sm" onClick={viewDocument} disabled={isPending}>
             View document
-          </button>
+          </Button>
         )}
       </div>
 
@@ -222,7 +206,7 @@ export function LeadRow({ lead }: { lead: LeadRowData }) {
           onChange={(e) => setNote(e.target.value)}
           placeholder="Admin note (internal only)"
           rows={2}
-          className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm outline-none focus:border-zinc-500"
+          className="w-full rounded-md border border-zinc-300 bg-white px-3 py-1.5 text-sm text-zinc-900 shadow-sm outline-none transition-colors placeholder:text-zinc-400 focus:border-zinc-400 focus:ring-2 focus:ring-zinc-400/40"
         />
 
         {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
@@ -230,24 +214,15 @@ export function LeadRow({ lead }: { lead: LeadRowData }) {
 
         <div className="mt-3 flex flex-wrap gap-2">
           {STATUS_OPTIONS.filter((s) => s !== status).map((s) => (
-            <button
-              key={s}
-              onClick={() => save(s)}
-              disabled={isPending}
-              className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm font-medium text-zinc-700 hover:bg-zinc-50 disabled:opacity-50"
-            >
+            <Button key={s} size="sm" onClick={() => save(s)} disabled={isPending}>
               Mark {s.charAt(0) + s.slice(1).toLowerCase()}
-            </button>
+            </Button>
           ))}
-          <button
-            onClick={() => save()}
-            disabled={isPending}
-            className="rounded-lg bg-zinc-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-zinc-800 disabled:opacity-50"
-          >
+          <Button size="sm" variant="primary" onClick={() => save()} disabled={isPending}>
             Save note
-          </button>
+          </Button>
         </div>
       </div>
-    </div>
+    </Card>
   );
 }

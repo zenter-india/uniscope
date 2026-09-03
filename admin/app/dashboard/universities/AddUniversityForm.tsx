@@ -60,7 +60,7 @@ export function AddUniversityForm() {
   }
 
   return (
-    <div className="w-full basis-full rounded-xl border border-zinc-200 bg-white p-4">
+    <div className="w-full basis-full rounded-lg border border-zinc-200 bg-white p-4">
       <p className="mb-3 text-sm font-semibold text-zinc-900">New university</p>
       <div className="grid grid-cols-2 gap-2">
         <input
