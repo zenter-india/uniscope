@@ -137,7 +137,8 @@ class _MentorOnboardingScreenState extends ConsumerState<MentorOnboardingScreen>
     }
   }
 
-  bool get _needsSpecialization => _stream == 'Medical' && _degree != null && _degree != 'UG';
+  bool get _needsSpecialization =>
+      _stream == 'Medical' && _degree != null && _degree != 'MBBS';
 
   String get _resolvedCity => _city == 'Other' ? _cityOtherController.text.trim() : (_city ?? '');
 

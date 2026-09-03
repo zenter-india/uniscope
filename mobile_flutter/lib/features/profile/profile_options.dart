@@ -357,8 +357,12 @@ const kStreamOptions = [
 // exactly. Medical keeps the full qualification list minus "Higher Secondary
 // (12th)" (not a real degree for a mentor); Dental and Engineering get their
 // own degree names; every other stream falls back to a generic UG/PG list.
+// Medical's undergraduate degree is specifically "MBBS", not the generic
+// "UG" every other stream uses (web commit "Rename Medical UG degree/
+// qualification to MBBS") — `University.levels` still stores the plain
+// "UG" tag, so any level-scoped college lookup translates MBBS→UG.
 const kMedicalDegrees = [
-  'UG',
+  'MBBS',
   'PG',
   'MD/MS',
   'DNB',

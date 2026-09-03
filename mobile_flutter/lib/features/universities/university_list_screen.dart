@@ -277,12 +277,15 @@ class _UniversityListScreenState extends ConsumerState<UniversityListScreen> {
     final curatedById = {for (final c in curatedColleges) c.id: c};
 
     // Specialization options: real per-college data when curated, else the
-    // flat medical list (Medical's UG has no curated key and no
-    // specialization concept — options stays just ['All'] and the pill hides).
+    // flat medical list. Medical's MBBS (undergrad) has no curated key and
+    // no specialization concept (matches web "Hide Specialization for
+    // MBBS") — options stays just ['All'] and the pill hides.
     final List<String> specializationOptions;
     if (curatedKey != null) {
       specializationOptions = _specializationOptionsFor(curatedColleges);
-    } else if (effectiveStream == 'Medical' && degreeFilter != 'All') {
+    } else if (effectiveStream == 'Medical' &&
+        degreeFilter != 'All' &&
+        degreeFilter != 'MBBS') {
       specializationOptions = ['All', ...kMedicalSpecializations];
     } else {
       specializationOptions = const ['All'];
@@ -494,8 +497,10 @@ class _UniversityListScreenState extends ConsumerState<UniversityListScreen> {
                       } else if (curatedKey != null) {
                         matchesDegree = curatedIds.contains(u.id);
                       } else if (effectiveStream == 'Medical' &&
-                          (degreeFilter == 'UG' || degreeFilter == 'PG')) {
-                        matchesDegree = u.levels.contains(degreeFilter);
+                          degreeFilter == 'MBBS') {
+                        // The degree label is "MBBS" but University.levels
+                        // still tags undergrad colleges "UG".
+                        matchesDegree = u.levels.contains('UG');
                       } else {
                         // Non-curated non-Medical degree (Doctorate/Others,
                         // generic UG/PG) — the flat catalogue can't tell
