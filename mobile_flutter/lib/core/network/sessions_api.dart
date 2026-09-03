@@ -56,6 +56,7 @@ class Session {
     this.callSlotMinutes,
     this.aspirantJoinedAt,
     this.mentorJoinedAt,
+    this.mentorIsAvailable = false,
   });
 
   final String id;
@@ -77,6 +78,11 @@ class Session {
   final int? callSlotMinutes;
   final String? aspirantJoinedAt;
   final String? mentorJoinedAt;
+  // Not yet sent by the backend (GET /sessions has no such field on its
+  // response projection today) -- defaults to false so the "Request a call"
+  // icon reads as not-yet-confirmed-available rather than falsely green
+  // until the backend actually adds this field.
+  final bool mentorIsAvailable;
 
   factory Session.fromJson(Map<String, dynamic> json) => Session(
     id: json['id'] as String,
@@ -98,6 +104,7 @@ class Session {
     callSlotMinutes: (json['callSlotMinutes'] as num?)?.toInt(),
     aspirantJoinedAt: json['aspirantJoinedAt'] as String?,
     mentorJoinedAt: json['mentorJoinedAt'] as String?,
+    mentorIsAvailable: json['mentorIsAvailable'] as bool? ?? false,
   );
 }
 
