@@ -79,12 +79,23 @@ Future<void> startChatWithMentor(
 /// into a free chat with them — no pricing or slot picker up front. A call
 /// can be requested from inside the chat screen instead (see
 /// SessionChatScreen's "Request a call" action).
-class MentorListScreen extends ConsumerWidget {
+class MentorListScreen extends ConsumerStatefulWidget {
   const MentorListScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<MentorListScreen> createState() => _MentorListScreenState();
+}
+
+class _MentorListScreenState extends ConsumerState<MentorListScreen> {
+  /// Client-side name filter over the already-loaded list — same approach
+  /// as the Colleges tab. `GET /mentors` returns the full set (no name
+  /// query param), so no extra request per keystroke.
+  String _query = '';
+
+  @override
+  Widget build(BuildContext context) {
     final mentorsAsync = ref.watch(mentorsListProvider);
+    final query = _query.trim().toLowerCase();
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -108,48 +119,90 @@ class MentorListScreen extends ConsumerWidget {
       ),
       body: SafeArea(
         bottom: false,
-        child: RefreshIndicator(
-          color: AppColors.primary,
-          onRefresh: () => ref.refresh(mentorsListProvider.future),
-          child: mentorsAsync.when(
-            loading: () => ListView(
-              padding: const EdgeInsets.all(AppSpacing.md),
-              children: const [
-                SkeletonCard(),
-                SkeletonCard(),
-                SkeletonCard(),
-                SkeletonCard(),
-              ],
-            ),
-            error: (err, _) => ListView(
-              children: [
-                EmptyState(
-                  icon: Icons.wifi_off_rounded,
-                  title: 'Could not load mentors',
-                  message: 'Check your connection and pull to refresh.',
-                  actionLabel: 'Retry',
-                  onAction: () => ref.invalidate(mentorsListProvider),
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.md,
+                vertical: AppSpacing.sm,
+              ),
+              child: TextField(
+                onChanged: (t) => setState(() => _query = t),
+                textInputAction: TextInputAction.search,
+                decoration: const InputDecoration(
+                  isDense: true,
+                  prefixIcon: Icon(Icons.search_rounded, size: 20),
+                  hintText: 'Search mentors by name...',
                 ),
-              ],
+              ),
             ),
-            data: (mentors) => mentors.isEmpty
-                ? ListView(
+            Expanded(
+              child: RefreshIndicator(
+                color: AppColors.primary,
+                onRefresh: () => ref.refresh(mentorsListProvider.future),
+                child: mentorsAsync.when(
+                  loading: () => ListView(
+                    padding: const EdgeInsets.all(AppSpacing.md),
                     children: const [
-                      SizedBox(height: 120),
+                      SkeletonCard(),
+                      SkeletonCard(),
+                      SkeletonCard(),
+                      SkeletonCard(),
+                    ],
+                  ),
+                  error: (err, _) => ListView(
+                    children: [
                       EmptyState(
-                        icon: Icons.people_alt_rounded,
-                        title: 'No mentors yet',
-                        message:
-                            'Verified mentors will appear here as they join.',
+                        icon: Icons.wifi_off_rounded,
+                        title: 'Could not load mentors',
+                        message: 'Check your connection and pull to refresh.',
+                        actionLabel: 'Retry',
+                        onAction: () => ref.invalidate(mentorsListProvider),
                       ),
                     ],
-                  )
-                : ListView.builder(
-                    padding: const EdgeInsets.all(AppSpacing.md),
-                    itemCount: mentors.length,
-                    itemBuilder: (_, i) => MentorCard(mentor: mentors[i]),
                   ),
-          ),
+                  data: (mentors) {
+                    if (mentors.isEmpty) {
+                      return ListView(
+                        children: const [
+                          SizedBox(height: 120),
+                          EmptyState(
+                            icon: Icons.people_alt_rounded,
+                            title: 'No mentors yet',
+                            message:
+                                'Verified mentors will appear here as they join.',
+                          ),
+                        ],
+                      );
+                    }
+                    final filtered = query.isEmpty
+                        ? mentors
+                        : mentors
+                            .where((m) =>
+                                m.displayName.toLowerCase().contains(query))
+                            .toList();
+                    if (filtered.isEmpty) {
+                      return ListView(
+                        children: [
+                          const SizedBox(height: 120),
+                          EmptyState(
+                            icon: Icons.search_off_rounded,
+                            title: 'No mentors found',
+                            message: 'No mentor matches "${_query.trim()}".',
+                          ),
+                        ],
+                      );
+                    }
+                    return ListView.builder(
+                      padding: const EdgeInsets.all(AppSpacing.md),
+                      itemCount: filtered.length,
+                      itemBuilder: (_, i) => MentorCard(mentor: filtered[i]),
+                    );
+                  },
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );

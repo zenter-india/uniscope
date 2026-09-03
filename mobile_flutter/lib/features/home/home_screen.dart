@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/network/mentors_api.dart';
+import '../../core/network/sessions_api.dart';
 import '../../core/network/universities_api.dart';
 import '../../core/network/users_api.dart';
 import '../../core/theme/app_theme.dart';
@@ -10,8 +11,18 @@ import '../../state/auth_controller.dart';
 import '../../widgets/app_widgets.dart';
 import '../auth/auth_background.dart' show authBrandTeal;
 import '../mentors/mentor_list_screen.dart';
+import '../sessions/session_list_screen.dart' show sessionsListProvider;
 import '../universities/university_list_screen.dart'
     show collegeStateFilterProvider;
+
+/// Statuses that still need the aspirant's attention — used to surface a
+/// mentor in the Home "Pick up where you left off" strip.
+const _homeActiveStatuses = {
+  SessionStatus.pending,
+  SessionStatus.accepted,
+  SessionStatus.ringing,
+  SessionStatus.inProgress,
+};
 
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
@@ -29,6 +40,7 @@ class HomeScreen extends ConsumerWidget {
     final firstName = displayName?.split(' ').first;
     final universitiesAsync = ref.watch(universitiesListProvider);
     final mentorsAsync = ref.watch(mentorsListProvider);
+    final sessionsAsync = ref.watch(sessionsListProvider);
     final myState = ref.watch(myProfileProvider).asData?.value.state;
     final myAvatarUrl = ref.watch(myProfileProvider).asData?.value.avatarUrl;
 
@@ -191,7 +203,7 @@ class HomeScreen extends ConsumerWidget {
                               const SizedBox(width: AppSpacing.sm),
                               const Expanded(
                                 child: Text(
-                                  'Search colleges, courses, or mentors...',
+                                  'Search universities...',
                                   style: TextStyle(
                                     fontSize: AppFont.sm,
                                     color: AppColors.textMuted,
@@ -297,16 +309,39 @@ class HomeScreen extends ConsumerWidget {
                         ),
                       ],
                     ),
-                    const SizedBox(height: AppSpacing.lg),
+                    // ─── Pick up where you left off ───────────────────
+                    // Only renders when there's an open chat or a live/
+                    // pending call — otherwise it takes no space.
+                    sessionsAsync.maybeWhen(
+                      orElse: () => const SizedBox.shrink(),
+                      data: (sessions) {
+                        final active = _activeByMentor(sessions);
+                        if (active.isEmpty) return const SizedBox.shrink();
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            SectionHeader(
+                              title: 'Pick up where you left off',
+                              accentColor: authBrandTeal,
+                              onSeeAll: () => context.go('/chats'),
+                            ),
+                            const SizedBox(height: AppSpacing.md),
+                            for (final s in active.take(3))
+                              _ActiveSessionRow(session: s),
+                            const SizedBox(height: AppSpacing.lg),
+                          ],
+                        );
+                      },
+                    ),
                     SectionHeader(
-                      title: 'Top Mentors',
+                      title: 'Top mentors for you',
                       accentColor: authBrandTeal,
                       onSeeAll: () => context.go('/mentors'),
                     ),
                     const SizedBox(height: AppSpacing.md),
                     mentorsAsync.when(
                       loading: () => const SizedBox(
-                        height: 150,
+                        height: 206,
                         child: Row(
                           children: [
                             Expanded(child: SkeletonCard()),
@@ -317,16 +352,14 @@ class HomeScreen extends ConsumerWidget {
                       ),
                       error: (_, __) => const SizedBox.shrink(),
                       data: (mentors) => SizedBox(
-                        height: 150,
+                        height: 206,
                         child: ListView.separated(
                           scrollDirection: Axis.horizontal,
                           itemCount: mentors.take(8).length,
                           separatorBuilder: (_, __) =>
                               const SizedBox(width: AppSpacing.sm),
-                          itemBuilder: (_, i) => _MentorTeaser(
-                            mentor: mentors[i],
-                            onTap: () => context.go('/mentors'),
-                          ),
+                          itemBuilder: (_, i) =>
+                              _MentorSpotlightCard(mentor: mentors[i]),
                         ),
                       ),
                     ),
@@ -509,79 +542,312 @@ class _CollegeCard extends StatelessWidget {
   }
 }
 
-/// Fixed-width tile for the Home screen's horizontally-scrolling Top
-/// Mentors row — content-heavy Row layout from before only worked full-
-/// width, so this is a distinct vertical layout rather than a resize of
-/// that one.
-class _MentorTeaser extends StatelessWidget {
-  const _MentorTeaser({required this.mentor, required this.onTap});
+/// Newest still-open session per mentor (chat open, or a live/pending
+/// call), newest first — backs the Home "Pick up where you left off" strip.
+List<Session> _activeByMentor(List<Session> sessions) {
+  final byMentor = <String, Session>{};
+  for (final s in sessions) {
+    if (!_homeActiveStatuses.contains(s.status)) continue;
+    final existing = byMentor[s.mentorId];
+    if (existing == null ||
+        s.requestedAt.compareTo(existing.requestedAt) > 0) {
+      byMentor[s.mentorId] = s;
+    }
+  }
+  return byMentor.values.toList()
+    ..sort((a, b) => b.requestedAt.compareTo(a.requestedAt));
+}
+
+/// One "Pick up where you left off" row — mentor, a one-line status with a
+/// state dot, and a single action (Join a joinable call / View a pending
+/// call / Open a chat). Tapping the row opens that mentor's chat thread.
+class _ActiveSessionRow extends ConsumerWidget {
+  const _ActiveSessionRow({required this.session});
+  final Session session;
+
+  (String, Color) _status() {
+    final isCall = session.type == 'AUDIO_CALL';
+    switch (session.status) {
+      case SessionStatus.pending:
+        return isCall
+            ? ('Call requested', AppColors.warning)
+            : ('Chat starting…', AppColors.warning);
+      case SessionStatus.ringing:
+        return ('Call connecting…', AppColors.warning);
+      case SessionStatus.accepted:
+        return isCall
+            ? ('Ready to join', AppColors.primary)
+            : ('Chat is open', AppColors.primary);
+      case SessionStatus.inProgress:
+        return isCall
+            ? ('Call in progress', AppColors.primary)
+            : ('Chatting now', AppColors.primary);
+      default:
+        return ('Active', AppColors.primary);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final isCall = session.type == 'AUDIO_CALL';
+    final joinable = isCall &&
+        (session.status == SessionStatus.accepted ||
+            session.status == SessionStatus.ringing ||
+            session.status == SessionStatus.inProgress);
+    final (label, dotColor) = _status();
+
+    return AppCard(
+      margin: const EdgeInsets.only(bottom: AppSpacing.sm),
+      onTap: () => startChatWithMentor(context, ref, session.mentorId),
+      child: Row(
+        children: [
+          AppAvatar(
+            name: session.mentorName,
+            size: 40,
+            avatarUrl: session.mentorAvatarUrl,
+          ),
+          const SizedBox(width: AppSpacing.sm),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  session.mentorName,
+                  style: const TextStyle(
+                    fontSize: AppFont.md,
+                    fontWeight: AppFont.bold,
+                    color: AppColors.textPrimary,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 2),
+                Row(
+                  children: [
+                    Container(
+                      width: 7,
+                      height: 7,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: dotColor,
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    Flexible(
+                      child: Text(
+                        label,
+                        style: const TextStyle(
+                          fontSize: AppFont.xs,
+                          color: AppColors.textSecondary,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: AppSpacing.xs),
+          _MiniButton(
+            label: joinable
+                ? 'Join'
+                : isCall
+                ? 'View'
+                : 'Open',
+            onTap: () {
+              if (joinable) {
+                context.push('/call/${session.id}');
+              } else if (isCall) {
+                startChatWithMentor(context, ref, session.mentorId);
+              } else {
+                context.push(
+                  '/chats/room',
+                  extra: {'sessionId': session.id},
+                );
+              }
+            },
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Fixed-width mentor card for the Home "Top mentors for you" rail — a
+/// tinted hero with the portrait + a Verified tick, then name, college,
+/// rating (or a New tag) and a "Start free chat" action. Tapping the hero
+/// opens the mentor's profile; the button starts a free chat.
+class _MentorSpotlightCard extends ConsumerWidget {
+  const _MentorSpotlightCard({required this.mentor});
 
   final Mentor mentor;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final subtitle = mentor.university?.name ?? mentor.stream ?? 'Mentor';
+
+    return SizedBox(
+      width: 176,
+      child: Container(
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(AppRadius.lg),
+          boxShadow: AppShadows.card,
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            InkWell(
+              onTap: () => context.push('/mentors/${mentor.id}'),
+              child: Container(
+                height: 82,
+                color: AppColors.primaryLight,
+                child: Stack(
+                  alignment: Alignment.bottomCenter,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 6),
+                      child: AppAvatar(
+                        name: mentor.displayName,
+                        size: 54,
+                        avatarUrl: mentor.avatarUrl,
+                      ),
+                    ),
+                    if (mentor.isVerified)
+                      Positioned(
+                        top: 8,
+                        right: 8,
+                        child: Container(
+                          padding: const EdgeInsets.all(3),
+                          decoration: const BoxDecoration(
+                            color: AppColors.surface,
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(
+                            Icons.verified_rounded,
+                            size: 13,
+                            color: AppColors.verified,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(10, 8, 10, 10),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    mentor.displayName,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: AppFont.bold,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    subtitle,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontSize: 11,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  if (mentor.rating != null)
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(
+                          Icons.star_rounded,
+                          size: 13,
+                          color: AppColors.warning,
+                        ),
+                        const SizedBox(width: 2),
+                        Text(
+                          '${mentor.rating!.toStringAsFixed(1)} (${mentor.reviewCount})',
+                          style: const TextStyle(
+                            fontSize: 11,
+                            fontWeight: AppFont.semibold,
+                            color: AppColors.textPrimary,
+                          ),
+                        ),
+                      ],
+                    )
+                  else
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 2,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppColors.primaryLight,
+                        borderRadius: BorderRadius.circular(AppRadius.full),
+                      ),
+                      child: const Text(
+                        'NEW',
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: AppFont.bold,
+                          letterSpacing: 0.4,
+                          color: AppColors.primaryDark,
+                        ),
+                      ),
+                    ),
+                  const SizedBox(height: 8),
+                  SizedBox(
+                    width: double.infinity,
+                    child: _MiniButton(
+                      label: 'Start free chat',
+                      onTap: () =>
+                          startChatWithMentor(context, ref, mentor.id),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Small tinted action button — used by the Home "Pick up where you left
+/// off" rows and the mentor spotlight card.
+class _MiniButton extends StatelessWidget {
+  const _MiniButton({required this.label, required this.onTap});
+  final String label;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      width: 132,
-      child: AppCard(
+    return Material(
+      color: AppColors.primaryLight,
+      borderRadius: BorderRadius.circular(AppRadius.sm),
+      child: InkWell(
         onTap: onTap,
-        padding: const EdgeInsets.all(AppSpacing.sm),
-        // Centered rather than top-aligned: the card's height is set by
-        // the row's shared SizedBox, not by this content, so a top-aligned
-        // Column left visible empty space beneath the shortest cards.
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            AppAvatar(
-              name: mentor.displayName,
-              size: 60,
-              avatarUrl: mentor.avatarUrl,
+        borderRadius: BorderRadius.circular(AppRadius.sm),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+          child: Text(
+            label,
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              fontSize: AppFont.xs,
+              fontWeight: AppFont.bold,
+              color: AppColors.primaryDark,
             ),
-            const SizedBox(height: AppSpacing.sm),
-            Text(
-              mentor.displayName,
-              textAlign: TextAlign.center,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
-                fontSize: AppFont.xs,
-                fontWeight: AppFont.bold,
-                color: AppColors.textPrimary,
-              ),
-            ),
-            const SizedBox(height: 3),
-            if (mentor.rating != null)
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(
-                    Icons.star_rounded,
-                    size: 13,
-                    color: AppColors.warning,
-                  ),
-                  const SizedBox(width: 2),
-                  Text(
-                    mentor.rating!.toStringAsFixed(1),
-                    style: const TextStyle(
-                      fontSize: AppFont.xs,
-                      color: AppColors.textSecondary,
-                    ),
-                  ),
-                ],
-              )
-            else
-              Text(
-                mentor.university?.name ?? 'Mentor',
-                textAlign: TextAlign.center,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  fontSize: AppFont.xs,
-                  color: AppColors.textSecondary,
-                ),
-              ),
-          ],
+          ),
         ),
       ),
     );

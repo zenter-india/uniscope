@@ -9,11 +9,40 @@ import '../../core/theme/app_theme.dart';
 import '../../state/auth_controller.dart';
 import '../../widgets/app_widgets.dart';
 import '../mentors/mentor_list_screen.dart' show startChatWithMentor;
+import '../wallet/low_balance_sheet.dart';
+import '../wallet/wallet_screen.dart' show walletBalanceProvider;
+import 'call_request_sheet.dart';
 import 'cancel_deflection_sheet.dart';
 
 final sessionsListProvider = FutureProvider.autoDispose<List<Session>>(
   (ref) => ref.watch(sessionsApiProvider).list(),
 );
+
+/// Shortest bookable call slot, in Uniminutes — mirrors SessionChatScreen's
+/// own `_minCallSlotUniminutes` so the Sessions-row call icon and the
+/// in-chat "Request a call" action refuse a booking at the exact same
+/// balance instead of one letting the sheet open only to fail at submit.
+final _minCallSlotUniminutes = kCallSlotMinutes.first;
+
+/// Dot colour for a mentor row's status subtitle — session state only.
+Color _statusDotColor(SessionStatus status) {
+  switch (status) {
+    case SessionStatus.pending:
+    case SessionStatus.ringing:
+      return AppColors.warning;
+    case SessionStatus.accepted:
+    case SessionStatus.inProgress:
+      return AppColors.primary;
+    case SessionStatus.completed:
+      return AppColors.textMuted;
+    case SessionStatus.rejected:
+    case SessionStatus.failed:
+      return AppColors.error;
+    case SessionStatus.cancelled:
+    case SessionStatus.expired:
+      return AppColors.textMuted;
+  }
+}
 
 bool _isActiveStatus(SessionStatus status) =>
     status == SessionStatus.pending ||
@@ -178,25 +207,71 @@ class SessionListScreen extends ConsumerWidget {
                             );
                           },
                         )
-                      : Builder(
-                          builder: (context) {
-                            final groups = _groupAllSessionsByCounterpart(
-                              sessions,
-                            );
-                            return ListView.builder(
-                              padding: const EdgeInsets.all(AppSpacing.md),
-                              itemCount: groups.length,
-                              itemBuilder: (_, i) =>
-                                  _AspirantMentorRow(sessions: groups[i]),
-                            );
-                          },
-                        ),
+                      : _AspirantSessions(sessions: sessions),
                 ),
               ),
             ),
           ],
         ),
       ),
+    );
+  }
+}
+
+/// Aspirant Sessions body: one row per mentor relationship, in a single
+/// hairline-divided card (see [_AspirantMentorRow]). Mentors with a live or
+/// pending session float to the top; the rest follow by recency. History
+/// within a relationship lives inside that mentor's chat screen.
+class _AspirantSessions extends StatelessWidget {
+  const _AspirantSessions({required this.sessions});
+  final List<Session> sessions;
+
+  @override
+  Widget build(BuildContext context) {
+    final groups = _groupAllSessionsByCounterpart(sessions);
+
+    String latestReq(List<Session> g) => g
+        .map((s) => s.requestedAt)
+        .reduce((a, b) => a.compareTo(b) >= 0 ? a : b);
+
+    groups.sort((a, b) {
+      final aActive = a.any((s) => _isActiveStatus(s.status));
+      final bActive = b.any((s) => _isActiveStatus(s.status));
+      if (aActive != bActive) return aActive ? -1 : 1;
+      return latestReq(b).compareTo(latestReq(a));
+    });
+
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.md,
+        AppSpacing.md,
+        AppSpacing.md,
+        AppSpacing.xl,
+      ),
+      children: [
+        Container(
+          decoration: BoxDecoration(
+            color: AppColors.surface,
+            borderRadius: BorderRadius.circular(AppRadius.lg),
+            border: Border.all(color: AppColors.border),
+            boxShadow: AppShadows.card,
+          ),
+          clipBehavior: Clip.antiAlias,
+          child: Column(
+            children: [
+              for (var i = 0; i < groups.length; i++) ...[
+                if (i > 0)
+                  const Divider(
+                    height: 1,
+                    thickness: 1,
+                    color: AppColors.border,
+                  ),
+                _AspirantMentorRow(sessions: groups[i]),
+              ],
+            ],
+          ),
+        ),
+      ],
     );
   }
 }
@@ -238,13 +313,27 @@ class _SupportChatEntry extends StatelessWidget {
             ),
             const SizedBox(width: AppSpacing.sm),
             const Expanded(
-              child: Text(
-                'Need help? Chat with our support team.',
-                style: TextStyle(
-                  fontSize: AppFont.sm,
-                  fontWeight: AppFont.bold,
-                  color: Colors.white,
-                ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    'Need help?',
+                    style: TextStyle(
+                      fontSize: AppFont.sm,
+                      fontWeight: AppFont.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                  SizedBox(height: 1),
+                  Text(
+                    'Chat with the Uniscope support team',
+                    style: TextStyle(
+                      fontSize: AppFont.xs,
+                      color: Colors.white70,
+                    ),
+                  ),
+                ],
               ),
             ),
             const Icon(
@@ -358,39 +447,70 @@ String _lastActivityLabel(Session session) {
 
 /// One row per mentor relationship, aspirant Sessions tab only (see
 /// `_groupAllSessionsByCounterpart`'s doc comment for why this consolidates
-/// every session with that mentor instead of listing each one). Any
-/// currently-actionable session (pending/accepted/ringing/in progress)
-/// still gets its own inline action row here — that's live right now, not
-/// history — but everything else (completed/cancelled/rejected/expired)
-/// only shows as a "N earlier" count, tap-through to the full list via
-/// [showMentorSessionHistory]. Tapping the row itself (outside an action
-/// button) always opens this mentor's chat, same as tapping a mentor card
-/// anywhere else in the app.
+/// every session with that mentor instead of listing each one).
+///
+/// Deliberately a flat, single-line list tile — WhatsApp-style — not a card
+/// with stacked action rows: name + one status subtitle, then a call icon
+/// and a chat icon at the trailing edge. No per-session Join/Cancel/history
+/// piles up here anymore — that all lives inside the mentor's own chat
+/// screen now (SessionChatScreen: the history action + the scoped
+/// ActiveSessionDock for a live/pending call). Tapping the avatar opens the
+/// mentor's profile (`/mentors/:id`); tapping anywhere else on the row, or
+/// the chat icon, opens the chat thread; the call icon opens the
+/// "Request a call" sheet (balance-gated, same as in-chat).
 class _AspirantMentorRow extends ConsumerWidget {
   const _AspirantMentorRow({required this.sessions});
   final List<Session> sessions;
 
+  Future<void> _requestCall(
+    BuildContext context,
+    WidgetRef ref,
+    String mentorId,
+  ) async {
+    final wallet = await ref.read(walletBalanceProvider.future);
+    if (!context.mounted) return;
+    if (wallet.balanceUniminutes < _minCallSlotUniminutes) {
+      await showLowBalanceSheet(
+        context,
+        balanceUniminutes: wallet.balanceUniminutes,
+      );
+      return;
+    }
+    if (!context.mounted) return;
+    await showCallRequestSheet(context, ref, mentorId: mentorId);
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final active = sessions.where((s) => _isActiveStatus(s.status)).toList();
-    final historyCount = sessions.length - active.length;
     final first = sessions.first;
     final latest = sessions.reduce(
       (a, b) => a.requestedAt.compareTo(b.requestedAt) >= 0 ? a : b,
     );
+    final mentorId = first.mentorId;
+    final mentorName = first.mentorName;
+    // The dot only earns its place when the status is something other than
+    // a plain "Chat" — a call request/outcome, or a live session.
+    final showDot =
+        latest.type == 'AUDIO_CALL' || _isActiveStatus(latest.status);
 
-    return AppCard(
-      margin: const EdgeInsets.only(bottom: AppSpacing.sm),
-      onTap: () => startChatWithMentor(context, ref, first.mentorId),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
+    return Material(
+      color: AppColors.surface,
+      child: InkWell(
+        onTap: () => startChatWithMentor(context, ref, mentorId),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.md,
+            vertical: 10,
+          ),
+          child: Row(
             children: [
-              AppAvatar(
-                name: first.mentorName,
-                avatarUrl: first.mentorAvatarUrl,
-                size: 40,
+              GestureDetector(
+                onTap: () => context.push('/mentors/$mentorId'),
+                child: AppAvatar(
+                  name: mentorName,
+                  avatarUrl: first.mentorAvatarUrl,
+                  size: 46,
+                ),
               ),
               const SizedBox(width: AppSpacing.sm),
               Expanded(
@@ -398,67 +518,122 @@ class _AspirantMentorRow extends ConsumerWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      first.mentorName,
+                      mentorName,
                       style: const TextStyle(
                         fontWeight: AppFont.bold,
                         fontSize: AppFont.md,
                       ),
                       overflow: TextOverflow.ellipsis,
                     ),
-                    Text(
-                      _lastActivityLabel(latest),
-                      style: const TextStyle(
-                        fontSize: AppFont.xs,
-                        color: AppColors.textSecondary,
-                      ),
-                      overflow: TextOverflow.ellipsis,
+                    const SizedBox(height: 2),
+                    Row(
+                      children: [
+                        if (showDot) ...[
+                          Container(
+                            width: 7,
+                            height: 7,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: _statusDotColor(latest.status),
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                        ],
+                        Flexible(
+                          child: Text(
+                            _lastActivityLabel(latest),
+                            style: const TextStyle(
+                              fontSize: AppFont.xs,
+                              color: AppColors.textSecondary,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
               ),
+              const SizedBox(width: AppSpacing.xs),
+              // Green only when this mentor can actually be booked for a
+              // call right now (verified + "accepting call bookings" on,
+              // not stale — the backend's `mentorIsAvailable` runs the same
+              // `isCallAvailable()` gate every other surface uses). Greyed
+              // otherwise, same glyph — a request would just be rejected
+              // server-side.
+              _RowIconButton(
+                icon: Icons.call_outlined,
+                tooltip: first.mentorIsAvailable
+                    ? 'Request a call'
+                    : 'Not accepting calls right now',
+                color: first.mentorIsAvailable
+                    ? AppColors.primary
+                    : AppColors.textMuted,
+                onTap: () => _requestCall(context, ref, mentorId),
+              ),
+              _RowIconButton(
+                icon: Icons.chat_bubble_rounded,
+                tooltip: 'Open chat',
+                filled: true,
+                onTap: () => startChatWithMentor(context, ref, mentorId),
+              ),
             ],
           ),
-          if (active.isNotEmpty) ...[
-            const SizedBox(height: AppSpacing.md),
-            for (final session in active)
-              Padding(
-                padding: const EdgeInsets.only(bottom: AppSpacing.xs),
-                child: _SessionActions(session: session, isMentor: false),
-              ),
-          ],
-          if (historyCount > 0) ...[
-            const SizedBox(height: AppSpacing.xs),
-            InkWell(
-              onTap: () => showMentorSessionHistory(
-                context,
-                mentorId: first.mentorId,
-                mentorName: first.mentorName,
-                sessions: sessions,
-              ),
-              child: Row(
-                children: [
-                  const Icon(
-                    Icons.history_rounded,
-                    size: 15,
-                    color: AppColors.textMuted,
-                  ),
-                  const SizedBox(width: 4),
-                  Text(
-                    active.isEmpty
-                        ? '$historyCount earlier session${historyCount == 1 ? '' : 's'}'
-                        : '+$historyCount earlier',
-                    style: const TextStyle(
-                      fontSize: AppFont.xs,
-                      color: AppColors.textSecondary,
-                      fontWeight: AppFont.semibold,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ],
+        ),
       ),
+    );
+  }
+}
+
+/// Compact trailing action for an aspirant Sessions row. Outlined by
+/// default (the call action); [filled] gives the primary-green disc used
+/// for the chat action, so "open the conversation" is the row's clear
+/// default move.
+class _RowIconButton extends StatelessWidget {
+  const _RowIconButton({
+    required this.icon,
+    required this.onTap,
+    this.tooltip,
+    this.color = AppColors.primary,
+    this.filled = false,
+  });
+
+  final IconData icon;
+  final VoidCallback onTap;
+  final String? tooltip;
+  final Color color;
+  final bool filled;
+
+  @override
+  Widget build(BuildContext context) {
+    if (filled) {
+      final button = Material(
+        color: AppColors.primary,
+        shape: const CircleBorder(),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.all(8),
+            child: Icon(icon, size: 18, color: Colors.white),
+          ),
+        ),
+      );
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 2),
+        child: tooltip != null
+            ? Tooltip(message: tooltip!, child: button)
+            : button,
+      );
+    }
+    return IconButton(
+      onPressed: onTap,
+      icon: Icon(icon, size: 21),
+      color: color,
+      tooltip: tooltip,
+      visualDensity: VisualDensity.compact,
+      padding: EdgeInsets.zero,
+      constraints: const BoxConstraints(minWidth: 38, minHeight: 38),
     );
   }
 }
