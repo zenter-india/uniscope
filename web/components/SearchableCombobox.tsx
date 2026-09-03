@@ -62,6 +62,13 @@ export function SearchableCombobox({
             <li key={option}>
               <button
                 type="button"
+                // Same fix as CollegeSearch.tsx/CuratedCollegeSearch.tsx's
+                // own version -- prevents the TextInput above from ever
+                // blurring when this is tapped, so onBlur's setTimeout
+                // close can't win the race against this button's own
+                // click on a real touch device and silently swallow the
+                // pick.
+                onMouseDown={(e) => e.preventDefault()}
                 onClick={() => {
                   onChange(option);
                   setOpen(false);

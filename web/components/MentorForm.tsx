@@ -266,7 +266,7 @@ export function MentorForm({ onExit }: { onExit: () => void }) {
   const [curatedColleges, setCuratedColleges] = useState<CuratedCollege[]>([]);
   const [loadingCurated, setLoadingCurated] = useState(false);
   const [dnbCollegeChoice, setDnbCollegeChoice] = useState("");
-  // Medical keeps the full DEGREES list (UG/PG/MD-MS/DNB/Diploma/
+  // Medical keeps the full DEGREES list (MBBS/PG/MD-MS/DNB/Diploma/
   // Doctorate/DM-MCh/Others); Dental and Engineering each get their own
   // stream-specific first/second degree names; every other stream falls
   // back to the generic UG/PG/Doctorate/Others list.
@@ -783,7 +783,12 @@ export function MentorForm({ onExit }: { onExit: () => void }) {
                 gold
                 value={form.collegeName}
                 stream="Medical"
-                level={form.degree === "UG" ? "UG" : undefined}
+                // form.degree is "MBBS" (the renamed display value), but
+                // the actual data-level tag on University.levels is still
+                // "UG" -- that's a separate, unrelated concept (seed
+                // scripts push "UG"/"PG"/"Diploma" onto levels; renaming
+                // the degree label doesn't change what's stored there).
+                level={form.degree === "MBBS" ? "UG" : undefined}
                 onPick={(name, id) => {
                   set("collegeName", name);
                   set("universityId", id ?? "");
