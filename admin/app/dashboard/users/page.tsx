@@ -17,11 +17,15 @@ const VERIFICATION_TABS = [
   'SUSPENDED',
 ] as const;
 
+const SORT_KEYS = ['joined', 'name', 'role', 'verification'];
+
 function buildHref(params: {
   role?: string;
   verificationStatus?: string;
   banned?: string;
   search?: string;
+  sort?: string;
+  dir?: string;
 }) {
   const qs = new URLSearchParams();
   if (params.role && params.role !== 'ALL') qs.set('role', params.role);
@@ -29,6 +33,8 @@ function buildHref(params: {
     qs.set('verificationStatus', params.verificationStatus);
   if (params.banned === '1') qs.set('banned', '1');
   if (params.search) qs.set('search', params.search);
+  if (params.sort) qs.set('sort', params.sort);
+  if (params.dir) qs.set('dir', params.dir);
   const s = qs.toString();
   return `/dashboard/users${s ? `?${s}` : ''}`;
 }
@@ -41,6 +47,8 @@ export default async function UsersPage({
     search?: string;
     verificationStatus?: string;
     banned?: string;
+    sort?: string;
+    dir?: string;
   }>;
 }) {
   const {
@@ -48,6 +56,8 @@ export default async function UsersPage({
     search,
     verificationStatus: rawVerification,
     banned: rawBanned,
+    sort: rawSort,
+    dir: rawDir,
   } = await searchParams;
   const role = ROLE_TABS.includes(rawRole as (typeof ROLE_TABS)[number])
     ? rawRole
@@ -58,12 +68,16 @@ export default async function UsersPage({
     ? rawVerification!
     : 'ALL';
   const banned = rawBanned === '1';
+  const sort = rawSort && SORT_KEYS.includes(rawSort) ? rawSort : undefined;
+  const dir = rawDir === 'asc' ? 'asc' : sort ? 'desc' : undefined;
 
   const params = new URLSearchParams({ limit: '50' });
   if (role && role !== 'ALL') params.set('role', role);
   if (search) params.set('search', search);
   if (verificationStatus !== 'ALL') params.set('verificationStatus', verificationStatus);
   if (banned) params.set('isBanned', 'true');
+  if (sort) params.set('sortBy', sort);
+  if (dir) params.set('sortDir', dir);
 
   const [email, page] = await Promise.all([
     getAdminEmail(),
@@ -101,7 +115,7 @@ export default async function UsersPage({
             items={ROLE_TABS}
             current={role as (typeof ROLE_TABS)[number]}
             hrefFor={(tab) =>
-              buildHref({ role: tab, verificationStatus, banned: banned ? '1' : undefined, search })
+              buildHref({ role: tab, verificationStatus, banned: banned ? '1' : undefined, search, sort, dir })
             }
           />
           <FilterTabs
@@ -109,12 +123,12 @@ export default async function UsersPage({
             items={VERIFICATION_TABS}
             current={verificationStatus as (typeof VERIFICATION_TABS)[number]}
             hrefFor={(tab) =>
-              buildHref({ role, verificationStatus: tab, banned: banned ? '1' : undefined, search })
+              buildHref({ role, verificationStatus: tab, banned: banned ? '1' : undefined, search, sort, dir })
             }
             labelFor={(tab) => (tab === 'ALL' ? 'Any verification' : tab.replace('_', ' '))}
           />
           <Link
-            href={buildHref({ role, verificationStatus, banned: banned ? undefined : '1', search })}
+            href={buildHref({ role, verificationStatus, banned: banned ? undefined : '1', search, sort, dir })}
             className={`rounded-md px-2.5 py-1 text-xs font-medium transition-colors ${
               banned
                 ? 'bg-red-600 text-white'
@@ -127,10 +141,10 @@ export default async function UsersPage({
       </div>
 
       <UsersList
-        key={`${role}|${verificationStatus}|${banned}|${search ?? ''}`}
+        key={`${role}|${verificationStatus}|${banned}|${search ?? ''}|${sort ?? ''}|${dir ?? ''}`}
         initialItems={page.data}
         initialCursor={page.nextCursor}
-        filters={{ role, search, verificationStatus, banned }}
+        filters={{ role, search, verificationStatus, banned, sort, dir }}
       />
     </DashboardShell>
   );

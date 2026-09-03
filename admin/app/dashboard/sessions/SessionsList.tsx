@@ -2,6 +2,7 @@
 
 import { InfiniteList } from '../../../components/InfiniteList';
 import { Table } from '../../../components/ui';
+import { SortableHeader } from '../../../components/SortableHeader';
 import { SessionRow } from './SessionRow';
 import { loadMoreSessions, type SessionListFilters, type SessionRowData } from './actions';
 
@@ -21,8 +22,8 @@ export function SessionsList({
         <tr>
           <Table.HeadCell>Aspirant → Mentor</Table.HeadCell>
           <Table.HeadCell>Type</Table.HeadCell>
-          <Table.HeadCell>Status</Table.HeadCell>
-          <Table.HeadCell>Requested</Table.HeadCell>
+          <SortableHeader label="Status" sortKey="status" />
+          <SortableHeader label="Requested" sortKey="requested" />
           <Table.HeadCell className="w-8" />
         </tr>
       }

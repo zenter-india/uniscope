@@ -1,6 +1,6 @@
 import { SessionStatus, SessionType } from '@prisma/client';
 import { Type } from 'class-transformer';
-import { IsEnum, IsInt, IsOptional, IsString, Max, Min } from 'class-validator';
+import { IsEnum, IsIn, IsInt, IsOptional, IsString, Max, Min } from 'class-validator';
 
 /** ADMIN session browser filter — unlike ListSessionsDto this is not scoped
  * to a party; it lists every session in the system. */
@@ -21,6 +21,14 @@ export class ListSessionsAdminDto {
   @IsOptional()
   @IsString()
   cursor?: string;
+
+  @IsOptional()
+  @IsIn(['requested', 'cost', 'status'])
+  sortBy?: string;
+
+  @IsOptional()
+  @IsIn(['asc', 'desc'])
+  sortDir?: 'asc' | 'desc';
 
   @IsOptional()
   @Type(() => Number)

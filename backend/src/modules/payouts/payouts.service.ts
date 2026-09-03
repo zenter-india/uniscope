@@ -6,7 +6,8 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
-import { LedgerEntryType, PayoutStatus, UserRole } from '@prisma/client';
+import { LedgerEntryType, PayoutStatus, Prisma, UserRole } from '@prisma/client';
+import { adminOrderBy } from '../../common/helpers/admin-sort.helper.js';
 import { PrismaService } from '../../database/prisma/prisma.service.js';
 import { NotificationsService } from '../notifications/notifications.service.js';
 import { WalletService } from '../wallet/wallet.service.js';
@@ -176,10 +177,21 @@ export class PayoutsService {
 
   /** Admin list — FIFO by request time, with the mentor's name and current
    * wallet balance attached so the reviewer isn't looking at bare UUIDs. */
-  async findAll(status?: PayoutStatus): Promise<PayoutRequestResponse[]> {
+  async findAll(
+    status?: PayoutStatus,
+    sortBy?: string,
+    sortDir?: 'asc' | 'desc',
+  ): Promise<PayoutRequestResponse[]> {
     const rows = await this.prisma.payoutRequest.findMany({
       where: status ? { status } : undefined,
-      orderBy: { createdAt: 'asc' },
+      // Default is oldest-first (FIFO — the queue an admin works top-down);
+      // an explicit sort overrides that.
+      orderBy: adminOrderBy(
+        sortBy,
+        sortDir,
+        { requested: 'createdAt', amount: 'amountMinor', status: 'status', period: 'periodEnd' },
+        { createdAt: 'asc' },
+      ) as Prisma.PayoutRequestOrderByWithRelationInput[],
       include: {
         mentor: {
           select: {

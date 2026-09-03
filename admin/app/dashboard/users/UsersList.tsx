@@ -2,6 +2,7 @@
 
 import { InfiniteList } from '../../../components/InfiniteList';
 import { Table } from '../../../components/ui';
+import { SortableHeader } from '../../../components/SortableHeader';
 import { UserRow, type UserRowData } from './UserRow';
 import { loadMoreUsers, type UserListFilters } from './actions';
 
@@ -19,10 +20,10 @@ export function UsersList({
       variant="table"
       tableHead={
         <tr>
-          <Table.HeadCell>User</Table.HeadCell>
-          <Table.HeadCell>Role</Table.HeadCell>
-          <Table.HeadCell>Verification</Table.HeadCell>
-          <Table.HeadCell>Joined</Table.HeadCell>
+          <SortableHeader label="User" sortKey="name" />
+          <SortableHeader label="Role" sortKey="role" />
+          <SortableHeader label="Verification" sortKey="verification" />
+          <SortableHeader label="Joined" sortKey="joined" />
           <Table.HeadCell className="text-right">Actions</Table.HeadCell>
         </tr>
       }

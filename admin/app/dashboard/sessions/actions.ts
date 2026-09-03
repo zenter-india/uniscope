@@ -38,6 +38,8 @@ export interface SessionListFilters {
   status?: string;
   type?: string;
   search?: string;
+  sort?: string;
+  dir?: string;
 }
 
 export async function loadMoreSessions(
@@ -48,6 +50,8 @@ export async function loadMoreSessions(
   if (filters.status && filters.status !== 'ALL') params.set('status', filters.status);
   if (filters.type && filters.type !== 'ALL') params.set('type', filters.type);
   if (filters.search) params.set('search', filters.search);
+  if (filters.sort) params.set('sortBy', filters.sort);
+  if (filters.dir) params.set('sortDir', filters.dir);
 
   return backendFetch<{ data: SessionRowData[]; nextCursor: string | null }>(
     `/sessions/admin/all?${params.toString()}`,

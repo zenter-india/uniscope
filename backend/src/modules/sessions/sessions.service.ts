@@ -16,6 +16,7 @@ import {
   SessionStatus,
   SessionType,
 } from '@prisma/client';
+import { adminOrderBy } from '../../common/helpers/admin-sort.helper.js';
 import { PrismaService } from '../../database/prisma/prisma.service.js';
 import { AgoraService } from '../agora/agora.service.js';
 import { AvatarService } from '../avatar/avatar.service.js';
@@ -849,7 +850,12 @@ export class SessionsService {
     const rows = await this.prisma.session.findMany({
       where,
       include: SESSION_WITH_NAMES_INCLUDE,
-      orderBy: [{ requestedAt: 'desc' }, { id: 'asc' }],
+      orderBy: adminOrderBy(
+        query.sortBy,
+        query.sortDir,
+        { requested: 'requestedAt', cost: 'totalCostMinor', status: 'status' },
+        { requestedAt: 'desc' },
+      ) as Prisma.SessionOrderByWithRelationInput[],
       take: take + 1,
       ...(query.cursor && { cursor: { id: query.cursor }, skip: 1 }),
     });

@@ -2,6 +2,7 @@
 
 import { InfiniteList } from '../../../components/InfiniteList';
 import { Table } from '../../../components/ui';
+import { SortableHeader } from '../../../components/SortableHeader';
 import { LeadRow, type LeadRowData } from './LeadRow';
 import { loadMoreLeads, type LeadListFilters } from './actions';
 
@@ -19,11 +20,11 @@ export function LeadsList({
       variant="table"
       tableHead={
         <tr>
-          <Table.HeadCell>Name</Table.HeadCell>
-          <Table.HeadCell>Type</Table.HeadCell>
-          <Table.HeadCell>Status</Table.HeadCell>
+          <SortableHeader label="Name" sortKey="name" />
+          <SortableHeader label="Type" sortKey="role" />
+          <SortableHeader label="Status" sortKey="status" />
           <Table.HeadCell>Contact</Table.HeadCell>
-          <Table.HeadCell>Submitted</Table.HeadCell>
+          <SortableHeader label="Submitted" sortKey="created" />
           <Table.HeadCell className="w-8" />
         </tr>
       }

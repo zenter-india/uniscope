@@ -20,6 +20,8 @@ export interface ReviewFilters {
   type: 'mentor' | 'university';
   status?: string;
   search?: string;
+  sort?: string;
+  dir?: string;
 }
 
 export async function loadMoreReviews(
@@ -29,6 +31,8 @@ export async function loadMoreReviews(
   const params = new URLSearchParams({ type: filters.type, limit: '20', cursor });
   if (filters.status && filters.status !== 'ALL') params.set('status', filters.status);
   if (filters.search) params.set('search', filters.search);
+  if (filters.sort) params.set('sortBy', filters.sort);
+  if (filters.dir) params.set('sortDir', filters.dir);
 
   return backendFetch<{ data: ModeratedReview[]; nextCursor: string | null }>(
     `/admin/reviews?${params.toString()}`,

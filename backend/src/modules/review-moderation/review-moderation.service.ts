@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma, ReviewStatus } from '@prisma/client';
+import { adminOrderBy } from '../../common/helpers/admin-sort.helper.js';
 import { PrismaService } from '../../database/prisma/prisma.service.js';
 import { ListReviewsDto } from './dto/list-reviews.dto.js';
 
@@ -28,7 +29,11 @@ export class ReviewModerationService {
   ): Promise<{ data: ModeratedReview[]; nextCursor: string | null }> {
     const take = Math.min(query.limit ?? DEFAULT_LIMIT, MAX_LIMIT);
     const paginate = {
-      orderBy: [{ createdAt: 'desc' as const }, { id: 'asc' as const }],
+      orderBy: adminOrderBy(query.sortBy, query.sortDir, {
+        created: 'createdAt',
+        rating: 'rating',
+        status: 'status',
+      }),
       take: take + 1,
       ...(query.cursor && { cursor: { id: query.cursor }, skip: 1 }),
     };

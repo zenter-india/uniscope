@@ -14,11 +14,15 @@ interface LeadStats {
   byRole: Record<string, number>;
 }
 
-function buildHref(role: string, status: string, search?: string) {
+const SORT_KEYS = ['created', 'name', 'status', 'role'];
+
+function buildHref(role: string, status: string, search?: string, sort?: string, dir?: string) {
   const params = new URLSearchParams();
   if (role !== 'ALL') params.set('role', role);
   if (status !== 'ALL') params.set('status', status);
   if (search) params.set('search', search);
+  if (sort) params.set('sort', sort);
+  if (dir) params.set('dir', dir);
   const qs = params.toString();
   return `/dashboard/leads${qs ? `?${qs}` : ''}`;
 }
@@ -26,18 +30,29 @@ function buildHref(role: string, status: string, search?: string) {
 export default async function LeadsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ role?: string; status?: string; search?: string }>;
+  searchParams: Promise<{
+    role?: string;
+    status?: string;
+    search?: string;
+    sort?: string;
+    dir?: string;
+  }>;
 }) {
-  const { role: rawRole, status: rawStatus, search } = await searchParams;
+  const { role: rawRole, status: rawStatus, search, sort: rawSort, dir: rawDir } =
+    await searchParams;
   const role = ROLE_TABS.includes(rawRole as (typeof ROLE_TABS)[number]) ? rawRole! : 'ALL';
   const status = STATUS_TABS.includes(rawStatus as (typeof STATUS_TABS)[number])
     ? rawStatus!
     : 'ALL';
+  const sort = rawSort && SORT_KEYS.includes(rawSort) ? rawSort : undefined;
+  const dir = rawDir === 'asc' ? 'asc' : sort ? 'desc' : undefined;
 
   const params = new URLSearchParams({ limit: '100' });
   if (role !== 'ALL') params.set('role', role);
   if (status !== 'ALL') params.set('status', status);
   if (search) params.set('search', search);
+  if (sort) params.set('sortBy', sort);
+  if (dir) params.set('sortDir', dir);
 
   const [email, page, stats] = await Promise.all([
     getAdminEmail(),
@@ -95,7 +110,7 @@ export default async function LeadsPage({
           <FilterTabs
             items={ROLE_TABS}
             current={role as (typeof ROLE_TABS)[number]}
-            hrefFor={(tab) => buildHref(tab, status, search)}
+            hrefFor={(tab) => buildHref(tab, status, search, sort, dir)}
             labelFor={(tab) =>
               tab === 'ALL' ? 'All roles' : tab === 'ASPIRANT' ? 'Students' : 'Mentors'
             }
@@ -104,16 +119,16 @@ export default async function LeadsPage({
             size="sm"
             items={STATUS_TABS}
             current={status as (typeof STATUS_TABS)[number]}
-            hrefFor={(tab) => buildHref(role, tab, search)}
+            hrefFor={(tab) => buildHref(role, tab, search, sort, dir)}
           />
         </div>
       </div>
 
       <LeadsList
-        key={`${role}|${status}|${search ?? ''}`}
+        key={`${role}|${status}|${search ?? ''}|${sort ?? ''}|${dir ?? ''}`}
         initialItems={page.data}
         initialCursor={page.nextCursor}
-        filters={{ role, status, search }}
+        filters={{ role, status, search, sort, dir }}
       />
     </DashboardShell>
   );

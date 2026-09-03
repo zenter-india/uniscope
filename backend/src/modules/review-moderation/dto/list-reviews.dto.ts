@@ -22,6 +22,14 @@ export class ListReviewsDto {
   cursor?: string;
 
   @IsOptional()
+  @IsIn(['created', 'rating', 'status'])
+  sortBy?: string;
+
+  @IsOptional()
+  @IsIn(['asc', 'desc'])
+  sortDir?: 'asc' | 'desc';
+
+  @IsOptional()
   @Type(() => Number)
   @IsInt()
   @Min(1)

@@ -1,6 +1,6 @@
 import { EnrollmentLeadRole, EnrollmentLeadStatus } from '@prisma/client';
 import { Type } from 'class-transformer';
-import { IsEnum, IsInt, IsOptional, IsString, Max, Min } from 'class-validator';
+import { IsEnum, IsIn, IsInt, IsOptional, IsString, Max, Min } from 'class-validator';
 
 /** Query parameters for the ADMIN-only GET /enrollments listing. */
 export class ListLeadsDto {
@@ -20,6 +20,14 @@ export class ListLeadsDto {
   @IsOptional()
   @IsString()
   search?: string;
+
+  @IsOptional()
+  @IsIn(['created', 'name', 'status', 'role'])
+  sortBy?: string;
+
+  @IsOptional()
+  @IsIn(['asc', 'desc'])
+  sortDir?: 'asc' | 'desc';
 
   @IsOptional()
   @Type(() => Number)

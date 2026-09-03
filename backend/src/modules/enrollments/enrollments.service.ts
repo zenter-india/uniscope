@@ -4,6 +4,7 @@ import { Cron, CronExpression } from '@nestjs/schedule';
 import { EnrollmentLeadRole, EnrollmentLeadStatus, Prisma } from '@prisma/client';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { parsePhoneNumberFromString } from 'libphonenumber-js';
+import { adminOrderBy } from '../../common/helpers/admin-sort.helper.js';
 import { SlackNotifierService } from '../../common/slack/slack-notifier.service.js';
 import { PrismaService } from '../../database/prisma/prisma.service.js';
 import { SUPABASE_BUCKETS, SUPABASE_CLIENT } from '../../supabase/index.js';
@@ -339,7 +340,12 @@ export class EnrollmentsService {
     const rows = await this.prisma.enrollmentLead.findMany({
       where,
       include: { university: { select: { name: true } } },
-      orderBy: [{ createdAt: 'desc' }, { id: 'asc' }],
+      orderBy: adminOrderBy(query.sortBy, query.sortDir, {
+        created: 'createdAt',
+        name: 'fullName',
+        status: 'status',
+        role: 'role',
+      }) as Prisma.EnrollmentLeadOrderByWithRelationInput[],
       take: take + 1,
       ...(query.cursor && { cursor: { id: query.cursor }, skip: 1 }),
     });

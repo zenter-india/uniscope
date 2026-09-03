@@ -30,8 +30,16 @@ export class PayoutsController {
   @UseGuards(RolesGuard)
   @Roles(UserRole.ADMIN)
   @Get()
-  findAll(@Query('status') status?: PayoutStatus) {
-    return this.payoutsService.findAll(status);
+  findAll(
+    @Query('status') status?: PayoutStatus,
+    @Query('sortBy') sortBy?: string,
+    @Query('sortDir') sortDir?: string,
+  ) {
+    return this.payoutsService.findAll(
+      status,
+      sortBy,
+      sortDir === 'asc' || sortDir === 'desc' ? sortDir : undefined,
+    );
   }
 
   @UseGuards(RolesGuard)

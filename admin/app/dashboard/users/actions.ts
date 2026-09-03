@@ -17,6 +17,8 @@ export interface UserListFilters {
   search?: string;
   verificationStatus?: string;
   banned?: boolean;
+  sort?: string;
+  dir?: string;
 }
 
 /** Next page of the admin user list — same filters as the page, plus a cursor.
@@ -32,6 +34,8 @@ export async function loadMoreUsers(
     params.set('verificationStatus', filters.verificationStatus);
   }
   if (filters.banned) params.set('isBanned', 'true');
+  if (filters.sort) params.set('sortBy', filters.sort);
+  if (filters.dir) params.set('sortDir', filters.dir);
 
   return backendFetch<{ data: UserRowData[]; nextCursor: string | null }>(
     `/users?${params.toString()}`,

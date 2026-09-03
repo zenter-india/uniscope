@@ -2,6 +2,7 @@
 
 import { InfiniteList } from '../../../components/InfiniteList';
 import { Table } from '../../../components/ui';
+import { SortableHeader } from '../../../components/SortableHeader';
 import { ReviewRow } from './ReviewRow';
 import { loadMoreReviews, type ModeratedReview, type ReviewFilters } from './actions';
 
@@ -19,10 +20,10 @@ export function ReviewsList({
       variant="table"
       tableHead={
         <tr>
-          <Table.HeadCell>Rating</Table.HeadCell>
+          <SortableHeader label="Rating" sortKey="rating" />
           <Table.HeadCell>Review</Table.HeadCell>
           <Table.HeadCell>Author / For</Table.HeadCell>
-          <Table.HeadCell>Status</Table.HeadCell>
+          <SortableHeader label="Status" sortKey="status" />
           <Table.HeadCell className="text-right">Actions</Table.HeadCell>
         </tr>
       }

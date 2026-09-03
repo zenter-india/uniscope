@@ -13,6 +13,7 @@ import {
   UserRole,
   VerificationStatus,
 } from '@prisma/client';
+import { adminOrderBy } from '../../common/helpers/admin-sort.helper.js';
 import { generatePseudonym } from '../../common/helpers/pseudonym.helper.js';
 import { encryptRealName } from '../../common/helpers/profile-encryption.helper.js';
 import {
@@ -407,7 +408,12 @@ export class UsersService {
 
     const rows = await this.prisma.user.findMany({
       where,
-      orderBy: [{ createdAt: 'desc' }, { id: 'asc' }],
+      orderBy: adminOrderBy(query.sortBy, query.sortDir, {
+        joined: 'createdAt',
+        name: 'displayName',
+        role: 'role',
+        verification: 'verificationStatus',
+      }) as Prisma.UserOrderByWithRelationInput[],
       take: take + 1,
       ...(query.cursor && { cursor: { id: query.cursor }, skip: 1 }),
     });

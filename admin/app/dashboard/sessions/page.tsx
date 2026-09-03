@@ -19,11 +19,21 @@ const STATUS_TABS = [
 ] as const;
 const TYPE_TABS = ['ALL', 'CHAT', 'AUDIO_CALL'] as const;
 
-function buildHref(params: { status?: string; type?: string; search?: string }) {
+const SORT_KEYS = ['requested', 'cost', 'status'];
+
+function buildHref(params: {
+  status?: string;
+  type?: string;
+  search?: string;
+  sort?: string;
+  dir?: string;
+}) {
   const qs = new URLSearchParams();
   if (params.status && params.status !== 'ALL') qs.set('status', params.status);
   if (params.type && params.type !== 'ALL') qs.set('type', params.type);
   if (params.search) qs.set('search', params.search);
+  if (params.sort) qs.set('sort', params.sort);
+  if (params.dir) qs.set('dir', params.dir);
   const s = qs.toString();
   return `/dashboard/sessions${s ? `?${s}` : ''}`;
 }
@@ -31,18 +41,29 @@ function buildHref(params: { status?: string; type?: string; search?: string }) 
 export default async function SessionsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ status?: string; type?: string; search?: string }>;
+  searchParams: Promise<{
+    status?: string;
+    type?: string;
+    search?: string;
+    sort?: string;
+    dir?: string;
+  }>;
 }) {
-  const { status: rawStatus, type: rawType, search } = await searchParams;
+  const { status: rawStatus, type: rawType, search, sort: rawSort, dir: rawDir } =
+    await searchParams;
   const status = STATUS_TABS.includes(rawStatus as (typeof STATUS_TABS)[number])
     ? rawStatus!
     : 'ALL';
   const type = TYPE_TABS.includes(rawType as (typeof TYPE_TABS)[number]) ? rawType! : 'ALL';
+  const sort = rawSort && SORT_KEYS.includes(rawSort) ? rawSort : undefined;
+  const dir = rawDir === 'asc' ? 'asc' : sort ? 'desc' : undefined;
 
   const params = new URLSearchParams({ limit: '25' });
   if (status !== 'ALL') params.set('status', status);
   if (type !== 'ALL') params.set('type', type);
   if (search) params.set('search', search);
+  if (sort) params.set('sortBy', sort);
+  if (dir) params.set('sortDir', dir);
 
   const [email, page] = await Promise.all([
     getAdminEmail(),
@@ -76,24 +97,24 @@ export default async function SessionsPage({
           <FilterTabs
             items={TYPE_TABS}
             current={type as (typeof TYPE_TABS)[number]}
-            hrefFor={(tab) => buildHref({ status, type: tab, search })}
+            hrefFor={(tab) => buildHref({ status, type: tab, search, sort, dir })}
             labelFor={(tab) => (tab === 'ALL' ? 'All types' : tab === 'CHAT' ? 'Chat' : 'Call')}
           />
           <FilterTabs
             size="sm"
             items={STATUS_TABS}
             current={status as (typeof STATUS_TABS)[number]}
-            hrefFor={(tab) => buildHref({ status: tab, type, search })}
+            hrefFor={(tab) => buildHref({ status: tab, type, search, sort, dir })}
             labelFor={(tab) => (tab === 'ALL' ? 'Any status' : tab.replace('_', ' '))}
           />
         </div>
       </div>
 
       <SessionsList
-        key={`${status}|${type}|${search ?? ''}`}
+        key={`${status}|${type}|${search ?? ''}|${sort ?? ''}|${dir ?? ''}`}
         initialItems={page.data}
         initialCursor={page.nextCursor}
-        filters={{ status, type, search }}
+        filters={{ status, type, search, sort, dir }}
       />
     </DashboardShell>
   );
