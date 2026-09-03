@@ -326,9 +326,15 @@ class _MentorAvailabilityCardState
   @override
   Widget build(BuildContext context) {
     final profileAsync = ref.watch(myProfileProvider);
-    final isAvailable = profileAsync.asData?.value.isMentorAvailable ?? false;
-    final isVerified =
-        profileAsync.asData?.value.verificationStatus == 'VERIFIED';
+    // valueOrNull (not asData?.value) so a background refresh — every
+    // `ref.invalidate(myProfileProvider)` this screen fires — doesn't
+    // momentarily blank the profile out and make a verified mentor's switch
+    // fall through to the "not verified" branch (that bug sent a tap on the
+    // toggle straight to the verification screen).
+    final profile = profileAsync.hasValue ? profileAsync.value : null;
+    final firstLoad = profile == null;
+    final isAvailable = profile?.isMentorAvailable ?? false;
+    final isVerified = profile?.verificationStatus == 'VERIFIED';
 
     return AppCard(
       child: Column(
@@ -345,28 +351,21 @@ class _MentorAvailabilityCardState
                   ),
                 ),
               ),
-              if (_saving)
+              if (_saving || firstLoad)
                 const SizedBox(
                   width: 20,
                   height: 20,
                   child: CircularProgressIndicator(strokeWidth: 2),
                 )
-              else if (isVerified)
-                Switch(
-                  value: isAvailable,
-                  activeThumbColor: AppColors.primary,
-                  onChanged: _toggle,
-                )
               else
-                // A disabled Switch swallows taps silently. Wrap it so an
-                // unverified mentor tapping it lands on the verification
-                // screen instead of hitting a dead control — matches
-                // UsersService.updateProfile's backend gate.
-                GestureDetector(
-                  onTap: () => context.go('/profile/verification'),
-                  child: AbsorbPointer(
-                    child: Switch(value: false, onChanged: (_) {}),
-                  ),
+                // Real switch for a verified mentor; a plainly-disabled one
+                // otherwise. Tapping it never navigates — the "Verify now"
+                // link below is the only route to verification, so a stray
+                // tap on the control can't yank the mentor off this screen.
+                Switch(
+                  value: isVerified && isAvailable,
+                  activeThumbColor: AppColors.primary,
+                  onChanged: isVerified ? _toggle : null,
                 ),
             ],
           ),
@@ -383,7 +382,7 @@ class _MentorAvailabilityCardState
               color: AppColors.textSecondary,
             ),
           ),
-          if (!isVerified) ...[
+          if (!firstLoad && !isVerified) ...[
             const SizedBox(height: AppSpacing.xs),
             GestureDetector(
               onTap: () => context.go('/profile/verification'),
