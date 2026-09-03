@@ -46,10 +46,43 @@ export interface University {
   city: string | null;
 }
 
-export function searchUniversities(query: string): Promise<{ data: University[] }> {
-  const params = new URLSearchParams({ limit: "8" });
+/** `level` (e.g. "UG") restricts results to colleges offering that level —
+ * pass it whenever the picker is degree-specific, so e.g. a UG selection
+ * doesn't surface PG-only accreditation sites (DNB/Diploma/etc hospitals)
+ * that have nothing to do with undergraduate admission. Called with an
+ * empty `query` to fetch a default browsable list (not just after typing),
+ * so the field can offer a full dropdown as well as type-to-search.
+ * `browse=true` is always sent — without it, GET /universities caps the
+ * default (no-query) page at 50 rows, which for a college count in the
+ * hundreds only ever shows the alphabetically-first handful (e.g. never
+ * anything past "An…"); see UniversitiesService.findAll's doc comment. */
+export function searchUniversities(query: string, level?: string, stream?: string): Promise<{ data: University[] }> {
+  const params = new URLSearchParams({ browse: "true" });
   if (query.trim()) params.set("search", query.trim());
+  if (level) params.set("level", level);
+  if (stream) params.set("stream", stream);
   return request(`/universities?${params.toString()}`);
+}
+
+export interface CuratedCollege {
+  id: string;
+  label: string;
+  specializations: string[];
+}
+
+/** Mentor form's College/University list for a given stream+degree. Pass
+ * `browse: true` for the full-list + type-to-search mode (MD/MS) instead of
+ * the default curated-top-N subset (DNB/DM-MCh/Diploma); `search` filters
+ * that full list by name and only applies when `browse` is set. */
+export function fetchCuratedColleges(
+  stream: string,
+  degree: string,
+  options?: { browse?: boolean; search?: string },
+): Promise<CuratedCollege[]> {
+  const params = new URLSearchParams({ stream, degree });
+  if (options?.browse) params.set("browse", "true");
+  if (options?.search) params.set("search", options.search);
+  return request(`/universities/curated?${params.toString()}`);
 }
 
 export interface LeadAcknowledgement {

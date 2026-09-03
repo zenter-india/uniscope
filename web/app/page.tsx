@@ -8,7 +8,6 @@ import { GetStarted } from "../components/GetStarted";
 export default function HomePage() {
   return (
     <>
-      {/* Uniscope landing page */}
       <SiteNav />
       <HeroCold />
       <HeroWarm />
