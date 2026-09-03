@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useState, useTransition } from 'react';
-import { Badge, Button, Card, toneFor } from '../../../components/ui';
+import { Badge, Button, Table, toneFor } from '../../../components/ui';
 import { setReviewStatus, type ModeratedReview } from './actions';
 
 function stars(n: number): string {
@@ -33,39 +33,45 @@ export function ReviewRow({ review }: { review: ModeratedReview }) {
       : `/dashboard/universities?search=${encodeURIComponent(review.subjectName)}`;
 
   return (
-    <Card className="p-4">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="text-sm text-amber-500" title={`${review.rating} / 5`}>
-              {stars(review.rating)}
-            </span>
-            <Badge tone={toneFor(status)}>{status}</Badge>
-            <Badge>{review.kind === 'mentor' ? 'Mentor' : 'College'}</Badge>
-          </div>
-          {review.text && (
-            <p className="mt-2 text-sm text-zinc-800">{review.text}</p>
-          )}
-          <p className="mt-2 text-xs text-zinc-400">
-            by{' '}
-            <Link
-              href={`/dashboard/users/${review.authorId}`}
-              className="underline decoration-zinc-300 underline-offset-2 hover:decoration-zinc-600"
-            >
-              {review.authorName}
-            </Link>{' '}
-            · for{' '}
-            <Link
-              href={subjectHref}
-              className="underline decoration-zinc-300 underline-offset-2 hover:decoration-zinc-600"
-            >
-              {review.subjectName}
-            </Link>{' '}
-            · {new Date(review.createdAt).toLocaleDateString()}
-          </p>
+    <Table.Row>
+      <Table.Cell className="whitespace-nowrap align-top">
+        <span className="text-amber-500" title={`${review.rating} / 5`}>
+          {stars(review.rating)}
+        </span>
+        <div className="mt-1">
+          <Badge>{review.kind === 'mentor' ? 'Mentor' : 'College'}</Badge>
         </div>
-
-        <div className="flex shrink-0 flex-wrap gap-2">
+      </Table.Cell>
+      <Table.Cell className="align-top">
+        <p className="max-w-md text-zinc-800">{review.text || <span className="text-zinc-400">— no text —</span>}</p>
+        {error && <p className="mt-1 text-xs text-red-600">{error}</p>}
+      </Table.Cell>
+      <Table.Cell className="align-top text-xs text-zinc-500">
+        <p>
+          by{' '}
+          <Link
+            href={`/dashboard/users/${review.authorId}`}
+            className="underline decoration-zinc-300 underline-offset-2 hover:decoration-zinc-600"
+          >
+            {review.authorName}
+          </Link>
+        </p>
+        <p className="mt-0.5">
+          for{' '}
+          <Link
+            href={subjectHref}
+            className="underline decoration-zinc-300 underline-offset-2 hover:decoration-zinc-600"
+          >
+            {review.subjectName}
+          </Link>
+        </p>
+        <p className="mt-0.5 text-zinc-400">{new Date(review.createdAt).toLocaleDateString()}</p>
+      </Table.Cell>
+      <Table.Cell className="align-top">
+        <Badge tone={toneFor(status)}>{status}</Badge>
+      </Table.Cell>
+      <Table.Cell className="align-top">
+        <div className="flex flex-wrap justify-end gap-2">
           {status !== 'ACTIVE' && (
             <Button size="sm" onClick={() => move('ACTIVE')} disabled={isPending}>
               Restore
@@ -87,9 +93,7 @@ export function ReviewRow({ review }: { review: ModeratedReview }) {
             </Button>
           )}
         </div>
-      </div>
-
-      {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
-    </Card>
+      </Table.Cell>
+    </Table.Row>
   );
 }

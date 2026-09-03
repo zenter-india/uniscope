@@ -1,5 +1,6 @@
 import { backendFetch } from '../../../lib/backend';
 import { getAdminEmail } from '../../../lib/adminAuth';
+import { Table } from '../../../components/ui';
 import { DashboardShell } from '../DashboardShell';
 import { VerificationRow, type VerificationRequestRow } from './VerificationRow';
 
@@ -17,11 +18,21 @@ export default async function VerificationQueuePage() {
           FIFO order.
         </p>
       ) : (
-        <div className="flex flex-col gap-4">
+        <Table
+          head={
+            <tr>
+              <Table.HeadCell>Applicant</Table.HeadCell>
+              <Table.HeadCell>Role</Table.HeadCell>
+              <Table.HeadCell>College · document</Table.HeadCell>
+              <Table.HeadCell>Submitted</Table.HeadCell>
+              <Table.HeadCell className="w-8" />
+            </tr>
+          }
+        >
           {queue.map((request) => (
             <VerificationRow key={request.id} request={request} />
           ))}
-        </div>
+        </Table>
       )}
     </DashboardShell>
   );

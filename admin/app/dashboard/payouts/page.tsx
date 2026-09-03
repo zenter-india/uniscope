@@ -1,6 +1,6 @@
-import Link from 'next/link';
 import { backendFetch } from '../../../lib/backend';
 import { getAdminEmail } from '../../../lib/adminAuth';
+import { FilterTabs, Table } from '../../../components/ui';
 import { DashboardShell } from '../DashboardShell';
 import { PayoutRow, type PayoutRowData } from './PayoutRow';
 
@@ -34,19 +34,12 @@ export default async function PayoutsPage({
   return (
     <DashboardShell title="Payouts" email={email}>
       <div className="mb-4 flex flex-wrap items-center gap-2">
-        {STATUS_TABS.map((tab) => (
-          <Link
-            key={tab}
-            href={`/dashboard/payouts?status=${tab}`}
-            className={`rounded-lg px-3 py-1.5 text-sm font-medium ${
-              status === tab
-                ? 'bg-zinc-900 text-white'
-                : 'border border-zinc-300 text-zinc-600 hover:bg-zinc-100'
-            }`}
-          >
-            {tab === 'ALL' ? 'All' : tab.charAt(0) + tab.slice(1).toLowerCase()}
-          </Link>
-        ))}
+        <FilterTabs
+          items={STATUS_TABS}
+          current={status as (typeof STATUS_TABS)[number]}
+          hrefFor={(tab) => `/dashboard/payouts?status=${tab}`}
+          labelFor={(tab) => (tab === 'ALL' ? 'All' : tab.charAt(0) + tab.slice(1).toLowerCase())}
+        />
         {openTotal > 0 && (
           <span className="ml-auto text-sm text-zinc-500">
             {rupees(openTotal)} awaiting payout
@@ -61,11 +54,21 @@ export default async function PayoutsPage({
             : 'No payout requests in this status.'}
         </p>
       ) : (
-        <div className="flex flex-col gap-4">
+        <Table
+          head={
+            <tr>
+              <Table.HeadCell>Mentor</Table.HeadCell>
+              <Table.HeadCell>Amount</Table.HeadCell>
+              <Table.HeadCell>Status</Table.HeadCell>
+              <Table.HeadCell>Earnings period</Table.HeadCell>
+              <Table.HeadCell className="w-8" />
+            </tr>
+          }
+        >
           {rows.map((payout) => (
             <PayoutRow key={payout.id} payout={payout} />
           ))}
-        </div>
+        </Table>
       )}
     </DashboardShell>
   );

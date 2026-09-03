@@ -2,7 +2,8 @@
 
 import Link from 'next/link';
 import { useState, useTransition } from 'react';
-import { Badge, Button, Card, toneFor } from '../../../components/ui';
+import { Badge, Button, toneFor } from '../../../components/ui';
+import { ExpandableRow } from '../../../components/ExpandableRow';
 import { getLeadDocumentUrl, updateLead } from './actions';
 
 const DOCUMENT_TYPE_LABELS: Record<string, string> = {
@@ -54,14 +55,13 @@ function Field({ label, value }: { label: string; value: React.ReactNode }) {
   if (value === null || value === undefined || value === '') return null;
   return (
     <div>
-      <p className="text-xs font-medium uppercase tracking-wide text-zinc-400">{label}</p>
+      <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">{label}</p>
       <p className="text-sm text-zinc-800">{value}</p>
     </div>
   );
 }
 
 export function LeadRow({ lead }: { lead: LeadRowData }) {
-  const [expanded, setExpanded] = useState(false);
   const [note, setNote] = useState(lead.adminNote ?? '');
   const [status, setStatus] = useState(lead.status);
   const [docUrl, setDocUrl] = useState<string | null>(null);
@@ -98,34 +98,36 @@ export function LeadRow({ lead }: { lead: LeadRowData }) {
   };
 
   return (
-    <Card className="p-5">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <button
-          type="button"
-          onClick={() => setExpanded((v) => !v)}
-          className="flex-1 text-left"
-        >
-          <div className="flex flex-wrap items-center gap-2">
-            <p className="font-medium text-zinc-900">{lead.fullName}</p>
-            <Badge tone={lead.role === 'MENTOR' ? 'info' : 'neutral'}>
-              {lead.role === 'MENTOR' ? 'Mentor' : 'Student'}
-            </Badge>
-            <Badge tone={toneFor(status)}>{status}</Badge>
-          </div>
-          <p className="mt-0.5 text-sm text-zinc-500">
-            {lead.phone}
-            {lead.email ? ` · ${lead.email}` : ''}
-            {lead.alias ? ` · alias: ${lead.alias}` : ''}
-          </p>
-          <p className="mt-0.5 text-xs text-zinc-400">
-            Submitted {new Date(lead.createdAt).toLocaleString()}
-          </p>
-        </button>
+    <ExpandableRow
+      colSpan={6}
+      cells={[
+        <span key="n" className="font-medium text-zinc-900">
+          {lead.fullName}
+        </span>,
+        <Badge key="r" tone={lead.role === 'MENTOR' ? 'info' : 'neutral'}>
+          {lead.role === 'MENTOR' ? 'Mentor' : 'Student'}
+        </Badge>,
+        <Badge key="s" tone={toneFor(status)}>
+          {status}
+        </Badge>,
+        <span key="c" className="text-xs text-zinc-500">
+          {lead.phone}
+          {lead.email ? ` · ${lead.email}` : ''}
+        </span>,
+        <span key="d" className="whitespace-nowrap text-xs text-zinc-500">
+          {new Date(lead.createdAt).toLocaleDateString()}
+        </span>,
+      ]}
+    >
+      <div className="flex flex-wrap items-center gap-3">
         {lead.hasDocument && (
           <Button size="sm" onClick={viewDocument} disabled={isPending}>
             View document
           </Button>
         )}
+        {lead.alias ? (
+          <span className="text-xs text-zinc-500">alias: {lead.alias}</span>
+        ) : null}
       </div>
 
       {docUrl && (
@@ -140,8 +142,7 @@ export function LeadRow({ lead }: { lead: LeadRowData }) {
         </a>
       )}
 
-      {expanded && (
-        <div className="mt-4 grid grid-cols-2 gap-x-6 gap-y-3 border-t border-zinc-100 pt-4 sm:grid-cols-3">
+      <div className="mt-4 grid grid-cols-2 gap-x-6 gap-y-3 sm:grid-cols-3">
           <Field label="Email" value={lead.email} />
           <Field
             label="Date of birth"
@@ -197,8 +198,7 @@ export function LeadRow({ lead }: { lead: LeadRowData }) {
             }
           />
           <Field label="Last updated" value={new Date(lead.updatedAt).toLocaleString()} />
-        </div>
-      )}
+      </div>
 
       <div className="mt-4 border-t border-zinc-100 pt-4">
         <textarea
@@ -223,6 +223,6 @@ export function LeadRow({ lead }: { lead: LeadRowData }) {
           </Button>
         </div>
       </div>
-    </Card>
+    </ExpandableRow>
   );
 }

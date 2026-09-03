@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useTransition } from 'react';
-import { Badge, Button, Card, toneFor } from '../../../components/ui';
+import { Badge, Button, toneFor } from '../../../components/ui';
+import { ExpandableRow } from '../../../components/ExpandableRow';
 import { processPayout } from './actions';
 
 export interface PayoutRowData {
@@ -57,35 +58,38 @@ export function PayoutRow({ payout }: { payout: PayoutRowData }) {
   };
 
   return (
-    <Card className="p-5">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <div className="flex flex-wrap items-center gap-2">
-            <p className="text-base font-semibold text-zinc-900">
-              {payout.mentorName ?? payout.mentorId}
-            </p>
-            <Badge tone={toneFor(status)}>{status}</Badge>
-            {payout.isOverdue && open && <Badge tone="danger">Overdue</Badge>}
-          </div>
-          <p className="mt-1 text-sm text-zinc-500">
-            Earnings {fmtDate(payout.periodStart)} – {fmtDate(payout.periodEnd)} · requested{' '}
-            {new Date(payout.createdAt).toLocaleString()}
-          </p>
-          <p className="mt-0.5 font-mono text-xs text-zinc-300">{payout.mentorId}</p>
-        </div>
-        <div className="text-right">
-          <p className="text-xl font-bold text-zinc-900">{rupees(payout.amountMinor)}</p>
-          {payout.mentorWalletBalanceMinor != null && (
-            <p className={`text-xs ${shortBalance ? 'text-red-600' : 'text-zinc-400'}`}>
-              wallet {rupees(payout.mentorWalletBalanceMinor)}
-              {shortBalance ? ' · short' : ''}
-            </p>
-          )}
-        </div>
-      </div>
+    <ExpandableRow
+      colSpan={5}
+      defaultOpen={open}
+      cells={[
+        <span key="m" className="font-medium text-zinc-900">
+          {payout.mentorName ?? payout.mentorId}
+        </span>,
+        <span key="a" className="font-semibold tabular-nums text-zinc-900">
+          {rupees(payout.amountMinor)}
+        </span>,
+        <span key="s" className="flex items-center gap-1.5">
+          <Badge tone={toneFor(status)}>{status}</Badge>
+          {payout.isOverdue && open && <Badge tone="danger">Overdue</Badge>}
+        </span>,
+        <span key="p" className="whitespace-nowrap text-xs text-zinc-500">
+          {fmtDate(payout.periodStart)} – {fmtDate(payout.periodEnd)}
+        </span>,
+      ]}
+    >
+      <p className="text-xs text-zinc-500">
+        Requested {new Date(payout.createdAt).toLocaleString()} · mentor id{' '}
+        <span className="font-mono">{payout.mentorId}</span>
+      </p>
+      {payout.mentorWalletBalanceMinor != null && (
+        <p className={`mt-1 text-xs ${shortBalance ? 'text-red-600' : 'text-zinc-400'}`}>
+          Mentor wallet balance {rupees(payout.mentorWalletBalanceMinor)}
+          {shortBalance ? ' — below the payout amount' : ''}
+        </p>
+      )}
 
       {!open && (processedAt || savedRef) && (
-        <p className="mt-3 border-t border-zinc-100 pt-3 text-sm text-zinc-500">
+        <p className="mt-2 text-sm text-zinc-500">
           {processedAt ? `${status === 'COMPLETED' ? 'Paid' : 'Closed'} ${new Date(processedAt).toLocaleString()}` : ''}
           {savedRef ? ` · ref ${savedRef}` : ''}
         </p>
@@ -157,6 +161,6 @@ export function PayoutRow({ payout }: { payout: PayoutRowData }) {
           )}
         </div>
       )}
-    </Card>
+    </ExpandableRow>
   );
 }

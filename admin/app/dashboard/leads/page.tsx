@@ -1,6 +1,6 @@
-import Link from 'next/link';
 import { backendFetch } from '../../../lib/backend';
 import { getAdminEmail } from '../../../lib/adminAuth';
+import { Card, FilterTabs } from '../../../components/ui';
 import { DashboardShell } from '../DashboardShell';
 import type { LeadRowData } from './LeadRow';
 import { LeadsList } from './LeadsList';
@@ -50,83 +50,63 @@ export default async function LeadsPage({
   return (
     <DashboardShell title="Enrollment Leads" email={email}>
       {stats && (
-        <div className="mb-5 flex flex-wrap gap-3">
-          <div className="rounded-lg border border-zinc-200 bg-white px-4 py-3">
-            <p className="text-xs text-zinc-400">Total</p>
-            <p className="text-lg font-semibold text-zinc-900">{stats.total}</p>
-          </div>
-          <div className="rounded-lg border border-zinc-200 bg-white px-4 py-3">
-            <p className="text-xs text-zinc-400">Students</p>
-            <p className="text-lg font-semibold text-zinc-900">{stats.byRole.ASPIRANT ?? 0}</p>
-          </div>
-          <div className="rounded-lg border border-zinc-200 bg-white px-4 py-3">
-            <p className="text-xs text-zinc-400">Mentors</p>
-            <p className="text-lg font-semibold text-zinc-900">{stats.byRole.MENTOR ?? 0}</p>
-          </div>
-          <div className="rounded-lg border border-zinc-200 bg-white px-4 py-3">
-            <p className="text-xs text-zinc-400">New</p>
-            <p className="text-lg font-semibold text-zinc-900">{stats.byStatus.NEW ?? 0}</p>
-          </div>
-          <div className="rounded-lg border border-zinc-200 bg-white px-4 py-3">
-            <p className="text-xs text-zinc-400">Converted</p>
-            <p className="text-lg font-semibold text-zinc-900">{stats.byStatus.CONVERTED ?? 0}</p>
-          </div>
+        <div className="mb-5 flex flex-wrap items-stretch gap-3">
+          {[
+            ['Total', stats.total],
+            ['Students', stats.byRole.ASPIRANT ?? 0],
+            ['Mentors', stats.byRole.MENTOR ?? 0],
+            ['New', stats.byStatus.NEW ?? 0],
+            ['Converted', stats.byStatus.CONVERTED ?? 0],
+          ].map(([label, value]) => (
+            <Card key={label} className="px-4 py-3">
+              <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">{label}</p>
+              <p className="mt-1 text-lg font-semibold tracking-tight text-zinc-900">{value}</p>
+            </Card>
+          ))}
           <a
             href={`/dashboard/leads/export${params.toString() ? `?${params.toString()}` : ''}`}
-            className="ml-auto self-center rounded-lg border border-zinc-300 px-3 py-1.5 text-sm font-medium text-zinc-700 hover:bg-zinc-50"
+            className="ml-auto inline-flex h-9 items-center self-center rounded-md border border-zinc-300 bg-white px-3.5 text-sm font-medium text-zinc-700 shadow-sm transition-colors hover:bg-zinc-50"
           >
             Export CSV
           </a>
         </div>
       )}
 
-      <form className="mb-4 flex gap-2" action="/dashboard/leads">
-        {role !== 'ALL' && <input type="hidden" name="role" value={role} />}
-        {status !== 'ALL' && <input type="hidden" name="status" value={status} />}
-        <input
-          type="text"
-          name="search"
-          defaultValue={search ?? ''}
-          placeholder="Search by name, phone, email, college..."
-          className="w-80 rounded-lg border border-zinc-300 px-3 py-1.5 text-sm outline-none focus:border-zinc-500"
-        />
-        <button
-          type="submit"
-          className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm font-medium text-zinc-700 hover:bg-zinc-50"
-        >
-          Search
-        </button>
-      </form>
+      <div className="mb-5 flex flex-col gap-3">
+        <form className="flex gap-2" action="/dashboard/leads">
+          {role !== 'ALL' && <input type="hidden" name="role" value={role} />}
+          {status !== 'ALL' && <input type="hidden" name="status" value={status} />}
+          <input
+            type="text"
+            name="search"
+            defaultValue={search ?? ''}
+            placeholder="Search by name, phone, email, college…"
+            className="w-80 rounded-md border border-zinc-300 bg-white px-3 py-1.5 text-sm text-zinc-900 shadow-sm outline-none transition-colors placeholder:text-zinc-400 focus:border-zinc-400 focus:ring-2 focus:ring-zinc-400/40"
+          />
+          <button
+            type="submit"
+            className="inline-flex h-9 items-center rounded-md border border-zinc-300 bg-white px-3.5 text-sm font-medium text-zinc-700 shadow-sm transition-colors hover:bg-zinc-50"
+          >
+            Search
+          </button>
+        </form>
 
-      <div className="mb-2 flex flex-wrap gap-2">
-        {ROLE_TABS.map((tab) => (
-          <Link
-            key={tab}
-            href={buildHref(tab, status, search)}
-            className={`rounded-lg px-3 py-1.5 text-sm font-medium ${
-              role === tab
-                ? 'bg-zinc-900 text-white'
-                : 'border border-zinc-300 text-zinc-600 hover:bg-zinc-100'
-            }`}
-          >
-            {tab === 'ALL' ? 'All roles' : tab === 'ASPIRANT' ? 'Students' : 'Mentors'}
-          </Link>
-        ))}
-      </div>
-      <div className="mb-4 flex flex-wrap gap-2">
-        {STATUS_TABS.map((tab) => (
-          <Link
-            key={tab}
-            href={buildHref(role, tab, search)}
-            className={`rounded-lg px-3 py-1 text-xs font-medium ${
-              status === tab
-                ? 'bg-zinc-700 text-white'
-                : 'border border-zinc-200 text-zinc-500 hover:bg-zinc-100'
-            }`}
-          >
-            {tab}
-          </Link>
-        ))}
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+          <FilterTabs
+            items={ROLE_TABS}
+            current={role as (typeof ROLE_TABS)[number]}
+            hrefFor={(tab) => buildHref(tab, status, search)}
+            labelFor={(tab) =>
+              tab === 'ALL' ? 'All roles' : tab === 'ASPIRANT' ? 'Students' : 'Mentors'
+            }
+          />
+          <FilterTabs
+            size="sm"
+            items={STATUS_TABS}
+            current={status as (typeof STATUS_TABS)[number]}
+            hrefFor={(tab) => buildHref(role, tab, search)}
+          />
+        </div>
       </div>
 
       <LeadsList

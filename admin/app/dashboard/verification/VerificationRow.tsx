@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useTransition } from 'react';
-import { Badge, Button, Card } from '../../../components/ui';
+import { Badge, Button } from '../../../components/ui';
+import { ExpandableRow } from '../../../components/ExpandableRow';
 import { getVerificationDocumentUrl, reviewVerificationRequest } from './actions';
 
 const DOCUMENT_TYPE_LABELS: Record<string, string> = {
@@ -51,14 +52,13 @@ function Field({ label, value }: { label: string; value: React.ReactNode }) {
   if (value === null || value === undefined || value === '') return null;
   return (
     <div>
-      <p className="text-xs font-medium uppercase tracking-wide text-zinc-400">{label}</p>
+      <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">{label}</p>
       <p className="text-sm text-zinc-800">{value}</p>
     </div>
   );
 }
 
 export function VerificationRow({ request }: { request: VerificationRequestRow }) {
-  const [expanded, setExpanded] = useState(false);
   const [note, setNote] = useState('');
   const [docUrl, setDocUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -99,34 +99,30 @@ export function VerificationRow({ request }: { request: VerificationRequestRow }
         : null;
 
   return (
-    <Card className="p-5">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <button
-          type="button"
-          onClick={() => setExpanded((v) => !v)}
-          className="flex-1 text-left"
-        >
-          <p className="font-medium text-zinc-900">
-            {request.userDisplayName ?? request.userId}
-            {a && <Badge className="ml-2">{a.role}</Badge>}
-          </p>
-          <p className="mt-0.5 text-sm text-zinc-500">
-            {request.universityName ?? request.universityId} ·{' '}
-            {DOCUMENT_TYPE_LABELS[request.documentType] ?? request.documentType}
-          </p>
-          <p className="mt-0.5 text-xs text-zinc-400">
-            Submitted{' '}
-            {request.submittedAt ? new Date(request.submittedAt).toLocaleString() : '—'}
-            {a ? ` · ${expanded ? 'hide details' : 'show details'}` : ''}
-          </p>
-        </button>
+    <ExpandableRow
+      colSpan={5}
+      cells={[
+        <span key="n" className="font-medium text-zinc-900">
+          {request.userDisplayName ?? request.userId}
+        </span>,
+        a ? <Badge key="r">{a.role}</Badge> : <span key="r">—</span>,
+        <span key="c" className="text-xs text-zinc-500">
+          {request.universityName ?? request.universityId} ·{' '}
+          {DOCUMENT_TYPE_LABELS[request.documentType] ?? request.documentType}
+        </span>,
+        <span key="d" className="whitespace-nowrap text-xs text-zinc-500">
+          {request.submittedAt ? new Date(request.submittedAt).toLocaleDateString() : '—'}
+        </span>,
+      ]}
+    >
+      <div className="flex flex-wrap items-center gap-3">
         <Button size="sm" onClick={viewDocument} disabled={isPending}>
           View document
         </Button>
       </div>
 
-      {expanded && a && (
-        <div className="mt-4 grid grid-cols-2 gap-x-6 gap-y-3 border-t border-zinc-100 pt-4 sm:grid-cols-3">
+      {a && (
+        <div className="mt-4 grid grid-cols-2 gap-x-6 gap-y-3 sm:grid-cols-3">
           <Field label="Real name" value={a.realName} />
           <Field
             label="Date of birth"
@@ -184,6 +180,6 @@ export function VerificationRow({ request }: { request: VerificationRequestRow }
           Reject
         </Button>
       </div>
-    </Card>
+    </ExpandableRow>
   );
 }

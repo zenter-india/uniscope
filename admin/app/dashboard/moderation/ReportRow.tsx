@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useTransition } from 'react';
-import { Button, Card } from '../../../components/ui';
+import { Badge, Button } from '../../../components/ui';
+import { ExpandableRow } from '../../../components/ExpandableRow';
 import { resolveReport } from './actions';
 
 const REASON_LABELS: Record<string, string> = {
@@ -66,26 +67,32 @@ export function ReportRow({
   if (resolved) return null;
 
   return (
-    <Card className="p-5">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <p className="font-medium text-zinc-900">
-            {REASON_LABELS[report.reason] ?? report.reason}
-          </p>
-          <p className="mt-0.5 text-sm text-zinc-500">
-            Reported by {report.reporterDisplayName ?? report.reporterId} · target:{' '}
-            {report.targetType} {report.targetId}
-          </p>
-          {report.description && (
-            <p className="mt-2 rounded-lg bg-zinc-50 p-2 text-sm text-zinc-700">
-              &ldquo;{report.description}&rdquo;
-            </p>
-          )}
-          <p className="mt-1 text-xs text-zinc-400">
-            {new Date(report.createdAt).toLocaleString()}
-          </p>
-        </div>
-      </div>
+    <ExpandableRow
+      colSpan={5}
+      defaultOpen={!readOnly}
+      cells={[
+        <span key="reason" className="font-medium text-zinc-900">
+          {REASON_LABELS[report.reason] ?? report.reason}
+        </span>,
+        <span key="by" className="text-xs text-zinc-500">
+          {report.reporterDisplayName ?? report.reporterId}
+        </span>,
+        <Badge key="t">
+          {report.targetType}
+        </Badge>,
+        <span key="at" className="whitespace-nowrap text-xs text-zinc-500">
+          {new Date(report.createdAt).toLocaleDateString()}
+        </span>,
+      ]}
+    >
+      <p className="text-xs text-zinc-500">
+        Target {report.targetType} <span className="font-mono">{report.targetId}</span>
+      </p>
+      {report.description && (
+        <p className="mt-2 rounded-lg bg-zinc-50 p-2 text-sm text-zinc-700">
+          &ldquo;{report.description}&rdquo;
+        </p>
+      )}
 
       {!readOnly && (
         <>
@@ -121,6 +128,6 @@ export function ReportRow({
           </div>
         </>
       )}
-    </Card>
+    </ExpandableRow>
   );
 }

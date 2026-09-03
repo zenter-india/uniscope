@@ -1,6 +1,6 @@
-import Link from 'next/link';
 import { backendFetch } from '../../../lib/backend';
 import { getAdminEmail } from '../../../lib/adminAuth';
+import { FilterTabs } from '../../../components/ui';
 import { DashboardShell } from '../DashboardShell';
 import { ReviewsList } from './ReviewsList';
 import type { ModeratedReview } from './actions';
@@ -41,54 +41,40 @@ export default async function ReviewsPage({
 
   return (
     <DashboardShell title="Reviews" email={email}>
-      <form className="mb-4 flex gap-2" action="/dashboard/reviews">
-        <input type="hidden" name="type" value={type} />
-        {status !== 'ALL' && <input type="hidden" name="status" value={status} />}
-        <input
-          type="text"
-          name="search"
-          defaultValue={search ?? ''}
-          placeholder="Search review text…"
-          className="w-80 rounded-lg border border-zinc-300 px-3 py-1.5 text-sm text-zinc-900 outline-none placeholder:text-zinc-400 focus:border-zinc-500"
-        />
-        <button
-          type="submit"
-          className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm font-medium text-zinc-700 hover:bg-zinc-50"
-        >
-          Search
-        </button>
-      </form>
-
-      <div className="mb-2 flex flex-wrap gap-2">
-        {TYPE_TABS.map((t) => (
-          <Link
-            key={t}
-            href={buildHref({ type: t, status, search })}
-            className={`rounded-lg px-3 py-1.5 text-sm font-medium ${
-              type === t
-                ? 'bg-zinc-900 text-white'
-                : 'border border-zinc-300 text-zinc-600 hover:bg-zinc-100'
-            }`}
+      <div className="mb-5 flex flex-col gap-3">
+        <form className="flex gap-2" action="/dashboard/reviews">
+          <input type="hidden" name="type" value={type} />
+          {status !== 'ALL' && <input type="hidden" name="status" value={status} />}
+          <input
+            type="text"
+            name="search"
+            defaultValue={search ?? ''}
+            placeholder="Search review text…"
+            className="w-80 rounded-md border border-zinc-300 bg-white px-3 py-1.5 text-sm text-zinc-900 shadow-sm outline-none transition-colors placeholder:text-zinc-400 focus:border-zinc-400 focus:ring-2 focus:ring-zinc-400/40"
+          />
+          <button
+            type="submit"
+            className="inline-flex h-9 items-center rounded-md border border-zinc-300 bg-white px-3.5 text-sm font-medium text-zinc-700 shadow-sm transition-colors hover:bg-zinc-50"
           >
-            {t === 'mentor' ? 'Mentor reviews' : 'College reviews'}
-          </Link>
-        ))}
-      </div>
+            Search
+          </button>
+        </form>
 
-      <div className="mb-4 flex flex-wrap gap-2">
-        {STATUS_TABS.map((s) => (
-          <Link
-            key={s}
-            href={buildHref({ type, status: s, search })}
-            className={`rounded-lg px-3 py-1 text-xs font-medium ${
-              status === s
-                ? 'bg-zinc-700 text-white'
-                : 'border border-zinc-200 text-zinc-500 hover:bg-zinc-100'
-            }`}
-          >
-            {s === 'ALL' ? 'Any status' : s}
-          </Link>
-        ))}
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+          <FilterTabs
+            items={TYPE_TABS}
+            current={type}
+            hrefFor={(t) => buildHref({ type: t, status, search })}
+            labelFor={(t) => (t === 'mentor' ? 'Mentor reviews' : 'College reviews')}
+          />
+          <FilterTabs
+            size="sm"
+            items={STATUS_TABS}
+            current={status as (typeof STATUS_TABS)[number]}
+            hrefFor={(s) => buildHref({ type, status: s, search })}
+            labelFor={(s) => (s === 'ALL' ? 'Any status' : s)}
+          />
+        </div>
       </div>
 
       <ReviewsList

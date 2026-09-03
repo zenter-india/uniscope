@@ -2,7 +2,8 @@
 
 import Link from 'next/link';
 import { useState, useTransition } from 'react';
-import { Badge, Button, Card, toneFor } from '../../../components/ui';
+import { Badge, Button, toneFor } from '../../../components/ui';
+import { ExpandableRow } from '../../../components/ExpandableRow';
 import { forceEndSession, type SessionRowData } from './actions';
 
 const TERMINAL = new Set(['COMPLETED', 'CANCELLED', 'REJECTED', 'EXPIRED', 'FAILED']);
@@ -18,7 +19,7 @@ function fmt(v: string | null): string {
 function Field({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div>
-      <p className="text-xs font-medium uppercase tracking-wide text-zinc-400">{label}</p>
+      <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">{label}</p>
       <p className="mt-0.5 text-sm text-zinc-800">
         {value === null || value === undefined || value === '' ? (
           <span className="text-zinc-300">—</span>
@@ -31,7 +32,6 @@ function Field({ label, value }: { label: string; value: React.ReactNode }) {
 }
 
 export function SessionRow({ session }: { session: SessionRowData }) {
-  const [expanded, setExpanded] = useState(false);
   const [status, setStatus] = useState(session.status);
   const [endReason, setEndReason] = useState(session.endReason);
   const [error, setError] = useState<string | null>(null);
@@ -54,25 +54,27 @@ export function SessionRow({ session }: { session: SessionRowData }) {
   };
 
   return (
-    <Card className="p-4">
-      <button type="button" onClick={() => setExpanded((v) => !v)} className="w-full text-left">
-        <div className="flex flex-wrap items-center gap-2">
+    <ExpandableRow
+      colSpan={5}
+      cells={[
+        <span key="p" className="flex items-center gap-1.5">
           <span className="font-medium text-zinc-900">{session.aspirantName}</span>
           <span className="text-zinc-400">→</span>
           <span className="font-medium text-zinc-900">{session.mentorName}</span>
-          <Badge tone={isCall ? 'info' : 'neutral'}>{isCall ? 'Call' : 'Chat'}</Badge>
-          <Badge tone={toneFor(status)}>{status.replace('_', ' ')}</Badge>
-        </div>
-        <p className="mt-1 text-xs text-zinc-400">
-          Requested {fmt(session.requestedAt)}
-          {isCall && session.callSlotMinutes ? ` · ${session.callSlotMinutes} min slot` : ''}
+        </span>,
+        <Badge key="t" tone={isCall ? 'info' : 'neutral'}>
+          {isCall ? 'Call' : 'Chat'}
+        </Badge>,
+        <Badge key="s" tone={toneFor(status)}>
+          {status.replace('_', ' ')}
+        </Badge>,
+        <span key="r" className="whitespace-nowrap text-xs text-zinc-500">
+          {fmt(session.requestedAt)}
           {session.totalCostMinor > 0 ? ` · ${rupees(session.totalCostMinor)}` : ''}
-          {endReason ? ` · ${endReason.replace(/_/g, ' ').toLowerCase()}` : ''}
-        </p>
-      </button>
-
-      {expanded && (
-        <div className="mt-4 grid grid-cols-2 gap-x-6 gap-y-3 border-t border-zinc-100 pt-4 sm:grid-cols-3">
+        </span>,
+      ]}
+    >
+      <div className="grid grid-cols-2 gap-x-6 gap-y-3 sm:grid-cols-3">
           <Field
             label="Aspirant"
             value={
@@ -122,8 +124,7 @@ export function SessionRow({ session }: { session: SessionRowData }) {
               <p className="text-xs text-zinc-400">Session is finished — nothing to force-end.</p>
             )}
           </div>
-        </div>
-      )}
-    </Card>
+      </div>
+    </ExpandableRow>
   );
 }

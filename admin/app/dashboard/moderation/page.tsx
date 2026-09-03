@@ -1,6 +1,6 @@
-import Link from 'next/link';
 import { backendFetch } from '../../../lib/backend';
 import { getAdminEmail } from '../../../lib/adminAuth';
+import { FilterTabs } from '../../../components/ui';
 import { DashboardShell } from '../DashboardShell';
 import type { ReportRowData } from './ReportRow';
 import { ReportsList } from './ReportsList';
@@ -26,20 +26,13 @@ export default async function ModerationPage({
 
   return (
     <DashboardShell title="Moderation" email={email}>
-      <div className="mb-4 flex gap-2">
-        {STATUS_TABS.map((tab) => (
-          <Link
-            key={tab}
-            href={`/dashboard/moderation?status=${tab}`}
-            className={`rounded-lg px-3 py-1.5 text-sm font-medium ${
-              status === tab
-                ? 'bg-zinc-900 text-white'
-                : 'border border-zinc-300 text-zinc-600 hover:bg-zinc-100'
-            }`}
-          >
-            {tab.replace('_', ' ')}
-          </Link>
-        ))}
+      <div className="mb-4">
+        <FilterTabs
+          items={STATUS_TABS}
+          current={status as (typeof STATUS_TABS)[number]}
+          hrefFor={(tab) => `/dashboard/moderation?status=${tab}`}
+          labelFor={(tab) => tab.replace('_', ' ')}
+        />
       </div>
 
       <ReportsList

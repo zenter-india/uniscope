@@ -1,6 +1,6 @@
-import Link from 'next/link';
 import { backendFetch } from '../../../lib/backend';
 import { getAdminEmail } from '../../../lib/adminAuth';
+import { FilterTabs } from '../../../components/ui';
 import { DashboardShell } from '../DashboardShell';
 import { SessionsList } from './SessionsList';
 import type { SessionRowData } from './actions';
@@ -53,54 +53,40 @@ export default async function SessionsPage({
 
   return (
     <DashboardShell title="Sessions" email={email}>
-      <form className="mb-4 flex gap-2" action="/dashboard/sessions">
-        {status !== 'ALL' && <input type="hidden" name="status" value={status} />}
-        {type !== 'ALL' && <input type="hidden" name="type" value={type} />}
-        <input
-          type="text"
-          name="search"
-          defaultValue={search ?? ''}
-          placeholder="Search by aspirant or mentor name…"
-          className="w-80 rounded-lg border border-zinc-300 px-3 py-1.5 text-sm outline-none focus:border-zinc-500"
-        />
-        <button
-          type="submit"
-          className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm font-medium text-zinc-700 hover:bg-zinc-50"
-        >
-          Search
-        </button>
-      </form>
-
-      <div className="mb-2 flex flex-wrap gap-2">
-        {TYPE_TABS.map((tab) => (
-          <Link
-            key={tab}
-            href={buildHref({ status, type: tab, search })}
-            className={`rounded-lg px-3 py-1.5 text-sm font-medium ${
-              type === tab
-                ? 'bg-zinc-900 text-white'
-                : 'border border-zinc-300 text-zinc-600 hover:bg-zinc-100'
-            }`}
+      <div className="mb-5 flex flex-col gap-3">
+        <form className="flex gap-2" action="/dashboard/sessions">
+          {status !== 'ALL' && <input type="hidden" name="status" value={status} />}
+          {type !== 'ALL' && <input type="hidden" name="type" value={type} />}
+          <input
+            type="text"
+            name="search"
+            defaultValue={search ?? ''}
+            placeholder="Search by aspirant or mentor name…"
+            className="w-80 rounded-md border border-zinc-300 bg-white px-3 py-1.5 text-sm text-zinc-900 shadow-sm outline-none transition-colors placeholder:text-zinc-400 focus:border-zinc-400 focus:ring-2 focus:ring-zinc-400/40"
+          />
+          <button
+            type="submit"
+            className="inline-flex h-9 items-center rounded-md border border-zinc-300 bg-white px-3.5 text-sm font-medium text-zinc-700 shadow-sm transition-colors hover:bg-zinc-50"
           >
-            {tab === 'ALL' ? 'All types' : tab === 'CHAT' ? 'Chat' : 'Call'}
-          </Link>
-        ))}
-      </div>
+            Search
+          </button>
+        </form>
 
-      <div className="mb-4 flex flex-wrap gap-2">
-        {STATUS_TABS.map((tab) => (
-          <Link
-            key={tab}
-            href={buildHref({ status: tab, type, search })}
-            className={`rounded-lg px-3 py-1 text-xs font-medium ${
-              status === tab
-                ? 'bg-zinc-700 text-white'
-                : 'border border-zinc-200 text-zinc-500 hover:bg-zinc-100'
-            }`}
-          >
-            {tab === 'ALL' ? 'Any status' : tab.replace('_', ' ')}
-          </Link>
-        ))}
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+          <FilterTabs
+            items={TYPE_TABS}
+            current={type as (typeof TYPE_TABS)[number]}
+            hrefFor={(tab) => buildHref({ status, type: tab, search })}
+            labelFor={(tab) => (tab === 'ALL' ? 'All types' : tab === 'CHAT' ? 'Chat' : 'Call')}
+          />
+          <FilterTabs
+            size="sm"
+            items={STATUS_TABS}
+            current={status as (typeof STATUS_TABS)[number]}
+            hrefFor={(tab) => buildHref({ status: tab, type, search })}
+            labelFor={(tab) => (tab === 'ALL' ? 'Any status' : tab.replace('_', ' '))}
+          />
+        </div>
       </div>
 
       <SessionsList
