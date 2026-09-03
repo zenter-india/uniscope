@@ -54,6 +54,37 @@ export async function loadMoreSessions(
   );
 }
 
+export interface ChatMessage {
+  id: string;
+  senderId: string;
+  text: string;
+  createdAt: string;
+}
+
+export interface SessionTranscriptPage {
+  messages: ChatMessage[];
+  hasMore: boolean;
+  sessionType: 'CHAT' | 'AUDIO_CALL';
+  aspirantId: string;
+  aspirantName: string;
+  mentorId: string;
+  mentorName: string;
+}
+
+/** The chat transcript for a session, with the two parties' names so it can
+ * render standalone (e.g. from a report). Non-chat sessions and never-opened
+ * chats come back with an empty `messages`. `before` is an older message id
+ * for paging up. */
+export async function getSessionMessages(
+  sessionId: string,
+  before?: string,
+): Promise<SessionTranscriptPage> {
+  const qs = before ? `?before=${encodeURIComponent(before)}` : '';
+  return backendFetch<SessionTranscriptPage>(
+    `/sessions/admin/${sessionId}/messages${qs}`,
+  );
+}
+
 type Result = { ok: true; status: string } | { ok: false; error: string };
 
 /** Force a stuck session to a terminal state and release any active hold.

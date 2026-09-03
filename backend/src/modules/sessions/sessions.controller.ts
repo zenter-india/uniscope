@@ -50,6 +50,13 @@ export class SessionsController {
 
   @UseGuards(RolesGuard)
   @Roles(UserRole.ADMIN)
+  @Get('admin/:id/messages')
+  messagesAdmin(@Param('id') id: string, @Query('before') before?: string) {
+    return this.sessionsService.findMessagesAdmin(id, before);
+  }
+
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.ADMIN)
   @Post('admin/:id/force-end')
   @HttpCode(HttpStatus.OK)
   forceEndAdmin(@Param('id') id: string) {

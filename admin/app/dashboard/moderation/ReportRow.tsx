@@ -3,6 +3,7 @@
 import { useState, useTransition } from 'react';
 import { Badge, Button } from '../../../components/ui';
 import { ExpandableRow } from '../../../components/ExpandableRow';
+import { SessionTranscript } from '../sessions/SessionTranscript';
 import { resolveReport } from './actions';
 
 const REASON_LABELS: Record<string, string> = {
@@ -92,6 +93,12 @@ export function ReportRow({
         <p className="mt-2 rounded-lg bg-zinc-50 p-2 text-sm text-zinc-700">
           &ldquo;{report.description}&rdquo;
         </p>
+      )}
+
+      {report.targetType === 'SESSION' && (
+        <div className="mt-3">
+          <SessionTranscript sessionId={report.targetId} autoOpen />
+        </div>
       )}
 
       {!readOnly && (

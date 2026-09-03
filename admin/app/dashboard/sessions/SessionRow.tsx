@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useState, useTransition } from 'react';
 import { Badge, Button, toneFor } from '../../../components/ui';
 import { ExpandableRow } from '../../../components/ExpandableRow';
+import { SessionTranscript } from './SessionTranscript';
 import { forceEndSession, type SessionRowData } from './actions';
 
 const TERMINAL = new Set(['COMPLETED', 'CANCELLED', 'REJECTED', 'EXPIRED', 'FAILED']);
@@ -113,6 +114,12 @@ export function SessionRow({ session }: { session: SessionRowData }) {
             </>
           )}
           <Field label="Session ID" value={<span className="font-mono text-xs">{session.id}</span>} />
+
+          {!isCall && (
+            <div className="col-span-2 sm:col-span-3">
+              <SessionTranscript sessionId={session.id} />
+            </div>
+          )}
 
           <div className="col-span-2 sm:col-span-3">
             {error && <p className="mb-2 text-sm text-red-600">{error}</p>}

@@ -875,6 +875,62 @@ export class SessionsService {
     return toSessionResponse(session, this.resolveAvatarUrl);
   }
 
+  /** ADMIN — the chat transcript for a CHAT session, cursor-paginated
+   * newest-page-first via `before` (an older message id), same shape as
+   * the participant-facing chat endpoint. Read-only: never provisions a
+   * channel, so a session that was never opened just returns an empty
+   * transcript rather than creating one as a side effect. Non-CHAT
+   * sessions (audio calls) have no transcript and return empty. */
+  async findMessagesAdmin(
+    sessionId: string,
+    before?: string,
+  ): Promise<{
+    messages: unknown[];
+    hasMore: boolean;
+    sessionType: SessionType;
+    aspirantId: string;
+    aspirantName: string;
+    mentorId: string;
+    mentorName: string;
+  }> {
+    const session = await this.prisma.session.findUnique({
+      where: { id: sessionId },
+      select: {
+        id: true,
+        type: true,
+        aspirantId: true,
+        mentorId: true,
+        aspirant: { select: { displayName: true } },
+        mentor: { select: { displayName: true } },
+      },
+    });
+    if (!session) {
+      throw new NotFoundException(`Session '${sessionId}' not found`);
+    }
+    const parties = {
+      sessionType: session.type,
+      aspirantId: session.aspirantId,
+      aspirantName: session.aspirant.displayName,
+      mentorId: session.mentorId,
+      mentorName: session.mentor.displayName,
+    };
+
+    if (session.type !== SessionType.CHAT) {
+      return { messages: [], hasMore: false, ...parties };
+    }
+
+    const channel = await this.prisma.chatChannel.findUnique({
+      where: { sessionId },
+      select: { id: true },
+    });
+    if (!channel) {
+      return { messages: [], hasMore: false, ...parties };
+    }
+
+    const page = await this.chatService.listMessages(channel.id, before);
+    return { ...page, ...parties };
+  }
+
   /** ADMIN escape hatch for a session stuck in a non-terminal state — a call
    * that connected and never received an end event, or a request a mentor
    * never answered. Sets a terminal status + `ADMIN_CLOSED` reason and
