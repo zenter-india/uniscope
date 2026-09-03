@@ -100,6 +100,32 @@ class University {
   );
 }
 
+/// One entry from `GET /universities/curated` — a college that offers a
+/// given stream+degree, plus every specialization its accredited program
+/// for that degree covers. Same shape as the web enrollment form's
+/// `CuratedCollege` (see web/lib/api.ts).
+class CuratedCollege {
+  const CuratedCollege({
+    required this.id,
+    required this.label,
+    required this.specializations,
+  });
+
+  final String id;
+  final String label;
+  final List<String> specializations;
+
+  factory CuratedCollege.fromJson(Map<String, dynamic> json) => CuratedCollege(
+    id: json['id'] as String,
+    label: json['label'] as String,
+    specializations:
+        (json['specializations'] as List<dynamic>?)
+            ?.map((e) => e as String)
+            .toList() ??
+        const [],
+  );
+}
+
 class UniversitiesApi {
   UniversitiesApi(this._dio);
 
@@ -152,6 +178,35 @@ class UniversitiesApi {
         .toList();
   }
 
+  /// The curated College list for a stream+degree — the same
+  /// `GET /universities/curated` the web enrollment form's college pickers
+  /// use (see web/lib/api.ts `fetchCuratedColleges`). `degree` here is the
+  /// backend curated key (a `Program.name` — e.g. "MD/MS", "B.Tech",
+  /// "Law-UG"), not the user-facing degree label — map it through
+  /// `curatedDegreeKey()` in profile_options.dart first. Always sends
+  /// `browse=true` (full list, not a curated top-N). Discover uses this to
+  /// (a) narrow the college list to a degree the flat `browse` catalogue
+  /// can't express and (b) build the Specialization filter's options from
+  /// real per-college data.
+  Future<List<CuratedCollege>> curated({
+    required String stream,
+    required String degree,
+    String? search,
+  }) async {
+    final res = await _dio.get<List<dynamic>>(
+      '/universities/curated',
+      queryParameters: {
+        'stream': stream,
+        'degree': degree,
+        'browse': 'true',
+        if (search != null && search.isNotEmpty) 'search': search,
+      },
+    );
+    return (res.data ?? const [])
+        .map((e) => CuratedCollege.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
+
   Future<University> getBySlug(String slug) async {
     final res = await _dio.get<Map<String, dynamic>>('/universities/$slug');
     return University.fromJson(res.data!);
@@ -189,3 +244,13 @@ final universitiesApiProvider = Provider<UniversitiesApi>(
 final universitiesListProvider = FutureProvider.autoDispose<List<University>>(
   (ref) => ref.watch(universitiesApiProvider).list(),
 );
+
+/// `(stream, curatedDegreeKey)` → curated colleges for that combination.
+/// Keyed by a record so Riverpod dedupes/caches per stream+degree; used by
+/// the Discover college filters (see UniversityListScreen).
+final curatedCollegesProvider = FutureProvider.autoDispose
+    .family<List<CuratedCollege>, ({String stream, String degree})>(
+      (ref, key) => ref
+          .watch(universitiesApiProvider)
+          .curated(stream: key.stream, degree: key.degree),
+    );

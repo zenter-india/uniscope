@@ -378,6 +378,37 @@ List<String> degreesForStream(String? stream) {
   return kDegreesByStream[stream] ?? kDefaultNonMedicalDegrees;
 }
 
+/// Maps a user-facing degree (per stream) to the curated `degree` key the
+/// backend `GET /universities/curated` expects (a `Program.name`). Ported
+/// from web/components/MentorForm.tsx CURATED_DEGREE_MAP_BY_STREAM — keep in
+/// sync. A stream+degree absent here has no per-college curated dataset:
+/// Discover can't narrow the college list by that degree and falls back to
+/// the flat specialization list (Medical) or hides the Specialization filter.
+const kCuratedDegreeMapByStream = <String, Map<String, String>>{
+  'Medical': {
+    'DNB': 'DNB',
+    'PG': 'MD/MS',
+    'MD/MS': 'MD/MS',
+    'Doctorate': 'MD/MS',
+    'Others': 'MD/MS',
+    'DM/MCh': 'DM/MCh',
+    'Diploma': 'Diploma',
+  },
+  'Dental': {'MDS': 'MDS'},
+  'Engineering': {
+    'B.Tech/B.E': 'B.Tech',
+    'M.Tech/M.E': 'M.Tech',
+    'Diploma': 'Diploma-Engg',
+  },
+  'Law': {'UG': 'Law-UG', 'PG': 'Law-PG'},
+};
+
+/// The backend curated key for a stream+degree, or null when that
+/// combination has no curated per-college dataset. See
+/// [kCuratedDegreeMapByStream].
+String? curatedDegreeKey(String? stream, String? degree) =>
+    kCuratedDegreeMapByStream[stream]?[degree];
+
 /// Shown for Medical-stream mentors on any degree except UG (which has no
 /// specialization yet) — ported 1:1 from web/lib/options.ts
 /// MEDICAL_SPECIALIZATIONS, kept in sync manually.

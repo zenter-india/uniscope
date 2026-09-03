@@ -13,29 +13,33 @@ import 'review_summary_card.dart';
 // 'All' plus the same academic-field picklist mentors/aspirants use, so
 // Discover can narrow a mixed-stream list down to e.g. "just Engineering".
 const _streamFilters = ['All', ...kStreamOptions];
-// Every college today is UG-only (see University.levels doc comment) —
-// selecting 'PG' correctly returns zero results rather than showing
-// anything invented, until real PG data is imported.
-const _levelFilters = ['All', 'UG', 'PG'];
 // 'All' plus every state the onboarding state picker offers, so Discover can
 // narrow to any state — not just the aspirant's own (see the quick "my
 // state" toggle pill below for that shortcut).
 const _stateFilters = ['All', ...kIndianStates];
-// Unlike the other three pills, this one's options come from the loaded
-// colleges themselves (see _specializationOptions below), not a fixed
-// picklist — real specialization strings carry their accrediting degree as
-// a prefix ("MD - Anaesthesiology" vs "DNB- Anaesthesiology" vs "DNB-
-// General Medicine"), which the mentor wizard's plain kMedicalSpecializations
-// list ("Anaesthesiology") doesn't match at all. Building the options from
-// the real data guarantees every option actually filters something, at the
-// cost of a longer, less tidy list. Only meaningful for Medical (see
-// University.specializations doc comment — every other stream's colleges
-// have none), so the pill only appears when the Stream filter is Medical.
-List<String> _specializationOptions(List<University> universities) {
-  final values = <String>{
-    for (final u in universities)
-      if (u.stream == 'Medical') ...u.specializations,
-  }.toList()..sort();
+
+// The Degree and Specialization pills cascade the same way the web
+// enrollment forms do (see web/components/AspirantForm.tsx):
+//
+//  Stream ─▶ Degree options are `degreesForStream(stream)`
+//  Degree ─▶ Specialization options come from GET /universities/curated for
+//           that stream+degree (real per-college data), or, for Medical's
+//           degrees with no curated dataset, the flat kMedicalSpecializations
+//           list. A stream+degree with neither (e.g. Engineering + Doctorate)
+//           hides the Specialization pill rather than offering a dead filter.
+//
+// Degree also narrows the college list itself: the flat `browse=true`
+// catalogue only knows a college's `stream`/`state`/`levels`, so a
+// postgrad degree like MD/MS or B.Tech is expressed by intersecting with
+// the curated college-id set for that stream+degree.
+
+/// Specialization options for a stream+degree, given the curated colleges
+/// already loaded for it (empty/absent while still loading, or when the
+/// combination has no curated dataset — the caller falls back to
+/// [kMedicalSpecializations] for Medical, or hides the pill).
+List<String> _specializationOptionsFor(List<CuratedCollege> curated) {
+  final values = <String>{for (final c in curated) ...c.specializations}.toList()
+    ..sort();
   return ['All', ...values];
 }
 
@@ -69,77 +73,161 @@ class UniversityListScreen extends ConsumerStatefulWidget {
 
 class _UniversityListScreenState extends ConsumerState<UniversityListScreen> {
   String _query = '';
-  String _levelFilter = 'All';
+  // 'All', or a degree from `degreesForStream(effectiveStream)`. Reset to
+  // 'All' whenever the effective stream changes (see _syncCascade), since a
+  // degree name is only meaningful within its stream.
+  String _degreeFilter = 'All';
+  // 'All', or a specialization from the current stream+degree's option list.
+  // Reset to 'All' whenever the stream or degree changes.
+  String _specializationFilter = 'All';
+  // The effective stream the Degree/Specialization filters were last aligned
+  // to — lets _syncCascade notice a stream change (whether from the pill or
+  // from the profile-derived default) and clear the now-stale child filters.
+  String? _cascadeStream;
   // null until the aspirant explicitly picks a stream from the sheet —
   // until then, the pill defaults to the profile's own stream (whatever
   // was chosen during onboarding), same deferred-until-touched pattern as
   // _explicitStateFilter below. 'All' is itself a valid explicit choice
   // (clears back to unfiltered), so this can't just be a plain String.
   String? _explicitStreamFilter;
-  String _specializationFilter = 'All';
   // null until the aspirant explicitly picks a state from the sheet —
   // until then, the pill defers to the ambient collegeStateFilterProvider
   // toggle (Home's "Colleges in <state>" quick action) so the two controls
   // stay merged into one pill instead of fighting each other.
   String? _explicitStateFilter;
 
-  /// Bottom sheet used by the Stream/Degree/State pills — single-select
-  /// list of the given options, closes itself on tap.
+  /// Bottom sheet used by the State/Stream/Degree/Specialization pills —
+  /// single-select, closes itself on tap. Height-capped and internally
+  /// scrollable so a long list (all 37 states, a stream's full
+  /// specialization catalogue) is fully reachable instead of overflowing
+  /// off the bottom of the sheet. [searchable] adds a filter box for the
+  /// long lists.
   Future<void> _pickOption({
     required String title,
     required List<String> options,
-    required String Function(String) optionLabel,
     required String selected,
     required ValueChanged<String> onSelected,
+    bool searchable = false,
   }) {
     return showModalBottomSheet(
       context: context,
       showDragHandle: true,
-      builder: (sheetContext) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(
-                AppSpacing.lg,
-                0,
-                AppSpacing.lg,
-                AppSpacing.sm,
-              ),
-              child: Text(
-                title,
-                style: const TextStyle(
-                  fontSize: AppFont.lg,
-                  fontWeight: AppFont.bold,
-                  color: AppColors.textPrimary,
+      isScrollControlled: true,
+      builder: (sheetContext) {
+        var query = '';
+        return StatefulBuilder(
+          builder: (sheetContext, setSheetState) {
+            final visible = query.isEmpty
+                ? options
+                : options
+                      .where(
+                        (o) => o.toLowerCase().contains(query.toLowerCase()),
+                      )
+                      .toList();
+            return SafeArea(
+              child: Padding(
+                padding: EdgeInsets.only(
+                  bottom: MediaQuery.of(sheetContext).viewInsets.bottom,
+                ),
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(
+                    maxHeight: MediaQuery.of(sheetContext).size.height * 0.75,
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(
+                          AppSpacing.lg,
+                          0,
+                          AppSpacing.lg,
+                          AppSpacing.sm,
+                        ),
+                        child: Text(
+                          title,
+                          style: const TextStyle(
+                            fontSize: AppFont.lg,
+                            fontWeight: AppFont.bold,
+                            color: AppColors.textPrimary,
+                          ),
+                        ),
+                      ),
+                      if (searchable)
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(
+                            AppSpacing.lg,
+                            0,
+                            AppSpacing.lg,
+                            AppSpacing.sm,
+                          ),
+                          child: TextField(
+                            decoration: const InputDecoration(
+                              isDense: true,
+                              prefixIcon: Icon(Icons.search_rounded, size: 20),
+                              hintText: 'Search…',
+                            ),
+                            onChanged: (t) => setSheetState(() => query = t),
+                          ),
+                        ),
+                      Flexible(
+                        child: visible.isEmpty
+                            ? const Padding(
+                                padding: EdgeInsets.all(AppSpacing.lg),
+                                child: Text(
+                                  'No matches',
+                                  style: TextStyle(color: AppColors.textMuted),
+                                ),
+                              )
+                            : ListView.builder(
+                                shrinkWrap: true,
+                                itemCount: visible.length,
+                                itemBuilder: (_, i) => ListTile(
+                                  title: Text(visible[i]),
+                                  trailing: visible[i] == selected
+                                      ? const Icon(
+                                          Icons.check_rounded,
+                                          color: AppColors.primary,
+                                        )
+                                      : null,
+                                  onTap: () {
+                                    onSelected(visible[i]);
+                                    Navigator.of(sheetContext).pop();
+                                  },
+                                ),
+                              ),
+                      ),
+                      const SizedBox(height: AppSpacing.sm),
+                    ],
+                  ),
                 ),
               ),
-            ),
-            for (final option in options)
-              ListTile(
-                title: Text(optionLabel(option)),
-                trailing: option == selected
-                    ? const Icon(Icons.check_rounded, color: AppColors.primary)
-                    : null,
-                onTap: () {
-                  onSelected(option);
-                  Navigator.of(sheetContext).pop();
-                },
-              ),
-            const SizedBox(height: AppSpacing.sm),
-          ],
-        ),
-      ),
+            );
+          },
+        );
+      },
     );
+  }
+
+  /// Clears the Degree/Specialization filters when the effective stream has
+  /// changed out from under them (whether via the Stream pill or the
+  /// profile-derived default resolving late). Called from build() — a
+  /// post-frame setState keeps it out of the current build pass.
+  void _syncCascade(String effectiveStream) {
+    if (_cascadeStream == effectiveStream) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      setState(() {
+        _cascadeStream = effectiveStream;
+        _degreeFilter = 'All';
+        _specializationFilter = 'All';
+      });
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     final universitiesAsync = ref.watch(universitiesListProvider);
-    final specializationOptions = _specializationOptions(
-      universitiesAsync.asData?.value ?? const [],
-    );
     final myProfile = ref.watch(myProfileProvider).asData?.value;
     final myState = myProfile?.state;
     final stateOnly = ref.watch(collegeStateFilterProvider);
@@ -161,6 +249,52 @@ class _UniversityListScreenState extends ConsumerState<UniversityListScreen> {
         (myStream != null && kStreamOptions.contains(myStream)
             ? myStream
             : 'All');
+    _syncCascade(effectiveStream);
+
+    final streamPicked = effectiveStream != 'All';
+    final degreeOptions = streamPicked
+        ? ['All', ...degreesForStream(effectiveStream)]
+        : const ['All'];
+    // Keep the pill honest if a stale value survived a race with _syncCascade.
+    final degreeFilter = degreeOptions.contains(_degreeFilter)
+        ? _degreeFilter
+        : 'All';
+
+    // The curated dataset backing the Degree/Specialization filters for the
+    // current stream+degree, if that combination has one (see
+    // curatedDegreeKey). Loaded lazily and cached per stream+degree.
+    final curatedKey = curatedDegreeKey(effectiveStream, degreeFilter);
+    final curatedAsync = curatedKey == null
+        ? null
+        : ref.watch(
+            curatedCollegesProvider((
+              stream: effectiveStream,
+              degree: curatedKey,
+            )),
+          );
+    final curatedColleges = curatedAsync?.asData?.value ?? const <CuratedCollege>[];
+    // college id → its curated specializations, for the specialization filter.
+    final curatedById = {for (final c in curatedColleges) c.id: c};
+
+    // Specialization options: real per-college data when curated, else the
+    // flat medical list (Medical's UG has no curated key and no
+    // specialization concept — options stays just ['All'] and the pill hides).
+    final List<String> specializationOptions;
+    if (curatedKey != null) {
+      specializationOptions = _specializationOptionsFor(curatedColleges);
+    } else if (effectiveStream == 'Medical' && degreeFilter != 'All') {
+      specializationOptions = ['All', ...kMedicalSpecializations];
+    } else {
+      specializationOptions = const ['All'];
+    }
+    final specializationFilter = specializationOptions.contains(
+          _specializationFilter,
+        )
+        ? _specializationFilter
+        : 'All';
+    final showSpecializationPill =
+        streamPicked && degreeFilter != 'All' && specializationOptions.length > 1;
+    final curatedLoading = curatedAsync?.isLoading ?? false;
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -208,7 +342,7 @@ class _UniversityListScreenState extends ConsumerState<UniversityListScreen> {
                       onTap: () => _pickOption(
                         title: 'State',
                         options: _stateFilters,
-                        optionLabel: (v) => v,
+                        searchable: true,
                         selected: effectiveState ?? 'All',
                         onSelected: (v) {
                           // Picking anything here always wins from now on —
@@ -236,48 +370,59 @@ class _UniversityListScreenState extends ConsumerState<UniversityListScreen> {
                       onTap: () => _pickOption(
                         title: 'Stream',
                         options: _streamFilters,
-                        optionLabel: (v) => v,
                         selected: effectiveStream,
-                        onSelected: (v) =>
-                            setState(() => _explicitStreamFilter = v),
+                        onSelected: (v) => setState(() {
+                          _explicitStreamFilter = v;
+                          // Child filters are stream-scoped — drop them now
+                          // rather than waiting for _syncCascade's next frame.
+                          _cascadeStream = v;
+                          _degreeFilter = 'All';
+                          _specializationFilter = 'All';
+                        }),
                       ),
                     ),
                   ),
-                  Padding(
-                    padding: const EdgeInsets.only(right: AppSpacing.sm),
-                    child: _FilterPill(
-                      icon: Icons.school_rounded,
-                      label: _levelFilter == 'All' ? 'Degree' : _levelFilter,
-                      active: _levelFilter != 'All',
-                      trailing: Icons.keyboard_arrow_down_rounded,
-                      onTap: () => _pickOption(
-                        title: 'Degree',
-                        options: _levelFilters,
-                        optionLabel: (v) => v,
-                        selected: _levelFilter,
-                        onSelected: (v) => setState(() => _levelFilter = v),
-                      ),
-                    ),
-                  ),
-                  // Only Medical colleges have any specialization data (see
-                  // University.specializations doc comment) — showing this
-                  // pill for every stream would offer a picker that always
-                  // returns zero results outside Medical.
-                  if (effectiveStream == 'Medical')
+                  // Degree options cascade from the picked stream, matching
+                  // the web enrollment forms (degreesForStream) — no stream,
+                  // no Degree pill.
+                  if (streamPicked)
                     Padding(
                       padding: const EdgeInsets.only(right: AppSpacing.sm),
                       child: _FilterPill(
-                        icon: Icons.local_hospital_rounded,
-                        label: _specializationFilter == 'All'
+                        icon: Icons.school_rounded,
+                        label: degreeFilter == 'All' ? 'Degree' : degreeFilter,
+                        active: degreeFilter != 'All',
+                        trailing: Icons.keyboard_arrow_down_rounded,
+                        onTap: () => _pickOption(
+                          title: 'Degree',
+                          options: degreeOptions,
+                          selected: degreeFilter,
+                          onSelected: (v) => setState(() {
+                            _degreeFilter = v;
+                            _specializationFilter = 'All';
+                          }),
+                        ),
+                      ),
+                    ),
+                  // Specialization cascades from the picked degree — options
+                  // come from that stream+degree's curated per-college data
+                  // (or Medical's flat list). Hidden when the combination
+                  // has no specialization data to offer.
+                  if (showSpecializationPill)
+                    Padding(
+                      padding: const EdgeInsets.only(right: AppSpacing.sm),
+                      child: _FilterPill(
+                        icon: Icons.workspace_premium_rounded,
+                        label: specializationFilter == 'All'
                             ? 'Specialization'
-                            : _specializationFilter,
-                        active: _specializationFilter != 'All',
+                            : specializationFilter,
+                        active: specializationFilter != 'All',
                         trailing: Icons.keyboard_arrow_down_rounded,
                         onTap: () => _pickOption(
                           title: 'Specialization',
                           options: specializationOptions,
-                          optionLabel: (v) => v,
-                          selected: _specializationFilter,
+                          searchable: true,
+                          selected: specializationFilter,
                           onSelected: (v) =>
                               setState(() => _specializationFilter = v),
                         ),
@@ -314,6 +459,24 @@ class _UniversityListScreenState extends ConsumerState<UniversityListScreen> {
                     ],
                   ),
                   data: (universities) {
+                    // A curated Degree filter narrows the list to the
+                    // colleges that dataset returns — but only once it's
+                    // loaded, so we don't briefly show a wrong (unfiltered)
+                    // list. Show skeletons while that request is in flight.
+                    if (curatedLoading &&
+                        (degreeFilter != 'All' ||
+                            specializationFilter != 'All')) {
+                      return ListView(
+                        padding: const EdgeInsets.all(AppSpacing.md),
+                        children: const [
+                          SkeletonCard(),
+                          SkeletonCard(),
+                          SkeletonCard(),
+                        ],
+                      );
+                    }
+                    final curatedIds = curatedById.keys.toSet();
+
                     final filtered = universities.where((u) {
                       final matchesQuery = u.name.toLowerCase().contains(
                         _query.toLowerCase(),
@@ -324,17 +487,44 @@ class _UniversityListScreenState extends ConsumerState<UniversityListScreen> {
                       final matchesState =
                           effectiveState == null ||
                           u.state.toLowerCase() == effectiveState.toLowerCase();
-                      final matchesLevel =
-                          _levelFilter == 'All' ||
-                          u.levels.contains(_levelFilter);
-                      final matchesSpecialization =
-                          effectiveStream != 'Medical' ||
-                          _specializationFilter == 'All' ||
-                          u.specializations.contains(_specializationFilter);
+
+                      final bool matchesDegree;
+                      if (degreeFilter == 'All') {
+                        matchesDegree = true;
+                      } else if (curatedKey != null) {
+                        matchesDegree = curatedIds.contains(u.id);
+                      } else if (effectiveStream == 'Medical' &&
+                          (degreeFilter == 'UG' || degreeFilter == 'PG')) {
+                        matchesDegree = u.levels.contains(degreeFilter);
+                      } else {
+                        // Non-curated non-Medical degree (Doctorate/Others,
+                        // generic UG/PG) — the flat catalogue can't tell
+                        // these apart, so stream+state is as far as we
+                        // narrow. Better than hiding every college.
+                        matchesDegree = true;
+                      }
+
+                      final bool matchesSpecialization;
+                      if (specializationFilter == 'All') {
+                        matchesSpecialization = true;
+                      } else if (curatedKey != null) {
+                        matchesSpecialization =
+                            curatedById[u.id]?.specializations.contains(
+                              specializationFilter,
+                            ) ??
+                            false;
+                      } else if (effectiveStream == 'Medical') {
+                        matchesSpecialization = u.specializations.contains(
+                          specializationFilter,
+                        );
+                      } else {
+                        matchesSpecialization = true;
+                      }
+
                       return matchesQuery &&
                           matchesStream &&
                           matchesState &&
-                          matchesLevel &&
+                          matchesDegree &&
                           matchesSpecialization;
                     }).toList();
 
