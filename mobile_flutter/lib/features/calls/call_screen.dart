@@ -10,6 +10,7 @@ import '../../core/network/sessions_api.dart';
 import '../../core/network/wallet_api.dart';
 import '../../core/theme/app_theme.dart';
 import '../../state/auth_controller.dart';
+import '../../widgets/app_widgets.dart';
 
 /// Hand-rolled native channel — see MainActivity.kt for why this bypasses
 /// the permission_handler plugin.
@@ -61,6 +62,33 @@ class _CallScreenState extends ConsumerState<CallScreen> {
   bool get _isAspirant =>
       _session != null &&
       ref.read(authControllerProvider).user?.id == _session!.aspirantId;
+
+  /// The other party — a mentor's name/avatar when the aspirant is looking,
+  /// and vice versa. Falls back to a generic label before the session loads.
+  String get _peerName {
+    final s = _session;
+    if (s == null) return 'Connecting';
+    return _isAspirant ? s.mentorName : s.aspirantName;
+  }
+
+  String? get _peerAvatarUrl {
+    final s = _session;
+    if (s == null) return null;
+    return _isAspirant ? s.mentorAvatarUrl : s.aspirantAvatarUrl;
+  }
+
+  /// Time left in the booked slot, or null when it can't be computed yet.
+  /// Negative once the slot has run out (the "continue?" prompt fires then).
+  Duration? get _slotRemaining {
+    final s = _session;
+    final startedAt = s?.startedAt;
+    if (s == null || startedAt == null) return null;
+    final slotSeconds =
+        (s.billedMinutes > 0 ? s.billedMinutes : (s.callSlotMinutes ?? 0)) * 60;
+    if (slotSeconds <= 0) return null;
+    return Duration(seconds: slotSeconds) -
+        DateTime.now().toUtc().difference(DateTime.parse(startedAt).toUtc());
+  }
 
   @override
   void initState() {
@@ -452,12 +480,18 @@ class _CallScreenState extends ConsumerState<CallScreen> {
         );
       case _Phase.waiting:
         return _WaitingView(
+          peerName: _peerName,
+          peerAvatarUrl: _peerAvatarUrl,
+          slotMinutes: _session?.callSlotMinutes,
           remoteJoined: _remoteJoinedChannel,
           onEnd: () => _endCall(),
         );
       case _Phase.active:
         return _ActiveCallView(
+          peerName: _peerName,
+          peerAvatarUrl: _peerAvatarUrl,
           elapsed: _fmt(_elapsed),
+          remaining: _slotRemaining,
           muted: _muted,
           speakerOn: _speakerOn,
           onToggleMute: () async {
@@ -475,6 +509,7 @@ class _CallScreenState extends ConsumerState<CallScreen> {
       case _Phase.ended:
         return _EndedView(
           session: _session,
+          peerName: _peerName,
           onDone: () => context.go('/chats'),
         );
     }
@@ -530,42 +565,95 @@ class _MessageScreen extends StatelessWidget {
   }
 }
 
+/// Shared avatar + name + status block, centred, for the call screen's dark
+/// background. `solid: true` gives the avatar a full-tone fill + white
+/// initials so it reads on the green.
+class _CallPeerHeader extends StatelessWidget {
+  const _CallPeerHeader({
+    required this.name,
+    required this.avatarUrl,
+    required this.status,
+    this.pulsing = false,
+  });
+
+  final String name;
+  final String? avatarUrl;
+  final String status;
+  final bool pulsing;
+
+  @override
+  Widget build(BuildContext context) {
+    Widget avatar = AppAvatar(
+      name: name,
+      avatarUrl: avatarUrl,
+      size: 104,
+      solid: true,
+    );
+    if (pulsing) {
+      avatar = Container(
+        padding: const EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          border: Border.all(color: Colors.white.withValues(alpha: 0.18)),
+        ),
+        child: avatar,
+      );
+    }
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        avatar,
+        const SizedBox(height: AppSpacing.md),
+        Text(
+          name,
+          textAlign: TextAlign.center,
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: AppFont.lg,
+            fontWeight: AppFont.bold,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          status,
+          style: const TextStyle(color: Colors.white70, fontSize: AppFont.sm),
+        ),
+      ],
+    );
+  }
+}
+
 class _WaitingView extends StatelessWidget {
-  const _WaitingView({required this.remoteJoined, required this.onEnd});
+  const _WaitingView({
+    required this.peerName,
+    required this.peerAvatarUrl,
+    required this.slotMinutes,
+    required this.remoteJoined,
+    required this.onEnd,
+  });
+  final String peerName;
+  final String? peerAvatarUrl;
+  final int? slotMinutes;
   final bool remoteJoined;
   final VoidCallback onEnd;
 
   @override
   Widget build(BuildContext context) {
     return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        Container(
-          width: 96,
-          height: 96,
-          decoration: const BoxDecoration(
-            color: Colors.white24,
-            shape: BoxShape.circle,
-          ),
-          alignment: Alignment.center,
-          child: const Text('👤', style: TextStyle(fontSize: 40)),
-        ),
         const SizedBox(height: AppSpacing.lg),
-        Text(
-          remoteJoined ? 'Connecting call…' : 'Calling…',
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: AppFont.xl,
-            fontWeight: AppFont.bold,
-          ),
+        if (slotMinutes != null)
+          _CallChip(label: 'Audio call · $slotMinutes min'),
+        const Spacer(),
+        _CallPeerHeader(
+          name: peerName,
+          avatarUrl: peerAvatarUrl,
+          status: remoteJoined ? 'Connecting…' : 'Ringing…',
+          pulsing: true,
         ),
-        const SizedBox(height: AppSpacing.sm),
-        const Text(
-          'Waiting for the other person to join',
-          style: TextStyle(color: Colors.white70, fontSize: AppFont.sm),
-        ),
-        const SizedBox(height: AppSpacing.xxl),
+        const Spacer(),
         _EndCallButton(onPressed: onEnd),
+        const SizedBox(height: AppSpacing.xxl),
       ],
     );
   }
@@ -573,7 +661,10 @@ class _WaitingView extends StatelessWidget {
 
 class _ActiveCallView extends StatelessWidget {
   const _ActiveCallView({
+    required this.peerName,
+    required this.peerAvatarUrl,
     required this.elapsed,
+    required this.remaining,
     required this.muted,
     required this.speakerOn,
     required this.onToggleMute,
@@ -581,41 +672,53 @@ class _ActiveCallView extends StatelessWidget {
     required this.onEnd,
   });
 
+  final String peerName;
+  final String? peerAvatarUrl;
   final String elapsed;
+  final Duration? remaining;
   final bool muted;
   final bool speakerOn;
   final VoidCallback onToggleMute;
   final VoidCallback onToggleSpeaker;
   final VoidCallback onEnd;
 
+  /// "4:48 left" while there's time; "0:12 over" once the slot has run out.
+  /// Amber under a minute, red under 20s or overrun.
+  (String, Color)? _remainingLabel() {
+    final r = remaining;
+    if (r == null) return null;
+    final secs = r.inSeconds;
+    if (secs <= 0) {
+      final over = (-secs);
+      return ('${over ~/ 60}:${(over % 60).toString().padLeft(2, '0')} over',
+          const Color(0xFFF0997B));
+    }
+    final label = '${secs ~/ 60}:${(secs % 60).toString().padLeft(2, '0')} left';
+    if (secs <= 20) return (label, const Color(0xFFF0997B));
+    if (secs <= 60) return (label, const Color(0xFFFAC775));
+    return (label, Colors.white.withValues(alpha: 0.85));
+  }
+
   @override
   Widget build(BuildContext context) {
+    final rem = _remainingLabel();
     return Column(
       children: [
-        const Spacer(),
-        Container(
-          width: 96,
-          height: 96,
-          decoration: const BoxDecoration(
-            color: Colors.white24,
-            shape: BoxShape.circle,
-          ),
-          alignment: Alignment.center,
-          child: const Text('👤', style: TextStyle(fontSize: 40)),
-        ),
         const SizedBox(height: AppSpacing.lg),
-        const Text(
-          'In call',
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: AppFont.xl,
-            fontWeight: AppFont.bold,
+        if (rem != null)
+          Text(
+            rem.$1,
+            style: TextStyle(
+              color: rem.$2,
+              fontSize: AppFont.sm,
+              fontWeight: AppFont.semibold,
+            ),
           ),
-        ),
-        const SizedBox(height: AppSpacing.sm),
-        Text(
-          elapsed,
-          style: const TextStyle(color: Colors.white70, fontSize: AppFont.md),
+        const Spacer(),
+        _CallPeerHeader(
+          name: peerName,
+          avatarUrl: peerAvatarUrl,
+          status: elapsed,
         ),
         const Spacer(),
         Padding(
@@ -623,14 +726,18 @@ class _ActiveCallView extends StatelessWidget {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
-              _RoundIconButton(
-                icon: muted ? Icons.mic_off : Icons.mic,
+              _CallControl(
+                icon: muted ? Icons.mic_off_rounded : Icons.mic_rounded,
+                label: muted ? 'Unmute' : 'Mute',
                 active: muted,
                 onPressed: onToggleMute,
               ),
               _EndCallButton(onPressed: onEnd),
-              _RoundIconButton(
-                icon: speakerOn ? Icons.volume_up : Icons.hearing,
+              _CallControl(
+                icon: speakerOn
+                    ? Icons.volume_up_rounded
+                    : Icons.hearing_rounded,
+                label: speakerOn ? 'Speaker' : 'Earpiece',
                 active: speakerOn,
                 onPressed: onToggleSpeaker,
               ),
@@ -643,9 +750,70 @@ class _ActiveCallView extends StatelessWidget {
   }
 }
 
+/// Small outlined pill used above the peer header ("Audio call · 6 min").
+class _CallChip extends StatelessWidget {
+  const _CallChip({required this.label});
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(AppRadius.full),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.25)),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          color: Colors.white.withValues(alpha: 0.7),
+          fontSize: AppFont.xs,
+        ),
+      ),
+    );
+  }
+}
+
+/// In-call control: round button with a caption underneath.
+class _CallControl extends StatelessWidget {
+  const _CallControl({
+    required this.icon,
+    required this.label,
+    required this.active,
+    required this.onPressed,
+  });
+  final IconData icon;
+  final String label;
+  final bool active;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        _RoundIconButton(icon: icon, active: active, onPressed: onPressed),
+        const SizedBox(height: 6),
+        Text(
+          label,
+          style: TextStyle(
+            color: Colors.white.withValues(alpha: 0.7),
+            fontSize: AppFont.xs,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
 class _EndedView extends StatelessWidget {
-  const _EndedView({required this.session, required this.onDone});
+  const _EndedView({
+    required this.session,
+    required this.peerName,
+    required this.onDone,
+  });
   final Session? session;
+  final String peerName;
   final VoidCallback onDone;
 
   String _reasonLabel(String? reason) {
@@ -674,7 +842,17 @@ class _EndedView extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text('📞', style: TextStyle(fontSize: 48)),
+            Container(
+              width: 72,
+              height: 72,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.white.withValues(alpha: 0.14),
+              ),
+              alignment: Alignment.center,
+              child: const Icon(Icons.call_end_rounded,
+                  color: Colors.white, size: 32),
+            ),
             const SizedBox(height: AppSpacing.md),
             Text(
               _reasonLabel(session?.endReason),
@@ -684,6 +862,14 @@ class _EndedView extends StatelessWidget {
                 fontWeight: AppFont.bold,
               ),
             ),
+            if (peerName != 'Connecting') ...[
+              const SizedBox(height: 4),
+              Text(
+                'with $peerName',
+                style: const TextStyle(
+                    color: Colors.white70, fontSize: AppFont.sm),
+              ),
+            ],
             const SizedBox(height: AppSpacing.lg),
             _SummaryRow(label: 'Duration', value: '$minutes min'),
             const SizedBox(height: AppSpacing.sm),
