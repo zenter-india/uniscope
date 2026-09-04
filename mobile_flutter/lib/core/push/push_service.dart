@@ -87,11 +87,23 @@ class PushService {
       return;
     }
 
-    final isAudioCallAccept =
-        message.data['type'] == 'SESSION_ACCEPTED' &&
-        message.data['sessionType'] == 'AUDIO_CALL';
-    if (!isAudioCallAccept) {
-      debugPrint('[push] deep-link SKIPPED — not a SESSION_ACCEPTED/AUDIO_CALL push');
+    final type = message.data['type'];
+
+    // Where a tapped push should land:
+    //  - the aspirant's "mentor accepted an audio call" → straight into the
+    //    call (they still need to join; CallScreen handles that).
+    //  - the mentor's "new audio call request" → the Sessions tab, where
+    //    the request shows with an Accept button (and the global dock).
+    //    A CHAT never goes through PENDING, so SESSION_REQUEST is always a
+    //    call.
+    final String target;
+    if (type == 'SESSION_ACCEPTED' &&
+        message.data['sessionType'] == 'AUDIO_CALL') {
+      target = '/call/$sessionId';
+    } else if (type == 'SESSION_REQUEST') {
+      target = '/chats';
+    } else {
+      debugPrint('[push] deep-link SKIPPED — no route for type=$type');
       return;
     }
 
@@ -100,8 +112,15 @@ class PushService {
       debugPrint('[push] deep-link SKIPPED — no navigator context available yet');
       return;
     }
-    debugPrint('[push] deep-linking to /call/$sessionId');
-    GoRouter.of(context).push('/call/$sessionId');
+    debugPrint('[push] deep-linking to $target');
+    final router = GoRouter.of(context);
+    // /call/:id is a full-screen route outside the tab shell — stack it.
+    // /chats is a tab — switch to it rather than pushing a duplicate.
+    if (target.startsWith('/call/')) {
+      router.push(target);
+    } else {
+      router.go(target);
+    }
   }
 
   Future<void> _upload(String token) async {
