@@ -7,11 +7,14 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/network/reports_api.dart';
 import '../../core/network/sessions_api.dart';
 import '../../core/network/wallet_api.dart';
 import '../../core/theme/app_theme.dart';
 import '../../state/auth_controller.dart';
 import '../../widgets/app_widgets.dart';
+import '../reports/report_sheet.dart';
+import '../sessions/rate_mentor_sheet.dart';
 
 /// Hand-rolled native channels — see MainActivity.kt for why these bypass
 /// the permission_handler plugin. `uniscope/call` drives the Android
@@ -722,9 +725,25 @@ class _CallScreenState extends ConsumerState<CallScreen> {
           onEnd: () => _endCall(),
         );
       case _Phase.ended:
+        final s = _session;
+        final completed = s?.status == SessionStatus.completed;
         return _EndedView(
-          session: _session,
+          session: s,
           peerName: _peerName,
+          // Aspirant rates the mentor after a real (completed) call.
+          onRate: (completed && _isAspirant && s != null)
+              ? () => showRateMentorSheet(context, sessionId: s.id)
+              : null,
+          // Either party can report the other.
+          onReport: s == null
+              ? null
+              : () => showReportSheet(
+                    context,
+                    ref,
+                    targetType: ReportTargetType.user,
+                    targetId: _isAspirant ? s.mentorId : s.aspirantId,
+                    targetLabel: _peerName,
+                  ),
           onDone: () => context.go('/chats'),
         );
     }
@@ -1140,10 +1159,14 @@ class _EndedView extends StatelessWidget {
     required this.session,
     required this.peerName,
     required this.onDone,
+    this.onRate,
+    this.onReport,
   });
   final Session? session;
   final String peerName;
   final VoidCallback onDone;
+  final VoidCallback? onRate;
+  final VoidCallback? onReport;
 
   String _reasonLabel(String? reason) {
     switch (reason) {
@@ -1204,16 +1227,40 @@ class _EndedView extends StatelessWidget {
             const SizedBox(height: AppSpacing.sm),
             _SummaryRow(label: 'Used', value: uniminutesLabel(spent)),
             const SizedBox(height: AppSpacing.xxl),
+            if (onRate != null)
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton.icon(
+                  style: FilledButton.styleFrom(
+                    backgroundColor: Colors.white,
+                    foregroundColor: AppColors.primaryDark,
+                  ),
+                  onPressed: onRate,
+                  icon: const Icon(Icons.star_rounded, size: 18),
+                  label: const Text('Rate this call'),
+                ),
+              ),
+            if (onRate != null) const SizedBox(height: AppSpacing.sm),
             SizedBox(
               width: double.infinity,
               child: FilledButton(
                 style: FilledButton.styleFrom(
-                  backgroundColor: AppColors.primary,
+                  backgroundColor: onRate != null
+                      ? Colors.white24
+                      : AppColors.primary,
                 ),
                 onPressed: onDone,
                 child: const Text('Done'),
               ),
             ),
+            if (onReport != null) ...[
+              const SizedBox(height: AppSpacing.sm),
+              TextButton(
+                onPressed: onReport,
+                style: TextButton.styleFrom(foregroundColor: Colors.white70),
+                child: const Text('Report a problem'),
+              ),
+            ],
           ],
         ),
       ),
