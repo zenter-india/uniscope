@@ -60,6 +60,103 @@ Future<void> _openCollegeReview(
   }
 }
 
+/// A "your profile is N% complete" nudge with the top missing field.
+/// Hidden once everything's filled. Fields checked mirror what Edit Profile
+/// / the onboarding wizards collect for each role.
+class _ProfileCompleteness extends StatelessWidget {
+  const _ProfileCompleteness({required this.profile, required this.isMentor});
+
+  final UserProfile profile;
+  final bool isMentor;
+
+  List<(String, bool)> get _checks {
+    final p = profile;
+    final common = <(String, bool)>[
+      ('a profile photo', p.avatarUrl != null),
+      ('your date of birth', p.dateOfBirth != null),
+      ('your city', (p.city ?? '').isNotEmpty),
+      ('your state', (p.state ?? '').isNotEmpty),
+    ];
+    if (isMentor) {
+      return [
+        ...common,
+        ('a short bio', (p.bio ?? '').isNotEmpty),
+        ('your field of study', (p.stream ?? p.specialty ?? '').isNotEmpty),
+        ('the languages you speak', p.languages.isNotEmpty),
+        ('your college', p.universityId != null),
+      ];
+    }
+    return [
+      ...common,
+      ('your qualification', (p.qualification ?? '').isNotEmpty),
+      ('your field of interest', (p.stream ?? '').isNotEmpty),
+      ('your goals', p.goals.isNotEmpty),
+      ('your preferred language', (p.preferredLanguage ?? '').isNotEmpty),
+    ];
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final checks = _checks;
+    final done = checks.where((c) => c.$2).length;
+    final pct = (done / checks.length * 100).round();
+    if (pct >= 100) return const SizedBox.shrink();
+
+    final missing = checks.where((c) => !c.$2).map((c) => c.$1).toList();
+    final hint = missing.length == 1
+        ? 'Add ${missing.first}.'
+        : 'Next: add ${missing.first}.';
+
+    return AppCard(
+      onTap: () => context.go('/profile/edit'),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Expanded(
+                child: Text(
+                  'Complete your profile',
+                  style: TextStyle(
+                    fontWeight: AppFont.bold,
+                    fontSize: AppFont.md,
+                  ),
+                ),
+              ),
+              Text(
+                '$pct%',
+                style: const TextStyle(
+                  fontWeight: AppFont.bold,
+                  fontSize: AppFont.md,
+                  color: AppColors.primary,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(AppRadius.full),
+            child: LinearProgressIndicator(
+              value: done / checks.length,
+              minHeight: 6,
+              backgroundColor: AppColors.border,
+              valueColor: const AlwaysStoppedAnimation(AppColors.primary),
+            ),
+          ),
+          const SizedBox(height: AppSpacing.xs),
+          Text(
+            '$hint A fuller profile helps mentors and matching find you.',
+            style: const TextStyle(
+              fontSize: AppFont.xs,
+              color: AppColors.textSecondary,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class ProfileHomeScreen extends ConsumerWidget {
   const ProfileHomeScreen({super.key});
 
@@ -180,6 +277,13 @@ class ProfileHomeScreen extends ConsumerWidget {
                   ],
                 ),
               ),
+              if (myProfileAsync.asData?.value != null) ...[
+                const SizedBox(height: AppSpacing.md),
+                _ProfileCompleteness(
+                  profile: myProfileAsync.asData!.value,
+                  isMentor: isMentor,
+                ),
+              ],
               if (isMentor) ...[
                 const SizedBox(height: AppSpacing.md),
                 const MentorAvailabilityCard(),
