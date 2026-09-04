@@ -278,14 +278,14 @@ class _CallScreenState extends ConsumerState<CallScreen> {
         },
         onAudioVolumeIndication:
             (connection, speakers, speakerNumber, totalVolume) {
-          // uid 0 = the local mic; anything else is the remote party.
-          final peerLoud = speakers.any(
-            (s) => (s.uid ?? 0) != 0 && (s.volume ?? 0) > 20,
-          );
-          if (mounted && peerLoud != _peerSpeaking) {
-            setState(() => _peerSpeaking = peerLoud);
-          }
-        },
+              // uid 0 = the local mic; anything else is the remote party.
+              final peerLoud = speakers.any(
+                (s) => (s.uid ?? 0) != 0 && (s.volume ?? 0) > 20,
+              );
+              if (mounted && peerLoud != _peerSpeaking) {
+                setState(() => _peerSpeaking = peerLoud);
+              }
+            },
         onConnectionStateChanged: (connection, state, reason) {
           if (!mounted) return;
           setState(() {
@@ -566,13 +566,53 @@ class _CallScreenState extends ConsumerState<CallScreen> {
     return '$m:$s';
   }
 
+  /// Back (hardware/gesture) used to be a dead end on every phase except
+  /// the terminal ones — this screen has no back arrow of its own, so a
+  /// user stuck mid-connect or mid-ring had no way off it at all. Now:
+  /// terminal phases pop straight away; a not-yet-live call (permission,
+  /// connecting, ringing) cancels quietly, since nothing has been billed
+  /// yet; a genuinely active call asks for confirmation first so a stray
+  /// swipe-back doesn't silently drop a live, billed call.
+  Future<void> _handleBack() async {
+    if (_phase == _Phase.ended ||
+        _phase == _Phase.error ||
+        _phase == _Phase.permissionDenied) {
+      if (mounted) context.pop();
+      return;
+    }
+    if (_phase == _Phase.active) {
+      final confirm = await showDialog<bool>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          title: const Text('Leave call?'),
+          content: const Text('This will end the call for both parties.'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(false),
+              child: const Text('Stay'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(true),
+              style: TextButton.styleFrom(foregroundColor: AppColors.error),
+              child: const Text('End Call'),
+            ),
+          ],
+        ),
+      );
+      if (confirm != true) return;
+    }
+    await _endCall();
+    if (mounted) context.pop();
+  }
+
   @override
   Widget build(BuildContext context) {
     return PopScope(
-      canPop:
-          _phase == _Phase.ended ||
-          _phase == _Phase.error ||
-          _phase == _Phase.permissionDenied,
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+        _handleBack();
+      },
       child: Scaffold(
         backgroundColor: AppColors.primaryDark,
         body: DecoratedBox(
@@ -692,12 +732,12 @@ class _CallScreenState extends ConsumerState<CallScreen> {
           onReport: s == null
               ? null
               : () => showReportSheet(
-                    context,
-                    ref,
-                    targetType: ReportTargetType.user,
-                    targetId: _isAspirant ? s.mentorId : s.aspirantId,
-                    targetLabel: _peerName,
-                  ),
+                  context,
+                  ref,
+                  targetType: ReportTargetType.user,
+                  targetId: _isAspirant ? s.mentorId : s.aspirantId,
+                  targetLabel: _peerName,
+                ),
           onDone: () => context.go('/chats'),
         );
     }
@@ -884,8 +924,7 @@ class _CallPeerHeaderState extends State<_CallPeerHeader>
   }
 
   void _syncAnim() {
-    final animate = widget.pulsing &&
-        !MediaQuery.of(context).disableAnimations;
+    final animate = widget.pulsing && !MediaQuery.of(context).disableAnimations;
     if (animate && !_c.isAnimating) {
       _c.repeat();
     } else if (!animate && _c.isAnimating) {
@@ -1101,10 +1140,13 @@ class _ActiveCallView extends StatelessWidget {
     final secs = r.inSeconds;
     if (secs <= 0) {
       final over = (-secs);
-      return ('${over ~/ 60}:${(over % 60).toString().padLeft(2, '0')} over',
-          const Color(0xFFF0997B));
+      return (
+        '${over ~/ 60}:${(over % 60).toString().padLeft(2, '0')} over',
+        const Color(0xFFF0997B),
+      );
     }
-    final label = '${secs ~/ 60}:${(secs % 60).toString().padLeft(2, '0')} left';
+    final label =
+        '${secs ~/ 60}:${(secs % 60).toString().padLeft(2, '0')} left';
     if (secs <= 20) return (label, const Color(0xFFF0997B));
     if (secs <= 60) return (label, const Color(0xFFFAC775));
     return (label, Colors.white.withValues(alpha: 0.85));
@@ -1186,7 +1228,9 @@ class _StatusPill extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(AppRadius.full),
-        color: (tone ?? Colors.white).withValues(alpha: tone == null ? 0.10 : 0.16),
+        color: (tone ?? Colors.white).withValues(
+          alpha: tone == null ? 0.10 : 0.16,
+        ),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -1345,7 +1389,9 @@ class _EndedView extends StatelessWidget {
               Text(
                 'with $peerName',
                 style: const TextStyle(
-                    color: Colors.white70, fontSize: AppFont.sm),
+                  color: Colors.white70,
+                  fontSize: AppFont.sm,
+                ),
               ),
             ],
             if (showSummary) ...[
@@ -1361,8 +1407,7 @@ class _EndedView extends StatelessWidget {
                   children: [
                     _SummaryRow(label: 'Duration', value: '$minutes min'),
                     const SizedBox(height: AppSpacing.sm),
-                    _SummaryRow(
-                        label: 'Used', value: uniminutesLabel(spent)),
+                    _SummaryRow(label: 'Used', value: uniminutesLabel(spent)),
                   ],
                 ),
               ),
@@ -1431,4 +1476,3 @@ class _SummaryRow extends StatelessWidget {
     );
   }
 }
-
