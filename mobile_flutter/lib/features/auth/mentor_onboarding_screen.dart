@@ -140,6 +140,34 @@ class _MentorOnboardingScreenState extends ConsumerState<MentorOnboardingScreen>
   bool get _needsSpecialization =>
       _stream == 'Medical' && _degree != null && _degree != 'MBBS';
 
+  /// Real bug fix (ported from web/components/MentorForm.tsx's own
+  /// shouldFetchMedicalStreamWideSpecialization): Doctorate/Others used to
+  /// show only the static kMedicalSpecializations list, which despite its
+  /// name only ever reflected MD/MS-shaped specialties -- real DNB/
+  /// Diploma/DM-MCh specializations were never in it, so the field
+  /// effectively showed just "the MD list". Doctorate/Others now merges
+  /// that static list with the real, data-driven union across every one
+  /// of Medical's curated degrees (streamWideSpecializationsProvider).
+  bool get _needsMedicalStreamWideSpecialization =>
+      _stream == 'Medical' && (_degree == 'Doctorate' || _degree == 'Others');
+
+  /// Merges kMedicalSpecializations with streamWideSpecializationsProvider's
+  /// real data-driven union across every one of Medical's curated degrees
+  /// (see _needsMedicalStreamWideSpecialization above). Merged rather than
+  /// replaced so the field never regresses to fewer options while the
+  /// fetch is still in flight or if it fails.
+  List<String> _medicalStreamWideSpecializationOptions() {
+    final curatedDegrees =
+        kCuratedDegreeMapByStream['Medical']!.values.toSet().toList();
+    final fetched = ref.watch(
+      streamWideSpecializationsProvider(
+        (stream: 'Medical', curatedDegrees: curatedDegrees),
+      ),
+    );
+    final merged = {...kMedicalSpecializations, ...fetched.value ?? const []}.toList()..sort();
+    return merged;
+  }
+
   String get _resolvedCity => _city == 'Other' ? _cityOtherController.text.trim() : (_city ?? '');
 
   void _goTo(int step) {
@@ -530,7 +558,9 @@ class _MentorOnboardingScreenState extends ConsumerState<MentorOnboardingScreen>
                         OnboardingDropdown(
                           value: _specialization,
                           hint: 'Select specialization',
-                          options: kMedicalSpecializations,
+                          options: _needsMedicalStreamWideSpecialization
+                              ? _medicalStreamWideSpecializationOptions()
+                              : kMedicalSpecializations,
                           onChanged: (v) => setState(() => _specialization = v),
                         ),
                       ],

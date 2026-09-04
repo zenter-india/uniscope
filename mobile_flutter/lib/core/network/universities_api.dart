@@ -254,3 +254,32 @@ final curatedCollegesProvider = FutureProvider.autoDispose
           .watch(universitiesApiProvider)
           .curated(stream: key.stream, degree: key.degree),
     );
+
+/// Every specialization known across ALL of a stream's curated degrees
+/// combined — e.g. for Medical: the union of MD/MS + DNB + Diploma +
+/// DM/MCh's specializations, not just one degree's own dataset. Mirrors
+/// web/components/MentorForm.tsx's own streamWideSpecializations fetch
+/// (same "union across every curated degree in the stream" idea, same fix
+/// for the real bug where Medical's Doctorate/Others only ever showed a
+/// static MD/MS-shaped list — see kMedicalSpecializations' doc comment).
+/// Fetches each curated degree's full browse list in parallel and unions
+/// their specializations; kCuratedDegreeMapByStream's values can repeat
+/// (Medical's several raw degree keys all map to "MD/MS", for instance)
+/// so callers should pass already-deduped curated degree keys.
+final streamWideSpecializationsProvider = FutureProvider.autoDispose
+    .family<List<String>, ({String stream, List<String> curatedDegrees})>(
+      (ref, key) async {
+        final api = ref.watch(universitiesApiProvider);
+        final results = await Future.wait(
+          key.curatedDegrees.map((degree) => api.curated(stream: key.stream, degree: degree)),
+        );
+        final specs = <String>{};
+        for (final colleges in results) {
+          for (final college in colleges) {
+            specs.addAll(college.specializations);
+          }
+        }
+        final sorted = specs.toList()..sort();
+        return sorted;
+      },
+    );
