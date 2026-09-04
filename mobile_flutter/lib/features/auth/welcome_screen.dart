@@ -69,7 +69,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
       headline: "Learn from Those Who've Successfully Enrolled",
       highlight: 'Enrolled',
       subtext:
-          'Discover your perfect college fit and get matched with alumni who have walked the path before you. Gain strategic guidance to navigate your dream college application journey.',
+          "Get one-on-one unfiltered guidance from real verified mentors who have already walked the path you're preparing for. Gain strategic guidance to navigate your dream college selection journey.",
       image: 'assets/onboarding/slide2_reviews.jpg',
     ),
     _Slide(
