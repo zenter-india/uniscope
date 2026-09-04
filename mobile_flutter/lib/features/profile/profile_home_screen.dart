@@ -238,7 +238,7 @@ class ProfileHomeScreen extends ConsumerWidget {
                       _MenuRow(
                         icon: Icons.account_balance_wallet_rounded,
                         label: 'Wallet',
-                        onTap: () => context.push('/wallet'),
+                        onTap: () => context.go('/wallet'),
                       ),
                     _MenuRow(
                       icon: Icons.settings_rounded,

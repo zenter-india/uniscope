@@ -62,6 +62,8 @@ const _aspirantTabs = <TabItem>[
   TabItem('Discover', Icons.explore_outlined, Icons.explore_rounded),
   TabItem('Mentors', Icons.people_alt_outlined, Icons.people_alt_rounded),
   TabItem('Sessions', Icons.forum_outlined, Icons.forum_rounded),
+  TabItem('Wallet', Icons.account_balance_wallet_outlined,
+      Icons.account_balance_wallet_rounded),
   TabItem('Profile', Icons.person_outline_rounded, Icons.person_rounded),
 ];
 
@@ -146,6 +148,11 @@ List<StatefulShellBranch> _buildAspirantBranches() => [
               GoRoute(path: 'support', builder: (_, __) => const SupportChatScreen()),
             ],
           ),
+        ],
+      ),
+      StatefulShellBranch(
+        routes: [
+          GoRoute(path: '/wallet', builder: (_, __) => const WalletScreen()),
         ],
       ),
       StatefulShellBranch(routes: [_profileRoute]),
@@ -309,15 +316,12 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (_, __) => const NotificationsScreen(),
       ),
 
-      // ─── Wallet (aspirant only — pushed from the Mentors tab's wallet
-      // icon or the Profile menu; Mentor's own "Earnings" tab already owns
-      // the '/wallet' path as a bottom-nav branch, so this would collide). ──
-      if (!isMentor)
-        GoRoute(path: '/wallet', builder: (_, __) => const WalletScreen()),
+      // Wallet is a bottom-nav branch for both roles now (aspirant: its own
+      // "Wallet" tab; mentor: the "Earnings" tab) — see the branch lists.
 
       // ─── Main tabs (StatefulShellRoute keeps the bottom bar) ─────
       // Branch order must exactly match the tab list passed to MainShell.
-      // Aspirant: Home | Discover | Mentors | Messages | Profile
+      // Aspirant: Home | Discover | Mentors | Sessions | Wallet | Profile
       // Mentor:   Home | Sessions | Dashboard | Earnings | Profile
       // Fully separate branch lists (rather than one shared list with
       // conditionals) since the two roles' tab orders and screen counts

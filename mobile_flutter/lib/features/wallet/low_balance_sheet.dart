@@ -56,7 +56,7 @@ Future<void> showLowBalanceSheet(
             child: FilledButton(
               onPressed: () {
                 Navigator.of(sheetContext).pop();
-                context.push('/wallet');
+                context.go('/wallet');
               },
               child: const Text('Recharge Uniminutes'),
             ),
