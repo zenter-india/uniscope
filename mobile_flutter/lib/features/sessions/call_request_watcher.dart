@@ -8,18 +8,20 @@ import '../../core/network/sessions_api.dart';
 import '../../state/auth_controller.dart';
 import 'session_list_screen.dart' show sessionsListProvider;
 
-/// Invisible widget mounted in the shell. While the current user has an
-/// outstanding AUDIO_CALL (request pending / accepted / ringing) it polls
-/// the sessions list every few seconds, and — for the aspirant who made the
-/// request — navigates straight into `/call/:id` the moment the mentor
-/// accepts.
+/// Invisible widget mounted in the shell. Two jobs, both standing in for a
+/// real incoming-call push (FCM isn't set up — `google-services.json` is
+/// still a placeholder, so no device registers a token):
 ///
-/// This is the stand-in for a real incoming-call push: FCM delivery isn't
-/// set up for this project yet (`google-services.json` is still a
-/// placeholder), so without this the aspirant just gets a snackbar and has
-/// to find the Sessions tab and tap "Join Call" before the mentor's client
-/// times out. Polling only runs while a call is actually outstanding, so
-/// the steady-state cost is nothing.
+///  - A **mentor** with the app open polls the sessions list every 10s so a
+///    brand-new call request surfaces on its own (the "New call request"
+///    dock banner would otherwise only appear on a manual refresh).
+///  - An **aspirant** who has an outstanding request polls every 4s and is
+///    navigated straight into `/call/:id` the moment the mentor accepts —
+///    no "Join Call" tap, no waiting for a push that never comes.
+///
+/// Polling stops when there's nothing to watch (aspirant with no
+/// outstanding call, or a mentor who backgrounds the app), so the
+/// steady-state cost is nothing.
 class CallRequestWatcher extends ConsumerStatefulWidget {
   const CallRequestWatcher({super.key});
 
@@ -27,9 +29,12 @@ class CallRequestWatcher extends ConsumerStatefulWidget {
   ConsumerState<CallRequestWatcher> createState() => _CallRequestWatcherState();
 }
 
-class _CallRequestWatcherState extends ConsumerState<CallRequestWatcher> {
+class _CallRequestWatcherState extends ConsumerState<CallRequestWatcher>
+    with WidgetsBindingObserver {
   Timer? _poll;
+  Duration? _pollEvery;
   final _navigatedFor = <String>{};
+  bool _foreground = true;
 
   static const _outstanding = {
     SessionStatus.pending,
@@ -38,16 +43,41 @@ class _CallRequestWatcherState extends ConsumerState<CallRequestWatcher> {
   };
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _poll?.cancel();
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    final fg = state == AppLifecycleState.resumed;
+    if (fg != _foreground && mounted) setState(() => _foreground = fg);
+  }
+
+  /// Restart the poll timer only when the interval actually changes.
+  void _setPoll(Duration? every) {
+    if (every == _pollEvery) return;
+    _pollEvery = every;
+    _poll?.cancel();
+    _poll = every == null
+        ? null
+        : Timer.periodic(every, (_) => ref.invalidate(sessionsListProvider));
   }
 
   @override
   Widget build(BuildContext context) {
     final auth = ref.watch(authControllerProvider);
     final myId = auth.user?.id;
-    final isAspirant = auth.user?.role == UserRole.aspirant;
+    final role = auth.user?.role;
+    final isAspirant = role == UserRole.aspirant;
+    final isMentor = role == UserRole.mentor;
     final sessions =
         ref.watch(sessionsListProvider).asData?.value ?? const <Session>[];
 
@@ -60,14 +90,16 @@ class _CallRequestWatcherState extends ConsumerState<CallRequestWatcher> {
         )
         .toList();
 
-    if (mine.isEmpty) {
-      _poll?.cancel();
-      _poll = null;
+    // Fast poll while a call is in flight; a slow mentor heartbeat so a new
+    // request appears without a manual refresh; nothing otherwise.
+    if (!_foreground || myId == null) {
+      _setPoll(null);
+    } else if (mine.isNotEmpty) {
+      _setPoll(const Duration(seconds: 4));
+    } else if (isMentor) {
+      _setPoll(const Duration(seconds: 10));
     } else {
-      _poll ??= Timer.periodic(
-        const Duration(seconds: 4),
-        (_) => ref.invalidate(sessionsListProvider),
-      );
+      _setPoll(null);
     }
 
     if (isAspirant) {
