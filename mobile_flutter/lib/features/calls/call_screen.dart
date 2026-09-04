@@ -80,6 +80,10 @@ class _CallScreenState extends ConsumerState<CallScreen> {
   bool _peerMuted = false;
   bool _weakSignal = false;
   bool _connectHapticDone = false;
+  // Set from Agora's onAudioVolumeIndication — true while the other party's
+  // mic level is above a small floor, so the avatar can show a "speaking"
+  // glow (the main "is this call actually live" signal).
+  bool _peerSpeaking = false;
   // Agora AudioRoute int (see onAudioRoutingChanged). 4 = loudspeaker, the
   // default we set on join. _btSeen latches once a Bluetooth route has been
   // reported, so the picker can offer it.
@@ -163,6 +167,7 @@ class _CallScreenState extends ConsumerState<CallScreen> {
             : DateTime.now().millisecondsSinceEpoch,
       });
       await _callChannel.invokeMethod('keepScreenOn', true);
+      await _callChannel.invokeMethod('setProximityScreenOff', true);
     } catch (_) {
       // Native side missing (web, or an old build) — the call still works,
       // it just won't survive backgrounding.
@@ -174,6 +179,7 @@ class _CallScreenState extends ConsumerState<CallScreen> {
     _callServiceRunning = false;
     try {
       await _callChannel.invokeMethod('keepScreenOn', false);
+      await _callChannel.invokeMethod('setProximityScreenOff', false);
       await _callChannel.invokeMethod('stopCallService');
     } catch (_) {}
   }
@@ -294,6 +300,13 @@ class _CallScreenState extends ConsumerState<CallScreen> {
     debugPrint(
       '[call] Agora setDefaultAudioRouteToSpeakerphone() completed channel=${creds.channelName}',
     );
+    // Drives the "speaking" glow on the peer avatar. 250ms is responsive
+    // without being jittery; reportVad isn't needed (we only look at level).
+    await engine.enableAudioVolumeIndication(
+      interval: 250,
+      smooth: 3,
+      reportVad: false,
+    );
     engine.registerEventHandler(
       RtcEngineEventHandler(
         onUserJoined: (connection, remoteUid, elapsed) {
@@ -310,6 +323,16 @@ class _CallScreenState extends ConsumerState<CallScreen> {
         },
         onUserMuteAudio: (connection, remoteUid, muted) {
           if (mounted) setState(() => _peerMuted = muted);
+        },
+        onAudioVolumeIndication:
+            (connection, speakers, speakerNumber, totalVolume) {
+          // uid 0 = the local mic; anything else is the remote party.
+          final peerLoud = speakers.any(
+            (s) => (s.uid ?? 0) != 0 && (s.volume ?? 0) > 20,
+          );
+          if (mounted && peerLoud != _peerSpeaking) {
+            setState(() => _peerSpeaking = peerLoud);
+          }
         },
         onConnectionStateChanged: (connection, state, reason) {
           debugPrint('[call] Agora connState=$state reason=$reason');
@@ -720,6 +743,7 @@ class _CallScreenState extends ConsumerState<CallScreen> {
           reconnecting: _reconnecting,
           weakSignal: _weakSignal,
           peerMuted: _peerMuted,
+          peerSpeaking: _peerSpeaking && !_peerMuted && !_reconnecting,
           routeIcon: _routeGlyph().$1,
           routeLabel: _routeGlyph().$2,
           onToggleMute: () async {
@@ -850,6 +874,7 @@ class _CallStage extends StatelessWidget {
     required this.controls,
     this.topPill,
     this.pulsing = false,
+    this.speaking = false,
   });
 
   final String peerName;
@@ -857,6 +882,7 @@ class _CallStage extends StatelessWidget {
   final String status;
   final Widget? topPill;
   final bool pulsing;
+  final bool speaking;
   final List<Widget> controls;
 
   @override
@@ -871,6 +897,7 @@ class _CallStage extends StatelessWidget {
           avatarUrl: peerAvatarUrl,
           status: status,
           pulsing: pulsing,
+          speaking: speaking,
         ),
         const Spacer(),
         Padding(
@@ -897,12 +924,18 @@ class _CallPeerHeader extends StatefulWidget {
     required this.avatarUrl,
     required this.status,
     this.pulsing = false,
+    this.speaking = false,
   });
 
   final String name;
   final String? avatarUrl;
   final String status;
   final bool pulsing;
+
+  /// The other party's mic is live right now — the avatar gets a soft
+  /// green halo + a barely-there scale-up so a working call never looks
+  /// frozen.
+  final bool speaking;
 
   @override
   State<_CallPeerHeader> createState() => _CallPeerHeaderState();
@@ -946,22 +979,34 @@ class _CallPeerHeaderState extends State<_CallPeerHeader>
 
   @override
   Widget build(BuildContext context) {
-    Widget avatar = Container(
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.35),
-            blurRadius: 30,
-            offset: const Offset(0, 12),
-          ),
-        ],
-      ),
-      child: AppAvatar(
-        name: widget.name,
-        avatarUrl: widget.avatarUrl,
-        size: 104,
-        solid: true,
+    Widget avatar = AnimatedScale(
+      scale: widget.speaking ? 1.04 : 1.0,
+      duration: const Duration(milliseconds: 180),
+      curve: Curves.easeOut,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 220),
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          boxShadow: [
+            const BoxShadow(
+              color: Color(0x59000000),
+              blurRadius: 30,
+              offset: Offset(0, 12),
+            ),
+            if (widget.speaking)
+              BoxShadow(
+                color: const Color(0xFF3BD69B).withValues(alpha: 0.55),
+                blurRadius: 26,
+                spreadRadius: 3,
+              ),
+          ],
+        ),
+        child: AppAvatar(
+          name: widget.name,
+          avatarUrl: widget.avatarUrl,
+          size: 104,
+          solid: true,
+        ),
       ),
     );
     if (widget.pulsing) {
@@ -1017,6 +1062,7 @@ class _CallPeerHeaderState extends State<_CallPeerHeader>
             fontSize: AppFont.sm,
             fontWeight: AppFont.medium,
             letterSpacing: 0.2,
+            fontFeatures: const [FontFeature.tabularFigures()],
           ),
         ),
       ],
@@ -1100,6 +1146,7 @@ class _ActiveCallView extends StatelessWidget {
     required this.reconnecting,
     required this.weakSignal,
     required this.peerMuted,
+    required this.peerSpeaking,
     required this.routeIcon,
     required this.routeLabel,
     required this.onToggleMute,
@@ -1116,6 +1163,7 @@ class _ActiveCallView extends StatelessWidget {
   final bool reconnecting;
   final bool weakSignal;
   final bool peerMuted;
+  final bool peerSpeaking;
   final IconData routeIcon;
   final String routeLabel;
   final VoidCallback onToggleMute;
@@ -1174,6 +1222,7 @@ class _ActiveCallView extends StatelessWidget {
       peerAvatarUrl: peerAvatarUrl,
       status: status,
       topPill: pill,
+      speaking: peerSpeaking,
       controls: [
         _CallControl(
           icon: muted ? Icons.mic_off_rounded : Icons.mic_rounded,
@@ -1230,6 +1279,7 @@ class _StatusPill extends StatelessWidget {
               fontSize: AppFont.xs,
               fontWeight: AppFont.semibold,
               letterSpacing: 0.2,
+              fontFeatures: const [FontFeature.tabularFigures()],
             ),
           ),
         ],

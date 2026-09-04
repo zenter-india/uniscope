@@ -5,6 +5,7 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
+import android.os.PowerManager
 import android.provider.Settings
 import android.view.WindowManager
 import androidx.core.app.ActivityCompat
@@ -35,6 +36,11 @@ class MainActivity : FlutterActivity() {
     private var pendingMicResult: MethodChannel.Result? = null
 
     private var callChannel: MethodChannel? = null
+
+    // Turns the screen off while the phone is held to the ear during a call
+    // (cheek-tap protection). The OS drives it from the proximity sensor —
+    // we just hold the wake lock for the duration of the call.
+    private var proximityLock: PowerManager.WakeLock? = null
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
@@ -103,6 +109,11 @@ class MainActivity : FlutterActivity() {
                         )
                         result.success(null)
                     }
+                    "setProximityScreenOff" -> {
+                        val on = call.arguments as? Boolean ?: false
+                        setProximityScreenOff(on)
+                        result.success(null)
+                    }
                     "keepScreenOn" -> {
                         val on = call.arguments as? Boolean ?: false
                         runOnUiThread {
@@ -121,6 +132,26 @@ class MainActivity : FlutterActivity() {
 
         // A cold start via the notification's "End call" action.
         maybeReportEndFromNotification(intent)
+    }
+
+    private fun setProximityScreenOff(on: Boolean) {
+        if (on) {
+            if (proximityLock?.isHeld == true) return
+            val pm = getSystemService(POWER_SERVICE) as PowerManager
+            if (!pm.isWakeLockLevelSupported(PowerManager.PROXIMITY_SCREEN_OFF_WAKE_LOCK)) return
+            proximityLock = pm.newWakeLock(
+                PowerManager.PROXIMITY_SCREEN_OFF_WAKE_LOCK,
+                "uniscope:call-proximity",
+            ).also { it.acquire(60 * 60 * 1000L) }
+        } else {
+            proximityLock?.let { if (it.isHeld) it.release() }
+            proximityLock = null
+        }
+    }
+
+    override fun onDestroy() {
+        setProximityScreenOff(false)
+        super.onDestroy()
     }
 
     override fun onNewIntent(intent: Intent) {
