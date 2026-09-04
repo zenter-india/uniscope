@@ -7,15 +7,10 @@ import '../../core/network/reviews_api.dart';
 import '../../core/theme/app_theme.dart';
 import '../../state/auth_controller.dart';
 import '../../widgets/app_widgets.dart';
+import '../mentors/mentor_reviews_screen.dart' show myMentorReviewsProvider;
+import '../universities/university_review_screen.dart'
+    show CollegeReviewPromptBanner;
 import 'mentor_home_screen.dart' show mentorDashboardStatsProvider;
-
-final mentorOwnReviewsProvider = FutureProvider.autoDispose<List<MentorReview>>(
-  (ref) async {
-    final userId = ref.watch(authControllerProvider).user?.id;
-    if (userId == null) return [];
-    return ref.watch(reviewsApiProvider).listForMentor(userId);
-  },
-);
 
 /// Mentor's Home tab — kept as the original rich overview (greeting,
 /// Today's Overview stats, Recent Sessions, Reviews, support banner), per
@@ -37,7 +32,7 @@ class MentorLandingScreen extends ConsumerWidget {
     final displayName = ref.watch(authControllerProvider).user?.displayName;
     final firstName = displayName?.split(' ').first;
     final statsAsync = ref.watch(mentorDashboardStatsProvider);
-    final reviewsAsync = ref.watch(mentorOwnReviewsProvider);
+    final reviewsAsync = ref.watch(myMentorReviewsProvider);
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -45,7 +40,7 @@ class MentorLandingScreen extends ConsumerWidget {
         color: AppColors.primary,
         onRefresh: () async {
           ref.invalidate(mentorDashboardStatsProvider);
-          ref.invalidate(mentorOwnReviewsProvider);
+          ref.invalidate(myMentorReviewsProvider);
         },
         child: SingleChildScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
@@ -135,6 +130,7 @@ class MentorLandingScreen extends ConsumerWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    const CollegeReviewPromptBanner(),
                     const Text(
                       "Today's Overview",
                       style: TextStyle(
@@ -221,13 +217,9 @@ class MentorLandingScreen extends ConsumerWidget {
                             ),
                     ),
                     const SizedBox(height: AppSpacing.lg),
-                    const Text(
-                      'Reviews',
-                      style: TextStyle(
-                        fontSize: AppFont.lg,
-                        fontWeight: AppFont.bold,
-                        color: AppColors.textPrimary,
-                      ),
+                    SectionHeader(
+                      title: 'Reviews',
+                      onSeeAll: () => context.push('/profile/reviews'),
                     ),
                     const SizedBox(height: AppSpacing.md),
                     reviewsAsync.when(

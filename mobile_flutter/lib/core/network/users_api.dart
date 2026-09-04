@@ -17,6 +17,7 @@ class UserProfile {
     this.specialty,
     this.languages = const [],
     this.isMentorAvailable = false,
+    this.mustReviewCollege = false,
     this.universityId,
     this.universityName,
     this.gender,
@@ -52,6 +53,13 @@ class UserProfile {
   final String? specialty;
   final List<String> languages;
   final bool isMentorAvailable;
+
+  /// Mentor-only — true if this mentor was verified under the college-review
+  /// requirement. While true and they haven't reviewed their own college
+  /// (`universityId`), the app shows a "review your college" prompt and the
+  /// "accepting call bookings" switch is blocked server-side. Pair with
+  /// `hasReviewedUniversityProvider(universityId)` to know if it's met.
+  final bool mustReviewCollege;
   final String? universityId;
   final String? universityName;
   final String? gender;
@@ -84,6 +92,7 @@ class UserProfile {
             .map((e) => e as String)
             .toList(),
         isMentorAvailable: (json['isMentorAvailable'] as bool?) ?? false,
+        mustReviewCollege: (json['mustReviewCollege'] as bool?) ?? false,
         universityId:
             (json['university'] as Map<String, dynamic>?)?['id'] as String?,
         universityName:

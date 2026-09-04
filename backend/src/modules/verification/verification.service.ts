@@ -201,7 +201,14 @@ export class VerificationService {
         ? [
             this.prisma.userProfile.updateMany({
               where: { userId: request.userId },
-              data: { universityId: request.universityId },
+              data: {
+                universityId: request.universityId,
+                // From here on, a newly-verified mentor must review their
+                // own college before they can switch on call bookings (see
+                // UsersService.updateProfile). Existing verified mentors
+                // were never flipped, so they stay exempt.
+                mustReviewCollege: true,
+              },
             }),
           ]
         : []),

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../core/network/university_reviews_api.dart' show UniversityReview;
 import '../features/admin/admin_dashboard_screen.dart';
 import '../features/auth/aspirant_onboarding_screen.dart';
 import '../features/auth/login_screen.dart';
@@ -19,6 +20,7 @@ import '../features/home/mentor_home_screen.dart';
 import '../features/home/mentor_landing_screen.dart';
 import '../features/mentors/mentor_detail_screen.dart';
 import '../features/mentors/mentor_list_screen.dart';
+import '../features/mentors/mentor_reviews_screen.dart';
 import '../features/mentors/saved_mentors_screen.dart';
 import '../features/notifications/notifications_screen.dart';
 import '../features/profile/avatar_customizer_screen.dart';
@@ -34,6 +36,7 @@ import '../features/universities/review_breakdown_screen.dart';
 import '../features/universities/saved_colleges_screen.dart';
 import '../features/universities/university_detail_screen.dart';
 import '../features/universities/university_list_screen.dart';
+import '../features/universities/university_review_screen.dart';
 import '../features/verification/verification_screen.dart';
 import '../features/wallet/wallet_screen.dart';
 import '../state/auth_controller.dart';
@@ -248,6 +251,10 @@ final _profileRoute = GoRoute(
     GoRoute(path: 'avatar', builder: (_, __) => const AvatarCustomizerScreen()),
     GoRoute(path: 'settings', builder: (_, __) => const SettingsScreen()),
     GoRoute(path: 'blocked-users', builder: (_, __) => const BlockedUsersScreen()),
+    // Mentor-only in practice — the entry points (Profile menu row, Home
+    // Reviews "See all") are gated to MENTOR role; the screen itself always
+    // resolves to the signed-in user's own reviews.
+    GoRoute(path: 'reviews', builder: (_, __) => const MentorReviewsScreen()),
   ],
 );
 
@@ -357,6 +364,21 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/notifications',
         builder: (_, __) => const NotificationsScreen(),
+      ),
+
+      // ─── College review — the 12-question form (pushed from "Rate Your
+      // College", the college detail screen, and the review breakdown
+      // screen via openUniversityReview). ──
+      GoRoute(
+        path: '/college-review',
+        builder: (_, state) {
+          final a = state.extra as Map<String, dynamic>? ?? const {};
+          return UniversityReviewScreen(
+            universityId: a['universityId'] as String? ?? '',
+            universityName: a['universityName'] as String? ?? 'Your college',
+            existingReview: a['existingReview'] as UniversityReview?,
+          );
+        },
       ),
 
       // Wallet needs no top-level standalone route for either role anymore:

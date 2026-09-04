@@ -7,6 +7,11 @@ import {
 import { ReviewStatus, UserRole, VerificationStatus } from '@prisma/client';
 import { PrismaService } from '../../database/prisma/prisma.service.js';
 import { CreateUniversityReviewDto } from './dto/create-university-review.dto.js';
+import {
+  REVIEW_CHOICE_FIELDS,
+  ReviewChoiceField,
+  WOULD_RECOMMEND_POSITIVE,
+} from './dto/review-choices.js';
 import { ListUniversityReviewsDto } from './dto/list-university-reviews.dto.js';
 import {
   toUniversityReviewResponse,
@@ -38,6 +43,12 @@ export interface UniversityReviewSummary {
   /** Only tags that were actually picked at least once appear here — the
    * client shows real counts, never a zero-count tag from the picklist. */
   tagCounts: Record<string, number>;
+  /** For each of the 7 single-choice questions (Q5–Q11), a code→count map
+   * of how the answers split. Only codes that were actually chosen appear.
+   * Backs the "Student Experience Breakdown" bars on the summary card
+   * (Phase 2) — computed here now so the aggregate endpoint stays a single
+   * source of truth. */
+  choiceDistributions: Record<ReviewChoiceField, Record<string, number>>;
 }
 
 /**
@@ -199,7 +210,11 @@ export class UniversityReviewsService {
       deletedAt: null,
     };
 
-    const [aggregate, recommendYes, recommendAnswered, tagRows] = await Promise.all([
+    const choiceFieldNames = Object.keys(
+      REVIEW_CHOICE_FIELDS,
+    ) as ReviewChoiceField[];
+
+    const [aggregate, recommendYes, recommendAnswered, rows] = await Promise.all([
       this.prisma.review.aggregate({
         where,
         _avg: {
@@ -212,18 +227,43 @@ export class UniversityReviewsService {
         _count: { overallRating: true },
       }),
       this.prisma.review.count({
-        where: { ...where, wouldRecommend: true },
+        where: { ...where, wouldRecommend: { in: [...WOULD_RECOMMEND_POSITIVE] } },
       }),
       this.prisma.review.count({
         where: { ...where, wouldRecommend: { not: null } },
       }),
-      this.prisma.review.findMany({ where, select: { tags: true } }),
+      // Review volume per university is small, so pulling the choice/tag
+      // columns and folding them in JS is cheaper than 8 more round trips.
+      this.prisma.review.findMany({
+        where,
+        select: {
+          tags: true,
+          raggingCulture: true,
+          facultyApproachability: true,
+          stipendStatus: true,
+          hostelAvailability: true,
+          hostelSafety: true,
+          wouldRecommend: true,
+          valueForMoney: true,
+        },
+      }),
     ]);
 
     const tagCounts: Record<string, number> = {};
-    for (const row of tagRows) {
+    const choiceDistributions = Object.fromEntries(
+      choiceFieldNames.map((f) => [f, {} as Record<string, number>]),
+    ) as Record<ReviewChoiceField, Record<string, number>>;
+
+    for (const row of rows) {
       for (const tag of row.tags) {
         tagCounts[tag] = (tagCounts[tag] ?? 0) + 1;
+      }
+      for (const field of choiceFieldNames) {
+        const code = row[field];
+        if (code != null) {
+          const dist = choiceDistributions[field];
+          dist[code] = (dist[code] ?? 0) + 1;
+        }
       }
     }
 
@@ -241,6 +281,7 @@ export class UniversityReviewsService {
         careerValue: aggregate._avg.placementsRating,
       },
       tagCounts,
+      choiceDistributions,
     };
   }
 

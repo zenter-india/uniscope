@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/network/university_reviews_api.dart';
 import '../../core/theme/app_theme.dart';
 import '../../widgets/app_widgets.dart';
-import '../profile/profile_options.dart';
+import 'review_choices.dart';
 
 /// Tags that read as a downside — colored like a caution, not a highlight,
 /// wherever a tag chip is shown. Everything else in kReviewTags is positive.
@@ -53,14 +52,18 @@ class ReviewTagChip extends StatelessWidget {
 
 /// One "Rated by Category" row — a labeled progress bar, skipped entirely
 /// (not rendered as a zero) when nobody has answered that category yet.
+/// [subtitle] is an optional one-line descriptor shown under the bar (used
+/// on the full breakdown screen, omitted in the compact summary card).
 class CategoryRatingBar extends StatelessWidget {
   const CategoryRatingBar({
     super.key,
     required this.label,
     required this.value,
+    this.subtitle,
   });
   final String label;
   final double? value;
+  final String? subtitle;
 
   @override
   Widget build(BuildContext context) {
@@ -68,41 +71,57 @@ class CategoryRatingBar extends StatelessWidget {
     if (v == null) return const SizedBox.shrink();
     return Padding(
       padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          SizedBox(
-            width: 92,
-            child: Text(
-              label,
-              style: const TextStyle(
-                fontSize: AppFont.sm,
-                color: AppColors.textPrimary,
+          Row(
+            children: [
+              SizedBox(
+                width: 92,
+                child: Text(
+                  label,
+                  style: const TextStyle(
+                    fontSize: AppFont.sm,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+              ),
+              Expanded(
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(AppRadius.full),
+                  child: LinearProgressIndicator(
+                    value: (v / 5).clamp(0, 1),
+                    minHeight: 8,
+                    backgroundColor: AppColors.border,
+                    valueColor: AlwaysStoppedAnimation(reviewScoreColor(v)),
+                  ),
+                ),
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              SizedBox(
+                width: 32,
+                child: Text(
+                  v.toStringAsFixed(1),
+                  textAlign: TextAlign.right,
+                  style: const TextStyle(
+                    fontSize: AppFont.sm,
+                    fontWeight: AppFont.bold,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          if (subtitle != null && subtitle!.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(left: 92, top: 3),
+              child: Text(
+                subtitle!,
+                style: const TextStyle(
+                  fontSize: AppFont.xs,
+                  color: AppColors.textMuted,
+                ),
               ),
             ),
-          ),
-          Expanded(
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(AppRadius.full),
-              child: LinearProgressIndicator(
-                value: (v / 5).clamp(0, 1),
-                minHeight: 8,
-                backgroundColor: AppColors.border,
-                valueColor: AlwaysStoppedAnimation(reviewScoreColor(v)),
-              ),
-            ),
-          ),
-          const SizedBox(width: AppSpacing.sm),
-          SizedBox(
-            width: 32,
-            child: Text(
-              v.toStringAsFixed(1),
-              textAlign: TextAlign.right,
-              style: const TextStyle(
-                fontSize: AppFont.sm,
-                fontWeight: AppFont.bold,
-              ),
-            ),
-          ),
         ],
       ),
     );
@@ -266,22 +285,6 @@ class ReviewCard extends StatelessWidget {
               ),
             ),
           ],
-          if ((review.pros != null && review.pros!.trim().isNotEmpty) ||
-              (review.cons != null && review.cons!.trim().isNotEmpty)) ...[
-            const SizedBox(height: AppSpacing.sm),
-            if (review.pros != null && review.pros!.trim().isNotEmpty)
-              _ProsConsLine(
-                icon: Icons.thumb_up_rounded,
-                color: AppColors.primary,
-                text: review.pros!,
-              ),
-            if (review.cons != null && review.cons!.trim().isNotEmpty)
-              _ProsConsLine(
-                icon: Icons.thumb_down_rounded,
-                color: const Color(0xFFE08E45),
-                text: review.cons!,
-              ),
-          ],
           if (review.tags.isNotEmpty) ...[
             const SizedBox(height: AppSpacing.sm),
             Wrap(
@@ -296,354 +299,146 @@ class ReviewCard extends StatelessWidget {
   }
 }
 
-class _ProsConsLine extends StatelessWidget {
-  const _ProsConsLine({
-    required this.icon,
-    required this.color,
-    required this.text,
+/// One "Student Experience Breakdown" card (Q5–Q11) — a headline sentence,
+/// a stacked severity bar, and an expandable per-option legend. Every % is
+/// real: it comes from `summary.choiceDistributions[spec.field]`, a
+/// code→count map the backend computes over ACTIVE reviews. A question
+/// nobody has answered yet is skipped by the caller, never shown as zeros.
+class ChoiceDistributionCard extends StatefulWidget {
+  const ChoiceDistributionCard({
+    super.key,
+    required this.spec,
+    required this.distribution,
   });
-  final IconData icon;
-  final Color color;
-  final String text;
+
+  final ReviewChoiceSpec spec;
+  final Map<String, int> distribution;
+
+  @override
+  State<ChoiceDistributionCard> createState() => _ChoiceDistributionCardState();
+}
+
+class _ChoiceDistributionCardState extends State<ChoiceDistributionCard> {
+  bool _expanded = false;
+
+  int get _total =>
+      widget.distribution.values.fold(0, (sum, n) => sum + n);
+
+  int _pct(int count) => _total == 0 ? 0 : ((count / _total) * 100).round();
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(top: 4),
-      child: Row(
+    final spec = widget.spec;
+    final total = _total;
+    final positiveCount = spec.positiveCodes.fold<int>(
+      0,
+      (sum, code) => sum + (widget.distribution[code] ?? 0),
+    );
+    final positivePct = total == 0 ? 0 : ((positiveCount / total) * 100).round();
+
+    return AppCard(
+      margin: const EdgeInsets.only(bottom: AppSpacing.sm),
+      onTap: () => setState(() => _expanded = !_expanded),
+      child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, size: 14, color: color),
-          const SizedBox(width: AppSpacing.xs),
-          Expanded(
-            child: Text(
-              text,
-              style: const TextStyle(
-                fontSize: AppFont.sm,
-                color: AppColors.textPrimary,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-/// Bottom sheet for writing a review — overall rating is the only required
-/// field; the 4 category ratings, "would you recommend", and tags are all
-/// optional so the form stays quick, but collecting them is what makes the
-/// summary card's category bars / recommend % / tag counts real instead of
-/// empty for every future review.
-class WriteReviewSheet extends ConsumerStatefulWidget {
-  const WriteReviewSheet({
-    super.key,
-    required this.universityId,
-    this.existingReview,
-  });
-  final String universityId;
-
-  /// When set, the sheet opens pre-filled with this review's values and
-  /// submits via update instead of create — same form either way, since
-  /// the fields are identical, just a different verb at the end.
-  final UniversityReview? existingReview;
-
-  @override
-  ConsumerState<WriteReviewSheet> createState() => _WriteReviewSheetState();
-}
-
-class _WriteReviewSheetState extends ConsumerState<WriteReviewSheet> {
-  late int _overallRating;
-  int? _academicsRating;
-  int? _campusLifeRating;
-  int? _workloadRating;
-  int? _careerValueRating;
-  bool? _wouldRecommend;
-  final Set<String> _tags = {};
-  late final _bodyController = TextEditingController(
-    text: widget.existingReview?.body ?? '',
-  );
-  late final _prosController = TextEditingController(
-    text: widget.existingReview?.pros ?? '',
-  );
-  late final _consController = TextEditingController(
-    text: widget.existingReview?.cons ?? '',
-  );
-  bool _submitting = false;
-  String? _error;
-
-  bool get _isEditing => widget.existingReview != null;
-
-  @override
-  void initState() {
-    super.initState();
-    final existing = widget.existingReview;
-    _overallRating = existing?.overallRating ?? 5;
-    _academicsRating = existing?.clinicalExposureRating;
-    _campusLifeRating = existing?.campusLifeRating;
-    _workloadRating = existing?.workloadRating;
-    _careerValueRating = existing?.placementsRating;
-    _wouldRecommend = existing?.wouldRecommend;
-    if (existing != null) _tags.addAll(existing.tags);
-  }
-
-  @override
-  void dispose() {
-    _bodyController.dispose();
-    _prosController.dispose();
-    _consController.dispose();
-    super.dispose();
-  }
-
-  Future<void> _submit() async {
-    setState(() {
-      _submitting = true;
-      _error = null;
-    });
-    try {
-      final api = ref.read(universityReviewsApiProvider);
-      if (_isEditing) {
-        await api.update(
-          widget.universityId,
-          overallRating: _overallRating,
-          clinicalExposureRating: _academicsRating,
-          campusLifeRating: _campusLifeRating,
-          workloadRating: _workloadRating,
-          placementsRating: _careerValueRating,
-          wouldRecommend: _wouldRecommend,
-          tags: _tags.toList(),
-          body: _bodyController.text.trim(),
-          pros: _prosController.text.trim(),
-          cons: _consController.text.trim(),
-        );
-      } else {
-        await api.create(
-          widget.universityId,
-          overallRating: _overallRating,
-          clinicalExposureRating: _academicsRating,
-          campusLifeRating: _campusLifeRating,
-          workloadRating: _workloadRating,
-          placementsRating: _careerValueRating,
-          wouldRecommend: _wouldRecommend,
-          tags: _tags.toList(),
-          body: _bodyController.text.trim(),
-          pros: _prosController.text.trim(),
-          cons: _consController.text.trim(),
-        );
-      }
-      if (!mounted) return;
-      Navigator.of(context).pop(true);
-    } catch (e) {
-      setState(() {
-        _submitting = false;
-        _error = e.toString();
-      });
-    }
-  }
-
-  Widget _starRow(String label, int? value, ValueChanged<int> onChanged) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: AppSpacing.xs),
-      child: Row(
-        children: [
-          SizedBox(
-            width: 100,
-            child: Text(label, style: const TextStyle(fontSize: AppFont.sm)),
-          ),
-          for (var i = 1; i <= 5; i++)
-            IconButton(
-              padding: EdgeInsets.zero,
-              constraints: const BoxConstraints(),
-              onPressed: () => onChanged(i),
-              icon: Icon(
-                value != null && i <= value
-                    ? Icons.star_rounded
-                    : Icons.star_border_rounded,
-                color: AppColors.warning,
-                size: 22,
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: EdgeInsets.fromLTRB(
-        AppSpacing.lg,
-        AppSpacing.md,
-        AppSpacing.lg,
-        AppSpacing.lg + MediaQuery.of(context).viewInsets.bottom,
-      ),
-      child: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Center(
-              child: Container(
-                width: 36,
-                height: 4,
-                margin: const EdgeInsets.only(bottom: AppSpacing.md),
-                decoration: BoxDecoration(
-                  color: AppColors.border,
-                  borderRadius: BorderRadius.circular(AppRadius.full),
-                ),
-              ),
-            ),
-            Text(
-              _isEditing ? 'Edit your review' : 'Write a review',
-              style: const TextStyle(
-                fontSize: AppFont.lg,
-                fontWeight: AppFont.extraBold,
-              ),
-            ),
-            const SizedBox(height: AppSpacing.md),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                for (var i = 1; i <= 5; i++)
-                  IconButton(
-                    onPressed: () => setState(() => _overallRating = i),
-                    icon: Icon(
-                      i <= _overallRating
-                          ? Icons.star_rounded
-                          : Icons.star_border_rounded,
-                      color: AppColors.warning,
-                      size: 32,
-                    ),
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  spec.title,
+                  style: const TextStyle(
+                    fontSize: AppFont.sm,
+                    fontWeight: AppFont.bold,
+                    color: AppColors.textPrimary,
                   ),
-              ],
-            ),
-            const SizedBox(height: AppSpacing.md),
-            const Text(
-              'Rate by category (optional)',
-              style: TextStyle(fontSize: AppFont.sm, fontWeight: AppFont.bold),
-            ),
-            const SizedBox(height: AppSpacing.xs),
-            _starRow(
-              'Academics',
-              _academicsRating,
-              (v) => setState(() => _academicsRating = v),
-            ),
-            _starRow(
-              'Campus Life',
-              _campusLifeRating,
-              (v) => setState(() => _campusLifeRating = v),
-            ),
-            _starRow(
-              'Workload',
-              _workloadRating,
-              (v) => setState(() => _workloadRating = v),
-            ),
-            _starRow(
-              'Career Value',
-              _careerValueRating,
-              (v) => setState(() => _careerValueRating = v),
-            ),
-            const SizedBox(height: AppSpacing.sm),
-            const Text(
-              'Would you recommend this college?',
-              style: TextStyle(fontSize: AppFont.sm, fontWeight: AppFont.bold),
-            ),
-            const SizedBox(height: AppSpacing.xs),
-            Row(
-              children: [
-                ChoiceChip(
-                  label: const Text('Yes'),
-                  selected: _wouldRecommend == true,
-                  onSelected: (_) => setState(() => _wouldRecommend = true),
                 ),
-                const SizedBox(width: AppSpacing.sm),
-                ChoiceChip(
-                  label: const Text('No'),
-                  selected: _wouldRecommend == false,
-                  onSelected: (_) => setState(() => _wouldRecommend = false),
-                ),
-              ],
-            ),
-            const SizedBox(height: AppSpacing.sm),
-            const Text(
-              'Highlights (optional)',
-              style: TextStyle(fontSize: AppFont.sm, fontWeight: AppFont.bold),
-            ),
-            const SizedBox(height: AppSpacing.xs),
-            Wrap(
-              spacing: AppSpacing.xs,
-              runSpacing: AppSpacing.xs,
-              children: [
-                for (final tag in kReviewTags)
-                  FilterChip(
-                    label: Text(tag),
-                    selected: _tags.contains(tag),
-                    onSelected: (v) => setState(() {
-                      if (v) {
-                        _tags.add(tag);
-                      } else {
-                        _tags.remove(tag);
-                      }
-                    }),
-                  ),
-              ],
-            ),
-            const SizedBox(height: AppSpacing.sm),
-            TextField(
-              controller: _bodyController,
-              maxLines: 4,
-              maxLength: 3000,
-              decoration: const InputDecoration(
-                hintText:
-                    'Share your experience — academics, faculty, campus life...',
-                border: OutlineInputBorder(),
               ),
-            ),
-            TextField(
-              controller: _prosController,
-              maxLength: 1000,
-              decoration: const InputDecoration(
-                labelText: 'Pros (optional) — e.g. "Great faculty"',
-                border: OutlineInputBorder(),
-              ),
-            ),
-            TextField(
-              controller: _consController,
-              maxLength: 1000,
-              decoration: const InputDecoration(
-                labelText: 'Cons (optional) — e.g. "Crowded labs"',
-                border: OutlineInputBorder(),
-              ),
-            ),
-            if (_error != null) ...[
-              const SizedBox(height: AppSpacing.sm),
-              Text(
-                _error!,
-                style: const TextStyle(
-                  fontSize: AppFont.xs,
-                  color: AppColors.error,
-                ),
+              Icon(
+                _expanded
+                    ? Icons.expand_less_rounded
+                    : Icons.expand_more_rounded,
+                size: 20,
+                color: AppColors.textMuted,
               ),
             ],
-            const SizedBox(height: AppSpacing.sm),
-            SizedBox(
-              width: double.infinity,
-              child: FilledButton(
-                onPressed: _submitting ? null : _submit,
-                child: _submitting
-                    ? const SizedBox(
-                        height: 18,
-                        width: 18,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: Colors.white,
+          ),
+          const SizedBox(height: 4),
+          Text(
+            '$positivePct% ${spec.positivePhrase}',
+            style: const TextStyle(
+              fontSize: AppFont.xs,
+              fontWeight: AppFont.semibold,
+              color: AppColors.primaryDark,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(AppRadius.full),
+            child: SizedBox(
+              height: 9,
+              child: Row(
+                children: [
+                  for (var i = 0; i < spec.options.length; i++)
+                    if ((widget.distribution[spec.options[i].code] ?? 0) > 0)
+                      Expanded(
+                        flex: widget.distribution[spec.options[i].code]!,
+                        child: ColoredBox(
+                          color: reviewChoiceSeverityColor(
+                            spec.options[i].code,
+                            i,
+                            spec.options.length,
+                          ),
                         ),
-                      )
-                    : Text(_isEditing ? 'Save changes' : 'Post review'),
+                      ),
+                ],
               ),
             ),
+          ),
+          if (_expanded) ...[
+            const SizedBox(height: AppSpacing.sm),
+            const Divider(height: 1, color: AppColors.border),
+            const SizedBox(height: AppSpacing.sm),
+            for (var i = 0; i < spec.options.length; i++)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 6),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 8,
+                      height: 8,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: reviewChoiceSeverityColor(
+                          spec.options[i].code,
+                          i,
+                          spec.options.length,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: AppSpacing.sm),
+                    Expanded(
+                      child: Text(
+                        spec.options[i].label,
+                        style: const TextStyle(
+                          fontSize: AppFont.xs,
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                    ),
+                    Text(
+                      '${_pct(widget.distribution[spec.options[i].code] ?? 0)}%',
+                      style: const TextStyle(
+                        fontSize: AppFont.xs,
+                        fontWeight: AppFont.bold,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
           ],
-        ),
+        ],
       ),
     );
   }

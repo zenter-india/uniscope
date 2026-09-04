@@ -6,7 +6,9 @@ import '../../core/network/users_api.dart';
 import '../../core/theme/app_theme.dart';
 import '../../state/auth_controller.dart' show UserRole;
 import '../../widgets/app_widgets.dart';
+import 'review_choices.dart';
 import 'review_widgets.dart';
+import 'university_review_screen.dart';
 
 /// Full review breakdown for one university — the screen the summary
 /// card's "See full review breakdown" arrow pushes into. Every number here
@@ -114,24 +116,69 @@ class ReviewBreakdownScreen extends ConsumerWidget {
                         CategoryRatingBar(
                           label: 'Academics',
                           value: summary.academics,
+                          subtitle:
+                              'Teaching quality, curriculum & practical exposure',
                         ),
                         CategoryRatingBar(
                           label: 'Campus Life',
                           value: summary.campusLife,
+                          subtitle: 'How healthy and supportive the environment is',
                         ),
                         CategoryRatingBar(
                           label: 'Workload',
                           value: summary.workload,
+                          subtitle: 'How manageable the schedule and duty hours are',
                         ),
                         CategoryRatingBar(
                           label: 'Career Value',
                           value: summary.careerValue,
+                          subtitle: 'How well it prepares you for the career ahead',
                         ),
                       ],
                     ),
                   ),
                   const SizedBox(height: AppSpacing.lg),
                 ],
+                Builder(
+                  builder: (context) {
+                    final dists = [
+                      for (final spec in kReviewChoices)
+                        (
+                          spec,
+                          summary.choiceDistributions[spec.field] ??
+                              const <String, int>{},
+                        ),
+                    ].where((e) => e.$2.values.any((n) => n > 0)).toList();
+                    if (dists.isEmpty) return const SizedBox.shrink();
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Student Experience Breakdown',
+                          style: TextStyle(
+                            fontSize: AppFont.md,
+                            fontWeight: AppFont.extraBold,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        const Text(
+                          'Tap any card for the full split',
+                          style: TextStyle(
+                            fontSize: AppFont.xs,
+                            color: AppColors.textMuted,
+                          ),
+                        ),
+                        const SizedBox(height: AppSpacing.sm),
+                        for (final (spec, dist) in dists)
+                          ChoiceDistributionCard(
+                            spec: spec,
+                            distribution: dist,
+                          ),
+                        const SizedBox(height: AppSpacing.lg),
+                      ],
+                    );
+                  },
+                ),
                 if (summary.tagCounts.isNotEmpty) ...[
                   const Text(
                     'Student Highlights',
@@ -163,44 +210,12 @@ class ReviewBreakdownScreen extends ConsumerWidget {
                     ),
                     if (canReview)
                       TextButton.icon(
-                        onPressed: () async {
-                          final existing = hasReviewedAsync.value == true
-                              ? await ref.read(
-                                  myUniversityReviewProvider(
-                                    universityId,
-                                  ).future,
-                                )
-                              : null;
-                          if (!context.mounted) return;
-                          final posted = await showModalBottomSheet<bool>(
-                            context: context,
-                            backgroundColor: AppColors.surface,
-                            isScrollControlled: true,
-                            shape: const RoundedRectangleBorder(
-                              borderRadius: BorderRadius.vertical(
-                                top: Radius.circular(AppRadius.xl),
-                              ),
-                            ),
-                            builder: (_) => WriteReviewSheet(
-                              universityId: universityId,
-                              existingReview: existing,
-                            ),
-                          );
-                          if (posted == true) {
-                            ref.invalidate(
-                              universityReviewsListProvider(universityId),
-                            );
-                            ref.invalidate(
-                              universityReviewSummaryProvider(universityId),
-                            );
-                            ref.invalidate(
-                              hasReviewedUniversityProvider(universityId),
-                            );
-                            ref.invalidate(
-                              myUniversityReviewProvider(universityId),
-                            );
-                          }
-                        },
+                        onPressed: () => openUniversityReview(
+                          context,
+                          ref,
+                          universityId: universityId,
+                          universityName: universityName,
+                        ),
                         icon: const Icon(Icons.edit_rounded, size: 16),
                         label: Text(
                           hasReviewedAsync.value == true

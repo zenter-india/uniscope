@@ -4,13 +4,18 @@
  * mobile_flutter/lib/features/profile/profile_options.dart as
  * kReviewTags — keep the two in sync. */
 export const REVIEW_TAGS = [
-  'Great exposure',
-  'Good placement',
   'Great faculty',
-  'Heavy workload',
+  'Toxic seniors',
   'Good hostel',
-  'Worth the fees',
+  'Poor hostel',
+  'Stipend on time',
   'Stipend delayed',
+  'Great exposure',
+  'Heavy workload',
+  'Good placement',
+  'Highly recommended',
+  'Not recommended',
+  'Worth the fees',
 ] as const;
 
 export type ReviewTag = (typeof REVIEW_TAGS)[number];

@@ -13,6 +13,7 @@ import '../auth/auth_background.dart' show authBrandTeal, authBrandNavy;
 import '../mentors/mentor_list_screen.dart';
 import 'review_summary_card.dart';
 import 'review_widgets.dart';
+import 'university_review_screen.dart';
 
 final universityDetailProvider = FutureProvider.autoDispose
     .family<University, String>(
@@ -642,38 +643,17 @@ class _ReviewsTab extends ConsumerWidget {
               width: double.infinity,
               child: OutlinedButton.icon(
                 onPressed: () async {
-                  final existing = hasReviewedAsync.value == true
-                      ? await ref.read(
-                          myUniversityReviewProvider(university.id).future,
-                        )
-                      : null;
-                  if (!context.mounted) return;
-                  final posted = await showModalBottomSheet<bool>(
-                    context: context,
-                    backgroundColor: AppColors.surface,
-                    isScrollControlled: true,
-                    shape: const RoundedRectangleBorder(
-                      borderRadius: BorderRadius.vertical(
-                        top: Radius.circular(AppRadius.xl),
-                      ),
-                    ),
-                    builder: (_) => WriteReviewSheet(
-                      universityId: university.id,
-                      existingReview: existing,
-                    ),
+                  final posted = await openUniversityReview(
+                    context,
+                    ref,
+                    universityId: university.id,
+                    universityName: university.name,
                   );
                   if (posted == true) {
-                    ref.invalidate(
-                      universityReviewsListProvider(university.id),
-                    );
-                    ref.invalidate(
-                      hasReviewedUniversityProvider(university.id),
-                    );
+                    // The review screen already refreshed the review
+                    // providers; the detail response also carries a
+                    // {rating, reviewCount}, so refresh that too.
                     ref.invalidate(universityDetailProvider(university.slug));
-                    ref.invalidate(
-                      universityReviewSummaryProvider(university.id),
-                    );
-                    ref.invalidate(myUniversityReviewProvider(university.id));
                   }
                 },
                 icon: const Icon(Icons.edit_rounded, size: 18),

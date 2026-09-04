@@ -1,24 +1,32 @@
 import { Review, UserRole } from '@prisma/client';
 
+/**
+ * Anonymised projection of one university review — the client-confirmed
+ * 12-question shape. Q1–Q4 map onto the pre-existing category-rating
+ * columns (see CreateUniversityReviewDto for the mapping); Q5–Q11 are
+ * choice codes (see dto/review-choices.ts); Q12 is `overallRating`.
+ * Never carries the author's name/handle — only their role, so a review
+ * reads as "from a Mentor" / "from a Student" with no identity attached.
+ */
 export interface UniversityReviewResponse {
   id: string;
   universityId: string;
-  overallRating: number;
-  facultyRating: number | null;
-  infrastructureRating: number | null;
-  clinicalExposureRating: number | null;
-  campusLifeRating: number | null;
-  placementsRating: number | null;
-  workloadRating: number | null;
-  wouldRecommend: boolean | null;
+  overallRating: number; // Q12
+  clinicalExposureRating: number | null; // Q1 Academic Exposure
+  campusLifeRating: number | null; // Q2 Campus Culture & Environment
+  workloadRating: number | null; // Q3 Workload & Stress Level
+  placementsRating: number | null; // Q4 Future Value & Career Outcomes
+  raggingCulture: string | null; // Q5
+  facultyApproachability: string | null; // Q6
+  stipendStatus: string | null; // Q7
+  hostelAvailability: string | null; // Q8
+  hostelSafety: string | null; // Q9
+  wouldRecommend: string | null; // Q10 (choice code, was a Boolean pre-form)
+  valueForMoney: string | null; // Q11
   tags: string[];
-  pros: string | null;
-  cons: string | null;
-  body: string | null;
+  body: string | null; // "In your own words"
   helpfulCount: number;
   createdAt: Date;
-  /** Never a name or handle — only the author's role, so a review reads as
-   * "from a Mentor" / "from a Student" with no identity attached. */
   authorRole: UserRole;
 }
 
@@ -29,16 +37,18 @@ export function toUniversityReviewResponse(
     id: review.id,
     universityId: review.universityId,
     overallRating: review.overallRating,
-    facultyRating: review.facultyRating,
-    infrastructureRating: review.infrastructureRating,
     clinicalExposureRating: review.clinicalExposureRating,
     campusLifeRating: review.campusLifeRating,
-    placementsRating: review.placementsRating,
     workloadRating: review.workloadRating,
+    placementsRating: review.placementsRating,
+    raggingCulture: review.raggingCulture,
+    facultyApproachability: review.facultyApproachability,
+    stipendStatus: review.stipendStatus,
+    hostelAvailability: review.hostelAvailability,
+    hostelSafety: review.hostelSafety,
     wouldRecommend: review.wouldRecommend,
+    valueForMoney: review.valueForMoney,
     tags: review.tags,
-    pros: review.pros,
-    cons: review.cons,
     body: review.body,
     helpfulCount: review.helpfulCount,
     createdAt: review.createdAt,

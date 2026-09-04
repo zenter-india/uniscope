@@ -363,7 +363,10 @@ export class UsersService {
 
   async updateProfile(userId: string, dto: UpdateProfileDto) {
     if (dto.isMentorAvailable !== undefined) {
-      const user = await this.prisma.user.findUniqueOrThrow({ where: { id: userId } });
+      const user = await this.prisma.user.findUniqueOrThrow({
+        where: { id: userId },
+        include: { profile: true },
+      });
       if (user.role !== UserRole.MENTOR) {
         throw new BadRequestException('Only mentors can set mentoring availability');
       }
@@ -375,6 +378,19 @@ export class UsersService {
       if (dto.isMentorAvailable && user.verificationStatus !== VerificationStatus.VERIFIED) {
         throw new BadRequestException(
           'Complete identity verification before accepting call bookings — you can still chat with aspirants in the meantime.',
+        );
+      }
+      // Mentors onboarded under the college-review requirement (see
+      // VerificationService.review — `mustReviewCollege`) must post a
+      // review of their own college before they can accept call bookings.
+      // Existing verified mentors have the flag false and skip this.
+      if (
+        dto.isMentorAvailable &&
+        user.profile?.mustReviewCollege &&
+        !(await this.hasReviewedOwnCollege(userId, user.profile))
+      ) {
+        throw new BadRequestException(
+          'Add a review of your college before you can accept call bookings — it only takes a minute and helps future applicants.',
         );
       }
     }
@@ -444,6 +460,29 @@ export class UsersService {
       throw new NotFoundException('User not found');
     }
     return updated;
+  }
+
+  /** Whether this user has posted a `Review` of their own linked college.
+   * Backs both the `isMentorAvailable` gate above and the
+   * `hasReviewedOwnCollege` flag on GET /users/me. A mentor with no linked
+   * `universityId` (shouldn't happen once `mustReviewCollege` is set, since
+   * both are written together on verification approval) counts as "not
+   * reviewed". */
+  async hasReviewedOwnCollege(
+    userId: string,
+    profile: { universityId: string | null },
+  ): Promise<boolean> {
+    if (!profile.universityId) return false;
+    const review = await this.prisma.review.findUnique({
+      where: {
+        authorId_universityId: {
+          authorId: userId,
+          universityId: profile.universityId,
+        },
+      },
+      select: { id: true },
+    });
+    return review !== null;
   }
 
   /** Admin-only search/list — deliberately excludes ADMIN-role rows from

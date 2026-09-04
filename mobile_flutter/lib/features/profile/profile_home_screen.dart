@@ -4,13 +4,15 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/network/college_wishlist_api.dart';
-import '../../core/network/university_reviews_api.dart';
+import '../../core/network/university_reviews_api.dart'
+    show hasReviewedUniversityProvider;
 import '../../core/network/users_api.dart';
 import '../../core/network/wishlist_api.dart';
 import '../../core/theme/app_theme.dart';
 import '../../state/auth_controller.dart';
 import '../../widgets/app_widgets.dart';
-import '../universities/review_widgets.dart' show WriteReviewSheet;
+import '../universities/university_review_screen.dart'
+    show CollegeReviewPromptBanner, openUniversityReview;
 
 (String, Color) _verificationPresentation(String? status) {
   switch (status) {
@@ -23,40 +25,6 @@ import '../universities/review_widgets.dart' show WriteReviewSheet;
       return ('Resubmit needed', AppColors.error);
     default:
       return ('Unverified', AppColors.warning);
-  }
-}
-
-/// Opens the same WriteReviewSheet the college detail screen uses, prefilled
-/// for an edit if the mentor already reviewed their own college. Lets a
-/// mentor post/update that review straight from their own Profile tab
-/// instead of having to browse to their college's own detail screen first.
-Future<void> _openCollegeReview(
-  BuildContext context,
-  WidgetRef ref, {
-  required String universityId,
-}) async {
-  final hasReviewed = await ref.read(
-    hasReviewedUniversityProvider(universityId).future,
-  );
-  final existing = hasReviewed
-      ? await ref.read(myUniversityReviewProvider(universityId).future)
-      : null;
-  if (!context.mounted) return;
-  final posted = await showModalBottomSheet<bool>(
-    context: context,
-    backgroundColor: AppColors.surface,
-    isScrollControlled: true,
-    shape: const RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.xl)),
-    ),
-    builder: (_) =>
-        WriteReviewSheet(universityId: universityId, existingReview: existing),
-  );
-  if (posted == true) {
-    ref.invalidate(universityReviewsListProvider(universityId));
-    ref.invalidate(hasReviewedUniversityProvider(universityId));
-    ref.invalidate(universityReviewSummaryProvider(universityId));
-    ref.invalidate(myUniversityReviewProvider(universityId));
   }
 }
 
@@ -313,6 +281,7 @@ class ProfileHomeScreen extends ConsumerWidget {
                     ],
                     if (isMentor) ...[
                       const SizedBox(height: AppSpacing.md),
+                      const CollegeReviewPromptBanner(),
                       const MentorAvailabilityCard(),
                     ] else ...[
                       const SizedBox(height: AppSpacing.md),
@@ -351,6 +320,12 @@ class ProfileHomeScreen extends ConsumerWidget {
                               label: 'Verification',
                               onTap: () => context.go('/profile/verification'),
                             ),
+                          if (isMentor)
+                            _MenuRow(
+                              icon: Icons.star_rounded,
+                              label: 'Your Reviews',
+                              onTap: () => context.push('/profile/reviews'),
+                            ),
                           // Only a VERIFIED mentor has a real, id-checked
                           // universityId (see VerificationService.review's
                           // link) — that's also exactly the same eligibility
@@ -364,11 +339,14 @@ class ProfileHomeScreen extends ConsumerWidget {
                             _MenuRow(
                               icon: Icons.rate_review_rounded,
                               label: 'Rate Your College',
-                              onTap: () => _openCollegeReview(
+                              onTap: () => openUniversityReview(
                                 context,
                                 ref,
                                 universityId:
                                     myProfileAsync.asData!.value.universityId!,
+                                universityName:
+                                    myProfileAsync.asData?.value.universityName ??
+                                    'Your college',
                               ),
                             ),
                           // Mentors already have Wallet as the top-level
@@ -481,6 +459,27 @@ class _MentorAvailabilityCardState
     final isAvailable = profile?.isMentorAvailable ?? false;
     final isVerified = profile?.verificationStatus == 'VERIFIED';
 
+    // Mentors verified under the college-review requirement can't switch on
+    // call bookings until they've posted a review of their own college
+    // (mirrors UsersService.updateProfile's gate). Only relevant once
+    // verified and a college is linked.
+    final needsCollegeReview =
+        (profile?.mustReviewCollege ?? false) && profile?.universityId != null;
+    final hasReviewedCollege = needsCollegeReview
+        ? (ref.watch(
+                hasReviewedUniversityProvider(profile!.universityId!),
+              ).asData?.value ??
+              false)
+        : true;
+    final reviewGateOpen = isVerified && needsCollegeReview && !hasReviewedCollege;
+
+    Future<void> openReview() => openUniversityReview(
+      context,
+      ref,
+      universityId: profile!.universityId!,
+      universityName: profile.universityName ?? 'Your college',
+    ).then((_) => ref.invalidate(myProfileProvider));
+
     return AppCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -503,25 +502,36 @@ class _MentorAvailabilityCardState
                   child: CircularProgressIndicator(strokeWidth: 2),
                 )
               else
-                // Real switch for a verified mentor; a plainly-disabled one
-                // otherwise. Tapping it never navigates — the "Verify now"
-                // link below is the only route to verification, so a stray
-                // tap on the control can't yank the mentor off this screen.
+                // Real switch for a verified mentor with no open gate; a
+                // plainly-disabled one when unverified. When the college-
+                // review gate is open, tapping opens the review flow
+                // instead of toggling — the "Verify now" / "Review your
+                // college" link below is otherwise the only route, so a
+                // stray tap on the control can't yank the mentor off this
+                // screen.
                 Switch(
                   value: isVerified && isAvailable,
                   activeThumbColor: AppColors.primary,
-                  onChanged: isVerified ? _toggle : null,
+                  onChanged: !isVerified
+                      ? null
+                      : reviewGateOpen
+                      ? (_) => openReview()
+                      : _toggle,
                 ),
             ],
           ),
           const SizedBox(height: AppSpacing.xs),
           Text(
-            isVerified
-                ? 'Students can always message you. This only controls whether '
+            !isVerified
+                ? 'Students can already find and message you. Verify your '
+                      'identity to start accepting paid calls and earning too.'
+                : reviewGateOpen
+                ? 'Students can always message you. Add a review of your '
+                      'college to unlock paid call bookings — it takes a minute '
+                      'and helps future applicants.'
+                : 'Students can always message you. This only controls whether '
                       'they can book a paid call. It switches itself off after 24 '
-                      'hours so your profile never promises a call you forgot about.'
-                : 'Students can already find and message you. Verify your '
-                      'identity to start accepting paid calls and earning too.',
+                      'hours so your profile never promises a call you forgot about.',
             style: const TextStyle(
               fontSize: AppFont.xs,
               color: AppColors.textSecondary,
@@ -533,6 +543,19 @@ class _MentorAvailabilityCardState
               onTap: () => context.go('/profile/verification'),
               child: const Text(
                 'Verify Now',
+                style: TextStyle(
+                  fontSize: AppFont.xs,
+                  fontWeight: AppFont.bold,
+                  color: AppColors.primary,
+                ),
+              ),
+            ),
+          ] else if (!firstLoad && reviewGateOpen) ...[
+            const SizedBox(height: AppSpacing.xs),
+            GestureDetector(
+              onTap: openReview,
+              child: const Text(
+                'Review your college',
                 style: TextStyle(
                   fontSize: AppFont.xs,
                   fontWeight: AppFont.bold,

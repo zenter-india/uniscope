@@ -34,6 +34,13 @@ export interface PublicUser {
   languages?: string[];
   availableDays?: string[];
   isMentorAvailable?: boolean;
+  /** Mentor-only — true if this mentor was verified under the
+   * college-review requirement (see UserProfile.mustReviewCollege). While
+   * true and they haven't yet reviewed their own `university`, the app
+   * shows a "review your college" banner and the call-bookings switch is
+   * blocked. Combine with GET /universities/:id/reviews/mine to know
+   * whether the requirement is already met. */
+  mustReviewCollege?: boolean;
   university?: { id: string; name: string; slug: string } | null;
   gender?: string | null;
   state?: string | null;
@@ -255,6 +262,7 @@ export function toPublicUser(
       // own switch must read the same as what students see, or they'd believe
       // they're bookable while the listing says otherwise.
       isMentorAvailable: isCallAvailable(user.profile),
+      mustReviewCollege: user.profile?.mustReviewCollege ?? false,
       university: user.profile?.university
         ? {
             id: user.profile.university.id,

@@ -294,6 +294,15 @@ model UserProfile {
   /// stays true, but every read path treats it as false once stale (see
   /// isCallAvailable in availability.ts). Null means never toggled on.
   availabilitySetAt        DateTime? @map("availability_set_at") @db.Timestamptz
+  /// Mentor-only — set true when this mentor's verification is APPROVED
+  /// (going forward only; existing verified mentors stay false). While true
+  /// and the mentor has no `Review` of their own `universityId`, they
+  /// cannot switch `isMentorAvailable` on (enforced in
+  /// UsersService.updateProfile) and the app shows a "review your college"
+  /// banner. Reviewing their college doesn't clear the flag — it's a
+  /// permanent "this mentor was onboarded under the review requirement"
+  /// marker; the gate just also checks whether a review now exists.
+  mustReviewCollege        Boolean  @default(false) @map("must_review_college")
   /// Rate charged per minute of session time, in minor units (paise). Null until
   /// the mentor sets a rate; enforced non-null at the service layer before a
   /// mentor can accept bookings.
@@ -442,9 +451,21 @@ model Review {
   /// (shown as "Academics"), campusLifeRating, and placementsRating (shown
   /// as "Career Value") — added for the review summary card.
   workloadRating         Int?                     @map("workload_rating") @db.SmallInt
-  /// Null means the reviewer didn't answer; only non-null answers count
-  /// toward the aggregated "would recommend" percentage.
-  wouldRecommend         Boolean?                 @map("would_recommend")
+  /// Q5–Q11 of the client-confirmed review form — single-choice answers
+  /// stored as short stable codes (see dto/review-choices.ts for the value
+  /// sets and their exact display labels). Nullable so a legacy/partial row
+  /// reads cleanly, but the create DTO now requires all seven.
+  raggingCulture         String?                  @map("ragging_culture")
+  facultyApproachability String?                  @map("faculty_approachability")
+  stipendStatus          String?                  @map("stipend_status")
+  hostelAvailability     String?                  @map("hostel_availability")
+  hostelSafety           String?                  @map("hostel_safety")
+  valueForMoney          String?                  @map("value_for_money")
+  /// Q10 "Would You Recommend?" — a 4-way choice code (was a plain
+  /// Boolean before the structured form; ABSOLUTELY/RIGHT_PERSON count as
+  /// "yes" for the aggregated recommend %, see WOULD_RECOMMEND_POSITIVE).
+  /// Null means the reviewer didn't answer.
+  wouldRecommend         String?                  @map("would_recommend")
   /// Structured highlight tags the reviewer picked (e.g. "Great faculty",
   /// "Heavy workload") — aggregated into real counts for the summary card's
   /// tag chips. Free-form pros/cons text below stays separate; these are

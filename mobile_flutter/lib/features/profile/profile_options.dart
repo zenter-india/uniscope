@@ -537,11 +537,16 @@ const kYearsOfStudy = [
 // review-tags.ts (REVIEW_TAGS) exactly. Validated server-side, so keep the
 // two in sync rather than adding options only on one side.
 const kReviewTags = [
-  'Great exposure',
-  'Good placement',
   'Great faculty',
-  'Heavy workload',
+  'Toxic seniors',
   'Good hostel',
-  'Worth the fees',
+  'Poor hostel',
+  'Stipend on time',
   'Stipend delayed',
+  'Great exposure',
+  'Heavy workload',
+  'Good placement',
+  'Highly recommended',
+  'Not recommended',
+  'Worth the fees',
 ];
