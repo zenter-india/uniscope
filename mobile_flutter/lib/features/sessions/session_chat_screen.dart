@@ -194,27 +194,32 @@ class _SessionChatScreenState extends ConsumerState<SessionChatScreen> {
           ],
         ),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.call_rounded, color: AppColors.primary),
-            tooltip: 'Request a call',
-            onPressed: () async {
-              final wallet = await ref.read(walletBalanceProvider.future);
-              if (!context.mounted) return;
-              if (wallet.balanceUniminutes < _minCallSlotUniminutes) {
-                await showLowBalanceSheet(
+          // Calls are always aspirant-initiated (request → mentor accepts →
+          // connect). A mentor never books or pays for a call, so the
+          // "Request a call" action — and its Uniminutes balance check —
+          // must never show on the mentor's side of a chat.
+          if (isAspirant)
+            IconButton(
+              icon: const Icon(Icons.call_rounded, color: AppColors.primary),
+              tooltip: 'Request a call',
+              onPressed: () async {
+                final wallet = await ref.read(walletBalanceProvider.future);
+                if (!context.mounted) return;
+                if (wallet.balanceUniminutes < _minCallSlotUniminutes) {
+                  await showLowBalanceSheet(
+                    context,
+                    balanceUniminutes: wallet.balanceUniminutes,
+                  );
+                  return;
+                }
+                if (!context.mounted) return;
+                await showCallRequestSheet(
                   context,
-                  balanceUniminutes: wallet.balanceUniminutes,
+                  ref,
+                  mentorId: _session!.mentorId,
                 );
-                return;
-              }
-              if (!context.mounted) return;
-              await showCallRequestSheet(
-                context,
-                ref,
-                mentorId: _session!.mentorId,
-              );
-            },
-          ),
+              },
+            ),
           // Aspirant-only: the Sessions tab now shows one collapsed row per
           // mentor instead of every past session (see
           // _groupAllSessionsByCounterpart's doc comment) — this is where

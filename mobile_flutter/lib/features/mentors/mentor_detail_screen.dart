@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/network/mentors_api.dart';
 import '../../core/network/reviews_api.dart';
 import '../../core/theme/app_theme.dart';
+import '../../state/auth_controller.dart';
 import '../../widgets/app_widgets.dart';
 import '../reports/safety_menu_sheet.dart';
 import '../sessions/call_request_sheet.dart';
@@ -637,6 +638,14 @@ class _ActionBar extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // Chat and call are both aspirant→mentor actions — a mentor (or admin)
+    // landing on another mentor's profile has nothing to do down here, and
+    // the Call button in particular would run a Uniminutes balance check
+    // against a wallet that never funds calls. Hide the whole bar.
+    final isAspirant =
+        ref.watch(authControllerProvider).user?.role == UserRole.aspirant;
+    if (!isAspirant) return const SizedBox.shrink();
+
     return Container(
       decoration: const BoxDecoration(
         color: AppColors.surface,
