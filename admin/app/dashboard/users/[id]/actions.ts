@@ -14,6 +14,23 @@ export async function setUserBanned(userId: string, banned: boolean): Promise<vo
 
 type SaveResult = { ok: true } | { ok: false; error: string };
 
+/** GDPR erasure — irreversibly anonymizes the account. The user row stays
+ * (financial/counterparty records depend on it) but every personal-data
+ * field is wiped and the phone hash is scrambled so it can't be recovered. */
+export async function eraseUser(userId: string): Promise<SaveResult> {
+  try {
+    await backendFetch(`/users/${userId}/erase`, { method: 'POST' });
+    revalidatePath(`/dashboard/users/${userId}`);
+    revalidatePath('/dashboard/users');
+    return { ok: true };
+  } catch (e) {
+    return {
+      ok: false,
+      error: e instanceof Error ? e.message : 'Could not erase the account',
+    };
+  }
+}
+
 /** Admin edit of a user's profile / role / verification / free-tier fields.
  * `patch` carries only the changed fields. Returns the failure reason rather
  * than throwing so it can be shown in the form. */

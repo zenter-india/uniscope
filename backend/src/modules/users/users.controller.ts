@@ -171,4 +171,14 @@ export class UsersController {
   async setBanned(@Param('id') id: string, @Body() dto: SetBannedDto) {
     return toPublicUser(await this.usersService.setBanned(id, dto));
   }
+
+  /** ADMIN — GDPR erasure. Irreversible: scrambles the phone hash and wipes
+   * every personal-data field. See UsersService.eraseUser. */
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @Post(':id/erase')
+  @HttpCode(HttpStatus.OK)
+  async eraseUser(@Param('id') id: string, @CurrentUser() admin: JwtPayload) {
+    return this.usersService.eraseUser(id, admin.sub);
+  }
 }

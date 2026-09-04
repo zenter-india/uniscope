@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import {
   BadRequestException,
   ConflictException,
@@ -575,6 +576,92 @@ export class UsersService {
         refreshTokenHash: null,
       },
     });
+  }
+
+  /**
+   * ADMIN — GDPR "right to erasure". Irreversible. Unlike `deleteMe` (a
+   * reversible soft delete that the owner reactivates by re-verifying their
+   * phone), this scrambles `phoneHash` to a non-matching tombstone so the
+   * account can never be resurrected by the login flow, and wipes every
+   * personal-data field on the user + profile.
+   *
+   * Deliberately does NOT delete the User row or its sessions / wallet /
+   * ledger / reviews — those carry financial and counterparty records that
+   * must survive (the row is kept only as an anonymous stub: a tombstone
+   * phoneHash, a `deleted_user_…` display name, an empty profile). It also
+   * leaves chat message bodies alone — scrubbing them would destroy the
+   * other party's conversation history and the moderation transcript.
+   */
+  async eraseUser(userId: string, adminUserId: string): Promise<{ erased: true }> {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      include: { profile: { select: { userId: true } } },
+    });
+    if (!user) {
+      throw new NotFoundException(`User '${userId}' not found`);
+    }
+    if (user.role === UserRole.ADMIN) {
+      throw new BadRequestException('Admin accounts cannot be erased from here');
+    }
+    if (user.phoneHash.startsWith('erased:')) {
+      // Already erased — idempotent, nothing left to scrub.
+      return { erased: true };
+    }
+
+    await this.prisma.$transaction(async (tx) => {
+      await tx.user.update({
+        where: { id: userId },
+        data: {
+          phoneHash: `erased:${randomUUID()}`,
+          displayName: `deleted_user_${userId.slice(0, 8)}`,
+          refreshTokenHash: null,
+          isActive: false,
+          isBanned: true,
+          deletedAt: new Date(),
+        },
+      });
+
+      if (user.profile) {
+        await tx.userProfile.update({
+          where: { userId },
+          data: {
+            realNameEncrypted: null,
+            bio: null,
+            avatarKey: null,
+            specialty: null,
+            gender: null,
+            state: null,
+            city: null,
+            qualification: null,
+            specialization: null,
+            stream: null,
+            dateOfBirth: null,
+            courseInterested: null,
+            preferredLanguage: null,
+            preferredMentorshipTiming: null,
+            graduationYear: null,
+            yearOfStudy: null,
+            goals: [],
+            languages: [],
+            availableDays: [],
+            isMentorAvailable: false,
+          },
+        });
+      }
+
+      await tx.pushToken.deleteMany({ where: { userId } });
+      await tx.notification.deleteMany({ where: { userId } });
+      await tx.blockedUser.deleteMany({
+        where: { OR: [{ blockerId: userId }, { blockedId: userId }] },
+      });
+      await tx.savedMentor.deleteMany({
+        where: { OR: [{ aspirantId: userId }, { mentorId: userId }] },
+      });
+      await tx.savedUniversity.deleteMany({ where: { aspirantId: userId } });
+    });
+
+    this.logger.warn(`[gdpr] user ${userId} erased by admin ${adminUserId}`);
+    return { erased: true };
   }
 
   async setBanned(userId: string, dto: SetBannedDto): Promise<User> {

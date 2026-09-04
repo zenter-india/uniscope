@@ -4,6 +4,7 @@ import { backendFetch, BackendApiError } from '../../../../lib/backend';
 import { getAdminEmail } from '../../../../lib/adminAuth';
 import { DashboardShell } from '../../DashboardShell';
 import { BanToggle, VerificationDocButton } from './interactive';
+import { DangerZone } from './DangerZone';
 import { EditUserPanel } from './EditUserPanel';
 import { WalletPanel } from './WalletPanel';
 import type { LedgerPage } from './actions';
@@ -430,6 +431,14 @@ export default async function UserDetailPage({
           <Field label="Profile updated" value={fmtDate(p?.updatedAt)} />
           <Field label="Deleted at" value={fmtDate(user.deletedAt)} />
         </Section>
+
+        {user.role !== 'ADMIN' && (
+          <DangerZone
+            userId={user.id}
+            displayName={user.displayName}
+            alreadyErased={user.displayName.startsWith('deleted_user_')}
+          />
+        )}
       </div>
     </DashboardShell>
   );
