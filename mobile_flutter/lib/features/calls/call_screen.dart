@@ -658,13 +658,20 @@ class _CallScreenState extends ConsumerState<CallScreen> {
   Widget _buildBody(BuildContext context) {
     switch (_phase) {
       case _Phase.requestingPermission:
+        return _ConnectingView(
+          peerName: _session == null ? null : _peerName,
+          peerAvatarUrl: _peerAvatarUrl,
+          status: 'Starting call…',
+        );
       case _Phase.connecting:
-        return const Center(
-          child: CircularProgressIndicator(color: Colors.white),
+        return _ConnectingView(
+          peerName: _peerName,
+          peerAvatarUrl: _peerAvatarUrl,
+          status: 'Connecting…',
         );
       case _Phase.permissionDenied:
         return _MessageScreen(
-          icon: '🎙️',
+          glyph: Icons.mic_off_rounded,
           title: 'Microphone access needed',
           message: 'Uniscope needs microphone access to make audio calls.',
           actions: [
@@ -683,7 +690,7 @@ class _CallScreenState extends ConsumerState<CallScreen> {
         );
       case _Phase.error:
         return _MessageScreen(
-          icon: '⚠️',
+          glyph: Icons.wifi_off_rounded,
           title: 'Could not connect',
           message: _errorMessage ?? 'Something went wrong.',
           actions: [
@@ -750,15 +757,19 @@ class _CallScreenState extends ConsumerState<CallScreen> {
   }
 }
 
+/// Bottom padding under the control row — clears the gesture nav pill
+/// without the arbitrary `xxl` the layout used before.
+const double _kCallBottomPad = 36;
+
 class _MessageScreen extends StatelessWidget {
   const _MessageScreen({
-    required this.icon,
+    required this.glyph,
     required this.title,
     required this.message,
     required this.actions,
   });
 
-  final String icon;
+  final IconData glyph;
   final String title;
   final String message;
   final List<Widget> actions;
@@ -771,13 +782,14 @@ class _MessageScreen extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(icon, style: const TextStyle(fontSize: 48)),
-            const SizedBox(height: AppSpacing.md),
+            _GlyphBadge(icon: glyph),
+            const SizedBox(height: AppSpacing.lg),
             Text(
               title,
+              textAlign: TextAlign.center,
               style: const TextStyle(
                 color: Colors.white,
-                fontSize: AppFont.lg,
+                fontSize: AppFont.xl,
                 fontWeight: AppFont.bold,
               ),
             ),
@@ -788,13 +800,89 @@ class _MessageScreen extends StatelessWidget {
               style: const TextStyle(
                 color: Colors.white70,
                 fontSize: AppFont.sm,
+                height: 1.4,
               ),
             ),
             const SizedBox(height: AppSpacing.xl),
-            ...actions,
+            for (var i = 0; i < actions.length; i++) ...[
+              if (i > 0) const SizedBox(height: AppSpacing.sm),
+              SizedBox(width: double.infinity, child: actions[i]),
+            ],
           ],
         ),
       ),
+    );
+  }
+}
+
+/// A round translucent icon badge — the shared "hero" mark for the
+/// message, connecting, and ended states so they feel like one screen.
+class _GlyphBadge extends StatelessWidget {
+  const _GlyphBadge({required this.icon});
+  final IconData icon;
+  static const double size = 76;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: Colors.white.withValues(alpha: 0.12),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.14)),
+      ),
+      alignment: Alignment.center,
+      child: Icon(icon, color: Colors.white, size: size * 0.42),
+    );
+  }
+}
+
+/// The shared call layout: a centred peer block sitting in the upper
+/// third, an optional status pill above it, and a control row pinned to
+/// the bottom. Every live phase (connecting / ringing / active) uses this
+/// so the avatar never jumps between states.
+class _CallStage extends StatelessWidget {
+  const _CallStage({
+    required this.peerName,
+    required this.peerAvatarUrl,
+    required this.status,
+    required this.controls,
+    this.topPill,
+    this.pulsing = false,
+  });
+
+  final String peerName;
+  final String? peerAvatarUrl;
+  final String status;
+  final Widget? topPill;
+  final bool pulsing;
+  final List<Widget> controls;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        const SizedBox(height: AppSpacing.md),
+        SizedBox(height: 34, child: Center(child: topPill)),
+        const SizedBox(height: AppSpacing.xl),
+        _CallPeerHeader(
+          name: peerName,
+          avatarUrl: peerAvatarUrl,
+          status: status,
+          pulsing: pulsing,
+        ),
+        const Spacer(),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xl),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: controls,
+          ),
+        ),
+        const SizedBox(height: _kCallBottomPad),
+      ],
     );
   }
 }
@@ -909,22 +997,54 @@ class _CallPeerHeaderState extends State<_CallPeerHeader>
       mainAxisSize: MainAxisSize.min,
       children: [
         avatar,
-        const SizedBox(height: AppSpacing.md),
+        const SizedBox(height: AppSpacing.lg),
         Text(
           widget.name,
           textAlign: TextAlign.center,
           style: const TextStyle(
             color: Colors.white,
-            fontSize: AppFont.lg,
+            fontSize: AppFont.xxl,
             fontWeight: AppFont.bold,
+            letterSpacing: -0.2,
           ),
         ),
-        const SizedBox(height: 4),
+        const SizedBox(height: 6),
         Text(
           widget.status,
-          style: const TextStyle(color: Colors.white70, fontSize: AppFont.sm),
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            color: Colors.white.withValues(alpha: 0.72),
+            fontSize: AppFont.sm,
+            fontWeight: AppFont.medium,
+            letterSpacing: 0.2,
+          ),
         ),
       ],
+    );
+  }
+}
+
+/// Pre-join phase — mic permission granted, fetching the token / joining
+/// Agora. Shows the peer block so the screen doesn't flash a bare spinner.
+class _ConnectingView extends StatelessWidget {
+  const _ConnectingView({
+    required this.peerName,
+    required this.peerAvatarUrl,
+    required this.status,
+  });
+  final String? peerName;
+  final String? peerAvatarUrl;
+  final String status;
+
+  @override
+  Widget build(BuildContext context) {
+    return _CallStage(
+      peerName: peerName ?? 'Audio call',
+      peerAvatarUrl: peerAvatarUrl,
+      status: status,
+      pulsing: true,
+      topPill: const _StatusPill(text: 'Please wait'),
+      controls: const [],
     );
   }
 }
@@ -945,21 +1065,25 @@ class _WaitingView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        const SizedBox(height: AppSpacing.lg),
-        if (slotMinutes != null)
-          _CallChip(label: 'Audio call · $slotMinutes min'),
-        const Spacer(),
-        _CallPeerHeader(
-          name: peerName,
-          avatarUrl: peerAvatarUrl,
-          status: remoteJoined ? 'Connecting…' : 'Ringing…',
-          pulsing: true,
+    return _CallStage(
+      peerName: peerName,
+      peerAvatarUrl: peerAvatarUrl,
+      status: remoteJoined ? 'Connecting…' : 'Ringing…',
+      pulsing: true,
+      topPill: slotMinutes == null
+          ? null
+          : _StatusPill(
+              icon: Icons.call_rounded,
+              text: 'Audio call · $slotMinutes min',
+            ),
+      controls: [
+        _CallControl(
+          icon: Icons.call_end_rounded,
+          label: 'Cancel',
+          onPressed: onEnd,
+          danger: true,
+          big: true,
         ),
-        const Spacer(),
-        _EndCallButton(onPressed: onEnd),
-        const SizedBox(height: AppSpacing.xxl),
       ],
     );
   }
@@ -1018,135 +1142,171 @@ class _ActiveCallView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final rem = _remainingLabel();
-    final status = reconnecting
-        ? 'Reconnecting…'
-        : peerMuted
-        ? '$elapsed · $peerName muted'
+    final status = peerMuted && !reconnecting
+        ? '$elapsed  ·  $peerName is muted'
         : elapsed;
-    return Column(
-      children: [
-        const SizedBox(height: AppSpacing.md),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-          child: Row(
-            children: [
-              if (weakSignal || reconnecting)
-                Row(
-                  children: [
-                    Icon(
-                      reconnecting
-                          ? Icons.sync_rounded
-                          : Icons.signal_cellular_alt_2_bar_rounded,
-                      size: 15,
-                      color: const Color(0xFFFAC775),
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      reconnecting ? 'Reconnecting' : 'Weak signal',
-                      style: const TextStyle(
-                        color: Color(0xFFFAC775),
-                        fontSize: AppFont.xs,
-                        fontWeight: AppFont.semibold,
-                      ),
-                    ),
-                  ],
-                ),
-              const Spacer(),
-              if (rem != null)
-                Text(
-                  rem.$1,
-                  style: TextStyle(
-                    color: rem.$2,
-                    fontSize: AppFont.sm,
-                    fontWeight: AppFont.semibold,
-                  ),
-                ),
-            ],
-          ),
+
+    // One pill above the avatar, by priority: a live connection problem
+    // outranks the countdown.
+    Widget? pill;
+    if (reconnecting) {
+      pill = const _StatusPill(
+        icon: Icons.sync_rounded,
+        text: 'Reconnecting…',
+        tone: Color(0xFFFAC775),
+      );
+    } else if (weakSignal) {
+      pill = const _StatusPill(
+        icon: Icons.signal_cellular_alt_2_bar_rounded,
+        text: 'Weak signal',
+        tone: Color(0xFFFAC775),
+      );
+    } else if (rem != null) {
+      pill = _StatusPill(
+        icon: Icons.schedule_rounded,
+        text: rem.$1,
+        tone: rem.$2,
+      );
+    }
+
+    return _CallStage(
+      peerName: peerName,
+      peerAvatarUrl: peerAvatarUrl,
+      status: status,
+      topPill: pill,
+      controls: [
+        _CallControl(
+          icon: muted ? Icons.mic_off_rounded : Icons.mic_rounded,
+          label: muted ? 'Unmute' : 'Mute',
+          active: muted,
+          onPressed: onToggleMute,
         ),
-        const Spacer(),
-        _CallPeerHeader(
-          name: peerName,
-          avatarUrl: peerAvatarUrl,
-          status: status,
+        _CallControl(
+          icon: Icons.call_end_rounded,
+          label: 'End',
+          onPressed: onEnd,
+          danger: true,
+          big: true,
         ),
-        const Spacer(),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xl),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              _CallControl(
-                icon: muted ? Icons.mic_off_rounded : Icons.mic_rounded,
-                label: muted ? 'Unmute' : 'Mute',
-                active: muted,
-                onPressed: onToggleMute,
-              ),
-              _EndCallButton(onPressed: onEnd),
-              _CallControl(
-                icon: routeIcon,
-                label: routeLabel,
-                active: speakerOn,
-                onPressed: onPickRoute,
-              ),
-            ],
-          ),
+        _CallControl(
+          icon: routeIcon,
+          label: routeLabel,
+          active: speakerOn,
+          onPressed: onPickRoute,
         ),
-        const SizedBox(height: AppSpacing.xxl),
       ],
     );
   }
 }
 
-/// Small outlined pill used above the peer header ("Audio call · 6 min").
-class _CallChip extends StatelessWidget {
-  const _CallChip({required this.label});
-  final String label;
+/// Rounded status pill above the peer header. Neutral by default; pass
+/// [tone] for a coloured state (amber signal warning, red countdown).
+class _StatusPill extends StatelessWidget {
+  const _StatusPill({required this.text, this.icon, this.tone});
+  final String text;
+  final IconData? icon;
+  final Color? tone;
 
   @override
   Widget build(BuildContext context) {
+    final fg = tone ?? Colors.white.withValues(alpha: 0.8);
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(AppRadius.full),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.25)),
+        color: (tone ?? Colors.white).withValues(alpha: tone == null ? 0.10 : 0.16),
       ),
-      child: Text(
-        label,
-        style: TextStyle(
-          color: Colors.white.withValues(alpha: 0.7),
-          fontSize: AppFont.xs,
-        ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (icon != null) ...[
+            Icon(icon, size: 14, color: fg),
+            const SizedBox(width: 5),
+          ],
+          Text(
+            text,
+            style: TextStyle(
+              color: fg,
+              fontSize: AppFont.xs,
+              fontWeight: AppFont.semibold,
+              letterSpacing: 0.2,
+            ),
+          ),
+        ],
       ),
     );
   }
 }
 
-/// In-call control: round button with a caption underneath.
+/// In-call control: round button with a caption underneath. [big] +
+/// [danger] make the end-call button, kept in the same row so all three
+/// controls share a baseline instead of the end button floating alone.
 class _CallControl extends StatelessWidget {
   const _CallControl({
     required this.icon,
     required this.label,
-    required this.active,
     required this.onPressed,
+    this.active = false,
+    this.danger = false,
+    this.big = false,
   });
   final IconData icon;
   final String label;
-  final bool active;
   final VoidCallback onPressed;
+  final bool active;
+  final bool danger;
+  final bool big;
 
   @override
   Widget build(BuildContext context) {
+    final size = big ? 66.0 : 58.0;
+    final Color bg;
+    final Color fg;
+    if (danger) {
+      bg = AppColors.error;
+      fg = Colors.white;
+    } else if (active) {
+      bg = Colors.white;
+      fg = AppColors.primaryDark;
+    } else {
+      bg = Colors.white.withValues(alpha: 0.14);
+      fg = Colors.white;
+    }
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        _RoundIconButton(icon: icon, active: active, onPressed: onPressed),
-        const SizedBox(height: 6),
+        InkWell(
+          onTap: onPressed,
+          customBorder: const CircleBorder(),
+          child: Container(
+            width: size,
+            height: size,
+            decoration: BoxDecoration(
+              color: bg,
+              shape: BoxShape.circle,
+              border: (!danger && !active)
+                  ? Border.all(color: Colors.white.withValues(alpha: 0.16))
+                  : null,
+              boxShadow: danger
+                  ? [
+                      BoxShadow(
+                        color: AppColors.error.withValues(alpha: 0.4),
+                        blurRadius: 22,
+                        offset: const Offset(0, 8),
+                      ),
+                    ]
+                  : null,
+            ),
+            child: Icon(icon, color: fg, size: big ? 30 : 25),
+          ),
+        ),
+        const SizedBox(height: 8),
         Text(
           label,
           style: TextStyle(
-            color: Colors.white.withValues(alpha: 0.7),
+            color: Colors.white.withValues(alpha: 0.72),
             fontSize: AppFont.xs,
+            fontWeight: AppFont.medium,
           ),
         ),
       ],
@@ -1188,26 +1348,19 @@ class _EndedView extends StatelessWidget {
     final minutes = session?.billedMinutes ?? 0;
     final spent = minorToUniminutes(session?.totalCostMinor ?? 0);
 
+    final showSummary = minutes > 0 || spent > 0;
+
     return Center(
-      child: Padding(
+      child: SingleChildScrollView(
         padding: const EdgeInsets.all(AppSpacing.xl),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Container(
-              width: 72,
-              height: 72,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: Colors.white.withValues(alpha: 0.14),
-              ),
-              alignment: Alignment.center,
-              child: const Icon(Icons.call_end_rounded,
-                  color: Colors.white, size: 32),
-            ),
-            const SizedBox(height: AppSpacing.md),
+            const _GlyphBadge(icon: Icons.call_end_rounded),
+            const SizedBox(height: AppSpacing.lg),
             Text(
               _reasonLabel(session?.endReason),
+              textAlign: TextAlign.center,
               style: const TextStyle(
                 color: Colors.white,
                 fontSize: AppFont.xl,
@@ -1222,11 +1375,26 @@ class _EndedView extends StatelessWidget {
                     color: Colors.white70, fontSize: AppFont.sm),
               ),
             ],
-            const SizedBox(height: AppSpacing.lg),
-            _SummaryRow(label: 'Duration', value: '$minutes min'),
-            const SizedBox(height: AppSpacing.sm),
-            _SummaryRow(label: 'Used', value: uniminutesLabel(spent)),
-            const SizedBox(height: AppSpacing.xxl),
+            if (showSummary) ...[
+              const SizedBox(height: AppSpacing.xl),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(AppSpacing.md),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.08),
+                  borderRadius: BorderRadius.circular(AppRadius.lg),
+                ),
+                child: Column(
+                  children: [
+                    _SummaryRow(label: 'Duration', value: '$minutes min'),
+                    const SizedBox(height: AppSpacing.sm),
+                    _SummaryRow(
+                        label: 'Used', value: uniminutesLabel(spent)),
+                  ],
+                ),
+              ),
+            ],
+            const SizedBox(height: AppSpacing.xl),
             if (onRate != null)
               SizedBox(
                 width: double.infinity,
@@ -1291,52 +1459,3 @@ class _SummaryRow extends StatelessWidget {
   }
 }
 
-class _RoundIconButton extends StatelessWidget {
-  const _RoundIconButton({
-    required this.icon,
-    required this.active,
-    required this.onPressed,
-  });
-  final IconData icon;
-  final bool active;
-  final VoidCallback onPressed;
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onPressed,
-      customBorder: const CircleBorder(),
-      child: Container(
-        width: 56,
-        height: 56,
-        decoration: BoxDecoration(
-          color: active ? Colors.white : Colors.white24,
-          shape: BoxShape.circle,
-        ),
-        child: Icon(icon, color: active ? AppColors.primaryDark : Colors.white),
-      ),
-    );
-  }
-}
-
-class _EndCallButton extends StatelessWidget {
-  const _EndCallButton({required this.onPressed});
-  final VoidCallback onPressed;
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onPressed,
-      customBorder: const CircleBorder(),
-      child: Container(
-        width: 64,
-        height: 64,
-        decoration: const BoxDecoration(
-          color: AppColors.error,
-          shape: BoxShape.circle,
-        ),
-        child: const Icon(Icons.call_end, color: Colors.white, size: 28),
-      ),
-    );
-  }
-}
