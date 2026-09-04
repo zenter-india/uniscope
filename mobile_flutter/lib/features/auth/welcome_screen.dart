@@ -75,7 +75,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
     _Slide(
       headline: 'Everything You Need In One Place',
       subtext:
-          'Explore college insights, Discover right colleges and make confident decisions at every step of your journey.',
+          'Explore college insights, discover the right colleges, and make confident decisions at every step of your journey.',
       image: 'assets/onboarding/slide3_anonymous.jpg',
     ),
     _Slide(
