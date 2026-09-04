@@ -28,18 +28,10 @@ Future<void> showCallRequestSheet(
 
   if (slotMinutes == null || !context.mounted) return;
 
-  // TEMP DIAGNOSTIC — remove once real-device call testing is confirmed
-  // working. mentorId is an opaque id, never PII.
-  debugPrint(
-    '[session] call requested mentorId=$mentorId slotMinutes=$slotMinutes',
-  );
   try {
-    final session = await ref
+    await ref
         .read(sessionsApiProvider)
         .create(mentorId, SessionKind.audioCall, slotMinutes: slotMinutes);
-    debugPrint(
-      '[session] call request created sessionId=${session.id} status=${session.status.wire}',
-    );
     // Without this, neither the persistent session dock nor the Sessions
     // tab would show the new request until something else happened to
     // refresh sessionsListProvider — defeating the dock's whole point.
@@ -49,7 +41,6 @@ Future<void> showCallRequestSheet(
       const SnackBar(content: Text('Call requested — check the Sessions tab')),
     );
   } catch (e) {
-    debugPrint('[session] call request FAILED mentorId=$mentorId — $e');
     if (!context.mounted) return;
     final message = e is DioException ? (e.message ?? '$e') : '$e';
     ScaffoldMessenger.of(
