@@ -23,6 +23,12 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   String? _stream;
   String? _state;
   final Set<String> _languages = {};
+  // A saved language that isn't one of kLanguageOptions' fixed values is a
+  // previously-typed "Others" answer (see _save's mapping below — the
+  // literal "Others" is never itself stored, it's replaced by what was
+  // typed). Pre-filling this lets an existing custom language actually show
+  // up as editable instead of silently vanishing from the chip group.
+  final _languagesOtherController = TextEditingController();
   bool _loaded = false;
   bool _saving = false;
 
@@ -36,7 +42,14 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     _qualification = profile.qualification;
     _stream = profile.stream;
     _state = profile.state;
-    _languages.addAll(profile.languages);
+    final customLanguages = profile.languages
+        .where((l) => !kLanguageOptions.contains(l))
+        .toList();
+    _languages.addAll(profile.languages.where(kLanguageOptions.contains));
+    if (customLanguages.isNotEmpty) {
+      _languages.add('Others');
+      _languagesOtherController.text = customLanguages.join(', ');
+    }
   }
 
   @override
@@ -44,6 +57,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     _displayNameController.dispose();
     _cityController.dispose();
     _bioController.dispose();
+    _languagesOtherController.dispose();
     super.dispose();
   }
 
@@ -54,13 +68,19 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
           ? null
           : _displayNameController.text.trim();
       if (role == UserRole.mentor) {
+        final resolvedLanguages = _languages
+            .map(
+              (l) => l == 'Others' ? _languagesOtherController.text.trim() : l,
+            )
+            .where((l) => l.isNotEmpty)
+            .toList();
         await ref
             .read(usersApiProvider)
             .updateProfile(
               displayName: displayName,
               bio: _bioController.text.trim(),
               stream: _stream,
-              languages: _languages.toList(),
+              languages: resolvedLanguages,
             );
       } else {
         await ref
@@ -207,6 +227,16 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                       );
                     }).toList(),
                   ),
+                  if (_languages.contains('Others')) ...[
+                    const SizedBox(height: AppSpacing.sm),
+                    TextField(
+                      controller: _languagesOtherController,
+                      onChanged: (_) => setState(() {}),
+                      decoration: const InputDecoration(
+                        hintText: 'Enter language',
+                      ),
+                    ),
+                  ],
                 ] else ...[
                   const Text(
                     'Gender',
