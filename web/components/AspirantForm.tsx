@@ -23,6 +23,7 @@ import { CURATED_DEGREE_MAP_BY_STREAM, STREAMS_WITH_COLLEGE_DATA, COLLEGE_SEARCH
 
 type FormState = {
   fullName: string;
+  alias: string;
   phone: string;
   gender: string;
   state: string;
@@ -45,6 +46,7 @@ type FormState = {
 
 const EMPTY: FormState = {
   fullName: "",
+  alias: "",
   phone: "",
   gender: "",
   state: "",
@@ -177,6 +179,7 @@ export function AspirantForm({ onExit }: { onExit: () => void }) {
   function validateStep(): string | null {
     if (wizard.step === 1) {
       if (!form.fullName.trim()) return "Enter your full name.";
+      if (!form.alias.trim()) return "Enter an alias / display name.";
       if (form.phone.trim().length !== 10) return "Enter a valid 10-digit phone number.";
       if (!form.gender) return "Select a gender.";
     }
@@ -226,6 +229,7 @@ export function AspirantForm({ onExit }: { onExit: () => void }) {
     try {
       await submitAspirantLead({
         fullName: form.fullName.trim(),
+        alias: form.alias.trim() || undefined,
         phone: form.phone.trim(),
         gender: form.gender || undefined,
         state: (form.state === "Other" ? form.stateOther.trim() : form.state) || undefined,
@@ -325,6 +329,14 @@ export function AspirantForm({ onExit }: { onExit: () => void }) {
               placeholder="Enter your full name"
               value={form.fullName}
               onChange={(e) => set("fullName", e.target.value)}
+            />
+          </Field>
+          <Field label="Alias / Display name" hint="Real name stays private. Mentors only see your alias.">
+            <TextInput
+              required
+              placeholder="e.g. John Snow"
+              value={form.alias}
+              onChange={(e) => set("alias", e.target.value)}
             />
           </Field>
           <Field label="Phone number">
