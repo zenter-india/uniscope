@@ -163,6 +163,7 @@ export class EnrollmentsService {
     const universityId = await this.resolveUniversityId(dto.universityId);
 
     return this.upsertLead(EnrollmentLeadRole.ASPIRANT, dto, {
+      alias: dto.alias,
       qualification: dto.qualification,
       universityId: universityId ?? undefined,
       collegeName: dto.collegeName,

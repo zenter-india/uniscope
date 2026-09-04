@@ -167,6 +167,7 @@ export function LeadRow({ lead }: { lead: LeadRowData }) {
           <Field label="State" value={lead.state} />
           <Field label="City" value={lead.city} />
           <Field label="Stream / Field" value={lead.stream} />
+          <Field label="Alias" value={lead.alias} />
           {lead.role === 'ASPIRANT' ? (
             <>
               <Field label="Qualification" value={lead.qualification} />
@@ -177,7 +178,6 @@ export function LeadRow({ lead }: { lead: LeadRowData }) {
             </>
           ) : (
             <>
-              <Field label="Alias" value={lead.alias} />
               <Field label="College" value={lead.universityName ?? lead.collegeName} />
               <Field label="Degree" value={lead.degree} />
               <Field label="Specialization" value={lead.specialization} />

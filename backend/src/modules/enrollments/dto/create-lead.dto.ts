@@ -62,6 +62,16 @@ export abstract class BaseLeadDto {
   @MaxLength(50)
   stream?: string;
 
+  /** Public-facing pseudonym. Originally mentor-only (mirroring the mobile
+   * mentor wizard's alias step); extended to aspirants per explicit request
+   * so both roles can set one. Not checked for availability here — a lead
+   * isn't a `User` yet, so there's no `displayName` to collide with until
+   * conversion. */
+  @IsOptional()
+  @IsString()
+  @MaxLength(60)
+  alias?: string;
+
   /**
    * Honeypot. Rendered hidden (and never labelled "website") on the form, so a
    * real person can't see or fill it — anything non-empty here is a bot. The
@@ -131,14 +141,6 @@ export class CreateAspirantLeadDto extends BaseLeadDto {
 }
 
 export class CreateMentorLeadDto extends BaseLeadDto {
-  /** Public-facing pseudonym, mirroring the mobile mentor wizard's alias step.
-   * Not checked for availability here — a lead isn't a `User` yet, so there's
-   * no `displayName` to collide with until conversion. */
-  @IsOptional()
-  @IsString()
-  @MaxLength(60)
-  alias?: string;
-
   /** Set when the college was picked from the GET /universities dropdown. */
   @IsOptional()
   @IsString()
