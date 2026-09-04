@@ -69,6 +69,14 @@ class _CallScreenState extends ConsumerState<CallScreen> {
   bool _extendDialogShowing = false;
   DateTime? _slotExpiredAt;
   Timer? _noAnswerTimer;
+  // Live call-quality signals from the Agora engine (see _joinAgoraChannel's
+  // event handler). _reconnecting flips true on a dropped connection and
+  // back on rejoin; _peerMuted mirrors the other party's mic; _weakSignal
+  // is set from onNetworkQuality.
+  bool _reconnecting = false;
+  bool _peerMuted = false;
+  bool _weakSignal = false;
+  bool _connectHapticDone = false;
   // TEMP DIAGNOSTIC — remove once real-device call testing is confirmed
   // working. Tracks the last status we logged so _poll doesn't spam a line
   // every 2s; only transitions are logged.
@@ -292,6 +300,34 @@ class _CallScreenState extends ConsumerState<CallScreen> {
           );
           if (mounted) setState(() => _remoteJoinedChannel = false);
         },
+        onUserMuteAudio: (connection, remoteUid, muted) {
+          if (mounted) setState(() => _peerMuted = muted);
+        },
+        onConnectionStateChanged: (connection, state, reason) {
+          debugPrint('[call] Agora connState=$state reason=$reason');
+          if (!mounted) return;
+          setState(() {
+            _reconnecting =
+                state == ConnectionStateType.connectionStateReconnecting ||
+                state == ConnectionStateType.connectionStateConnecting;
+          });
+        },
+        onRejoinChannelSuccess: (connection, elapsed) {
+          if (mounted) setState(() => _reconnecting = false);
+        },
+        onNetworkQuality: (connection, remoteUid, txQuality, rxQuality) {
+          // rxQuality is the more useful "how well am I hearing them" number.
+          final bad = {
+            QualityType.qualityPoor,
+            QualityType.qualityBad,
+            QualityType.qualityVbad,
+            QualityType.qualityDown,
+          };
+          final weak = bad.contains(rxQuality) || bad.contains(txQuality);
+          if (mounted && weak != _weakSignal) {
+            setState(() => _weakSignal = weak);
+          }
+        },
         onError: (err, msg) {
           debugPrint(
             '[call] Agora onError channel=${creds.channelName} err=$err msg=$msg',
@@ -353,6 +389,10 @@ class _CallScreenState extends ConsumerState<CallScreen> {
       _noAnswerTimer = null;
       if (_phase != _Phase.active) {
         _startCallService();
+        if (!_connectHapticDone) {
+          _connectHapticDone = true;
+          HapticFeedback.mediumImpact();
+        }
         setState(() => _phase = _Phase.active);
         _tickTimer ??= Timer.periodic(
           const Duration(seconds: 1),
@@ -468,6 +508,7 @@ class _CallScreenState extends ConsumerState<CallScreen> {
   }
 
   Future<void> _endCall({String reason = 'NORMAL'}) async {
+    HapticFeedback.heavyImpact();
     debugPrint(
       '[call] endCall requested reason=$reason sessionId=${widget.sessionId}',
     );
@@ -590,12 +631,17 @@ class _CallScreenState extends ConsumerState<CallScreen> {
           remaining: _slotRemaining,
           muted: _muted,
           speakerOn: _speakerOn,
+          reconnecting: _reconnecting,
+          weakSignal: _weakSignal,
+          peerMuted: _peerMuted,
           onToggleMute: () async {
+            HapticFeedback.selectionClick();
             final next = !_muted;
             await _engine?.muteLocalAudioStream(next);
             setState(() => _muted = next);
           },
           onToggleSpeaker: () async {
+            HapticFeedback.selectionClick();
             final next = !_speakerOn;
             await _engine?.setEnableSpeakerphone(next);
             setState(() => _speakerOn = next);
@@ -775,6 +821,9 @@ class _ActiveCallView extends StatelessWidget {
     required this.remaining,
     required this.muted,
     required this.speakerOn,
+    required this.reconnecting,
+    required this.weakSignal,
+    required this.peerMuted,
     required this.onToggleMute,
     required this.onToggleSpeaker,
     required this.onEnd,
@@ -786,6 +835,9 @@ class _ActiveCallView extends StatelessWidget {
   final Duration? remaining;
   final bool muted;
   final bool speakerOn;
+  final bool reconnecting;
+  final bool weakSignal;
+  final bool peerMuted;
   final VoidCallback onToggleMute;
   final VoidCallback onToggleSpeaker;
   final VoidCallback onEnd;
@@ -810,23 +862,57 @@ class _ActiveCallView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final rem = _remainingLabel();
+    final status = reconnecting
+        ? 'Reconnecting…'
+        : peerMuted
+        ? '$elapsed · $peerName muted'
+        : elapsed;
     return Column(
       children: [
-        const SizedBox(height: AppSpacing.lg),
-        if (rem != null)
-          Text(
-            rem.$1,
-            style: TextStyle(
-              color: rem.$2,
-              fontSize: AppFont.sm,
-              fontWeight: AppFont.semibold,
-            ),
+        const SizedBox(height: AppSpacing.md),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+          child: Row(
+            children: [
+              if (weakSignal || reconnecting)
+                Row(
+                  children: [
+                    Icon(
+                      reconnecting
+                          ? Icons.sync_rounded
+                          : Icons.signal_cellular_alt_2_bar_rounded,
+                      size: 15,
+                      color: const Color(0xFFFAC775),
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      reconnecting ? 'Reconnecting' : 'Weak signal',
+                      style: const TextStyle(
+                        color: Color(0xFFFAC775),
+                        fontSize: AppFont.xs,
+                        fontWeight: AppFont.semibold,
+                      ),
+                    ),
+                  ],
+                ),
+              const Spacer(),
+              if (rem != null)
+                Text(
+                  rem.$1,
+                  style: TextStyle(
+                    color: rem.$2,
+                    fontSize: AppFont.sm,
+                    fontWeight: AppFont.semibold,
+                  ),
+                ),
+            ],
           ),
+        ),
         const Spacer(),
         _CallPeerHeader(
           name: peerName,
           avatarUrl: peerAvatarUrl,
-          status: elapsed,
+          status: status,
         ),
         const Spacer(),
         Padding(
