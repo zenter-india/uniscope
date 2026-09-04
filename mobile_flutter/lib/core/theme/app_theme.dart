@@ -8,12 +8,14 @@ import 'package:flutter/material.dart';
 /// mass rename. New concepts (shadows, gradients, text styles) get their
 /// own token classes below.
 class AppColors {
-  // Brand — the real logo green, picked from the app icon's own pixels
-  // (#008562), replacing the earlier teal (#12A9A3). Client's choice from
-  // a contrast-checked shortlist. Scoped to just this hue swap — no navy,
-  // no structural changes to the canopy/header (that exploration was
-  // reverted separately).
-  static const Color primary = Color(0xFF008562);
+  // Brand green. Was #008562 (picked from the app icon's own pixels,
+  // replacing the earlier teal #12A9A3); client's latest pick is #0B815A
+  // (2026-09-04) — close in hue/lightness to the previous value, so the
+  // existing primaryDark/primaryLight/canopyTop complements (independently
+  // chosen, not derived from this literal) still read consistently and
+  // were deliberately left as-is. No navy, no structural changes to the
+  // canopy/header (that exploration was reverted separately).
+  static const Color primary = Color(0xFF0B815A);
   static const Color primaryLight = Color(0xFFE3F3EC);
   static const Color primaryDark = Color(0xFF005E44);
 
@@ -94,7 +96,7 @@ class AppShadows {
   ];
 
   static const List<BoxShadow> raised = [
-    BoxShadow(color: Color(0x14008562), blurRadius: 24, offset: Offset(0, 8)),
+    BoxShadow(color: Color(0x140B815A), blurRadius: 24, offset: Offset(0, 8)),
   ];
 }
 
@@ -104,7 +106,7 @@ class AppGradients {
   static const LinearGradient brand = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    colors: [Color(0xFF008562), Color(0xFF005E44)],
+    colors: [Color(0xFF0B815A), Color(0xFF005E44)],
   );
 
   /// Barely-there green wash for full-screen backgrounds behind cards.
@@ -125,9 +127,9 @@ class AppGradients {
     begin: Alignment.topCenter,
     end: Alignment.bottomCenter,
     colors: [
-      Color(0xFF008562),
-      Color(0xFF007354),
-      Color(0xFF00664A),
+      Color(0xFF0B815A),
+      Color(0xFF067150),
+      Color(0xFF026548),
       Color(0xFF005E44),
     ],
     stops: [0.0, 0.46, 0.80, 1.0],
