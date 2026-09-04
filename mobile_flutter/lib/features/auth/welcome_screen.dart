@@ -73,9 +73,9 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
       image: 'assets/onboarding/slide2_reviews.jpg',
     ),
     _Slide(
-      headline: 'Your College Discovery Partner',
+      headline: 'Everything You Need In One Place',
       subtext:
-          'From initial discovery to final enrollment, we unify your college journey with data-driven insights and professional mentorship.',
+          'Explore college insights, Discover right colleges and make confident decisions at every step of your journey.',
       image: 'assets/onboarding/slide3_anonymous.jpg',
     ),
     _Slide(
