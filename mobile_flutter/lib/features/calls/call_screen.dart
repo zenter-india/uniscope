@@ -77,6 +77,11 @@ class _CallScreenState extends ConsumerState<CallScreen> {
   bool _peerMuted = false;
   bool _weakSignal = false;
   bool _connectHapticDone = false;
+  // Agora AudioRoute int (see onAudioRoutingChanged). 4 = loudspeaker, the
+  // default we set on join. _btSeen latches once a Bluetooth route has been
+  // reported, so the picker can offer it.
+  int _audioRoute = 4;
+  bool _btSeen = false;
   // TEMP DIAGNOSTIC — remove once real-device call testing is confirmed
   // working. Tracks the last status we logged so _poll doesn't spam a line
   // every 2s; only transitions are logged.
@@ -315,6 +320,14 @@ class _CallScreenState extends ConsumerState<CallScreen> {
         onRejoinChannelSuccess: (connection, elapsed) {
           if (mounted) setState(() => _reconnecting = false);
         },
+        onAudioRoutingChanged: (routing) {
+          if (!mounted) return;
+          setState(() {
+            _audioRoute = routing;
+            if (routing == 5 || routing == 10) _btSeen = true;
+            _speakerOn = routing == 3 || routing == 4;
+          });
+        },
         onNetworkQuality: (connection, remoteUid, txQuality, rxQuality) {
           // rxQuality is the more useful "how well am I hearing them" number.
           final bad = {
@@ -507,6 +520,69 @@ class _CallScreenState extends ConsumerState<CallScreen> {
     }
   }
 
+  (IconData, String) _routeGlyph() {
+    switch (_audioRoute) {
+      case 0:
+      case 2:
+        return (Icons.headset_rounded, 'Headset');
+      case 1:
+        return (Icons.hearing_rounded, 'Earpiece');
+      case 5:
+      case 10:
+        return (Icons.bluetooth_audio_rounded, 'Bluetooth');
+      default:
+        return (Icons.volume_up_rounded, 'Speaker');
+    }
+  }
+
+  Future<void> _pickAudioRoute() async {
+    HapticFeedback.selectionClick();
+    Future<void> set(bool speaker) async {
+      Navigator.of(context).pop();
+      await _engine?.setEnableSpeakerphone(speaker);
+      if (mounted) setState(() => _speakerOn = speaker);
+    }
+
+    await showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      builder: (_) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.volume_up_rounded),
+              title: const Text('Speaker'),
+              trailing: (_audioRoute == 3 || _audioRoute == 4)
+                  ? const Icon(Icons.check_rounded, color: AppColors.primary)
+                  : null,
+              onTap: () => set(true),
+            ),
+            ListTile(
+              leading: const Icon(Icons.hearing_rounded),
+              title: const Text('Earpiece'),
+              trailing: _audioRoute == 1
+                  ? const Icon(Icons.check_rounded, color: AppColors.primary)
+                  : null,
+              onTap: () => set(false),
+            ),
+            if (_btSeen)
+              ListTile(
+                leading: const Icon(Icons.bluetooth_audio_rounded),
+                title: const Text('Bluetooth'),
+                trailing: (_audioRoute == 5 || _audioRoute == 10)
+                    ? const Icon(Icons.check_rounded, color: AppColors.primary)
+                    : null,
+                // Agora routes to a connected BT headset once the
+                // loudspeaker is off.
+                onTap: () => set(false),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Future<void> _endCall({String reason = 'NORMAL'}) async {
     HapticFeedback.heavyImpact();
     debugPrint(
@@ -634,18 +710,15 @@ class _CallScreenState extends ConsumerState<CallScreen> {
           reconnecting: _reconnecting,
           weakSignal: _weakSignal,
           peerMuted: _peerMuted,
+          routeIcon: _routeGlyph().$1,
+          routeLabel: _routeGlyph().$2,
           onToggleMute: () async {
             HapticFeedback.selectionClick();
             final next = !_muted;
             await _engine?.muteLocalAudioStream(next);
             setState(() => _muted = next);
           },
-          onToggleSpeaker: () async {
-            HapticFeedback.selectionClick();
-            final next = !_speakerOn;
-            await _engine?.setEnableSpeakerphone(next);
-            setState(() => _speakerOn = next);
-          },
+          onPickRoute: _pickAudioRoute,
           onEnd: () => _endCall(),
         );
       case _Phase.ended:
@@ -709,8 +782,9 @@ class _MessageScreen extends StatelessWidget {
 
 /// Shared avatar + name + status block, centred, for the call screen's dark
 /// background. `solid: true` gives the avatar a full-tone fill + white
-/// initials so it reads on the green.
-class _CallPeerHeader extends StatelessWidget {
+/// initials so it reads on the green. When `pulsing`, an expanding ring
+/// radiates from the avatar (skipped under reduce-motion).
+class _CallPeerHeader extends StatefulWidget {
   const _CallPeerHeader({
     required this.name,
     required this.avatarUrl,
@@ -722,6 +796,46 @@ class _CallPeerHeader extends StatelessWidget {
   final String? avatarUrl;
   final String status;
   final bool pulsing;
+
+  @override
+  State<_CallPeerHeader> createState() => _CallPeerHeaderState();
+}
+
+class _CallPeerHeaderState extends State<_CallPeerHeader>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _c = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 2200),
+  );
+
+  @override
+  void didUpdateWidget(_CallPeerHeader old) {
+    super.didUpdateWidget(old);
+    _syncAnim();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _syncAnim();
+  }
+
+  void _syncAnim() {
+    final animate = widget.pulsing &&
+        !MediaQuery.of(context).disableAnimations;
+    if (animate && !_c.isAnimating) {
+      _c.repeat();
+    } else if (!animate && _c.isAnimating) {
+      _c.stop();
+      _c.value = 0;
+    }
+  }
+
+  @override
+  void dispose() {
+    _c.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -737,20 +851,39 @@ class _CallPeerHeader extends StatelessWidget {
         ],
       ),
       child: AppAvatar(
-        name: name,
-        avatarUrl: avatarUrl,
+        name: widget.name,
+        avatarUrl: widget.avatarUrl,
         size: 104,
         solid: true,
       ),
     );
-    if (pulsing) {
-      avatar = Container(
-        padding: const EdgeInsets.all(8),
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          border: Border.all(color: Colors.white.withValues(alpha: 0.18)),
+    if (widget.pulsing) {
+      avatar = SizedBox(
+        width: 148,
+        height: 148,
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            AnimatedBuilder(
+              animation: _c,
+              builder: (_, __) {
+                final t = _c.value;
+                return Container(
+                  width: 112 + 36 * t,
+                  height: 112 + 36 * t,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.22 * (1 - t)),
+                      width: 2,
+                    ),
+                  ),
+                );
+              },
+            ),
+            avatar,
+          ],
         ),
-        child: avatar,
       );
     }
     return Column(
@@ -759,7 +892,7 @@ class _CallPeerHeader extends StatelessWidget {
         avatar,
         const SizedBox(height: AppSpacing.md),
         Text(
-          name,
+          widget.name,
           textAlign: TextAlign.center,
           style: const TextStyle(
             color: Colors.white,
@@ -769,7 +902,7 @@ class _CallPeerHeader extends StatelessWidget {
         ),
         const SizedBox(height: 4),
         Text(
-          status,
+          widget.status,
           style: const TextStyle(color: Colors.white70, fontSize: AppFont.sm),
         ),
       ],
@@ -824,8 +957,10 @@ class _ActiveCallView extends StatelessWidget {
     required this.reconnecting,
     required this.weakSignal,
     required this.peerMuted,
+    required this.routeIcon,
+    required this.routeLabel,
     required this.onToggleMute,
-    required this.onToggleSpeaker,
+    required this.onPickRoute,
     required this.onEnd,
   });
 
@@ -838,8 +973,10 @@ class _ActiveCallView extends StatelessWidget {
   final bool reconnecting;
   final bool weakSignal;
   final bool peerMuted;
+  final IconData routeIcon;
+  final String routeLabel;
   final VoidCallback onToggleMute;
-  final VoidCallback onToggleSpeaker;
+  final VoidCallback onPickRoute;
   final VoidCallback onEnd;
 
   /// "4:48 left" while there's time; "0:12 over" once the slot has run out.
@@ -928,12 +1065,10 @@ class _ActiveCallView extends StatelessWidget {
               ),
               _EndCallButton(onPressed: onEnd),
               _CallControl(
-                icon: speakerOn
-                    ? Icons.volume_up_rounded
-                    : Icons.hearing_rounded,
-                label: speakerOn ? 'Speaker' : 'Earpiece',
+                icon: routeIcon,
+                label: routeLabel,
                 active: speakerOn,
-                onPressed: onToggleSpeaker,
+                onPressed: onPickRoute,
               ),
             ],
           ),
