@@ -39,8 +39,9 @@ const _activeStatuses = {
 Future<void> startChatWithMentor(
   BuildContext context,
   WidgetRef ref,
-  String mentorId,
-) async {
+  String mentorId, {
+  String? draft,
+}) async {
   final api = ref.read(sessionsApiProvider);
   try {
     Session session;
@@ -68,7 +69,10 @@ Future<void> startChatWithMentor(
     // without an explicit invalidate.
     ref.invalidate(sessionsListProvider);
     if (!context.mounted) return;
-    context.push('/chats/room', extra: {'sessionId': session.id});
+    context.push('/chats/room', extra: {
+      'sessionId': session.id,
+      if (draft != null && draft.trim().isNotEmpty) 'draft': draft,
+    });
   } catch (e) {
     if (!context.mounted) return;
     ScaffoldMessenger.of(context)

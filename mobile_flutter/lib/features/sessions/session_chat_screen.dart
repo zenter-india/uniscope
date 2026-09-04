@@ -37,9 +37,13 @@ final _minCallSlotUniminutes = kCallSlotMinutes.first;
 /// normally reached, but is kept in case that ever changes back to a real
 /// accept step.
 class SessionChatScreen extends ConsumerStatefulWidget {
-  const SessionChatScreen({super.key, required this.sessionId});
+  const SessionChatScreen({super.key, required this.sessionId, this.initialDraft});
 
   final String sessionId;
+
+  /// Optional composer pre-fill, passed via the route's `extra` map when a
+  /// chat is opened from a tapped sample question.
+  final String? initialDraft;
 
   @override
   ConsumerState<SessionChatScreen> createState() => _SessionChatScreenState();
@@ -274,6 +278,7 @@ class _SessionChatScreenState extends ConsumerState<SessionChatScreen> {
             child: ChatThreadView(
               connection: _connection!,
               currentUserId: currentUserId,
+              initialDraft: widget.initialDraft,
               onSend: (text, clientMessageId) => ref
                   .read(chatApiProvider)
                   .sendMessage(

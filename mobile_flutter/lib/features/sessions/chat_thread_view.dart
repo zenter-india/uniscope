@@ -26,7 +26,13 @@ class ChatThreadView extends StatefulWidget {
     required this.onSend,
     required this.onRefetch,
     required this.onLoadOlder,
+    this.initialDraft,
   });
+
+  /// Pre-fills the composer once, on first mount — used when a chat is
+  /// started from a tapped sample question so the aspirant lands with the
+  /// question already typed, ready to edit or send.
+  final String? initialDraft;
 
   final ChatConnection connection;
   final String currentUserId;
@@ -56,6 +62,9 @@ class _ChatThreadViewState extends State<ChatThreadView>
     WidgetsBinding.instance.addObserver(this);
     _messages = List.of(widget.connection.messages);
     _hasMore = widget.connection.hasMore;
+    if (widget.initialDraft != null && widget.initialDraft!.trim().isNotEmpty) {
+      _composerController.text = widget.initialDraft!;
+    }
     _subscribe();
     _scrollController.addListener(_maybeLoadMore);
     WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());

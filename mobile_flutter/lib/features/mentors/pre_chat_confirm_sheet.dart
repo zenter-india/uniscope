@@ -26,7 +26,7 @@ Future<void> showPreChatConfirmSheet(
   required String mentorName,
   String? mentorAvatarUrl,
 }) async {
-  final confirmed = await showModalBottomSheet<bool>(
+  final result = await showModalBottomSheet<_PreChatResult>(
     context: context,
     backgroundColor: AppColors.surface,
     isScrollControlled: true,
@@ -39,8 +39,15 @@ Future<void> showPreChatConfirmSheet(
     ),
   );
 
-  if (confirmed != true || !context.mounted) return;
-  await startChatWithMentor(context, ref, mentorId);
+  if (result == null || !context.mounted) return;
+  await startChatWithMentor(context, ref, mentorId, draft: result.draft);
+}
+
+/// How the sheet was dismissed — [draft] is a tapped sample question (or
+/// null for the plain "Start Chat" button).
+class _PreChatResult {
+  const _PreChatResult({this.draft});
+  final String? draft;
 }
 
 class _PreChatConfirmSheet extends StatelessWidget {
@@ -83,7 +90,8 @@ class _PreChatConfirmSheet extends StatelessWidget {
           ),
           const SizedBox(height: AppSpacing.xs),
           const Text(
-            'Ask anything about their college, courses, or journey so far.',
+            'Ask anything about their college, courses, or journey so far. '
+            'Tap a question to start with it typed for you.',
             textAlign: TextAlign.center,
             style: TextStyle(fontSize: AppFont.sm, color: AppColors.textSecondary),
           ),
@@ -105,17 +113,22 @@ class _PreChatConfirmSheet extends StatelessWidget {
             runSpacing: AppSpacing.sm,
             children: [
               for (final q in _sampleQuestions)
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: AppSpacing.sm, vertical: AppSpacing.xs),
-                  decoration: BoxDecoration(
-                    color: AppColors.primaryLight,
-                    borderRadius: BorderRadius.circular(AppRadius.md),
-                  ),
-                  child: Text(
-                    q,
-                    style: const TextStyle(
-                        fontSize: AppFont.xs, color: AppColors.primaryDark),
+                InkWell(
+                  onTap: () =>
+                      Navigator.of(context).pop(_PreChatResult(draft: q)),
+                  borderRadius: BorderRadius.circular(AppRadius.md),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: AppSpacing.sm, vertical: AppSpacing.xs),
+                    decoration: BoxDecoration(
+                      color: AppColors.primaryLight,
+                      borderRadius: BorderRadius.circular(AppRadius.md),
+                    ),
+                    child: Text(
+                      q,
+                      style: const TextStyle(
+                          fontSize: AppFont.xs, color: AppColors.primaryDark),
+                    ),
                   ),
                 ),
             ],
@@ -124,13 +137,14 @@ class _PreChatConfirmSheet extends StatelessWidget {
           SizedBox(
             width: double.infinity,
             child: FilledButton(
-              onPressed: () => Navigator.of(context).pop(true),
+              onPressed: () =>
+                  Navigator.of(context).pop(const _PreChatResult()),
               child: const Text('Start Chat'),
             ),
           ),
           const SizedBox(height: AppSpacing.xs),
           TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
+            onPressed: () => Navigator.of(context).pop(),
             child: const Text('Maybe later',
                 style: TextStyle(color: AppColors.textMuted)),
           ),

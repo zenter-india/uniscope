@@ -5,7 +5,7 @@ import '../../core/network/wallet_api.dart';
 import '../../core/theme/app_theme.dart';
 
 /// Shown instead of the call-slot picker when the aspirant's balance can't
-/// cover even the shortest (5-min) call slot. Chat itself is always free —
+/// cover even the shortest (6-min) call slot. Chat itself is always free —
 /// this only ever gates the call-request action, never chatting itself.
 Future<void> showLowBalanceSheet(
   BuildContext context, {
@@ -46,7 +46,7 @@ Future<void> showLowBalanceSheet(
           ),
           const SizedBox(height: AppSpacing.xs),
           Text(
-            'You have ${uniminutesLabel(balanceUniminutes)}. The shortest call slot needs 5 — recharge to book one.',
+            'You have ${uniminutesLabel(balanceUniminutes)}. The shortest call slot needs 6 — recharge to book one.',
             textAlign: TextAlign.center,
             style: const TextStyle(fontSize: AppFont.sm, color: AppColors.textSecondary),
           ),

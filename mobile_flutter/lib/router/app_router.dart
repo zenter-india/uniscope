@@ -141,7 +141,10 @@ List<StatefulShellBranch> _buildAspirantBranches() => [
                 path: 'room',
                 builder: (_, state) {
                   final a = state.extra as Map<String, dynamic>? ?? const {};
-                  return SessionChatScreen(sessionId: a['sessionId'] as String? ?? '');
+                  return SessionChatScreen(
+                    sessionId: a['sessionId'] as String? ?? '',
+                    initialDraft: a['draft'] as String?,
+                  );
                 },
               ),
               GoRoute(path: 'support', builder: (_, __) => const SupportChatScreen()),
@@ -204,7 +207,10 @@ List<StatefulShellBranch> _buildMentorBranches() => [
                 path: 'room',
                 builder: (_, state) {
                   final a = state.extra as Map<String, dynamic>? ?? const {};
-                  return SessionChatScreen(sessionId: a['sessionId'] as String? ?? '');
+                  return SessionChatScreen(
+                    sessionId: a['sessionId'] as String? ?? '',
+                    initialDraft: a['draft'] as String?,
+                  );
                 },
               ),
               GoRoute(path: 'support', builder: (_, __) => const SupportChatScreen()),
