@@ -923,7 +923,8 @@ model EnrollmentLead {
   preferredLanguage         String?  @map("preferred_language") @db.VarChar(150)
   preferredMentorshipTiming String?  @map("preferred_mentorship_timing") @db.VarChar(150)
 
-  /// Mentor-only.
+  /// Shared by both roles -- originally mentor-only, extended to aspirants
+  /// per explicit request so both can set a public-facing pseudonym.
   alias          String?  @db.VarChar(60)
   /// `universityId` is set when the person picked an existing college from
   /// the dropdown; `collegeName` always holds the raw text so a college

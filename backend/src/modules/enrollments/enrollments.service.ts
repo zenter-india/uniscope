@@ -1,13 +1,20 @@
-import { randomUUID } from 'node:crypto';
-import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { createHash, randomUUID } from 'node:crypto';
+import { BadRequestException, Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
-import { EnrollmentLeadRole, EnrollmentLeadStatus, Prisma } from '@prisma/client';
+import {
+  EnrollmentLeadRole,
+  EnrollmentLeadStatus,
+  Prisma,
+  UserRole,
+  VerificationStatus,
+} from '@prisma/client';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { parsePhoneNumberFromString } from 'libphonenumber-js';
 import { adminOrderBy } from '../../common/helpers/admin-sort.helper.js';
 import { SlackNotifierService } from '../../common/slack/slack-notifier.service.js';
 import { PrismaService } from '../../database/prisma/prisma.service.js';
 import { SUPABASE_BUCKETS, SUPABASE_CLIENT } from '../../supabase/index.js';
+import { UsersService } from '../users/users.service.js';
 import {
   BaseLeadDto,
   CreateAspirantLeadDto,
@@ -31,11 +38,27 @@ const LEAD_DOCUMENT_PREFIX = 'enrollment-leads';
 
 @Injectable()
 export class EnrollmentsService {
+  private readonly logger = new Logger(EnrollmentsService.name);
+
   constructor(
     private readonly prisma: PrismaService,
     @Inject(SUPABASE_CLIENT) private readonly supabase: SupabaseClient,
     private readonly slack: SlackNotifierService,
+    private readonly usersService: UsersService,
   ) {}
+
+  /** Same phoneHash derivation as AuthService.verifyOtp's production
+   * (non-mock) path: sha256 of the whitespace-stripped phone string. Must
+   * stay byte-for-byte identical to that method, or a website-provisioned
+   * account will never be found by a later OTP login on the same number.
+   * Safe here because `phone` is already this service's own E.164-
+   * normalized value (see normalizePhone) — libphonenumber-js's E.164
+   * output for a valid Indian number and the mobile client's own
+   * `+91<digits>` string are the same shape, so the two sides hash
+   * identically without needing to coordinate normalization logic. */
+  private phoneHashFor(e164Phone: string): string {
+    return createHash('sha256').update(e164Phone.replace(/\s+/g, '').trim()).digest('hex');
+  }
 
   /** E.164 so the (role, phone) uniqueness actually holds — otherwise the same
    * person typing "9876543210" and "+91 98765 43210" creates two leads. */
@@ -61,6 +84,82 @@ export class EnrollmentsService {
       throw new BadRequestException(`Failed to upload document: ${error.message}`);
     }
     return key;
+  }
+
+  /**
+   * Turns a lead submission into a real, immediately-usable account (per
+   * explicit request): a website registration now provisions the actual
+   * `User`/`UserProfile` row, pre-filled from what was submitted, so that
+   * verifying OTP on the same phone in the app later logs straight into
+   * this already-set-up account instead of a blank one that still needs
+   * role selection or the onboarding wizard — findOrCreateByPhoneHash finds
+   * it by the same phoneHash and returns isNewUser:false.
+   *
+   * Best-effort and non-fatal by design: this runs after the lead itself
+   * is already safely upserted, wrapped in try/catch by both call sites,
+   * so a bug or a transient DB/storage error here must never fail the
+   * public form submission — worst case, the lead exists without a linked
+   * account yet, exactly like before this feature existed.
+   *
+   * For a mentor with both a resolved universityId and an uploaded
+   * document, also auto-submits their real VerificationRequest reusing the
+   * already-uploaded file (same Supabase bucket, just a different key
+   * prefix — see LEAD_DOCUMENT_PREFIX) rather than asking them to re-upload
+   * inside the app, per explicit request. Skipped (left for the in-app
+   * verification flow instead) when the college was only free-typed with
+   * no matching University row, since VerificationRequest.universityId is
+   * required.
+   */
+  private async provisionAccountFromLead(
+    role: EnrollmentLeadRole,
+    phone: string,
+    dto: BaseLeadDto,
+    profile: Prisma.UserProfileUncheckedCreateWithoutUserInput,
+    mentorVerification?: {
+      universityId: string | null;
+      documentType?: Prisma.VerificationRequestUncheckedCreateInput['documentType'];
+      documentKey: string | null;
+    },
+  ): Promise<void> {
+    const phoneHash = this.phoneHashFor(phone);
+
+    const { user, isNewUser } = await this.usersService.provisionAccountFromLead({
+      phoneHash,
+      role: role === EnrollmentLeadRole.MENTOR ? UserRole.MENTOR : UserRole.ASPIRANT,
+      displayName: dto.alias,
+      realName: dto.fullName,
+      profile,
+    });
+
+    if (
+      isNewUser &&
+      role === EnrollmentLeadRole.MENTOR &&
+      mentorVerification?.universityId &&
+      mentorVerification.documentType &&
+      mentorVerification.documentKey
+    ) {
+      await this.prisma.$transaction([
+        this.prisma.verificationRequest.create({
+          data: {
+            userId: user.id,
+            universityId: mentorVerification.universityId,
+            documentType: mentorVerification.documentType,
+            documentKey: mentorVerification.documentKey,
+            status: VerificationStatus.SUBMITTED,
+            submittedAt: new Date(),
+          },
+        }),
+        this.prisma.user.update({
+          where: { id: user.id },
+          data: { verificationStatus: VerificationStatus.SUBMITTED },
+        }),
+      ]);
+    }
+
+    await this.prisma.enrollmentLead.update({
+      where: { role_phone: { role, phone } },
+      data: { convertedUserId: user.id, status: EnrollmentLeadStatus.CONVERTED },
+    });
   }
 
   /**
@@ -163,7 +262,8 @@ export class EnrollmentsService {
   ): Promise<EnrollmentLeadAcknowledgement> {
     const universityId = await this.resolveUniversityId(dto.universityId);
 
-    return this.upsertLead(EnrollmentLeadRole.ASPIRANT, dto, {
+    const ack = await this.upsertLead(EnrollmentLeadRole.ASPIRANT, dto, {
+      alias: dto.alias,
       qualification: dto.qualification,
       universityId: universityId ?? undefined,
       collegeName: dto.collegeName,
@@ -172,6 +272,31 @@ export class EnrollmentsService {
       preferredLanguage: dto.preferredLanguage,
       preferredMentorshipTiming: dto.preferredMentorshipTiming,
     });
+
+    try {
+      await this.provisionAccountFromLead(EnrollmentLeadRole.ASPIRANT, this.normalizePhone(dto.phone), dto, {
+        gender: dto.gender,
+        state: dto.state,
+        city: dto.city,
+        stream: dto.stream,
+        dateOfBirth: dto.dateOfBirth ? new Date(dto.dateOfBirth) : undefined,
+        qualification: dto.qualification,
+        specialization: dto.specialization,
+        courseInterested: dto.courseInterested,
+        preferredLanguage: dto.preferredLanguage,
+        preferredMentorshipTiming: dto.preferredMentorshipTiming,
+        universityId: universityId ?? undefined,
+      });
+    } catch (err) {
+      // Never let account provisioning fail the public form submission --
+      // the lead above is already safely saved either way.
+      this.logger.error(
+        `Failed to provision account for aspirant lead ${ack.id}`,
+        err instanceof Error ? err.stack : String(err),
+      );
+    }
+
+    return ack;
   }
 
   /**
@@ -299,7 +424,7 @@ export class EnrollmentsService {
       ? await this.uploadDocument(dto.documentBase64)
       : null;
 
-    return this.upsertLead(EnrollmentLeadRole.MENTOR, dto, {
+    const ack = await this.upsertLead(EnrollmentLeadRole.MENTOR, dto, {
       alias: dto.alias,
       universityId: universityId ?? undefined,
       collegeName: dto.collegeName,
@@ -316,6 +441,41 @@ export class EnrollmentsService {
       // without re-attaching keeps the document already on file.
       documentKey: documentKey ?? undefined,
     });
+
+    try {
+      await this.provisionAccountFromLead(
+        EnrollmentLeadRole.MENTOR,
+        this.normalizePhone(dto.phone),
+        dto,
+        {
+          gender: dto.gender,
+          state: dto.state,
+          city: dto.city,
+          stream: dto.stream,
+          dateOfBirth: dto.dateOfBirth ? new Date(dto.dateOfBirth) : undefined,
+          // Mentor's "degree" answer is the same UserProfile.qualification
+          // column an aspirant's answer lands in (dual-purpose, mirroring
+          // the mobile onboarding wizard's own mapping -- see
+          // mentor_onboarding_screen.dart's `qualification: _degree`).
+          qualification: dto.degree,
+          specialization: dto.specialization,
+          yearOfStudy: dto.yearOfStudy,
+          graduationYear: dto.graduationYear,
+          yearInfoPrivate: dto.yearInfoPrivate ?? false,
+          languages: dto.languages ?? [],
+          availableDays: dto.availableDays ?? [],
+          universityId: universityId ?? undefined,
+        },
+        { universityId, documentType: dto.documentType, documentKey },
+      );
+    } catch (err) {
+      this.logger.error(
+        `Failed to provision account for mentor lead ${ack.id}`,
+        err instanceof Error ? err.stack : String(err),
+      );
+    }
+
+    return ack;
   }
 
   /** ADMIN — cursor-paginated, newest first. */
