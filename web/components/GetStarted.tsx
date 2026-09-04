@@ -27,7 +27,7 @@ export function GetStarted() {
           </div>
           <h2 className="mt-2 text-[clamp(24px,3.2vw,32px)] font-extrabold">Join Uniscope</h2>
           <p className="mt-2.5 text-[15px] font-semibold text-slate-600">
-            Tell us a bit about yourself — no account needed yet. We&apos;ll be in touch once your account is ready to go.
+            Tell us a bit about yourself — we&apos;ll set up your account right away. Just verify the same phone number in the app to log straight in.
           </p>
         </Reveal>
 
