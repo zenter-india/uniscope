@@ -20,6 +20,17 @@ import '../../widgets/app_widgets.dart';
 const _permissionsChannel = MethodChannel('uniscope/permissions');
 const _callChannel = MethodChannel('uniscope/call');
 
+/// A session in any of these is over — no token to issue, no join to
+/// confirm. Reaching CallScreen with one of these means the call already
+/// ended (a late push, a no-show sweep, the other party never joined).
+const _terminalStatuses = {
+  SessionStatus.completed,
+  SessionStatus.rejected,
+  SessionStatus.cancelled,
+  SessionStatus.expired,
+  SessionStatus.failed,
+};
+
 enum _Phase {
   requestingPermission,
   permissionDenied,
@@ -182,6 +193,21 @@ class _CallScreenState extends ConsumerState<CallScreen> {
       if (session.type != 'AUDIO_CALL') {
         throw Exception('Not an audio call session');
       }
+
+      // The call may already be over by the time this screen opens — a
+      // stale "mentor accepted" push tapped late, or the other party never
+      // joined and the no-show sweep / no-answer timeout already closed it.
+      // Show the ended summary rather than letting getCallToken 409 into a
+      // scary "Could not connect".
+      if (_terminalStatuses.contains(session.status)) {
+        if (!mounted) return;
+        setState(() {
+          _session = session;
+          _phase = _Phase.ended;
+        });
+        return;
+      }
+
       setState(() {
         _session = session;
         _phase = _Phase.connecting;
@@ -313,14 +339,7 @@ class _CallScreenState extends ConsumerState<CallScreen> {
       _lastLoggedStatus = session.status;
     }
 
-    const terminal = {
-      SessionStatus.completed,
-      SessionStatus.rejected,
-      SessionStatus.cancelled,
-      SessionStatus.expired,
-      SessionStatus.failed,
-    };
-    if (terminal.contains(session.status)) {
+    if (_terminalStatuses.contains(session.status)) {
       debugPrint(
         '[call] terminal status=${session.status.wire} endReason=${session.endReason} '
         'sessionId=${widget.sessionId}',
@@ -347,14 +366,17 @@ class _CallScreenState extends ConsumerState<CallScreen> {
       // denied) is exactly the "stuck ringing forever" failure mode the
       // deep-link fix targets on the happy path — this is the fallback for
       // when it still doesn't reach the other party. Only ever started
-      // once per call (not per poll tick).
-      _noAnswerTimer ??= Timer(const Duration(seconds: 45), _noAnswer);
+      // once per call (not per poll tick). 90s, not 45 — the other party
+      // realistically needs time to notice the notification, unlock, and
+      // tap Join; the backend no-show sweep (half the slot) is the real
+      // backstop, this just avoids an indefinite ring if that's far off.
+      _noAnswerTimer ??= Timer(const Duration(seconds: 90), _noAnswer);
     }
   }
 
   void _noAnswer() {
     if (!mounted || _phase != _Phase.waiting) return;
-    debugPrint('[call] no-answer timeout (45s) sessionId=${widget.sessionId}');
+    debugPrint('[call] no-answer timeout (90s) sessionId=${widget.sessionId}');
     _endCall(reason: 'NO_ANSWER');
   }
 
