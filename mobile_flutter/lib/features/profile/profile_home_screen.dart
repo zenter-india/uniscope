@@ -73,7 +73,6 @@ class _ProfileCompleteness extends StatelessWidget {
     final p = profile;
     final common = <(String, bool)>[
       ('a profile photo', p.avatarUrl != null),
-      ('your date of birth', p.dateOfBirth != null),
       ('your city', (p.city ?? '').isNotEmpty),
       ('your state', (p.state ?? '').isNotEmpty),
     ];
@@ -194,194 +193,236 @@ class ProfileHomeScreen extends ConsumerWidget {
       ),
       body: SafeArea(
         bottom: false,
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(AppSpacing.md),
-          child: Column(
-            children: [
-              AppCard(
-                padding: const EdgeInsets.all(AppSpacing.lg),
-                child: Column(
+        child: Column(
+          children: [
+            // Pinned above the scroll — always reachable for editing without
+            // having to scroll back up to it.
+            Padding(
+              padding: const EdgeInsets.only(
+                top: AppSpacing.md,
+                bottom: AppSpacing.sm,
+              ),
+              child: Center(
+                child: Stack(
+                  clipBehavior: Clip.none,
                   children: [
-                    Stack(
-                      clipBehavior: Clip.none,
-                      children: [
-                        AppAvatar(
-                          name: displayName,
-                          size: 72,
-                          avatarUrl: myProfileAsync.asData?.value.avatarUrl,
-                        ),
-                        Positioned(
-                          bottom: -2,
-                          right: -2,
-                          child: Material(
-                            color: AppColors.primary,
-                            shape: const CircleBorder(),
-                            child: InkWell(
-                              customBorder: const CircleBorder(),
-                              onTap: () => context.push('/profile/avatar'),
-                              child: const Padding(
-                                padding: EdgeInsets.all(6),
-                                child: Icon(
-                                  Icons.edit_rounded,
-                                  size: 14,
-                                  color: Colors.white,
-                                ),
-                              ),
+                    AppAvatar(
+                      name: displayName,
+                      size: 72,
+                      avatarUrl: myProfileAsync.asData?.value.avatarUrl,
+                    ),
+                    Positioned(
+                      bottom: -2,
+                      right: -2,
+                      child: Material(
+                        color: AppColors.primary,
+                        shape: const CircleBorder(),
+                        child: InkWell(
+                          customBorder: const CircleBorder(),
+                          onTap: () => context.push('/profile/avatar'),
+                          child: const Padding(
+                            padding: EdgeInsets.all(6),
+                            child: Icon(
+                              Icons.edit_rounded,
+                              size: 14,
+                              color: Colors.white,
                             ),
                           ),
                         ),
-                      ],
-                    ),
-                    const SizedBox(height: AppSpacing.sm),
-                    Text(
-                      displayName,
-                      style: const TextStyle(
-                        fontSize: AppFont.xl,
-                        fontWeight: AppFont.extraBold,
-                        color: AppColors.textPrimary,
                       ),
                     ),
-                    const SizedBox(height: AppSpacing.xs),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        StatusChip(label: roleLabel, color: AppColors.primary),
-                        if (isMentor) ...[
-                          const SizedBox(width: AppSpacing.xs),
-                          StatusChip(label: statusLabel, color: statusColor),
-                        ],
-                      ],
-                    ),
-                    if (myProfileAsync.asData?.value.uniqueId != null) ...[
-                      const SizedBox(height: AppSpacing.xs),
-                      Text(
-                        'ID: ${myProfileAsync.asData!.value.uniqueId}',
-                        style: const TextStyle(
-                          fontSize: AppFont.xs,
-                          color: AppColors.textSecondary,
-                          fontWeight: AppFont.medium,
-                        ),
-                      ),
-                    ],
-                    if (isMentor && !isVerified) ...[
-                      const SizedBox(height: AppSpacing.md),
-                      SizedBox(
-                        width: double.infinity,
-                        child: FilledButton.icon(
-                          onPressed: () => context.go('/profile/verification'),
-                          icon: const Icon(Icons.verified_rounded, size: 18),
-                          label: const Text('Get Verified'),
-                        ),
-                      ),
-                    ],
                   ],
                 ),
               ),
-              if (myProfileAsync.asData?.value != null) ...[
-                const SizedBox(height: AppSpacing.md),
-                _ProfileCompleteness(
-                  profile: myProfileAsync.asData!.value,
-                  isMentor: isMentor,
+            ),
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.md,
+                  0,
+                  AppSpacing.md,
+                  AppSpacing.md,
                 ),
-              ],
-              if (isMentor) ...[
-                const SizedBox(height: AppSpacing.md),
-                const MentorAvailabilityCard(),
-              ] else ...[
-                const SizedBox(height: AppSpacing.md),
-                AppCard(
-                  padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
-                  child: Row(
-                    children: [
-                      _Stat(value: '$savedColleges', label: 'Saved Colleges'),
-                      const _StatDivider(),
-                      _Stat(value: '$savedMentors', label: 'Saved Mentors'),
-                    ],
-                  ),
-                ),
-              ],
-              const SizedBox(height: AppSpacing.md),
-              AppCard(
-                padding: EdgeInsets.zero,
                 child: Column(
                   children: [
-                    _MenuRow(
-                      icon: Icons.edit_rounded,
-                      label: 'Edit Profile',
-                      onTap: () => context.go('/profile/edit'),
-                    ),
-                    if (isMentor)
-                      _MenuRow(
-                        icon: Icons.verified_user_rounded,
-                        label: 'Verification',
-                        onTap: () => context.go('/profile/verification'),
+                    AppCard(
+                      padding: const EdgeInsets.all(AppSpacing.lg),
+                      child: Column(
+                        children: [
+                          Text(
+                            displayName,
+                            style: const TextStyle(
+                              fontSize: AppFont.xl,
+                              fontWeight: AppFont.extraBold,
+                              color: AppColors.textPrimary,
+                            ),
+                          ),
+                          const SizedBox(height: AppSpacing.xs),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              StatusChip(
+                                label: roleLabel,
+                                color: AppColors.primary,
+                              ),
+                              if (isMentor) ...[
+                                const SizedBox(width: AppSpacing.xs),
+                                StatusChip(
+                                  label: statusLabel,
+                                  color: statusColor,
+                                ),
+                              ],
+                            ],
+                          ),
+                          if (myProfileAsync.asData?.value.uniqueId !=
+                              null) ...[
+                            const SizedBox(height: AppSpacing.xs),
+                            Text(
+                              'ID: ${myProfileAsync.asData!.value.uniqueId}',
+                              style: const TextStyle(
+                                fontSize: AppFont.xs,
+                                color: AppColors.textSecondary,
+                                fontWeight: AppFont.medium,
+                              ),
+                            ),
+                          ],
+                          if (isMentor && !isVerified) ...[
+                            const SizedBox(height: AppSpacing.md),
+                            SizedBox(
+                              width: double.infinity,
+                              child: FilledButton.icon(
+                                onPressed: () =>
+                                    context.go('/profile/verification'),
+                                icon: const Icon(
+                                  Icons.verified_rounded,
+                                  size: 18,
+                                ),
+                                label: const Text('Get Verified'),
+                              ),
+                            ),
+                          ],
+                        ],
                       ),
-                    // Only a VERIFIED mentor has a real, id-checked
-                    // universityId (see VerificationService.review's link) —
-                    // that's also exactly the same eligibility the backend
-                    // enforces for posting a review of it (see
-                    // UniversityReviewsService.create), so gating the entry
-                    // point on it here just avoids a dead tap that 403s.
-                    if (isMentor &&
-                        isVerified &&
-                        myProfileAsync.asData?.value.universityId != null)
-                      _MenuRow(
-                        icon: Icons.rate_review_rounded,
-                        label: 'Rate Your College',
-                        onTap: () => _openCollegeReview(
-                          context,
-                          ref,
-                          universityId:
-                              myProfileAsync.asData!.value.universityId!,
+                    ),
+                    if (myProfileAsync.asData?.value != null) ...[
+                      const SizedBox(height: AppSpacing.md),
+                      _ProfileCompleteness(
+                        profile: myProfileAsync.asData!.value,
+                        isMentor: isMentor,
+                      ),
+                    ],
+                    if (isMentor) ...[
+                      const SizedBox(height: AppSpacing.md),
+                      const MentorAvailabilityCard(),
+                    ] else ...[
+                      const SizedBox(height: AppSpacing.md),
+                      AppCard(
+                        padding: const EdgeInsets.symmetric(
+                          vertical: AppSpacing.sm,
                         ),
-                      ),
-                    // Mentors already have Wallet as the top-level "Earnings"
-                    // tab — this row is aspirant-only, since the Mentors tab
-                    // took over that slot in the aspirant bottom nav.
-                    if (user?.role != UserRole.mentor)
-                      _MenuRow(
-                        icon: Icons.account_balance_wallet_rounded,
-                        label: 'Wallet',
-                        onTap: () => context.go('/wallet'),
-                      ),
-                    _MenuRow(
-                      icon: Icons.settings_rounded,
-                      label: 'Settings',
-                      onTap: () => context.go('/profile/settings'),
-                      isLast: true,
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: AppSpacing.md),
-              AppCard(
-                padding: EdgeInsets.zero,
-                onTap: () => ref.read(authControllerProvider.notifier).logout(),
-                child: const Padding(
-                  padding: EdgeInsets.all(AppSpacing.md),
-                  child: Row(
-                    children: [
-                      Icon(
-                        Icons.logout_rounded,
-                        size: 20,
-                        color: AppColors.error,
-                      ),
-                      SizedBox(width: AppSpacing.md),
-                      Text(
-                        'Log Out',
-                        style: TextStyle(
-                          fontSize: AppFont.md,
-                          color: AppColors.error,
-                          fontWeight: AppFont.bold,
+                        child: Row(
+                          children: [
+                            _Stat(
+                              value: '$savedColleges',
+                              label: 'Saved Colleges',
+                            ),
+                            const _StatDivider(),
+                            _Stat(
+                              value: '$savedMentors',
+                              label: 'Saved Mentors',
+                            ),
+                          ],
                         ),
                       ),
                     ],
-                  ),
+                    const SizedBox(height: AppSpacing.md),
+                    AppCard(
+                      padding: EdgeInsets.zero,
+                      child: Column(
+                        children: [
+                          _MenuRow(
+                            icon: Icons.edit_rounded,
+                            label: 'Edit Profile',
+                            onTap: () => context.go('/profile/edit'),
+                          ),
+                          if (isMentor)
+                            _MenuRow(
+                              icon: Icons.verified_user_rounded,
+                              label: 'Verification',
+                              onTap: () => context.go('/profile/verification'),
+                            ),
+                          // Only a VERIFIED mentor has a real, id-checked
+                          // universityId (see VerificationService.review's
+                          // link) — that's also exactly the same eligibility
+                          // the backend enforces for posting a review of it
+                          // (see UniversityReviewsService.create), so gating
+                          // the entry point on it here just avoids a dead tap
+                          // that 403s.
+                          if (isMentor &&
+                              isVerified &&
+                              myProfileAsync.asData?.value.universityId != null)
+                            _MenuRow(
+                              icon: Icons.rate_review_rounded,
+                              label: 'Rate Your College',
+                              onTap: () => _openCollegeReview(
+                                context,
+                                ref,
+                                universityId:
+                                    myProfileAsync.asData!.value.universityId!,
+                              ),
+                            ),
+                          // Mentors already have Wallet as the top-level
+                          // "Earnings" tab — this row is aspirant-only, since
+                          // the Mentors tab took over that slot in the
+                          // aspirant bottom nav.
+                          if (user?.role != UserRole.mentor)
+                            _MenuRow(
+                              icon: Icons.account_balance_wallet_rounded,
+                              label: 'Wallet',
+                              onTap: () => context.go('/wallet'),
+                            ),
+                          _MenuRow(
+                            icon: Icons.settings_rounded,
+                            label: 'Settings',
+                            onTap: () => context.go('/profile/settings'),
+                            isLast: true,
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.md),
+                    AppCard(
+                      padding: EdgeInsets.zero,
+                      onTap: () =>
+                          ref.read(authControllerProvider.notifier).logout(),
+                      child: const Padding(
+                        padding: EdgeInsets.all(AppSpacing.md),
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.logout_rounded,
+                              size: 20,
+                              color: AppColors.error,
+                            ),
+                            SizedBox(width: AppSpacing.md),
+                            Text(
+                              'Log Out',
+                              style: TextStyle(
+                                fontSize: AppFont.md,
+                                color: AppColors.error,
+                                fontWeight: AppFont.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.xl),
+                  ],
                 ),
               ),
-              const SizedBox(height: AppSpacing.xl),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
