@@ -4,13 +4,18 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'dio_client.dart';
 
 class MentorUniversity {
-  const MentorUniversity({required this.id, required this.name, required this.slug});
+  const MentorUniversity({
+    required this.id,
+    required this.name,
+    required this.slug,
+  });
 
   final String id;
   final String name;
   final String slug;
 
-  factory MentorUniversity.fromJson(Map<String, dynamic> json) => MentorUniversity(
+  factory MentorUniversity.fromJson(Map<String, dynamic> json) =>
+      MentorUniversity(
         id: json['id'] as String,
         name: json['name'] as String,
         slug: json['slug'] as String,
@@ -24,6 +29,8 @@ class Mentor {
     required this.role,
     required this.specialty,
     this.stream,
+    this.qualification,
+    this.specialization,
     required this.bio,
     required this.languages,
     required this.pricePerMinuteMinor,
@@ -44,15 +51,25 @@ class Mentor {
   final String role;
   final String? avatarUrl;
   final String? specialty;
+
   /// Mentor's college field of study (Medical/Engineering/Law/etc) — the
   /// primary discovery/filter attribute now that mentors span every stream,
   /// not just medical. `specialty` stays for older mentors who set it before
   /// the Areas-of-Guidance wizard step was removed.
   final String? stream;
+
+  /// The mentor onboarding wizard's "Degree" step answer (e.g. "MBBS",
+  /// "B.Tech") — same picklist as `degreesForStream(stream)`.
+  final String? qualification;
+
+  /// Medical-stream-only degree specialization (e.g. "Paediatrics") — null
+  /// for MBBS and every non-Medical stream.
+  final String? specialization;
   final String? bio;
   final List<String> languages;
   final int pricePerMinuteMinor;
   final MentorUniversity? university;
+
   /// Whether the mentor is currently accepting call bookings — their own
   /// stated intent, which the backend auto-expires after 24h. This is NOT
   /// real-time presence: never label it "online". Doesn't affect whether
@@ -80,31 +97,33 @@ class Mentor {
   double get pricePerMinuteRupees => pricePerMinuteMinor / 100;
 
   factory Mentor.fromJson(Map<String, dynamic> json) => Mentor(
-        id: json['id'] as String,
-        displayName: json['displayName'] as String,
-        role: json['role'] as String,
-        specialty: json['specialty'] as String?,
-        stream: json['stream'] as String?,
-        bio: json['bio'] as String?,
-        languages: (json['languages'] as List<dynamic>? ?? [])
-            .map((e) => e as String)
-            .toList(),
-        pricePerMinuteMinor: (json['pricePerMinuteMinor'] as num).toInt(),
-        university: json['university'] != null
-            ? MentorUniversity.fromJson(json['university'] as Map<String, dynamic>)
-            : null,
-        isAvailable: json['isAvailable'] as bool? ?? false,
-        isVerified: json['isVerified'] as bool? ?? false,
-        availableDays: (json['availableDays'] as List<dynamic>? ?? [])
-            .map((e) => e as String)
-            .toList(),
-        rating: (json['rating'] as num?)?.toDouble(),
-        reviewCount: (json['reviewCount'] as num?)?.toInt() ?? 0,
-        yearOfStudy: (json['yearOfStudy'] as num?)?.toInt(),
-        studentsHelped: (json['studentsHelped'] as num?)?.toInt(),
-        minutesMentored: (json['minutesMentored'] as num?)?.toInt(),
-        avatarUrl: json['avatarUrl'] as String?,
-      );
+    id: json['id'] as String,
+    displayName: json['displayName'] as String,
+    role: json['role'] as String,
+    specialty: json['specialty'] as String?,
+    stream: json['stream'] as String?,
+    qualification: json['qualification'] as String?,
+    specialization: json['specialization'] as String?,
+    bio: json['bio'] as String?,
+    languages: (json['languages'] as List<dynamic>? ?? [])
+        .map((e) => e as String)
+        .toList(),
+    pricePerMinuteMinor: (json['pricePerMinuteMinor'] as num).toInt(),
+    university: json['university'] != null
+        ? MentorUniversity.fromJson(json['university'] as Map<String, dynamic>)
+        : null,
+    isAvailable: json['isAvailable'] as bool? ?? false,
+    isVerified: json['isVerified'] as bool? ?? false,
+    availableDays: (json['availableDays'] as List<dynamic>? ?? [])
+        .map((e) => e as String)
+        .toList(),
+    rating: (json['rating'] as num?)?.toDouble(),
+    reviewCount: (json['reviewCount'] as num?)?.toInt() ?? 0,
+    yearOfStudy: (json['yearOfStudy'] as num?)?.toInt(),
+    studentsHelped: (json['studentsHelped'] as num?)?.toInt(),
+    minutesMentored: (json['minutesMentored'] as num?)?.toInt(),
+    avatarUrl: json['avatarUrl'] as String?,
+  );
 }
 
 class MentorDashboardRecentSession {
@@ -128,8 +147,9 @@ class MentorDashboardRecentSession {
       MentorDashboardRecentSession(
         id: json['id'] as String,
         aspirantDisplayName: json['aspirantDisplayName'] as String,
-        endedAt:
-            json['endedAt'] != null ? DateTime.parse(json['endedAt'] as String) : null,
+        endedAt: json['endedAt'] != null
+            ? DateTime.parse(json['endedAt'] as String)
+            : null,
         billedMinutes: (json['billedMinutes'] as num).toInt(),
         earnedMinor: (json['earnedMinor'] as num).toInt(),
       );
@@ -172,8 +192,11 @@ class MentorDashboardStats {
         rating: (json['rating'] as num?)?.toDouble(),
         reviewCount: (json['reviewCount'] as num?)?.toInt() ?? 0,
         recentSessions: (json['recentSessions'] as List<dynamic>? ?? [])
-            .map((e) =>
-                MentorDashboardRecentSession.fromJson(e as Map<String, dynamic>))
+            .map(
+              (e) => MentorDashboardRecentSession.fromJson(
+                e as Map<String, dynamic>,
+              ),
+            )
             .toList(),
       );
 }
@@ -198,7 +221,9 @@ class MentorsApi {
   }
 
   Future<MentorDashboardStats> getDashboardStats() async {
-    final res = await _dio.get<Map<String, dynamic>>('/mentors/me/dashboard-stats');
+    final res = await _dio.get<Map<String, dynamic>>(
+      '/mentors/me/dashboard-stats',
+    );
     return MentorDashboardStats.fromJson(res.data!);
   }
 }

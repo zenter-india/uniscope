@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/network/mentors_api.dart';
 import '../../core/network/sessions_api.dart';
+import '../../core/network/users_api.dart';
 import '../../core/network/wishlist_api.dart';
 import '../../core/theme/app_theme.dart';
 import '../../state/auth_controller.dart';
@@ -16,11 +17,11 @@ final mentorsListProvider = FutureProvider.autoDispose<List<Mentor>>(
   (ref) => ref.watch(mentorsApiProvider).list(),
 );
 
-final mentorsByUniversityProvider =
-    FutureProvider.autoDispose.family<List<Mentor>, String>(
-  (ref, universityId) =>
-      ref.watch(mentorsApiProvider).list(universityId: universityId),
-);
+final mentorsByUniversityProvider = FutureProvider.autoDispose
+    .family<List<Mentor>, String>(
+      (ref, universityId) =>
+          ref.watch(mentorsApiProvider).list(universityId: universityId),
+    );
 
 /// Statuses a session can be in while still "live" — mirrors the backend's
 /// ACTIVE_STATUSES in SessionsService, used to find an already-outstanding
@@ -55,7 +56,8 @@ Future<void> startChatWithMentor(
 
       final existing = await api.list();
       final match = existing.where(
-        (s) => s.mentorId == mentorId &&
+        (s) =>
+            s.mentorId == mentorId &&
             s.type == 'CHAT' &&
             _activeStatuses.contains(s.status),
       );
@@ -69,14 +71,18 @@ Future<void> startChatWithMentor(
     // without an explicit invalidate.
     ref.invalidate(sessionsListProvider);
     if (!context.mounted) return;
-    context.push('/chats/room', extra: {
-      'sessionId': session.id,
-      if (draft != null && draft.trim().isNotEmpty) 'draft': draft,
-    });
+    context.push(
+      '/chats/room',
+      extra: {
+        'sessionId': session.id,
+        if (draft != null && draft.trim().isNotEmpty) 'draft': draft,
+      },
+    );
   } catch (e) {
     if (!context.mounted) return;
-    ScaffoldMessenger.of(context)
-        .showSnackBar(SnackBar(content: Text('Could not start chat: $e')));
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text('Could not start chat: $e')));
   }
 }
 
@@ -97,6 +103,13 @@ class _MentorListScreenState extends ConsumerState<MentorListScreen> {
   /// here means no extra request per keystroke / toggle.
   String _query = '';
   String? _stream;
+  // Whether the aspirant has explicitly touched the Stream pill (including
+  // picking "Any"). Until then, Stream defaults to — and actively filters
+  // by — their own profile.stream from onboarding, same deferred-default
+  // pattern as the Colleges tab's Stream pill.
+  bool _streamTouched = false;
+  String? _degree;
+  String? _specialization;
   String? _language;
   bool _availableOnly = false;
   bool _topRated = false;
@@ -122,10 +135,18 @@ class _MentorListScreenState extends ConsumerState<MentorListScreen> {
             children: [
               Padding(
                 padding: const EdgeInsets.fromLTRB(
-                    AppSpacing.lg, 0, AppSpacing.lg, AppSpacing.sm),
-                child: Text(title,
-                    style: const TextStyle(
-                        fontSize: AppFont.lg, fontWeight: AppFont.bold)),
+                  AppSpacing.lg,
+                  0,
+                  AppSpacing.lg,
+                  AppSpacing.sm,
+                ),
+                child: Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: AppFont.lg,
+                    fontWeight: AppFont.bold,
+                  ),
+                ),
               ),
               Flexible(
                 child: ListView(
@@ -134,9 +155,12 @@ class _MentorListScreenState extends ConsumerState<MentorListScreen> {
                     for (final o in ['Any', ...options])
                       ListTile(
                         title: Text(o),
-                        trailing: (o == 'Any' ? selected == null : o == selected)
-                            ? const Icon(Icons.check_rounded,
-                                color: AppColors.primary)
+                        trailing:
+                            (o == 'Any' ? selected == null : o == selected)
+                            ? const Icon(
+                                Icons.check_rounded,
+                                color: AppColors.primary,
+                              )
                             : null,
                         onTap: () {
                           onPick(o == 'Any' ? null : o);
@@ -158,6 +182,28 @@ class _MentorListScreenState extends ConsumerState<MentorListScreen> {
   Widget build(BuildContext context) {
     final mentorsAsync = ref.watch(mentorsListProvider);
     final query = _query.trim().toLowerCase();
+
+    // Same deferred-default pattern as the Colleges tab's Stream pill:
+    // nothing explicitly picked yet defaults to — and actively filters by
+    // — the stream chosen at signup, as long as it's a value this filter
+    // understands. Item 2 of the "filter mentors by profile stream" ask.
+    final myStream = ref.watch(myProfileProvider).asData?.value.stream;
+    final effectiveStream = _streamTouched
+        ? _stream
+        : (myStream != null && kStreamOptions.contains(myStream)
+              ? myStream
+              : null);
+
+    // Degree cascades from Stream (mirrors the Colleges tab); Specialization
+    // only ever applies to a non-MBBS Medical degree, matching the mentor
+    // onboarding wizard's own _needsSpecialization rule.
+    final degreeOptions = effectiveStream != null
+        ? degreesForStream(effectiveStream)
+        : const <String>[];
+    final degree = degreeOptions.contains(_degree) ? _degree : null;
+    final showSpecialization =
+        effectiveStream == 'Medical' && degree != null && degree != 'MBBS';
+    final specialization = showSpecialization ? _specialization : null;
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -194,8 +240,7 @@ class _MentorListScreenState extends ConsumerState<MentorListScreen> {
               height: 38,
               child: ListView(
                 scrollDirection: Axis.horizontal,
-                padding:
-                    const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
                 children: [
                   _MentorFilterChip(
                     label: 'Available now',
@@ -211,16 +256,55 @@ class _MentorListScreenState extends ConsumerState<MentorListScreen> {
                   ),
                   const SizedBox(width: AppSpacing.xs),
                   _MentorFilterChip(
-                    label: _stream ?? 'Stream',
-                    active: _stream != null,
+                    label: effectiveStream ?? 'Stream',
+                    active: effectiveStream != null,
                     dropdown: true,
                     onTap: () => _pickOne(
                       title: 'Field of study',
                       options: kStreamOptions,
-                      selected: _stream,
-                      onPick: (v) => setState(() => _stream = v),
+                      selected: effectiveStream,
+                      onPick: (v) => setState(() {
+                        _stream = v;
+                        _streamTouched = true;
+                        // Degree/Specialization are stream-scoped — drop
+                        // them now rather than leaving a stale selection
+                        // from the previous stream.
+                        _degree = null;
+                        _specialization = null;
+                      }),
                     ),
                   ),
+                  if (degreeOptions.isNotEmpty) ...[
+                    const SizedBox(width: AppSpacing.xs),
+                    _MentorFilterChip(
+                      label: degree ?? 'Degree',
+                      active: degree != null,
+                      dropdown: true,
+                      onTap: () => _pickOne(
+                        title: 'Degree',
+                        options: degreeOptions,
+                        selected: degree,
+                        onPick: (v) => setState(() {
+                          _degree = v;
+                          _specialization = null;
+                        }),
+                      ),
+                    ),
+                  ],
+                  if (showSpecialization) ...[
+                    const SizedBox(width: AppSpacing.xs),
+                    _MentorFilterChip(
+                      label: specialization ?? 'Specialization',
+                      active: specialization != null,
+                      dropdown: true,
+                      onTap: () => _pickOne(
+                        title: 'Specialization',
+                        options: kMedicalSpecializations,
+                        selected: specialization,
+                        onPick: (v) => setState(() => _specialization = v),
+                      ),
+                    ),
+                  ],
                   const SizedBox(width: AppSpacing.xs),
                   _MentorFilterChip(
                     label: _language ?? 'Language',
@@ -284,7 +368,17 @@ class _MentorListScreenState extends ConsumerState<MentorListScreen> {
                       }
                       if (_availableOnly && !m.isAvailable) return false;
                       if (_topRated && (m.rating ?? 0) < 4.0) return false;
-                      if (_stream != null && m.stream != _stream) return false;
+                      if (effectiveStream != null &&
+                          m.stream != effectiveStream) {
+                        return false;
+                      }
+                      if (degree != null && m.qualification != degree) {
+                        return false;
+                      }
+                      if (specialization != null &&
+                          m.specialization != specialization) {
+                        return false;
+                      }
                       if (_language != null &&
                           !m.languages.contains(_language)) {
                         return false;
@@ -340,7 +434,10 @@ class MentorCard extends ConsumerWidget {
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           AppAvatar(
-              name: mentor.displayName, size: 52, avatarUrl: mentor.avatarUrl),
+            name: mentor.displayName,
+            size: 52,
+            avatarUrl: mentor.avatarUrl,
+          ),
           const SizedBox(width: AppSpacing.md),
           Expanded(
             child: Column(
@@ -361,12 +458,18 @@ class MentorCard extends ConsumerWidget {
                     ),
                     const SizedBox(width: 4),
                     if (mentor.isVerified) ...[
-                      const Icon(Icons.verified_rounded,
-                          size: 16, color: AppColors.verified),
+                      const Icon(
+                        Icons.verified_rounded,
+                        size: 16,
+                        color: AppColors.verified,
+                      ),
                       const SizedBox(width: 4),
                     ],
-                    const Icon(Icons.chevron_right_rounded,
-                        size: 16, color: AppColors.textMuted),
+                    const Icon(
+                      Icons.chevron_right_rounded,
+                      size: 16,
+                      color: AppColors.textMuted,
+                    ),
                   ],
                 ),
                 if (mentor.university != null)
@@ -386,11 +489,16 @@ class MentorCard extends ConsumerWidget {
                   child: Row(
                     children: [
                       CallAvailabilityChip(
-                          isAvailable: mentor.isAvailable, compact: true),
+                        isAvailable: mentor.isAvailable,
+                        compact: true,
+                      ),
                       if (mentor.rating != null) ...[
                         const SizedBox(width: 6),
-                        const Icon(Icons.star_rounded,
-                            size: 14, color: AppColors.warning),
+                        const Icon(
+                          Icons.star_rounded,
+                          size: 14,
+                          color: AppColors.warning,
+                        ),
                         const SizedBox(width: 2),
                         Text(
                           '${mentor.rating!.toStringAsFixed(1)} (${mentor.reviewCount})',
@@ -499,4 +607,3 @@ class _SaveMentorButton extends ConsumerWidget {
     );
   }
 }
-

@@ -35,6 +35,15 @@ export interface MentorResponse {
    * primary attribute aspirants filter/search mentors by, now that the
    * separate guidance-area step is gone from the mentor wizard. */
   stream: string | null;
+  /** The mentor onboarding wizard's "Degree" step answer (e.g. "MBBS",
+   * "B.Tech") — stored on `UserProfile.qualification`, same column an
+   * aspirant's own qualification uses (dual-purpose, same pattern as
+   * `stream`/`specialty`). Powers the Mentors-tab Degree filter. */
+  qualification: string | null;
+  /** Medical-stream-only degree specialization (e.g. "Paediatrics" for an
+   * MD/MS mentor) — null for MBBS and every non-Medical stream. Powers the
+   * Mentors-tab Specialization filter. */
+  specialization: string | null;
   bio: string | null;
   languages: string[];
   yearOfStudy: number | null;
@@ -86,6 +95,8 @@ export function toMentorResponse(
     availableDays: profile?.availableDays ?? [],
     specialty: profile?.specialty ?? null,
     stream: profile?.stream ?? null,
+    qualification: profile?.qualification ?? null,
+    specialization: profile?.specialization ?? null,
     bio: profile?.bio ?? null,
     languages: profile?.languages ?? [],
     yearOfStudy: profile?.yearOfStudy ?? null,
