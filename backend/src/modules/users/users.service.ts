@@ -97,26 +97,83 @@ export class UsersService {
       },
     });
 
-    // Give every new user an illustrated avatar immediately, so nobody
-    // ever sees a blank or initials placeholder. Deliberately non-fatal:
-    // avatar rendering hits Supabase Storage, and a storage blip must
-    // never block someone from signing in. They just get no avatar until
-    // they open the customiser.
+    await this.generateAvatarBestEffort(user.id);
+
+    return { user, isNewUser: true };
+  }
+
+  /** Give every new user an illustrated avatar immediately, so nobody ever
+   * sees a blank or initials placeholder. Deliberately non-fatal: avatar
+   * rendering hits Supabase Storage, and a storage blip must never block
+   * someone from signing in — they just get no avatar until they open the
+   * customiser. Shared by every account-creation path (OTP signup, and
+   * provisionAccountFromLead below). */
+  private async generateAvatarBestEffort(userId: string): Promise<void> {
     try {
       const config = this.avatarService.randomConfig();
-      await this.avatarService.renderAndStore(user.id, config);
+      await this.avatarService.renderAndStore(userId, config);
       await this.prisma.userProfile.update({
-        where: { userId: user.id },
+        where: { userId },
         data: { avatarKey: JSON.stringify(config) },
       });
     } catch (err) {
       // Non-fatal, but must not be invisible: a persistently failing
       // renderer would silently leave every new user without an avatar.
       this.logger.error(
-        `Failed to generate avatar for new user ${user.id}`,
+        `Failed to generate avatar for new user ${userId}`,
         err instanceof Error ? err.stack : String(err),
       );
     }
+  }
+
+  /**
+   * Creates a real account from a website enrollment-lead submission (see
+   * EnrollmentsService), so verifying OTP on the same phone later
+   * (AuthService.verifyOtp -> findOrCreateByPhoneHash, same phoneHash
+   * derivation) logs straight into an already fully set-up account instead
+   * of a blank one that still needs the onboarding wizard.
+   *
+   * Deliberately conservative: only ever CREATES a brand-new account. If a
+   * User already exists for this phoneHash — they already have a real app
+   * account, or an earlier lead submission already provisioned one — this
+   * is a no-op that just returns the existing user, so a web-form
+   * resubmission (or someone re-registering with a phone number that's
+   * already a real, possibly-since-changed account) can never clobber real
+   * account data.
+   */
+  async provisionAccountFromLead(params: {
+    phoneHash: string;
+    role: UserRole;
+    displayName?: string;
+    realName?: string;
+    profile: Prisma.UserProfileUncheckedCreateWithoutUserInput;
+  }): Promise<{ user: User; isNewUser: boolean }> {
+    const existing = await this.prisma.user.findUnique({
+      where: { phoneHash: params.phoneHash },
+    });
+    if (existing) {
+      return { user: existing, isNewUser: false };
+    }
+
+    const user = await this.prisma.user.create({
+      data: {
+        phoneHash: params.phoneHash,
+        displayName: params.displayName?.trim() || generatePseudonym(),
+        role: params.role,
+        lastActiveAt: new Date(),
+        profile: {
+          create: {
+            ...params.profile,
+            ...(params.realName?.trim() && {
+              realNameEncrypted: encryptRealName(params.realName.trim()),
+            }),
+          },
+        },
+        wallet: { create: {} },
+      },
+    });
+
+    await this.generateAvatarBestEffort(user.id);
 
     return { user, isNewUser: true };
   }
