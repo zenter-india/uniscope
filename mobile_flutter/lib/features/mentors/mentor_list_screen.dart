@@ -108,8 +108,6 @@ class _MentorListScreenState extends ConsumerState<MentorListScreen> {
   // by — their own profile.stream from onboarding, same deferred-default
   // pattern as the Colleges tab's Stream pill.
   bool _streamTouched = false;
-  String? _degree;
-  String? _specialization;
   String? _language;
   bool _availableOnly = false;
   bool _topRated = false;
@@ -194,17 +192,6 @@ class _MentorListScreenState extends ConsumerState<MentorListScreen> {
               ? myStream
               : null);
 
-    // Degree cascades from Stream (mirrors the Colleges tab); Specialization
-    // only ever applies to a non-MBBS Medical degree, matching the mentor
-    // onboarding wizard's own _needsSpecialization rule.
-    final degreeOptions = effectiveStream != null
-        ? degreesForStream(effectiveStream)
-        : const <String>[];
-    final degree = degreeOptions.contains(_degree) ? _degree : null;
-    final showSpecialization =
-        effectiveStream == 'Medical' && degree != null && degree != 'MBBS';
-    final specialization = showSpecialization ? _specialization : null;
-
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
@@ -266,45 +253,9 @@ class _MentorListScreenState extends ConsumerState<MentorListScreen> {
                       onPick: (v) => setState(() {
                         _stream = v;
                         _streamTouched = true;
-                        // Degree/Specialization are stream-scoped — drop
-                        // them now rather than leaving a stale selection
-                        // from the previous stream.
-                        _degree = null;
-                        _specialization = null;
                       }),
                     ),
                   ),
-                  if (degreeOptions.isNotEmpty) ...[
-                    const SizedBox(width: AppSpacing.xs),
-                    _MentorFilterChip(
-                      label: degree ?? 'Degree',
-                      active: degree != null,
-                      dropdown: true,
-                      onTap: () => _pickOne(
-                        title: 'Degree',
-                        options: degreeOptions,
-                        selected: degree,
-                        onPick: (v) => setState(() {
-                          _degree = v;
-                          _specialization = null;
-                        }),
-                      ),
-                    ),
-                  ],
-                  if (showSpecialization) ...[
-                    const SizedBox(width: AppSpacing.xs),
-                    _MentorFilterChip(
-                      label: specialization ?? 'Specialization',
-                      active: specialization != null,
-                      dropdown: true,
-                      onTap: () => _pickOne(
-                        title: 'Specialization',
-                        options: kMedicalSpecializations,
-                        selected: specialization,
-                        onPick: (v) => setState(() => _specialization = v),
-                      ),
-                    ),
-                  ],
                   const SizedBox(width: AppSpacing.xs),
                   _MentorFilterChip(
                     label: _language ?? 'Language',
@@ -370,13 +321,6 @@ class _MentorListScreenState extends ConsumerState<MentorListScreen> {
                       if (_topRated && (m.rating ?? 0) < 4.0) return false;
                       if (effectiveStream != null &&
                           m.stream != effectiveStream) {
-                        return false;
-                      }
-                      if (degree != null && m.qualification != degree) {
-                        return false;
-                      }
-                      if (specialization != null &&
-                          m.specialization != specialization) {
                         return false;
                       }
                       if (_language != null &&
