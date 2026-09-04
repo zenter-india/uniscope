@@ -125,7 +125,9 @@ class _TabButton extends StatelessWidget {
           AnimatedContainer(
             duration: const Duration(milliseconds: 220),
             curve: Curves.easeOut,
-            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 5),
+            // Narrower horizontal padding so six tabs (aspirant: + Wallet)
+            // still breathe on a small phone.
+            padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 5),
             decoration: BoxDecoration(
               color: focused ? AppColors.primaryLight : Colors.transparent,
               borderRadius: BorderRadius.circular(AppRadius.full),
@@ -139,6 +141,8 @@ class _TabButton extends StatelessWidget {
           const SizedBox(height: 3),
           Text(
             item.label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
             style: TextStyle(
               fontSize: 11,
               color: color,

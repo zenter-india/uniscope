@@ -9,6 +9,7 @@ import '../../core/network/wishlist_api.dart';
 import '../../core/theme/app_theme.dart';
 import '../../state/auth_controller.dart';
 import '../../widgets/app_widgets.dart';
+import '../profile/profile_options.dart';
 import '../sessions/session_list_screen.dart' show sessionsListProvider;
 
 final mentorsListProvider = FutureProvider.autoDispose<List<Mentor>>(
@@ -87,10 +88,67 @@ class MentorListScreen extends ConsumerStatefulWidget {
 }
 
 class _MentorListScreenState extends ConsumerState<MentorListScreen> {
-  /// Client-side name filter over the already-loaded list — same approach
-  /// as the Colleges tab. `GET /mentors` returns the full set (no name
-  /// query param), so no extra request per keystroke.
+  /// Client-side filters over the already-loaded list — same approach as
+  /// the Colleges tab. `GET /mentors` returns the full set, so filtering
+  /// here means no extra request per keystroke / toggle.
   String _query = '';
+  String? _stream;
+  String? _language;
+  bool _availableOnly = false;
+  bool _topRated = false;
+
+  Future<void> _pickOne({
+    required String title,
+    required List<String> options,
+    required String? selected,
+    required ValueChanged<String?> onPick,
+  }) {
+    return showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      isScrollControlled: true,
+      builder: (sheetContext) => SafeArea(
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            maxHeight: MediaQuery.of(sheetContext).size.height * 0.7,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(
+                    AppSpacing.lg, 0, AppSpacing.lg, AppSpacing.sm),
+                child: Text(title,
+                    style: const TextStyle(
+                        fontSize: AppFont.lg, fontWeight: AppFont.bold)),
+              ),
+              Flexible(
+                child: ListView(
+                  shrinkWrap: true,
+                  children: [
+                    for (final o in ['Any', ...options])
+                      ListTile(
+                        title: Text(o),
+                        trailing: (o == 'Any' ? selected == null : o == selected)
+                            ? const Icon(Icons.check_rounded,
+                                color: AppColors.primary)
+                            : null,
+                        onTap: () {
+                          onPick(o == 'Any' ? null : o);
+                          Navigator.of(sheetContext).pop();
+                        },
+                      ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: AppSpacing.sm),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -101,19 +159,11 @@ class _MentorListScreenState extends ConsumerState<MentorListScreen> {
       backgroundColor: AppColors.background,
       appBar: AppBar(
         title: const Text('Mentors'),
-        // Saved sits before Wallet so Wallet keeps its established
-        // far-right position — deliberately not relocated.
         actions: [
           IconButton(
             onPressed: () => context.push('/mentors/saved'),
             icon: const Icon(Icons.favorite_rounded, color: AppColors.error),
             tooltip: 'Saved mentors',
-          ),
-          IconButton(
-            onPressed: () => context.push('/wallet'),
-            icon: const Icon(Icons.account_balance_wallet_rounded,
-                color: AppColors.primary),
-            tooltip: 'Wallet',
           ),
         ],
       ),
@@ -136,6 +186,54 @@ class _MentorListScreenState extends ConsumerState<MentorListScreen> {
                 ),
               ),
             ),
+            SizedBox(
+              height: 38,
+              child: ListView(
+                scrollDirection: Axis.horizontal,
+                padding:
+                    const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+                children: [
+                  _MentorFilterChip(
+                    label: 'Available now',
+                    active: _availableOnly,
+                    onTap: () =>
+                        setState(() => _availableOnly = !_availableOnly),
+                  ),
+                  const SizedBox(width: AppSpacing.xs),
+                  _MentorFilterChip(
+                    label: '4★ and up',
+                    active: _topRated,
+                    onTap: () => setState(() => _topRated = !_topRated),
+                  ),
+                  const SizedBox(width: AppSpacing.xs),
+                  _MentorFilterChip(
+                    label: _stream ?? 'Stream',
+                    active: _stream != null,
+                    dropdown: true,
+                    onTap: () => _pickOne(
+                      title: 'Field of study',
+                      options: kStreamOptions,
+                      selected: _stream,
+                      onPick: (v) => setState(() => _stream = v),
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.xs),
+                  _MentorFilterChip(
+                    label: _language ?? 'Language',
+                    active: _language != null,
+                    dropdown: true,
+                    onTap: () => _pickOne(
+                      title: 'Speaks',
+                      options: kLanguageOptions,
+                      selected: _language,
+                      onPick: (v) => setState(() => _language = v),
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.md),
+                ],
+              ),
+            ),
+            const SizedBox(height: AppSpacing.sm),
             Expanded(
               child: RefreshIndicator(
                 color: AppColors.primary,
@@ -175,20 +273,28 @@ class _MentorListScreenState extends ConsumerState<MentorListScreen> {
                         ],
                       );
                     }
-                    final filtered = query.isEmpty
-                        ? mentors
-                        : mentors
-                            .where((m) =>
-                                m.displayName.toLowerCase().contains(query))
-                            .toList();
+                    final filtered = mentors.where((m) {
+                      if (query.isNotEmpty &&
+                          !m.displayName.toLowerCase().contains(query)) {
+                        return false;
+                      }
+                      if (_availableOnly && !m.isAvailable) return false;
+                      if (_topRated && (m.rating ?? 0) < 4.0) return false;
+                      if (_stream != null && m.stream != _stream) return false;
+                      if (_language != null &&
+                          !m.languages.contains(_language)) {
+                        return false;
+                      }
+                      return true;
+                    }).toList();
                     if (filtered.isEmpty) {
                       return ListView(
-                        children: [
-                          const SizedBox(height: 120),
+                        children: const [
+                          SizedBox(height: 120),
                           EmptyState(
                             icon: Icons.search_off_rounded,
                             title: 'No mentors found',
-                            message: 'No mentor matches "${_query.trim()}".',
+                            message: 'Try clearing a filter or search.',
                           ),
                         ],
                       );
@@ -302,6 +408,65 @@ class MentorCard extends ConsumerWidget {
           // mentor tapping this would just get a 403.
           if (!isMentor) _SaveMentorButton(mentorId: mentor.id),
         ],
+      ),
+    );
+  }
+}
+
+/// One pill in the Mentors filter row — a plain toggle, or a sheet trigger
+/// (`dropdown: true` adds a chevron). Filled-primary when active.
+class _MentorFilterChip extends StatelessWidget {
+  const _MentorFilterChip({
+    required this.label,
+    required this.active,
+    required this.onTap,
+    this.dropdown = false,
+  });
+
+  final String label;
+  final bool active;
+  final VoidCallback onTap;
+  final bool dropdown;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: active ? AppColors.primary : AppColors.surface,
+      borderRadius: BorderRadius.circular(AppRadius.full),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(AppRadius.full),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(AppRadius.full),
+            border: Border.all(
+              color: active ? AppColors.primary : AppColors.border,
+            ),
+          ),
+          alignment: Alignment.center,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: AppFont.sm,
+                  fontWeight: AppFont.semibold,
+                  color: active
+                      ? AppColors.textInverse
+                      : AppColors.textSecondary,
+                ),
+              ),
+              if (dropdown)
+                Icon(
+                  Icons.keyboard_arrow_down_rounded,
+                  size: 16,
+                  color: active ? AppColors.textInverse : AppColors.textMuted,
+                ),
+            ],
+          ),
+        ),
       ),
     );
   }
