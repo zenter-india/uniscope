@@ -307,6 +307,19 @@ export function MentorForm({ onExit }: { onExit: () => void }) {
   // here and keep the plain free-text field via hasFreeTextSpecialization
   // below.
   const hasStreamWideSpecialization = isDoctorateOrOthersDegree && STREAMS_WITH_COLLEGE_DATA.has(form.stream);
+  // Medical's own Doctorate/Others used to show a static, hand-maintained
+  // MEDICAL_SPECIALIZATIONS list that (despite its name) only ever
+  // reflected MD/MS-shaped specialties -- real DNB/Diploma/DM-MCh
+  // specializations were never in it, so Doctorate effectively showed
+  // "the MD list" only. Per explicit bug report, Medical's Doctorate/
+  // Others now gets the same real, data-driven "union across every
+  // curated degree in the stream" treatment as Engineering/Law/Dental
+  // above, via the same streamWideSpecializations fetch below -- just
+  // triggered separately from hasStreamWideSpecialization (which stays
+  // false for Medical, since Medical's own hasCuratedData/isBrowseDegree
+  // branch below already renders Specialization; this only widens what
+  // that branch's option list is fetched from).
+  const shouldFetchMedicalStreamWideSpecialization = isDoctorateOrOthersDegree && form.stream === "Medical";
   // Mirrors the JSX condition below that renders the plain free-text
   // Specialization field for a STREAMS_WITH_EMPTY_SPECIALIZATION
   // stream+degree with no curated, flat, or stream-wide dataset of its
@@ -370,7 +383,7 @@ export function MentorForm({ onExit }: { onExit: () => void }) {
   const [streamWideSpecializations, setStreamWideSpecializations] = useState<string[]>([]);
 
   useEffect(() => {
-    if (!hasStreamWideSpecialization) {
+    if (!hasStreamWideSpecialization && !shouldFetchMedicalStreamWideSpecialization) {
       // eslint-disable-next-line react-hooks/set-state-in-effect -- resets the list when leaving a stream-wide-specialization degree
       setStreamWideSpecializations([]);
       return;
@@ -389,7 +402,7 @@ export function MentorForm({ onExit }: { onExit: () => void }) {
     return () => {
       cancelled = true;
     };
-  }, [form.stream, hasStreamWideSpecialization]);
+  }, [form.stream, hasStreamWideSpecialization, shouldFetchMedicalStreamWideSpecialization]);
 
   useEffect(() => {
     if (!curatedDegree || isBrowseDegree) return;
@@ -894,7 +907,19 @@ export function MentorForm({ onExit }: { onExit: () => void }) {
                   // it to a single always-merged list.
                   options={
                     isDoctorateOrOthersDegree
-                      ? [...MEDICAL_SPECIALIZATIONS]
+                      ? // Union of the hand-curated MEDICAL_SPECIALIZATIONS
+                        // list with the real, data-driven union across every
+                        // one of Medical's curated degrees (MD/MS, DNB,
+                        // Diploma, DM/MCh -- see
+                        // shouldFetchMedicalStreamWideSpecialization above).
+                        // Fixes a real bug: MEDICAL_SPECIALIZATIONS alone
+                        // only ever reflected MD/MS-shaped specialties, so
+                        // Doctorate/Others effectively showed just "the MD
+                        // list" instead of every medical degree's
+                        // specializations. Merging (not replacing) means the
+                        // field never regresses to fewer options while the
+                        // fetch is still in flight.
+                        Array.from(new Set([...MEDICAL_SPECIALIZATIONS, ...streamWideSpecializations])).sort()
                       : SPECIALIZATION_SUGGESTION_STREAMS.has(form.stream) && form.specialization.trim()
                         ? Array.from(new Set([...browseSpecializations, ...allSpecializationsForDegree])).sort()
                         : browseSpecializations.length > 0

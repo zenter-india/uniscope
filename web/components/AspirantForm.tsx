@@ -130,6 +130,14 @@ export function AspirantForm({ onExit }: { onExit: () => void }) {
   // below, same mechanism as MentorForm's own hasStreamWideSpecialization
   // for the same case).
   const hasStreamWideSpecialization = isDoctorateOrOthersQualification && STREAMS_WITH_COLLEGE_DATA.has(form.stream);
+  // Same real-bug fix as MentorForm.tsx's own shouldFetchMedicalStreamWideSpecialization:
+  // Medical's Doctorate/Others used to show only the static
+  // MEDICAL_SPECIALIZATIONS list, which despite its name only ever
+  // reflected MD/MS-shaped specialties -- not DNB/Diploma/DM-MCh. This
+  // triggers the same streamWideSpecializations fetch (below) for
+  // Medical too, so the field can merge in the real, data-driven union
+  // across every one of Medical's curated degrees.
+  const shouldFetchMedicalStreamWideSpecialization = isDoctorateOrOthersQualification && form.stream === "Medical";
 
   const [allSpecializationsForDegree, setAllSpecializationsForDegree] = useState<string[]>([]);
   useEffect(() => {
@@ -155,7 +163,7 @@ export function AspirantForm({ onExit }: { onExit: () => void }) {
 
   const [streamWideSpecializations, setStreamWideSpecializations] = useState<string[]>([]);
   useEffect(() => {
-    if (!hasStreamWideSpecialization) {
+    if (!hasStreamWideSpecialization && !shouldFetchMedicalStreamWideSpecialization) {
       // eslint-disable-next-line react-hooks/set-state-in-effect -- resets the list when leaving a stream-wide-specialization qualification
       setStreamWideSpecializations([]);
       return;
@@ -174,7 +182,7 @@ export function AspirantForm({ onExit }: { onExit: () => void }) {
     return () => {
       cancelled = true;
     };
-  }, [form.stream, hasStreamWideSpecialization]);
+  }, [form.stream, hasStreamWideSpecialization, shouldFetchMedicalStreamWideSpecialization]);
 
   function validateStep(): string | null {
     if (wizard.step === 1) {
@@ -539,13 +547,19 @@ export function AspirantForm({ onExit }: { onExit: () => void }) {
           {showSpecialization && (
             <Field label="Specialization">
               {isDoctorateOrOthersQualification && form.stream === "Medical" ? (
-                // Same static full list Medical's own Doctorate/Others use
-                // on the mentor form -- MD/MS-scoped data doesn't apply to
-                // Doctorate/Others, so this hand-curated list stands in as
-                // "every specialization" for that case.
+                // Union of the hand-curated MEDICAL_SPECIALIZATIONS list
+                // with the real, data-driven union across every one of
+                // Medical's curated degrees (MD/MS, DNB, Diploma, DM/MCh
+                // -- see shouldFetchMedicalStreamWideSpecialization
+                // above). Fixes a real bug: MEDICAL_SPECIALIZATIONS alone
+                // only ever reflected MD/MS-shaped specialties, so
+                // Doctorate/Others effectively showed just "the MD list"
+                // instead of every medical degree's specializations.
+                // Merging (not replacing) means the field never regresses
+                // to fewer options while the fetch is still in flight.
                 <SearchableCombobox
                   value={form.specialization}
-                  options={[...MEDICAL_SPECIALIZATIONS]}
+                  options={Array.from(new Set([...MEDICAL_SPECIALIZATIONS, ...streamWideSpecializations])).sort()}
                   placeholder="Select or type to search…"
                   onChange={(v) => set("specialization", v)}
                 />
