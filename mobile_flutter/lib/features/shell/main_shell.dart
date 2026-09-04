@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../core/theme/app_theme.dart';
 import '../../state/auth_controller.dart';
 import '../sessions/active_session_dock.dart';
+import '../sessions/call_request_watcher.dart';
 
 /// Bottom navigation shell — tab set is role-dependent (see app_router.dart),
 /// active tab gets a soft pill highlight.
@@ -41,6 +42,10 @@ class MainShell extends StatelessWidget {
       bottomNavigationBar: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
+          // Polls for an outstanding call and (aspirant side) jumps into
+          // /call/:id when the mentor accepts — the stand-in for a real
+          // incoming-call push. Renders nothing.
+          const CallRequestWatcher(),
           Consumer(
             builder: (context, ref, _) {
               final isMentor =
