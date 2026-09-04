@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:agora_rtc_engine/agora_rtc_engine.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -12,9 +13,12 @@ import '../../core/theme/app_theme.dart';
 import '../../state/auth_controller.dart';
 import '../../widgets/app_widgets.dart';
 
-/// Hand-rolled native channel — see MainActivity.kt for why this bypasses
-/// the permission_handler plugin.
+/// Hand-rolled native channels — see MainActivity.kt for why these bypass
+/// the permission_handler plugin. `uniscope/call` drives the Android
+/// foreground service that keeps the call alive when backgrounded (see
+/// CallForegroundService.kt) and the keep-screen-awake flag.
 const _permissionsChannel = MethodChannel('uniscope/permissions');
+const _callChannel = MethodChannel('uniscope/call');
 
 enum _Phase {
   requestingPermission,
@@ -90,9 +94,18 @@ class _CallScreenState extends ConsumerState<CallScreen> {
         DateTime.now().toUtc().difference(DateTime.parse(startedAt).toUtc());
   }
 
+  bool _callServiceRunning = false;
+
   @override
   void initState() {
     super.initState();
+    // The notification's "End call" action routes back through MainActivity,
+    // which calls this method on the channel.
+    _callChannel.setMethodCallHandler((call) async {
+      if (call.method == 'endCall' && mounted && _phase == _Phase.active) {
+        _endCall();
+      }
+    });
     WidgetsBinding.instance.addPostFrameCallback((_) => _start());
   }
 
@@ -103,7 +116,39 @@ class _CallScreenState extends ConsumerState<CallScreen> {
     _noAnswerTimer?.cancel();
     _engine?.leaveChannel();
     _engine?.release();
+    _stopCallService();
+    _callChannel.setMethodCallHandler(null);
     super.dispose();
+  }
+
+  /// Foreground service keeps Agora's audio + the call timer alive while the
+  /// app is backgrounded, and shows the ongoing-call notification. No-op on
+  /// web (native-only) and if already started.
+  Future<void> _startCallService() async {
+    if (kIsWeb || _callServiceRunning) return;
+    final startedAt = _session?.startedAt;
+    _callServiceRunning = true;
+    try {
+      await _callChannel.invokeMethod('startCallService', {
+        'peer': _peerName,
+        'startedAtMillis': startedAt != null
+            ? DateTime.parse(startedAt).millisecondsSinceEpoch
+            : DateTime.now().millisecondsSinceEpoch,
+      });
+      await _callChannel.invokeMethod('keepScreenOn', true);
+    } catch (_) {
+      // Native side missing (web, or an old build) — the call still works,
+      // it just won't survive backgrounding.
+    }
+  }
+
+  Future<void> _stopCallService() async {
+    if (kIsWeb || !_callServiceRunning) return;
+    _callServiceRunning = false;
+    try {
+      await _callChannel.invokeMethod('keepScreenOn', false);
+      await _callChannel.invokeMethod('stopCallService');
+    } catch (_) {}
   }
 
   Future<void> _start() async {
@@ -120,6 +165,12 @@ class _CallScreenState extends ConsumerState<CallScreen> {
       setState(() => _phase = _Phase.permissionDenied);
       return;
     }
+
+    // Best-effort — needed on Android 13+ for the ongoing-call notification
+    // to be visible. Never blocks the call.
+    try {
+      await _permissionsChannel.invokeMethod('requestNotifications');
+    } catch (_) {}
 
     try {
       final api = ref.read(sessionsApiProvider);
@@ -282,6 +333,7 @@ class _CallScreenState extends ConsumerState<CallScreen> {
       _noAnswerTimer?.cancel();
       _noAnswerTimer = null;
       if (_phase != _Phase.active) {
+        _startCallService();
         setState(() => _phase = _Phase.active);
         _tickTimer ??= Timer.periodic(
           const Duration(seconds: 1),
@@ -416,6 +468,7 @@ class _CallScreenState extends ConsumerState<CallScreen> {
     _pollTimer?.cancel();
     _tickTimer?.cancel();
     _engine?.leaveChannel();
+    _stopCallService();
     if (mounted) setState(() => _phase = _Phase.ended);
   }
 
