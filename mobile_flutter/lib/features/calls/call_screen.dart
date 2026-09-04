@@ -434,7 +434,28 @@ class _CallScreenState extends ConsumerState<CallScreen> {
           _phase == _Phase.permissionDenied,
       child: Scaffold(
         backgroundColor: AppColors.primaryDark,
-        body: SafeArea(child: _buildBody(context)),
+        body: DecoratedBox(
+          // A soft glow high on the screen (behind the avatar) over a
+          // top-to-bottom dark-green fade — gives the call surface some
+          // depth instead of a flat fill.
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [Color(0xFF0C5B46), Color(0xFF063C33)],
+            ),
+          ),
+          child: DecoratedBox(
+            decoration: const BoxDecoration(
+              gradient: RadialGradient(
+                center: Alignment(0, -0.55),
+                radius: 0.9,
+                colors: [Color(0x66239E75), Color(0x00239E75)],
+              ),
+            ),
+            child: SafeArea(child: _buildBody(context)),
+          ),
+        ),
       ),
     );
   }
@@ -583,11 +604,23 @@ class _CallPeerHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    Widget avatar = AppAvatar(
-      name: name,
-      avatarUrl: avatarUrl,
-      size: 104,
-      solid: true,
+    Widget avatar = Container(
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.35),
+            blurRadius: 30,
+            offset: const Offset(0, 12),
+          ),
+        ],
+      ),
+      child: AppAvatar(
+        name: name,
+        avatarUrl: avatarUrl,
+        size: 104,
+        solid: true,
+      ),
     );
     if (pulsing) {
       avatar = Container(
