@@ -78,10 +78,9 @@ class Session {
   final int? callSlotMinutes;
   final String? aspirantJoinedAt;
   final String? mentorJoinedAt;
-  // Not yet sent by the backend (GET /sessions has no such field on its
-  // response projection today) -- defaults to false so the "Request a call"
-  // icon reads as not-yet-confirmed-available rather than falsely green
-  // until the backend actually adds this field.
+  /// Expiry-aware "can this mentor be booked for a call right now" — the
+  /// backend runs the same isCallAvailable() gate every other surface uses
+  /// (SessionResponse.mentorIsAvailable). Defaults false if absent.
   final bool mentorIsAvailable;
 
   factory Session.fromJson(Map<String, dynamic> json) => Session(

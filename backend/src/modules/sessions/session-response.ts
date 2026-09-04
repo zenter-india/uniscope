@@ -1,9 +1,13 @@
 import { Session } from '@prisma/client';
 
+import { isCallAvailable } from '../mentors/availability.js';
+
 /** Reusable Prisma `include` for fetching the display names + avatar source
  * fields needed to render "who is this session/chat with" (including their
  * avatar) in the client — pass this to any query whose result feeds
- * toSessionResponse. */
+ * toSessionResponse. The mentor side additionally pulls the two
+ * availability columns isCallAvailable() reads, so every session response
+ * can carry an expiry-aware mentorIsAvailable (see toSessionResponse). */
 export const SESSION_WITH_NAMES_INCLUDE = {
   aspirant: {
     select: {
@@ -14,7 +18,14 @@ export const SESSION_WITH_NAMES_INCLUDE = {
   mentor: {
     select: {
       displayName: true,
-      profile: { select: { avatarKey: true, updatedAt: true } },
+      profile: {
+        select: {
+          avatarKey: true,
+          updatedAt: true,
+          isMentorAvailable: true,
+          availabilitySetAt: true,
+        },
+      },
     },
   },
 } as const;
@@ -24,9 +35,21 @@ type SessionParty = {
   profile: { avatarKey: string | null; updatedAt: Date } | null;
 };
 
+type MentorSessionParty = {
+  displayName: string;
+  profile:
+    | {
+        avatarKey: string | null;
+        updatedAt: Date;
+        isMentorAvailable: boolean;
+        availabilitySetAt: Date | null;
+      }
+    | null;
+};
+
 type SessionWithNames = Session & {
   aspirant: SessionParty;
-  mentor: SessionParty;
+  mentor: MentorSessionParty;
 };
 
 /** Resolves a party's avatar URL — injected by the caller (SessionsService
@@ -62,6 +85,12 @@ export interface SessionResponse {
   aspirantJoinedAt: Date | null;
   mentorJoinedAt: Date | null;
   createdAt: Date;
+  /** Expiry-aware "can this mentor be booked for a call right now" — the
+   * same isCallAvailable() gate every other surface uses (mentor list,
+   * mentor detail, the mentor's own profile switch). Lets the aspirant's
+   * Sessions list show a live call-availability state per mentor without a
+   * second request. */
+  mentorIsAvailable: boolean;
 }
 
 export function toSessionResponse(
@@ -102,5 +131,6 @@ export function toSessionResponse(
     aspirantJoinedAt: session.aspirantJoinedAt,
     mentorJoinedAt: session.mentorJoinedAt,
     createdAt: session.createdAt,
+    mentorIsAvailable: isCallAvailable(session.mentor.profile),
   };
 }
