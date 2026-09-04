@@ -67,10 +67,9 @@ const _aspirantTabs = <TabItem>[
 
 const _mentorTabs = <TabItem>[
   TabItem('Home', Icons.home_outlined, Icons.home_rounded),
+  TabItem('Discover', Icons.explore_outlined, Icons.explore_rounded),
   TabItem('Sessions', Icons.calendar_today_outlined, Icons.calendar_today_rounded),
   TabItem('Dashboard', Icons.dashboard_outlined, Icons.dashboard_rounded),
-  TabItem('Earnings', Icons.account_balance_wallet_outlined,
-      Icons.account_balance_wallet_rounded),
   TabItem('Profile', Icons.person_outline_rounded, Icons.person_rounded),
 ];
 
@@ -160,6 +159,37 @@ List<StatefulShellBranch> _buildMentorBranches() => [
       StatefulShellBranch(
         routes: [
           GoRoute(
+            path: '/colleges',
+            builder: (_, __) => const UniversityListScreen(),
+            routes: [
+              GoRoute(
+                path: 'detail',
+                builder: (_, state) {
+                  final a = state.extra as Map<String, dynamic>? ?? const {};
+                  return UniversityDetailScreen(
+                    universitySlug: a['universitySlug'] as String? ?? '',
+                    universityName: a['universityName'] as String? ?? '',
+                  );
+                },
+              ),
+              GoRoute(path: 'saved', builder: (_, __) => const SavedCollegesScreen()),
+              GoRoute(
+                path: 'reviews',
+                builder: (_, state) {
+                  final a = state.extra as Map<String, dynamic>? ?? const {};
+                  return ReviewBreakdownScreen(
+                    universityId: a['universityId'] as String? ?? '',
+                    universityName: a['universityName'] as String? ?? '',
+                  );
+                },
+              ),
+            ],
+          ),
+        ],
+      ),
+      StatefulShellBranch(
+        routes: [
+          GoRoute(
             path: '/chats',
             builder: (_, __) => const SessionListScreen(),
             routes: [
@@ -177,11 +207,18 @@ List<StatefulShellBranch> _buildMentorBranches() => [
       ),
       StatefulShellBranch(
         routes: [
-          GoRoute(path: '/dashboard', builder: (_, __) => const MentorDashboardScreen()),
+          GoRoute(
+            path: '/dashboard',
+            builder: (_, __) => const MentorDashboardScreen(),
+            // Wallet is no longer its own bottom-nav tab for mentors (see
+            // the Dashboard's wallet card) — pushed from there instead,
+            // nested here rather than top-level to avoid colliding with
+            // the aspirant-only top-level '/wallet' route below.
+            routes: [
+              GoRoute(path: 'wallet', builder: (_, __) => const WalletScreen()),
+            ],
+          ),
         ],
-      ),
-      StatefulShellBranch(
-        routes: [GoRoute(path: '/wallet', builder: (_, __) => const WalletScreen())],
       ),
       StatefulShellBranch(routes: [_profileRoute]),
     ];
@@ -310,15 +347,16 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
 
       // ─── Wallet (aspirant only — pushed from the Mentors tab's wallet
-      // icon or the Profile menu; Mentor's own "Earnings" tab already owns
-      // the '/wallet' path as a bottom-nav branch, so this would collide). ──
+      // icon or the Profile menu; a mentor reaches their wallet via the
+      // Dashboard's wallet card instead, at the nested '/dashboard/wallet'
+      // path, so this top-level one is free for the aspirant flow alone). ──
       if (!isMentor)
         GoRoute(path: '/wallet', builder: (_, __) => const WalletScreen()),
 
       // ─── Main tabs (StatefulShellRoute keeps the bottom bar) ─────
       // Branch order must exactly match the tab list passed to MainShell.
       // Aspirant: Home | Discover | Mentors | Messages | Profile
-      // Mentor:   Home | Sessions | Dashboard | Earnings | Profile
+      // Mentor:   Home | Discover | Sessions | Dashboard | Profile
       // Fully separate branch lists (rather than one shared list with
       // conditionals) since the two roles' tab orders and screen counts
       // diverge too much to share cleanly.

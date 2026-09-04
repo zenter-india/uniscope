@@ -3,30 +3,44 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/network/mentors_api.dart';
+import '../../core/network/notifications_api.dart';
+import '../../core/network/payouts_api.dart';
 import '../../core/theme/app_theme.dart';
 import '../../widgets/app_widgets.dart';
 import '../profile/profile_home_screen.dart' show MentorAvailabilityCard;
+import '../wallet/wallet_screen.dart' show walletBalanceProvider, mentorPayoutsProvider;
 
 final mentorDashboardStatsProvider =
     FutureProvider.autoDispose<MentorDashboardStats>((ref) {
       return ref.watch(mentorsApiProvider).getDashboardStats();
     });
 
-/// Mentor's Dashboard tab — earnings summary + activity analytics, distinct
-/// from the lighter Home landing tab. Matches the reference design: a
-/// gradient earnings card with an inline Withdraw shortcut, a 2x2 stat grid,
-/// and a recent-sessions list.
-///
-/// One honest substitution from the reference: it shows a "Response rate"
-/// tile, which isn't a metric this app tracks anywhere (no accept/decline
-/// timing is recorded) — rather than fabricate a number, that tile shows
-/// Reviews count instead, which is real.
+/// Latest few notifications, reused as the Dashboard's "Recent activity"
+/// feed — this is the same real data the Notifications screen shows, not a
+/// separate concept, just truncated to the first page here.
+final mentorRecentActivityProvider =
+    FutureProvider.autoDispose<List<AppNotification>>((ref) {
+      return ref.watch(notificationsApiProvider).list();
+    });
+
+const _recentActivityLimit = 5;
+const _payoutRequestsLimit = 5;
+
+/// Mentor's Dashboard tab — wallet summary, payout requests, and recent
+/// activity. Deliberately no vanity stat grid (total sessions/rating/
+/// reviews/minutes were removed — the client wanted this screen focused on
+/// money and what's actually happening, not a scoreboard) and no earnings
+/// figure (that lived on the old "Earnings" tab, which this screen's wallet
+/// card now replaces — see the Discover-tab change in app_router.dart for
+/// the other half of that swap).
 class MentorDashboardScreen extends ConsumerWidget {
   const MentorDashboardScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final statsAsync = ref.watch(mentorDashboardStatsProvider);
+    final walletAsync = ref.watch(walletBalanceProvider);
+    final payoutsAsync = ref.watch(mentorPayoutsProvider);
+    final activityAsync = ref.watch(mentorRecentActivityProvider);
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -39,89 +53,73 @@ class MentorDashboardScreen extends ConsumerWidget {
       ),
       body: RefreshIndicator(
         color: AppColors.primary,
-        onRefresh: () async => ref.invalidate(mentorDashboardStatsProvider),
+        onRefresh: () async {
+          ref.invalidate(walletBalanceProvider);
+          ref.invalidate(mentorPayoutsProvider);
+          ref.invalidate(mentorRecentActivityProvider);
+        },
         child: SingleChildScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
           padding: const EdgeInsets.all(AppSpacing.md),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              statsAsync.when(
+              walletAsync.when(
                 loading: () => const SkeletonCard(),
                 error: (_, __) => const SizedBox.shrink(),
-                data: (stats) => _EarningsCard(stats: stats),
+                data: (wallet) => _WalletCard(balanceRupees: wallet.balanceRupees),
               ),
               const SizedBox(height: AppSpacing.md),
               const MentorAvailabilityCard(),
-              const SizedBox(height: AppSpacing.md),
-              statsAsync.when(
-                loading: () =>
-                    const Column(children: [SkeletonCard(), SkeletonCard()]),
-                error: (_, __) => const SizedBox.shrink(),
-                data: (stats) => Column(
-                  children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: _StatTile(
-                            value: '${stats.totalSessionsCount}',
-                            label: 'Total sessions',
-                            icon: Icons.forum_rounded,
-                          ),
-                        ),
-                        const SizedBox(width: AppSpacing.sm),
-                        Expanded(
-                          child: _StatTile(
-                            value: stats.rating?.toStringAsFixed(1) ?? '—',
-                            label: 'Avg rating',
-                            icon: Icons.star_rounded,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: AppSpacing.sm),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: _StatTile(
-                            value: '${stats.reviewCount}',
-                            label: 'Reviews',
-                            icon: Icons.rate_review_rounded,
-                          ),
-                        ),
-                        const SizedBox(width: AppSpacing.sm),
-                        Expanded(
-                          child: _StatTile(
-                            value: '${stats.totalMinutesConsulted}',
-                            label: 'Minutes',
-                            icon: Icons.timer_outlined,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
               const SizedBox(height: AppSpacing.lg),
+
               SectionHeader(
-                title: 'Recent sessions',
-                onSeeAll: () => context.go('/chats'),
+                title: 'Recent activity',
+                onSeeAll: () => context.push('/notifications'),
               ),
               const SizedBox(height: AppSpacing.sm),
-              statsAsync.when(
+              activityAsync.when(
                 loading: () => const SkeletonCard(),
                 error: (_, __) => const SizedBox.shrink(),
-                data: (stats) => stats.recentSessions.isEmpty
-                    ? const EmptyState(
-                        icon: Icons.event_busy_rounded,
-                        title: 'No sessions yet',
-                        message: 'Completed sessions will show up here.',
-                      )
-                    : Column(
-                        children: stats.recentSessions
-                            .map((s) => _RecentSessionCard(session: s))
-                            .toList(),
-                      ),
+                data: (items) {
+                  final recent = items.take(_recentActivityLimit).toList();
+                  return recent.isEmpty
+                      ? const EmptyState(
+                          icon: Icons.notifications_none_rounded,
+                          title: 'No activity yet',
+                          message: 'Requests, messages, and updates will show up here.',
+                        )
+                      : Column(
+                          children: recent
+                              .map((n) => _RecentActivityCard(notification: n))
+                              .toList(),
+                        );
+                },
+              ),
+              const SizedBox(height: AppSpacing.lg),
+
+              SectionHeader(
+                title: 'Payout requests',
+                onSeeAll: () => context.push('/dashboard/wallet'),
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              payoutsAsync.when(
+                loading: () => const SkeletonCard(),
+                error: (_, __) => const SizedBox.shrink(),
+                data: (payouts) {
+                  final recent = payouts.take(_payoutRequestsLimit).toList();
+                  return recent.isEmpty
+                      ? const EmptyState(
+                          icon: Icons.account_balance_wallet_outlined,
+                          title: 'No payout requests yet',
+                          message: 'Request a payout from your wallet once you\'re above the minimum.',
+                        )
+                      : Column(
+                          children: recent
+                              .map((p) => _PayoutRequestCard(payout: p))
+                              .toList(),
+                        );
+                },
               ),
               const SizedBox(height: AppSpacing.xl),
             ],
@@ -132,9 +130,9 @@ class MentorDashboardScreen extends ConsumerWidget {
   }
 }
 
-class _EarningsCard extends StatelessWidget {
-  const _EarningsCard({required this.stats});
-  final MentorDashboardStats stats;
+class _WalletCard extends StatelessWidget {
+  const _WalletCard({required this.balanceRupees});
+  final double balanceRupees;
 
   @override
   Widget build(BuildContext context) {
@@ -152,12 +150,12 @@ class _EarningsCard extends StatelessWidget {
           Row(
             children: [
               const Text(
-                "This month's earnings",
+                'Wallet balance',
                 style: TextStyle(color: Colors.white70, fontSize: AppFont.sm),
               ),
               const Spacer(),
               Icon(
-                Icons.currency_rupee_rounded,
+                Icons.account_balance_wallet_rounded,
                 color: Colors.white.withValues(alpha: 0.5),
                 size: 20,
               ),
@@ -168,7 +166,7 @@ class _EarningsCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               Text(
-                '₹${stats.monthlyEarningsRupees.toStringAsFixed(0)}',
+                '₹${balanceRupees.toStringAsFixed(0)}',
                 style: const TextStyle(
                   color: Colors.white,
                   fontSize: AppFont.display,
@@ -181,9 +179,9 @@ class _EarningsCard extends StatelessWidget {
                   backgroundColor: Colors.white,
                   foregroundColor: AppColors.primaryDark,
                 ),
-                onPressed: () => context.go('/wallet'),
+                onPressed: () => context.push('/dashboard/wallet'),
                 icon: const Icon(Icons.arrow_forward_rounded, size: 18),
-                label: const Text('Withdraw'),
+                label: const Text('View wallet'),
               ),
             ],
           ),
@@ -193,29 +191,61 @@ class _EarningsCard extends StatelessWidget {
   }
 }
 
-class _StatTile extends StatelessWidget {
-  const _StatTile({
-    required this.value,
-    required this.label,
-    required this.icon,
-  });
-  final String value;
-  final String label;
-  final IconData icon;
+class _RecentActivityCard extends StatelessWidget {
+  const _RecentActivityCard({required this.notification});
+  final AppNotification notification;
+
+  (IconData, Color) get _iconFor {
+    switch (notification.type) {
+      case 'SESSION_REQUEST':
+        return (Icons.calendar_today_rounded, AppColors.primary);
+      case 'SESSION_ACCEPTED':
+        return (Icons.check_circle_rounded, AppColors.success);
+      case 'SESSION_REJECTED':
+        return (Icons.cancel_rounded, AppColors.error);
+      case 'SESSION_ENDED':
+        return (Icons.call_end_rounded, AppColors.textSecondary);
+      case 'MESSAGE':
+        return (Icons.chat_bubble_rounded, AppColors.info);
+      case 'REVIEW':
+        return (Icons.star_rounded, AppColors.warning);
+      case 'VERIFICATION':
+        return (Icons.verified_user_rounded, AppColors.primary);
+      default:
+        return (Icons.notifications_rounded, AppColors.textMuted);
+    }
+  }
+
+  String get _timeAgo {
+    final dt = DateTime.tryParse(notification.createdAt);
+    if (dt == null) return '';
+    final diff = DateTime.now().difference(dt);
+    if (diff.inMinutes < 1) return 'just now';
+    if (diff.inMinutes < 60) return '${diff.inMinutes}m ago';
+    if (diff.inHours < 24) return '${diff.inHours}h ago';
+    return '${diff.inDays}d ago';
+  }
 
   @override
   Widget build(BuildContext context) {
+    final (icon, color) = _iconFor;
+
     return AppCard(
+      margin: const EdgeInsets.only(bottom: AppSpacing.sm),
+      color: notification.isRead ? AppColors.surface : AppColors.primaryLight,
+      onTap: notification.sessionId != null
+          ? () => context.push(
+                '/chats/room',
+                extra: {'sessionId': notification.sessionId},
+              )
+          : null,
       child: Row(
         children: [
           Container(
-            width: 40,
-            height: 40,
-            decoration: const BoxDecoration(
-              color: AppColors.primaryLight,
-              shape: BoxShape.circle,
-            ),
-            child: Icon(icon, size: 18, color: AppColors.primary),
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(color: color.withValues(alpha: 0.12), shape: BoxShape.circle),
+            child: Icon(icon, size: 16, color: color),
           ),
           const SizedBox(width: AppSpacing.sm),
           Expanded(
@@ -223,21 +253,22 @@ class _StatTile extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  value,
-                  style: const TextStyle(
-                    fontSize: AppFont.lg,
-                    fontWeight: AppFont.extraBold,
-                  ),
+                  notification.title,
+                  style: const TextStyle(fontWeight: AppFont.bold, fontSize: AppFont.sm),
                 ),
-                Text(
-                  label,
-                  style: const TextStyle(
-                    fontSize: AppFont.xs,
-                    color: AppColors.textSecondary,
+                if (notification.body != null)
+                  Text(
+                    notification.body!,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(fontSize: AppFont.xs, color: AppColors.textSecondary),
                   ),
-                ),
               ],
             ),
+          ),
+          Text(
+            _timeAgo,
+            style: const TextStyle(fontSize: AppFont.xs, color: AppColors.textMuted),
           ),
         ],
       ),
@@ -245,66 +276,56 @@ class _StatTile extends StatelessWidget {
   }
 }
 
-class _RecentSessionCard extends StatelessWidget {
-  const _RecentSessionCard({required this.session});
-  final MentorDashboardRecentSession session;
+class _PayoutRequestCard extends StatelessWidget {
+  const _PayoutRequestCard({required this.payout});
+  final PayoutRequest payout;
+
+  Color get _statusColor {
+    switch (payout.status) {
+      case 'COMPLETED':
+        return AppColors.success;
+      case 'FAILED':
+        return AppColors.error;
+      default:
+        return AppColors.warning;
+    }
+  }
+
+  String get _statusLabel {
+    if (payout.isOverdue) return '${payout.status} (overdue)';
+    return payout.status;
+  }
 
   @override
   Widget build(BuildContext context) {
     return AppCard(
       margin: const EdgeInsets.only(bottom: AppSpacing.sm),
-      onTap: () => context.push(
-        '/chats/room',
-        extra: {'sessionId': session.id},
-      ),
+      onTap: () => context.push('/dashboard/wallet'),
       child: Row(
         children: [
-          AppAvatar(name: session.aspirantDisplayName, size: 40),
-          const SizedBox(width: AppSpacing.md),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  session.aspirantDisplayName,
+                  '₹${payout.amountRupees.toStringAsFixed(2)}',
                   style: const TextStyle(
-                    fontSize: AppFont.md,
-                    fontWeight: AppFont.bold,
+                    fontWeight: AppFont.extraBold,
+                    fontSize: AppFont.sm,
                   ),
                 ),
-                Row(
-                  children: [
-                    const Icon(
-                      Icons.access_time_rounded,
-                      size: 12,
+                if (payout.bankReference != null)
+                  Text(
+                    'Ref: ${payout.bankReference}',
+                    style: const TextStyle(
+                      fontSize: AppFont.xs,
                       color: AppColors.textSecondary,
                     ),
-                    const SizedBox(width: 2),
-                    Text(
-                      '${session.billedMinutes} min',
-                      style: const TextStyle(
-                        fontSize: AppFont.xs,
-                        color: AppColors.textSecondary,
-                      ),
-                    ),
-                  ],
-                ),
+                  ),
               ],
             ),
           ),
-          Text(
-            '+₹${session.earnedRupees.toStringAsFixed(0)}',
-            style: const TextStyle(
-              fontSize: AppFont.md,
-              fontWeight: AppFont.bold,
-              color: AppColors.success,
-            ),
-          ),
-          const Icon(
-            Icons.chevron_right_rounded,
-            size: 18,
-            color: AppColors.textMuted,
-          ),
+          StatusChip(label: _statusLabel, color: _statusColor),
         ],
       ),
     );
