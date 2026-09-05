@@ -185,12 +185,10 @@ class HomeScreen extends ConsumerWidget {
                                   child: Text(
                                     'Uniscope',
                                     overflow: TextOverflow.ellipsis,
-                                    style: TextStyle(
+                                    style: const TextStyle(
                                       fontSize: AppFont.xxl,
                                       fontWeight: AppFont.extraBold,
-                                      color: Colors.white.withValues(
-                                        alpha: 0.95,
-                                      ),
+                                      color: AppColors.logoNavy,
                                     ),
                                   ),
                                 ),
@@ -247,7 +245,7 @@ class HomeScreen extends ConsumerWidget {
                                   style: const TextStyle(
                                     fontSize: AppFont.lg,
                                     fontWeight: AppFont.extraBold,
-                                    color: Colors.white,
+                                    color: AppColors.logoNavy,
                                   ),
                                 ),
                                 const SizedBox(height: 2),

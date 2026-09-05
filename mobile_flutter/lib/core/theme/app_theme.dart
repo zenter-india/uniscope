@@ -27,6 +27,11 @@ class AppColors {
   /// against textPrimary, verified before committing.
   static const Color canopyTop = Color(0xFF1C9B78);
 
+  /// The navy from the Uniscope logo mark, sampled from the icon's own
+  /// pixels (#001A46). Used for the "Uniscope" wordmark + greeting on the
+  /// Home canopy, where plain white read as flat against the green.
+  static const Color logoNavy = Color(0xFF001A46);
+
   static const Color accent = Color(0xFFF4A261);
 
   // Neutrals — slate scale (cooler and richer than plain grays).
