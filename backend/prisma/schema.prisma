@@ -579,6 +579,14 @@ model Session {
   /// regardless of whether it was free-tier or wallet-held, so the connect
   /// handler always knows how much to bill/decrement.
   callSlotMinutes    Int?          @map("call_slot_minutes")
+  /// AUDIO_CALL only: the time the aspirant asked to connect, picked at
+  /// booking. Null = "Instant" (connect once the mentor accepts — the
+  /// original flow). A mentor free-window quick-pick or a custom slot
+  /// stores the concrete datetime here. ADVISORY ONLY — nothing is
+  /// reserved, no reminder is scheduled, and the hold / no-show / billing
+  /// logic is unchanged; the mentor just sees it on the request and still
+  /// drives the connect. Bounded to now … now + 4 days at the service layer.
+  requestedFor       DateTime?     @map("requested_for") @db.Timestamptz
   requestedAt        DateTime      @default(now()) @map("requested_at") @db.Timestamptz
   respondedAt        DateTime?     @map("responded_at") @db.Timestamptz
   /// Set only on a server-confirmed connection event — never client-reported.

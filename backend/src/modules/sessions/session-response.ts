@@ -26,6 +26,10 @@ export const SESSION_WITH_NAMES_INCLUDE = {
           updatedAt: true,
           isMentorAvailable: true,
           availabilitySetAt: true,
+          // The mentor's stated free-time windows ("Morning (6 AM - 12 PM)"
+          // etc). Feeds the "When?" quick-picks in the call-request sheet so
+          // the Sessions list can offer them without a second fetch.
+          availableDays: true,
         },
       },
     },
@@ -47,6 +51,7 @@ type MentorSessionParty = {
         updatedAt: Date;
         isMentorAvailable: boolean;
         availabilitySetAt: Date | null;
+        availableDays: string[];
       }
     | null;
 };
@@ -92,6 +97,10 @@ export interface SessionResponse {
   totalCostMinor: number;
   endReason: string | null;
   callSlotMinutes: number | null;
+  /** AUDIO_CALL only: the time the aspirant asked to connect, from the
+   * "When?" step. Null = Instant. Advisory — nothing is reserved; the
+   * mentor sees it on the request and still drives the connect. */
+  requestedFor: Date | null;
   aspirantJoinedAt: Date | null;
   mentorJoinedAt: Date | null;
   createdAt: Date;
@@ -101,6 +110,10 @@ export interface SessionResponse {
    * Sessions list show a live call-availability state per mentor without a
    * second request. */
   mentorIsAvailable: boolean;
+  /** The mentor's stated free-time windows (e.g. ["Morning (6 AM - 12 PM)",
+   * "Evening (4 PM - 8 PM)"]) — surfaced so the call-request sheet's
+   * "When?" step can offer them as quick-picks straight from a session row. */
+  mentorAvailableDays: string[];
 }
 
 export function toSessionResponse(
@@ -140,9 +153,11 @@ export function toSessionResponse(
     totalCostMinor: session.totalCostMinor,
     endReason: session.endReason,
     callSlotMinutes: session.callSlotMinutes,
+    requestedFor: session.requestedFor,
     aspirantJoinedAt: session.aspirantJoinedAt,
     mentorJoinedAt: session.mentorJoinedAt,
     createdAt: session.createdAt,
     mentorIsAvailable: isCallAvailable(session.mentor.profile),
+    mentorAvailableDays: session.mentor.profile?.availableDays ?? [],
   };
 }

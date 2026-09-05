@@ -165,6 +165,28 @@ export class SessionsService {
     const slotSeconds = slotMinutes * 60;
     const slotCostMinor = slotMinutes * MENTOR_RATE_PER_MINUTE_MINOR;
 
+    // "When?" step: Instant → requestedFor stays null (connect once the
+    // mentor accepts, the original flow). A mentor free-window pick or a
+    // custom slot sends a concrete ISO timestamp — advisory only, so all we
+    // do is sanity-bound it (not in the past, not more than 4 days out) and
+    // store it for the mentor to see. No hold/no-show/billing change.
+    let requestedFor: Date | null = null;
+    if (isAudioCall && dto.requestedFor) {
+      const parsed = new Date(dto.requestedFor);
+      const now = Date.now();
+      const maxAheadMs = 4 * 24 * 60 * 60 * 1000;
+      if (
+        Number.isNaN(parsed.getTime()) ||
+        parsed.getTime() < now - 60_000 ||
+        parsed.getTime() > now + maxAheadMs
+      ) {
+        throw new BadRequestException(
+          'requestedFor must be a time between now and 4 days ahead',
+        );
+      }
+      requestedFor = parsed;
+    }
+
     let isFreeSlot = false;
     if (isAudioCall) {
       const profile = await this.prisma.userProfile.findUniqueOrThrow({
@@ -183,6 +205,7 @@ export class SessionsService {
         // decision: chat with any mentor costs nothing, no per-mentor rate).
         ratePerMinuteMinor: isAudioCall ? MENTOR_RATE_PER_MINUTE_MINOR : 0,
         ...(isAudioCall && { callSlotMinutes: slotMinutes }),
+        ...(requestedFor && { requestedFor }),
       },
     });
 
