@@ -363,6 +363,16 @@ class ProfileHomeScreen extends ConsumerWidget {
                             icon: Icons.settings_rounded,
                             label: 'Settings',
                             onTap: () => context.go('/profile/settings'),
+                          ),
+                          // Same support chat the Sessions tab's "Need
+                          // help?" banner opens (SupportChatScreen, lazily
+                          // provisioned per user) — just a second entry
+                          // point, not a separate support system. Available
+                          // to both roles.
+                          _MenuRow(
+                            icon: Icons.support_agent_rounded,
+                            label: 'Need Help?',
+                            onTap: () => context.push('/chats/support'),
                             isLast: true,
                           ),
                         ],

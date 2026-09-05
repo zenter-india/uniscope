@@ -184,17 +184,42 @@ class _SessionChatScreenState extends ConsumerState<SessionChatScreen> {
         ? _session!.mentorAvatarUrl
         : _session!.aspirantAvatarUrl;
     final otherUserId = isAspirant ? _session!.mentorId : _session!.aspirantId;
+    final otherUniqueId = isAspirant
+        ? _session!.mentorUniqueId
+        : _session!.aspirantUniqueId;
 
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
         titleSpacing: 0,
+        // Deliberately a plain, non-tappable header — no navigation to the
+        // counterparty's profile from here. The unique ID (their public
+        // registration number, never the internal DB id) shown under the
+        // name is the only identity signal, for both aspirant and mentor.
         title: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
             AppAvatar(name: otherName, avatarUrl: otherAvatarUrl, size: 32),
             const SizedBox(width: AppSpacing.sm),
-            Expanded(child: Text(otherName, overflow: TextOverflow.ellipsis)),
+            Expanded(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(otherName, overflow: TextOverflow.ellipsis),
+                  if (otherUniqueId != null)
+                    Text(
+                      '@$otherUniqueId',
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: AppFont.xs,
+                        fontWeight: AppFont.regular,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                ],
+              ),
+            ),
           ],
         ),
         actions: [

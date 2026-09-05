@@ -13,9 +13,38 @@ import '../../widgets/app_widgets.dart';
 import '../profile/profile_options.dart';
 import '../sessions/session_list_screen.dart' show sessionsListProvider;
 
-final mentorsListProvider = FutureProvider.autoDispose<List<Mentor>>(
-  (ref) => ref.watch(mentorsApiProvider).list(),
+/// Server-side discovery filters for the Mentors tab. Keyed as a record so
+/// changing any one filter (Stream / Degree / Specialization / Language)
+/// naturally produces a fresh cache entry and a fresh `GET /mentors` call —
+/// the query narrows server-side instead of downloading every mentor and
+/// filtering the list in Flutter.
+typedef MentorListFilters = ({
+  String? stream,
+  String? qualification,
+  String? specialization,
+  String? language,
+});
+
+/// Unfiltered — for callers like the Home tab's "Top Mentors" strip that
+/// just want the plain discovery list, no active filters.
+const kNoMentorFilters = (
+  stream: null,
+  qualification: null,
+  specialization: null,
+  language: null,
 );
+
+final mentorsListProvider = FutureProvider.autoDispose
+    .family<List<Mentor>, MentorListFilters>(
+      (ref, filters) => ref
+          .watch(mentorsApiProvider)
+          .list(
+            stream: filters.stream,
+            qualification: filters.qualification,
+            specialization: filters.specialization,
+            language: filters.language,
+          ),
+    );
 
 final mentorsByUniversityProvider = FutureProvider.autoDispose
     .family<List<Mentor>, String>(
@@ -98,19 +127,58 @@ class MentorListScreen extends ConsumerStatefulWidget {
 }
 
 class _MentorListScreenState extends ConsumerState<MentorListScreen> {
-  /// Client-side filters over the already-loaded list — same approach as
-  /// the Colleges tab. `GET /mentors` returns the full set, so filtering
-  /// here means no extra request per keystroke / toggle.
+  /// Name search and the two toggles stay client-side over whatever page
+  /// the server already returned: rating is a joined/computed value (not a
+  /// raw column) and "available now" is a time-decayed derived flag
+  /// (isCallAvailable), so filtering either server-side would mean
+  /// replicating logic that's deliberately centralized elsewhere. Stream,
+  /// Degree, Specialization and Language are all plain indexed columns —
+  /// those go to the server (see [mentorsListProvider]).
   String _query = '';
+  final _searchController = TextEditingController();
   String? _stream;
   // Whether the aspirant has explicitly touched the Stream pill (including
   // picking "Any"). Until then, Stream defaults to — and actively filters
   // by — their own profile.stream from onboarding, same deferred-default
   // pattern as the Colleges tab's Stream pill.
   bool _streamTouched = false;
+  String? _qualification;
+  String? _specialization;
   String? _language;
   bool _availableOnly = false;
   bool _topRated = false;
+
+  void _setStream(String? value) {
+    setState(() {
+      _stream = value;
+      _streamTouched = true;
+      // A degree/specialization from a different stream no longer applies.
+      _qualification = null;
+      _specialization = null;
+    });
+  }
+
+  bool _hasActiveFilters(String? effectiveStream) =>
+      _query.isNotEmpty ||
+      _availableOnly ||
+      _topRated ||
+      effectiveStream != null ||
+      _qualification != null ||
+      _specialization != null ||
+      _language != null;
+
+  void _clearFilters() {
+    setState(() {
+      _query = '';
+      _stream = null;
+      _streamTouched = true; // "touched + null" reads as an explicit "Any".
+      _qualification = null;
+      _specialization = null;
+      _language = null;
+      _availableOnly = false;
+      _topRated = false;
+    });
+  }
 
   Future<void> _pickOne({
     required String title,
@@ -177,8 +245,13 @@ class _MentorListScreenState extends ConsumerState<MentorListScreen> {
   }
 
   @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final mentorsAsync = ref.watch(mentorsListProvider);
     final query = _query.trim().toLowerCase();
 
     // Same deferred-default pattern as the Colleges tab's Stream pill:
@@ -191,6 +264,25 @@ class _MentorListScreenState extends ConsumerState<MentorListScreen> {
         : (myStream != null && kStreamOptions.contains(myStream)
               ? myStream
               : null);
+
+    // Degree only makes sense once a stream is picked; Specialization only
+    // exists (today) for Medical mentors past the base MBBS degree — same
+    // rule the mentor onboarding wizard itself uses to decide whether to
+    // collect one.
+    final degreeOptions = degreesForStream(effectiveStream);
+    final showSpecialization =
+        effectiveStream == 'Medical' &&
+        _qualification != null &&
+        _qualification != 'MBBS';
+
+    final filters = (
+      stream: effectiveStream,
+      qualification: effectiveStream != null ? _qualification : null,
+      specialization: showSpecialization ? _specialization : null,
+      language: _language,
+    );
+    final mentorsAsync = ref.watch(mentorsListProvider(filters));
+    final hasActiveFilters = _hasActiveFilters(effectiveStream);
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -214,6 +306,7 @@ class _MentorListScreenState extends ConsumerState<MentorListScreen> {
                 vertical: AppSpacing.sm,
               ),
               child: TextField(
+                controller: _searchController,
                 onChanged: (t) => setState(() => _query = t),
                 textInputAction: TextInputAction.search,
                 decoration: const InputDecoration(
@@ -250,12 +343,40 @@ class _MentorListScreenState extends ConsumerState<MentorListScreen> {
                       title: 'Field of study',
                       options: kStreamOptions,
                       selected: effectiveStream,
-                      onPick: (v) => setState(() {
-                        _stream = v;
-                        _streamTouched = true;
-                      }),
+                      onPick: _setStream,
                     ),
                   ),
+                  const SizedBox(width: AppSpacing.xs),
+                  _MentorFilterChip(
+                    label: _qualification ?? 'Degree',
+                    active: _qualification != null,
+                    dropdown: true,
+                    onTap: effectiveStream == null
+                        ? null
+                        : () => _pickOne(
+                            title: 'Degree',
+                            options: degreeOptions,
+                            selected: _qualification,
+                            onPick: (v) => setState(() {
+                              _qualification = v;
+                              _specialization = null;
+                            }),
+                          ),
+                  ),
+                  if (showSpecialization) ...[
+                    const SizedBox(width: AppSpacing.xs),
+                    _MentorFilterChip(
+                      label: _specialization ?? 'Specialization',
+                      active: _specialization != null,
+                      dropdown: true,
+                      onTap: () => _pickOne(
+                        title: 'Specialization',
+                        options: kMedicalSpecializations,
+                        selected: _specialization,
+                        onPick: (v) => setState(() => _specialization = v),
+                      ),
+                    ),
+                  ],
                   const SizedBox(width: AppSpacing.xs),
                   _MentorFilterChip(
                     label: _language ?? 'Language',
@@ -268,6 +389,18 @@ class _MentorListScreenState extends ConsumerState<MentorListScreen> {
                       onPick: (v) => setState(() => _language = v),
                     ),
                   ),
+                  if (hasActiveFilters) ...[
+                    const SizedBox(width: AppSpacing.sm),
+                    Center(
+                      child: TextButton(
+                        onPressed: () {
+                          _searchController.clear();
+                          _clearFilters();
+                        },
+                        child: const Text('Clear filters'),
+                      ),
+                    ),
+                  ],
                   const SizedBox(width: AppSpacing.md),
                 ],
               ),
@@ -276,7 +409,8 @@ class _MentorListScreenState extends ConsumerState<MentorListScreen> {
             Expanded(
               child: RefreshIndicator(
                 color: AppColors.primary,
-                onRefresh: () => ref.refresh(mentorsListProvider.future),
+                onRefresh: () =>
+                    ref.refresh(mentorsListProvider(filters).future),
                 child: mentorsAsync.when(
                   loading: () => ListView(
                     padding: const EdgeInsets.all(AppSpacing.md),
@@ -294,12 +428,13 @@ class _MentorListScreenState extends ConsumerState<MentorListScreen> {
                         title: 'Could not load mentors',
                         message: 'Check your connection and pull to refresh.',
                         actionLabel: 'Retry',
-                        onAction: () => ref.invalidate(mentorsListProvider),
+                        onAction: () =>
+                            ref.invalidate(mentorsListProvider(filters)),
                       ),
                     ],
                   ),
                   data: (mentors) {
-                    if (mentors.isEmpty) {
+                    if (mentors.isEmpty && !hasActiveFilters) {
                       return ListView(
                         children: const [
                           SizedBox(height: 120),
@@ -312,6 +447,12 @@ class _MentorListScreenState extends ConsumerState<MentorListScreen> {
                         ],
                       );
                     }
+                    // Stream/Degree/Specialization/Language are already
+                    // applied server-side (see mentorsListProvider); name
+                    // search and the two rating/availability toggles are
+                    // the only filtering still done here, over whatever
+                    // page the server returned — see the field doc comment
+                    // above for why those two stay client-side.
                     final filtered = mentors.where((m) {
                       if (query.isNotEmpty &&
                           !m.displayName.toLowerCase().contains(query)) {
@@ -319,24 +460,25 @@ class _MentorListScreenState extends ConsumerState<MentorListScreen> {
                       }
                       if (_availableOnly && !m.isAvailable) return false;
                       if (_topRated && (m.rating ?? 0) < 4.0) return false;
-                      if (effectiveStream != null &&
-                          m.stream != effectiveStream) {
-                        return false;
-                      }
-                      if (_language != null &&
-                          !m.languages.contains(_language)) {
-                        return false;
-                      }
                       return true;
                     }).toList();
                     if (filtered.isEmpty) {
                       return ListView(
-                        children: const [
-                          SizedBox(height: 120),
+                        children: [
+                          const SizedBox(height: 120),
                           EmptyState(
                             icon: Icons.search_off_rounded,
                             title: 'No mentors found',
-                            message: 'Try clearing a filter or search.',
+                            message: hasActiveFilters
+                                ? 'No mentors match these filters — try clearing one.'
+                                : 'Try a different search.',
+                            actionLabel: hasActiveFilters ? 'Clear filters' : null,
+                            onAction: hasActiveFilters
+                                ? () {
+                                    _searchController.clear();
+                                    _clearFilters();
+                                  }
+                                : null,
                           ),
                         ],
                       );
@@ -481,46 +623,52 @@ class _MentorFilterChip extends StatelessWidget {
 
   final String label;
   final bool active;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
   final bool dropdown;
 
   @override
   Widget build(BuildContext context) {
+    final disabled = onTap == null;
     return Material(
       color: active ? AppColors.primary : AppColors.surface,
       borderRadius: BorderRadius.circular(AppRadius.full),
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(AppRadius.full),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(AppRadius.full),
-            border: Border.all(
-              color: active ? AppColors.primary : AppColors.border,
-            ),
-          ),
-          alignment: Alignment.center,
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: AppFont.sm,
-                  fontWeight: AppFont.semibold,
-                  color: active
-                      ? AppColors.textInverse
-                      : AppColors.textSecondary,
-                ),
+        child: Opacity(
+          opacity: disabled ? 0.45 : 1,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(AppRadius.full),
+              border: Border.all(
+                color: active ? AppColors.primary : AppColors.border,
               ),
-              if (dropdown)
-                Icon(
-                  Icons.keyboard_arrow_down_rounded,
-                  size: 16,
-                  color: active ? AppColors.textInverse : AppColors.textMuted,
+            ),
+            alignment: Alignment.center,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: AppFont.sm,
+                    fontWeight: AppFont.semibold,
+                    color: active
+                        ? AppColors.textInverse
+                        : AppColors.textSecondary,
+                  ),
                 ),
-            ],
+                if (dropdown)
+                  Icon(
+                    Icons.keyboard_arrow_down_rounded,
+                    size: 16,
+                    color: active
+                        ? AppColors.textInverse
+                        : AppColors.textMuted,
+                  ),
+              ],
+            ),
           ),
         ),
       ),

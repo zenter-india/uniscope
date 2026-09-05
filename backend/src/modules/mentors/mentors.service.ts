@@ -81,6 +81,15 @@ export class MentorsService {
         ...(query.stream && {
           stream: { equals: query.stream, mode: 'insensitive' },
         }),
+        ...(query.qualification && {
+          qualification: { equals: query.qualification, mode: 'insensitive' },
+        }),
+        ...(query.specialization && {
+          specialization: {
+            equals: query.specialization,
+            mode: 'insensitive',
+          },
+        }),
         ...(query.language && { languages: { has: query.language } }),
       },
       ...(query.search && {
@@ -180,6 +189,7 @@ export class MentorsService {
 
     const [
       todaysSessions,
+      todaysEarnings,
       weeklyEarnings,
       monthlyEarnings,
       totalStats,
@@ -193,6 +203,14 @@ export class MentorsService {
           startedAt: { gte: startOfToday },
         },
         select: { billedMinutes: true },
+      }),
+      this.prisma.ledgerEntry.aggregate({
+        where: {
+          type: LedgerEntryType.SESSION_CREDIT,
+          createdAt: { gte: startOfToday },
+          wallet: { userId: mentorId },
+        },
+        _sum: { amountMinor: true },
       }),
       this.prisma.ledgerEntry.aggregate({
         where: {
@@ -232,6 +250,7 @@ export class MentorsService {
 
     return toMentorDashboardStatsResponse({
       todaysSessionsCount: todaysSessions.length,
+      todaysEarningsMinor: todaysEarnings._sum.amountMinor ?? 0,
       monthlyEarningsMinor: monthlyEarnings._sum.amountMinor ?? 0,
       totalSessionsCount: totalStats._count,
       totalMinutesConsulted: totalStats._sum.billedMinutes ?? 0,
@@ -241,6 +260,8 @@ export class MentorsService {
       recentSessions: recentSessionRows.map((row) => ({
         id: row.id,
         aspirantDisplayName: row.aspirant.displayName,
+        type: row.type,
+        status: row.status,
         endedAt: row.endedAt,
         billedMinutes: row.billedMinutes,
         earnedMinor: row.ledgerEntries.reduce((sum, e) => sum + e.amountMinor, 0),

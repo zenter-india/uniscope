@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../core/network/users_api.dart';
 import '../../core/theme/app_theme.dart';
@@ -130,227 +131,291 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
         data: (profile) {
           _hydrate(profile);
           final isMentor = profile.role == UserRole.mentor;
-          return SingleChildScrollView(
-            padding: const EdgeInsets.all(AppSpacing.md),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Display name',
-                  style: TextStyle(
-                    fontSize: AppFont.sm,
-                    fontWeight: AppFont.semibold,
-                  ),
+          // Avatar sits outside the scroll view — always visible while
+          // editing the fields below, never scrolls away. `Expanded` +
+          // `SingleChildScrollView` share the remaining height, so an
+          // on-screen keyboard resizes only the scrollable half instead of
+          // pushing the avatar off-screen or breaking the layout.
+          return Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.only(
+                  top: AppSpacing.md,
+                  bottom: AppSpacing.sm,
                 ),
-                const SizedBox(height: AppSpacing.xs),
-                TextField(controller: _displayNameController),
-                const SizedBox(height: AppSpacing.md),
-                if (isMentor) ...[
-                  const Text(
-                    'Stream / Field',
-                    style: TextStyle(
-                      fontSize: AppFont.sm,
-                      fontWeight: AppFont.semibold,
-                    ),
-                  ),
-                  const SizedBox(height: AppSpacing.xs),
-                  DropdownButtonFormField<String>(
-                    // A value predating this fix (e.g. an old kGuidanceAreas
-                    // entry stuck in `specialty`, or nothing at all) won't
-                    // match kStreamOptions' exact strings — fall back to
-                    // null rather than assert-crash on an unknown value.
-                    initialValue: kStreamOptions.contains(_stream)
-                        ? _stream
-                        : null,
-                    isExpanded: true,
-                    hint: const Text('What can you help aspirants with?'),
-                    items: kStreamOptions
-                        .map((s) => DropdownMenuItem(value: s, child: Text(s)))
-                        .toList(),
-                    onChanged: (v) => setState(() => _stream = v),
-                  ),
-                  const SizedBox(height: AppSpacing.md),
-                  const Text(
-                    'Bio',
-                    style: TextStyle(
-                      fontSize: AppFont.sm,
-                      fontWeight: AppFont.semibold,
-                    ),
-                  ),
-                  const SizedBox(height: AppSpacing.xs),
-                  TextField(
-                    controller: _bioController,
-                    maxLines: 3,
-                    decoration: const InputDecoration(
-                      hintText:
-                          'A short introduction for aspirants browsing mentors',
-                    ),
-                  ),
-                  const SizedBox(height: AppSpacing.md),
-                  const Text(
-                    'Languages',
-                    style: TextStyle(
-                      fontSize: AppFont.sm,
-                      fontWeight: AppFont.semibold,
-                    ),
-                  ),
-                  const SizedBox(height: AppSpacing.xs),
-                  Wrap(
-                    spacing: AppSpacing.sm,
-                    runSpacing: AppSpacing.sm,
-                    children: kLanguageOptions.map((language) {
-                      final selected = _languages.contains(language);
-                      return FilterChip(
-                        label: Text(language),
-                        selected: selected,
-                        onSelected: (v) => setState(
-                          () => v
-                              ? _languages.add(language)
-                              : _languages.remove(language),
-                        ),
-                        selectedColor: AppColors.primaryLight,
-                        checkmarkColor: AppColors.primary,
-                        labelStyle: TextStyle(
-                          fontSize: AppFont.sm,
-                          color: selected
-                              ? AppColors.primaryDark
-                              : AppColors.textSecondary,
-                          fontWeight: selected
-                              ? AppFont.semibold
-                              : AppFont.medium,
-                        ),
-                        side: BorderSide(
-                          color: selected
-                              ? AppColors.primary
-                              : AppColors.border,
-                        ),
-                      );
-                    }).toList(),
-                  ),
-                  if (_languages.contains('Others')) ...[
-                    const SizedBox(height: AppSpacing.sm),
-                    TextField(
-                      controller: _languagesOtherController,
-                      onChanged: (_) => setState(() {}),
-                      decoration: const InputDecoration(
-                        hintText: 'Enter language',
+                child: Center(
+                  child: Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      AppAvatar(
+                        name: profile.displayName,
+                        size: 72,
+                        avatarUrl: profile.avatarUrl,
                       ),
-                    ),
-                  ],
-                ] else ...[
-                  const Text(
-                    'Gender',
-                    style: TextStyle(
-                      fontSize: AppFont.sm,
-                      fontWeight: AppFont.semibold,
-                    ),
-                  ),
-                  const SizedBox(height: AppSpacing.xs),
-                  DropdownButtonFormField<String>(
-                    initialValue: _gender,
-                    isExpanded: true,
-                    hint: const Text('Select gender'),
-                    items: kGenders
-                        .map((g) => DropdownMenuItem(value: g, child: Text(g)))
-                        .toList(),
-                    onChanged: (v) => setState(() => _gender = v),
-                  ),
-                  const SizedBox(height: AppSpacing.md),
-                  const Text(
-                    'Qualification',
-                    style: TextStyle(
-                      fontSize: AppFont.sm,
-                      fontWeight: AppFont.semibold,
-                    ),
-                  ),
-                  const SizedBox(height: AppSpacing.xs),
-                  DropdownButtonFormField<String>(
-                    initialValue: _qualification,
-                    isExpanded: true,
-                    hint: const Text('Select qualification'),
-                    items: kQualifications
-                        .map((q) => DropdownMenuItem(value: q, child: Text(q)))
-                        .toList(),
-                    onChanged: (v) => setState(() => _qualification = v),
-                  ),
-                  const SizedBox(height: AppSpacing.md),
-                  const Text(
-                    'Stream / Field of Interest',
-                    style: TextStyle(
-                      fontSize: AppFont.sm,
-                      fontWeight: AppFont.semibold,
-                    ),
-                  ),
-                  const SizedBox(height: AppSpacing.xs),
-                  DropdownButtonFormField<String>(
-                    // A value saved via the onboarding wizard (e.g. "Engineering")
-                    // won't match if it's not one of kStreamOptions' exact
-                    // strings — fall back to null rather than let
-                    // DropdownButtonFormField assert-crash on an unknown value.
-                    initialValue: kStreamOptions.contains(_stream)
-                        ? _stream
-                        : null,
-                    isExpanded: true,
-                    hint: const Text('Select stream / field'),
-                    items: kStreamOptions
-                        .map((s) => DropdownMenuItem(value: s, child: Text(s)))
-                        .toList(),
-                    onChanged: (v) => setState(() => _stream = v),
-                  ),
-                  const SizedBox(height: AppSpacing.md),
-                  const Text(
-                    'State',
-                    style: TextStyle(
-                      fontSize: AppFont.sm,
-                      fontWeight: AppFont.semibold,
-                    ),
-                  ),
-                  const SizedBox(height: AppSpacing.xs),
-                  DropdownButtonFormField<String>(
-                    initialValue: _state,
-                    isExpanded: true,
-                    hint: const Text('Select state'),
-                    items: kIndianStates
-                        .map((s) => DropdownMenuItem(value: s, child: Text(s)))
-                        .toList(),
-                    onChanged: (v) => setState(() => _state = v),
-                  ),
-                  const SizedBox(height: AppSpacing.md),
-                  const Text(
-                    'City',
-                    style: TextStyle(
-                      fontSize: AppFont.sm,
-                      fontWeight: AppFont.semibold,
-                    ),
-                  ),
-                  const SizedBox(height: AppSpacing.xs),
-                  TextField(
-                    controller: _cityController,
-                    decoration: const InputDecoration(
-                      hintText: 'Enter your city',
-                    ),
-                  ),
-                ],
-                const SizedBox(height: AppSpacing.xl),
-                SizedBox(
-                  width: double.infinity,
-                  child: FilledButton(
-                    onPressed: _saving ? null : () => _save(profile.role),
-                    child: _saving
-                        ? const SizedBox(
-                            width: 18,
-                            height: 18,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: Colors.white,
+                      Positioned(
+                        bottom: -2,
+                        right: -2,
+                        child: Material(
+                          color: AppColors.primary,
+                          shape: const CircleBorder(),
+                          child: InkWell(
+                            customBorder: const CircleBorder(),
+                            onTap: () => context.push('/profile/avatar'),
+                            child: const Padding(
+                              padding: EdgeInsets.all(6),
+                              child: Icon(
+                                Icons.edit_rounded,
+                                size: 14,
+                                color: Colors.white,
+                              ),
                             ),
-                          )
-                        : const Text('Save'),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                const SizedBox(height: AppSpacing.xl),
-              ],
-            ),
+              ),
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(AppSpacing.md),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Display name',
+                        style: TextStyle(
+                          fontSize: AppFont.sm,
+                          fontWeight: AppFont.semibold,
+                        ),
+                      ),
+                      const SizedBox(height: AppSpacing.xs),
+                      TextField(controller: _displayNameController),
+                      const SizedBox(height: AppSpacing.md),
+                      if (isMentor) ...[
+                        const Text(
+                          'Stream / Field',
+                          style: TextStyle(
+                            fontSize: AppFont.sm,
+                            fontWeight: AppFont.semibold,
+                          ),
+                        ),
+                        const SizedBox(height: AppSpacing.xs),
+                        DropdownButtonFormField<String>(
+                          // A value predating this fix (e.g. an old kGuidanceAreas
+                          // entry stuck in `specialty`, or nothing at all) won't
+                          // match kStreamOptions' exact strings — fall back to
+                          // null rather than assert-crash on an unknown value.
+                          initialValue: kStreamOptions.contains(_stream)
+                              ? _stream
+                              : null,
+                          isExpanded: true,
+                          hint: const Text('What can you help aspirants with?'),
+                          items: kStreamOptions
+                              .map(
+                                (s) =>
+                                    DropdownMenuItem(value: s, child: Text(s)),
+                              )
+                              .toList(),
+                          onChanged: (v) => setState(() => _stream = v),
+                        ),
+                        const SizedBox(height: AppSpacing.md),
+                        const Text(
+                          'Bio',
+                          style: TextStyle(
+                            fontSize: AppFont.sm,
+                            fontWeight: AppFont.semibold,
+                          ),
+                        ),
+                        const SizedBox(height: AppSpacing.xs),
+                        TextField(
+                          controller: _bioController,
+                          maxLines: 3,
+                          decoration: const InputDecoration(
+                            hintText:
+                                'A short introduction for aspirants browsing mentors',
+                          ),
+                        ),
+                        const SizedBox(height: AppSpacing.md),
+                        const Text(
+                          'Languages',
+                          style: TextStyle(
+                            fontSize: AppFont.sm,
+                            fontWeight: AppFont.semibold,
+                          ),
+                        ),
+                        const SizedBox(height: AppSpacing.xs),
+                        Wrap(
+                          spacing: AppSpacing.sm,
+                          runSpacing: AppSpacing.sm,
+                          children: kLanguageOptions.map((language) {
+                            final selected = _languages.contains(language);
+                            return FilterChip(
+                              label: Text(language),
+                              selected: selected,
+                              onSelected: (v) => setState(
+                                () => v
+                                    ? _languages.add(language)
+                                    : _languages.remove(language),
+                              ),
+                              selectedColor: AppColors.primaryLight,
+                              checkmarkColor: AppColors.primary,
+                              labelStyle: TextStyle(
+                                fontSize: AppFont.sm,
+                                color: selected
+                                    ? AppColors.primaryDark
+                                    : AppColors.textSecondary,
+                                fontWeight: selected
+                                    ? AppFont.semibold
+                                    : AppFont.medium,
+                              ),
+                              side: BorderSide(
+                                color: selected
+                                    ? AppColors.primary
+                                    : AppColors.border,
+                              ),
+                            );
+                          }).toList(),
+                        ),
+                        if (_languages.contains('Others')) ...[
+                          const SizedBox(height: AppSpacing.sm),
+                          TextField(
+                            controller: _languagesOtherController,
+                            onChanged: (_) => setState(() {}),
+                            decoration: const InputDecoration(
+                              hintText: 'Enter language',
+                            ),
+                          ),
+                        ],
+                      ] else ...[
+                        const Text(
+                          'Gender',
+                          style: TextStyle(
+                            fontSize: AppFont.sm,
+                            fontWeight: AppFont.semibold,
+                          ),
+                        ),
+                        const SizedBox(height: AppSpacing.xs),
+                        DropdownButtonFormField<String>(
+                          initialValue: _gender,
+                          isExpanded: true,
+                          hint: const Text('Select gender'),
+                          items: kGenders
+                              .map(
+                                (g) =>
+                                    DropdownMenuItem(value: g, child: Text(g)),
+                              )
+                              .toList(),
+                          onChanged: (v) => setState(() => _gender = v),
+                        ),
+                        const SizedBox(height: AppSpacing.md),
+                        const Text(
+                          'Qualification',
+                          style: TextStyle(
+                            fontSize: AppFont.sm,
+                            fontWeight: AppFont.semibold,
+                          ),
+                        ),
+                        const SizedBox(height: AppSpacing.xs),
+                        DropdownButtonFormField<String>(
+                          initialValue: _qualification,
+                          isExpanded: true,
+                          hint: const Text('Select qualification'),
+                          items: kQualifications
+                              .map(
+                                (q) =>
+                                    DropdownMenuItem(value: q, child: Text(q)),
+                              )
+                              .toList(),
+                          onChanged: (v) => setState(() => _qualification = v),
+                        ),
+                        const SizedBox(height: AppSpacing.md),
+                        const Text(
+                          'Stream / Field of Interest',
+                          style: TextStyle(
+                            fontSize: AppFont.sm,
+                            fontWeight: AppFont.semibold,
+                          ),
+                        ),
+                        const SizedBox(height: AppSpacing.xs),
+                        DropdownButtonFormField<String>(
+                          // A value saved via the onboarding wizard (e.g. "Engineering")
+                          // won't match if it's not one of kStreamOptions' exact
+                          // strings — fall back to null rather than let
+                          // DropdownButtonFormField assert-crash on an unknown value.
+                          initialValue: kStreamOptions.contains(_stream)
+                              ? _stream
+                              : null,
+                          isExpanded: true,
+                          hint: const Text('Select stream / field'),
+                          items: kStreamOptions
+                              .map(
+                                (s) =>
+                                    DropdownMenuItem(value: s, child: Text(s)),
+                              )
+                              .toList(),
+                          onChanged: (v) => setState(() => _stream = v),
+                        ),
+                        const SizedBox(height: AppSpacing.md),
+                        const Text(
+                          'State',
+                          style: TextStyle(
+                            fontSize: AppFont.sm,
+                            fontWeight: AppFont.semibold,
+                          ),
+                        ),
+                        const SizedBox(height: AppSpacing.xs),
+                        DropdownButtonFormField<String>(
+                          initialValue: _state,
+                          isExpanded: true,
+                          hint: const Text('Select state'),
+                          items: kIndianStates
+                              .map(
+                                (s) =>
+                                    DropdownMenuItem(value: s, child: Text(s)),
+                              )
+                              .toList(),
+                          onChanged: (v) => setState(() => _state = v),
+                        ),
+                        const SizedBox(height: AppSpacing.md),
+                        const Text(
+                          'City',
+                          style: TextStyle(
+                            fontSize: AppFont.sm,
+                            fontWeight: AppFont.semibold,
+                          ),
+                        ),
+                        const SizedBox(height: AppSpacing.xs),
+                        TextField(
+                          controller: _cityController,
+                          decoration: const InputDecoration(
+                            hintText: 'Enter your city',
+                          ),
+                        ),
+                      ],
+                      const SizedBox(height: AppSpacing.xl),
+                      SizedBox(
+                        width: double.infinity,
+                        child: FilledButton(
+                          onPressed: _saving ? null : () => _save(profile.role),
+                          child: _saving
+                              ? const SizedBox(
+                                  width: 18,
+                                  height: 18,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: Colors.white,
+                                  ),
+                                )
+                              : const Text('Save'),
+                        ),
+                      ),
+                      const SizedBox(height: AppSpacing.xl),
+                    ],
+                  ),
+                ),
+              ),
+            ],
           );
         },
       ),

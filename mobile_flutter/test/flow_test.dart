@@ -83,7 +83,7 @@ Widget _app() => ProviderScope(
         // resolve instantly with no data rather than hitting the real
         // backend, which isn't reachable from a test runner.
         universitiesListProvider.overrideWith((ref) async => const []),
-        mentorsListProvider.overrideWith((ref) async => const []),
+        mentorsListProvider.overrideWith((ref, filters) async => const []),
       ],
       child: const UniscopeApp(),
     );

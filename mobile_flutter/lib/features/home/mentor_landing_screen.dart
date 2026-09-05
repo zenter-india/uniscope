@@ -174,20 +174,42 @@ class MentorLandingScreen extends ConsumerWidget {
                               Expanded(
                                 child: _StatTile(
                                   value:
-                                      '₹${stats.weeklyEarningsRupees.toStringAsFixed(0)}',
-                                  label: 'Weekly Earnings',
-                                  icon: Icons.account_balance_wallet_rounded,
-                                  color: AppColors.warning,
+                                      '₹${stats.todaysEarningsRupees.toStringAsFixed(0)}',
+                                  label: "Today's Earnings",
+                                  icon: Icons.payments_rounded,
+                                  color: AppColors.success,
                                 ),
                               ),
                               const SizedBox(width: AppSpacing.sm),
                               Expanded(
                                 child: _StatTile(
                                   value:
-                                      stats.rating?.toStringAsFixed(1) ?? '—',
+                                      '₹${stats.weeklyEarningsRupees.toStringAsFixed(0)}',
+                                  label: 'Weekly Earnings',
+                                  icon: Icons.account_balance_wallet_rounded,
+                                  color: AppColors.warning,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: AppSpacing.sm),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: _StatTile(
+                                  value: stats.rating?.toStringAsFixed(1) ?? '—',
                                   label: 'Average Rating',
                                   icon: Icons.star_rounded,
                                   color: AppColors.warning,
+                                ),
+                              ),
+                              const SizedBox(width: AppSpacing.sm),
+                              Expanded(
+                                child: _StatTile(
+                                  value: '${stats.totalSessionsCount}',
+                                  label: 'Sessions Completed',
+                                  icon: Icons.task_alt_rounded,
+                                  color: AppColors.primary,
                                 ),
                               ),
                             ],
@@ -347,8 +369,27 @@ class _RecentSessionCard extends StatelessWidget {
 
   final MentorDashboardRecentSession session;
 
+  String get _typeLabel => session.isCall ? 'Call' : 'Chat';
+
+  /// Manual formatting — this project has no `intl` dependency, so a
+  /// hand-rolled "Sep 4, 3:20 PM" beats pulling in a package for one label.
+  String? get _whenLabel {
+    final endedAt = session.endedAt;
+    if (endedAt == null) return null;
+    final local = endedAt.toLocal();
+    const months = [
+      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+    ];
+    final hour12 = local.hour % 12 == 0 ? 12 : local.hour % 12;
+    final minute = local.minute.toString().padLeft(2, '0');
+    final period = local.hour < 12 ? 'AM' : 'PM';
+    return '${months[local.month - 1]} ${local.day}, $hour12:$minute $period';
+  }
+
   @override
   Widget build(BuildContext context) {
+    final when = _whenLabel;
     return AppCard(
       margin: const EdgeInsets.only(bottom: AppSpacing.sm),
       onTap: () => context.push(
@@ -356,6 +397,7 @@ class _RecentSessionCard extends StatelessWidget {
         extra: {'sessionId': session.id},
       ),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           AppAvatar(name: session.aspirantDisplayName, size: 40),
           const SizedBox(width: AppSpacing.md),
@@ -371,12 +413,38 @@ class _RecentSessionCard extends StatelessWidget {
                     color: AppColors.textPrimary,
                   ),
                 ),
+                const SizedBox(height: 2),
+                Row(
+                  children: [
+                    Icon(
+                      session.isCall
+                          ? Icons.call_rounded
+                          : Icons.chat_bubble_outline_rounded,
+                      size: 12,
+                      color: AppColors.textSecondary,
+                    ),
+                    const SizedBox(width: 4),
+                    Flexible(
+                      child: Text(
+                        when == null ? _typeLabel : '$_typeLabel · $when',
+                        style: const TextStyle(
+                          fontSize: AppFont.xs,
+                          color: AppColors.textSecondary,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
               ],
             ),
           ),
+          const SizedBox(width: AppSpacing.sm),
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
+              StatusChip(label: session.status, color: AppColors.success),
+              const SizedBox(height: 4),
               Text(
                 '₹${session.earnedRupees.toStringAsFixed(0)}',
                 style: const TextStyle(

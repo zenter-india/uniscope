@@ -12,12 +12,14 @@ export const SESSION_WITH_NAMES_INCLUDE = {
   aspirant: {
     select: {
       displayName: true,
+      uniqueId: true,
       profile: { select: { avatarKey: true, updatedAt: true } },
     },
   },
   mentor: {
     select: {
       displayName: true,
+      uniqueId: true,
       profile: {
         select: {
           avatarKey: true,
@@ -32,11 +34,13 @@ export const SESSION_WITH_NAMES_INCLUDE = {
 
 type SessionParty = {
   displayName: string;
+  uniqueId: string | null;
   profile: { avatarKey: string | null; updatedAt: Date } | null;
 };
 
 type MentorSessionParty = {
   displayName: string;
+  uniqueId: string | null;
   profile:
     | {
         avatarKey: string | null;
@@ -69,6 +73,12 @@ export interface SessionResponse {
   mentorId: string;
   aspirantName: string;
   mentorName: string;
+  /** Public registration number (e.g. "A1134500001" / "M3300000047") — see
+   * unique-id.helper.ts. Null until the party's profile.stream is known.
+   * Shown to the counterparty in the chat/session header instead of a
+   * tappable name, per product decision — never the internal DB id. */
+  aspirantUniqueId: string | null;
+  mentorUniqueId: string | null;
   aspirantAvatarUrl: string | null;
   mentorAvatarUrl: string | null;
   type: Session['type'];
@@ -103,6 +113,8 @@ export function toSessionResponse(
     mentorId: session.mentorId,
     aspirantName: session.aspirant.displayName,
     mentorName: session.mentor.displayName,
+    aspirantUniqueId: session.aspirant.uniqueId,
+    mentorUniqueId: session.mentor.uniqueId,
     aspirantAvatarUrl: session.aspirant.profile
       ? resolveAvatarUrl(
           session.aspirantId,

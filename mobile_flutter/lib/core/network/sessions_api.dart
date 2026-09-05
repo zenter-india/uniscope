@@ -42,6 +42,8 @@ class Session {
     required this.mentorId,
     required this.aspirantName,
     required this.mentorName,
+    this.aspirantUniqueId,
+    this.mentorUniqueId,
     this.aspirantAvatarUrl,
     this.mentorAvatarUrl,
     required this.type,
@@ -64,6 +66,11 @@ class Session {
   final String mentorId;
   final String aspirantName;
   final String mentorName;
+  /// Public registration number (e.g. "A1134500001" / "M3300000047") — shown
+  /// under the counterparty's name in the session/chat header instead of a
+  /// tap-to-profile link. Null until that party's profile.stream is known.
+  final String? aspirantUniqueId;
+  final String? mentorUniqueId;
   final String? aspirantAvatarUrl;
   final String? mentorAvatarUrl;
   final String type;
@@ -89,6 +96,8 @@ class Session {
     mentorId: json['mentorId'] as String,
     aspirantName: json['aspirantName'] as String? ?? 'Aspirant',
     mentorName: json['mentorName'] as String? ?? 'Mentor',
+    aspirantUniqueId: json['aspirantUniqueId'] as String?,
+    mentorUniqueId: json['mentorUniqueId'] as String?,
     aspirantAvatarUrl: json['aspirantAvatarUrl'] as String?,
     mentorAvatarUrl: json['mentorAvatarUrl'] as String?,
     type: json['type'] as String,

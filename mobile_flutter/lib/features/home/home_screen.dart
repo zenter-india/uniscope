@@ -11,6 +11,7 @@ import '../../state/auth_controller.dart';
 import '../../widgets/app_widgets.dart';
 import '../auth/auth_background.dart' show authBrandTeal;
 import '../mentors/mentor_list_screen.dart';
+import '../profile/profile_options.dart' show kStreamOptions;
 import '../sessions/session_list_screen.dart' show sessionsListProvider;
 import '../universities/university_list_screen.dart'
     show collegeStateFilterProvider;
@@ -23,6 +24,35 @@ const _homeActiveStatuses = {
   SessionStatus.ringing,
   SessionStatus.inProgress,
 };
+
+/// Ranks a mentor list for the "Top mentors for you" rail — highest rating
+/// first. An unrated mentor sorts last, not to a 0.0 average (which would
+/// wrongly outrank a mentor with a genuinely low real rating), then review
+/// count breaks ties between mentors of the same rating.
+List<Mentor> _topMentors(List<Mentor> mentors, {int take = 8}) {
+  final sorted = [...mentors]..sort((a, b) {
+    final ratingA = a.rating ?? -1;
+    final ratingB = b.rating ?? -1;
+    if (ratingA != ratingB) return ratingB.compareTo(ratingA);
+    return b.reviewCount.compareTo(a.reviewCount);
+  });
+  return sorted.take(take).toList();
+}
+
+/// Ranks a college list for the "Top colleges for you" rail by NIRF rank
+/// (lower is better). Most rows have none — NIRF here only covers the top
+/// medical colleges nationally — so an unranked college sorts last rather
+/// than tying at 0, and the same alphabetical tiebreak the plain catalogue
+/// already uses decides the rest.
+List<University> _topColleges(List<University> universities, {int take = 8}) {
+  final sorted = [...universities]..sort((a, b) {
+    final rankA = a.nirfRank ?? 1 << 30;
+    final rankB = b.nirfRank ?? 1 << 30;
+    if (rankA != rankB) return rankA.compareTo(rankB);
+    return a.name.compareTo(b.name);
+  });
+  return sorted.take(take).toList();
+}
 
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
@@ -39,10 +69,54 @@ class HomeScreen extends ConsumerWidget {
     final displayName = ref.watch(authControllerProvider).user?.displayName;
     final firstName = displayName?.split(' ').first;
     final universitiesAsync = ref.watch(universitiesListProvider);
-    final mentorsAsync = ref.watch(mentorsListProvider);
+    final mentorsAsync = ref.watch(mentorsListProvider(kNoMentorFilters));
     final sessionsAsync = ref.watch(sessionsListProvider);
-    final myState = ref.watch(myProfileProvider).asData?.value.state;
-    final myAvatarUrl = ref.watch(myProfileProvider).asData?.value.avatarUrl;
+    final myProfile = ref.watch(myProfileProvider).asData?.value;
+    final myState = myProfile?.state;
+    final myAvatarUrl = myProfile?.avatarUrl;
+
+    // Same deferred-default pattern as the Mentors/Discover tabs' Stream
+    // pill: personalize by the stream chosen at signup, as long as it's a
+    // value this filter actually understands.
+    final myStream = myProfile?.stream;
+    final effectiveStream =
+        (myStream != null && kStreamOptions.contains(myStream))
+        ? myStream
+        : null;
+    final personalizedMentorFilters = effectiveStream == null
+        ? null
+        : (
+            stream: effectiveStream,
+            qualification: null,
+            specialization: null,
+            language: null,
+          );
+    final streamMentorsAsync = personalizedMentorFilters == null
+        ? null
+        : ref.watch(mentorsListProvider(personalizedMentorFilters));
+
+    // "Top mentors for you": the stream-filtered list once we know it and
+    // it isn't empty, otherwise the plain discovery list — so a stream
+    // with no mentors yet (or an aspirant who hasn't set one) never leaves
+    // the rail blank. Either way the result is ranked by rating, which the
+    // backend's own ordering (createdAt desc) doesn't do.
+    final streamMentors = streamMentorsAsync?.asData?.value ?? const [];
+    final topMentors = _topMentors(
+      streamMentors.isNotEmpty
+          ? streamMentors
+          : mentorsAsync.asData?.value ?? const [],
+    );
+
+    // "Top colleges for you": same idea, derived from the catalogue already
+    // fetched below for "Keep Exploring" — no extra request. Ranked by NIRF
+    // rank where one exists (mainly Medical colleges today).
+    final allColleges = universitiesAsync.asData?.value ?? const [];
+    final streamColleges = effectiveStream == null
+        ? const <University>[]
+        : allColleges.where((u) => u.stream == effectiveStream).toList();
+    final topColleges = _topColleges(
+      streamColleges.isNotEmpty ? streamColleges : allColleges,
+    );
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -50,7 +124,10 @@ class HomeScreen extends ConsumerWidget {
         color: authBrandTeal,
         onRefresh: () async {
           ref.invalidate(universitiesListProvider);
-          ref.invalidate(mentorsListProvider);
+          ref.invalidate(mentorsListProvider(kNoMentorFilters));
+          if (personalizedMentorFilters != null) {
+            ref.invalidate(mentorsListProvider(personalizedMentorFilters));
+          }
         },
         child: SingleChildScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
@@ -351,17 +428,55 @@ class HomeScreen extends ConsumerWidget {
                         ),
                       ),
                       error: (_, __) => const SizedBox.shrink(),
-                      data: (mentors) => SizedBox(
-                        height: 206,
-                        child: ListView.separated(
-                          scrollDirection: Axis.horizontal,
-                          itemCount: mentors.take(8).length,
-                          separatorBuilder: (_, __) =>
-                              const SizedBox(width: AppSpacing.sm),
-                          itemBuilder: (_, i) =>
-                              _MentorSpotlightCard(mentor: mentors[i]),
+                      data: (_) => topMentors.isEmpty
+                          ? const SizedBox.shrink()
+                          : SizedBox(
+                              height: 206,
+                              child: ListView.separated(
+                                scrollDirection: Axis.horizontal,
+                                itemCount: topMentors.length,
+                                separatorBuilder: (_, __) =>
+                                    const SizedBox(width: AppSpacing.sm),
+                                itemBuilder: (_, i) =>
+                                    _MentorSpotlightCard(
+                                      mentor: topMentors[i],
+                                    ),
+                              ),
+                            ),
+                    ),
+                    const SizedBox(height: AppSpacing.lg),
+                    SectionHeader(
+                      title: 'Top colleges for you',
+                      accentColor: authBrandTeal,
+                      onSeeAll: () => context.go('/colleges'),
+                    ),
+                    const SizedBox(height: AppSpacing.md),
+                    universitiesAsync.when(
+                      loading: () => const SizedBox(
+                        height: 176,
+                        child: Row(
+                          children: [
+                            Expanded(child: SkeletonCard()),
+                            SizedBox(width: AppSpacing.sm),
+                            Expanded(child: SkeletonCard()),
+                          ],
                         ),
                       ),
+                      error: (_, __) => const SizedBox.shrink(),
+                      data: (_) => topColleges.isEmpty
+                          ? const SizedBox.shrink()
+                          : SizedBox(
+                              height: 176,
+                              child: ListView.separated(
+                                scrollDirection: Axis.horizontal,
+                                itemCount: topColleges.length,
+                                separatorBuilder: (_, __) =>
+                                    const SizedBox(width: AppSpacing.sm),
+                                itemBuilder: (_, i) => _CollegeSpotlightCard(
+                                  university: topColleges[i],
+                                ),
+                              ),
+                            ),
                     ),
                     const SizedBox(height: AppSpacing.lg),
                     SectionHeader(
@@ -816,6 +931,109 @@ class _MentorSpotlightCard extends ConsumerWidget {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Fixed-width college card for the Home "Top colleges for you" rail —
+/// same visual language as [_MentorSpotlightCard]: a tinted hero, then
+/// name/state and a NIRF-rank badge when the college has one (most rows
+/// outside Medical don't yet — see [_topColleges]'s doc comment).
+class _CollegeSpotlightCard extends StatelessWidget {
+  const _CollegeSpotlightCard({required this.university});
+
+  final University university;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: 176,
+      child: Container(
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(AppRadius.lg),
+          boxShadow: AppShadows.card,
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: () => context.push(
+            '/colleges/detail',
+            extra: {
+              'universitySlug': university.slug,
+              'universityName': university.name,
+            },
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                height: 64,
+                width: double.infinity,
+                color: AppColors.primaryLight,
+                alignment: Alignment.center,
+                child: const Icon(
+                  Icons.account_balance_rounded,
+                  size: 28,
+                  color: authBrandTeal,
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(10, 8, 10, 10),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      university.name,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: AppFont.bold,
+                        color: AppColors.textPrimary,
+                        height: 1.2,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      university.state,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 11,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                    if (university.nirfRank != null) ...[
+                      const SizedBox(height: 6),
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(
+                            Icons.emoji_events_rounded,
+                            size: 13,
+                            color: AppColors.warning,
+                          ),
+                          const SizedBox(width: 2),
+                          Text(
+                            'NIRF #${university.nirfRank}',
+                            style: const TextStyle(
+                              fontSize: 11,
+                              fontWeight: AppFont.semibold,
+                              color: AppColors.textPrimary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

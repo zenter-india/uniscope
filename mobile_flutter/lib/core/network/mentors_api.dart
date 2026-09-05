@@ -130,6 +130,8 @@ class MentorDashboardRecentSession {
   const MentorDashboardRecentSession({
     required this.id,
     required this.aspirantDisplayName,
+    required this.type,
+    required this.status,
     required this.endedAt,
     required this.billedMinutes,
     required this.earnedMinor,
@@ -137,16 +139,24 @@ class MentorDashboardRecentSession {
 
   final String id;
   final String aspirantDisplayName;
+  /// "CHAT" | "AUDIO_CALL".
+  final String type;
+  /// Always "COMPLETED" today — this list is scoped to completed sessions
+  /// server-side — but a real field rather than a hardcoded label.
+  final String status;
   final DateTime? endedAt;
   final int billedMinutes;
   final int earnedMinor;
 
+  bool get isCall => type == 'AUDIO_CALL';
   double get earnedRupees => earnedMinor / 100;
 
   factory MentorDashboardRecentSession.fromJson(Map<String, dynamic> json) =>
       MentorDashboardRecentSession(
         id: json['id'] as String,
         aspirantDisplayName: json['aspirantDisplayName'] as String,
+        type: json['type'] as String? ?? 'CHAT',
+        status: json['status'] as String? ?? 'COMPLETED',
         endedAt: json['endedAt'] != null
             ? DateTime.parse(json['endedAt'] as String)
             : null,
@@ -159,6 +169,7 @@ class MentorDashboardStats {
   const MentorDashboardStats({
     required this.todaysSessionsCount,
     required this.minutesConsultedToday,
+    required this.todaysEarningsMinor,
     required this.weeklyEarningsMinor,
     required this.monthlyEarningsMinor,
     required this.totalSessionsCount,
@@ -170,6 +181,7 @@ class MentorDashboardStats {
 
   final int todaysSessionsCount;
   final int minutesConsultedToday;
+  final int todaysEarningsMinor;
   final int weeklyEarningsMinor;
   final int monthlyEarningsMinor;
   final int totalSessionsCount;
@@ -178,6 +190,7 @@ class MentorDashboardStats {
   final int reviewCount;
   final List<MentorDashboardRecentSession> recentSessions;
 
+  double get todaysEarningsRupees => todaysEarningsMinor / 100;
   double get weeklyEarningsRupees => weeklyEarningsMinor / 100;
   double get monthlyEarningsRupees => monthlyEarningsMinor / 100;
 
@@ -185,6 +198,8 @@ class MentorDashboardStats {
       MentorDashboardStats(
         todaysSessionsCount: (json['todaysSessionsCount'] as num).toInt(),
         minutesConsultedToday: (json['minutesConsultedToday'] as num).toInt(),
+        todaysEarningsMinor:
+            (json['todaysEarningsMinor'] as num?)?.toInt() ?? 0,
         weeklyEarningsMinor: (json['weeklyEarningsMinor'] as num).toInt(),
         monthlyEarningsMinor: (json['monthlyEarningsMinor'] as num).toInt(),
         totalSessionsCount: (json['totalSessionsCount'] as num).toInt(),
@@ -206,10 +221,26 @@ class MentorsApi {
 
   final Dio _dio;
 
-  Future<List<Mentor>> list({String? universityId}) async {
+  /// Server-side discovery filters — mirrors backend `ListMentorsDto`
+  /// exactly (`stream`/`qualification`/`specialization`/`language`), so
+  /// combining them narrows the query itself instead of downloading every
+  /// mentor and filtering in Flutter.
+  Future<List<Mentor>> list({
+    String? universityId,
+    String? stream,
+    String? qualification,
+    String? specialization,
+    String? language,
+  }) async {
     final res = await _dio.get<Map<String, dynamic>>(
       '/mentors',
-      queryParameters: {if (universityId != null) 'universityId': universityId},
+      queryParameters: {
+        if (universityId != null) 'universityId': universityId,
+        if (stream != null) 'stream': stream,
+        if (qualification != null) 'qualification': qualification,
+        if (specialization != null) 'specialization': specialization,
+        if (language != null) 'language': language,
+      },
     );
     final data = res.data!['data'] as List<dynamic>;
     return data.map((e) => Mentor.fromJson(e as Map<String, dynamic>)).toList();

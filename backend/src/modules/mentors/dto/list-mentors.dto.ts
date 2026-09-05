@@ -26,6 +26,18 @@ export class ListMentorsDto {
   @IsString()
   stream?: string;
 
+  /** Degree stage, e.g. "MBBS" / "MD/MS" — see UserProfile.qualification
+   * (written by the mentor onboarding wizard's "Degree" step). */
+  @IsOptional()
+  @IsString()
+  qualification?: string;
+
+  /** Curated specialization within the stream/degree — see
+   * UserProfile.specialization. */
+  @IsOptional()
+  @IsString()
+  specialization?: string;
+
   /** Matches mentors whose `languages` array contains this value. */
   @IsOptional()
   @IsString()
