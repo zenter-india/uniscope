@@ -468,8 +468,11 @@ class _LedgerRow extends StatelessWidget {
             width: 38,
             height: 38,
             decoration: BoxDecoration(
-              color: (isCredit ? AppColors.success : AppColors.error)
-                  .withValues(alpha: 0.1),
+              // A solid pastel tint reads clearer at this size than the
+              // faint 10%-alpha wash this used to be.
+              color: isCredit
+                  ? const Color(0xFFE7F6EC)
+                  : const Color(0xFFFBE9EA),
               shape: BoxShape.circle,
             ),
             child: Icon(

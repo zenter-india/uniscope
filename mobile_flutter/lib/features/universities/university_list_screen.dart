@@ -43,6 +43,68 @@ List<String> _specializationOptionsFor(List<CuratedCollege> curated) {
   return ['All', ...values];
 }
 
+/// A stream's icon + colour + light tint — the "duotone thumbnail" look on
+/// a college card, and the tint a filter pill takes on once that stream is
+/// picked. One hue per stream, tuned to sit together rather than clash.
+class _StreamVisual {
+  const _StreamVisual(this.icon, this.color, this.tint);
+  final IconData icon;
+  final Color color;
+  final Color tint;
+}
+
+const _defaultStreamVisual = _StreamVisual(
+  Icons.account_balance_rounded,
+  AppColors.primary,
+  AppColors.primaryLight,
+);
+
+const _streamVisuals = <String, _StreamVisual>{
+  'Medical': _StreamVisual(
+    Icons.medical_services_rounded,
+    Color(0xFF0B8F6A),
+    Color(0xFFE3F4EE),
+  ),
+  'Dental': _StreamVisual(
+    Icons.health_and_safety_rounded,
+    Color(0xFF7A63D4),
+    Color(0xFFECE8FA),
+  ),
+  'Engineering': _StreamVisual(
+    Icons.engineering_rounded,
+    Color(0xFFE08A2B),
+    Color(0xFFFBEEDB),
+  ),
+  'Commerce & Business': _StreamVisual(
+    Icons.business_center_rounded,
+    Color(0xFF3C79D4),
+    Color(0xFFE5EEFB),
+  ),
+  'Law': _StreamVisual(
+    Icons.gavel_rounded,
+    Color(0xFFD8566F),
+    Color(0xFFFBE6EB),
+  ),
+  'Arts & Humanities': _StreamVisual(
+    Icons.palette_rounded,
+    Color(0xFF12A5A0),
+    Color(0xFFDFF3F2),
+  ),
+  'Design': _StreamVisual(
+    Icons.brush_rounded,
+    Color(0xFF5B5FC7),
+    Color(0xFFE7E8FB),
+  ),
+  'Others': _StreamVisual(
+    Icons.account_balance_rounded,
+    Color(0xFF59636E),
+    Color(0xFFEEF1F0),
+  ),
+};
+
+_StreamVisual _visualFor(String? stream) =>
+    _streamVisuals[stream] ?? _defaultStreamVisual;
+
 /// Whether the college list is currently narrowed to the aspirant's own
 /// state. Lives outside the screen so Home's `Colleges in <state>` card can
 /// switch it on before navigating to the Discover tab. The chip stays
@@ -369,6 +431,8 @@ class _UniversityListScreenState extends ConsumerState<UniversityListScreen> {
                           ? 'Stream'
                           : effectiveStream,
                       active: effectiveStream != 'All',
+                      activeColor: _visualFor(effectiveStream).color,
+                      activeTint: _visualFor(effectiveStream).tint,
                       trailing: Icons.keyboard_arrow_down_rounded,
                       onTap: () => _pickOption(
                         title: 'Stream',
@@ -548,24 +612,63 @@ class _UniversityListScreenState extends ConsumerState<UniversityListScreen> {
                       );
                     }
 
-                    return ListView.builder(
-                      padding: const EdgeInsets.fromLTRB(
-                        AppSpacing.md,
-                        0,
-                        AppSpacing.md,
-                        AppSpacing.xl,
-                      ),
-                      itemCount: filtered.length,
-                      itemBuilder: (_, i) => UniversityCard(
-                        university: filtered[i],
-                        onTap: () => context.push(
-                          '/colleges/detail',
-                          extra: {
-                            'universitySlug': filtered[i].slug,
-                            'universityName': filtered[i].name,
-                          },
+                    return Column(
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(
+                            AppSpacing.md,
+                            AppSpacing.xs,
+                            AppSpacing.md,
+                            AppSpacing.sm,
+                          ),
+                          child: Align(
+                            alignment: Alignment.centerLeft,
+                            child: Text.rich(
+                              TextSpan(
+                                style: const TextStyle(
+                                  fontSize: AppFont.xs,
+                                  color: AppColors.textSecondary,
+                                ),
+                                children: [
+                                  TextSpan(
+                                    text: '${filtered.length}',
+                                    style: const TextStyle(
+                                      fontWeight: AppFont.bold,
+                                      color: AppColors.textPrimary,
+                                    ),
+                                  ),
+                                  TextSpan(
+                                    text: filtered.length == 1
+                                        ? ' college found'
+                                        : ' colleges found',
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
                         ),
-                      ),
+                        Expanded(
+                          child: ListView.builder(
+                            padding: const EdgeInsets.fromLTRB(
+                              AppSpacing.md,
+                              0,
+                              AppSpacing.md,
+                              AppSpacing.xl,
+                            ),
+                            itemCount: filtered.length,
+                            itemBuilder: (_, i) => UniversityCard(
+                              university: filtered[i],
+                              onTap: () => context.push(
+                                '/colleges/detail',
+                                extra: {
+                                  'universitySlug': filtered[i].slug,
+                                  'universityName': filtered[i].name,
+                                },
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
                     );
                   },
                 ),
@@ -590,6 +693,8 @@ class UniversityCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final visual = _visualFor(university.stream);
+
     return AppCard(
       onTap: onTap,
       margin: const EdgeInsets.only(bottom: AppSpacing.sm),
@@ -598,19 +703,18 @@ class UniversityCard extends ConsumerWidget {
         children: [
           Row(
             children: [
+              // Stream-tinted "thumbnail" — a colour + icon per stream
+              // (see _StreamVisual) instead of one generic grey building
+              // icon, so a scanned list reads by field at a glance.
               Container(
                 width: 44,
                 height: 44,
                 decoration: BoxDecoration(
-                  color: AppColors.background,
+                  color: visual.tint,
                   borderRadius: BorderRadius.circular(AppRadius.sm),
                 ),
                 alignment: Alignment.center,
-                child: Icon(
-                  Icons.account_balance_rounded,
-                  size: 20,
-                  color: AppColors.textMuted.withValues(alpha: 0.6),
-                ),
+                child: Icon(visual.icon, size: 20, color: visual.color),
               ),
               const SizedBox(width: AppSpacing.md),
               Expanded(
@@ -625,18 +729,47 @@ class UniversityCard extends ConsumerWidget {
                         color: AppColors.textPrimary,
                       ),
                     ),
-                    const SizedBox(height: 2),
-                    Text(
-                      [
-                        if (university.stream != null) university.stream!,
-                        university.state,
-                        if (university.mbbsSeats != null)
-                          '${university.mbbsSeats} seats',
-                      ].join(' · '),
-                      style: const TextStyle(
-                        fontSize: AppFont.xs,
-                        color: AppColors.textSecondary,
-                      ),
+                    const SizedBox(height: 4),
+                    Row(
+                      children: [
+                        if (university.stream != null) ...[
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: 1,
+                            ),
+                            decoration: BoxDecoration(
+                              color: visual.tint,
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Text(
+                              university.stream!.toUpperCase(),
+                              style: TextStyle(
+                                fontSize: 9,
+                                fontWeight: AppFont.extraBold,
+                                letterSpacing: 0.3,
+                                color: visual.color,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          const Text(
+                            '·',
+                            style: TextStyle(color: AppColors.textMuted),
+                          ),
+                          const SizedBox(width: 6),
+                        ],
+                        Flexible(
+                          child: Text(
+                            university.state,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontSize: AppFont.xs,
+                              color: AppColors.textSecondary,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
@@ -645,18 +778,14 @@ class UniversityCard extends ConsumerWidget {
               _CollegeSaveButton(universityId: university.id),
             ],
           ),
-          // A college with no reviews yet has nothing to show here — most
-          // viewers can't write one either (see ReviewSummaryBody), so an
-          // empty "No reviews yet" row on every unreviewed card in a list
-          // this long is just noise. It still appears once real reviews
-          // exist.
-          if (university.reviewCount > 0) ...[
-            const SizedBox(height: AppSpacing.md),
-            const Divider(height: 1, color: AppColors.border),
-            const SizedBox(height: AppSpacing.md),
-            // Its own tap target, nested inside the card's own (detail-screen)
-            // tap target — tapping the review summary goes straight to the
-            // full breakdown instead of the college's Overview tab.
+          const SizedBox(height: AppSpacing.md),
+          const Divider(height: 1, color: AppColors.border),
+          const SizedBox(height: AppSpacing.sm),
+          if (university.reviewCount > 0)
+            // Its own tap target, nested inside the card's own
+            // (detail-screen) tap target — tapping the review summary goes
+            // straight to the full breakdown instead of the college's
+            // Overview tab.
             Material(
               color: Colors.transparent,
               child: InkWell(
@@ -674,8 +803,16 @@ class UniversityCard extends ConsumerWidget {
                   fallbackReviewCount: university.reviewCount,
                 ),
               ),
+            )
+          else
+            const Text(
+              'No reviews yet',
+              style: TextStyle(
+                fontSize: AppFont.xs,
+                fontStyle: FontStyle.italic,
+                color: AppColors.textMuted,
+              ),
             ),
-          ],
         ],
       ),
     );
@@ -714,6 +851,8 @@ class _FilterPill extends StatelessWidget {
     required this.active,
     required this.onTap,
     this.trailing,
+    this.activeColor = AppColors.primary,
+    this.activeTint = AppColors.primaryLight,
   });
 
   final IconData? icon;
@@ -722,10 +861,16 @@ class _FilterPill extends StatelessWidget {
   final VoidCallback onTap;
   final IconData? trailing;
 
+  /// Colour the pill takes on once it's active — defaults to brand green,
+  /// overridden by the Stream pill with that stream's own colour (see
+  /// [_visualFor]) so picking "Engineering" tints the pill amber, etc.
+  final Color activeColor;
+  final Color activeTint;
+
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: active ? AppColors.primary : AppColors.surface,
+      color: active ? activeTint : AppColors.surface,
       borderRadius: BorderRadius.circular(AppRadius.full),
       child: InkWell(
         onTap: onTap,
@@ -738,7 +883,7 @@ class _FilterPill extends StatelessWidget {
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(AppRadius.full),
             border: Border.all(
-              color: active ? AppColors.primary : AppColors.border,
+              color: active ? activeTint : AppColors.border,
             ),
           ),
           child: Row(
@@ -748,7 +893,7 @@ class _FilterPill extends StatelessWidget {
                 Icon(
                   icon,
                   size: 14,
-                  color: active ? AppColors.textInverse : AppColors.primary,
+                  color: active ? activeColor : AppColors.primary,
                 ),
                 const SizedBox(width: 4),
               ],
@@ -757,9 +902,7 @@ class _FilterPill extends StatelessWidget {
                 style: TextStyle(
                   fontSize: AppFont.sm,
                   fontWeight: AppFont.semibold,
-                  color: active
-                      ? AppColors.textInverse
-                      : AppColors.textSecondary,
+                  color: active ? activeColor : AppColors.textSecondary,
                 ),
               ),
               if (trailing != null) ...[
@@ -767,7 +910,7 @@ class _FilterPill extends StatelessWidget {
                 Icon(
                   trailing,
                   size: 16,
-                  color: active ? AppColors.textInverse : AppColors.textMuted,
+                  color: active ? activeColor : AppColors.textMuted,
                 ),
               ],
             ],

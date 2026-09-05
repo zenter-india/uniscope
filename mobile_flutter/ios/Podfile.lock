@@ -1,22 +1,5 @@
 PODS:
   - Flutter (1.0.0)
-  - get_thumbnail_video (0.0.1):
-    - Flutter
-    - libwebp
-  - libwebp (1.6.0):
-    - libwebp/demux (= 1.6.0)
-    - libwebp/mux (= 1.6.0)
-    - libwebp/sharpyuv (= 1.6.0)
-    - libwebp/webp (= 1.6.0)
-  - libwebp/demux (1.6.0):
-    - libwebp/webp
-  - libwebp/mux (1.6.0):
-    - libwebp/demux
-  - libwebp/sharpyuv (1.6.0)
-  - libwebp/webp (1.6.0):
-    - libwebp/sharpyuv
-  - media_kit_video (0.0.1):
-    - Flutter
   - razorpay-core-pod (1.0.7)
   - razorpay-pod (1.5.6):
     - razorpay-core-pod (= 1.0.7)
@@ -26,31 +9,21 @@ PODS:
 
 DEPENDENCIES:
   - Flutter (from `Flutter`)
-  - get_thumbnail_video (from `.symlinks/plugins/get_thumbnail_video/ios`)
-  - media_kit_video (from `.symlinks/plugins/media_kit_video/ios`)
   - razorpay_flutter (from `.symlinks/plugins/razorpay_flutter/ios`)
 
 SPEC REPOS:
   trunk:
-    - libwebp
     - razorpay-core-pod
     - razorpay-pod
 
 EXTERNAL SOURCES:
   Flutter:
     :path: Flutter
-  get_thumbnail_video:
-    :path: ".symlinks/plugins/get_thumbnail_video/ios"
-  media_kit_video:
-    :path: ".symlinks/plugins/media_kit_video/ios"
   razorpay_flutter:
     :path: ".symlinks/plugins/razorpay_flutter/ios"
 
 SPEC CHECKSUMS:
   Flutter: cabc95a1d2626b1b06e7179b784ebcf0c0cde467
-  get_thumbnail_video: 1a754d46b860dffefcc57b7290a43089cd5d7e58
-  libwebp: af5937a13536ef73f3784d69cc342b98961acf33
-  media_kit_video: f3b0d035d89def15cfbbcf7dc2ae278f201e2f83
   razorpay-core-pod: c7f3ac3d214c1a7fac4e9a59c1de7eac02130573
   razorpay-pod: e939db88bc67c33a84bcc419505b8546b1081023
   razorpay_flutter: 0e98e4fcaae27ad50e011d85f66d85e0a008754a
