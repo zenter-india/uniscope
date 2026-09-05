@@ -232,7 +232,7 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
 
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: AppBar(title: const Text('Wallet')),
+      appBar: GradientAppBar(title: const Text('Wallet')),
       body: SafeArea(
         bottom: false,
         child: RefreshIndicator(

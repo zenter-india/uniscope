@@ -363,12 +363,12 @@ class _UniversityListScreenState extends ConsumerState<UniversityListScreen> {
 
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: AppBar(
+      appBar: GradientAppBar(
         title: const Text('Colleges'),
         actions: [
           IconButton(
             onPressed: () => context.push('/colleges/saved'),
-            icon: const Icon(Icons.favorite_rounded, color: AppColors.error),
+            icon: const Icon(Icons.favorite_rounded, color: Colors.white),
             tooltip: 'Saved colleges',
           ),
         ],

@@ -261,9 +261,10 @@ class _SkeletonState extends State<Skeleton>
   @override
   Widget build(BuildContext context) {
     return FadeTransition(
-      opacity: Tween(begin: 0.45, end: 1.0).animate(
-        CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
-      ),
+      opacity: Tween(
+        begin: 0.45,
+        end: 1.0,
+      ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut)),
       child: Container(
         width: widget.width,
         height: widget.height,
@@ -359,10 +360,7 @@ class EmptyState extends StatelessWidget {
             ),
             if (actionLabel != null) ...[
               const SizedBox(height: AppSpacing.lg),
-              FilledButton(
-                onPressed: onAction,
-                child: Text(actionLabel!),
-              ),
+              FilledButton(onPressed: onAction, child: Text(actionLabel!)),
             ],
           ],
         ),
@@ -461,4 +459,36 @@ class NotificationBell extends ConsumerWidget {
       ],
     );
   }
+}
+
+/// A screen AppBar with the green canopy gradient behind it — the same
+/// gradient as the Home header (AppGradients.canopy), so the six bottom-nav
+/// tabs share one header look. Title, leading and action icons render white
+/// against it. Drop-in for `AppBar` on those screens; everything else keeps
+/// the plain neutral bar from the theme.
+class GradientAppBar extends AppBar {
+  GradientAppBar({
+    super.key,
+    super.title,
+    super.actions,
+    super.leading,
+    super.centerTitle,
+    super.titleSpacing,
+  }) : super(
+         backgroundColor: Colors.transparent,
+         foregroundColor: Colors.white,
+         elevation: 0,
+         scrolledUnderElevation: 0,
+         titleTextStyle: const TextStyle(
+           fontFamily: 'Manrope',
+           color: Colors.white,
+           fontSize: AppFont.xl,
+           fontWeight: AppFont.extraBold,
+         ),
+         iconTheme: const IconThemeData(color: Colors.white),
+         actionsIconTheme: const IconThemeData(color: Colors.white),
+         flexibleSpace: const DecoratedBox(
+           decoration: BoxDecoration(gradient: AppGradients.canopy),
+         ),
+       );
 }

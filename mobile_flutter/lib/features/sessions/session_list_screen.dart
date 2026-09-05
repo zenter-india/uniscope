@@ -131,9 +131,9 @@ class SessionListScreen extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: AppBar(
+      appBar: GradientAppBar(
         title: const Text('Sessions'),
-        actions: const [NotificationBell()],
+        actions: const [NotificationBell(color: Colors.white)],
       ),
       body: SafeArea(
         bottom: false,

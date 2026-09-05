@@ -151,12 +151,19 @@ class ProfileHomeScreen extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: AppBar(
+      appBar: GradientAppBar(
         leading: Padding(
-          padding: const EdgeInsets.all(12),
-          child: Image.asset(
-            'assets/logo/uniscope_icon.png',
-            fit: BoxFit.contain,
+          padding: const EdgeInsets.all(10),
+          child: Container(
+            padding: const EdgeInsets.all(4),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(AppRadius.sm),
+            ),
+            child: Image.asset(
+              'assets/logo/uniscope_icon.png',
+              fit: BoxFit.contain,
+            ),
           ),
         ),
         title: const Text('Profile'),
