@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/network/users_api.dart';
 import '../../core/theme/app_theme.dart';
+import '../../widgets/app_widgets.dart';
 import 'avatar_picker_panel.dart';
 
 /// Standalone avatar editor reached from Profile's pencil badge. Wraps the
@@ -22,6 +24,11 @@ class _AvatarCustomizerScreenState
     extends ConsumerState<AvatarCustomizerScreen> {
   final _panelKey = GlobalKey<AvatarPickerPanelState>();
   bool _saving = false;
+
+  // Mirrors the panel's live preview so it can be pinned above the scroll
+  // while the option chips scroll underneath it.
+  String? _previewSvg;
+  String? _previewUrl;
 
   Future<void> _save() async {
     final config = _panelKey.currentState?.currentConfig;
@@ -63,9 +70,51 @@ class _AvatarCustomizerScreenState
       ),
       body: SafeArea(
         bottom: false,
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(AppSpacing.md),
-          child: AvatarPickerPanel(key: _panelKey),
+        child: Column(
+          children: [
+            // Pinned preview — a compact band that stays put while the
+            // options scroll, so you can see each change without scrolling
+            // back up. Kept tight to the avatar so it doesn't eat the
+            // options list's room on shorter screens.
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
+              decoration: const BoxDecoration(
+                color: AppColors.surface,
+                border: Border(
+                  bottom: BorderSide(color: AppColors.border),
+                ),
+              ),
+              child: Center(
+                child: _previewSvg != null
+                    ? ClipOval(
+                        child: SvgPicture.string(
+                          _previewSvg!,
+                          width: 80,
+                          height: 80,
+                          fit: BoxFit.cover,
+                        ),
+                      )
+                    : AppAvatar(name: '?', size: 80, avatarUrl: _previewUrl),
+              ),
+            ),
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(AppSpacing.md),
+                child: AvatarPickerPanel(
+                  key: _panelKey,
+                  showInlinePreview: false,
+                  onPreviewChanged: (svg, url) {
+                    if (!mounted) return;
+                    setState(() {
+                      _previewSvg = svg;
+                      _previewUrl = url;
+                    });
+                  },
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );
