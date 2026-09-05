@@ -403,7 +403,7 @@ class HomeScreen extends ConsumerWidget {
                     const SizedBox(height: AppSpacing.md),
                     universitiesAsync.when(
                       loading: () => const SizedBox(
-                        height: 150,
+                        height: 128,
                         child: Row(
                           children: [
                             Expanded(child: SkeletonCard()),
@@ -416,7 +416,7 @@ class HomeScreen extends ConsumerWidget {
                       data: (_) => collegesForYou.isEmpty
                           ? const SizedBox.shrink()
                           : SizedBox(
-                              height: 150,
+                              height: 128,
                               child: ListView.separated(
                                 scrollDirection: Axis.horizontal,
                                 itemCount: collegesForYou.length,
@@ -944,50 +944,49 @@ class _CollegeSpotlightCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Fills the rail's fixed height so every card is the same size — the
+    // name always reserves two lines so shorter names don't shrink the
+    // card. No rating row here; the full rating is on the detail screen.
     return SizedBox(
       width: 176,
-      // Align so the card sizes to its own content instead of stretching to
-      // fill the rail's height — otherwise the white surface runs on well
-      // past the text, leaving a big empty band under the state line.
-      child: Align(
-        alignment: Alignment.topCenter,
-        child: Container(
-          decoration: BoxDecoration(
-            color: AppColors.surface,
-            borderRadius: BorderRadius.circular(AppRadius.lg),
-            boxShadow: AppShadows.card,
+      child: Container(
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(AppRadius.lg),
+          boxShadow: AppShadows.card,
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: () => context.push(
+            '/colleges/detail',
+            extra: {
+              'universitySlug': university.slug,
+              'universityName': university.name,
+            },
           ),
-          clipBehavior: Clip.antiAlias,
-          child: InkWell(
-            onTap: () => context.push(
-              '/colleges/detail',
-              extra: {
-                'universitySlug': university.slug,
-                'universityName': university.name,
-              },
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  height: 64,
-                  width: double.infinity,
-                  color: AppColors.primaryLight,
-                  alignment: Alignment.center,
-                  child: const Icon(
-                    Icons.account_balance_rounded,
-                    size: 28,
-                    color: authBrandTeal,
-                  ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                height: 60,
+                width: double.infinity,
+                color: AppColors.primaryLight,
+                alignment: Alignment.center,
+                child: const Icon(
+                  Icons.account_balance_rounded,
+                  size: 28,
+                  color: authBrandTeal,
                 ),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(10, 8, 10, 10),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(10, 8, 10, 8),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    SizedBox(
+                      height: 32,
+                      child: Text(
                         university.name,
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
@@ -998,52 +997,24 @@ class _CollegeSpotlightCard extends StatelessWidget {
                           height: 1.2,
                         ),
                       ),
-                      const SizedBox(height: 4),
-                      Text(
-                        [
-                          if (university.stream != null) university.stream!,
-                          university.state,
-                        ].join(' · '),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          fontSize: 11,
-                          color: AppColors.textSecondary,
-                        ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      [
+                        if (university.stream != null) university.stream!,
+                        university.state,
+                      ].join(' · '),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 11,
+                        color: AppColors.textSecondary,
                       ),
-                      // College reviews are mentor-authored today (see the
-                      // university-reviews module's canReview gate), so this
-                      // is effectively the average of mentors' ratings of the
-                      // college. Shown only once a real rating exists — no
-                      // "no reviews yet" placeholder. Mirrors
-                      // _MentorSpotlightCard's rating row.
-                      if (university.rating != null) ...[
-                        const SizedBox(height: 6),
-                        Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Icon(
-                              Icons.star_rounded,
-                              size: 13,
-                              color: AppColors.warning,
-                            ),
-                            const SizedBox(width: 2),
-                            Text(
-                              '${university.rating!.toStringAsFixed(1)} (${university.reviewCount})',
-                              style: const TextStyle(
-                                fontSize: 11,
-                                fontWeight: AppFont.semibold,
-                                color: AppColors.textPrimary,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),
