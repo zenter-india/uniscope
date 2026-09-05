@@ -53,12 +53,14 @@ class _ProfileCompleteness extends StatelessWidget {
         ('your college', p.universityId != null),
       ];
     }
+    // Only fields the aspirant can actually set — in onboarding or from
+    // Edit Profile. "Goals" isn't collected anywhere anymore (removed from
+    // both flows), and preferred language / course are onboarding-only with
+    // no edit field, so nudging for them is a dead end.
     return [
       ...common,
       ('your qualification', (p.qualification ?? '').isNotEmpty),
       ('your field of interest', (p.stream ?? '').isNotEmpty),
-      ('your goals', p.goals.isNotEmpty),
-      ('your preferred language', (p.preferredLanguage ?? '').isNotEmpty),
     ];
   }
 
