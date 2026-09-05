@@ -39,18 +39,11 @@ List<Mentor> _topMentors(List<Mentor> mentors, {int take = 8}) {
   return sorted.take(take).toList();
 }
 
-/// Ranks a college list for the "Top colleges for you" rail by NIRF rank
-/// (lower is better). Most rows have none — NIRF here only covers the top
-/// medical colleges nationally — so an unranked college sorts last rather
-/// than tying at 0, and the same alphabetical tiebreak the plain catalogue
-/// already uses decides the rest.
-List<University> _topColleges(List<University> universities, {int take = 8}) {
-  final sorted = [...universities]..sort((a, b) {
-    final rankA = a.nirfRank ?? 1 << 30;
-    final rankB = b.nirfRank ?? 1 << 30;
-    if (rankA != rankB) return rankA.compareTo(rankB);
-    return a.name.compareTo(b.name);
-  });
+/// First N colleges for the "Colleges for you" rail — the catalogue has no
+/// quality/ranking signal to order by, so this is just the stream-filtered
+/// set alphabetically, matching how the Colleges tab itself lists them.
+List<University> _collegesForYou(List<University> universities, {int take = 8}) {
+  final sorted = [...universities]..sort((a, b) => a.name.compareTo(b.name));
   return sorted.take(take).toList();
 }
 
@@ -107,14 +100,14 @@ class HomeScreen extends ConsumerWidget {
           : mentorsAsync.asData?.value ?? const [],
     );
 
-    // "Top colleges for you": same idea, derived from the catalogue already
-    // fetched below for "Keep Exploring" — no extra request. Ranked by NIRF
-    // rank where one exists (mainly Medical colleges today).
+    // "Colleges for you": the student's stream filtered out of the catalogue
+    // already fetched below for "Keep Exploring" — no extra request. Falls
+    // back to the whole catalogue when the stream is unknown or has none.
     final allColleges = universitiesAsync.asData?.value ?? const [];
     final streamColleges = effectiveStream == null
         ? const <University>[]
         : allColleges.where((u) => u.stream == effectiveStream).toList();
-    final topColleges = _topColleges(
+    final collegesForYou = _collegesForYou(
       streamColleges.isNotEmpty ? streamColleges : allColleges,
     );
 
@@ -331,11 +324,11 @@ class HomeScreen extends ConsumerWidget {
                     Row(
                       children: [
                         Expanded(
-                          // State, not GPS: 85% of government MBBS seats
-                          // are state-quota, so the aspirant's own state
-                          // is the filter that actually affects where
-                          // they can get in. Falls back to the plain
-                          // list until onboarding has captured a state.
+                          // State, not GPS: most government seats are
+                          // state-quota, so the aspirant's own state is the
+                          // filter that actually affects where they can get
+                          // in. Falls back to the plain list until
+                          // onboarding has captured a state.
                           child: _QuickCard(
                             label: myState ?? 'All Colleges',
                             sub: myState != null
@@ -446,7 +439,7 @@ class HomeScreen extends ConsumerWidget {
                     ),
                     const SizedBox(height: AppSpacing.lg),
                     SectionHeader(
-                      title: 'Top colleges for you',
+                      title: 'Colleges for you',
                       accentColor: authBrandTeal,
                       onSeeAll: () => context.go('/colleges'),
                     ),
@@ -463,17 +456,17 @@ class HomeScreen extends ConsumerWidget {
                         ),
                       ),
                       error: (_, __) => const SizedBox.shrink(),
-                      data: (_) => topColleges.isEmpty
+                      data: (_) => collegesForYou.isEmpty
                           ? const SizedBox.shrink()
                           : SizedBox(
                               height: 176,
                               child: ListView.separated(
                                 scrollDirection: Axis.horizontal,
-                                itemCount: topColleges.length,
+                                itemCount: collegesForYou.length,
                                 separatorBuilder: (_, __) =>
                                     const SizedBox(width: AppSpacing.sm),
                                 itemBuilder: (_, i) => _CollegeSpotlightCard(
-                                  university: topColleges[i],
+                                  university: collegesForYou[i],
                                 ),
                               ),
                             ),
@@ -495,17 +488,11 @@ class HomeScreen extends ConsumerWidget {
                           return _CollegeCard(
                             name: u.name,
                             sub: [
-                              // Was a binary Government/Private ternary that
-                              // mislabelled CENTRAL colleges (e.g. NIFT
-                              // Delhi) and DEEMED ones as "Private".
-                              switch (u.type) {
-                                'GOVERNMENT' => 'Government',
-                                'CENTRAL' => 'Central',
-                                'DEEMED' => 'Deemed',
-                                _ => 'Private',
-                              },
-                              if (u.mbbsSeats != null) '${u.mbbsSeats} seats',
-                            ].join(' · '),
+                              if (u.stream != null) u.stream!,
+                              [u.city, u.state]
+                                  .where((v) => v != null && v.isNotEmpty)
+                                  .join(', '),
+                            ].where((s) => s.isNotEmpty).join(' · '),
                             onTap: () => context.push(
                               '/colleges/detail',
                               extra: {
@@ -937,10 +924,9 @@ class _MentorSpotlightCard extends ConsumerWidget {
   }
 }
 
-/// Fixed-width college card for the Home "Top colleges for you" rail —
-/// same visual language as [_MentorSpotlightCard]: a tinted hero, then
-/// name/state and a NIRF-rank badge when the college has one (most rows
-/// outside Medical don't yet — see [_topColleges]'s doc comment).
+/// Fixed-width college card for the Home "Colleges for you" rail — same
+/// visual language as [_MentorSpotlightCard]: a tinted hero, then the
+/// college name, its stream, and its city/state.
 class _CollegeSpotlightCard extends StatelessWidget {
   const _CollegeSpotlightCard({required this.university});
 
@@ -999,7 +985,10 @@ class _CollegeSpotlightCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      university.state,
+                      [
+                        if (university.stream != null) university.stream!,
+                        university.state,
+                      ].join(' · '),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
@@ -1007,19 +996,23 @@ class _CollegeSpotlightCard extends StatelessWidget {
                         color: AppColors.textSecondary,
                       ),
                     ),
-                    if (university.nirfRank != null) ...[
-                      const SizedBox(height: 6),
+                    const SizedBox(height: 6),
+                    // College reviews are mentor-authored today (see the
+                    // university-reviews module's canReview gate), so this
+                    // is effectively the average of mentors' ratings of the
+                    // college. Mirrors _MentorSpotlightCard's rating row.
+                    if (university.rating != null)
                       Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           const Icon(
-                            Icons.emoji_events_rounded,
+                            Icons.star_rounded,
                             size: 13,
                             color: AppColors.warning,
                           ),
                           const SizedBox(width: 2),
                           Text(
-                            'NIRF #${university.nirfRank}',
+                            '${university.rating!.toStringAsFixed(1)} (${university.reviewCount})',
                             style: const TextStyle(
                               fontSize: 11,
                               fontWeight: AppFont.semibold,
@@ -1027,8 +1020,16 @@ class _CollegeSpotlightCard extends StatelessWidget {
                             ),
                           ),
                         ],
+                      )
+                    else
+                      const Text(
+                        'No reviews yet',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontStyle: FontStyle.italic,
+                          color: AppColors.textMuted,
+                        ),
                       ),
-                    ],
                   ],
                 ),
               ),
