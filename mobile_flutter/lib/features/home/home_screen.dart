@@ -30,19 +30,23 @@ const _homeActiveStatuses = {
 /// wrongly outrank a mentor with a genuinely low real rating), then review
 /// count breaks ties between mentors of the same rating.
 List<Mentor> _topMentors(List<Mentor> mentors, {int take = 8}) {
-  final sorted = [...mentors]..sort((a, b) {
-    final ratingA = a.rating ?? -1;
-    final ratingB = b.rating ?? -1;
-    if (ratingA != ratingB) return ratingB.compareTo(ratingA);
-    return b.reviewCount.compareTo(a.reviewCount);
-  });
+  final sorted = [...mentors]
+    ..sort((a, b) {
+      final ratingA = a.rating ?? -1;
+      final ratingB = b.rating ?? -1;
+      if (ratingA != ratingB) return ratingB.compareTo(ratingA);
+      return b.reviewCount.compareTo(a.reviewCount);
+    });
   return sorted.take(take).toList();
 }
 
 /// First N colleges for the "Colleges for you" rail — the catalogue has no
 /// quality/ranking signal to order by, so this is just the stream-filtered
 /// set alphabetically, matching how the Colleges tab itself lists them.
-List<University> _collegesForYou(List<University> universities, {int take = 8}) {
+List<University> _collegesForYou(
+  List<University> universities, {
+  int take = 8,
+}) {
   final sorted = [...universities]..sort((a, b) => a.name.compareTo(b.name));
   return sorted.take(take).toList();
 }
@@ -401,7 +405,7 @@ class HomeScreen extends ConsumerWidget {
                     const SizedBox(height: AppSpacing.md),
                     universitiesAsync.when(
                       loading: () => const SizedBox(
-                        height: 176,
+                        height: 150,
                         child: Row(
                           children: [
                             Expanded(child: SkeletonCard()),
@@ -414,7 +418,7 @@ class HomeScreen extends ConsumerWidget {
                       data: (_) => collegesForYou.isEmpty
                           ? const SizedBox.shrink()
                           : SizedBox(
-                              height: 176,
+                              height: 150,
                               child: ListView.separated(
                                 scrollDirection: Axis.horizontal,
                                 itemCount: collegesForYou.length,
@@ -479,9 +483,7 @@ class HomeScreen extends ConsumerWidget {
                                 separatorBuilder: (_, __) =>
                                     const SizedBox(width: AppSpacing.sm),
                                 itemBuilder: (_, i) =>
-                                    _MentorSpotlightCard(
-                                      mentor: topMentors[i],
-                                    ),
+                                    _MentorSpotlightCard(mentor: topMentors[i]),
                               ),
                             ),
                     ),
@@ -665,8 +667,7 @@ List<Session> _activeByMentor(List<Session> sessions) {
   for (final s in sessions) {
     if (!_homeActiveStatuses.contains(s.status)) continue;
     final existing = byMentor[s.mentorId];
-    if (existing == null ||
-        s.requestedAt.compareTo(existing.requestedAt) > 0) {
+    if (existing == null || s.requestedAt.compareTo(existing.requestedAt) > 0) {
       byMentor[s.mentorId] = s;
     }
   }
@@ -706,7 +707,8 @@ class _ActiveSessionRow extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final isCall = session.type == 'AUDIO_CALL';
-    final joinable = isCall &&
+    final joinable =
+        isCall &&
         (session.status == SessionStatus.accepted ||
             session.status == SessionStatus.ringing ||
             session.status == SessionStatus.inProgress);
@@ -776,10 +778,7 @@ class _ActiveSessionRow extends ConsumerWidget {
               } else if (isCall) {
                 startChatWithMentor(context, ref, session.mentorId);
               } else {
-                context.push(
-                  '/chats/room',
-                  extra: {'sessionId': session.id},
-                );
+                context.push('/chats/room', extra: {'sessionId': session.id});
               }
             },
           ),
@@ -924,8 +923,7 @@ class _MentorSpotlightCard extends ConsumerWidget {
                     width: double.infinity,
                     child: _MiniButton(
                       label: 'Start free chat',
-                      onTap: () =>
-                          startChatWithMentor(context, ref, mentor.id),
+                      onTap: () => startChatWithMentor(context, ref, mentor.id),
                     ),
                   ),
                 ],
@@ -950,98 +948,104 @@ class _CollegeSpotlightCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return SizedBox(
       width: 176,
-      child: Container(
-        decoration: BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: BorderRadius.circular(AppRadius.lg),
-          boxShadow: AppShadows.card,
-        ),
-        clipBehavior: Clip.antiAlias,
-        child: InkWell(
-          onTap: () => context.push(
-            '/colleges/detail',
-            extra: {
-              'universitySlug': university.slug,
-              'universityName': university.name,
-            },
+      // Align so the card sizes to its own content instead of stretching to
+      // fill the rail's height — otherwise the white surface runs on well
+      // past the text, leaving a big empty band under the state line.
+      child: Align(
+        alignment: Alignment.topCenter,
+        child: Container(
+          decoration: BoxDecoration(
+            color: AppColors.surface,
+            borderRadius: BorderRadius.circular(AppRadius.lg),
+            boxShadow: AppShadows.card,
           ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                height: 64,
-                width: double.infinity,
-                color: AppColors.primaryLight,
-                alignment: Alignment.center,
-                child: const Icon(
-                  Icons.account_balance_rounded,
-                  size: 28,
-                  color: authBrandTeal,
+          clipBehavior: Clip.antiAlias,
+          child: InkWell(
+            onTap: () => context.push(
+              '/colleges/detail',
+              extra: {
+                'universitySlug': university.slug,
+                'universityName': university.name,
+              },
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  height: 64,
+                  width: double.infinity,
+                  color: AppColors.primaryLight,
+                  alignment: Alignment.center,
+                  child: const Icon(
+                    Icons.account_balance_rounded,
+                    size: 28,
+                    color: authBrandTeal,
+                  ),
                 ),
-              ),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(10, 8, 10, 10),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      university.name,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        fontSize: 13,
-                        fontWeight: AppFont.bold,
-                        color: AppColors.textPrimary,
-                        height: 1.2,
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(10, 8, 10, 10),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        university.name,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: AppFont.bold,
+                          color: AppColors.textPrimary,
+                          height: 1.2,
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      [
-                        if (university.stream != null) university.stream!,
-                        university.state,
-                      ].join(' · '),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        fontSize: 11,
-                        color: AppColors.textSecondary,
+                      const SizedBox(height: 4),
+                      Text(
+                        [
+                          if (university.stream != null) university.stream!,
+                          university.state,
+                        ].join(' · '),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 11,
+                          color: AppColors.textSecondary,
+                        ),
                       ),
-                    ),
-                    // College reviews are mentor-authored today (see the
-                    // university-reviews module's canReview gate), so this
-                    // is effectively the average of mentors' ratings of the
-                    // college. Shown only once a real rating exists — no
-                    // "no reviews yet" placeholder. Mirrors
-                    // _MentorSpotlightCard's rating row.
-                    if (university.rating != null) ...[
-                      const SizedBox(height: 6),
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(
-                            Icons.star_rounded,
-                            size: 13,
-                            color: AppColors.warning,
-                          ),
-                          const SizedBox(width: 2),
-                          Text(
-                            '${university.rating!.toStringAsFixed(1)} (${university.reviewCount})',
-                            style: const TextStyle(
-                              fontSize: 11,
-                              fontWeight: AppFont.semibold,
-                              color: AppColors.textPrimary,
+                      // College reviews are mentor-authored today (see the
+                      // university-reviews module's canReview gate), so this
+                      // is effectively the average of mentors' ratings of the
+                      // college. Shown only once a real rating exists — no
+                      // "no reviews yet" placeholder. Mirrors
+                      // _MentorSpotlightCard's rating row.
+                      if (university.rating != null) ...[
+                        const SizedBox(height: 6),
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(
+                              Icons.star_rounded,
+                              size: 13,
+                              color: AppColors.warning,
                             ),
-                          ),
-                        ],
-                      ),
+                            const SizedBox(width: 2),
+                            Text(
+                              '${university.rating!.toStringAsFixed(1)} (${university.reviewCount})',
+                              style: const TextStyle(
+                                fontSize: 11,
+                                fontWeight: AppFont.semibold,
+                                color: AppColors.textPrimary,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
                     ],
-                  ],
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
