@@ -26,6 +26,18 @@ import 'session_list_screen.dart'
 /// and fail at submit time.
 final _minCallSlotUniminutes = kCallSlotMinutes.first;
 
+/// Generic conversation starters offered inside a brand-new mentor chat
+/// (see ChatThreadView's empty state) — not mentor-specific, just enough to
+/// unblock someone facing a blank thread. Tapping one drops it into the
+/// composer to edit or send; it vanishes the moment the thread has any
+/// message, and never reappears on reopening a thread with history.
+const kMentorChatStarters = [
+  'What made you choose this college?',
+  'What do you wish you knew before joining?',
+  "What's campus life really like day-to-day?",
+  'How did you prepare for admissions?',
+];
+
 /// Chat UI for a CHAT session (Postgres + Supabase Realtime — see
 /// ChatThreadView). Chat is free and has no pricing or timing shown
 /// anywhere in this screen — the only place a cost ever appears is the
@@ -304,6 +316,11 @@ class _SessionChatScreenState extends ConsumerState<SessionChatScreen> {
               connection: _connection!,
               currentUserId: currentUserId,
               initialDraft: widget.initialDraft,
+              // Conversation starters, shown only while the thread is still
+              // empty (see ChatThreadView) — aspirant → mentor only; a
+              // mentor opening a new student thread, or the support chat,
+              // gets the plain empty state.
+              starterSuggestions: isAspirant ? kMentorChatStarters : null,
               onSend: (text, clientMessageId) => ref
                   .read(chatApiProvider)
                   .sendMessage(

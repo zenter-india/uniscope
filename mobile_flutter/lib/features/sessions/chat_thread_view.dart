@@ -27,12 +27,19 @@ class ChatThreadView extends StatefulWidget {
     required this.onRefetch,
     required this.onLoadOlder,
     this.initialDraft,
+    this.starterSuggestions,
   });
 
   /// Pre-fills the composer once, on first mount — used when a chat is
   /// started from a tapped sample question so the aspirant lands with the
   /// question already typed, ready to edit or send.
   final String? initialDraft;
+
+  /// Conversation starters shown in the empty state only — the moment the
+  /// thread has a single message (sent, received, or loaded from history on
+  /// reopen) they're gone. Null / empty = plain empty state (support chat,
+  /// or the mentor's side of a new student thread).
+  final List<String>? starterSuggestions;
 
   final ChatConnection connection;
   final String currentUserId;
@@ -247,11 +254,14 @@ class _ChatThreadViewState extends State<ChatThreadView>
       children: [
         Expanded(
           child: _messages.isEmpty
-              ? const Center(
-                  child: Text(
-                    'No messages yet — say hello!',
-                    style: TextStyle(color: AppColors.textMuted),
-                  ),
+              ? _EmptyThread(
+                  suggestions: widget.starterSuggestions,
+                  onPick: (q) {
+                    _composerController.text = q;
+                    _composerController.selection =
+                        TextSelection.collapsed(offset: q.length);
+                    setState(() {});
+                  },
                 )
               : ListView.builder(
                   controller: _scrollController,
@@ -331,6 +341,93 @@ class _ChatThreadViewState extends State<ChatThreadView>
           ),
         ),
       ],
+    );
+  }
+}
+
+/// Shown while a thread has zero messages. With [suggestions] it also
+/// offers tap-to-compose conversation starters (a brand-new mentor chat);
+/// without them it's just a gentle nudge (support chat, mentor side).
+class _EmptyThread extends StatelessWidget {
+  const _EmptyThread({required this.suggestions, required this.onPick});
+
+  final List<String>? suggestions;
+  final ValueChanged<String> onPick;
+
+  @override
+  Widget build(BuildContext context) {
+    final starters = suggestions ?? const <String>[];
+    if (starters.isEmpty) {
+      return const Center(
+        child: Text(
+          'No messages yet — say hello!',
+          style: TextStyle(color: AppColors.textMuted),
+        ),
+      );
+    }
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(AppSpacing.lg),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const SizedBox(height: AppSpacing.lg),
+          const Text(
+            'Say hello, or start with one of these',
+            style: TextStyle(
+              fontSize: AppFont.md,
+              fontWeight: AppFont.bold,
+              color: AppColors.textPrimary,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.xs),
+          const Text(
+            'Tap a question to drop it into the message box, then edit or '
+            'send it.',
+            style: TextStyle(
+              fontSize: AppFont.sm,
+              color: AppColors.textSecondary,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.lg),
+          const Text(
+            'Need ideas? Try asking:',
+            style: TextStyle(
+              fontSize: AppFont.sm,
+              fontWeight: AppFont.semibold,
+              color: AppColors.textPrimary,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          Wrap(
+            spacing: AppSpacing.sm,
+            runSpacing: AppSpacing.sm,
+            children: [
+              for (final q in starters)
+                InkWell(
+                  onTap: () => onPick(q),
+                  borderRadius: BorderRadius.circular(AppRadius.md),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.sm,
+                      vertical: AppSpacing.xs,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppColors.primaryLight,
+                      borderRadius: BorderRadius.circular(AppRadius.md),
+                    ),
+                    child: Text(
+                      q,
+                      style: const TextStyle(
+                        fontSize: AppFont.xs,
+                        color: AppColors.primaryDark,
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 }

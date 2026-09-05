@@ -8,17 +8,16 @@ import '../../state/auth_controller.dart';
 import '../../widgets/app_widgets.dart';
 import '../reports/safety_menu_sheet.dart';
 import '../sessions/call_request_sheet.dart';
-import 'pre_chat_confirm_sheet.dart';
+import 'mentor_list_screen.dart' show startChatWithMentor;
 
-final mentorDetailProvider =
-    FutureProvider.autoDispose.family<Mentor, String>(
+final mentorDetailProvider = FutureProvider.autoDispose.family<Mentor, String>(
   (ref, mentorId) => ref.watch(mentorsApiProvider).getById(mentorId),
 );
 
-final mentorReviewsListProvider =
-    FutureProvider.autoDispose.family<List<MentorReview>, String>(
-  (ref, mentorId) => ref.watch(reviewsApiProvider).listForMentor(mentorId),
-);
+final mentorReviewsListProvider = FutureProvider.autoDispose
+    .family<List<MentorReview>, String>(
+      (ref, mentorId) => ref.watch(reviewsApiProvider).listForMentor(mentorId),
+    );
 
 /// Read-only mentor profile: identity, track record, bio, expertise, and
 /// reviews, over a persistent Chat / Call action bar. Reviews are written
@@ -36,7 +35,8 @@ class MentorDetailScreen extends ConsumerWidget {
       body: mentorAsync.when(
         loading: () => const _HeaderScaffold(
           child: Center(
-              child: CircularProgressIndicator(color: AppColors.primary)),
+            child: CircularProgressIndicator(color: AppColors.primary),
+          ),
         ),
         error: (err, _) => _HeaderScaffold(
           child: EmptyState(
@@ -49,11 +49,18 @@ class MentorDetailScreen extends ConsumerWidget {
         ),
         data: (mentor) => Column(
           children: [
-            _GradientHeader(mentorId: mentor.id, mentorName: mentor.displayName),
+            _GradientHeader(
+              mentorId: mentor.id,
+              mentorName: mentor.displayName,
+            ),
             Expanded(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.fromLTRB(
-                    AppSpacing.md, 0, AppSpacing.md, AppSpacing.lg),
+                  AppSpacing.md,
+                  0,
+                  AppSpacing.md,
+                  AppSpacing.lg,
+                ),
                 child: Column(
                   // stretch, not start — otherwise cards whose content is
                   // narrow (the expertise Wrap) shrink-wrap instead of
@@ -69,7 +76,9 @@ class MentorDetailScreen extends ConsumerWidget {
                     _AboutCard(mentor: mentor),
                     const SizedBox(height: AppSpacing.md),
                     _ReviewsSection(
-                        mentorId: mentorId, reviewCount: mentor.reviewCount),
+                      mentorId: mentorId,
+                      reviewCount: mentor.reviewCount,
+                    ),
                   ],
                 ),
               ),
@@ -113,7 +122,11 @@ class _GradientHeader extends ConsumerWidget {
       padding: EdgeInsets.only(top: MediaQuery.of(context).padding.top),
       child: Padding(
         padding: const EdgeInsets.fromLTRB(
-            AppSpacing.sm, AppSpacing.sm, AppSpacing.sm, AppSpacing.lg),
+          AppSpacing.sm,
+          AppSpacing.sm,
+          AppSpacing.sm,
+          AppSpacing.lg,
+        ),
         child: Row(
           children: [
             IconButton(
@@ -178,9 +191,10 @@ class _IdentityCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               AppAvatar(
-                  name: mentor.displayName,
-                  size: 76,
-                  avatarUrl: mentor.avatarUrl),
+                name: mentor.displayName,
+                size: 76,
+                avatarUrl: mentor.avatarUrl,
+              ),
               const SizedBox(width: AppSpacing.md),
               Expanded(
                 child: Column(
@@ -195,11 +209,23 @@ class _IdentityCard extends StatelessWidget {
                         height: 1.15,
                       ),
                     ),
+                    if (mentor.uniqueId != null) ...[
+                      const SizedBox(height: 2),
+                      Text(
+                        '@${mentor.uniqueId}',
+                        style: const TextStyle(
+                          fontSize: AppFont.xs,
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                    ],
                     if (mentor.isVerified) ...[
                       const SizedBox(height: 6),
                       Container(
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 10, vertical: 4),
+                          horizontal: 10,
+                          vertical: 4,
+                        ),
                         decoration: BoxDecoration(
                           color: AppColors.primaryLight,
                           borderRadius: BorderRadius.circular(AppRadius.full),
@@ -207,8 +233,11 @@ class _IdentityCard extends StatelessWidget {
                         child: const Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Icon(Icons.verified_rounded,
-                                size: 14, color: AppColors.primary),
+                            Icon(
+                              Icons.verified_rounded,
+                              size: 14,
+                              color: AppColors.primary,
+                            ),
                             SizedBox(width: 4),
                             Text(
                               'Verified student',
@@ -225,8 +254,9 @@ class _IdentityCard extends StatelessWidget {
                     const SizedBox(height: 6),
                     Align(
                       alignment: Alignment.centerLeft,
-                      child:
-                          CallAvailabilityChip(isAvailable: mentor.isAvailable),
+                      child: CallAvailabilityChip(
+                        isAvailable: mentor.isAvailable,
+                      ),
                     ),
                     if (_affiliation != null) ...[
                       const SizedBox(height: 6),
@@ -242,8 +272,11 @@ class _IdentityCard extends StatelessWidget {
                       const SizedBox(height: 6),
                       Row(
                         children: [
-                          const Icon(Icons.star_rounded,
-                              size: 18, color: AppColors.warning),
+                          const Icon(
+                            Icons.star_rounded,
+                            size: 18,
+                            color: AppColors.warning,
+                          ),
                           const SizedBox(width: 3),
                           Text(
                             mentor.rating!.toStringAsFixed(1),
@@ -272,28 +305,11 @@ class _IdentityCard extends StatelessWidget {
           const SizedBox(height: AppSpacing.md),
           const Divider(height: 1, color: AppColors.border),
           const SizedBox(height: AppSpacing.md),
-          // Only stats the backend can actually compute. The reference
-          // design also showed "response rate" and "responds within X" —
-          // nothing timestamps individual messages, so those are omitted
-          // rather than invented.
+          // Rating is the only track-record stat surfaced here now — a
+          // per-minute "minutes mentored" / "students helped" count read as
+          // noise more than signal. The full review list is below.
           Row(
             children: [
-              _TrackStat(
-                icon: Icons.schedule_rounded,
-                value: mentor.minutesMentored != null
-                    ? '${mentor.minutesMentored}'
-                    : '—',
-                label: 'Minutes mentored',
-              ),
-              const _StatDivider(),
-              _TrackStat(
-                icon: Icons.people_alt_rounded,
-                value: mentor.studentsHelped != null
-                    ? '${mentor.studentsHelped}'
-                    : '—',
-                label: 'Students helped',
-              ),
-              const _StatDivider(),
               _TrackStat(
                 icon: Icons.star_rounded,
                 value: mentor.rating != null
@@ -352,14 +368,6 @@ class _TrackStat extends StatelessWidget {
   }
 }
 
-class _StatDivider extends StatelessWidget {
-  const _StatDivider();
-
-  @override
-  Widget build(BuildContext context) =>
-      Container(width: 1, height: 40, color: AppColors.border);
-}
-
 class _AboutCard extends StatelessWidget {
   const _AboutCard({required this.mentor});
   final Mentor mentor;
@@ -372,10 +380,12 @@ class _AboutCard extends StatelessWidget {
     // `stream` (college field of study) is the field new mentors set —
     // `specialty` only remains for mentors who onboarded before the
     // Areas-of-Guidance step was removed.
-    final hasStream = !hasSpecialty &&
+    final hasStream =
+        !hasSpecialty &&
         mentor.stream != null &&
         mentor.stream!.trim().isNotEmpty;
-    final hasExpertise = hasSpecialty || hasStream || mentor.languages.isNotEmpty;
+    final hasExpertise =
+        hasSpecialty || hasStream || mentor.languages.isNotEmpty;
     final hasDays = mentor.availableDays.isNotEmpty;
 
     if (!hasBio && !hasExpertise && !hasDays) return const SizedBox.shrink();
@@ -403,8 +413,31 @@ class _AboutCard extends StatelessWidget {
               ),
             ),
           ],
-          if (hasBio && hasExpertise) const SizedBox(height: AppSpacing.md),
+          if (hasDays) ...[
+            if (hasBio) const SizedBox(height: AppSpacing.md),
+            const Text(
+              'Usually free on',
+              style: TextStyle(
+                fontSize: AppFont.md,
+                fontWeight: AppFont.bold,
+                color: AppColors.textPrimary,
+              ),
+            ),
+            const SizedBox(height: AppSpacing.xs),
+            // Advisory only — the mentor said these are their typical days,
+            // and nothing blocks a booking on any other day. Worded as a
+            // habit ("usually") rather than a schedule so it can't be read
+            // as a guarantee.
+            Text(
+              mentor.availableDays.join(' · '),
+              style: const TextStyle(
+                fontSize: AppFont.sm,
+                color: AppColors.textSecondary,
+              ),
+            ),
+          ],
           if (hasExpertise) ...[
+            if (hasBio || hasDays) const SizedBox(height: AppSpacing.md),
             const Text(
               'Can help with',
               style: TextStyle(
@@ -434,29 +467,6 @@ class _AboutCard extends StatelessWidget {
                     label: language,
                   ),
               ],
-            ),
-          ],
-          if (hasDays) ...[
-            if (hasBio || hasExpertise) const SizedBox(height: AppSpacing.md),
-            const Text(
-              'Usually free on',
-              style: TextStyle(
-                fontSize: AppFont.md,
-                fontWeight: AppFont.bold,
-                color: AppColors.textPrimary,
-              ),
-            ),
-            const SizedBox(height: AppSpacing.xs),
-            // Advisory only — the mentor said these are their typical days,
-            // and nothing blocks a booking on any other day. Worded as a
-            // habit ("usually") rather than a schedule so it can't be read
-            // as a guarantee.
-            Text(
-              mentor.availableDays.join(' · '),
-              style: const TextStyle(
-                fontSize: AppFont.sm,
-                color: AppColors.textSecondary,
-              ),
             ),
           ],
         ],
@@ -519,7 +529,8 @@ class _ReviewsSection extends ConsumerWidget {
         ),
         const SizedBox(height: AppSpacing.sm),
         reviewsAsync.when(
-          loading: () => const Column(children: [SkeletonCard(), SkeletonCard()]),
+          loading: () =>
+              const Column(children: [SkeletonCard(), SkeletonCard()]),
           error: (err, _) => const EmptyState(
             icon: Icons.wifi_off_rounded,
             title: 'Could not load reviews',
@@ -582,8 +593,11 @@ class _ReviewTile extends StatelessWidget {
                   color: AppColors.primaryLight,
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(Icons.person_rounded,
-                    size: 16, color: AppColors.primary),
+                child: const Icon(
+                  Icons.person_rounded,
+                  size: 16,
+                  color: AppColors.primary,
+                ),
               ),
               const SizedBox(width: AppSpacing.sm),
               const Text(
@@ -655,7 +669,11 @@ class _ActionBar extends ConsumerWidget {
         top: false,
         child: Padding(
           padding: const EdgeInsets.fromLTRB(
-              AppSpacing.md, AppSpacing.sm, AppSpacing.md, AppSpacing.sm),
+            AppSpacing.md,
+            AppSpacing.sm,
+            AppSpacing.md,
+            AppSpacing.sm,
+          ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -663,13 +681,8 @@ class _ActionBar extends ConsumerWidget {
                 children: [
                   Expanded(
                     child: OutlinedButton.icon(
-                      onPressed: () => showPreChatConfirmSheet(
-                        context,
-                        ref,
-                        mentorId: mentor.id,
-                        mentorName: mentor.displayName,
-                        mentorAvatarUrl: mentor.avatarUrl,
-                      ),
+                      onPressed: () =>
+                          startChatWithMentor(context, ref, mentor.id),
                       style: OutlinedButton.styleFrom(
                         foregroundColor: AppColors.primary,
                         side: const BorderSide(color: AppColors.primary),
@@ -690,10 +703,10 @@ class _ActionBar extends ConsumerWidget {
                     child: FilledButton.icon(
                       onPressed: mentor.isAvailable
                           ? () => showCallRequestSheet(
-                                context,
-                                ref,
-                                mentorId: mentor.id,
-                              )
+                              context,
+                              ref,
+                              mentorId: mentor.id,
+                            )
                           : null,
                       style: FilledButton.styleFrom(
                         backgroundColor: AppColors.primary,
