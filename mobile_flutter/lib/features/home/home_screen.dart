@@ -245,7 +245,7 @@ class HomeScreen extends ConsumerWidget {
                                   style: const TextStyle(
                                     fontSize: AppFont.lg,
                                     fontWeight: AppFont.extraBold,
-                                    color: AppColors.logoNavy,
+                                    color: Colors.white,
                                   ),
                                 ),
                                 const SizedBox(height: 2),
