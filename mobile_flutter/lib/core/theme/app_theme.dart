@@ -127,12 +127,12 @@ class AppGradients {
     begin: Alignment.topCenter,
     end: Alignment.bottomCenter,
     colors: [
+      Color(0xFF1C9B78),
       Color(0xFF0B815A),
-      Color(0xFF067150),
-      Color(0xFF026548),
-      Color(0xFF005E44),
+      Color(0xFF6FBFA3),
+      Color(0xFFE3F3EC),
     ],
-    stops: [0.0, 0.46, 0.80, 1.0],
+    stops: [0.0, 0.38, 0.78, 1.0],
   );
 }
 
