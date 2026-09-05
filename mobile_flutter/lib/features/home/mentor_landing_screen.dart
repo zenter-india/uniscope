@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/network/mentors_api.dart' show MentorDashboardRecentSession;
 import '../../core/network/reviews_api.dart';
+import '../../core/network/users_api.dart' show myProfileProvider;
 import '../../core/theme/app_theme.dart';
 import '../../state/auth_controller.dart';
 import '../../widgets/app_widgets.dart';
@@ -31,6 +32,7 @@ class MentorLandingScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final displayName = ref.watch(authControllerProvider).user?.displayName;
     final firstName = displayName?.split(' ').first;
+    final myAvatarUrl = ref.watch(myProfileProvider).asData?.value.avatarUrl;
     final statsAsync = ref.watch(mentorDashboardStatsProvider);
     final reviewsAsync = ref.watch(myMentorReviewsProvider);
 
@@ -70,16 +72,46 @@ class MentorLandingScreen extends ConsumerWidget {
                               fit: BoxFit.contain,
                             ),
                             const SizedBox(width: AppSpacing.xs),
-                            Text(
-                              'Uniscope',
-                              style: TextStyle(
-                                fontSize: AppFont.sm,
-                                fontWeight: AppFont.bold,
-                                color: AppColors.textPrimary.withValues(
-                                  alpha: 0.75,
+                            Expanded(
+                              child: Text(
+                                'Uniscope',
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  fontSize: AppFont.sm,
+                                  fontWeight: AppFont.bold,
+                                  color: AppColors.textPrimary.withValues(
+                                    alpha: 0.75,
+                                  ),
                                 ),
                               ),
                             ),
+                            if (displayName != null)
+                              Material(
+                                color: Colors.transparent,
+                                shape: const CircleBorder(),
+                                child: InkWell(
+                                  customBorder: const CircleBorder(),
+                                  onTap: () => context.go('/profile'),
+                                  child: Container(
+                                    padding: const EdgeInsets.all(2),
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      border: Border.all(
+                                        color: AppColors.primary.withValues(
+                                          alpha: 0.35,
+                                        ),
+                                        width: 2,
+                                      ),
+                                    ),
+                                    child: AppAvatar(
+                                      name: displayName,
+                                      size: 34,
+                                      solid: true,
+                                      avatarUrl: myAvatarUrl,
+                                    ),
+                                  ),
+                                ),
+                              ),
                           ],
                         ),
                       ),
@@ -197,7 +229,8 @@ class MentorLandingScreen extends ConsumerWidget {
                             children: [
                               Expanded(
                                 child: _StatTile(
-                                  value: stats.rating?.toStringAsFixed(1) ?? '—',
+                                  value:
+                                      stats.rating?.toStringAsFixed(1) ?? '—',
                                   label: 'Average Rating',
                                   icon: Icons.star_rounded,
                                   color: AppColors.warning,
@@ -378,8 +411,18 @@ class _RecentSessionCard extends StatelessWidget {
     if (endedAt == null) return null;
     final local = endedAt.toLocal();
     const months = [
-      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
     ];
     final hour12 = local.hour % 12 == 0 ? 12 : local.hour % 12;
     final minute = local.minute.toString().padLeft(2, '0');
@@ -392,10 +435,8 @@ class _RecentSessionCard extends StatelessWidget {
     final when = _whenLabel;
     return AppCard(
       margin: const EdgeInsets.only(bottom: AppSpacing.sm),
-      onTap: () => context.push(
-        '/chats/room',
-        extra: {'sessionId': session.id},
-      ),
+      onTap: () =>
+          context.push('/chats/room', extra: {'sessionId': session.id}),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
