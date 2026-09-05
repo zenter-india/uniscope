@@ -21,7 +21,19 @@ class AvatarPickerPanel extends ConsumerStatefulWidget {
     super.key,
     this.initialGenderText,
     this.startFromFirstOption = false,
+    this.showInlinePreview = true,
+    this.onPreviewChanged,
   });
+
+  /// When false, the panel omits the big preview avatar at the top —
+  /// [AvatarCustomizerScreen] turns this off so it can pin its own copy
+  /// above the scroll instead. The onboarding wizards leave it on.
+  final bool showInlinePreview;
+
+  /// Fires whenever the live preview updates (rendered SVG, and the saved
+  /// avatar URL fallback), so a pinned external preview can stay in sync
+  /// while the option list scrolls underneath it.
+  final void Function(String? previewSvg, String? previewUrl)? onPreviewChanged;
 
   /// Seeds the gender toggle — e.g. the 'Male'/'Female'/'Other' value the
   /// user already picked earlier in the same wizard, before it's persisted
@@ -103,6 +115,7 @@ class AvatarPickerPanelState extends ConsumerState<AvatarPickerPanel> {
             await ref.read(usersApiProvider).previewAvatarConfig(_config!);
         if (!mounted) return;
         setState(() => _previewSvg = svg);
+        widget.onPreviewChanged?.call(_previewSvg, _previewUrl);
       } catch (_) {
         // Non-fatal — the last good preview (or the fallback disc) stays.
       }
@@ -146,6 +159,7 @@ class AvatarPickerPanelState extends ConsumerState<AvatarPickerPanel> {
           }
         }
       });
+      widget.onPreviewChanged?.call(_previewSvg, _previewUrl);
       _schedulePreview();
     } catch (e) {
       setState(() {
@@ -184,21 +198,22 @@ class AvatarPickerPanelState extends ConsumerState<AvatarPickerPanel> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Center(
-          child: Padding(
-            padding: const EdgeInsets.only(bottom: AppSpacing.lg),
-            child: _previewSvg != null
-                ? ClipOval(
-                    child: SvgPicture.string(
-                      _previewSvg!,
-                      width: 120,
-                      height: 120,
-                      fit: BoxFit.cover,
-                    ),
-                  )
-                : AppAvatar(name: '?', size: 120, avatarUrl: _previewUrl),
+        if (widget.showInlinePreview)
+          Center(
+            child: Padding(
+              padding: const EdgeInsets.only(bottom: AppSpacing.lg),
+              child: _previewSvg != null
+                  ? ClipOval(
+                      child: SvgPicture.string(
+                        _previewSvg!,
+                        width: 120,
+                        height: 120,
+                        fit: BoxFit.cover,
+                      ),
+                    )
+                  : AppAvatar(name: '?', size: 120, avatarUrl: _previewUrl),
+            ),
           ),
-        ),
         Padding(
           padding: const EdgeInsets.only(bottom: AppSpacing.lg),
           child: Column(

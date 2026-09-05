@@ -778,10 +778,14 @@ class UniversityCard extends ConsumerWidget {
               _CollegeSaveButton(universityId: university.id),
             ],
           ),
-          const SizedBox(height: AppSpacing.md),
-          const Divider(height: 1, color: AppColors.border),
-          const SizedBox(height: AppSpacing.sm),
-          if (university.reviewCount > 0)
+          // The review summary (average rating + breakdown) only appears
+          // once real reviews exist — mentor-authored today. No "no reviews
+          // yet" placeholder, and no divider eating space when there's
+          // nothing to show.
+          if (university.reviewCount > 0) ...[
+            const SizedBox(height: AppSpacing.md),
+            const Divider(height: 1, color: AppColors.border),
+            const SizedBox(height: AppSpacing.sm),
             // Its own tap target, nested inside the card's own
             // (detail-screen) tap target — tapping the review summary goes
             // straight to the full breakdown instead of the college's
@@ -803,16 +807,8 @@ class UniversityCard extends ConsumerWidget {
                   fallbackReviewCount: university.reviewCount,
                 ),
               ),
-            )
-          else
-            const Text(
-              'No reviews yet',
-              style: TextStyle(
-                fontSize: AppFont.xs,
-                fontStyle: FontStyle.italic,
-                color: AppColors.textMuted,
-              ),
             ),
+          ],
         ],
       ),
     );
