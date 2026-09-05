@@ -26,6 +26,7 @@ class Mentor {
   const Mentor({
     required this.id,
     required this.displayName,
+    this.uniqueId,
     required this.role,
     required this.specialty,
     this.stream,
@@ -48,6 +49,11 @@ class Mentor {
 
   final String id;
   final String displayName;
+
+  /// Public registration number (e.g. "M3300000047") — shown on the mentor
+  /// detail screen, never the internal DB id. Null until the mentor has a
+  /// stream set on their profile.
+  final String? uniqueId;
   final String role;
   final String? avatarUrl;
   final String? specialty;
@@ -99,6 +105,7 @@ class Mentor {
   factory Mentor.fromJson(Map<String, dynamic> json) => Mentor(
     id: json['id'] as String,
     displayName: json['displayName'] as String,
+    uniqueId: json['uniqueId'] as String?,
     role: json['role'] as String,
     specialty: json['specialty'] as String?,
     stream: json['stream'] as String?,
@@ -139,8 +146,10 @@ class MentorDashboardRecentSession {
 
   final String id;
   final String aspirantDisplayName;
+
   /// "CHAT" | "AUDIO_CALL".
   final String type;
+
   /// Always "COMPLETED" today — this list is scoped to completed sessions
   /// server-side — but a real field rather than a hardcoded label.
   final String status;
@@ -194,26 +203,25 @@ class MentorDashboardStats {
   double get weeklyEarningsRupees => weeklyEarningsMinor / 100;
   double get monthlyEarningsRupees => monthlyEarningsMinor / 100;
 
-  factory MentorDashboardStats.fromJson(Map<String, dynamic> json) =>
-      MentorDashboardStats(
-        todaysSessionsCount: (json['todaysSessionsCount'] as num).toInt(),
-        minutesConsultedToday: (json['minutesConsultedToday'] as num).toInt(),
-        todaysEarningsMinor:
-            (json['todaysEarningsMinor'] as num?)?.toInt() ?? 0,
-        weeklyEarningsMinor: (json['weeklyEarningsMinor'] as num).toInt(),
-        monthlyEarningsMinor: (json['monthlyEarningsMinor'] as num).toInt(),
-        totalSessionsCount: (json['totalSessionsCount'] as num).toInt(),
-        totalMinutesConsulted: (json['totalMinutesConsulted'] as num).toInt(),
-        rating: (json['rating'] as num?)?.toDouble(),
-        reviewCount: (json['reviewCount'] as num?)?.toInt() ?? 0,
-        recentSessions: (json['recentSessions'] as List<dynamic>? ?? [])
-            .map(
-              (e) => MentorDashboardRecentSession.fromJson(
-                e as Map<String, dynamic>,
-              ),
-            )
-            .toList(),
-      );
+  factory MentorDashboardStats.fromJson(
+    Map<String, dynamic> json,
+  ) => MentorDashboardStats(
+    todaysSessionsCount: (json['todaysSessionsCount'] as num).toInt(),
+    minutesConsultedToday: (json['minutesConsultedToday'] as num).toInt(),
+    todaysEarningsMinor: (json['todaysEarningsMinor'] as num?)?.toInt() ?? 0,
+    weeklyEarningsMinor: (json['weeklyEarningsMinor'] as num).toInt(),
+    monthlyEarningsMinor: (json['monthlyEarningsMinor'] as num).toInt(),
+    totalSessionsCount: (json['totalSessionsCount'] as num).toInt(),
+    totalMinutesConsulted: (json['totalMinutesConsulted'] as num).toInt(),
+    rating: (json['rating'] as num?)?.toDouble(),
+    reviewCount: (json['reviewCount'] as num?)?.toInt() ?? 0,
+    recentSessions: (json['recentSessions'] as List<dynamic>? ?? [])
+        .map(
+          (e) =>
+              MentorDashboardRecentSession.fromJson(e as Map<String, dynamic>),
+        )
+        .toList(),
+  );
 }
 
 class MentorsApi {

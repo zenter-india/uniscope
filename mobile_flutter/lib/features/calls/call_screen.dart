@@ -108,6 +108,15 @@ class _CallScreenState extends ConsumerState<CallScreen> {
     return _isAspirant ? s.mentorAvatarUrl : s.aspirantAvatarUrl;
   }
 
+  /// The other party's public registration number (e.g. "A26260831001") —
+  /// shown under their name on the call screen so each side can note who
+  /// they spoke to. Never the internal DB id; null until it's assigned.
+  String? get _peerUniqueId {
+    final s = _session;
+    if (s == null) return null;
+    return _isAspirant ? s.mentorUniqueId : s.aspirantUniqueId;
+  }
+
   /// Time left in the booked slot, or null when it can't be computed yet.
   /// Negative once the slot has run out (the "continue?" prompt fires then).
   Duration? get _slotRemaining {
@@ -646,12 +655,14 @@ class _CallScreenState extends ConsumerState<CallScreen> {
       case _Phase.requestingPermission:
         return _ConnectingView(
           peerName: _session == null ? null : _peerName,
+          peerUniqueId: _peerUniqueId,
           peerAvatarUrl: _peerAvatarUrl,
           status: 'Starting call…',
         );
       case _Phase.connecting:
         return _ConnectingView(
           peerName: _peerName,
+          peerUniqueId: _peerUniqueId,
           peerAvatarUrl: _peerAvatarUrl,
           status: 'Connecting…',
         );
@@ -690,6 +701,7 @@ class _CallScreenState extends ConsumerState<CallScreen> {
       case _Phase.waiting:
         return _WaitingView(
           peerName: _peerName,
+          peerUniqueId: _peerUniqueId,
           peerAvatarUrl: _peerAvatarUrl,
           slotMinutes: _session?.callSlotMinutes,
           remoteJoined: _remoteJoinedChannel,
@@ -698,6 +710,7 @@ class _CallScreenState extends ConsumerState<CallScreen> {
       case _Phase.active:
         return _ActiveCallView(
           peerName: _peerName,
+          peerUniqueId: _peerUniqueId,
           peerAvatarUrl: _peerAvatarUrl,
           elapsed: _fmt(_elapsed),
           remaining: _slotRemaining,
@@ -832,6 +845,7 @@ class _GlyphBadge extends StatelessWidget {
 class _CallStage extends StatelessWidget {
   const _CallStage({
     required this.peerName,
+    required this.peerUniqueId,
     required this.peerAvatarUrl,
     required this.status,
     required this.controls,
@@ -841,6 +855,7 @@ class _CallStage extends StatelessWidget {
   });
 
   final String peerName;
+  final String? peerUniqueId;
   final String? peerAvatarUrl;
   final String status;
   final Widget? topPill;
@@ -857,6 +872,7 @@ class _CallStage extends StatelessWidget {
         const SizedBox(height: AppSpacing.xl),
         _CallPeerHeader(
           name: peerName,
+          uniqueId: peerUniqueId,
           avatarUrl: peerAvatarUrl,
           status: status,
           pulsing: pulsing,
@@ -884,6 +900,7 @@ class _CallStage extends StatelessWidget {
 class _CallPeerHeader extends StatefulWidget {
   const _CallPeerHeader({
     required this.name,
+    required this.uniqueId,
     required this.avatarUrl,
     required this.status,
     this.pulsing = false,
@@ -891,6 +908,7 @@ class _CallPeerHeader extends StatefulWidget {
   });
 
   final String name;
+  final String? uniqueId;
   final String? avatarUrl;
   final String status;
   final bool pulsing;
@@ -1015,6 +1033,19 @@ class _CallPeerHeaderState extends State<_CallPeerHeader>
             letterSpacing: -0.2,
           ),
         ),
+        if (widget.uniqueId != null) ...[
+          const SizedBox(height: 3),
+          Text(
+            '@${widget.uniqueId}',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: Colors.white.withValues(alpha: 0.6),
+              fontSize: AppFont.xs,
+              fontWeight: AppFont.medium,
+              letterSpacing: 0.2,
+            ),
+          ),
+        ],
         const SizedBox(height: 6),
         Text(
           widget.status,
@@ -1037,10 +1068,12 @@ class _CallPeerHeaderState extends State<_CallPeerHeader>
 class _ConnectingView extends StatelessWidget {
   const _ConnectingView({
     required this.peerName,
+    required this.peerUniqueId,
     required this.peerAvatarUrl,
     required this.status,
   });
   final String? peerName;
+  final String? peerUniqueId;
   final String? peerAvatarUrl;
   final String status;
 
@@ -1048,6 +1081,7 @@ class _ConnectingView extends StatelessWidget {
   Widget build(BuildContext context) {
     return _CallStage(
       peerName: peerName ?? 'Audio call',
+      peerUniqueId: peerUniqueId,
       peerAvatarUrl: peerAvatarUrl,
       status: status,
       pulsing: true,
@@ -1060,12 +1094,14 @@ class _ConnectingView extends StatelessWidget {
 class _WaitingView extends StatelessWidget {
   const _WaitingView({
     required this.peerName,
+    required this.peerUniqueId,
     required this.peerAvatarUrl,
     required this.slotMinutes,
     required this.remoteJoined,
     required this.onEnd,
   });
   final String peerName;
+  final String? peerUniqueId;
   final String? peerAvatarUrl;
   final int? slotMinutes;
   final bool remoteJoined;
@@ -1075,6 +1111,7 @@ class _WaitingView extends StatelessWidget {
   Widget build(BuildContext context) {
     return _CallStage(
       peerName: peerName,
+      peerUniqueId: peerUniqueId,
       peerAvatarUrl: peerAvatarUrl,
       status: remoteJoined ? 'Connecting…' : 'Ringing…',
       pulsing: true,
@@ -1100,6 +1137,7 @@ class _WaitingView extends StatelessWidget {
 class _ActiveCallView extends StatelessWidget {
   const _ActiveCallView({
     required this.peerName,
+    required this.peerUniqueId,
     required this.peerAvatarUrl,
     required this.elapsed,
     required this.remaining,
@@ -1117,6 +1155,7 @@ class _ActiveCallView extends StatelessWidget {
   });
 
   final String peerName;
+  final String? peerUniqueId;
   final String? peerAvatarUrl;
   final String elapsed;
   final Duration? remaining;
@@ -1184,6 +1223,7 @@ class _ActiveCallView extends StatelessWidget {
 
     return _CallStage(
       peerName: peerName,
+      peerUniqueId: peerUniqueId,
       peerAvatarUrl: peerAvatarUrl,
       status: status,
       topPill: pill,

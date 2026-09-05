@@ -9,6 +9,11 @@ import { isCallAvailable } from './availability.js';
 export interface MentorResponse {
   id: string;
   displayName: string;
+  /** Public registration number (e.g. "M3300000047") — see
+   * unique-id.helper.ts. Null until the mentor's profile.stream is set.
+   * Shown on the mentor detail screen an aspirant visits; never the
+   * internal DB id. */
+  uniqueId: string | null;
   role: User['role'];
   /** Public URL of the rendered avatar SVG. `avatarKey` (the raw
    * config) is deliberately NOT exposed — it's private styling state,
@@ -88,6 +93,7 @@ export function toMentorResponse(
   return {
     id: user.id,
     displayName: user.displayName,
+    uniqueId: user.uniqueId,
     role: user.role,
     avatarUrl: avatarUrl ?? null,
     isAvailable: isCallAvailable(profile),

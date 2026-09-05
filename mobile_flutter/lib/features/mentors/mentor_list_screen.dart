@@ -62,6 +62,15 @@ const _activeStatuses = {
   SessionStatus.inProgress,
 };
 
+/// The two states of the call-availability filter pill. Wording matches the
+/// per-card CallAvailabilityChip — never "online/offline".
+const _kAvailForCalls = 'Available for calls';
+const _kChatOnly = 'Chat only';
+
+/// Minimum-rating filter choices, highest first. The pill stores the label;
+/// the leading digit is the numeric floor a mentor's rating must clear.
+const _kRatingOptions = ['4★ & up', '3★ & up', '2★ & up', '1★ & up'];
+
 /// Opens a free chat with [mentorId] and navigates into it. Shared by the
 /// mentor card and the mentor profile screen. If an active chat with this
 /// mentor already exists the backend 409s, and we reuse that session
@@ -127,13 +136,14 @@ class MentorListScreen extends ConsumerStatefulWidget {
 }
 
 class _MentorListScreenState extends ConsumerState<MentorListScreen> {
-  /// Name search and the two toggles stay client-side over whatever page
-  /// the server already returned: rating is a joined/computed value (not a
-  /// raw column) and "available now" is a time-decayed derived flag
-  /// (isCallAvailable), so filtering either server-side would mean
-  /// replicating logic that's deliberately centralized elsewhere. Stream,
-  /// Degree, Specialization and Language are all plain indexed columns —
-  /// those go to the server (see [mentorsListProvider]).
+  /// Name search, the rating toggle and the availability filter stay
+  /// client-side over whatever page the server already returned: rating is a
+  /// joined/computed value (not a raw column) and call availability is a
+  /// time-decayed derived flag (isCallAvailable), so filtering either
+  /// server-side would mean replicating logic that's deliberately
+  /// centralized elsewhere. Stream, Degree, Specialization and Language are
+  /// all plain indexed columns — those go to the server (see
+  /// [mentorsListProvider]).
   String _query = '';
   final _searchController = TextEditingController();
   String? _stream;
@@ -145,8 +155,18 @@ class _MentorListScreenState extends ConsumerState<MentorListScreen> {
   String? _qualification;
   String? _specialization;
   String? _language;
-  bool _availableOnly = false;
-  bool _topRated = false;
+
+  /// Call-availability filter: null = show all, [_kAvailForCalls] = only
+  /// mentors accepting call bookings, [_kChatOnly] = only mentors who
+  /// aren't. Never framed as "online/offline" — this is the mentor's stated
+  /// booking intent, not real-time presence (see CallAvailabilityChip).
+  String? _availability;
+
+  /// Minimum-rating filter: null = any rating, otherwise one of
+  /// [_kRatingOptions] ('4★ & up' … '1★ & up'). The leading digit is the
+  /// floor a mentor's rating must reach.
+  String? _rating;
+  int? get _minRating => _rating == null ? null : int.tryParse(_rating![0]);
 
   void _setStream(String? value) {
     setState(() {
@@ -160,8 +180,8 @@ class _MentorListScreenState extends ConsumerState<MentorListScreen> {
 
   bool _hasActiveFilters(String? effectiveStream) =>
       _query.isNotEmpty ||
-      _availableOnly ||
-      _topRated ||
+      _availability != null ||
+      _rating != null ||
       effectiveStream != null ||
       _qualification != null ||
       _specialization != null ||
@@ -175,8 +195,8 @@ class _MentorListScreenState extends ConsumerState<MentorListScreen> {
       _qualification = null;
       _specialization = null;
       _language = null;
-      _availableOnly = false;
-      _topRated = false;
+      _availability = null;
+      _rating = null;
     });
   }
 
@@ -323,16 +343,27 @@ class _MentorListScreenState extends ConsumerState<MentorListScreen> {
                 padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
                 children: [
                   _MentorFilterChip(
-                    label: 'Available now',
-                    active: _availableOnly,
-                    onTap: () =>
-                        setState(() => _availableOnly = !_availableOnly),
+                    label: _availability ?? 'Availability',
+                    active: _availability != null,
+                    dropdown: true,
+                    onTap: () => _pickOne(
+                      title: 'Availability',
+                      options: const [_kAvailForCalls, _kChatOnly],
+                      selected: _availability,
+                      onPick: (v) => setState(() => _availability = v),
+                    ),
                   ),
                   const SizedBox(width: AppSpacing.xs),
                   _MentorFilterChip(
-                    label: '4★ and up',
-                    active: _topRated,
-                    onTap: () => setState(() => _topRated = !_topRated),
+                    label: _rating ?? 'Rating',
+                    active: _rating != null,
+                    dropdown: true,
+                    onTap: () => _pickOne(
+                      title: 'Minimum rating',
+                      options: _kRatingOptions,
+                      selected: _rating,
+                      onPick: (v) => setState(() => _rating = v),
+                    ),
                   ),
                   const SizedBox(width: AppSpacing.xs),
                   _MentorFilterChip(
@@ -449,17 +480,25 @@ class _MentorListScreenState extends ConsumerState<MentorListScreen> {
                     }
                     // Stream/Degree/Specialization/Language are already
                     // applied server-side (see mentorsListProvider); name
-                    // search and the two rating/availability toggles are
-                    // the only filtering still done here, over whatever
+                    // search, the rating toggle and the availability filter
+                    // are the only filtering still done here, over whatever
                     // page the server returned — see the field doc comment
-                    // above for why those two stay client-side.
+                    // above for why those stay client-side.
                     final filtered = mentors.where((m) {
                       if (query.isNotEmpty &&
                           !m.displayName.toLowerCase().contains(query)) {
                         return false;
                       }
-                      if (_availableOnly && !m.isAvailable) return false;
-                      if (_topRated && (m.rating ?? 0) < 4.0) return false;
+                      if (_availability == _kAvailForCalls && !m.isAvailable) {
+                        return false;
+                      }
+                      if (_availability == _kChatOnly && m.isAvailable) {
+                        return false;
+                      }
+                      final minRating = _minRating;
+                      if (minRating != null && (m.rating ?? 0) < minRating) {
+                        return false;
+                      }
                       return true;
                     }).toList();
                     if (filtered.isEmpty) {
@@ -472,7 +511,9 @@ class _MentorListScreenState extends ConsumerState<MentorListScreen> {
                             message: hasActiveFilters
                                 ? 'No mentors match these filters — try clearing one.'
                                 : 'Try a different search.',
-                            actionLabel: hasActiveFilters ? 'Clear filters' : null,
+                            actionLabel: hasActiveFilters
+                                ? 'Clear filters'
+                                : null,
                             onAction: hasActiveFilters
                                 ? () {
                                     _searchController.clear();
@@ -663,9 +704,7 @@ class _MentorFilterChip extends StatelessWidget {
                   Icon(
                     Icons.keyboard_arrow_down_rounded,
                     size: 16,
-                    color: active
-                        ? AppColors.textInverse
-                        : AppColors.textMuted,
+                    color: active ? AppColors.textInverse : AppColors.textMuted,
                   ),
               ],
             ),
