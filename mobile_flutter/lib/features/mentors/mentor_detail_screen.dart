@@ -706,6 +706,8 @@ class _ActionBar extends ConsumerWidget {
                               context,
                               ref,
                               mentorId: mentor.id,
+                              mentorName: mentor.displayName,
+                              mentorWindows: mentor.availableDays,
                             )
                           : null,
                       style: FilledButton.styleFrom(

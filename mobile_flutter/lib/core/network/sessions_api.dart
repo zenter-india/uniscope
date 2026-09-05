@@ -56,9 +56,11 @@ class Session {
     this.totalCostMinor = 0,
     this.endReason,
     this.callSlotMinutes,
+    this.requestedFor,
     this.aspirantJoinedAt,
     this.mentorJoinedAt,
     this.mentorIsAvailable = false,
+    this.mentorAvailableDays = const [],
   });
 
   final String id;
@@ -66,6 +68,7 @@ class Session {
   final String mentorId;
   final String aspirantName;
   final String mentorName;
+
   /// Public registration number (e.g. "A1134500001" / "M3300000047") — shown
   /// under the counterparty's name in the session/chat header instead of a
   /// tap-to-profile link. Null until that party's profile.stream is known.
@@ -83,12 +86,23 @@ class Session {
   final int totalCostMinor;
   final String? endReason;
   final int? callSlotMinutes;
+
+  /// AUDIO_CALL only: the time the aspirant asked to connect, from the
+  /// "When?" step. Null = Instant (connect once the mentor accepts).
+  /// Advisory — nothing is reserved; the mentor sees it on the request.
+  final DateTime? requestedFor;
   final String? aspirantJoinedAt;
   final String? mentorJoinedAt;
+
   /// Expiry-aware "can this mentor be booked for a call right now" — the
   /// backend runs the same isCallAvailable() gate every other surface uses
   /// (SessionResponse.mentorIsAvailable). Defaults false if absent.
   final bool mentorIsAvailable;
+
+  /// The mentor's stated free-time windows (kTimeSlots strings, e.g.
+  /// "Morning (6 AM - 12 PM)") — lets the call-request sheet's "When?" step
+  /// offer them as quick-picks straight from a session row.
+  final List<String> mentorAvailableDays;
 
   factory Session.fromJson(Map<String, dynamic> json) => Session(
     id: json['id'] as String,
@@ -110,9 +124,17 @@ class Session {
     totalCostMinor: (json['totalCostMinor'] as num?)?.toInt() ?? 0,
     endReason: json['endReason'] as String?,
     callSlotMinutes: (json['callSlotMinutes'] as num?)?.toInt(),
+    requestedFor: json['requestedFor'] != null
+        ? DateTime.tryParse(json['requestedFor'] as String)
+        : null,
     aspirantJoinedAt: json['aspirantJoinedAt'] as String?,
     mentorJoinedAt: json['mentorJoinedAt'] as String?,
     mentorIsAvailable: json['mentorIsAvailable'] as bool? ?? false,
+    mentorAvailableDays:
+        (json['mentorAvailableDays'] as List<dynamic>?)
+            ?.map((e) => e as String)
+            .toList() ??
+        const [],
   );
 }
 
@@ -147,6 +169,7 @@ class SessionsApi {
     String mentorId,
     SessionKind type, {
     int? slotMinutes,
+    DateTime? requestedFor,
   }) async {
     try {
       final res = await _dio.post<Map<String, dynamic>>(
@@ -155,6 +178,8 @@ class SessionsApi {
           'mentorId': mentorId,
           'type': type.wire,
           if (slotMinutes != null) 'slotMinutes': slotMinutes,
+          if (requestedFor != null)
+            'requestedFor': requestedFor.toUtc().toIso8601String(),
         },
       );
       return Session.fromJson(res.data!);

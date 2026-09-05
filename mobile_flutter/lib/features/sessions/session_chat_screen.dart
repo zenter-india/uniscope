@@ -49,7 +49,11 @@ const kMentorChatStarters = [
 /// normally reached, but is kept in case that ever changes back to a real
 /// accept step.
 class SessionChatScreen extends ConsumerStatefulWidget {
-  const SessionChatScreen({super.key, required this.sessionId, this.initialDraft});
+  const SessionChatScreen({
+    super.key,
+    required this.sessionId,
+    this.initialDraft,
+  });
 
   final String sessionId;
 
@@ -258,6 +262,8 @@ class _SessionChatScreenState extends ConsumerState<SessionChatScreen> {
                   context,
                   ref,
                   mentorId: _session!.mentorId,
+                  mentorName: _session!.mentorName,
+                  mentorWindows: _session!.mentorAvailableDays,
                 );
               },
             ),

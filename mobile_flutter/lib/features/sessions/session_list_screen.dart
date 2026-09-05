@@ -12,6 +12,7 @@ import '../mentors/mentor_list_screen.dart' show startChatWithMentor;
 import '../wallet/low_balance_sheet.dart';
 import '../wallet/wallet_screen.dart' show walletBalanceProvider;
 import 'call_request_sheet.dart';
+import 'call_time_windows.dart';
 import 'cancel_deflection_sheet.dart';
 import 'rate_mentor_sheet.dart';
 
@@ -426,7 +427,10 @@ class _MergedSessionCard extends StatelessWidget {
 String _lastActivityLabel(Session session) {
   switch (session.status) {
     case SessionStatus.pending:
-      return session.type == 'AUDIO_CALL' ? 'Call requested' : 'Chat started';
+      if (session.type != 'AUDIO_CALL') return 'Chat started';
+      return session.requestedFor != null
+          ? 'Call requested · ${friendlyCallTime(session.requestedFor!)}'
+          : 'Call requested';
     case SessionStatus.accepted:
       return 'Ready — accepted';
     case SessionStatus.ringing:
@@ -467,6 +471,8 @@ class _AspirantMentorRow extends ConsumerWidget {
     BuildContext context,
     WidgetRef ref,
     String mentorId,
+    String mentorName,
+    List<String> mentorWindows,
   ) async {
     final wallet = await ref.read(walletBalanceProvider.future);
     if (!context.mounted) return;
@@ -478,7 +484,13 @@ class _AspirantMentorRow extends ConsumerWidget {
       return;
     }
     if (!context.mounted) return;
-    await showCallRequestSheet(context, ref, mentorId: mentorId);
+    await showCallRequestSheet(
+      context,
+      ref,
+      mentorId: mentorId,
+      mentorName: mentorName,
+      mentorWindows: mentorWindows,
+    );
   }
 
   @override
@@ -570,7 +582,13 @@ class _AspirantMentorRow extends ConsumerWidget {
                 color: first.mentorIsAvailable
                     ? AppColors.primary
                     : AppColors.textMuted,
-                onTap: () => _requestCall(context, ref, mentorId),
+                onTap: () => _requestCall(
+                  context,
+                  ref,
+                  mentorId,
+                  mentorName,
+                  first.mentorAvailableDays,
+                ),
               ),
               _RowIconButton(
                 icon: Icons.chat_bubble_rounded,
@@ -941,6 +959,28 @@ class _SessionActionsState extends ConsumerState<_SessionActions> {
                 ),
             ],
           ),
+          if (isCall && session.requestedFor != null) ...[
+            SizedBox(height: widget.dense ? 2 : AppSpacing.xs),
+            Row(
+              children: [
+                const Icon(
+                  Icons.schedule_rounded,
+                  size: 12,
+                  color: AppColors.textMuted,
+                ),
+                const SizedBox(width: 4),
+                Flexible(
+                  child: Text(
+                    'Requested for ${friendlyCallTime(session.requestedFor!)}',
+                    style: const TextStyle(
+                      fontSize: AppFont.xs,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
           SizedBox(height: widget.dense ? AppSpacing.xs : AppSpacing.sm),
         ],
         Row(
