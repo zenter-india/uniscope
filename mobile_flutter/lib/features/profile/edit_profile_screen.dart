@@ -19,7 +19,6 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   final _displayNameController = TextEditingController();
   final _cityController = TextEditingController();
   final _bioController = TextEditingController();
-  String? _gender;
   String? _qualification;
   String? _stream;
   String? _state;
@@ -39,7 +38,6 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     _displayNameController.text = profile.displayName;
     _cityController.text = profile.city ?? '';
     _bioController.text = profile.bio ?? '';
-    _gender = profile.gender;
     _qualification = profile.qualification;
     _stream = profile.stream;
     _state = profile.state;
@@ -88,7 +86,6 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
             .read(usersApiProvider)
             .updateProfile(
               displayName: displayName,
-              gender: _gender,
               state: _state,
               city: _cityController.text.trim(),
               qualification: _qualification,
@@ -288,27 +285,6 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                           ),
                         ],
                       ] else ...[
-                        const Text(
-                          'Gender',
-                          style: TextStyle(
-                            fontSize: AppFont.sm,
-                            fontWeight: AppFont.semibold,
-                          ),
-                        ),
-                        const SizedBox(height: AppSpacing.xs),
-                        DropdownButtonFormField<String>(
-                          initialValue: _gender,
-                          isExpanded: true,
-                          hint: const Text('Select gender'),
-                          items: kGenders
-                              .map(
-                                (g) =>
-                                    DropdownMenuItem(value: g, child: Text(g)),
-                              )
-                              .toList(),
-                          onChanged: (v) => setState(() => _gender = v),
-                        ),
-                        const SizedBox(height: AppSpacing.md),
                         const Text(
                           'Qualification',
                           style: TextStyle(

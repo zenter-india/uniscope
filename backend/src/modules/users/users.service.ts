@@ -362,6 +362,21 @@ export class UsersService {
   }
 
   async updateProfile(userId: string, dto: UpdateProfileDto) {
+    // Gender is captured once, during onboarding, and is not user-editable
+    // afterwards (product decision — applies to aspirants and mentors
+    // alike). The self-service path silently ignores a change to an
+    // already-set value rather than erroring, so a client that still sends
+    // the field on a later save just no-ops. Admins can still correct it
+    // via PATCH /users/:id (adminUpdateUser), which doesn't run this guard.
+    let applyGender = dto.gender !== undefined;
+    if (applyGender) {
+      const existing = await this.prisma.userProfile.findUnique({
+        where: { userId },
+        select: { gender: true },
+      });
+      if (existing?.gender) applyGender = false;
+    }
+
     if (dto.isMentorAvailable !== undefined) {
       const user = await this.prisma.user.findUniqueOrThrow({
         where: { id: userId },
@@ -407,7 +422,7 @@ export class UsersService {
         isMentorAvailable: dto.isMentorAvailable,
         availabilitySetAt: new Date(),
       }),
-      ...(dto.gender !== undefined && { gender: dto.gender }),
+      ...(applyGender && { gender: dto.gender }),
       ...(dto.state !== undefined && { state: dto.state }),
       ...(dto.city !== undefined && { city: dto.city }),
       ...(dto.qualification !== undefined && { qualification: dto.qualification }),
