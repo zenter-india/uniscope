@@ -157,13 +157,26 @@ class HomeScreen extends ConsumerWidget {
                           Flexible(
                             child: Row(
                               children: [
-                                Image.asset(
-                                  'assets/logo/uniscope_icon.png',
-                                  width: 44,
-                                  height: 44,
-                                  fit: BoxFit.contain,
+                                // The logo mark is dark navy/teal, so on the
+                                // green canopy it all but disappears — sit it
+                                // on a white chip so it reads, same as the
+                                // avatar's white ring on the other side.
+                                Container(
+                                  padding: const EdgeInsets.all(5),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    borderRadius: BorderRadius.circular(
+                                      AppRadius.sm,
+                                    ),
+                                  ),
+                                  child: Image.asset(
+                                    'assets/logo/uniscope_icon.png',
+                                    width: 30,
+                                    height: 30,
+                                    fit: BoxFit.contain,
+                                  ),
                                 ),
-                                const SizedBox(width: AppSpacing.xs),
+                                const SizedBox(width: AppSpacing.sm),
                                 Flexible(
                                   child: Text(
                                     'Uniscope',
@@ -379,6 +392,41 @@ class HomeScreen extends ConsumerWidget {
                         ),
                       ],
                     ),
+                    const SizedBox(height: AppSpacing.lg),
+                    SectionHeader(
+                      title: 'Colleges for you',
+                      accentColor: authBrandTeal,
+                      onSeeAll: () => context.go('/colleges'),
+                    ),
+                    const SizedBox(height: AppSpacing.md),
+                    universitiesAsync.when(
+                      loading: () => const SizedBox(
+                        height: 176,
+                        child: Row(
+                          children: [
+                            Expanded(child: SkeletonCard()),
+                            SizedBox(width: AppSpacing.sm),
+                            Expanded(child: SkeletonCard()),
+                          ],
+                        ),
+                      ),
+                      error: (_, __) => const SizedBox.shrink(),
+                      data: (_) => collegesForYou.isEmpty
+                          ? const SizedBox.shrink()
+                          : SizedBox(
+                              height: 176,
+                              child: ListView.separated(
+                                scrollDirection: Axis.horizontal,
+                                itemCount: collegesForYou.length,
+                                separatorBuilder: (_, __) =>
+                                    const SizedBox(width: AppSpacing.sm),
+                                itemBuilder: (_, i) => _CollegeSpotlightCard(
+                                  university: collegesForYou[i],
+                                ),
+                              ),
+                            ),
+                    ),
+                    const SizedBox(height: AppSpacing.lg),
                     // ─── Pick up where you left off ───────────────────
                     // Only renders when there's an open chat or a live/
                     // pending call — otherwise it takes no space.
@@ -434,40 +482,6 @@ class HomeScreen extends ConsumerWidget {
                                     _MentorSpotlightCard(
                                       mentor: topMentors[i],
                                     ),
-                              ),
-                            ),
-                    ),
-                    const SizedBox(height: AppSpacing.lg),
-                    SectionHeader(
-                      title: 'Colleges for you',
-                      accentColor: authBrandTeal,
-                      onSeeAll: () => context.go('/colleges'),
-                    ),
-                    const SizedBox(height: AppSpacing.md),
-                    universitiesAsync.when(
-                      loading: () => const SizedBox(
-                        height: 176,
-                        child: Row(
-                          children: [
-                            Expanded(child: SkeletonCard()),
-                            SizedBox(width: AppSpacing.sm),
-                            Expanded(child: SkeletonCard()),
-                          ],
-                        ),
-                      ),
-                      error: (_, __) => const SizedBox.shrink(),
-                      data: (_) => collegesForYou.isEmpty
-                          ? const SizedBox.shrink()
-                          : SizedBox(
-                              height: 176,
-                              child: ListView.separated(
-                                scrollDirection: Axis.horizontal,
-                                itemCount: collegesForYou.length,
-                                separatorBuilder: (_, __) =>
-                                    const SizedBox(width: AppSpacing.sm),
-                                itemBuilder: (_, i) => _CollegeSpotlightCard(
-                                  university: collegesForYou[i],
-                                ),
                               ),
                             ),
                     ),
@@ -996,12 +1010,14 @@ class _CollegeSpotlightCard extends StatelessWidget {
                         color: AppColors.textSecondary,
                       ),
                     ),
-                    const SizedBox(height: 6),
                     // College reviews are mentor-authored today (see the
                     // university-reviews module's canReview gate), so this
                     // is effectively the average of mentors' ratings of the
-                    // college. Mirrors _MentorSpotlightCard's rating row.
-                    if (university.rating != null)
+                    // college. Shown only once a real rating exists — no
+                    // "no reviews yet" placeholder. Mirrors
+                    // _MentorSpotlightCard's rating row.
+                    if (university.rating != null) ...[
+                      const SizedBox(height: 6),
                       Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
@@ -1020,16 +1036,8 @@ class _CollegeSpotlightCard extends StatelessWidget {
                             ),
                           ),
                         ],
-                      )
-                    else
-                      const Text(
-                        'No reviews yet',
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontStyle: FontStyle.italic,
-                          color: AppColors.textMuted,
-                        ),
                       ),
+                    ],
                   ],
                 ),
               ),
