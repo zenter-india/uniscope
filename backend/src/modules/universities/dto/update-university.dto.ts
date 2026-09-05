@@ -1,7 +1,5 @@
-import { UniversityType } from '@prisma/client';
 import {
   IsBoolean,
-  IsEnum,
   IsInt,
   IsOptional,
   IsString,
@@ -18,10 +16,6 @@ export class UpdateUniversityDto {
   name?: string;
 
   @IsOptional()
-  @IsEnum(UniversityType)
-  type?: UniversityType;
-
-  @IsOptional()
   @IsString()
   @MaxLength(100)
   state?: string;
@@ -36,16 +30,6 @@ export class UpdateUniversityDto {
   @IsString()
   @MaxLength(50)
   stream?: string;
-
-  @IsOptional()
-  @IsInt()
-  @Min(1)
-  nirfRank?: number;
-
-  @IsOptional()
-  @IsInt()
-  @Min(0)
-  mbbsSeats?: number;
 
   @IsOptional()
   @IsInt()

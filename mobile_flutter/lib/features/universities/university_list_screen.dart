@@ -110,8 +110,8 @@ _StreamVisual _visualFor(String? stream) =>
 /// switch it on before navigating to the Discover tab. The chip stays
 /// visible while it's active, so this never silently filters the list.
 ///
-/// State — not GPS distance — is the right lens here: 85% of government
-/// MBBS seats are state-quota and tied to domicile, so a college 40km away
+/// State — not GPS distance — is the right lens here: most government
+/// seats are state-quota and tied to domicile, so a college 40km away
 /// across a state border is far less relevant than one 400km away in-state.
 class CollegeStateFilterNotifier extends Notifier<bool> {
   @override
@@ -841,8 +841,9 @@ class _CollegeSaveButton extends ConsumerWidget {
 }
 
 /// One filter control in the Discover top bar — either a plain toggle
-/// (the state pill) or a sheet trigger (Type/Stream, `trailing` set to a
-/// chevron). Active state uses the same filled-primary look either way,
+/// (the state pill) or a sheet trigger (Stream / Degree / Specialization,
+/// `trailing` set to a chevron). Active state uses the same filled-primary
+/// look either way,
 /// so a glance at the bar tells you what's currently narrowing the list.
 class _FilterPill extends StatelessWidget {
   const _FilterPill({

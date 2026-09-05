@@ -1,13 +1,9 @@
-import { UniversityType } from '@prisma/client';
-import { IsEnum, IsInt, IsOptional, IsString, IsUrl, Max, MaxLength, Min } from 'class-validator';
+import { IsInt, IsOptional, IsString, IsUrl, Max, MaxLength, Min } from 'class-validator';
 
 export class CreateUniversityDto {
   @IsString()
   @MaxLength(200)
   name!: string;
-
-  @IsEnum(UniversityType)
-  type!: UniversityType;
 
   @IsString()
   @MaxLength(100)
@@ -22,16 +18,6 @@ export class CreateUniversityDto {
   @IsString()
   @MaxLength(50)
   stream?: string;
-
-  @IsOptional()
-  @IsInt()
-  @Min(1)
-  nirfRank?: number;
-
-  @IsOptional()
-  @IsInt()
-  @Min(0)
-  mbbsSeats?: number;
 
   @IsOptional()
   @IsInt()

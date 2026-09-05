@@ -13,11 +13,8 @@ interface UgCaptured {
   name: string;
   state: string;
   city: string | null;
-  type: 'GOVERNMENT' | 'PRIVATE' | null;
   stream: string;
   levels: string[];
-  mbbsSeats: number | null;
-  nirfRank: number | null;
 }
 
 interface PgMatch {
@@ -166,7 +163,7 @@ export class DataImportService {
     const captured = await runPython<UgCaptured[]>('refresh_ug.py', []);
 
     const existing = await this.prisma.university.findMany({
-      select: { id: true, name: true, type: true, city: true, mbbsSeats: true, nirfRank: true },
+      select: { id: true, name: true, city: true },
     });
     const byName = new Map(existing.map((u) => [normalizeName(u.name), u]));
 
@@ -180,16 +177,11 @@ export class DataImportService {
         added.push({
           key: c.name,
           name: c.name,
-          detail: `${c.type ?? 'unknown type'} · ${c.state}${c.mbbsSeats ? ` · ${c.mbbsSeats} seats` : ''}${c.nirfRank ? ` · NIRF #${c.nirfRank}` : ''}`,
+          detail: `${c.state}${c.city ? ` · ${c.city}` : ''}`,
         });
         continue;
       }
       const fieldDiffs: string[] = [];
-      if (c.type && c.type !== match.type) fieldDiffs.push(`type ${match.type} → ${c.type}`);
-      if (c.mbbsSeats !== match.mbbsSeats)
-        fieldDiffs.push(`seats ${match.mbbsSeats ?? '—'} → ${c.mbbsSeats ?? '—'}`);
-      if (c.nirfRank !== match.nirfRank)
-        fieldDiffs.push(`NIRF ${match.nirfRank ?? '—'} → ${c.nirfRank ?? '—'}`);
       if (c.city && c.city !== match.city) fieldDiffs.push(`city ${match.city ?? '—'} → ${c.city}`);
 
       if (fieldDiffs.length === 0) {
@@ -268,14 +260,7 @@ export class DataImportService {
           city: c.city,
           stream: c.stream,
           levels: c.levels,
-          mbbsSeats: c.mbbsSeats,
-          nirfRank: c.nirfRank,
-          // NIRF-only institutes have no sourced ownership (see
-          // seed-universities.mjs for the original version of this same
-          // call) — seeded inactive rather than defaulted to a guessed
-          // type, so a wrong "Private" badge never lands on e.g. PGIMER.
-          type: c.type ?? 'PRIVATE',
-          isActive: Boolean(c.type),
+          isActive: true,
         },
       });
     }
@@ -286,9 +271,6 @@ export class DataImportService {
       await this.prisma.university.update({
         where: { id: item.key },
         data: {
-          ...(c.type ? { type: c.type } : {}),
-          ...(c.mbbsSeats !== null ? { mbbsSeats: c.mbbsSeats } : {}),
-          ...(c.nirfRank !== null ? { nirfRank: c.nirfRank } : {}),
           ...(c.city ? { city: c.city } : {}),
         },
       });

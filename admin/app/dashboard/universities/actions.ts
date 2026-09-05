@@ -5,7 +5,6 @@ import { backendFetch } from '../../../lib/backend';
 import type { UniversityRowData } from './UniversityRow';
 
 export interface UniversityListFilters {
-  type?: string;
   search?: string;
 }
 
@@ -16,7 +15,6 @@ export async function loadMoreUniversities(
   cursor: string,
 ): Promise<{ data: UniversityRowData[]; nextCursor: string | null }> {
   const params = new URLSearchParams({ limit: '50', cursor });
-  if (filters.type && filters.type !== 'ALL') params.set('type', filters.type);
   if (filters.search) params.set('search', filters.search);
 
   return backendFetch<{ data: UniversityRowData[]; nextCursor: string | null }>(
@@ -26,11 +24,9 @@ export async function loadMoreUniversities(
 
 export interface UniversityInput {
   name: string;
-  type: string;
+  stream?: string;
   state: string;
   city: string | null;
-  nirfRank?: number;
-  mbbsSeats?: number;
   establishedYear?: number;
   website?: string;
   description?: string;

@@ -4,17 +4,13 @@ import { useRef, useState, useTransition } from 'react';
 import { Badge, Button, Card, fieldClass } from '../../../components/ui';
 import { updateUniversity, uploadUniversityPhoto } from './actions';
 
-const TYPES = ['GOVERNMENT', 'PRIVATE', 'DEEMED', 'CENTRAL'];
-
 export interface UniversityRowData {
   id: string;
   name: string;
   slug: string;
-  type: string;
   state: string;
   city: string | null;
-  nirfRank: number | null;
-  mbbsSeats: number | null;
+  stream: string | null;
   establishedYear: number | null;
   website: string | null;
   description: string | null;
@@ -41,11 +37,8 @@ export function UniversityRow({ university }: { university: UniversityRowData })
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [form, setForm] = useState({
     name: university.name,
-    type: university.type,
     state: university.state,
     city: university.city ?? '',
-    nirfRank: university.nirfRank?.toString() ?? '',
-    mbbsSeats: university.mbbsSeats?.toString() ?? '',
     establishedYear: university.establishedYear?.toString() ?? '',
     website: university.website ?? '',
   });
@@ -58,11 +51,8 @@ export function UniversityRow({ university }: { university: UniversityRowData })
       try {
         await updateUniversity(university.id, {
           name: form.name,
-          type: form.type,
           state: form.state,
           city: form.city,
-          nirfRank: form.nirfRank ? Number(form.nirfRank) : undefined,
-          mbbsSeats: form.mbbsSeats ? Number(form.mbbsSeats) : undefined,
           establishedYear: form.establishedYear ? Number(form.establishedYear) : undefined,
           website: form.website || undefined,
         });
@@ -110,17 +100,6 @@ export function UniversityRow({ university }: { university: UniversityRowData })
             placeholder="Name"
             className={fieldClass}
           />
-          <select
-            value={form.type}
-            onChange={(e) => setForm({ ...form, type: e.target.value })}
-            className={fieldClass}
-          >
-            {TYPES.map((t) => (
-              <option key={t} value={t}>
-                {t}
-              </option>
-            ))}
-          </select>
           <input
             value={form.state}
             onChange={(e) => setForm({ ...form, state: e.target.value })}
@@ -131,20 +110,6 @@ export function UniversityRow({ university }: { university: UniversityRowData })
             value={form.city}
             onChange={(e) => setForm({ ...form, city: e.target.value })}
             placeholder="City"
-            className={fieldClass}
-          />
-          <input
-            value={form.nirfRank}
-            onChange={(e) => setForm({ ...form, nirfRank: e.target.value })}
-            placeholder="NIRF rank"
-            type="number"
-            className={fieldClass}
-          />
-          <input
-            value={form.mbbsSeats}
-            onChange={(e) => setForm({ ...form, mbbsSeats: e.target.value })}
-            placeholder="MBBS seats"
-            type="number"
             className={fieldClass}
           />
           <input
@@ -206,13 +171,11 @@ export function UniversityRow({ university }: { university: UniversityRowData })
         <div>
           <div className="flex items-center gap-2">
             <p className="font-medium text-zinc-900">{university.name}</p>
-            <Badge>{university.type}</Badge>
+            {university.stream && <Badge>{university.stream}</Badge>}
             {!university.isActive && <Badge tone="danger">Inactive</Badge>}
           </div>
           <p className="mt-1 text-xs text-zinc-500">
             {[university.city, university.state].filter(Boolean).join(', ')}
-            {university.nirfRank ? ` · NIRF #${university.nirfRank}` : ''}
-            {university.mbbsSeats ? ` · ${university.mbbsSeats} seats` : ''}
           </p>
           {error && <p className="mt-1 text-xs text-red-600">{error}</p>}
           {photoError && <p className="mt-1 text-xs text-red-600">{photoError}</p>}

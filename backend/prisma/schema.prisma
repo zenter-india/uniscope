@@ -42,13 +42,6 @@ enum VerificationStatus {
   SUSPENDED
 }
 
-enum UniversityType {
-  GOVERNMENT
-  PRIVATE
-  DEEMED
-  CENTRAL
-}
-
 enum DocumentType {
   STUDENT_ID
   STUDENT_PORTAL_SCREENSHOT
@@ -335,7 +328,6 @@ model University {
   id              String                   @id @default(uuid())
   name            String                   @db.VarChar(200)
   slug            String                   @unique @db.VarChar(200)
-  type            UniversityType
   state           String                   @db.VarChar(100)
   /// Nullable because the authoritative NMC seat matrix has no city column —
   /// it is only derivable from the college name for ~69% of rows. Better an
@@ -354,8 +346,6 @@ model University {
   /// real medical colleges offer both once PG data is added — a string
   /// field would need a breaking migration to add a second value later.
   levels          String[]                 @default(["UG"])
-  nirfRank        Int?                     @map("nirf_rank") @db.SmallInt
-  mbbsSeats       Int?                     @map("mbbs_seats") @db.SmallInt
   establishedYear Int?                     @map("established_year") @db.SmallInt
   website         String?                  @db.VarChar(300)
   description     String?                  @db.Text
@@ -374,9 +364,7 @@ model University {
   enrollmentLeads      EnrollmentLead[]
 
   @@index([state])
-  @@index([type])
   @@index([stream])
-  @@index([nirfRank])
   @@map("universities")
 }
 

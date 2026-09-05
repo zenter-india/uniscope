@@ -20,21 +20,6 @@ final universityDetailProvider = FutureProvider.autoDispose
       (ref, slug) => ref.watch(universitiesApiProvider).getBySlug(slug),
     );
 
-String _typeLabel(String type) {
-  switch (type) {
-    case 'GOVERNMENT':
-      return 'Government';
-    case 'PRIVATE':
-      return 'Private';
-    case 'DEEMED':
-      return 'Deemed';
-    case 'CENTRAL':
-      return 'Central';
-    default:
-      return type;
-  }
-}
-
 /// Restyled to match the provided reference: full-bleed hero image (a
 /// gradient placeholder for now — swap to Image.network(uni.imageUrl) once
 /// the backend/admin support uploading real photos, which doesn't exist
@@ -496,11 +481,7 @@ class _OverviewTab extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final rows = <(String, String)>[
-      ('Type', _typeLabel(university.type)),
-      // Field name is still mbbsSeats in the schema (pre-dates the
-      // multi-stream pivot), but the label shown here is stream-neutral —
-      // this same count backs seat totals for any institution type now.
-      if (university.mbbsSeats != null) ('Seats', '${university.mbbsSeats}'),
+      if (university.stream != null) ('Stream', university.stream!),
       if (university.establishedYear != null)
         ('Established', '${university.establishedYear}'),
     ];

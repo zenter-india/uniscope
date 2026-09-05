@@ -1,6 +1,5 @@
-import { UniversityType } from '@prisma/client';
 import { Type } from 'class-transformer';
-import { IsEnum, IsInt, IsOptional, IsString, Max, Min } from 'class-validator';
+import { IsInt, IsOptional, IsString, Max, Min } from 'class-validator';
 
 /**
  * Query parameters for GET /universities.
@@ -15,10 +14,6 @@ export class ListUniversitiesDto {
   @IsOptional()
   @IsString()
   state?: string;
-
-  @IsOptional()
-  @IsEnum(UniversityType)
-  type?: UniversityType;
 
   /** Academic field filter (Medical/Engineering/Law/etc) — see
    * University.stream. */

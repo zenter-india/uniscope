@@ -3,15 +3,11 @@
 import { useState, useTransition } from 'react';
 import { createUniversity } from './actions';
 
-const TYPES = ['GOVERNMENT', 'PRIVATE', 'DEEMED', 'CENTRAL'];
-
 const EMPTY = {
   name: '',
-  type: 'GOVERNMENT',
+  stream: '',
   state: '',
   city: '',
-  nirfRank: '',
-  mbbsSeats: '',
   establishedYear: '',
   website: '',
 };
@@ -32,11 +28,9 @@ export function AddUniversityForm() {
       try {
         await createUniversity({
           name: form.name,
-          type: form.type,
+          stream: form.stream || undefined,
           state: form.state,
           city: form.city,
-          nirfRank: form.nirfRank ? Number(form.nirfRank) : undefined,
-          mbbsSeats: form.mbbsSeats ? Number(form.mbbsSeats) : undefined,
           establishedYear: form.establishedYear ? Number(form.establishedYear) : undefined,
           website: form.website || undefined,
         });
@@ -69,17 +63,12 @@ export function AddUniversityForm() {
           placeholder="Name"
           className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm outline-none focus:border-zinc-500"
         />
-        <select
-          value={form.type}
-          onChange={(e) => setForm({ ...form, type: e.target.value })}
+        <input
+          value={form.stream}
+          onChange={(e) => setForm({ ...form, stream: e.target.value })}
+          placeholder="Stream (e.g. Medical, Engineering)"
           className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm outline-none focus:border-zinc-500"
-        >
-          {TYPES.map((t) => (
-            <option key={t} value={t}>
-              {t}
-            </option>
-          ))}
-        </select>
+        />
         <input
           value={form.state}
           onChange={(e) => setForm({ ...form, state: e.target.value })}
@@ -90,20 +79,6 @@ export function AddUniversityForm() {
           value={form.city}
           onChange={(e) => setForm({ ...form, city: e.target.value })}
           placeholder="City"
-          className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm outline-none focus:border-zinc-500"
-        />
-        <input
-          value={form.nirfRank}
-          onChange={(e) => setForm({ ...form, nirfRank: e.target.value })}
-          placeholder="NIRF rank"
-          type="number"
-          className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm outline-none focus:border-zinc-500"
-        />
-        <input
-          value={form.mbbsSeats}
-          onChange={(e) => setForm({ ...form, mbbsSeats: e.target.value })}
-          placeholder="MBBS seats"
-          type="number"
           className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm outline-none focus:border-zinc-500"
         />
         <input

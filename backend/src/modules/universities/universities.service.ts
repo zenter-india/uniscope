@@ -5,7 +5,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { Prisma, University, UniversityType } from '@prisma/client';
+import { Prisma, University } from '@prisma/client';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { PrismaService } from '../../database/prisma/prisma.service.js';
 import { SUPABASE_BUCKETS, SUPABASE_CLIENT } from '../../supabase/index.js';
@@ -78,9 +78,9 @@ export class UniversitiesService {
   ) {}
 
   /**
-   * Cursor-paginated list of active universities, ordered by NIRF rank
-   * (unranked last) with id as a stable tiebreaker for the cursor. This is
-   * also the mentor form's UG/"Others" College field (CollegeSearch.tsx),
+   * Cursor-paginated list of active universities, ordered alphabetically
+   * with id as a stable tiebreaker for the cursor. This is also the mentor
+   * form's UG/"Others" College field (CollegeSearch.tsx),
    * which needs `browse=true` (see below) — without it, the default
    * take-50-and-stop page only ever shows colleges from the very start of
    * the alphabet, since nothing narrows the query yet when the field is
@@ -122,7 +122,6 @@ export class UniversitiesService {
     const where: Prisma.UniversityWhereInput = {
       isActive: true,
       ...(query.state && { state: query.state }),
-      ...(query.type && { type: query.type }),
       ...(query.stream && { stream: query.stream }),
       ...(query.level && { levels: { has: query.level } }),
       ...(query.search && {
@@ -153,9 +152,7 @@ export class UniversitiesService {
     const rows = await this.prisma.university.findMany({
       where,
       include: UNIVERSITY_SPECIALIZATIONS_INCLUDE,
-      // Plain alphabetical — NIRF rank isn't shown in the UI anymore
-      // (it only covers the top 50 medical colleges nationally, so ~94%
-      // of rows had no rank anyway), id as a stable tiebreaker for the cursor.
+      // Plain alphabetical, id as a stable tiebreaker for the cursor.
       orderBy: [{ name: 'asc' }, { id: 'asc' }],
       take: take + 1,
       ...(query.cursor && { cursor: { id: query.cursor }, skip: 1 }),
@@ -294,7 +291,6 @@ export class UniversitiesService {
 
     const where: Prisma.UniversityWhereInput = {
       ...(query.state && { state: query.state }),
-      ...(query.type && { type: query.type }),
       ...(query.stream && { stream: query.stream }),
       ...(query.search && {
         OR: [
@@ -373,7 +369,6 @@ export class UniversitiesService {
       data: {
         name,
         slug,
-        type: UniversityType.PRIVATE,
         state,
         city: dto.city.trim(),
         stream: dto.stream,

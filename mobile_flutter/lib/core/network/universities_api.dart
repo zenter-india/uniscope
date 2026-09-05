@@ -18,13 +18,10 @@ class University {
     required this.id,
     required this.name,
     required this.slug,
-    required this.type,
     required this.state,
     this.city,
     this.stream,
     this.levels = const ['UG'],
-    required this.nirfRank,
-    required this.mbbsSeats,
     required this.establishedYear,
     required this.website,
     required this.description,
@@ -38,7 +35,6 @@ class University {
   final String id;
   final String name;
   final String slug;
-  final String type;
   final String state;
 
   /// Nullable: the NMC seat matrix the medical colleges were seeded from
@@ -53,8 +49,6 @@ class University {
   /// today is UG-only: the imported source (NMC's MBBS seat matrix) only
   /// covers undergraduate intake, no PG data has been imported yet.
   final List<String> levels;
-  final int? nirfRank;
-  final int? mbbsSeats;
   final int? establishedYear;
   final String? website;
   final String? description;
@@ -74,15 +68,12 @@ class University {
     id: json['id'] as String,
     name: json['name'] as String,
     slug: json['slug'] as String,
-    type: json['type'] as String,
     state: json['state'] as String,
     city: json['city'] as String?,
     stream: json['stream'] as String?,
     levels:
         (json['levels'] as List<dynamic>?)?.map((e) => e as String).toList() ??
         const ['UG'],
-    nirfRank: (json['nirfRank'] as num?)?.toInt(),
-    mbbsSeats: (json['mbbsSeats'] as num?)?.toInt(),
     establishedYear: (json['establishedYear'] as num?)?.toInt(),
     website: json['website'] as String?,
     description: json['description'] as String?,
