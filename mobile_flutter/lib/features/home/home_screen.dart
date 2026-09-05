@@ -238,10 +238,22 @@ class HomeScreen extends ConsumerWidget {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(
-                                  firstName == null
-                                      ? _greeting
-                                      : '$_greeting, $firstName',
+                                Text.rich(
+                                  TextSpan(
+                                    children: firstName == null
+                                        ? [TextSpan(text: _greeting)]
+                                        : [
+                                            TextSpan(text: '$_greeting, '),
+                                            // The name alone in the logo
+                                            // navy — the rest stays white.
+                                            TextSpan(
+                                              text: firstName,
+                                              style: const TextStyle(
+                                                color: AppColors.logoNavy,
+                                              ),
+                                            ),
+                                          ],
+                                  ),
                                   style: const TextStyle(
                                     fontSize: AppFont.lg,
                                     fontWeight: AppFont.extraBold,
