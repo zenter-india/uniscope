@@ -175,42 +175,48 @@ class _Hero extends StatelessWidget {
               ),
             ),
           ),
-          Padding(
-            // Hugs the true top edge instead of the full device safe-area
-            // inset — these are translucent circular buttons floating over
-            // the hero photo, not content that needs to clear a notch/status
-            // bar, so a small fixed gap reads better than however much
-            // MediaQuery.padding.top happens to report (client-requested:
-            // was sitting well below the top edge on some devices).
-            padding: const EdgeInsets.fromLTRB(
-              AppSpacing.md,
-              AppSpacing.sm,
-              AppSpacing.md,
-              0,
-            ),
-            child: Row(
-              children: [
-                _CircleIconButton(
-                  icon: Icons.arrow_back_rounded,
-                  onTap: () => Navigator.of(context).maybePop(),
-                ),
-                const Spacer(),
-                Consumer(
-                  builder: (context, ref, _) {
-                    final savedIds = ref.watch(savedCollegeIdsProvider).value;
-                    final saved = savedIds?.contains(university.id) ?? false;
-                    return _CircleIconButton(
-                      icon: saved
-                          ? Icons.favorite_rounded
-                          : Icons.favorite_border_rounded,
-                      iconColor: saved ? AppColors.error : Colors.white,
-                      onTap: () => ref
-                          .read(savedCollegeIdsProvider.notifier)
-                          .toggle(university.id),
-                    );
-                  },
-                ),
-              ],
+          // Pinned to the true top of the hero — the parent Stack is
+          // StackFit.expand, so a plain (non-positioned) child gets tight
+          // constraints and its Row would centre vertically over the whole
+          // 300px hero (which is why these used to float down by the name).
+          // Positioned + the status-bar inset keeps them up top and clear
+          // of the notch on a real device (0 on web, so just the small gap).
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: Padding(
+              padding: EdgeInsets.fromLTRB(
+                AppSpacing.md,
+                MediaQuery.of(context).padding.top + AppSpacing.sm,
+                AppSpacing.md,
+                0,
+              ),
+              child: Row(
+                children: [
+                  _CircleIconButton(
+                    icon: Icons.arrow_back_rounded,
+                    onTap: () => Navigator.of(context).maybePop(),
+                  ),
+                  const Spacer(),
+                  Consumer(
+                    builder: (context, ref, _) {
+                      final savedIds = ref.watch(savedCollegeIdsProvider).value;
+                      final saved =
+                          savedIds?.contains(university.id) ?? false;
+                      return _CircleIconButton(
+                        icon: saved
+                            ? Icons.favorite_rounded
+                            : Icons.favorite_border_rounded,
+                        iconColor: saved ? AppColors.error : Colors.white,
+                        onTap: () => ref
+                            .read(savedCollegeIdsProvider.notifier)
+                            .toggle(university.id),
+                      );
+                    },
+                  ),
+                ],
+              ),
             ),
           ),
           Positioned(
