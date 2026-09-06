@@ -9,6 +9,17 @@ import '../../core/theme/app_theme.dart';
 import '../../state/auth_controller.dart';
 import '../../widgets/app_widgets.dart';
 
+/// The four fixed recharge packages — `(rupees, uniminutes)`. Must match the
+/// backend's `RECHARGE_PACKAGES` exactly (`create-topup.dto.ts`): the server
+/// rejects any amount that isn't one of these. Non-linear: bigger packs give
+/// more Uniminutes per rupee.
+const _kRechargePackages = <(int, int)>[
+  (250, 10),
+  (400, 20),
+  (750, 40),
+  (1000, 60),
+];
+
 final walletBalanceProvider = FutureProvider.autoDispose<Wallet>(
   (ref) => ref.watch(walletApiProvider).getBalance(),
 );
@@ -191,31 +202,40 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
             ),
             const SizedBox(height: AppSpacing.xs),
             const Text(
-              'Uniminutes are your talk time — 1 Uniminute is 1 minute on a '
-              'call. ₹250 gets you 20 Uniminutes.',
+              'Uniminutes are your talk time. Pick a recharge pack — bigger '
+              'packs give more Uniminutes per rupee.',
               style: TextStyle(
                 fontSize: AppFont.xs,
                 color: AppColors.textSecondary,
               ),
             ),
             const SizedBox(height: AppSpacing.md),
-            Row(
-              children: [250, 500, 1000].map((rupees) {
-                return Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.only(right: AppSpacing.sm),
-                    child: OutlinedButton(
-                      onPressed: () {
-                        Navigator.of(sheetContext).pop();
-                        _startTopup(rupees * 100);
-                      },
-                      child: Text('₹$rupees'),
-                    ),
+            // Fixed recharge packages — must match the backend's
+            // RECHARGE_PACKAGES exactly (any other amount is rejected).
+            ..._kRechargePackages.map((pack) {
+              return Padding(
+                padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+                child: OutlinedButton(
+                  onPressed: () {
+                    Navigator.of(sheetContext).pop();
+                    _startTopup(pack.$1 * 100);
+                  },
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        '₹${pack.$1}',
+                        style: const TextStyle(fontWeight: AppFont.bold),
+                      ),
+                      Text(
+                        uniminutesLabel(pack.$2),
+                        style: const TextStyle(color: AppColors.textSecondary),
+                      ),
+                    ],
                   ),
-                );
-              }).toList(),
-            ),
-            const SizedBox(height: AppSpacing.sm),
+                ),
+              );
+            }),
           ],
         ),
       ),

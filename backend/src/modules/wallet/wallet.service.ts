@@ -13,7 +13,11 @@ import Razorpay from 'razorpay';
 import type { RazorpayConfig } from '../../config/index.js';
 import { PrismaService } from '../../database/prisma/prisma.service.js';
 import { AdjustWalletDto } from './dto/adjust-wallet.dto.js';
-import { CreateTopupDto } from './dto/create-topup.dto.js';
+import {
+  CreateTopupDto,
+  RECHARGE_AMOUNTS_MINOR,
+  RECHARGE_PACKAGES,
+} from './dto/create-topup.dto.js';
 import { ListLedgerDto } from './dto/list-ledger.dto.js';
 import { VerifyTopupDto } from './dto/verify-topup.dto.js';
 import {
@@ -29,31 +33,42 @@ const CURRENCY = 'INR';
 
 /**
  * Uniminute economics (product decision, see docs/decisions):
- *   - 1 Uniminute = 1000 minor units (₹10) — this is purely the top-up
- *     currency conversion. It's no longer tied to a flat per-minute call
- *     rate (see CALL_SLOT_PRICE_MINOR in sessions/dto/create-session.dto —
- *     calls are billed at a fixed price per slot, not minutes × a rate,
- *     since 2026-09-06), so a session's Uniminute cost no longer equals its
- *     slot's minute count. The mentor is still paid the exact same amount
- *     debited from the aspirant for a call (zero per-session platform cut,
- *     same as every other billing path) — the tiered price just isn't
- *     minutes × a constant anymore.
- *   - The platform margin lives ONLY in the recharge conversion: a ₹250
- *     (25,000 minor) topup credits 20 Uniminutes (20,000 minor) — a fixed
- *     1250-minor-paid-per-Uniminute-credited rate, i.e. 20% margin. This is
- *     never shown to the user as a "commission" line; the wallet is simply
- *     denominated in Uniminutes, not rupees, so there's no rupee-for-rupee
- *     promise being broken. The raw paid amount is preserved in the ledger
- *     entry's `note` for internal audit/revenue reporting.
+ *   - 1 Uniminute = 1000 minor units (₹10) — matches the flat mentor call
+ *     payout rate exactly, so a session debit of N Uniminutes always pays
+ *     the mentor N * MENTOR_RATE_PER_MINUTE_MINOR with zero per-session
+ *     platform cut.
+ *   - The platform margin lives ONLY in the recharge conversion. Recharge is
+ *     a CLOSED set of four fixed packages (RECHARGE_PACKAGES in
+ *     dto/create-topup.dto) — ₹250→10, ₹400→20, ₹750→40, ₹1000→60
+ *     Uniminutes — non-linear: bigger packages give more Uniminutes per
+ *     rupee. This replaced the earlier continuous "₹12.50 paid per Uniminute
+ *     credited" formula (flat 20% margin, any amount) on 2026-09-06. The
+ *     margin is never shown to the user as a "commission" line; the wallet
+ *     is simply denominated in Uniminutes, not rupees, so there's no
+ *     rupee-for-rupee promise being broken. The raw paid amount is preserved
+ *     in the ledger entry's `note` for internal audit/revenue reporting.
  */
 export const UNIMINUTE_VALUE_MINOR = 1000;
-const PAID_MINOR_PER_UNIMINUTE_CREDITED = 1250;
+export const MENTOR_RATE_PER_MINUTE_MINOR = UNIMINUTE_VALUE_MINOR;
 
+/**
+ * Maps an exact paid amount (minor units) to the Uniminutes it credits.
+ * Only the four fixed RECHARGE_PACKAGES amounts are valid — any other
+ * amount throws. The DTO's `@IsIn` already blocks bad amounts on the
+ * order-creation path; this guard covers the webhook / direct-confirm
+ * paths, which read the amount back from Razorpay, not from the DTO.
+ */
 function computeTopupCredit(paidAmountMinor: number): {
   uniminutes: number;
   creditedAmountMinor: number;
 } {
-  const uniminutes = Math.floor(paidAmountMinor / PAID_MINOR_PER_UNIMINUTE_CREDITED);
+  const uniminutes = RECHARGE_PACKAGES[paidAmountMinor];
+  if (uniminutes === undefined) {
+    throw new BadRequestException(
+      `Unrecognised recharge amount: ${paidAmountMinor} minor. ` +
+        `Valid packages: ${RECHARGE_AMOUNTS_MINOR.join(', ')} minor.`,
+    );
+  }
   return { uniminutes, creditedAmountMinor: uniminutes * UNIMINUTE_VALUE_MINOR };
 }
 

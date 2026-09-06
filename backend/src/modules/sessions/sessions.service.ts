@@ -24,12 +24,8 @@ import { BlocksService } from '../blocks/blocks.service.js';
 import { ChatService } from '../chat/chat.service.js';
 import { MentorsService } from '../mentors/mentors.service.js';
 import { NotificationsService } from '../notifications/notifications.service.js';
-import { WalletService } from '../wallet/wallet.service.js';
-import {
-  CALL_SLOT_MINUTES,
-  callSlotPriceMinor,
-  CreateSessionDto,
-} from './dto/create-session.dto.js';
+import { MENTOR_RATE_PER_MINUTE_MINOR, WalletService } from '../wallet/wallet.service.js';
+import { CALL_SLOT_MINUTES, CreateSessionDto } from './dto/create-session.dto.js';
 import { ListSessionsAdminDto } from './dto/list-sessions-admin.dto.js';
 import { ListSessionsDto } from './dto/list-sessions.dto.js';
 import {
@@ -46,18 +42,18 @@ const MAX_LIMIT = 50;
 const JOINABLE_STATUSES: SessionStatus[] = [SessionStatus.ACCEPTED, SessionStatus.RINGING];
 
 /** No-show grace period, as a fraction of the booked slot — product decision:
- * exactly half the slot's *time*, for every slot size (10-min slot -> 5 min
- * grace, 20-min -> 10 min, 40-min -> 20 min, 60-min -> 30 min). The no-show
- * *fee*, though, is half the slot's fixed price (CALL_SLOT_PRICE_MINOR),
- * not half its minutes at some per-minute rate — pricing stopped being
- * linear-per-minute when the tiered slot prices were introduced. This is
- * why a no-show fee is recorded via `totalCostMinor` only, not
+ * exactly half the slot, for every slot size (5-min slot -> 2.5 min grace,
+ * 10-min -> 5 min, 20-min -> 10 min). Money math stays exact regardless of
+ * the fraction — everything is minor units (1000 minor = 1 Uniminute), so
+ * 2.5 minutes of fee is a clean 2500 minor, never a rounding problem. Only
+ * the cosmetic `billedMinutes` integer column would round awkwardly, which
+ * is why a no-show fee is recorded via `totalCostMinor` only, not
  * `billedMinutes` (that column stays 0 — no call minutes were actually
  * billed, this is a distinct no-show fee). */
 const CALL_GRACE_FRACTION = 0.5;
 
 /** How often the no-show sweep runs — frequent enough that even the
- * shortest grace period (5 min on the 10-min slot) is caught within ~30s of
+ * shortest grace period (2.5 min on a 5-min slot) is caught within ~30s of
  * expiring, not minutes late. */
 const NO_SHOW_SWEEP_INTERVAL_MS = 30_000;
 
@@ -107,9 +103,8 @@ export class SessionsService {
    * snapshotted onto the session at creation time — later rate changes must
    * never retroactively affect this session.
    *
-   * AUDIO_CALL is a fixed pre-paid slot (10/20/40/60 min, each at its own
-   * fixed price — see CALL_SLOT_PRICE_MINOR in CreateSessionDto): covered by
-   * the aspirant's free-call-minutes tier if there's enough left,
+   * AUDIO_CALL is a fixed pre-paid slot (5/10/20 min, see CreateSessionDto):
+   * covered by the aspirant's free-call-minutes tier if there's enough left,
    * otherwise a WalletHold for the slot cost is placed here at BOOKING time
    * (so the mentor never accepts a request the aspirant can't afford) — the
    * hold is only converted into an actual debit once the call server-
@@ -168,7 +163,7 @@ export class SessionsService {
     const isAudioCall = dto.type === SessionType.AUDIO_CALL;
     const slotMinutes = dto.slotMinutes ?? 0;
     const slotSeconds = slotMinutes * 60;
-    const slotCostMinor = isAudioCall ? callSlotPriceMinor(slotMinutes) : 0;
+    const slotCostMinor = slotMinutes * MENTOR_RATE_PER_MINUTE_MINOR;
 
     // "When?" step: Instant → requestedFor stays null (connect once the
     // mentor accepts, the original flow). A mentor free-window pick or a
@@ -205,12 +200,10 @@ export class SessionsService {
         aspirantId,
         mentorId: dto.mentorId,
         type: dto.type,
-        // CHAT is always free — only AUDIO_CALL is billed, at a fixed price
-        // per slot (see CALL_SLOT_PRICE_MINOR), never a mentor-set rate.
-        // This field records the *effective* per-minute rate this
-        // particular slot works out to — informational only, nothing
-        // computes cost from it (pricing isn't linear-per-minute anymore).
-        ratePerMinuteMinor: isAudioCall ? Math.round(slotCostMinor / slotMinutes) : 0,
+        // CHAT is always free — only AUDIO_CALL is billed, and always at the
+        // flat platform rate, never a mentor-set price (see product
+        // decision: chat with any mentor costs nothing, no per-mentor rate).
+        ratePerMinuteMinor: isAudioCall ? MENTOR_RATE_PER_MINUTE_MINOR : 0,
         ...(isAudioCall && { callSlotMinutes: slotMinutes }),
         ...(requestedFor && { requestedFor }),
       },
@@ -494,7 +487,7 @@ export class SessionsService {
     this.logger.log(`[call] both parties joined — status=IN_PROGRESS sessionId=${sessionId}`);
 
     const slotMinutes = updated.callSlotMinutes ?? 0;
-    const slotCostMinor = slotMinutes > 0 ? callSlotPriceMinor(slotMinutes) : 0;
+    const slotCostMinor = slotMinutes * MENTOR_RATE_PER_MINUTE_MINOR;
     const hold = await this.prisma.walletHold.findFirst({
       where: { sessionId, status: HoldStatus.ACTIVE },
     });
@@ -532,7 +525,7 @@ export class SessionsService {
   }
 
   /**
-   * "Continue for another 10 min" — same debit/credit mechanism as the
+   * "Continue for another 5 min" — same debit/credit mechanism as the
    * original booking, but billed immediately (no hold step) since the call
    * is already IN_PROGRESS and both parties are already present. Only the
    * aspirant can trigger this (it costs them Uniminutes).
@@ -548,8 +541,8 @@ export class SessionsService {
       throw new ConflictException(`Cannot extend a call in status ${session.status}`);
     }
 
-    const extensionMinutes = CALL_SLOT_MINUTES[0]; // fixed +10 min (shortest slot), see product decision
-    const extensionCostMinor = callSlotPriceMinor(extensionMinutes);
+    const extensionMinutes = CALL_SLOT_MINUTES[0]; // fixed +6 min (shortest slot), see product decision
+    const extensionCostMinor = extensionMinutes * MENTOR_RATE_PER_MINUTE_MINOR;
 
     const [aspirantWallet, mentorWallet] = await Promise.all([
       this.prisma.wallet.findUniqueOrThrow({ where: { userId: session.aspirantId } }),
@@ -718,11 +711,8 @@ export class SessionsService {
       // balanceMinor in the first place (a hold only affects the
       // *available* balance calculation), so there's nothing further to
       // release once the hold is marked settled.
-      // Half the slot's fixed price, not half the minutes at some flat
-      // rate — pricing is a fixed amount per slot now (see
-      // CALL_SLOT_PRICE_MINOR), so "half the slot" means half its price.
-      const slotPriceMinor = callSlotPriceMinor(session.callSlotMinutes ?? 0);
-      const feeMinor = Math.round(slotPriceMinor * CALL_GRACE_FRACTION);
+      const graceMinutes = (session.callSlotMinutes ?? 0) * CALL_GRACE_FRACTION;
+      const feeMinor = Math.round(graceMinutes * MENTOR_RATE_PER_MINUTE_MINOR);
       const mentorWallet = await this.prisma.wallet.findUniqueOrThrow({
         where: { userId: session.mentorId },
       });

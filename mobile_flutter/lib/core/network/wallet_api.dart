@@ -4,11 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'dio_client.dart';
 
 /// Minor units in one Uniminute — mirrors the backend's Uniminute
-/// conversion (WalletService.UNIMINUTE_VALUE_MINOR). 1 Uniminute = 1000
-/// minor units = ₹10 at top-up. Uniminutes are a plain currency unit, not
-/// a literal minutes-of-call-time reading — see slotUniminutes below; that
-/// equivalence held before the 2026-09-06 tiered call pricing, but no
-/// longer does.
+/// conversion. 1 Uniminute = 1000 minor units = one minute of mentor call
+/// time, so a balance in Uniminutes reads directly as "minutes I can talk".
 const int kMinorUnitsPerUniminute = 1000;
 
 /// Uniminutes are the ONLY unit shown to students outside the top-up sheet.
@@ -17,21 +14,10 @@ const int kMinorUnitsPerUniminute = 1000;
 /// minute they can't actually spend.
 int minorToUniminutes(int minor) => minor ~/ kMinorUnitsPerUniminute;
 
-/// Uniminutes a fixed call slot costs — mirrors the backend's
-/// CALL_SLOT_PRICE_MINOR exactly (kept as a lookup, not computed, so the two
-/// can't silently drift). Each slot is a fixed price, not minutes × a flat
-/// rate — 10 min → ₹250 (25 Uniminutes), 20 min → ₹400 (40), 40 min → ₹750
-/// (75), 60 min → ₹1000 (100). A slot's Uniminute cost no longer equals its
-/// minute count (product decision, 2026-09-06, replacing the earlier flat
-/// ₹10/min-for-every-slot pricing).
-int slotUniminutes(int slotMinutes) {
-  const prices = {10: 25, 20: 40, 40: 75, 60: 100};
-  final price = prices[slotMinutes];
-  if (price == null) {
-    throw ArgumentError('No price configured for call slot: $slotMinutes min');
-  }
-  return price;
-}
+/// Uniminutes a fixed call slot costs. Slots are priced at exactly one
+/// Uniminute per minute, so this is the identity — it exists so the
+/// relationship is stated once instead of assumed at each call site.
+int slotUniminutes(int slotMinutes) => slotMinutes;
 
 String uniminutesLabel(int count) =>
     count == 1 ? '1 Uniminute' : '$count Uniminutes';

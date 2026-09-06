@@ -889,20 +889,19 @@ const _kArticles = <_HelpArticle>[
     category: _HelpCategory.chatsCalls,
     question: 'How do call slots and the "When?" step work?',
     answer:
-        'When you request a call you pick a slot length (10, 20, 40 or 60 '
-        'minutes — longer slots work out cheaper per minute) and when you’d '
-        'like it. Your Uniminutes for that slot are held right away, before '
-        'the mentor sees the request. The mentor then accepts, and you both '
-        'join at the agreed time.',
+        'When you request a call you pick a slot length (6, 10 or 20 minutes) '
+        'and when you’d like it. Your Uniminutes for that slot are held right '
+        'away, before the mentor sees the request. The mentor then accepts, '
+        'and you both join at the agreed time.',
   ),
   _HelpArticle(
     category: _HelpCategory.chatsCalls,
     question: 'What if I miss a call I booked?',
     answer:
         'If the mentor showed up and you didn’t within the grace period, a '
-        'no-show fee (half your slot’s cost) is charged and the rest of the '
-        'hold is released. If neither of you joined, the full hold is '
-        'released and nothing is charged.',
+        'fee equal to that grace time is charged and the rest of the hold is '
+        'released. If neither of you joined, the full hold is released and '
+        'nothing is charged.',
   ),
   _HelpArticle(
     category: _HelpCategory.chatsCalls,
@@ -1032,11 +1031,10 @@ const _kArticles = <_HelpArticle>[
     mentorOnly: true,
     question: 'How and when do I get paid?',
     answer:
-        'You’re paid the exact same amount the student is charged for the '
-        'slot — never less. Your earnings build up as sessions complete. '
-        'When your balance is at least ₹200 you can request a payout to '
-        'your bank account from the wallet screen; our team processes it '
-        'and marks it paid.',
+        'Calls pay a flat ₹10 per minute. Your earnings build up as sessions '
+        'complete. When your balance is at least ₹200 you can request a '
+        'payout to your bank account from the wallet screen; our team '
+        'processes it and marks it paid.',
   ),
   _HelpArticle(
     category: _HelpCategory.mentor,

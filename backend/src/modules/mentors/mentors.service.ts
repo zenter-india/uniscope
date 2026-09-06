@@ -28,8 +28,8 @@ const MAX_LIMIT = 50;
  * An unavailable mentor still shows up everywhere, still accepts CHAT, and
  * mobile renders their status as an online/offline dot. A per-minute rate is
  * no longer a requirement: chat is free with every mentor and audio calls
- * are always billed at the platform's fixed per-slot prices
- * (CALL_SLOT_PRICE_MINOR), never a mentor-set price — see product decision. */
+ * are always billed at the flat platform rate (MENTOR_RATE_PER_MINUTE_MINOR),
+ * never a mentor-set price — see product decision. */
 const MENTOR_ROLES: UserRole[] = [UserRole.MENTOR];
 
 @Injectable()
