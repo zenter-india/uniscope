@@ -23,6 +23,10 @@ export default function HomePage() {
           <Link href="/terms" className="hover:text-slate-600 hover:underline">
             Terms and Conditions
           </Link>
+          <span className="mx-2">·</span>
+          <Link href="/refund" className="hover:text-slate-600 hover:underline">
+            Refund and Cancellation Policy
+          </Link>
         </p>
       </footer>
     </>
