@@ -476,10 +476,11 @@ class _AspirantMentorRow extends ConsumerWidget {
   ) async {
     final wallet = await ref.read(walletBalanceProvider.future);
     if (!context.mounted) return;
-    if (wallet.balanceUniminutes < _minCallSlotUniminutes) {
+    if (wallet.availableUniminutes < _minCallSlotUniminutes) {
       await showLowBalanceSheet(
         context,
-        balanceUniminutes: wallet.balanceUniminutes,
+        balanceUniminutes: wallet.availableUniminutes,
+        reservedUniminutes: wallet.reservedUniminutes,
       );
       return;
     }

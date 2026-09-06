@@ -254,7 +254,8 @@ class _CallRequestSheetState extends State<_CallRequestSheet> {
             ),
             const SizedBox(height: AppSpacing.sm),
             Text(
-              '${uniminutesLabel(cost)} are deducted once the call connects.',
+              '${uniminutesLabel(cost)} reserved now — charged only when the '
+              'call connects, released if it doesn\'t.',
               style: const TextStyle(
                 fontSize: AppFont.xs,
                 color: AppColors.textSecondary,

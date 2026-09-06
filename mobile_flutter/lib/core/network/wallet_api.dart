@@ -23,22 +23,39 @@ String uniminutesLabel(int count) =>
     count == 1 ? '1 Uniminute' : '$count Uniminutes';
 
 class Wallet {
-  const Wallet({required this.id, required this.balanceMinor});
+  const Wallet({
+    required this.id,
+    required this.balanceMinor,
+    this.reservedMinor = 0,
+  });
 
   final String id;
   final int balanceMinor;
 
-  /// Student-facing balance. This is what the wallet screen shows.
+  /// Minor units currently held for a booked-but-not-yet-connected call.
+  /// Not spent — released if the call is rejected/cancelled or nobody joins.
+  final int reservedMinor;
+
+  /// Total credited balance in Uniminutes (includes anything reserved).
   int get balanceUniminutes => minorToUniminutes(balanceMinor);
+
+  /// Uniminutes held for pending calls — shown on the wallet screen so the
+  /// spendable figure below it is never a surprise.
+  int get reservedUniminutes => minorToUniminutes(reservedMinor);
+
+  /// What a new call booking can actually draw on: balance minus reserved.
+  int get availableUniminutes =>
+      minorToUniminutes(balanceMinor - reservedMinor);
 
   /// Rupee value — mentor earnings and payouts only. Never render this on
   /// an aspirant surface outside the top-up sheet.
   double get balanceRupees => balanceMinor / 100;
 
   factory Wallet.fromJson(Map<String, dynamic> json) => Wallet(
-        id: json['id'] as String,
-        balanceMinor: (json['balanceMinor'] as num).toInt(),
-      );
+    id: json['id'] as String,
+    balanceMinor: (json['balanceMinor'] as num).toInt(),
+    reservedMinor: (json['reservedMinor'] as num?)?.toInt() ?? 0,
+  );
 }
 
 class LedgerEntry {
@@ -61,13 +78,13 @@ class LedgerEntry {
   double get amountRupees => amountMinor / 100;
 
   factory LedgerEntry.fromJson(Map<String, dynamic> json) => LedgerEntry(
-        id: json['id'] as String,
-        type: json['type'] as String,
-        amountMinor: (json['amountMinor'] as num).toInt(),
-        balanceAfterMinor: (json['balanceAfterMinor'] as num).toInt(),
-        note: json['note'] as String?,
-        createdAt: json['createdAt'] as String,
-      );
+    id: json['id'] as String,
+    type: json['type'] as String,
+    amountMinor: (json['amountMinor'] as num).toInt(),
+    balanceAfterMinor: (json['balanceAfterMinor'] as num).toInt(),
+    note: json['note'] as String?,
+    createdAt: json['createdAt'] as String,
+  );
 }
 
 class TopupOrder {
@@ -84,11 +101,11 @@ class TopupOrder {
   final String keyId;
 
   factory TopupOrder.fromJson(Map<String, dynamic> json) => TopupOrder(
-        orderId: json['orderId'] as String,
-        amountMinor: (json['amountMinor'] as num).toInt(),
-        currency: json['currency'] as String,
-        keyId: json['keyId'] as String,
-      );
+    orderId: json['orderId'] as String,
+    amountMinor: (json['amountMinor'] as num).toInt(),
+    currency: json['currency'] as String,
+    keyId: json['keyId'] as String,
+  );
 }
 
 class WalletApi {
@@ -104,7 +121,9 @@ class WalletApi {
   Future<List<LedgerEntry>> getLedger() async {
     final res = await _dio.get<Map<String, dynamic>>('/wallet/ledger');
     final data = res.data!['data'] as List<dynamic>;
-    return data.map((e) => LedgerEntry.fromJson(e as Map<String, dynamic>)).toList();
+    return data
+        .map((e) => LedgerEntry.fromJson(e as Map<String, dynamic>))
+        .toList();
   }
 
   Future<TopupOrder> createTopupOrder(int amountMinor) async {

@@ -89,7 +89,11 @@ export class WalletService {
 
   async getBalance(userId: string): Promise<WalletResponse> {
     const wallet = await this.requireWallet(userId);
-    return toWalletResponse(wallet);
+    const activeHolds = await this.prisma.walletHold.aggregate({
+      where: { walletId: wallet.id, status: HoldStatus.ACTIVE },
+      _sum: { amountMinor: true },
+    });
+    return toWalletResponse(wallet, activeHolds._sum.amountMinor ?? 0);
   }
 
   async getLedger(

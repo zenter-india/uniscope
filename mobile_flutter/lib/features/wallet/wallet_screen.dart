@@ -293,29 +293,57 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
                       ),
                       // Aspirants think in Uniminutes; only mentors, who
                       // withdraw to a real bank account, ever see rupees.
-                      data: (wallet) => Row(
-                        crossAxisAlignment: CrossAxisAlignment.baseline,
-                        textBaseline: TextBaseline.alphabetic,
+                      data: (wallet) => Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            isMentor
-                                ? '₹${wallet.balanceRupees.toStringAsFixed(2)}'
-                                : '${wallet.balanceUniminutes}',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: AppFont.display,
-                              fontWeight: AppFont.extraBold,
-                            ),
-                          ),
-                          if (!isMentor) ...[
-                            const SizedBox(width: 6),
-                            const Text(
-                              'Uniminutes',
-                              style: TextStyle(
-                                color: Colors.white70,
-                                fontSize: AppFont.md,
-                                fontWeight: AppFont.semibold,
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.baseline,
+                            textBaseline: TextBaseline.alphabetic,
+                            children: [
+                              Text(
+                                isMentor
+                                    ? '₹${wallet.balanceRupees.toStringAsFixed(2)}'
+                                    : '${wallet.balanceUniminutes}',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: AppFont.display,
+                                  fontWeight: AppFont.extraBold,
+                                ),
                               ),
+                              if (!isMentor) ...[
+                                const SizedBox(width: 6),
+                                const Text(
+                                  'Uniminutes',
+                                  style: TextStyle(
+                                    color: Colors.white70,
+                                    fontSize: AppFont.md,
+                                    fontWeight: AppFont.semibold,
+                                  ),
+                                ),
+                              ],
+                            ],
+                          ),
+                          if (!isMentor && wallet.reservedMinor > 0) ...[
+                            const SizedBox(height: 4),
+                            Row(
+                              children: [
+                                Icon(
+                                  Icons.lock_clock_rounded,
+                                  size: 13,
+                                  color: Colors.white.withValues(alpha: 0.75),
+                                ),
+                                const SizedBox(width: 4),
+                                Text(
+                                  '${uniminutesLabel(wallet.reservedUniminutes)} '
+                                  'reserved for a pending call · '
+                                  '${wallet.availableUniminutes} available',
+                                  style: TextStyle(
+                                    color: Colors.white.withValues(alpha: 0.75),
+                                    fontSize: AppFont.xs,
+                                    fontWeight: AppFont.medium,
+                                  ),
+                                ),
+                              ],
                             ),
                           ],
                         ],
