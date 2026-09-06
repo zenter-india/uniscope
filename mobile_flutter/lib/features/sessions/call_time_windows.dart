@@ -21,38 +21,63 @@ class CallDayPart {
   final int endHour;
 }
 
+// Six uniform 4-hour blocks covering the full day — matches kTimeSlots in
+// profile_options.dart exactly (same start hours), so a mentor's stated
+// free-window always resolves to one of these for both the call-request
+// quick-picks and the "Custom time" picker's grouping.
 const List<CallDayPart> kCallDayParts = [
-  CallDayPart('Early hours', '12 – 6 AM', 0, 6),
-  CallDayPart('Morning', '6 AM – 12 PM', 6, 12),
+  CallDayPart('Late Night', '12 – 4 AM', 0, 4),
+  CallDayPart('Early Morning', '4 – 8 AM', 4, 8),
+  CallDayPart('Morning', '8 AM – 12 PM', 8, 12),
   CallDayPart('Afternoon', '12 – 4 PM', 12, 16),
   CallDayPart('Evening', '4 – 8 PM', 16, 20),
-  CallDayPart('Night', '8 – 11 PM', 20, 23),
+  CallDayPart('Night', '8 PM – 12 AM', 20, 24),
 ];
 
-/// The mentor stores their free-time windows as `kTimeSlots` strings
-/// ("Morning (6 AM - 12 PM)" …). Maps one to its start hour, or null if it
-/// isn't a recognised value.
+/// The mentor stores their free-time windows as `kTimeSlots` strings, now
+/// half-hour ranges like "8:00 AM - 8:30 AM" (see profile_options.dart).
+/// Parses the range's start clock-time into minutes-since-midnight, or null
+/// if it isn't a recognised "h:mm AM/PM - h:mm AM/PM" value.
+int? startMinutesForTimeSlot(String value) {
+  final parts = value.split('-');
+  if (parts.isEmpty) return null;
+  return _parseClockToMinutes(parts.first.trim());
+}
+
+/// Same as [startMinutesForTimeSlot] but as an hour (for callers that only
+/// need hour-granularity, e.g. bucketing into [kCallDayParts]).
 int? startHourForTimeSlot(String value) {
-  switch (value.trim()) {
-    case 'Morning (6 AM - 12 PM)':
-      return 6;
-    case 'Afternoon (12 PM - 4 PM)':
-      return 12;
-    case 'Evening (4 PM - 8 PM)':
-      return 16;
-    case 'Night (8 PM - 11 PM)':
-      return 20;
-  }
-  return null;
+  final minutes = startMinutesForTimeSlot(value);
+  return minutes == null ? null : minutes ~/ 60;
+}
+
+/// Parses "8:00 AM" / "12:30 PM" into minutes-since-midnight, or null.
+int? _parseClockToMinutes(String clock) {
+  final match = RegExp(
+    r'^(\d{1,2}):(\d{2})\s*(AM|PM)$',
+    caseSensitive: false,
+  ).firstMatch(clock.trim());
+  if (match == null) return null;
+  var hour = int.parse(match.group(1)!);
+  final minute = int.parse(match.group(2)!);
+  final isPm = match.group(3)!.toUpperCase() == 'PM';
+  if (hour == 12) hour = 0;
+  final hour24 = isPm ? hour + 12 : hour;
+  return hour24 * 60 + minute;
 }
 
 /// The [CallDayPart]s the mentor marked as "usually free", in render order.
+/// A mentor's half-hour slot is matched to whichever 4-hour bucket it falls
+/// inside (range containment, not exact equality, since the mentor's
+/// picklist is now finer-grained than these grouping buckets).
 List<CallDayPart> mentorFreeDayParts(List<String> mentorWindows) {
   final hours = mentorWindows
       .map(startHourForTimeSlot)
       .whereType<int>()
       .toSet();
-  return kCallDayParts.where((p) => hours.contains(p.startHour)).toList();
+  return kCallDayParts
+      .where((p) => hours.any((h) => h >= p.startHour && h < p.endHour))
+      .toList();
 }
 
 /// The next real datetime a "Morning/Evening/…" quick-pick resolves to:
