@@ -4,6 +4,45 @@ Mentorship marketplace connecting prospective medical students (Aspirants) with 
 
 **Branch:** `feature/flutter-migration` (mobile was ported from React Native to Flutter mid-project; backend/admin unaffected).
 
+## 🚧 READ THIS FIRST — pending revert + correct pricing change (2026-09-06)
+
+**The very next session must do this before anything else in this repo.** Commit `279a8c1` ("feat(calls): tiered per-slot call pricing, replacing flat ₹10/min") was built on a genuine misunderstanding of the client's pricing brief and needs to be **reverted** — the client then clarified: *"the calls will remain same as 6,10 and 20 but the recharge system will work as 10,20,40,60 with the respective amount given"*. So the four numbers (10min-₹250, 20min-₹400, 40min-₹750, 60min-₹1000) were never call-slot pricing at all — they're **wallet recharge package sizes**: pay ₹250, get 10 Uniminutes; ₹400 → 20; ₹750 → 40; ₹1000 → 60. Two completely separate, previously-conflated asks.
+
+### Part 1 — Revert: calls go back to flat ₹10/min, slots back to 6/10/20 min
+Everything commit `279a8c1` changed for **calls** must be undone (`git revert 279a8c1` is the fast path, then re-check nothing else landed on top of it that needs preserving — check `git log 279a8c1..HEAD` first):
+- `backend/src/modules/sessions/dto/create-session.dto.ts`: `CALL_SLOT_MINUTES` back to `[6, 10, 20] as const`; delete `CALL_SLOT_PRICE_MINOR`/`callSlotPriceMinor`.
+- `backend/src/modules/wallet/wallet.service.ts`: restore `export const MENTOR_RATE_PER_MINUTE_MINOR = UNIMINUTE_VALUE_MINOR;` (flat ₹10/min).
+- `backend/src/modules/sessions/sessions.service.ts`: restore every `slotMinutes * MENTOR_RATE_PER_MINUTE_MINOR` computation (booking hold, settle-time debit/credit, the no-show fee — back to `graceMinutes * MENTOR_RATE_PER_MINUTE_MINOR`, not half-the-slot's-price), the extension back to `CALL_SLOT_MINUTES[0] * MENTOR_RATE_PER_MINUTE_MINOR` (+6 min, not +10), and the `ratePerMinuteMinor` field on session-create back to the flat constant.
+- `backend/src/modules/mentors/mentors.service.ts` and `sessions.controller.ts`: revert the doc-comment wording changes.
+- `mobile_flutter/lib/core/network/sessions_api.dart`: `kCallSlotMinutes` back to `[6, 10, 20]`.
+- `mobile_flutter/lib/core/network/wallet_api.dart`: `slotUniminutes(int slotMinutes) => slotMinutes;` (the identity function) — **but keep this call site's shape**, since the latent bug fix (using `slotUniminutes(kCallSlotMinutes.first)` instead of the raw literal in `session_chat_screen.dart`/`session_list_screen.dart`/`low_balance_sheet.dart`) is still correct defensive practice even once it's back to being an identity function — no need to undo that part.
+- `mobile_flutter/lib/features/calls/call_screen.dart`: extension dialog copy back to "5 minutes" / `kCallSlotMinutes.first` will now correctly read 6 automatically once the constant is reverted — just confirm the copy still reads right.
+- `mobile_flutter/lib/features/sessions/call_request_sheet.dart`: the "How long?" button subtext showing each slot's Uniminute cost can either stay (harmless once `slotUniminutes` is an identity again — it'll just show "6 Uniminutes" etc.) or be removed as unnecessary; not required either way.
+- `mobile_flutter/lib/features/support/help_screen.dart`: revert the three FAQ copy edits ("10, 20, 40 or 60 minutes" back to "6, 10 or 20 minutes"; the no-show fee line back to referencing grace time; the mentor payout FAQ back to "flat ₹10 per minute").
+- `mobile_flutter/lib/features/wallet/low_balance_sheet.dart`: the "shortest call slot needs N" copy will auto-correct once `kCallSlotMinutes`/`slotUniminutes` are reverted.
+- `CLAUDE.md` itself: revert the "Currency" bullet, the new "Tiered per-slot pricing" bullet under "Audio call billing", and the three other small `6/10/20` → `10/20/40/60` copy-edits made alongside this — back to describing flat ₹10/min, 6/10/20 slots.
+
+**Verify like the original change was verified**: `tsc` clean, `flutter analyze` clean, then live-test against the real backend + real DB (book each of 6/10/20, confirm hold = minutes × 1000 minor exactly, confirm settle/extend/no-show fee math is back to the flat-rate formulas) — use throwaway test users via the OTP `mock` provider (phone `+91`-prefixed, any valid-looking 10-digit number, code always `111111`), clean up afterward. This repo's convention (see "Conventions to follow" below) is real-DB verification before calling anything done, not just a clean compile.
+
+### Part 2 — Build: recharge becomes 4 fixed packages, not a continuous formula
+This is the part that's actually new and hasn't been built at all yet. Currently `backend/src/modules/wallet/wallet.service.ts`'s `computeTopupCredit(paidAmountMinor)` is a **continuous linear formula** — `uniminutes = floor(paidAmountMinor / PAID_MINOR_PER_UNIMINUTE_CREDITED)` where `PAID_MINOR_PER_UNIMINUTE_CREDITED = 1250` (₹12.50 per Uniminute credited, a flat 20% margin, works for *any* topup amount) — and the mobile top-up sheet (`mobile_flutter/lib/features/wallet/wallet_screen.dart`, `_showTopupSheet`, ~line 172-220) offers three preset buttons `[250, 500, 1000]` rupees that all resolve through that same formula.
+
+The client wants this replaced with **exactly four fixed recharge packages**, non-linear (bigger packages are a better rate per Uniminute — the opposite margin shape from today's flat-20%):
+
+| Pay | Get |
+|---|---|
+| ₹250 | 10 Uniminutes |
+| ₹400 | 20 Uniminutes |
+| ₹750 | 40 Uniminutes |
+| ₹1000 | 60 Uniminutes |
+
+Note this is a **bigger margin at the low end** than today (₹250 currently buys 20 Uniminutes; under the new pricing ₹250 only buys 10) — worth a sanity-confirmation with the client before shipping, since it's a real reduction in what the cheapest recharge buys, not just a relabeling. Implementation sketch (not yet built, not yet verified — a fresh session should treat this as a from-scratch task, not something to lightly adjust from the reverted state):
+- Replace `computeTopupCredit`'s continuous formula with a fixed lookup table keyed by the exact paid amount (25,000 / 40,000 / 75,000 / 100,000 minor units → 10 / 20 / 40 / 60 Uniminutes), and reject/throw on any other amount rather than silently falling back to a formula — this is now a closed set of packages, not an open-ended top-up-any-amount flow.
+- `CreateTopupDto` and whatever validates the requested amount server-side need to constrain to these four values (mirroring the `@IsIn` pattern this session used for `CreateSessionDto.slotMinutes`).
+- Mobile: `wallet_screen.dart`'s `_showTopupSheet` preset buttons change from `[250, 500, 1000]` to the four new amounts, and its label text ("₹250 gets you 20 Uniminutes") needs updating to the new numbers per button (each button should probably show both the ₹ and the Uniminute count, e.g. "₹250 · 10 Uniminutes", since the rate now differs per package).
+- Check whether the Razorpay order-creation path (`createTopupOrder`) needs the same amount constraint, and whether the webhook/direct-confirm verification path assumes a continuous formula anywhere else (grep `PAID_MINOR_PER_UNIMINUTE_CREDITED`/`computeTopupCredit` for every call site first).
+- Live-test against the real backend + real DB + real Razorpay test flow (or the direct-confirm fallback used for local dev) for all four packages before calling this done, and update CLAUDE.md's "Recharge margin" bullet under "Business model decisions" to describe the new tiered structure instead of the old flat-20%-margin one.
+
 ## Stack
 
 | Layer | Tech |
