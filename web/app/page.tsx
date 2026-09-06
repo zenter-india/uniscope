@@ -27,6 +27,10 @@ export default function HomePage() {
           <Link href="/refund" className="hover:text-slate-600 hover:underline">
             Refund and Cancellation Policy
           </Link>
+          <span className="mx-2">·</span>
+          <Link href="/community-guidelines" className="hover:text-slate-600 hover:underline">
+            Community Guidelines
+          </Link>
         </p>
       </footer>
     </>
