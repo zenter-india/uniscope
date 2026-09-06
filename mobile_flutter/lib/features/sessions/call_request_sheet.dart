@@ -219,7 +219,7 @@ class _CallRequestSheetState extends State<_CallRequestSheet> {
                 title: '${part.label} · ${part.rangeLabel}',
                 subtitle: _isWindowSelected(part)
                     ? 'Picked: ${friendlyCallTime((_when as _CustomChoice).time)}'
-                    : 'Mentor · tap to pick a half-hour slot',
+                    : 'Mentor · tap to pick a time',
                 selected: _isWindowSelected(part),
                 trailing: _expandedWindowStart == part.startHour
                     ? Icons.keyboard_arrow_up_rounded
@@ -269,6 +269,10 @@ class _CallRequestSheetState extends State<_CallRequestSheet> {
                               : AppColors.border,
                           width: 1.5,
                         ),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 4,
+                          vertical: 10,
+                        ),
                       ),
                       onPressed: () => setState(() => _slotMinutes = m),
                       child: Column(
@@ -276,14 +280,19 @@ class _CallRequestSheetState extends State<_CallRequestSheet> {
                         children: [
                           Text('$m min'),
                           const SizedBox(height: 2),
-                          Text(
-                            uniminutesLabel(slotUniminutes(m)),
-                            style: TextStyle(
-                              fontSize: AppFont.xs,
-                              fontWeight: AppFont.regular,
-                              color: selected
-                                  ? AppColors.primaryDark
-                                  : AppColors.textSecondary,
+                          // Shrink-to-fit so "10 Uniminutes" stays on one
+                          // line inside the narrow 3-across slot card.
+                          FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: Text(
+                              uniminutesLabel(slotUniminutes(m)),
+                              style: TextStyle(
+                                fontSize: 10,
+                                fontWeight: AppFont.regular,
+                                color: selected
+                                    ? AppColors.primaryDark
+                                    : AppColors.textSecondary,
+                              ),
                             ),
                           ),
                         ],
