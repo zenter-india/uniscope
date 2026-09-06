@@ -390,8 +390,20 @@ class _AboutCard extends StatelessWidget {
         !hasSpecialty &&
         mentor.stream != null &&
         mentor.stream!.trim().isNotEmpty;
+    // Collected at onboarding ("Degree" / Medical-only specialization
+    // steps) and already flowing through the API — just never surfaced to
+    // a student before. Same chip treatment as stream/languages below.
+    final hasQualification =
+        mentor.qualification != null && mentor.qualification!.trim().isNotEmpty;
+    final hasSpecialization =
+        mentor.specialization != null &&
+        mentor.specialization!.trim().isNotEmpty;
     final hasExpertise =
-        hasSpecialty || hasStream || mentor.languages.isNotEmpty;
+        hasSpecialty ||
+        hasStream ||
+        hasQualification ||
+        hasSpecialization ||
+        mentor.languages.isNotEmpty;
     final hasDays = mentor.availableDays.isNotEmpty;
 
     if (!hasBio && !hasExpertise && !hasDays) return const SizedBox.shrink();
@@ -466,6 +478,16 @@ class _AboutCard extends StatelessWidget {
                   _ExpertiseChip(
                     icon: Icons.school_rounded,
                     label: mentor.stream!,
+                  ),
+                if (hasQualification)
+                  _ExpertiseChip(
+                    icon: Icons.school_rounded,
+                    label: mentor.qualification!,
+                  ),
+                if (hasSpecialization)
+                  _ExpertiseChip(
+                    icon: Icons.workspace_premium_rounded,
+                    label: mentor.specialization!,
                   ),
                 for (final language in mentor.languages)
                   _ExpertiseChip(
