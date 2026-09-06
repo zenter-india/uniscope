@@ -7,7 +7,11 @@ import '../../core/theme/app_theme.dart';
 /// the two flows share the same look and feel.
 
 class OnboardingProgressBar extends StatelessWidget {
-  const OnboardingProgressBar({super.key, required this.step, required this.total});
+  const OnboardingProgressBar({
+    super.key,
+    required this.step,
+    required this.total,
+  });
   final int step;
   final int total;
 
@@ -20,7 +24,9 @@ class OnboardingProgressBar extends StatelessWidget {
           final active = i <= step;
           return Expanded(
             child: Container(
-              margin: EdgeInsets.only(right: i == total - 1 ? 0 : AppSpacing.xs),
+              margin: EdgeInsets.only(
+                right: i == total - 1 ? 0 : AppSpacing.xs,
+              ),
               height: 4,
               decoration: BoxDecoration(
                 color: active ? AppColors.primary : AppColors.border,
@@ -152,14 +158,20 @@ class OnboardingDropdown extends StatelessWidget {
       initialValue: value,
       isExpanded: true,
       hint: Text(hint),
-      items: options.map((o) => DropdownMenuItem(value: o, child: Text(o))).toList(),
+      items: options
+          .map((o) => DropdownMenuItem(value: o, child: Text(o)))
+          .toList(),
       onChanged: enabled ? onChanged : null,
     );
   }
 }
 
 class OnboardingDateField extends StatelessWidget {
-  const OnboardingDateField({super.key, required this.value, required this.onTap});
+  const OnboardingDateField({
+    super.key,
+    required this.value,
+    required this.onTap,
+  });
   final DateTime? value;
   final VoidCallback onTap;
 
@@ -168,7 +180,7 @@ class OnboardingDateField extends StatelessWidget {
     final label = value == null
         ? 'Select date of birth'
         : '${value!.day.toString().padLeft(2, '0')}/'
-            '${value!.month.toString().padLeft(2, '0')}/${value!.year}';
+              '${value!.month.toString().padLeft(2, '0')}/${value!.year}';
     return InkWell(
       onTap: onTap,
       child: InputDecorator(
@@ -179,10 +191,16 @@ class OnboardingDateField extends StatelessWidget {
             Text(
               label,
               style: TextStyle(
-                color: value == null ? AppColors.textMuted : AppColors.textPrimary,
+                color: value == null
+                    ? AppColors.textMuted
+                    : AppColors.textPrimary,
               ),
             ),
-            const Icon(Icons.calendar_today_rounded, size: 18, color: AppColors.textMuted),
+            const Icon(
+              Icons.calendar_today_rounded,
+              size: 18,
+              color: AppColors.textMuted,
+            ),
           ],
         ),
       ),
@@ -196,30 +214,46 @@ class OnboardingChipGroup extends StatelessWidget {
     required this.options,
     required this.selected,
     required this.onToggle,
+    this.maxSelections,
   });
   final List<String> options;
   final Set<String> selected;
   final void Function(String option, bool value) onToggle;
 
+  /// Caps how many chips can be selected at once (e.g. mentor "Preferred
+  /// Timing": at most 2). Null (the default) means unlimited, unchanged
+  /// behavior for every other caller. Once the cap is hit, unselected chips
+  /// render disabled rather than silently rejecting the tap — a mentor
+  /// shouldn't have to guess why a chip stopped responding.
+  final int? maxSelections;
+
   @override
   Widget build(BuildContext context) {
+    final atCap = maxSelections != null && selected.length >= maxSelections!;
     return Wrap(
       spacing: AppSpacing.sm,
       runSpacing: AppSpacing.sm,
       children: options.map((option) {
         final isSelected = selected.contains(option);
+        final disabled = atCap && !isSelected;
         return FilterChip(
           label: Text(option),
           selected: isSelected,
-          onSelected: (v) => onToggle(option, v),
+          onSelected: disabled ? null : (v) => onToggle(option, v),
           selectedColor: AppColors.primaryLight,
           checkmarkColor: AppColors.primary,
           labelStyle: TextStyle(
             fontSize: AppFont.sm,
-            color: isSelected ? AppColors.primaryDark : AppColors.textSecondary,
+            color: isSelected
+                ? AppColors.primaryDark
+                : disabled
+                ? AppColors.textMuted
+                : AppColors.textSecondary,
             fontWeight: isSelected ? AppFont.semibold : AppFont.medium,
           ),
-          side: BorderSide(color: isSelected ? AppColors.primary : AppColors.border),
+          side: BorderSide(
+            color: isSelected ? AppColors.primary : AppColors.border,
+          ),
         );
       }).toList(),
     );
@@ -257,7 +291,9 @@ class OnboardingSingleChipGroup extends StatelessWidget {
             color: isSelected ? AppColors.primaryDark : AppColors.textSecondary,
             fontWeight: isSelected ? AppFont.semibold : AppFont.medium,
           ),
-          side: BorderSide(color: isSelected ? AppColors.primary : AppColors.border),
+          side: BorderSide(
+            color: isSelected ? AppColors.primary : AppColors.border,
+          ),
         );
       }).toList(),
     );
@@ -284,7 +320,11 @@ class OnboardingToggle extends StatelessWidget {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Switch(value: value, onChanged: onChanged, activeThumbColor: AppColors.primary),
+        Switch(
+          value: value,
+          onChanged: onChanged,
+          activeThumbColor: AppColors.primary,
+        ),
         const SizedBox(width: AppSpacing.xs),
         Expanded(
           child: Padding(
@@ -304,7 +344,10 @@ class OnboardingToggle extends StatelessWidget {
                   const SizedBox(height: 2),
                   Text(
                     hint!,
-                    style: const TextStyle(fontSize: AppFont.xs, color: AppColors.textMuted),
+                    style: const TextStyle(
+                      fontSize: AppFont.xs,
+                      color: AppColors.textMuted,
+                    ),
                   ),
                 ],
               ],
