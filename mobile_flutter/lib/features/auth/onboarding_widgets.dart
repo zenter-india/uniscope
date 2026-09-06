@@ -39,36 +39,66 @@ class OnboardingStepScaffold extends StatelessWidget {
     super.key,
     required this.title,
     required this.subtitle,
-    required this.children,
+    this.children = const [],
+    this.expandedChild,
   });
   final String title;
   final String subtitle;
   final List<Widget> children;
 
+  /// When given, the step is a fixed header + this widget filling the rest
+  /// of the viewport (the page itself doesn't scroll) — for a step whose
+  /// body scrolls itself, like the avatar picker with its pinned preview.
+  /// Mutually exclusive with [children].
+  final Widget? expandedChild;
+
   @override
   Widget build(BuildContext context) {
+    final header = [
+      Text(
+        title,
+        style: const TextStyle(
+          fontSize: AppFont.xl,
+          fontWeight: AppFont.bold,
+          color: AppColors.textPrimary,
+        ),
+      ),
+      const SizedBox(height: AppSpacing.xs),
+      Text(
+        subtitle,
+        style: const TextStyle(
+          fontSize: AppFont.sm,
+          color: AppColors.textSecondary,
+          height: 1.4,
+        ),
+      ),
+    ];
+
+    if (expandedChild != null) {
+      return Padding(
+        padding: const EdgeInsets.fromLTRB(
+          AppSpacing.xl,
+          AppSpacing.xl,
+          AppSpacing.xl,
+          0,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            ...header,
+            const SizedBox(height: AppSpacing.lg),
+            Expanded(child: expandedChild!),
+          ],
+        ),
+      );
+    }
+
     return SingleChildScrollView(
       padding: const EdgeInsets.all(AppSpacing.xl),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            title,
-            style: const TextStyle(
-              fontSize: AppFont.xl,
-              fontWeight: AppFont.bold,
-              color: AppColors.textPrimary,
-            ),
-          ),
-          const SizedBox(height: AppSpacing.xs),
-          Text(
-            subtitle,
-            style: const TextStyle(
-              fontSize: AppFont.sm,
-              color: AppColors.textSecondary,
-              height: 1.4,
-            ),
-          ),
+          ...header,
           const SizedBox(height: AppSpacing.xl),
           ...children,
         ],

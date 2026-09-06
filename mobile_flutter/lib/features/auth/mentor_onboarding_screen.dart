@@ -569,12 +569,10 @@ class _MentorOnboardingScreenState extends ConsumerState<MentorOnboardingScreen>
                   OnboardingStepScaffold(
                     title: _stepTitles[4],
                     subtitle: _stepSubtitles[4],
-                    children: [
-                      AvatarPickerPanel(
-                          key: _avatarPanelKey,
-                          initialGenderText: _gender,
-                          startFromFirstOption: true),
-                    ],
+                    expandedChild: StickyPreviewAvatarPicker(
+                        panelKey: _avatarPanelKey,
+                        initialGenderText: _gender,
+                        startFromFirstOption: true),
                   ),
                   OnboardingStepScaffold(
                     title: _stepTitles[5],

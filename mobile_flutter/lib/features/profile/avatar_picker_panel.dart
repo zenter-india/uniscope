@@ -386,3 +386,80 @@ class _ColorSwatch extends StatelessWidget {
     );
   }
 }
+
+/// [AvatarPickerPanel] with its preview **pinned** above the scrolling
+/// option list (the panel's own inline preview turned off). The avatar
+/// you're building stays visible while you scroll the categories
+/// underneath. Shared by the standalone Customize Avatar screen and both
+/// onboarding wizards' avatar step so the three can't drift.
+///
+/// Read the in-progress selection through [panelKey] exactly as with a bare
+/// [AvatarPickerPanel] — the key is forwarded to the inner panel, so
+/// `panelKey.currentState?.currentConfig` still works.
+class StickyPreviewAvatarPicker extends StatefulWidget {
+  const StickyPreviewAvatarPicker({
+    super.key,
+    required this.panelKey,
+    this.initialGenderText,
+    this.startFromFirstOption = false,
+  });
+
+  final GlobalKey<AvatarPickerPanelState> panelKey;
+  final String? initialGenderText;
+  final bool startFromFirstOption;
+
+  @override
+  State<StickyPreviewAvatarPicker> createState() =>
+      _StickyPreviewAvatarPickerState();
+}
+
+class _StickyPreviewAvatarPickerState extends State<StickyPreviewAvatarPicker> {
+  String? _previewSvg;
+  String? _previewUrl;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
+          decoration: const BoxDecoration(
+            color: AppColors.surface,
+            border: Border(bottom: BorderSide(color: AppColors.border)),
+          ),
+          child: Center(
+            child: _previewSvg != null
+                ? ClipOval(
+                    child: SvgPicture.string(
+                      _previewSvg!,
+                      width: 80,
+                      height: 80,
+                      fit: BoxFit.cover,
+                    ),
+                  )
+                : AppAvatar(name: '?', size: 80, avatarUrl: _previewUrl),
+          ),
+        ),
+        Expanded(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(AppSpacing.md),
+            child: AvatarPickerPanel(
+              key: widget.panelKey,
+              showInlinePreview: false,
+              initialGenderText: widget.initialGenderText,
+              startFromFirstOption: widget.startFromFirstOption,
+              onPreviewChanged: (svg, url) {
+                if (!mounted) return;
+                setState(() {
+                  _previewSvg = svg;
+                  _previewUrl = url;
+                });
+              },
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}

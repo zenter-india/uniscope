@@ -374,12 +374,10 @@ class _AspirantOnboardingScreenState
                   OnboardingStepScaffold(
                     title: _stepTitles[5],
                     subtitle: _stepSubtitles[5],
-                    children: [
-                      AvatarPickerPanel(
-                          key: _avatarPanelKey,
-                          initialGenderText: _gender,
-                          startFromFirstOption: true),
-                    ],
+                    expandedChild: StickyPreviewAvatarPicker(
+                        panelKey: _avatarPanelKey,
+                        initialGenderText: _gender,
+                        startFromFirstOption: true),
                   ),
                 ],
               ),
