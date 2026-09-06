@@ -775,6 +775,8 @@ class CollegeReviewPromptBanner extends ConsumerWidget {
         false;
     if (reviewed) return const SizedBox.shrink();
 
+    final collegeName = profile.universityName ?? 'your college';
+
     return AppCard(
       margin: const EdgeInsets.only(bottom: AppSpacing.md),
       onTap: () => openUniversityReview(
@@ -803,12 +805,12 @@ class CollegeReviewPromptBanner extends ConsumerWidget {
               ),
             ),
             const SizedBox(width: AppSpacing.sm),
-            const Expanded(
+            Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    'Review your college',
+                  const Text(
+                    'Review your own college to accept call bookings',
                     style: TextStyle(
                       fontSize: AppFont.sm,
                       fontWeight: AppFont.bold,
@@ -816,8 +818,9 @@ class CollegeReviewPromptBanner extends ConsumerWidget {
                     ),
                   ),
                   Text(
-                    'Required to accept paid call bookings — takes a minute.',
-                    style: TextStyle(
+                    'A quick honest review of $collegeName unlocks the '
+                    '"Accepting calls" switch.',
+                    style: const TextStyle(
                       fontSize: AppFont.xs,
                       color: AppColors.textSecondary,
                     ),
