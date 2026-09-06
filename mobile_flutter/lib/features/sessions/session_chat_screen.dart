@@ -244,30 +244,47 @@ class _SessionChatScreenState extends ConsumerState<SessionChatScreen> {
           // connect). A mentor never books or pays for a call, so the
           // "Request a call" action — and its Uniminutes balance check —
           // must never show on the mentor's side of a chat.
+          // Green + tappable only when this mentor can actually be booked
+          // for a call right now (verified + "accepting call bookings" on,
+          // not stale — `Session.mentorIsAvailable` runs the same
+          // `isCallAvailable()` gate every other surface uses). Greyed and
+          // NOT tappable otherwise — a request would just be rejected
+          // server-side.
           if (isAspirant)
             IconButton(
-              icon: const Icon(Icons.call_rounded, color: AppColors.primary),
-              tooltip: 'Request a call',
-              onPressed: () async {
-                final wallet = await ref.read(walletBalanceProvider.future);
-                if (!context.mounted) return;
-                if (wallet.availableUniminutes < _minCallSlotUniminutes) {
-                  await showLowBalanceSheet(
-                    context,
-                    balanceUniminutes: wallet.availableUniminutes,
-                    reservedUniminutes: wallet.reservedUniminutes,
-                  );
-                  return;
-                }
-                if (!context.mounted) return;
-                await showCallRequestSheet(
-                  context,
-                  ref,
-                  mentorId: _session!.mentorId,
-                  mentorName: _session!.mentorName,
-                  mentorWindows: _session!.mentorAvailableDays,
-                );
-              },
+              icon: Icon(
+                Icons.call_rounded,
+                color: _session!.mentorIsAvailable
+                    ? AppColors.primary
+                    : AppColors.textMuted,
+              ),
+              tooltip: _session!.mentorIsAvailable
+                  ? 'Request a call'
+                  : 'Not accepting calls right now',
+              onPressed: _session!.mentorIsAvailable
+                  ? () async {
+                      final wallet = await ref.read(
+                        walletBalanceProvider.future,
+                      );
+                      if (!context.mounted) return;
+                      if (wallet.availableUniminutes < _minCallSlotUniminutes) {
+                        await showLowBalanceSheet(
+                          context,
+                          balanceUniminutes: wallet.availableUniminutes,
+                          reservedUniminutes: wallet.reservedUniminutes,
+                        );
+                        return;
+                      }
+                      if (!context.mounted) return;
+                      await showCallRequestSheet(
+                        context,
+                        ref,
+                        mentorId: _session!.mentorId,
+                        mentorName: _session!.mentorName,
+                        mentorWindows: _session!.mentorAvailableDays,
+                      );
+                    }
+                  : null,
             ),
           // Aspirant-only: the Sessions tab now shows one collapsed row per
           // mentor instead of every past session (see

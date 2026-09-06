@@ -586,13 +586,18 @@ class _AspirantMentorRow extends ConsumerWidget {
                 color: first.mentorIsAvailable
                     ? AppColors.primary
                     : AppColors.textMuted,
-                onTap: () => _requestCall(
-                  context,
-                  ref,
-                  mentorId,
-                  mentorName,
-                  first.mentorAvailableDays,
-                ),
+                // Tappable only when the mentor is actually bookable —
+                // greyed + disabled otherwise (a request would just 409
+                // server-side).
+                onTap: first.mentorIsAvailable
+                    ? () => _requestCall(
+                        context,
+                        ref,
+                        mentorId,
+                        mentorName,
+                        first.mentorAvailableDays,
+                      )
+                    : null,
               ),
               _RowIconButton(
                 icon: Icons.chat_bubble_rounded,
@@ -622,7 +627,9 @@ class _RowIconButton extends StatelessWidget {
   });
 
   final IconData icon;
-  final VoidCallback onTap;
+
+  /// null → the button renders disabled (greyed, not tappable).
+  final VoidCallback? onTap;
   final String? tooltip;
   final Color color;
   final bool filled;
