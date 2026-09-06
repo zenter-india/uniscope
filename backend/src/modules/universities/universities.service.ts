@@ -25,6 +25,9 @@ const MAX_LIMIT = 50;
 // other seeded college is still reachable by typing it under "Other".
 const CURATED_LIMIT = 30;
 
+// "Top Colleges For You" rail on the mentor Home screen — how many cards.
+const TOP_FOR_MENTOR_LIMIT = 8;
+
 export interface CuratedCollegeOption {
   id: string;
   label: string;
@@ -163,6 +166,67 @@ export class UniversitiesService {
     const nextCursor = hasMore ? sliced[sliced.length - 1].id : null;
 
     return { data: sliced.map(withSpecializations), nextCursor };
+  }
+
+  /**
+   * "Top Colleges For You" for the mentor Home rail. Colleges in the
+   * mentor's OWN stream (the field they studied), minus their own college,
+   * ranked by average rating then review count — computed fresh from ACTIVE
+   * reviews via UniversityReviewsService.ratingSummaries.
+   *
+   * "Top" is only meaningful where reviews exist, so this returns ONLY
+   * reviewed colleges — no alphabetical filler with a fake rating. Empty
+   * (→ the rail hides) when the mentor has no stream, or nothing in their
+   * stream has been reviewed yet. It fills in on its own as the review
+   * corpus grows.
+   */
+  async topForMentor(
+    userId: string,
+  ): Promise<
+    Array<University & { rating: number | null; reviewCount: number }>
+  > {
+    const profile = await this.prisma.userProfile.findUnique({
+      where: { userId },
+      select: { stream: true, universityId: true },
+    });
+    if (!profile?.stream) return [];
+
+    const candidates = await this.prisma.university.findMany({
+      where: {
+        isActive: true,
+        stream: profile.stream,
+        ...(profile.universityId && { id: { not: profile.universityId } }),
+      },
+      select: { id: true },
+    });
+    if (candidates.length === 0) return [];
+
+    const ratings = await this.universityReviewsService.ratingSummaries(
+      candidates.map((c) => c.id),
+    );
+    const ranked = [...ratings.entries()]
+      .map(([id, s]) => ({ id, average: s.average ?? 0, count: s.count }))
+      .sort((a, b) => b.average - a.average || b.count - a.count)
+      .slice(0, TOP_FOR_MENTOR_LIMIT);
+    if (ranked.length === 0) return [];
+
+    const rows = await this.prisma.university.findMany({
+      where: { id: { in: ranked.map((r) => r.id) } },
+    });
+    const byId = new Map(rows.map((r) => [r.id, r]));
+
+    return ranked.flatMap((r) => {
+      const university = byId.get(r.id);
+      const summary = ratings.get(r.id);
+      if (!university || !summary) return [];
+      return [
+        {
+          ...university,
+          rating: summary.average,
+          reviewCount: summary.count,
+        },
+      ];
+    });
   }
 
   /**

@@ -203,6 +203,17 @@ class UniversitiesApi {
     return University.fromJson(res.data!);
   }
 
+  /// "Top Colleges For You" for the mentor Home rail — colleges in the
+  /// mentor's own stream, ranked by rating (computed server-side), each
+  /// with `rating`/`reviewCount` populated. Empty when the mentor has no
+  /// stream or nothing in it has been reviewed yet. MENTOR-only endpoint.
+  Future<List<University>> topForMentor() async {
+    final res = await _dio.get<List<dynamic>>('/universities/top-for-mentor');
+    return (res.data ?? const [])
+        .map((e) => University.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
+
   /// Matches an existing university by name+state (case-insensitive) or
   /// creates a new one — used by the mentor onboarding wizard's College
   /// field for non-Medical streams, where the curated dropdown doesn't
@@ -235,6 +246,12 @@ final universitiesApiProvider = Provider<UniversitiesApi>(
 final universitiesListProvider = FutureProvider.autoDispose<List<University>>(
   (ref) => ref.watch(universitiesApiProvider).list(),
 );
+
+/// "Top Colleges For You" for the mentor Home rail (MENTOR accounts only).
+final topCollegesForMentorProvider =
+    FutureProvider.autoDispose<List<University>>(
+      (ref) => ref.watch(universitiesApiProvider).topForMentor(),
+    );
 
 /// `(stream, curatedDegreeKey)` → curated colleges for that combination.
 /// Keyed by a record so Riverpod dedupes/caches per stream+degree; used by

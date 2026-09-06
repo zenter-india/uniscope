@@ -4,6 +4,8 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/network/mentors_api.dart' show MentorDashboardRecentSession;
 import '../../core/network/reviews_api.dart';
+import '../../core/network/universities_api.dart'
+    show University, topCollegesForMentorProvider;
 import '../../core/network/users_api.dart' show myProfileProvider;
 import '../../core/theme/app_theme.dart';
 import '../../state/auth_controller.dart';
@@ -250,6 +252,41 @@ class MentorLandingScreen extends ConsumerWidget {
                         ],
                       ),
                     ),
+                    // Top Colleges For You — colleges in the mentor's own
+                    // stream ranked by rating (server-side). The whole
+                    // section (header + rail) is hidden until there's real
+                    // data — no lonely header, no fabricated filler.
+                    ref
+                        .watch(topCollegesForMentorProvider)
+                        .maybeWhen(
+                          data: (colleges) => colleges.isEmpty
+                              ? const SizedBox.shrink()
+                              : Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const SizedBox(height: AppSpacing.lg),
+                                    const SectionHeader(
+                                      title: 'Top Colleges For You',
+                                    ),
+                                    const SizedBox(height: AppSpacing.md),
+                                    SizedBox(
+                                      height: 150,
+                                      child: ListView.separated(
+                                        scrollDirection: Axis.horizontal,
+                                        itemCount: colleges.length,
+                                        separatorBuilder: (_, __) =>
+                                            const SizedBox(
+                                              width: AppSpacing.sm,
+                                            ),
+                                        itemBuilder: (_, i) => _TopCollegeCard(
+                                          university: colleges[i],
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                          orElse: () => const SizedBox.shrink(),
+                        ),
                     const SizedBox(height: AppSpacing.lg),
                     SectionHeader(
                       title: 'Recent Sessions',
@@ -273,7 +310,7 @@ class MentorLandingScreen extends ConsumerWidget {
                     ),
                     const SizedBox(height: AppSpacing.lg),
                     SectionHeader(
-                      title: 'Reviews',
+                      title: 'Your Starboard',
                       onSeeAll: () => context.push('/profile/reviews'),
                     ),
                     const SizedBox(height: AppSpacing.md),
@@ -543,6 +580,114 @@ class _ReviewCard extends StatelessWidget {
             ),
           ],
         ],
+      ),
+    );
+  }
+}
+
+/// Fixed-width card for the mentor Home "Top Colleges For You" rail. Unlike
+/// the aspirant's `_CollegeSpotlightCard`, this one shows the rating — the
+/// rail is ranked by it, so hiding it would bury the reason a college is
+/// here.
+class _TopCollegeCard extends StatelessWidget {
+  const _TopCollegeCard({required this.university});
+
+  final University university;
+
+  @override
+  Widget build(BuildContext context) {
+    final rating = university.rating;
+    return SizedBox(
+      width: 150,
+      child: Container(
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(AppRadius.lg),
+          boxShadow: AppShadows.card,
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: () => context.push(
+            '/colleges/detail',
+            extra: {
+              'universitySlug': university.slug,
+              'universityName': university.name,
+            },
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                height: 54,
+                width: double.infinity,
+                color: AppColors.primaryLight,
+                alignment: Alignment.center,
+                child: const Icon(
+                  Icons.account_balance_rounded,
+                  size: 26,
+                  color: AppColors.primaryDark,
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(10, 8, 10, 10),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    SizedBox(
+                      height: 32,
+                      child: Text(
+                        university.name,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: AppFont.bold,
+                          color: AppColors.textPrimary,
+                          height: 1.2,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Row(
+                      children: [
+                        if (university.stream != null)
+                          Expanded(
+                            child: Text(
+                              university.stream!,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                fontSize: 10,
+                                fontWeight: AppFont.semibold,
+                                color: AppColors.textMuted,
+                              ),
+                            ),
+                          ),
+                        if (rating != null) ...[
+                          const Icon(
+                            Icons.star_rounded,
+                            size: 12,
+                            color: AppColors.warning,
+                          ),
+                          const SizedBox(width: 2),
+                          Text(
+                            rating.toStringAsFixed(1),
+                            style: const TextStyle(
+                              fontSize: 11,
+                              fontWeight: AppFont.bold,
+                              color: AppColors.textPrimary,
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

@@ -9,6 +9,8 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { UserRole } from '@prisma/client';
+import { CurrentUser } from '../../auth/decorators/current-user.decorator.js';
+import type { JwtPayload } from '../../auth/decorators/current-user.decorator.js';
 import { Roles } from '../../auth/decorators/roles.decorator.js';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard.js';
 import { RolesGuard } from '../../auth/guards/roles.guard.js';
@@ -74,6 +76,16 @@ export class UniversitiesController {
   @Get('curated')
   curated(@Query() query: ListCuratedUniversitiesDto) {
     return this.universitiesService.findCurated(query);
+  }
+
+  /** "Top Colleges For You" rail on the mentor Home screen — colleges in
+   * the mentor's own stream, ranked by rating. Declared before `:slug` so
+   * the literal path isn't swallowed by the slug param. */
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.MENTOR)
+  @Get('top-for-mentor')
+  topForMentor(@CurrentUser() user: JwtPayload) {
+    return this.universitiesService.topForMentor(user.sub);
   }
 
   @Get(':slug')
