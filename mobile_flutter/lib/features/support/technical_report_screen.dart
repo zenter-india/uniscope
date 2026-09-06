@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../core/network/support_api.dart';
 import '../../core/theme/app_theme.dart';
@@ -70,7 +71,10 @@ class _TechnicalReportScreenState extends ConsumerState<TechnicalReportScreen> {
               child: _done ? _buildDone() : _buildForm(),
             ),
           ),
-          _StillNeedHelpBand(onCall: () => callSupport(context)),
+          _StillNeedHelpBand(
+            onChat: () => context.push('/support'),
+            onCall: () => callSupport(context),
+          ),
         ],
       ),
     );
@@ -224,8 +228,9 @@ class _TechnicalReportScreenState extends ConsumerState<TechnicalReportScreen> {
 /// reference design — a persistent help affordance at the bottom of the
 /// technical-report screen.
 class _StillNeedHelpBand extends StatelessWidget {
-  const _StillNeedHelpBand({required this.onCall});
+  const _StillNeedHelpBand({required this.onChat, required this.onCall});
 
+  final VoidCallback onChat;
   final VoidCallback onCall;
 
   @override
@@ -252,17 +257,39 @@ class _StillNeedHelpBand extends StatelessWidget {
             ),
           ),
           const SizedBox(height: AppSpacing.sm),
-          OutlinedButton.icon(
-            onPressed: onCall,
-            icon: const Icon(Icons.call_rounded, size: 18, color: Colors.green),
-            label: const Text('Call us'),
-            style: OutlinedButton.styleFrom(
-              foregroundColor: AppColors.textPrimary,
-              side: const BorderSide(color: AppColors.border),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(AppRadius.xl),
+          Wrap(
+            spacing: AppSpacing.sm,
+            runSpacing: AppSpacing.sm,
+            children: [
+              FilledButton.icon(
+                onPressed: onChat,
+                icon: const Icon(Icons.chat_bubble_rounded, size: 16),
+                label: const Text('Chat with us'),
+                style: FilledButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(AppRadius.xl),
+                  ),
+                ),
               ),
-            ),
+              OutlinedButton.icon(
+                onPressed: onCall,
+                icon: const Icon(
+                  Icons.call_rounded,
+                  size: 16,
+                  color: Colors.green,
+                ),
+                label: const Text('Call us'),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppColors.textPrimary,
+                  side: const BorderSide(color: AppColors.border),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(AppRadius.xl),
+                  ),
+                ),
+              ),
+            ],
           ),
         ],
       ),

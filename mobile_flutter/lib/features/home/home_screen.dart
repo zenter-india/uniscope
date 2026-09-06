@@ -517,6 +517,46 @@ class HomeScreen extends ConsumerWidget {
                         }).toList(),
                       ),
                     ),
+                    const SizedBox(height: AppSpacing.lg),
+                    AppCard(
+                      onTap: () => context.push('/help'),
+                      child: const Row(
+                        children: [
+                          Icon(
+                            Icons.chat_bubble_outline_rounded,
+                            color: AppColors.primary,
+                          ),
+                          SizedBox(width: AppSpacing.sm),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Need Help?',
+                                  style: TextStyle(
+                                    fontSize: AppFont.md,
+                                    fontWeight: AppFont.bold,
+                                    color: AppColors.textPrimary,
+                                  ),
+                                ),
+                                Text(
+                                  'Visit the Help Centre or chat with our team.',
+                                  style: TextStyle(
+                                    fontSize: AppFont.xs,
+                                    color: AppColors.textSecondary,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Icon(
+                            Icons.chevron_right_rounded,
+                            color: AppColors.textMuted,
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.xl),
                   ],
                 ),
               ),
