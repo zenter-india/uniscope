@@ -89,9 +89,9 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
         ),
         _Feature(
           icon: Icons.forum_rounded,
-          title: 'Strategic Matching',
+          title: 'The Right Mentors',
           description:
-              'Get matched with mentors who share your interests and can provide real insights into campus life and culture.',
+              'Find mentors who share your interests and can give you real insights into campus life and culture.',
         ),
       ],
     ),

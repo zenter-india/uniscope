@@ -314,7 +314,7 @@ export const STATE_DISTRICTS: Record<string, readonly string[]> = {
  * want to talk" preference and the mentor's "when am I generally free"
  * availability, so the two sides of a booking speak the same vocabulary.
  * Deliberately time-of-day, not day-of-week — a weekday/weekend picker just
- * has everyone pick weekend, which tells the matching logic nothing. */
+ * has everyone pick weekend, which tells the recommendation logic nothing. */
 export const TIME_SLOTS = [
   "Morning (6 AM - 12 PM)",
   "Afternoon (12 PM - 4 PM)",

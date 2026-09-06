@@ -61,7 +61,7 @@ export default function PrivacyPage() {
           <Section title="Why we collect it, and why your phone number stays as plain text">
             <p>
               This form exists so we can reach you once your account is ready — that&apos;s it. Every other field
-              helps us match students with the right mentors sooner.
+              helps us connect students with the right mentors sooner.
             </p>
             <p>
               Almost everything else in Uniscope&apos;s systems stores phone numbers in a scrambled, one-way form

@@ -62,9 +62,9 @@ class _AspirantOnboardingScreenState
   ];
   static const _stepSubtitles = [
     'Core identity details.',
-    'For regional mentor matching.',
+    'Helps us suggest mentors from your region.',
     'Current or highest education level.',
-    'Used for mentor matching.',
+    'Used to recommend relevant mentors.',
     'Helps us find the right mentors for you.',
     'Pick a look — you can always change this later from your profile.',
   ];

@@ -114,7 +114,7 @@ class _ProfileCompleteness extends StatelessWidget {
           ),
           const SizedBox(height: AppSpacing.xs),
           Text(
-            '$hint A fuller profile helps mentors and matching find you.',
+            '$hint A fuller profile helps the right mentors find you.',
             style: const TextStyle(
               fontSize: AppFont.xs,
               color: AppColors.textSecondary,

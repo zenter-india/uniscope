@@ -338,9 +338,9 @@ const kTimeSlots = [
 ];
 
 // UserProfile.stream — a mentor's college field of study, or an aspirant's
-// field of interest ("used for mentor matching"). Same list either way since
-// Uniscope spans every academic field now, not just medical; "Others" pairs
-// with a free-text field in the UI.
+// field of interest (used to recommend relevant mentors). Same list either
+// way since Uniscope spans every academic field now, not just medical;
+// "Others" goes with a free-text field in the UI.
 const kStreamOptions = [
   'Medical',
   'Dental',
