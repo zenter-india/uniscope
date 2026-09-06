@@ -357,30 +357,6 @@ class _MentorListScreenState extends ConsumerState<MentorListScreen> {
                   ),
                   const SizedBox(width: AppSpacing.xs),
                   _MentorFilterChip(
-                    label: _availability ?? 'Availability',
-                    active: _availability != null,
-                    dropdown: true,
-                    onTap: () => _pickOne(
-                      title: 'Availability',
-                      options: const [_kAvailForCalls, _kChatOnly],
-                      selected: _availability,
-                      onPick: (v) => setState(() => _availability = v),
-                    ),
-                  ),
-                  const SizedBox(width: AppSpacing.xs),
-                  _MentorFilterChip(
-                    label: _rating ?? 'Rating',
-                    active: _rating != null,
-                    dropdown: true,
-                    onTap: () => _pickOne(
-                      title: 'Minimum rating',
-                      options: _kRatingOptions,
-                      selected: _rating,
-                      onPick: (v) => setState(() => _rating = v),
-                    ),
-                  ),
-                  const SizedBox(width: AppSpacing.xs),
-                  _MentorFilterChip(
                     label: _qualification ?? 'Degree',
                     active: _qualification != null,
                     dropdown: true,
@@ -420,6 +396,30 @@ class _MentorListScreenState extends ConsumerState<MentorListScreen> {
                       options: kLanguageOptions,
                       selected: _language,
                       onPick: (v) => setState(() => _language = v),
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.xs),
+                  _MentorFilterChip(
+                    label: _availability ?? 'Availability',
+                    active: _availability != null,
+                    dropdown: true,
+                    onTap: () => _pickOne(
+                      title: 'Availability',
+                      options: const [_kAvailForCalls, _kChatOnly],
+                      selected: _availability,
+                      onPick: (v) => setState(() => _availability = v),
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.xs),
+                  _MentorFilterChip(
+                    label: _rating ?? 'Rating',
+                    active: _rating != null,
+                    dropdown: true,
+                    onTap: () => _pickOne(
+                      title: 'Minimum rating',
+                      options: _kRatingOptions,
+                      selected: _rating,
+                      onPick: (v) => setState(() => _rating = v),
                     ),
                   ),
                   if (hasActiveFilters) ...[

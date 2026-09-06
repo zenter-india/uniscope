@@ -372,32 +372,6 @@ class _UniversityListScreenState extends ConsumerState<UniversityListScreen> {
                       ),
                     ),
                   ),
-                  Padding(
-                    padding: const EdgeInsets.only(right: AppSpacing.sm),
-                    child: _FilterPill(
-                      icon: Icons.place_rounded,
-                      label: effectiveState ?? 'State',
-                      active: effectiveState != null,
-                      trailing: Icons.keyboard_arrow_down_rounded,
-                      onTap: () => _pickOption(
-                        title: 'State',
-                        options: _stateFilters,
-                        searchable: true,
-                        selected: effectiveState ?? 'All',
-                        onSelected: (v) {
-                          // Picking anything here always wins from now on —
-                          // clear the ambient toggle so it can't silently
-                          // fight the explicit choice on the next rebuild.
-                          ref
-                              .read(collegeStateFilterProvider.notifier)
-                              .set(false);
-                          setState(
-                            () => _explicitStateFilter = v == 'All' ? 'All' : v,
-                          );
-                        },
-                      ),
-                    ),
-                  ),
                   // Degree options cascade from the picked stream, matching
                   // the web enrollment forms (degreesForStream) — no stream,
                   // no Degree pill.
@@ -444,6 +418,34 @@ class _UniversityListScreenState extends ConsumerState<UniversityListScreen> {
                         ),
                       ),
                     ),
+                  // State last — it's independent of the field-of-study
+                  // cascade above it.
+                  Padding(
+                    padding: const EdgeInsets.only(right: AppSpacing.sm),
+                    child: _FilterPill(
+                      icon: Icons.place_rounded,
+                      label: effectiveState ?? 'State',
+                      active: effectiveState != null,
+                      trailing: Icons.keyboard_arrow_down_rounded,
+                      onTap: () => _pickOption(
+                        title: 'State',
+                        options: _stateFilters,
+                        searchable: true,
+                        selected: effectiveState ?? 'All',
+                        onSelected: (v) {
+                          // Picking anything here always wins from now on —
+                          // clear the ambient toggle so it can't silently
+                          // fight the explicit choice on the next rebuild.
+                          ref
+                              .read(collegeStateFilterProvider.notifier)
+                              .set(false);
+                          setState(
+                            () => _explicitStateFilter = v == 'All' ? 'All' : v,
+                          );
+                        },
+                      ),
+                    ),
+                  ),
                   const SizedBox(width: AppSpacing.md),
                 ],
               ),
