@@ -405,7 +405,7 @@ class HomeScreen extends ConsumerWidget {
                     ),
                     const SizedBox(height: AppSpacing.lg),
                     SectionHeader(
-                      title: 'Colleges for you',
+                      title: 'Top colleges for you',
                       accentColor: authBrandTeal,
                       onSeeAll: () => context.go('/colleges'),
                     ),
