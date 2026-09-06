@@ -6,6 +6,7 @@ import '../../core/network/users_api.dart';
 import '../../core/theme/app_theme.dart';
 import '../../state/auth_controller.dart';
 import '../../widgets/app_widgets.dart';
+import '../common/legal_links.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
@@ -76,6 +77,48 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 label: 'Blocked Users',
                 onTap: () => context.push('/profile/blocked-users'),
                 isLast: true,
+              ),
+            ),
+            const SizedBox(height: AppSpacing.xl),
+            const Text(
+              'Legal & policies',
+              style: TextStyle(
+                fontSize: AppFont.sm,
+                fontWeight: AppFont.bold,
+                color: AppColors.textMuted,
+                letterSpacing: 0.6,
+              ),
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            AppCard(
+              padding: EdgeInsets.zero,
+              child: Column(
+                children: [
+                  _SettingsRow(
+                    icon: Icons.description_outlined,
+                    label: 'Terms & Conditions',
+                    onTap: () => openLegalPage(context, LegalPage.terms),
+                  ),
+                  _SettingsRow(
+                    icon: Icons.privacy_tip_outlined,
+                    label: 'Privacy Policy',
+                    onTap: () => openLegalPage(context, LegalPage.privacy),
+                  ),
+                  _SettingsRow(
+                    icon: Icons.groups_outlined,
+                    label: 'Community Guidelines',
+                    onTap: () => openLegalPage(
+                      context,
+                      LegalPage.communityGuidelines,
+                    ),
+                  ),
+                  _SettingsRow(
+                    icon: Icons.currency_rupee_rounded,
+                    label: 'Refund & Cancellation Policy',
+                    onTap: () => openLegalPage(context, LegalPage.refund),
+                    isLast: true,
+                  ),
+                ],
               ),
             ),
             const SizedBox(height: AppSpacing.xl),

@@ -8,6 +8,7 @@ import '../../core/network/wallet_api.dart';
 import '../../core/theme/app_theme.dart';
 import '../../state/auth_controller.dart';
 import '../../widgets/app_widgets.dart';
+import '../common/legal_links.dart';
 
 /// The four fixed recharge packages — `(rupees, uniminutes)`. Must match the
 /// backend's `RECHARGE_PACKAGES` exactly (`create-topup.dto.ts`): the server
@@ -236,6 +237,23 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
                 ),
               );
             }),
+            const SizedBox(height: AppSpacing.xs),
+            Align(
+              alignment: Alignment.center,
+              child: TextButton(
+                onPressed: () {
+                  Navigator.of(sheetContext).pop();
+                  openLegalPage(context, LegalPage.refund);
+                },
+                child: const Text(
+                  'Refund & Cancellation Policy',
+                  style: TextStyle(
+                    fontSize: AppFont.xs,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+              ),
+            ),
           ],
         ),
       ),

@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../core/theme/app_theme.dart';
 import '../../state/auth_controller.dart';
 import '../../widgets/app_widgets.dart';
+import '../common/legal_links.dart';
 import 'support_contact.dart';
 
 /// Help Centre landing screen (route `/help`). Self-serve topics + FAQ
@@ -579,30 +580,28 @@ class _HelpFooter extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    void openLegal(String title, String url) =>
-        context.push('/legal', extra: {'title': title, 'url': url});
     return Column(
       children: [
         Wrap(
           alignment: WrapAlignment.center,
           crossAxisAlignment: WrapCrossAlignment.center,
+          runSpacing: 4,
           children: [
-            _FootLink(
-              'Terms',
-              () => openLegal('Terms', 'https://uniscope.in/terms'),
-            ),
+            _FootLink('Terms', () => openLegalPage(context, LegalPage.terms)),
             const _FootDot(),
             _FootLink(
               'Privacy',
-              () => openLegal('Privacy', 'https://uniscope.in/privacy'),
+              () => openLegalPage(context, LegalPage.privacy),
             ),
             const _FootDot(),
             _FootLink(
               'Community guidelines',
-              () => openLegal(
-                'Community guidelines',
-                'https://uniscope.in/guidelines',
-              ),
+              () => openLegalPage(context, LegalPage.communityGuidelines),
+            ),
+            const _FootDot(),
+            _FootLink(
+              'Refund policy',
+              () => openLegalPage(context, LegalPage.refund),
             ),
           ],
         ),

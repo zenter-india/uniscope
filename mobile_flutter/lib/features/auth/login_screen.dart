@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/network/auth_api.dart';
 import '../../core/theme/app_theme.dart';
+import '../common/legal_links.dart';
 import 'auth_background.dart';
 
 /// Port of RN `auth/LoginScreen.tsx`.
@@ -20,6 +21,7 @@ class LoginScreen extends ConsumerStatefulWidget {
 class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _controller = TextEditingController();
   late final TapGestureRecognizer _termsTapRecognizer;
+  late final TapGestureRecognizer _privacyTapRecognizer;
   String _phone = '';
   bool _loading = false;
   String _error = '';
@@ -30,19 +32,16 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   void initState() {
     super.initState();
     _termsTapRecognizer = TapGestureRecognizer()
-      ..onTap = () => context.push(
-            '/legal',
-            extra: {
-              'title': 'Terms & Privacy',
-              'url': 'https://uniscope.in/privacy',
-            },
-          );
+      ..onTap = () => openLegalPage(context, LegalPage.terms);
+    _privacyTapRecognizer = TapGestureRecognizer()
+      ..onTap = () => openLegalPage(context, LegalPage.privacy);
   }
 
   @override
   void dispose() {
     _controller.dispose();
     _termsTapRecognizer.dispose();
+    _privacyTapRecognizer.dispose();
     super.dispose();
   }
 
@@ -239,19 +238,28 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         padding: const EdgeInsets.only(bottom: AppSpacing.lg),
                         child: Text.rich(
                           TextSpan(
-                            text: 'By continuing you agree to ',
+                            text: 'By continuing you agree to our ',
                             style: const TextStyle(
                               fontSize: AppFont.xs,
                               color: AppColors.textMuted,
                             ),
                             children: [
                               TextSpan(
-                                text: 'Terms & Privacy',
+                                text: 'Terms',
                                 style: const TextStyle(
                                   color: authBrandTeal,
                                   fontWeight: AppFont.semibold,
                                 ),
                                 recognizer: _termsTapRecognizer,
+                              ),
+                              const TextSpan(text: ' & '),
+                              TextSpan(
+                                text: 'Privacy Policy',
+                                style: const TextStyle(
+                                  color: authBrandTeal,
+                                  fontWeight: AppFont.semibold,
+                                ),
+                                recognizer: _privacyTapRecognizer,
                               ),
                             ],
                           ),
