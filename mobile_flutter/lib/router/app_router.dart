@@ -16,7 +16,6 @@ import '../features/calls/call_screen.dart';
 import '../features/common/placeholder_screen.dart';
 import '../features/common/web_page_screen.dart';
 import '../features/home/home_screen.dart';
-import '../features/home/mentor_home_screen.dart';
 import '../features/home/mentor_landing_screen.dart';
 import '../features/mentors/mentor_detail_screen.dart';
 import '../features/mentors/mentor_list_screen.dart';
@@ -75,7 +74,8 @@ const _mentorTabs = <TabItem>[
   TabItem('Home', Icons.home_outlined, Icons.home_rounded),
   TabItem('Discover', Icons.explore_outlined, Icons.explore_rounded),
   TabItem('Sessions', Icons.calendar_today_outlined, Icons.calendar_today_rounded),
-  TabItem('Dashboard', Icons.dashboard_outlined, Icons.dashboard_rounded),
+  TabItem('Wallet', Icons.account_balance_wallet_outlined,
+      Icons.account_balance_wallet_rounded),
   TabItem('Profile', Icons.person_outline_rounded, Icons.person_rounded),
 ];
 
@@ -224,17 +224,12 @@ List<StatefulShellBranch> _buildMentorBranches() => [
       ),
       StatefulShellBranch(
         routes: [
-          GoRoute(
-            path: '/dashboard',
-            builder: (_, __) => const MentorDashboardScreen(),
-            // Wallet is no longer its own bottom-nav tab for mentors (see
-            // the Dashboard's wallet card) — pushed from there instead,
-            // nested here rather than top-level to avoid colliding with
-            // the aspirant-only top-level '/wallet' route below.
-            routes: [
-              GoRoute(path: 'wallet', builder: (_, __) => const WalletScreen()),
-            ],
-          ),
+          // The mentor's 4th tab is the Wallet (balance, Withdraw, payout
+          // requests, ledger) — it replaced a separate "Dashboard" overview
+          // screen, whose stats already live on the mentor Home tab
+          // (MentorLandingScreen). Path kept as '/dashboard' so it can't
+          // collide with the aspirant-only top-level '/wallet' route.
+          GoRoute(path: '/dashboard', builder: (_, __) => const WalletScreen()),
         ],
       ),
       StatefulShellBranch(routes: [_profileRoute]),
@@ -388,15 +383,14 @@ final routerProvider = Provider<GoRouter>((ref) {
         },
       ),
 
-      // Wallet needs no top-level standalone route for either role anymore:
-      // aspirants reach it via their own "Wallet" bottom-nav tab, and
-      // mentors via the Dashboard's wallet card at the nested
-      // '/dashboard/wallet' path — see the branch lists below.
+      // Wallet needs no top-level standalone route for either role: both
+      // reach it via a bottom-nav "Wallet" tab (aspirant branch 5 at
+      // '/wallet', mentor branch 4 at '/dashboard' — see the branch lists).
 
       // ─── Main tabs (StatefulShellRoute keeps the bottom bar) ─────
       // Branch order must exactly match the tab list passed to MainShell.
       // Aspirant: Home | Discover | Mentors | Sessions | Wallet | Profile
-      // Mentor:   Home | Discover | Sessions | Dashboard | Profile
+      // Mentor:   Home | Discover | Sessions | Wallet | Profile
       // Fully separate branch lists (rather than one shared list with
       // conditionals) since the two roles' tab orders and screen counts
       // diverge too much to share cleanly.

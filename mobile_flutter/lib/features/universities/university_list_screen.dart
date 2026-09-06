@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/network/college_wishlist_api.dart';
@@ -47,11 +48,28 @@ List<String> _specializationOptionsFor(List<CuratedCollege> curated) {
 /// a college card, and the tint a filter pill takes on once that stream is
 /// picked. One hue per stream, tuned to sit together rather than clash.
 class _StreamVisual {
-  const _StreamVisual(this.icon, this.color, this.tint);
+  const _StreamVisual(this.icon, this.color, this.tint, {this.assetPath});
+
+  /// Fallback glyph, used unless [assetPath] is set.
   final IconData icon;
   final Color color;
   final Color tint;
+
+  /// An SVG in assets/icons/ for streams that have no fitting Material icon
+  /// (e.g. a tooth for Dental, a stethoscope for Medical). Tinted to [color].
+  final String? assetPath;
 }
+
+/// The 20px stream glyph — an asset SVG when the stream has one, else the
+/// Material [IconData] fallback. Both tinted to [v.color].
+Widget _streamGlyph(_StreamVisual v) => v.assetPath != null
+    ? SvgPicture.asset(
+        v.assetPath!,
+        width: 20,
+        height: 20,
+        colorFilter: ColorFilter.mode(v.color, BlendMode.srcIn),
+      )
+    : Icon(v.icon, size: 20, color: v.color);
 
 const _defaultStreamVisual = _StreamVisual(
   Icons.account_balance_rounded,
@@ -64,11 +82,13 @@ const _streamVisuals = <String, _StreamVisual>{
     Icons.medical_services_rounded,
     Color(0xFF0B8F6A),
     Color(0xFFE3F4EE),
+    assetPath: 'assets/icons/stethoscope.svg',
   ),
   'Dental': _StreamVisual(
     Icons.health_and_safety_rounded,
     Color(0xFF7A63D4),
     Color(0xFFECE8FA),
+    assetPath: 'assets/icons/tooth.svg',
   ),
   'Engineering': _StreamVisual(
     Icons.engineering_rounded,
@@ -714,7 +734,7 @@ class UniversityCard extends ConsumerWidget {
                   borderRadius: BorderRadius.circular(AppRadius.sm),
                 ),
                 alignment: Alignment.center,
-                child: Icon(visual.icon, size: 20, color: visual.color),
+                child: _streamGlyph(visual),
               ),
               const SizedBox(width: AppSpacing.md),
               Expanded(
