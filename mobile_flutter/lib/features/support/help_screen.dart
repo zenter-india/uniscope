@@ -5,13 +5,16 @@ import 'package:go_router/go_router.dart';
 import '../../core/theme/app_theme.dart';
 import '../../state/auth_controller.dart';
 import '../../widgets/app_widgets.dart';
+import 'support_contact.dart';
 
-/// Help & Support landing screen (route `/help`). Self-serve topics + FAQ
-/// first, one clear way to reach a human ("Chat with us" → the
-/// existing persistent `/support` thread). All topic/FAQ content is
-/// static and shipped in the app (see [_kArticles] / [_kTopics]) so it
-/// works offline and needs no CMS. Role-aware: mentor-only articles and
-/// the "Verification & payouts" topic render only for MENTOR accounts.
+/// Help Centre landing screen (route `/help`). Self-serve topics + FAQ
+/// first, then clear ways to reach a human — "Chat with us" (the existing
+/// persistent `/support` thread), "Call us" ([kSupportPhoneNumber]), and
+/// "Report a technical issue" (route `/report-issue`). All topic/FAQ
+/// content is static and shipped in the app (see [_kArticles] /
+/// [_kTopics]) so it works offline and needs no CMS. Role-aware:
+/// mentor-only articles and the "Verification & payouts" topic render only
+/// for MENTOR accounts.
 class HelpScreen extends ConsumerStatefulWidget {
   const HelpScreen({super.key});
 
@@ -55,7 +58,7 @@ class _HelpScreenState extends ConsumerState<HelpScreen> {
 
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: GradientAppBar(title: const Text('Help & Support')),
+      appBar: GradientAppBar(title: const Text('Help Centre')),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(
           AppSpacing.md,
@@ -117,6 +120,13 @@ class _HelpScreenState extends ConsumerState<HelpScreen> {
               articles: articles
                   .where((a) => a.popular)
                   .toList(growable: false),
+            ),
+            const SizedBox(height: AppSpacing.lg),
+            const _TechDifficultyBlock(),
+            const SizedBox(height: AppSpacing.md),
+            _StillNeedHelpBand(
+              onChat: () => context.push('/support'),
+              onCall: () => callSupport(context),
             ),
             const SizedBox(height: AppSpacing.lg),
             const _HelpFooter(),
@@ -529,6 +539,114 @@ class _NoResultsHint extends StatelessWidget {
           height: 1.5,
           color: AppColors.textSecondary,
         ),
+      ),
+    );
+  }
+}
+
+/// "Facing technical difficulties with the application?" → the
+/// Report-a-technical-issue form (`/report-issue`).
+class _TechDifficultyBlock extends StatelessWidget {
+  const _TechDifficultyBlock();
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Padding(
+          padding: EdgeInsets.symmetric(horizontal: AppSpacing.xs),
+          child: Text(
+            'Facing technical difficulties with the application?',
+            style: TextStyle(
+              fontSize: AppFont.sm,
+              fontWeight: AppFont.bold,
+              color: AppColors.textPrimary,
+            ),
+          ),
+        ),
+        const SizedBox(height: AppSpacing.sm),
+        OutlinedButton(
+          onPressed: () => context.push('/report-issue'),
+          style: OutlinedButton.styleFrom(
+            foregroundColor: AppColors.textPrimary,
+            side: const BorderSide(color: AppColors.border),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(AppRadius.xl),
+            ),
+          ),
+          child: const Text('Report a technical issue'),
+        ),
+      ],
+    );
+  }
+}
+
+/// The grey "Still can't find what you're looking for?" band from the
+/// reference design — Chat with us + Call us.
+class _StillNeedHelpBand extends StatelessWidget {
+  const _StillNeedHelpBand({required this.onChat, required this.onCall});
+
+  final VoidCallback onChat;
+  final VoidCallback onCall;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(AppSpacing.md),
+      decoration: BoxDecoration(
+        color: AppColors.primaryLight.withValues(alpha: 0.5),
+        borderRadius: BorderRadius.circular(AppRadius.md),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            "Still can't find what you're looking for? Don't worry we're "
+            'here to help',
+            style: TextStyle(
+              fontSize: AppFont.sm,
+              fontWeight: AppFont.bold,
+              color: AppColors.textPrimary,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          Wrap(
+            spacing: AppSpacing.sm,
+            runSpacing: AppSpacing.sm,
+            children: [
+              FilledButton.icon(
+                onPressed: onChat,
+                icon: const Icon(Icons.chat_bubble_rounded, size: 16),
+                label: const Text('Chat with us'),
+                style: FilledButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(AppRadius.xl),
+                  ),
+                ),
+              ),
+              OutlinedButton.icon(
+                onPressed: onCall,
+                icon: const Icon(
+                  Icons.call_rounded,
+                  size: 16,
+                  color: Colors.green,
+                ),
+                label: const Text('Call us'),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppColors.textPrimary,
+                  side: const BorderSide(color: AppColors.border),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(AppRadius.xl),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }

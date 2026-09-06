@@ -54,6 +54,7 @@ import { EnrollmentsModule } from './modules/enrollments/enrollments.module.js';
 import { MetricsModule } from './modules/metrics/metrics.module.js';
 import { ReviewModerationModule } from './modules/review-moderation/review-moderation.module.js';
 import { BroadcastsModule } from './modules/broadcasts/broadcasts.module.js';
+import { TechnicalReportsModule } from './modules/technical-reports/technical-reports.module.js';
 
 @Module({
   imports: [
@@ -125,6 +126,7 @@ import { BroadcastsModule } from './modules/broadcasts/broadcasts.module.js';
     MetricsModule,
     ReviewModerationModule,
     BroadcastsModule,
+    TechnicalReportsModule,
   ],
   controllers: [AppController],
   providers: [

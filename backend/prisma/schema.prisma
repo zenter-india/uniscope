@@ -204,6 +204,8 @@ model User {
   reviews               Review[]
   sentReports           Report[]              @relation("ReporterReports")
   actionedReports       Report[]              @relation("ActionedByReports")
+  technicalReports      TechnicalReport[]     @relation("TechnicalReportAuthor")
+  resolvedTechReports   TechnicalReport[]     @relation("TechnicalReportResolver")
   notifications         Notification[]
   pushTokens            PushToken[]
   mentorReviewsReceived MentorReview[]        @relation("MentorReviewsReceived")
@@ -807,6 +809,37 @@ model Report {
   @@index([targetType, targetId])
   @@index([actionedBy])
   @@map("reports")
+}
+
+enum TechnicalReportStatus {
+  OPEN
+  RESOLVED
+}
+
+/// A "something in the app is broken" report from the Help Centre's
+/// "Report a technical issue" form. Deliberately separate from Report
+/// (member/session moderation) — it has no target and never touches the
+/// wallet; it's a plain support-bug queue an admin reads and resolves.
+model TechnicalReport {
+  id         String                @id @default(uuid())
+  userId     String                @map("user_id")
+  message    String                @db.VarChar(2000)
+  /// "android" | "ios" | "web" | null — best-effort, sent by the client.
+  platform   String?               @db.VarChar(20)
+  appVersion String?               @map("app_version") @db.VarChar(40)
+  status     TechnicalReportStatus @default(OPEN)
+  adminNote  String?               @map("admin_note") @db.VarChar(2000)
+  resolvedBy String?               @map("resolved_by")
+  resolvedAt DateTime?             @map("resolved_at") @db.Timestamptz
+  createdAt  DateTime              @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt  DateTime              @updatedAt @map("updated_at") @db.Timestamptz
+
+  user           User  @relation("TechnicalReportAuthor", fields: [userId], references: [id])
+  resolvedByUser User? @relation("TechnicalReportResolver", fields: [resolvedBy], references: [id])
+
+  @@index([status, createdAt(sort: Desc)])
+  @@index([userId])
+  @@map("technical_reports")
 }
 
 /// In-app notification record linked to a user.

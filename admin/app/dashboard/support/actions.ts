@@ -72,3 +72,52 @@ export async function sendSupportReply(
     };
   }
 }
+
+// ── Technical reports ("Report a technical issue" from the Help Centre) ──
+
+export interface TechnicalReport {
+  id: string;
+  message: string;
+  platform: string | null;
+  appVersion: string | null;
+  status: 'OPEN' | 'RESOLVED';
+  adminNote: string | null;
+  createdAt: string;
+  resolvedAt: string | null;
+  reporter: { displayName: string; uniqueId: string | null; role: string } | null;
+}
+
+export async function listTechnicalReports(
+  status?: 'OPEN' | 'RESOLVED',
+): Promise<{ data: TechnicalReport[]; nextCursor: string | null }> {
+  const qs = status ? `?status=${status}` : '';
+  return backendFetch<{ data: TechnicalReport[]; nextCursor: string | null }>(
+    `/admin/technical-reports${qs}`,
+  );
+}
+
+type ResolveResult =
+  | { ok: true; report: TechnicalReport }
+  | { ok: false; error: string };
+
+export async function setTechnicalReportStatus(
+  id: string,
+  status: 'OPEN' | 'RESOLVED',
+  adminNote?: string,
+): Promise<ResolveResult> {
+  try {
+    const report = await backendFetch<TechnicalReport>(
+      `/admin/technical-reports/${encodeURIComponent(id)}`,
+      {
+        method: 'PATCH',
+        body: JSON.stringify({ status, adminNote: adminNote ?? undefined }),
+      },
+    );
+    return { ok: true, report };
+  } catch (e) {
+    return {
+      ok: false,
+      error: e instanceof Error ? e.message : 'Could not update the report',
+    };
+  }
+}
