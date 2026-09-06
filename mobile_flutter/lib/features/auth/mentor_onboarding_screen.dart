@@ -40,8 +40,7 @@ class MentorOnboardingScreen extends ConsumerStatefulWidget {
       _MentorOnboardingScreenState();
 }
 
-class _MentorOnboardingScreenState
-    extends ConsumerState<MentorOnboardingScreen> {
+class _MentorOnboardingScreenState extends ConsumerState<MentorOnboardingScreen> {
   final _pageController = PageController();
   final _avatarPanelKey = GlobalKey<AvatarPickerPanelState>();
   int _step = 0;
@@ -121,21 +120,17 @@ class _MentorOnboardingScreenState
         final statusOk = _currentStatus == 'Currently Studying'
             ? _yearOfStudyLabel != null
             : _currentStatus == 'Graduated'
-            ? int.tryParse(_graduationYearController.text.trim()) != null
-            : false;
-        final languagesOk =
-            _languages.isNotEmpty &&
+                ? int.tryParse(_graduationYearController.text.trim()) != null
+                : false;
+        final languagesOk = _languages.isNotEmpty &&
             (!_languages.contains('Others') ||
                 _languagesOtherController.text.trim().isNotEmpty);
         return statusOk && languagesOk && _preferredTimings.isNotEmpty;
       case 3:
-        final streamOk =
-            _stream != null &&
-            (_stream != 'Others' ||
-                _streamOtherController.text.trim().isNotEmpty);
+        final streamOk = _stream != null &&
+            (_stream != 'Others' || _streamOtherController.text.trim().isNotEmpty);
         final collegeOk = _collegeNameController.text.trim().isNotEmpty;
-        final specializationOk =
-            !_needsSpecialization || _specialization != null;
+        final specializationOk = !_needsSpecialization || _specialization != null;
         return _degree != null && streamOk && collegeOk && specializationOk;
       default:
         return true;
@@ -162,24 +157,18 @@ class _MentorOnboardingScreenState
   /// replaced so the field never regresses to fewer options while the
   /// fetch is still in flight or if it fails.
   List<String> _medicalStreamWideSpecializationOptions() {
-    final curatedDegrees = kCuratedDegreeMapByStream['Medical']!.values
-        .toSet()
-        .toList();
+    final curatedDegrees =
+        kCuratedDegreeMapByStream['Medical']!.values.toSet().toList();
     final fetched = ref.watch(
-      streamWideSpecializationsProvider((
-        stream: 'Medical',
-        curatedDegrees: curatedDegrees,
-      )),
+      streamWideSpecializationsProvider(
+        (stream: 'Medical', curatedDegrees: curatedDegrees),
+      ),
     );
-    final merged = {
-      ...kMedicalSpecializations,
-      ...fetched.value ?? const [],
-    }.toList()..sort();
+    final merged = {...kMedicalSpecializations, ...fetched.value ?? const []}.toList()..sort();
     return merged;
   }
 
-  String get _resolvedCity =>
-      _city == 'Other' ? _cityOtherController.text.trim() : (_city ?? '');
+  String get _resolvedCity => _city == 'Other' ? _cityOtherController.text.trim() : (_city ?? '');
 
   void _goTo(int step) {
     setState(() => _step = step);
@@ -214,15 +203,11 @@ class _MentorOnboardingScreenState
     if (_university == null) {
       setState(() => _resolvingCollege = true);
       try {
-        final university = await ref
-            .read(universitiesApiProvider)
-            .findOrCreate(
+        final university = await ref.read(universitiesApiProvider).findOrCreate(
               name: _collegeNameController.text.trim(),
               state: _state ?? '',
               city: _resolvedCity,
-              stream: _stream == 'Others'
-                  ? _streamOtherController.text.trim()
-                  : _stream,
+              stream: _stream == 'Others' ? _streamOtherController.text.trim() : _stream,
             );
         if (!mounted) return;
         setState(() {
@@ -232,9 +217,8 @@ class _MentorOnboardingScreenState
       } catch (e) {
         if (!mounted) return;
         setState(() => _resolvingCollege = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Could not save your college: $e')),
-        );
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('Could not save your college: $e')));
         return;
       }
     }
@@ -275,13 +259,11 @@ class _MentorOnboardingScreenState
   Future<void> _saveProfile() async {
     setState(() => _saving = true);
     try {
-      final resolvedStream =
-          _stream == 'Others' && _streamOtherController.text.trim().isNotEmpty
+      final resolvedStream = _stream == 'Others' &&
+              _streamOtherController.text.trim().isNotEmpty
           ? _streamOtherController.text.trim()
           : _stream;
-      await ref
-          .read(usersApiProvider)
-          .updateProfile(
+      await ref.read(usersApiProvider).updateProfile(
             realName: _fullNameController.text.trim().isEmpty
                 ? null
                 : _fullNameController.text.trim(),
@@ -299,10 +281,7 @@ class _MentorOnboardingScreenState
                 : null,
             yearInfoPrivate: _yearInfoPrivate,
             languages: _languages
-                .map(
-                  (l) =>
-                      l == 'Others' ? _languagesOtherController.text.trim() : l,
-                )
+                .map((l) => l == 'Others' ? _languagesOtherController.text.trim() : l)
                 .where((l) => l.isNotEmpty)
                 .toList(),
             availableDays: _preferredTimings.toList(),
@@ -313,9 +292,8 @@ class _MentorOnboardingScreenState
     } catch (e) {
       if (!mounted) return;
       setState(() => _saving = false);
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Could not save: $e')));
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('Could not save: $e')));
     }
   }
 
@@ -340,9 +318,7 @@ class _MentorOnboardingScreenState
     setState(() => _saving = true);
     try {
       final base64Image = base64Encode(_imageBytes!);
-      await ref
-          .read(verificationApiProvider)
-          .submit(
+      await ref.read(verificationApiProvider).submit(
             universityId: _university!.id,
             documentType: _docType,
             documentBase64: base64Image,
@@ -355,21 +331,18 @@ class _MentorOnboardingScreenState
     } catch (e) {
       if (!mounted) return;
       setState(() => _saving = false);
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Could not submit: $e')));
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('Could not submit: $e')));
     }
   }
 
   @override
   Widget build(BuildContext context) {
     if (_verificationSubmitted) {
-      return _SubmittedScreen(
-        onContinue: () {
-          ref.read(authControllerProvider.notifier).clearNeedsOnboarding();
-          context.go('/home');
-        },
-      );
+      return _SubmittedScreen(onContinue: () {
+        ref.read(authControllerProvider.notifier).clearNeedsOnboarding();
+        context.go('/home');
+      });
     }
 
     return Scaffold(
@@ -395,17 +368,13 @@ class _MentorOnboardingScreenState
                       TextFormField(
                         controller: _fullNameController,
                         onChanged: (_) => setState(() {}),
-                        decoration: const InputDecoration(
-                          hintText: 'Enter your full name',
-                        ),
+                        decoration:
+                            const InputDecoration(hintText: 'Enter your full name'),
                       ),
                       const SizedBox(height: AppSpacing.xs),
                       const Text(
                         'Real name stays private. Aspirants only see your display name.',
-                        style: TextStyle(
-                          fontSize: AppFont.xs,
-                          color: AppColors.textMuted,
-                        ),
+                        style: TextStyle(fontSize: AppFont.xs, color: AppColors.textMuted),
                       ),
                       const SizedBox(height: AppSpacing.md),
                       const OnboardingFieldLabel('Gender'),
@@ -438,9 +407,7 @@ class _MentorOnboardingScreenState
                       const OnboardingFieldLabel('City'),
                       OnboardingDropdown(
                         value: _city,
-                        hint: _state == null
-                            ? 'Select a state first'
-                            : 'Select your city',
+                        hint: _state == null ? 'Select a state first' : 'Select your city',
                         enabled: _state != null,
                         options: [...?kStateDistricts[_state], 'Other'],
                         onChanged: (v) => setState(() => _city = v),
@@ -450,9 +417,8 @@ class _MentorOnboardingScreenState
                         TextFormField(
                           controller: _cityOtherController,
                           onChanged: (_) => setState(() {}),
-                          decoration: const InputDecoration(
-                            hintText: 'Enter your city',
-                          ),
+                          decoration:
+                              const InputDecoration(hintText: 'Enter your city'),
                         ),
                       ],
                     ],
@@ -472,14 +438,12 @@ class _MentorOnboardingScreenState
                         OnboardingSingleChipGroup(
                           options: kYearsOfStudy,
                           selected: _yearOfStudyLabel,
-                          onSelect: (v) =>
-                              setState(() => _yearOfStudyLabel = v),
+                          onSelect: (v) => setState(() => _yearOfStudyLabel = v),
                         ),
                         const SizedBox(height: AppSpacing.sm),
                         OnboardingToggle(
                           value: _yearInfoPrivate,
-                          onChanged: (v) =>
-                              setState(() => _yearInfoPrivate = v),
+                          onChanged: (v) => setState(() => _yearInfoPrivate = v),
                           label: 'Keep my year of study private',
                           hint:
                               'When on, this stays anonymous and isn\'t shown publicly on your profile.',
@@ -492,15 +456,12 @@ class _MentorOnboardingScreenState
                           controller: _graduationYearController,
                           keyboardType: TextInputType.number,
                           onChanged: (_) => setState(() {}),
-                          decoration: const InputDecoration(
-                            hintText: 'e.g. 2023',
-                          ),
+                          decoration: const InputDecoration(hintText: 'e.g. 2023'),
                         ),
                         const SizedBox(height: AppSpacing.sm),
                         OnboardingToggle(
                           value: _yearInfoPrivate,
-                          onChanged: (v) =>
-                              setState(() => _yearInfoPrivate = v),
+                          onChanged: (v) => setState(() => _yearInfoPrivate = v),
                           label: 'Keep my graduation year private',
                           hint:
                               'When on, this stays anonymous and isn\'t shown publicly on your profile.',
@@ -524,9 +485,8 @@ class _MentorOnboardingScreenState
                         TextFormField(
                           controller: _languagesOtherController,
                           onChanged: (_) => setState(() {}),
-                          decoration: const InputDecoration(
-                            hintText: 'Enter language',
-                          ),
+                          decoration:
+                              const InputDecoration(hintText: 'Enter language'),
                         ),
                       ],
                       const SizedBox(height: AppSpacing.md),
@@ -587,8 +547,7 @@ class _MentorOnboardingScreenState
                           controller: _streamOtherController,
                           onChanged: (_) => setState(() {}),
                           decoration: const InputDecoration(
-                            hintText: 'Tell us your field of study',
-                          ),
+                              hintText: 'Tell us your field of study'),
                         ),
                       ],
                       const SizedBox(height: AppSpacing.md),
@@ -618,10 +577,9 @@ class _MentorOnboardingScreenState
                     title: _stepTitles[4],
                     subtitle: _stepSubtitles[4],
                     expandedChild: StickyPreviewAvatarPicker(
-                      panelKey: _avatarPanelKey,
-                      initialGenderText: _gender,
-                      startFromFirstOption: true,
-                    ),
+                        panelKey: _avatarPanelKey,
+                        initialGenderText: _gender,
+                        startFromFirstOption: true),
                   ),
                   OnboardingStepScaffold(
                     title: _stepTitles[5],
@@ -632,15 +590,9 @@ class _MentorOnboardingScreenState
                         initialValue: _docType,
                         isExpanded: true,
                         items: DocumentType.values
-                            .map(
-                              (d) => DropdownMenuItem(
-                                value: d,
-                                child: Text(d.label),
-                              ),
-                            )
+                            .map((d) => DropdownMenuItem(value: d, child: Text(d.label)))
                             .toList(),
-                        onChanged: (d) =>
-                            setState(() => _docType = d ?? _docType),
+                        onChanged: (d) => setState(() => _docType = d ?? _docType),
                       ),
                       const SizedBox(height: AppSpacing.md),
                       const OnboardingFieldLabel('College ID'),
@@ -667,38 +619,24 @@ class _MentorOnboardingScreenState
                                   child: Column(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
-                                      Icon(
-                                        Icons.add_photo_alternate_rounded,
-                                        size: 32,
-                                        color: AppColors.textMuted,
-                                      ),
+                                      Icon(Icons.add_photo_alternate_rounded,
+                                          size: 32, color: AppColors.textMuted),
                                       SizedBox(height: AppSpacing.xs),
-                                      Text(
-                                        'Take picture to upload',
-                                        style: TextStyle(
-                                          fontSize: AppFont.xs,
-                                          color: AppColors.textSecondary,
-                                        ),
-                                      ),
-                                      Text(
-                                        'JPEG, PNG, formats upto 25 MB.',
-                                        style: TextStyle(
-                                          fontSize: AppFont.xs,
-                                          color: AppColors.textMuted,
-                                        ),
-                                      ),
+                                      Text('Take picture to upload',
+                                          style: TextStyle(
+                                              fontSize: AppFont.xs,
+                                              color: AppColors.textSecondary)),
+                                      Text('JPEG, PNG, formats upto 25 MB.',
+                                          style: TextStyle(
+                                              fontSize: AppFont.xs,
+                                              color: AppColors.textMuted)),
                                     ],
                                   ),
                                 )
                               : ClipRRect(
-                                  borderRadius: BorderRadius.circular(
-                                    AppRadius.md,
-                                  ),
-                                  child: Image.memory(
-                                    _imageBytes!,
-                                    fit: BoxFit.cover,
-                                    width: double.infinity,
-                                  ),
+                                  borderRadius: BorderRadius.circular(AppRadius.md),
+                                  child: Image.memory(_imageBytes!, fit: BoxFit.cover,
+                                      width: double.infinity),
                                 ),
                         ),
                       ),
@@ -709,11 +647,7 @@ class _MentorOnboardingScreenState
             ),
             Padding(
               padding: const EdgeInsets.fromLTRB(
-                AppSpacing.xl,
-                0,
-                AppSpacing.xl,
-                AppSpacing.xl,
-              ),
+                  AppSpacing.xl, 0, AppSpacing.xl, AppSpacing.xl),
               child: Column(
                 children: [
                   PrimaryButton(
@@ -736,10 +670,7 @@ class _MentorOnboardingScreenState
                       onPressed: _saving ? null : _skipAvatar,
                       child: const Text(
                         'Skip for now',
-                        style: TextStyle(
-                          fontSize: AppFont.sm,
-                          color: AppColors.textMuted,
-                        ),
+                        style: TextStyle(fontSize: AppFont.sm, color: AppColors.textMuted),
                       ),
                     ),
                   ],
@@ -749,10 +680,7 @@ class _MentorOnboardingScreenState
                       onPressed: _saving ? null : _skip,
                       child: const Text(
                         'Skip for now',
-                        style: TextStyle(
-                          fontSize: AppFont.sm,
-                          color: AppColors.textMuted,
-                        ),
+                        style: TextStyle(fontSize: AppFont.sm, color: AppColors.textMuted),
                       ),
                     ),
                   ],
@@ -788,11 +716,8 @@ class _SubmittedScreen extends StatelessWidget {
                   shape: BoxShape.circle,
                 ),
                 alignment: Alignment.center,
-                child: const Icon(
-                  Icons.verified_rounded,
-                  size: 44,
-                  color: AppColors.primary,
-                ),
+                child: const Icon(Icons.verified_rounded,
+                    size: 44, color: AppColors.primary),
               ),
               const SizedBox(height: AppSpacing.xl),
               const Text(

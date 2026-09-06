@@ -152,20 +152,25 @@ class ProfileHomeScreen extends ConsumerWidget {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: GradientAppBar(
-        leading: Padding(
-          padding: const EdgeInsets.all(10),
-          child: Container(
-            padding: const EdgeInsets.all(4),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(AppRadius.sm),
-            ),
-            child: Image.asset(
-              'assets/logo/uniscope_icon.png',
-              fit: BoxFit.contain,
-            ),
-          ),
-        ),
+        // Student (aspirant) profile drops the logo chip per explicit
+        // request — mentor keeps it, matching the rest of the mentor-side
+        // screens that still show it in the app bar.
+        leading: isMentor
+            ? Padding(
+                padding: const EdgeInsets.all(10),
+                child: Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(AppRadius.sm),
+                  ),
+                  child: Image.asset(
+                    'assets/logo/uniscope_icon.png',
+                    fit: BoxFit.contain,
+                  ),
+                ),
+              )
+            : null,
         title: const Text('Profile'),
       ),
       body: SafeArea(
