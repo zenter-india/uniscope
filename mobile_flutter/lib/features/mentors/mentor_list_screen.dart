@@ -342,6 +342,20 @@ class _MentorListScreenState extends ConsumerState<MentorListScreen> {
                 scrollDirection: Axis.horizontal,
                 padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
                 children: [
+                  // Field of study first — it also gates the Degree /
+                  // Specialization chips that follow.
+                  _MentorFilterChip(
+                    label: effectiveStream ?? 'Field of study',
+                    active: effectiveStream != null,
+                    dropdown: true,
+                    onTap: () => _pickOne(
+                      title: 'Field of study',
+                      options: kStreamOptions,
+                      selected: effectiveStream,
+                      onPick: _setStream,
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.xs),
                   _MentorFilterChip(
                     label: _availability ?? 'Availability',
                     active: _availability != null,
@@ -363,18 +377,6 @@ class _MentorListScreenState extends ConsumerState<MentorListScreen> {
                       options: _kRatingOptions,
                       selected: _rating,
                       onPick: (v) => setState(() => _rating = v),
-                    ),
-                  ),
-                  const SizedBox(width: AppSpacing.xs),
-                  _MentorFilterChip(
-                    label: effectiveStream ?? 'Stream',
-                    active: effectiveStream != null,
-                    dropdown: true,
-                    onTap: () => _pickOne(
-                      title: 'Field of study',
-                      options: kStreamOptions,
-                      selected: effectiveStream,
-                      onPick: _setStream,
                     ),
                   ),
                   const SizedBox(width: AppSpacing.xs),

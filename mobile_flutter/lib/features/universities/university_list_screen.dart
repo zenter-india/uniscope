@@ -344,6 +344,34 @@ class _UniversityListScreenState extends ConsumerState<UniversityListScreen> {
                 scrollDirection: Axis.horizontal,
                 padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
                 children: [
+                  // Field of study first — it drives the cascading Degree /
+                  // Specialization filters below it.
+                  Padding(
+                    padding: const EdgeInsets.only(right: AppSpacing.sm),
+                    child: _FilterPill(
+                      icon: Icons.menu_book_rounded,
+                      label: effectiveStream == 'All'
+                          ? 'Field of study'
+                          : effectiveStream,
+                      active: effectiveStream != 'All',
+                      activeColor: streamVisualFor(effectiveStream).color,
+                      activeTint: streamVisualFor(effectiveStream).tint,
+                      trailing: Icons.keyboard_arrow_down_rounded,
+                      onTap: () => _pickOption(
+                        title: 'Field of study',
+                        options: _streamFilters,
+                        selected: effectiveStream,
+                        onSelected: (v) => setState(() {
+                          _explicitStreamFilter = v;
+                          // Child filters are stream-scoped — drop them now
+                          // rather than waiting for _syncCascade's next frame.
+                          _cascadeStream = v;
+                          _degreeFilter = 'All';
+                          _specializationFilter = 'All';
+                        }),
+                      ),
+                    ),
+                  ),
                   Padding(
                     padding: const EdgeInsets.only(right: AppSpacing.sm),
                     child: _FilterPill(
@@ -367,32 +395,6 @@ class _UniversityListScreenState extends ConsumerState<UniversityListScreen> {
                             () => _explicitStateFilter = v == 'All' ? 'All' : v,
                           );
                         },
-                      ),
-                    ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.only(right: AppSpacing.sm),
-                    child: _FilterPill(
-                      icon: Icons.menu_book_rounded,
-                      label: effectiveStream == 'All'
-                          ? 'Stream'
-                          : effectiveStream,
-                      active: effectiveStream != 'All',
-                      activeColor: streamVisualFor(effectiveStream).color,
-                      activeTint: streamVisualFor(effectiveStream).tint,
-                      trailing: Icons.keyboard_arrow_down_rounded,
-                      onTap: () => _pickOption(
-                        title: 'Stream',
-                        options: _streamFilters,
-                        selected: effectiveStream,
-                        onSelected: (v) => setState(() {
-                          _explicitStreamFilter = v;
-                          // Child filters are stream-scoped — drop them now
-                          // rather than waiting for _syncCascade's next frame.
-                          _cascadeStream = v;
-                          _degreeFilter = 'All';
-                          _specializationFilter = 'All';
-                        }),
                       ),
                     ),
                   ),
