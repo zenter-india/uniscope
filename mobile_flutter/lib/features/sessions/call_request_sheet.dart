@@ -81,19 +81,16 @@ Future<void> showCallRequestSheet(
   }
 }
 
-/// The "When?" selection: Instant, one of the mentor's free windows (by
-/// index into the resolved list), or a custom slot.
+/// The "When?" selection: Instant, or a specific time — either picked from
+/// a mentor free-window's expanded half-hour slots, or from the full
+/// "Custom time" day picker. Both land here as the same shape since the
+/// booking itself never cares which path produced the DateTime.
 sealed class _WhenChoice {
   const _WhenChoice();
 }
 
 class _Instant extends _WhenChoice {
   const _Instant();
-}
-
-class _WindowChoice extends _WhenChoice {
-  const _WindowChoice(this.part);
-  final CallDayPart part;
 }
 
 class _CustomChoice extends _WhenChoice {
@@ -114,6 +111,10 @@ class _CallRequestSheetState extends State<_CallRequestSheet> {
   int _slotMinutes = kCallSlotMinutes.first;
   _WhenChoice _when = const _Instant();
 
+  /// The mentor free-window (by start hour) currently expanded to show its
+  /// individual half-hour slots — null if none is expanded.
+  int? _expandedWindowStart;
+
   late final List<CallDayPart> _windows = mentorFreeDayParts(
     widget.mentorWindows,
   );
@@ -122,21 +123,32 @@ class _CallRequestSheetState extends State<_CallRequestSheet> {
     final w = _when;
     return switch (w) {
       _Instant() => null,
-      _WindowChoice(:final part) => nextOccurrenceOfWindow(
-        part.startHour,
-        part.endHour,
-      ),
       _CustomChoice(:final time) => time,
     };
   }
 
-  bool _sameChoice(_WhenChoice a, _WhenChoice b) {
-    if (a is _Instant && b is _Instant) return true;
-    if (a is _WindowChoice && b is _WindowChoice) {
-      return a.part.startHour == b.part.startHour;
-    }
-    if (a is _CustomChoice && b is _CustomChoice) return a.time == b.time;
-    return false;
+  /// Whether the currently-picked time falls inside [part]'s window — used
+  /// to show a check on the right window row after a slot is picked.
+  bool _isWindowSelected(CallDayPart part) {
+    final w = _when;
+    if (w is! _CustomChoice) return false;
+    final h = w.time.hour;
+    return h >= part.startHour && h < part.endHour;
+  }
+
+  void _toggleWindow(CallDayPart part) {
+    setState(() {
+      _expandedWindowStart = _expandedWindowStart == part.startHour
+          ? null
+          : part.startHour;
+    });
+  }
+
+  void _pickSlot(DateTime time) {
+    setState(() {
+      _when = _CustomChoice(time);
+      _expandedWindowStart = null;
+    });
   }
 
   Future<void> _pickCustom() async {
@@ -201,15 +213,28 @@ class _CallRequestSheetState extends State<_CallRequestSheet> {
               selected: _when is _Instant,
               onTap: () => setState(() => _when = const _Instant()),
             ),
-            for (final part in _windows)
+            for (final part in _windows) ...[
               _WhenOption(
                 icon: Icons.schedule_rounded,
                 title: '${part.label} · ${part.rangeLabel}',
-                subtitle:
-                    'Mentor · next: ${friendlyCallTime(nextOccurrenceOfWindow(part.startHour, part.endHour))}',
-                selected: _sameChoice(_when, _WindowChoice(part)),
-                onTap: () => setState(() => _when = _WindowChoice(part)),
+                subtitle: _isWindowSelected(part)
+                    ? 'Picked: ${friendlyCallTime((_when as _CustomChoice).time)}'
+                    : 'Mentor · tap to pick a half-hour slot',
+                selected: _isWindowSelected(part),
+                trailing: _expandedWindowStart == part.startHour
+                    ? Icons.keyboard_arrow_up_rounded
+                    : Icons.keyboard_arrow_down_rounded,
+                onTap: () => _toggleWindow(part),
               ),
+              if (_expandedWindowStart == part.startHour)
+                _HalfHourSlotPicker(
+                  part: part,
+                  selected: _when is _CustomChoice
+                      ? (_when as _CustomChoice).time
+                      : null,
+                  onPick: _pickSlot,
+                ),
+            ],
             _WhenOption(
               icon: Icons.calendar_month_rounded,
               title: 'Custom time',
@@ -372,6 +397,101 @@ class _WhenOption extends StatelessWidget {
                 else if (trailing != null)
                   Icon(trailing, size: 18, color: AppColors.textMuted),
               ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Shown under a tapped mentor free-window row — splits that 4-hour window
+/// into its individual 30-minute slots (today's occurrence, or tomorrow's
+/// if today's window has already passed) so the aspirant can pick an exact
+/// time instead of just "sometime in this block".
+class _HalfHourSlotPicker extends StatelessWidget {
+  const _HalfHourSlotPicker({
+    required this.part,
+    required this.selected,
+    required this.onPick,
+  });
+
+  final CallDayPart part;
+  final DateTime? selected;
+  final ValueChanged<DateTime> onPick;
+
+  @override
+  Widget build(BuildContext context) {
+    final day = windowAnchorDay(part.startHour, part.endHour);
+    final slots = halfHourSlotsInWindow(part.startHour, part.endHour, day);
+
+    if (slots.isEmpty) {
+      return const Padding(
+        padding: EdgeInsets.only(bottom: AppSpacing.sm),
+        child: Text(
+          'No slots left in this window today.',
+          style: TextStyle(fontSize: AppFont.xs, color: AppColors.textMuted),
+        ),
+      );
+    }
+
+    return Padding(
+      padding: const EdgeInsets.only(
+        left: AppSpacing.md,
+        bottom: AppSpacing.sm,
+      ),
+      child: Wrap(
+        spacing: AppSpacing.xs,
+        runSpacing: AppSpacing.xs,
+        children: [
+          for (final dt in slots)
+            _SlotChip(
+              label: clockLabel(dt),
+              selected: selected == dt,
+              onTap: () => onPick(dt),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SlotChip extends StatelessWidget {
+  const _SlotChip({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: selected ? AppColors.primary : AppColors.background,
+      borderRadius: BorderRadius.circular(AppRadius.full),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(AppRadius.full),
+        child: Container(
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.sm + 2,
+            vertical: 6,
+          ),
+          decoration: BoxDecoration(
+            border: Border.all(
+              color: selected ? AppColors.primary : AppColors.border,
+            ),
+            borderRadius: BorderRadius.circular(AppRadius.full),
+          ),
+          child: Text(
+            label,
+            style: TextStyle(
+              fontSize: AppFont.xs,
+              fontWeight: AppFont.bold,
+              color: selected ? Colors.white : AppColors.textPrimary,
             ),
           ),
         ),

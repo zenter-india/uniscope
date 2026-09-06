@@ -328,32 +328,23 @@ const kMentorshipTimings = [
 ];
 
 // Time-of-day slots — shared shape for the aspirant's "when do you want to
-// talk" preference and the mentor's "when am I generally free" availability.
-// Every half hour across the full day, e.g. "12:00 AM - 12:30 AM" ...
-// "11:30 PM - 12:00 AM" (client request: finer-grained than the earlier
-// 4-hour-block pass) — 48 options in total. Generated rather than typed out
-// by hand so the format can't drift between entries; see
-// call_time_windows.dart's startMinutesForTimeSlot for the matching parser.
-// This diverges from the web enrollment form's TIME_SLOTS (still 4 uneven
+// talk" preference and the mentor's "when am I generally free" availability,
+// picked once at onboarding (or edited later). Six uniform 4-hour blocks
+// covering the full day — this is the granularity actually *stored* per
+// mentor; the call-request sheet splits a picked block into individual
+// 30-minute slots at booking time instead of this picklist itself carrying
+// 48 options (see call_time_windows.dart's halfHourSlotsInWindow). This
+// diverges from the web enrollment form's TIME_SLOTS (still 4 uneven
 // windows, web/lib/options.ts), which was previously kept in sync with this
 // list; web hasn't been updated to match as part of this change.
-final List<String> kTimeSlots = _generateHalfHourSlots();
-
-List<String> _generateHalfHourSlots() {
-  String label(int totalMinutes) {
-    final h24 = (totalMinutes ~/ 60) % 24;
-    final m = totalMinutes % 60;
-    final h12 = h24 % 12 == 0 ? 12 : h24 % 12;
-    final period = h24 < 12 ? 'AM' : 'PM';
-    final mm = m.toString().padLeft(2, '0');
-    return '$h12:$mm $period';
-  }
-
-  return [
-    for (var start = 0; start < 24 * 60; start += 30)
-      '${label(start)} - ${label(start + 30)}',
-  ];
-}
+const kTimeSlots = [
+  'Late Night (12 AM - 4 AM)',
+  'Early Morning (4 AM - 8 AM)',
+  'Morning (8 AM - 12 PM)',
+  'Afternoon (12 PM - 4 PM)',
+  'Evening (4 PM - 8 PM)',
+  'Night (8 PM - 12 AM)',
+];
 
 // UserProfile.stream — a mentor's college field of study, or an aspirant's
 // field of interest (used to recommend relevant mentors). Same list either

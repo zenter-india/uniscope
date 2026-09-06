@@ -34,50 +34,70 @@ const List<CallDayPart> kCallDayParts = [
   CallDayPart('Night', '8 PM – 12 AM', 20, 24),
 ];
 
-/// The mentor stores their free-time windows as `kTimeSlots` strings, now
-/// half-hour ranges like "8:00 AM - 8:30 AM" (see profile_options.dart).
-/// Parses the range's start clock-time into minutes-since-midnight, or null
-/// if it isn't a recognised "h:mm AM/PM - h:mm AM/PM" value.
-int? startMinutesForTimeSlot(String value) {
-  final parts = value.split('-');
-  if (parts.isEmpty) return null;
-  return _parseClockToMinutes(parts.first.trim());
-}
-
-/// Same as [startMinutesForTimeSlot] but as an hour (for callers that only
-/// need hour-granularity, e.g. bucketing into [kCallDayParts]).
+/// The mentor stores their free-time windows as `kTimeSlots` strings
+/// ("Morning (8 AM - 12 PM)" …). Maps one to its start hour, or null if it
+/// isn't a recognised value.
 int? startHourForTimeSlot(String value) {
-  final minutes = startMinutesForTimeSlot(value);
-  return minutes == null ? null : minutes ~/ 60;
-}
-
-/// Parses "8:00 AM" / "12:30 PM" into minutes-since-midnight, or null.
-int? _parseClockToMinutes(String clock) {
-  final match = RegExp(
-    r'^(\d{1,2}):(\d{2})\s*(AM|PM)$',
-    caseSensitive: false,
-  ).firstMatch(clock.trim());
-  if (match == null) return null;
-  var hour = int.parse(match.group(1)!);
-  final minute = int.parse(match.group(2)!);
-  final isPm = match.group(3)!.toUpperCase() == 'PM';
-  if (hour == 12) hour = 0;
-  final hour24 = isPm ? hour + 12 : hour;
-  return hour24 * 60 + minute;
+  switch (value.trim()) {
+    case 'Late Night (12 AM - 4 AM)':
+      return 0;
+    case 'Early Morning (4 AM - 8 AM)':
+      return 4;
+    case 'Morning (8 AM - 12 PM)':
+      return 8;
+    case 'Afternoon (12 PM - 4 PM)':
+      return 12;
+    case 'Evening (4 PM - 8 PM)':
+      return 16;
+    case 'Night (8 PM - 12 AM)':
+      return 20;
+  }
+  return null;
 }
 
 /// The [CallDayPart]s the mentor marked as "usually free", in render order.
-/// A mentor's half-hour slot is matched to whichever 4-hour bucket it falls
-/// inside (range containment, not exact equality, since the mentor's
-/// picklist is now finer-grained than these grouping buckets).
 List<CallDayPart> mentorFreeDayParts(List<String> mentorWindows) {
   final hours = mentorWindows
       .map(startHourForTimeSlot)
       .whereType<int>()
       .toSet();
-  return kCallDayParts
-      .where((p) => hours.any((h) => h >= p.startHour && h < p.endHour))
-      .toList();
+  return kCallDayParts.where((p) => hours.contains(p.startHour)).toList();
+}
+
+/// The day a tap on [startHour, endHour) should generate slots for: today,
+/// if the window hasn't fully passed yet; tomorrow otherwise. Same rule
+/// [nextOccurrenceOfWindow] uses to pick a day.
+DateTime windowAnchorDay(int startHour, int endHour, [DateTime? nowArg]) {
+  final now = nowArg ?? DateTime.now();
+  final today = DateTime(now.year, now.month, now.day);
+  final todayEnd = DateTime(now.year, now.month, now.day, endHour);
+  return now.isBefore(todayEnd) ? today : today.add(const Duration(days: 1));
+}
+
+/// Every 30-minute slot inside `[startHour, endHour)` on [day] — this is
+/// what a tap on one of the call-request sheet's mentor-free-window rows
+/// expands into, so the aspirant can pick an exact half hour instead of
+/// just "sometime in this 4-hour block". Slots already in the past are
+/// dropped when [day] is today.
+List<DateTime> halfHourSlotsInWindow(
+  int startHour,
+  int endHour,
+  DateTime day, [
+  DateTime? nowArg,
+]) {
+  final now = nowArg ?? DateTime.now();
+  final cutoff = now.add(const Duration(minutes: 10));
+  final isToday =
+      day.year == now.year && day.month == now.month && day.day == now.day;
+  final out = <DateTime>[];
+  for (var h = startHour; h < endHour; h++) {
+    for (final m in const [0, 30]) {
+      final dt = DateTime(day.year, day.month, day.day, h, m);
+      if (isToday && dt.isBefore(cutoff)) continue;
+      out.add(dt);
+    }
+  }
+  return out;
 }
 
 /// The next real datetime a "Morning/Evening/…" quick-pick resolves to:
