@@ -268,6 +268,18 @@ class ProfileHomeScreen extends ConsumerWidget {
                               ),
                             ),
                           ],
+                          if (isMentor &&
+                              (myProfileAsync.asData?.value.gender ?? '')
+                                  .isNotEmpty) ...[
+                            const SizedBox(height: 2),
+                            Text(
+                              myProfileAsync.asData!.value.gender!,
+                              style: const TextStyle(
+                                fontSize: AppFont.xs,
+                                color: AppColors.textSecondary,
+                              ),
+                            ),
+                          ],
                           if (isMentor && !isVerified) ...[
                             const SizedBox(height: AppSpacing.md),
                             SizedBox(
