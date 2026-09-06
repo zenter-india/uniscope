@@ -461,11 +461,12 @@ class NotificationBell extends ConsumerWidget {
   }
 }
 
-/// A screen AppBar with the green canopy gradient behind it — the same
-/// gradient as the Home header (AppGradients.canopy), so the six bottom-nav
-/// tabs share one header look. Title, leading and action icons render white
-/// against it. Drop-in for `AppBar` on those screens; everything else keeps
-/// the plain neutral bar from the theme.
+/// Screen AppBar for the six bottom-nav tabs. Previously carried a green
+/// canopy gradient, then a solid green fill; reverted to a plain neutral
+/// bar — same off-white ground and near-black title as the theme's default
+/// `AppBar` — per explicit request ("normal white with black text, no
+/// green box"). Kept as a named type only so the call sites don't all need
+/// touching; it's effectively an `AppBar` alias now.
 class GradientAppBar extends AppBar {
   GradientAppBar({
     super.key,
@@ -475,20 +476,17 @@ class GradientAppBar extends AppBar {
     super.centerTitle,
     super.titleSpacing,
   }) : super(
-         backgroundColor: Colors.transparent,
-         foregroundColor: Colors.white,
+         backgroundColor: AppColors.background,
+         foregroundColor: AppColors.textPrimary,
          elevation: 0,
          scrolledUnderElevation: 0,
          titleTextStyle: const TextStyle(
            fontFamily: 'Manrope',
-           color: Colors.white,
+           color: AppColors.textPrimary,
            fontSize: AppFont.xl,
            fontWeight: AppFont.extraBold,
          ),
-         iconTheme: const IconThemeData(color: Colors.white),
-         actionsIconTheme: const IconThemeData(color: Colors.white),
-         flexibleSpace: const DecoratedBox(
-           decoration: BoxDecoration(gradient: AppGradients.canopy),
-         ),
+         iconTheme: const IconThemeData(color: AppColors.textPrimary),
+         actionsIconTheme: const IconThemeData(color: AppColors.textPrimary),
        );
 }
