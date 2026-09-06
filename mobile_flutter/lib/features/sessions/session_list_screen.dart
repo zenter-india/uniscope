@@ -431,9 +431,9 @@ String _lastActivityLabel(Session session) {
   switch (session.status) {
     case SessionStatus.pending:
       if (session.type != 'AUDIO_CALL') return 'Chat started';
-      return session.requestedFor != null
-          ? 'Call requested · ${friendlyCallTime(session.requestedFor!)}'
-          : 'Call requested';
+      if (session.requestedFor == null) return 'Call requested';
+      if (session.requestedForAlt != null) return 'Call requested · 2 times';
+      return 'Call requested · ${friendlyCallTime(session.requestedFor!)}';
     case SessionStatus.accepted:
       return 'Ready — accepted';
     case SessionStatus.ringing:
@@ -973,6 +973,7 @@ class _SessionActionsState extends ConsumerState<_SessionActions> {
           if (isCall && session.requestedFor != null) ...[
             SizedBox(height: widget.dense ? 2 : AppSpacing.xs),
             Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Icon(
                   Icons.schedule_rounded,
@@ -982,7 +983,10 @@ class _SessionActionsState extends ConsumerState<_SessionActions> {
                 const SizedBox(width: 4),
                 Flexible(
                   child: Text(
-                    'Requested for ${friendlyCallTime(session.requestedFor!)}',
+                    session.requestedForAlt != null
+                        ? 'Requested for ${friendlyCallTime(session.requestedFor!)} '
+                              'or ${friendlyCallTime(session.requestedForAlt!)}'
+                        : 'Requested for ${friendlyCallTime(session.requestedFor!)}',
                     style: const TextStyle(
                       fontSize: AppFont.xs,
                       color: AppColors.textSecondary,

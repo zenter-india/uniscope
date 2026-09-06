@@ -589,6 +589,11 @@ model Session {
   /// logic is unchanged; the mentor just sees it on the request and still
   /// drives the connect. Bounded to now … now + 4 days at the service layer.
   requestedFor       DateTime?     @map("requested_for") @db.Timestamptz
+  /// AUDIO_CALL only: an optional SECOND preferred time — the aspirant may
+  /// offer the mentor two options to pick from. Same advisory semantics
+  /// and same now … now + 4 days bound as requestedFor. Never set without
+  /// requestedFor also set.
+  requestedForAlt    DateTime?     @map("requested_for_alt") @db.Timestamptz
   requestedAt        DateTime      @default(now()) @map("requested_at") @db.Timestamptz
   respondedAt        DateTime?     @map("responded_at") @db.Timestamptz
   /// Set only on a server-confirmed connection event — never client-reported.

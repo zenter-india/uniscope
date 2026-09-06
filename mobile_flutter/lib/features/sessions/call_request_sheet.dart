@@ -9,12 +9,13 @@ import 'call_time_windows.dart';
 import 'custom_call_time_screen.dart';
 import 'session_list_screen.dart' show sessionsListProvider;
 
-/// What the sheet hands back: the slot length plus, for a non-Instant pick,
-/// the time the aspirant wants to connect (null = Instant).
+/// What the sheet hands back: the slot length plus the aspirant's preferred
+/// time(s). [times] is empty for Instant, or holds 1–2 options for the
+/// mentor to pick between.
 class _CallRequestResult {
-  const _CallRequestResult(this.slotMinutes, this.requestedFor);
+  const _CallRequestResult(this.slotMinutes, this.times);
   final int slotMinutes;
-  final DateTime? requestedFor;
+  final List<DateTime> times;
 }
 
 /// Opens the call-request sheet — a "When?" step (Instant / one of the
@@ -54,24 +55,28 @@ Future<void> showCallRequestSheet(
           mentorId,
           SessionKind.audioCall,
           slotMinutes: result.slotMinutes,
-          requestedFor: result.requestedFor,
+          requestedFor: result.times.isEmpty ? null : result.times.first,
+          requestedForAlt: result.times.length > 1 ? result.times[1] : null,
         );
     // Without this, neither the persistent session dock nor the Sessions
     // tab would show the new request until something else happened to
     // refresh sessionsListProvider — defeating the dock's whole point.
     ref.invalidate(sessionsListProvider);
     if (!context.mounted) return;
-    final when = result.requestedFor;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          when == null
-              ? 'Call requested — check the Sessions tab'
-              : 'Call requested for ${friendlyCallTime(when)} — '
-                    'check the Sessions tab',
-        ),
-      ),
-    );
+    final times = result.times;
+    final String msg;
+    if (times.isEmpty) {
+      msg = 'Call requested — check the Sessions tab';
+    } else if (times.length == 1) {
+      msg =
+          'Call requested for ${friendlyCallTime(times.first)} — '
+          'check the Sessions tab';
+    } else {
+      msg =
+          'Call requested — you offered 2 times, the mentor picks one. '
+          'Check the Sessions tab.';
+    }
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
   } catch (e) {
     if (!context.mounted) return;
     final message = e is DioException ? (e.message ?? '$e') : '$e';
@@ -79,23 +84,6 @@ Future<void> showCallRequestSheet(
       context,
     ).showSnackBar(SnackBar(content: Text(message)));
   }
-}
-
-/// The "When?" selection: Instant, or a specific time — either picked from
-/// a mentor free-window's expanded half-hour slots, or from the full
-/// "Custom time" day picker. Both land here as the same shape since the
-/// booking itself never cares which path produced the DateTime.
-sealed class _WhenChoice {
-  const _WhenChoice();
-}
-
-class _Instant extends _WhenChoice {
-  const _Instant();
-}
-
-class _CustomChoice extends _WhenChoice {
-  const _CustomChoice(this.time);
-  final DateTime time;
 }
 
 class _CallRequestSheet extends StatefulWidget {
@@ -108,8 +96,15 @@ class _CallRequestSheet extends StatefulWidget {
 }
 
 class _CallRequestSheetState extends State<_CallRequestSheet> {
+  static const _maxTimes = 2;
+
   int _slotMinutes = kCallSlotMinutes.first;
-  _WhenChoice _when = const _Instant();
+
+  /// The aspirant's preferred connect time(s). Empty = Instant. 1–2 entries
+  /// are offered to the mentor as options to pick between.
+  final List<DateTime> _times = [];
+
+  bool get _instant => _times.isEmpty;
 
   /// The mentor free-window (by start hour) currently expanded to show its
   /// individual half-hour slots — null if none is expanded.
@@ -119,22 +114,23 @@ class _CallRequestSheetState extends State<_CallRequestSheet> {
     widget.mentorWindows,
   );
 
-  DateTime? _resolvedTime() {
-    final w = _when;
-    return switch (w) {
-      _Instant() => null,
-      _CustomChoice(:final time) => time,
-    };
+  void _pickInstant() => setState(_times.clear);
+
+  /// Add/remove [time] from the picks. Removing is always allowed; adding is
+  /// capped at [_maxTimes] — a third pick bumps the oldest so tapping keeps
+  /// giving you the last two.
+  void _toggleTime(DateTime time) {
+    setState(() {
+      if (_times.remove(time)) return;
+      if (_times.length >= _maxTimes) _times.removeAt(0);
+      _times.add(time);
+      _times.sort();
+    });
   }
 
-  /// Whether the currently-picked time falls inside [part]'s window — used
-  /// to show a check on the right window row after a slot is picked.
-  bool _isWindowSelected(CallDayPart part) {
-    final w = _when;
-    if (w is! _CustomChoice) return false;
-    final h = w.time.hour;
-    return h >= part.startHour && h < part.endHour;
-  }
+  /// Any pick falls inside [part]'s window — shows a check on that row.
+  bool _isWindowSelected(CallDayPart part) =>
+      _times.any((t) => t.hour >= part.startHour && t.hour < part.endHour);
 
   void _toggleWindow(CallDayPart part) {
     setState(() {
@@ -145,10 +141,8 @@ class _CallRequestSheetState extends State<_CallRequestSheet> {
   }
 
   void _pickSlot(DateTime time) {
-    setState(() {
-      _when = _CustomChoice(time);
-      _expandedWindowStart = null;
-    });
+    _toggleTime(time);
+    setState(() => _expandedWindowStart = null);
   }
 
   Future<void> _pickCustom() async {
@@ -160,15 +154,12 @@ class _CallRequestSheetState extends State<_CallRequestSheet> {
         ),
       ),
     );
-    if (picked != null && mounted) {
-      setState(() => _when = _CustomChoice(picked));
-    }
+    if (picked != null && mounted) _toggleTime(picked);
   }
 
   @override
   Widget build(BuildContext context) {
     final cost = slotUniminutes(_slotMinutes);
-    final resolved = _resolvedTime();
 
     return Padding(
       padding: EdgeInsets.fromLTRB(
@@ -204,22 +195,32 @@ class _CallRequestSheetState extends State<_CallRequestSheet> {
             ),
             const SizedBox(height: AppSpacing.lg),
 
-            _sectionLabel('When?'),
+            Row(
+              children: [
+                _sectionLabel('When?'),
+                const SizedBox(width: 6),
+                Text(
+                  '(offer up to 2 times)',
+                  style: const TextStyle(
+                    fontSize: AppFont.xs,
+                    color: AppColors.textMuted,
+                  ),
+                ),
+              ],
+            ),
             const SizedBox(height: AppSpacing.sm),
             _WhenOption(
               icon: Icons.bolt_rounded,
               title: 'Instant connect',
               subtitle: 'Send the request now — connect once they accept',
-              selected: _when is _Instant,
-              onTap: () => setState(() => _when = const _Instant()),
+              selected: _instant,
+              onTap: _pickInstant,
             ),
             for (final part in _windows) ...[
               _WhenOption(
                 icon: Icons.schedule_rounded,
                 title: '${part.label} · ${part.rangeLabel}',
-                subtitle: _isWindowSelected(part)
-                    ? 'Picked: ${friendlyCallTime((_when as _CustomChoice).time)}'
-                    : 'Mentor · tap to pick a time',
+                subtitle: 'Mentor · tap to pick a time',
                 selected: _isWindowSelected(part),
                 trailing: _expandedWindowStart == part.startHour
                     ? Icons.keyboard_arrow_up_rounded
@@ -229,22 +230,22 @@ class _CallRequestSheetState extends State<_CallRequestSheet> {
               if (_expandedWindowStart == part.startHour)
                 _HalfHourSlotPicker(
                   part: part,
-                  selected: _when is _CustomChoice
-                      ? (_when as _CustomChoice).time
-                      : null,
+                  selectedTimes: _times,
                   onPick: _pickSlot,
                 ),
             ],
             _WhenOption(
               icon: Icons.calendar_month_rounded,
               title: 'Custom time',
-              subtitle: _when is _CustomChoice
-                  ? friendlyCallTime((_when as _CustomChoice).time)
-                  : 'Pick a day & slot — today, tomorrow or the day after',
-              selected: _when is _CustomChoice,
+              subtitle: 'Pick a day & slot — today, tomorrow or the day after',
+              selected: false,
               trailing: Icons.chevron_right_rounded,
               onTap: _pickCustom,
             ),
+            if (_times.isNotEmpty) ...[
+              const SizedBox(height: 2),
+              _PickedTimesBar(times: _times, onRemove: _toggleTime),
+            ],
 
             const SizedBox(height: AppSpacing.lg),
             _sectionLabel('How long?'),
@@ -317,12 +318,12 @@ class _CallRequestSheetState extends State<_CallRequestSheet> {
               child: FilledButton(
                 onPressed: () => Navigator.of(
                   context,
-                ).pop(_CallRequestResult(_slotMinutes, resolved)),
-                child: Text(
-                  resolved == null
-                      ? 'Request call'
-                      : 'Request call · ${friendlyCallTime(resolved)}',
-                ),
+                ).pop(_CallRequestResult(_slotMinutes, List.of(_times))),
+                child: Text(switch (_times.length) {
+                  0 => 'Request call',
+                  1 => 'Request call · ${friendlyCallTime(_times.first)}',
+                  _ => 'Request call · 2 options',
+                }),
               ),
             ),
           ],
@@ -437,12 +438,12 @@ class _WhenOption extends StatelessWidget {
 class _HalfHourSlotPicker extends StatelessWidget {
   const _HalfHourSlotPicker({
     required this.part,
-    required this.selected,
+    required this.selectedTimes,
     required this.onPick,
   });
 
   final CallDayPart part;
-  final DateTime? selected;
+  final List<DateTime> selectedTimes;
   final ValueChanged<DateTime> onPick;
 
   @override
@@ -472,7 +473,7 @@ class _HalfHourSlotPicker extends StatelessWidget {
           for (final dt in slots)
             _SlotChip(
               label: clockLabel(dt),
-              selected: selected == dt,
+              selected: selectedTimes.contains(dt),
               onTap: () => onPick(dt),
             ),
         ],
@@ -520,6 +521,76 @@ class _SlotChip extends StatelessWidget {
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// The 1–2 preferred times the aspirant has picked, each removable. Makes
+/// the "offer up to 2" state visible in one place regardless of which
+/// window/custom row each pick came from.
+class _PickedTimesBar extends StatelessWidget {
+  const _PickedTimesBar({required this.times, required this.onRemove});
+
+  final List<DateTime> times;
+  final ValueChanged<DateTime> onRemove;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            times.length == 1
+                ? 'Offering 1 time'
+                : 'Offering 2 times — the mentor picks one',
+            style: const TextStyle(
+              fontSize: AppFont.xs,
+              fontWeight: AppFont.bold,
+              color: AppColors.textSecondary,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Wrap(
+            spacing: AppSpacing.xs,
+            runSpacing: AppSpacing.xs,
+            children: [
+              for (final t in times)
+                Material(
+                  color: AppColors.primaryLight,
+                  borderRadius: BorderRadius.circular(AppRadius.full),
+                  child: InkWell(
+                    onTap: () => onRemove(t),
+                    borderRadius: BorderRadius.circular(AppRadius.full),
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(12, 6, 8, 6),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            friendlyCallTime(t),
+                            style: const TextStyle(
+                              fontSize: AppFont.xs,
+                              fontWeight: AppFont.bold,
+                              color: AppColors.primaryDark,
+                            ),
+                          ),
+                          const SizedBox(width: 4),
+                          const Icon(
+                            Icons.close_rounded,
+                            size: 14,
+                            color: AppColors.primaryDark,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ],
       ),
     );
   }

@@ -4,116 +4,25 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/network/users_api.dart';
 import '../../core/theme/app_theme.dart';
-import '../../state/auth_controller.dart';
+import '../../state/auth_controller.dart' show UserRole;
 import '../../widgets/app_widgets.dart';
-import 'profile_options.dart';
 
-class EditProfileScreen extends ConsumerStatefulWidget {
+/// Read-only "Profile Details" — users can view what's on file but not edit
+/// it (product decision, 2026-09-06, both roles). The one thing still
+/// changeable here is the avatar (the pencil badge → /profile/avatar).
+/// Onboarding is where profile fields are set; changes after that go through
+/// support. Class name kept as `EditProfileScreen` so the `/profile/edit`
+/// route and its callers don't need touching.
+class EditProfileScreen extends ConsumerWidget {
   const EditProfileScreen({super.key});
 
   @override
-  ConsumerState<EditProfileScreen> createState() => _EditProfileScreenState();
-}
-
-class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
-  final _displayNameController = TextEditingController();
-  final _cityController = TextEditingController();
-  final _bioController = TextEditingController();
-  String? _qualification;
-  String? _stream;
-  String? _state;
-  final Set<String> _languages = {};
-  // A saved language that isn't one of kLanguageOptions' fixed values is a
-  // previously-typed "Others" answer (see _save's mapping below — the
-  // literal "Others" is never itself stored, it's replaced by what was
-  // typed). Pre-filling this lets an existing custom language actually show
-  // up as editable instead of silently vanishing from the chip group.
-  final _languagesOtherController = TextEditingController();
-  bool _loaded = false;
-  bool _saving = false;
-
-  void _hydrate(UserProfile profile) {
-    if (_loaded) return;
-    _loaded = true;
-    _displayNameController.text = profile.displayName;
-    _cityController.text = profile.city ?? '';
-    _bioController.text = profile.bio ?? '';
-    _qualification = profile.qualification;
-    _stream = profile.stream;
-    _state = profile.state;
-    final customLanguages = profile.languages
-        .where((l) => !kLanguageOptions.contains(l))
-        .toList();
-    _languages.addAll(profile.languages.where(kLanguageOptions.contains));
-    if (customLanguages.isNotEmpty) {
-      _languages.add('Others');
-      _languagesOtherController.text = customLanguages.join(', ');
-    }
-  }
-
-  @override
-  void dispose() {
-    _displayNameController.dispose();
-    _cityController.dispose();
-    _bioController.dispose();
-    _languagesOtherController.dispose();
-    super.dispose();
-  }
-
-  Future<void> _save(UserRole role) async {
-    setState(() => _saving = true);
-    try {
-      final displayName = _displayNameController.text.trim().isEmpty
-          ? null
-          : _displayNameController.text.trim();
-      if (role == UserRole.mentor) {
-        final resolvedLanguages = _languages
-            .map(
-              (l) => l == 'Others' ? _languagesOtherController.text.trim() : l,
-            )
-            .where((l) => l.isNotEmpty)
-            .toList();
-        await ref
-            .read(usersApiProvider)
-            .updateProfile(
-              displayName: displayName,
-              bio: _bioController.text.trim(),
-              stream: _stream,
-              languages: resolvedLanguages,
-            );
-      } else {
-        await ref
-            .read(usersApiProvider)
-            .updateProfile(
-              displayName: displayName,
-              state: _state,
-              city: _cityController.text.trim(),
-              qualification: _qualification,
-              stream: _stream,
-            );
-      }
-      ref.invalidate(myProfileProvider);
-      if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Profile updated')));
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Could not save: $e')));
-    } finally {
-      if (mounted) setState(() => _saving = false);
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final profileAsync = ref.watch(myProfileProvider);
 
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: AppBar(title: const Text('Edit Profile')),
+      appBar: AppBar(title: const Text('Profile Details')),
       body: profileAsync.when(
         loading: () => const Center(
           child: CircularProgressIndicator(color: AppColors.primary),
@@ -126,13 +35,27 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
           onAction: () => ref.invalidate(myProfileProvider),
         ),
         data: (profile) {
-          _hydrate(profile);
           final isMentor = profile.role == UserRole.mentor;
-          // Avatar sits outside the scroll view — always visible while
-          // editing the fields below, never scrolls away. `Expanded` +
-          // `SingleChildScrollView` share the remaining height, so an
-          // on-screen keyboard resizes only the scrollable half instead of
-          // pushing the avatar off-screen or breaking the layout.
+
+          final rows = <(String, String)>[
+            ('Display name', profile.displayName),
+            if (profile.uniqueId != null) ('ID', profile.uniqueId!),
+            if ((profile.gender ?? '').isNotEmpty) ('Gender', profile.gender!),
+            if (isMentor) ...[
+              ('Field of study', _orDash(profile.stream)),
+              ('Bio', _orDash(profile.bio)),
+              (
+                'Languages',
+                profile.languages.isEmpty ? '—' : profile.languages.join(', '),
+              ),
+            ] else ...[
+              ('Qualification', _orDash(profile.qualification)),
+              ('Field of interest', _orDash(profile.stream)),
+              ('State', _orDash(profile.state)),
+              ('City', _orDash(profile.city)),
+            ],
+          ];
+
           return Column(
             children: [
               Padding(
@@ -149,6 +72,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                         size: 72,
                         avatarUrl: profile.avatarUrl,
                       ),
+                      // Avatar stays editable even though the fields don't.
                       Positioned(
                         bottom: -2,
                         right: -2,
@@ -179,230 +103,27 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
-                        'Display name',
-                        style: TextStyle(
-                          fontSize: AppFont.sm,
-                          fontWeight: AppFont.semibold,
+                      AppCard(
+                        padding: EdgeInsets.zero,
+                        child: Column(
+                          children: [
+                            for (var i = 0; i < rows.length; i++)
+                              _DetailRow(
+                                label: rows[i].$1,
+                                value: rows[i].$2,
+                                isLast: i == rows.length - 1,
+                              ),
+                          ],
                         ),
                       ),
-                      const SizedBox(height: AppSpacing.xs),
-                      TextField(controller: _displayNameController),
                       const SizedBox(height: AppSpacing.md),
-                      if ((profile.gender ?? '').isNotEmpty) ...[
-                        const Text(
-                          'Gender',
-                          style: TextStyle(
-                            fontSize: AppFont.sm,
-                            fontWeight: AppFont.semibold,
-                          ),
-                        ),
-                        const SizedBox(height: AppSpacing.xs),
-                        // Read-only: gender is set once at sign-up and can't
-                        // be changed here (see UsersService.updateProfile —
-                        // it silently no-ops a gender change).
-                        TextFormField(
-                          initialValue: profile.gender,
-                          readOnly: true,
-                          enabled: false,
-                        ),
-                        const SizedBox(height: AppSpacing.md),
-                      ],
-                      if (isMentor) ...[
-                        const Text(
-                          'Stream / Field',
-                          style: TextStyle(
-                            fontSize: AppFont.sm,
-                            fontWeight: AppFont.semibold,
-                          ),
-                        ),
-                        const SizedBox(height: AppSpacing.xs),
-                        DropdownButtonFormField<String>(
-                          // A value predating this fix (e.g. an old kGuidanceAreas
-                          // entry stuck in `specialty`, or nothing at all) won't
-                          // match kStreamOptions' exact strings — fall back to
-                          // null rather than assert-crash on an unknown value.
-                          initialValue: kStreamOptions.contains(_stream)
-                              ? _stream
-                              : null,
-                          isExpanded: true,
-                          hint: const Text('What can you help aspirants with?'),
-                          items: kStreamOptions
-                              .map(
-                                (s) =>
-                                    DropdownMenuItem(value: s, child: Text(s)),
-                              )
-                              .toList(),
-                          onChanged: (v) => setState(() => _stream = v),
-                        ),
-                        const SizedBox(height: AppSpacing.md),
-                        const Text(
-                          'Bio',
-                          style: TextStyle(
-                            fontSize: AppFont.sm,
-                            fontWeight: AppFont.semibold,
-                          ),
-                        ),
-                        const SizedBox(height: AppSpacing.xs),
-                        TextField(
-                          controller: _bioController,
-                          maxLines: 3,
-                          decoration: const InputDecoration(
-                            hintText:
-                                'A short introduction for aspirants browsing mentors',
-                          ),
-                        ),
-                        const SizedBox(height: AppSpacing.md),
-                        const Text(
-                          'Languages',
-                          style: TextStyle(
-                            fontSize: AppFont.sm,
-                            fontWeight: AppFont.semibold,
-                          ),
-                        ),
-                        const SizedBox(height: AppSpacing.xs),
-                        Wrap(
-                          spacing: AppSpacing.sm,
-                          runSpacing: AppSpacing.sm,
-                          children: kLanguageOptions.map((language) {
-                            final selected = _languages.contains(language);
-                            return FilterChip(
-                              label: Text(language),
-                              selected: selected,
-                              onSelected: (v) => setState(
-                                () => v
-                                    ? _languages.add(language)
-                                    : _languages.remove(language),
-                              ),
-                              selectedColor: AppColors.primaryLight,
-                              checkmarkColor: AppColors.primary,
-                              labelStyle: TextStyle(
-                                fontSize: AppFont.sm,
-                                color: selected
-                                    ? AppColors.primaryDark
-                                    : AppColors.textSecondary,
-                                fontWeight: selected
-                                    ? AppFont.semibold
-                                    : AppFont.medium,
-                              ),
-                              side: BorderSide(
-                                color: selected
-                                    ? AppColors.primary
-                                    : AppColors.border,
-                              ),
-                            );
-                          }).toList(),
-                        ),
-                        if (_languages.contains('Others')) ...[
-                          const SizedBox(height: AppSpacing.sm),
-                          TextField(
-                            controller: _languagesOtherController,
-                            onChanged: (_) => setState(() {}),
-                            decoration: const InputDecoration(
-                              hintText: 'Enter language',
-                            ),
-                          ),
-                        ],
-                      ] else ...[
-                        const Text(
-                          'Qualification',
-                          style: TextStyle(
-                            fontSize: AppFont.sm,
-                            fontWeight: AppFont.semibold,
-                          ),
-                        ),
-                        const SizedBox(height: AppSpacing.xs),
-                        DropdownButtonFormField<String>(
-                          initialValue: _qualification,
-                          isExpanded: true,
-                          hint: const Text('Select qualification'),
-                          items: kQualifications
-                              .map(
-                                (q) =>
-                                    DropdownMenuItem(value: q, child: Text(q)),
-                              )
-                              .toList(),
-                          onChanged: (v) => setState(() => _qualification = v),
-                        ),
-                        const SizedBox(height: AppSpacing.md),
-                        const Text(
-                          'Stream / Field of Interest',
-                          style: TextStyle(
-                            fontSize: AppFont.sm,
-                            fontWeight: AppFont.semibold,
-                          ),
-                        ),
-                        const SizedBox(height: AppSpacing.xs),
-                        DropdownButtonFormField<String>(
-                          // A value saved via the onboarding wizard (e.g. "Engineering")
-                          // won't match if it's not one of kStreamOptions' exact
-                          // strings — fall back to null rather than let
-                          // DropdownButtonFormField assert-crash on an unknown value.
-                          initialValue: kStreamOptions.contains(_stream)
-                              ? _stream
-                              : null,
-                          isExpanded: true,
-                          hint: const Text('Select stream / field'),
-                          items: kStreamOptions
-                              .map(
-                                (s) =>
-                                    DropdownMenuItem(value: s, child: Text(s)),
-                              )
-                              .toList(),
-                          onChanged: (v) => setState(() => _stream = v),
-                        ),
-                        const SizedBox(height: AppSpacing.md),
-                        const Text(
-                          'State',
-                          style: TextStyle(
-                            fontSize: AppFont.sm,
-                            fontWeight: AppFont.semibold,
-                          ),
-                        ),
-                        const SizedBox(height: AppSpacing.xs),
-                        DropdownButtonFormField<String>(
-                          initialValue: _state,
-                          isExpanded: true,
-                          hint: const Text('Select state'),
-                          items: kIndianStates
-                              .map(
-                                (s) =>
-                                    DropdownMenuItem(value: s, child: Text(s)),
-                              )
-                              .toList(),
-                          onChanged: (v) => setState(() => _state = v),
-                        ),
-                        const SizedBox(height: AppSpacing.md),
-                        const Text(
-                          'City',
-                          style: TextStyle(
-                            fontSize: AppFont.sm,
-                            fontWeight: AppFont.semibold,
-                          ),
-                        ),
-                        const SizedBox(height: AppSpacing.xs),
-                        TextField(
-                          controller: _cityController,
-                          decoration: const InputDecoration(
-                            hintText: 'Enter your city',
-                          ),
-                        ),
-                      ],
-                      const SizedBox(height: AppSpacing.xl),
-                      SizedBox(
-                        width: double.infinity,
-                        child: FilledButton(
-                          onPressed: _saving ? null : () => _save(profile.role),
-                          child: _saving
-                              ? const SizedBox(
-                                  width: 18,
-                                  height: 18,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    color: Colors.white,
-                                  ),
-                                )
-                              : const Text('Save'),
+                      const Text(
+                        'These details were set during sign-up and can\'t be '
+                        'changed here. Your profile photo is the exception — '
+                        'tap the pencil above to update it.',
+                        style: TextStyle(
+                          fontSize: AppFont.xs,
+                          color: AppColors.textMuted,
                         ),
                       ),
                       const SizedBox(height: AppSpacing.xl),
@@ -413,6 +134,61 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
             ],
           );
         },
+      ),
+    );
+  }
+}
+
+String _orDash(String? v) => (v ?? '').trim().isEmpty ? '—' : v!.trim();
+
+class _DetailRow extends StatelessWidget {
+  const _DetailRow({
+    required this.label,
+    required this.value,
+    this.isLast = false,
+  });
+
+  final String label;
+  final String value;
+  final bool isLast;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.md,
+        vertical: AppSpacing.md,
+      ),
+      decoration: BoxDecoration(
+        border: isLast
+            ? null
+            : const Border(bottom: BorderSide(color: AppColors.border)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 120,
+            child: Text(
+              label,
+              style: const TextStyle(
+                fontSize: AppFont.sm,
+                fontWeight: AppFont.semibold,
+                color: AppColors.textSecondary,
+              ),
+            ),
+          ),
+          const SizedBox(width: AppSpacing.sm),
+          Expanded(
+            child: Text(
+              value,
+              style: const TextStyle(
+                fontSize: AppFont.sm,
+                color: AppColors.textPrimary,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

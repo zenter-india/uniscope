@@ -45,4 +45,15 @@ export class CreateSessionDto {
   @IsOptional()
   @IsISO8601()
   requestedFor?: string;
+
+  /** AUDIO_CALL only, optional. A SECOND preferred time — the aspirant may
+   * offer the mentor two options. Same validation as requestedFor; the
+   * service ignores it unless requestedFor is also set. */
+  @ValidateIf(
+    (dto: CreateSessionDto) =>
+      dto.type === SessionType.AUDIO_CALL && dto.requestedForAlt != null,
+  )
+  @IsOptional()
+  @IsISO8601()
+  requestedForAlt?: string;
 }

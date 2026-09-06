@@ -57,6 +57,7 @@ class Session {
     this.endReason,
     this.callSlotMinutes,
     this.requestedFor,
+    this.requestedForAlt,
     this.aspirantJoinedAt,
     this.mentorJoinedAt,
     this.mentorIsAvailable = false,
@@ -91,6 +92,10 @@ class Session {
   /// "When?" step. Null = Instant (connect once the mentor accepts).
   /// Advisory — nothing is reserved; the mentor sees it on the request.
   final DateTime? requestedFor;
+
+  /// AUDIO_CALL only: an optional second preferred time — the aspirant may
+  /// offer the mentor two options to pick between.
+  final DateTime? requestedForAlt;
   final String? aspirantJoinedAt;
   final String? mentorJoinedAt;
 
@@ -126,6 +131,9 @@ class Session {
     callSlotMinutes: (json['callSlotMinutes'] as num?)?.toInt(),
     requestedFor: json['requestedFor'] != null
         ? DateTime.tryParse(json['requestedFor'] as String)
+        : null,
+    requestedForAlt: json['requestedForAlt'] != null
+        ? DateTime.tryParse(json['requestedForAlt'] as String)
         : null,
     aspirantJoinedAt: json['aspirantJoinedAt'] as String?,
     mentorJoinedAt: json['mentorJoinedAt'] as String?,
@@ -170,6 +178,7 @@ class SessionsApi {
     SessionKind type, {
     int? slotMinutes,
     DateTime? requestedFor,
+    DateTime? requestedForAlt,
   }) async {
     try {
       final res = await _dio.post<Map<String, dynamic>>(
@@ -180,6 +189,8 @@ class SessionsApi {
           if (slotMinutes != null) 'slotMinutes': slotMinutes,
           if (requestedFor != null)
             'requestedFor': requestedFor.toUtc().toIso8601String(),
+          if (requestedForAlt != null)
+            'requestedForAlt': requestedForAlt.toUtc().toIso8601String(),
         },
       );
       return Session.fromJson(res.data!);

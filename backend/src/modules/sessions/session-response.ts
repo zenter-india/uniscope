@@ -101,6 +101,9 @@ export interface SessionResponse {
    * "When?" step. Null = Instant. Advisory — nothing is reserved; the
    * mentor sees it on the request and still drives the connect. */
   requestedFor: Date | null;
+  /** AUDIO_CALL only: an optional second preferred time — the aspirant may
+   * offer two options. Null unless requestedFor is also set. */
+  requestedForAlt: Date | null;
   aspirantJoinedAt: Date | null;
   mentorJoinedAt: Date | null;
   createdAt: Date;
@@ -154,6 +157,7 @@ export function toSessionResponse(
     endReason: session.endReason,
     callSlotMinutes: session.callSlotMinutes,
     requestedFor: session.requestedFor,
+    requestedForAlt: session.requestedForAlt,
     aspirantJoinedAt: session.aspirantJoinedAt,
     mentorJoinedAt: session.mentorJoinedAt,
     createdAt: session.createdAt,

@@ -167,12 +167,17 @@ export class SessionsService {
 
     // "When?" step: Instant → requestedFor stays null (connect once the
     // mentor accepts, the original flow). A mentor free-window pick or a
-    // custom slot sends a concrete ISO timestamp — advisory only, so all we
-    // do is sanity-bound it (not in the past, not more than 4 days out) and
-    // store it for the mentor to see. No hold/no-show/billing change.
-    let requestedFor: Date | null = null;
-    if (isAudioCall && dto.requestedFor) {
-      const parsed = new Date(dto.requestedFor);
+    // custom slot sends a concrete ISO timestamp — the aspirant may send
+    // TWO (requestedFor + requestedForAlt) as options for the mentor to
+    // choose between. Advisory only, so all we do is sanity-bound each (not
+    // in the past, not more than 4 days out) and store it. No
+    // hold/no-show/billing change.
+    const boundRequestedTime = (
+      value: string | undefined,
+      field: string,
+    ): Date | null => {
+      if (!value) return null;
+      const parsed = new Date(value);
       const now = Date.now();
       const maxAheadMs = 4 * 24 * 60 * 60 * 1000;
       if (
@@ -181,10 +186,23 @@ export class SessionsService {
         parsed.getTime() > now + maxAheadMs
       ) {
         throw new BadRequestException(
-          'requestedFor must be a time between now and 4 days ahead',
+          `${field} must be a time between now and 4 days ahead`,
         );
       }
-      requestedFor = parsed;
+      return parsed;
+    };
+
+    let requestedFor: Date | null = null;
+    let requestedForAlt: Date | null = null;
+    if (isAudioCall) {
+      requestedFor = boundRequestedTime(dto.requestedFor, 'requestedFor');
+      // A second option only makes sense alongside a first one.
+      if (requestedFor) {
+        requestedForAlt = boundRequestedTime(
+          dto.requestedForAlt,
+          'requestedForAlt',
+        );
+      }
     }
 
     let isFreeSlot = false;
@@ -206,6 +224,7 @@ export class SessionsService {
         ratePerMinuteMinor: isAudioCall ? MENTOR_RATE_PER_MINUTE_MINOR : 0,
         ...(isAudioCall && { callSlotMinutes: slotMinutes }),
         ...(requestedFor && { requestedFor }),
+        ...(requestedForAlt && { requestedForAlt }),
       },
     });
 
