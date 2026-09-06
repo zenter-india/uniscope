@@ -12,9 +12,11 @@ enum SessionKind {
   final String wire;
 }
 
-/// Fixed pre-paid call slots — mirrors backend CALL_SLOT_MINUTES. Shortest
-/// slot is 6 min (was 5, per explicit client request).
-const List<int> kCallSlotMinutes = [6, 10, 20];
+/// Fixed pre-paid call slots — mirrors backend CALL_SLOT_MINUTES. Each has
+/// its own fixed price rather than a shared per-minute rate — see
+/// wallet_api.dart's slotUniminutes (product decision, 2026-09-06,
+/// replacing the earlier flat ₹10/min-for-every-slot pricing).
+const List<int> kCallSlotMinutes = [10, 20, 40, 60];
 
 /// Mirrors the backend `SessionStatus` enum.
 enum SessionStatus {

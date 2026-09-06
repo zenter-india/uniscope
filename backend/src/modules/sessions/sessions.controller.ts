@@ -113,7 +113,7 @@ export class SessionsController {
     return this.sessionsService.confirmJoined(id, user.sub);
   }
 
-  /** Aspirant-only: bill +6 min (the shortest slot) and keep the call going. */
+  /** Aspirant-only: bill +10 min (the shortest slot, at its price) and keep the call going. */
   @Post(':id/call/extend')
   @HttpCode(HttpStatus.OK)
   extendCall(@CurrentUser() user: JwtPayload, @Param('id') id: string) {

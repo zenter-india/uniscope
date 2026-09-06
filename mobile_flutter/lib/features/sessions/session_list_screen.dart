@@ -20,11 +20,14 @@ final sessionsListProvider = FutureProvider.autoDispose<List<Session>>(
   (ref) => ref.watch(sessionsApiProvider).list(),
 );
 
-/// Shortest bookable call slot, in Uniminutes — mirrors SessionChatScreen's
-/// own `_minCallSlotUniminutes` so the Sessions-row call icon and the
-/// in-chat "Request a call" action refuse a booking at the exact same
-/// balance instead of one letting the sheet open only to fail at submit.
-final _minCallSlotUniminutes = kCallSlotMinutes.first;
+/// Cost of the shortest bookable call slot, in Uniminutes — mirrors
+/// SessionChatScreen's own `_minCallSlotUniminutes` (derived via
+/// slotUniminutes(), not kCallSlotMinutes.first directly — slot prices
+/// aren't 1 Uniminute-per-minute anymore, see wallet_api.dart) so the
+/// Sessions-row call icon and the in-chat "Request a call" action refuse a
+/// booking at the exact same balance instead of one letting the sheet open
+/// only to fail at submit.
+final _minCallSlotUniminutes = slotUniminutes(kCallSlotMinutes.first);
 
 /// Dot colour for a mentor row's status subtitle — session state only.
 Color _statusDotColor(SessionStatus status) {

@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/network/chat_api.dart';
 import '../../core/network/sessions_api.dart';
+import '../../core/network/wallet_api.dart';
 import '../../core/theme/app_theme.dart';
 import '../../state/auth_controller.dart';
 import '../../widgets/app_widgets.dart';
@@ -17,14 +18,14 @@ import 'chat_thread_view.dart';
 import 'session_list_screen.dart'
     show sessionsListProvider, showMentorSessionHistory;
 
-/// Shortest bookable call slot, in Uniminutes — derived from
-/// kCallSlotMinutes (itself mirroring the backend's
-/// CreateSessionDto.CALL_SLOT_MINUTES) rather than a separate literal, so
-/// this can't drift out of sync the next time the slot sizes change.
-/// Below this balance, booking any slot is impossible, so the
-/// call-request action is gated here instead of letting the sheet open
-/// and fail at submit time.
-final _minCallSlotUniminutes = kCallSlotMinutes.first;
+/// Cost of the shortest bookable call slot, in Uniminutes — derived via
+/// slotUniminutes(kCallSlotMinutes.first) rather than a separate literal
+/// (and NOT kCallSlotMinutes.first itself — slot prices aren't 1
+/// Uniminute-per-minute anymore, see wallet_api.dart), so this can't drift
+/// out of sync the next time the slot sizes or prices change. Below this
+/// balance, booking any slot is impossible, so the call-request action is
+/// gated here instead of letting the sheet open and fail at submit time.
+final _minCallSlotUniminutes = slotUniminutes(kCallSlotMinutes.first);
 
 /// Generic conversation starters offered inside a brand-new mentor chat
 /// (see ChatThreadView's empty state) — not mentor-specific, just enough to

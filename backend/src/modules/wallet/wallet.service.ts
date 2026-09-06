@@ -29,10 +29,15 @@ const CURRENCY = 'INR';
 
 /**
  * Uniminute economics (product decision, see docs/decisions):
- *   - 1 Uniminute = 1000 minor units (₹10) — matches the flat mentor call
- *     payout rate exactly, so a session debit of N Uniminutes always pays
- *     the mentor N * MENTOR_RATE_PER_MINUTE_MINOR with zero per-session
- *     platform cut.
+ *   - 1 Uniminute = 1000 minor units (₹10) — this is purely the top-up
+ *     currency conversion. It's no longer tied to a flat per-minute call
+ *     rate (see CALL_SLOT_PRICE_MINOR in sessions/dto/create-session.dto —
+ *     calls are billed at a fixed price per slot, not minutes × a rate,
+ *     since 2026-09-06), so a session's Uniminute cost no longer equals its
+ *     slot's minute count. The mentor is still paid the exact same amount
+ *     debited from the aspirant for a call (zero per-session platform cut,
+ *     same as every other billing path) — the tiered price just isn't
+ *     minutes × a constant anymore.
  *   - The platform margin lives ONLY in the recharge conversion: a ₹250
  *     (25,000 minor) topup credits 20 Uniminutes (20,000 minor) — a fixed
  *     1250-minor-paid-per-Uniminute-credited rate, i.e. 20% margin. This is
@@ -43,7 +48,6 @@ const CURRENCY = 'INR';
  */
 export const UNIMINUTE_VALUE_MINOR = 1000;
 const PAID_MINOR_PER_UNIMINUTE_CREDITED = 1250;
-export const MENTOR_RATE_PER_MINUTE_MINOR = UNIMINUTE_VALUE_MINOR;
 
 function computeTopupCredit(paidAmountMinor: number): {
   uniminutes: number;

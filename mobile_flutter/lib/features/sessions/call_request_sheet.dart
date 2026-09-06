@@ -271,7 +271,23 @@ class _CallRequestSheetState extends State<_CallRequestSheet> {
                         ),
                       ),
                       onPressed: () => setState(() => _slotMinutes = m),
-                      child: Text('$m min'),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text('$m min'),
+                          const SizedBox(height: 2),
+                          Text(
+                            uniminutesLabel(slotUniminutes(m)),
+                            style: TextStyle(
+                              fontSize: AppFont.xs,
+                              fontWeight: AppFont.regular,
+                              color: selected
+                                  ? AppColors.primaryDark
+                                  : AppColors.textSecondary,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 );

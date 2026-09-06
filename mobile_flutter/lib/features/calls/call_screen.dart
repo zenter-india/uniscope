@@ -447,8 +447,12 @@ class _CallScreenState extends ConsumerState<CallScreen> {
       builder: (dialogContext) => AlertDialog(
         title: const Text('Time\'s up'),
         content: Text(
-          'Your slot has ended. Continue for another 5 minutes? '
-          '${uniminutesLabel(slotUniminutes(5))} will be deducted.',
+          // Extension length always mirrors the shortest bookable slot
+          // (kCallSlotMinutes.first) and is billed at that slot's price —
+          // see SessionsService.extendCall.
+          'Your slot has ended. Continue for another '
+          '${kCallSlotMinutes.first} minutes? '
+          '${uniminutesLabel(slotUniminutes(kCallSlotMinutes.first))} will be deducted.',
         ),
         actions: [
           TextButton(

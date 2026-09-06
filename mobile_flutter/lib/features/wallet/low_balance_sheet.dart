@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/network/sessions_api.dart';
 import '../../core/network/wallet_api.dart';
 import '../../core/theme/app_theme.dart';
 
 /// Shown instead of the call-slot picker when the aspirant's *available*
 /// balance (total minus anything reserved for a pending call) can't cover
-/// even the shortest (6-min) call slot. Chat itself is always free — this
-/// only ever gates the call-request action, never chatting itself.
+/// even the shortest call slot. Chat itself is always free — this only
+/// ever gates the call-request action, never chatting itself.
 Future<void> showLowBalanceSheet(
   BuildContext context, {
   required int balanceUniminutes,
@@ -58,10 +59,13 @@ Future<void> showLowBalanceSheet(
             reservedUniminutes > 0
                 ? 'You have ${uniminutesLabel(balanceUniminutes)} available '
                       '(${uniminutesLabel(reservedUniminutes)} reserved for a '
-                      'pending call). The shortest call slot needs 6 — recharge '
-                      'or wait for that call to finish.'
+                      'pending call). The shortest call slot needs '
+                      '${uniminutesLabel(slotUniminutes(kCallSlotMinutes.first))} — '
+                      'recharge or wait for that call to finish.'
                 : 'You have ${uniminutesLabel(balanceUniminutes)}. The shortest '
-                      'call slot needs 6 — recharge to book one.',
+                      'call slot needs '
+                      '${uniminutesLabel(slotUniminutes(kCallSlotMinutes.first))} — '
+                      'recharge to book one.',
             textAlign: TextAlign.center,
             style: const TextStyle(
               fontSize: AppFont.sm,
