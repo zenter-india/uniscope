@@ -31,6 +31,7 @@ import '../features/profile/settings_screen.dart';
 import '../features/sessions/session_chat_screen.dart';
 import '../features/sessions/session_list_screen.dart';
 import '../features/sessions/support_chat_screen.dart';
+import '../features/support/help_screen.dart';
 import '../features/shell/main_shell.dart';
 import '../features/universities/review_breakdown_screen.dart';
 import '../features/universities/saved_colleges_screen.dart';
@@ -310,6 +311,10 @@ final routerProvider = Provider<GoRouter>((ref) {
     },
     routes: [
       GoRoute(path: '/', builder: (_, __) => const UniscopeSplashScreen()),
+
+      // Help & Support landing — reached from every "Need Help?" entry
+      // point; "Start a conversation" from here opens /chats/support.
+      GoRoute(path: '/help', builder: (_, __) => const HelpScreen()),
 
       // ─── Auth flow ──────────────────────────────────────────────
       GoRoute(path: '/welcome', builder: (_, __) => const WelcomeScreen()),

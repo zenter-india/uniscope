@@ -140,7 +140,7 @@ class SessionListScreen extends ConsumerWidget {
         bottom: false,
         child: Column(
           children: [
-            _SupportChatEntry(onTap: () => context.push('/chats/support')),
+            _SupportChatEntry(onTap: () => context.push('/help')),
             Expanded(
               child: RefreshIndicator(
                 color: AppColors.primary,

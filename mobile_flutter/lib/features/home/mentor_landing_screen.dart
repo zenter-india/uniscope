@@ -333,7 +333,7 @@ class MentorLandingScreen extends ConsumerWidget {
                     ),
                     const SizedBox(height: AppSpacing.md),
                     AppCard(
-                      onTap: () => context.push('/chats/support'),
+                      onTap: () => context.push('/help'),
                       child: const Row(
                         children: [
                           Icon(

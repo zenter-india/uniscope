@@ -50,6 +50,7 @@ export const Icon = {
   trendDown: (p: IconProps) => base({ ...p, children: <><path d="M16 17h6v-6" /><path d="m22 17-8.5-8.5-5 5L2 7" /></> }),
   clock: (p: IconProps) => base({ ...p, children: <><circle cx="12" cy="12" r="10" /><path d="M12 6v6l4 2" /></> }),
   refresh: (p: IconProps) => base({ ...p, children: <><path d="M3 12a9 9 0 0 1 15-6.7L21 8" /><path d="M21 3v5h-5" /><path d="M21 12a9 9 0 0 1-15 6.7L3 16" /><path d="M3 21v-5h5" /></> }),
+  lifebuoy: (p: IconProps) => base({ ...p, children: <><circle cx="12" cy="12" r="10" /><circle cx="12" cy="12" r="4" /><path d="m4.93 4.93 4.24 4.24M14.83 14.83l4.24 4.24M14.83 9.17l4.24-4.24M14.83 9.17 18.36 5.64M4.93 19.07l4.24-4.24" /></> }),
 };
 
 export type IconName = keyof typeof Icon;

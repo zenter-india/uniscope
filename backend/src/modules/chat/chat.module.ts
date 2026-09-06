@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { PrismaModule } from '../../database/prisma/prisma.module.js';
 import { BlocksModule } from '../blocks/blocks.module.js';
 import { NotificationsModule } from '../notifications/notifications.module.js';
+import { AdminSupportController } from './admin-support.controller.js';
 import { ChatController } from './chat.controller.js';
 import { ChatService } from './chat.service.js';
 import { SupportChatController } from './support-chat.controller.js';
@@ -20,7 +21,7 @@ import { SupportChatController } from './support-chat.controller.js';
  */
 @Module({
   imports: [PrismaModule, BlocksModule, NotificationsModule],
-  controllers: [ChatController, SupportChatController],
+  controllers: [ChatController, SupportChatController, AdminSupportController],
   providers: [ChatService],
   exports: [ChatService],
 })

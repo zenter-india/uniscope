@@ -29,6 +29,25 @@ export interface MessagePage {
   hasMore: boolean;
 }
 
+/** One row of the admin support inbox — the user behind a SUPPORT channel
+ * plus a preview of where the conversation stands. */
+export interface SupportChannelSummary {
+  channelId: string;
+  userId: string;
+  displayName: string;
+  uniqueId: string | null;
+  role: string | null;
+  messageCount: number;
+  lastMessageText: string | null;
+  lastMessageAt: Date;
+  /** True when the most recent message came from the support sentinel
+   * (staff), false when it came from the real user. */
+  lastMessageFromStaff: boolean;
+  /** True when the last message is from the user and still unanswered —
+   * what the admin inbox sorts/badges on. */
+  awaitingReply: boolean;
+}
+
 /**
  * Owns chat channel provisioning, message persistence, and live-delivery
  * signaling. Replaces Stream Chat (see migration/chat-supabase-realtime) —
@@ -94,6 +113,76 @@ export class ChatService {
     return this.prisma.chatChannel.create({
       data: { type: ChatChannelType.SUPPORT, supportUserId: userId },
     });
+  }
+
+  /** The admin support inbox — every SUPPORT channel that has at least one
+   * message, newest activity first, each with the user behind it and a
+   * preview of the last message. Channels that were lazily provisioned by a
+   * "GET messages" open but never actually used are excluded. */
+  async listSupportChannels(): Promise<SupportChannelSummary[]> {
+    const channels = await this.prisma.chatChannel.findMany({
+      where: { type: ChatChannelType.SUPPORT },
+      include: {
+        messages: { orderBy: { createdAt: 'desc' }, take: 1 },
+        _count: { select: { messages: true } },
+      },
+    });
+
+    const userIds = channels
+      .map((c) => c.supportUserId)
+      .filter((v): v is string => !!v);
+    const users = await this.prisma.user.findMany({
+      where: { id: { in: userIds } },
+      select: { id: true, displayName: true, uniqueId: true, role: true },
+    });
+    const userMap = new Map(users.map((u) => [u.id, u]));
+
+    return channels
+      .filter((c) => c.supportUserId && c._count.messages > 0)
+      .map((c) => {
+        const last = c.messages[0];
+        const u = userMap.get(c.supportUserId!);
+        const fromStaff = last ? last.senderId === SUPPORT_ACCOUNT_ID : false;
+        return {
+          channelId: c.id,
+          userId: c.supportUserId!,
+          displayName: u?.displayName ?? 'Unknown user',
+          uniqueId: u?.uniqueId ?? null,
+          role: u?.role ?? null,
+          messageCount: c._count.messages,
+          lastMessageText: last?.text ?? null,
+          lastMessageAt: last?.createdAt ?? c.createdAt,
+          lastMessageFromStaff: fromStaff,
+          awaitingReply: last ? !fromStaff : false,
+        };
+      })
+      .sort((a, b) => b.lastMessageAt.getTime() - a.lastMessageAt.getTime());
+  }
+
+  /** Read one user's support thread (admin side). Provisions the channel if
+   * the user has somehow never opened support — harmless, same idempotent
+   * path the user's own GET uses. */
+  async getSupportThreadForUser(
+    userId: string,
+    before?: string,
+  ): Promise<MessagePage & { channelId: string }> {
+    const channel = await this.ensureSupportChannel(userId);
+    const page = await this.listMessages(channel.id, before);
+    return { ...page, channelId: channel.id };
+  }
+
+  /** Post a staff reply into a user's support thread, sent as the
+   * SUPPORT_ACCOUNT_ID sentinel so it renders on the "UniScope Support"
+   * side for the user. Runs through the same sendMessage path as any other
+   * message, so the user gets the in-app + push "new message" notification
+   * (see notifyOthers) and any connected client refetches. */
+  async sendSupportReply(
+    userId: string,
+    text: string,
+    clientMessageId?: string,
+  ): Promise<ChatMessageResponse> {
+    const channel = await this.ensureSupportChannel(userId);
+    return this.sendMessage(channel.id, SUPPORT_ACCOUNT_ID, text, clientMessageId);
   }
 
   /**
@@ -171,11 +260,10 @@ export class ChatService {
   /** Push + in-app notification for whoever didn't just send this message.
    * Best-effort — NotificationsService already swallows push failures
    * internally (see its doc comment), and a failure here must never block
-   * the send itself, so this is wrapped defensively too. SUPPORT channels
-   * only notify when the sender is the real user (the support sentinel
-   * has no device to push to; nothing today sends *as* the sentinel — see
-   * SUPPORT_ACCOUNT_ID doc comment — so this branch is a no-op in
-   * practice until an admin-reply path exists, not dead code). */
+   * the send itself, so this is wrapped defensively too. On a SUPPORT
+   * channel only a staff reply (sent as SUPPORT_ACCOUNT_ID) notifies
+   * anyone — the real user; a message the user sent *to* support has no
+   * "support" User row to push to. */
   private async notifyOthers(
     channelId: string,
     senderId: string,
@@ -190,18 +278,19 @@ export class ChatService {
       });
       if (!channel) return;
 
-      const recipientIds =
-        channel.type === ChatChannelType.SESSION && channel.session
-          ? [channel.session.aspirantId, channel.session.mentorId].filter(
-              (id) => id !== senderId,
-            )
-          : channel.type === ChatChannelType.SUPPORT &&
-              channel.supportUserId &&
-              senderId !== channel.supportUserId
-            ? [] // real user -> support: no real "support" User row to notify
-            : channel.supportUserId
-              ? [channel.supportUserId] // support sentinel -> real user
-              : [];
+      let recipientIds: string[] = [];
+      if (channel.type === ChatChannelType.SESSION && channel.session) {
+        recipientIds = [
+          channel.session.aspirantId,
+          channel.session.mentorId,
+        ].filter((id) => id !== senderId);
+      } else if (
+        channel.type === ChatChannelType.SUPPORT &&
+        channel.supportUserId
+      ) {
+        recipientIds =
+          senderId === SUPPORT_ACCOUNT_ID ? [channel.supportUserId] : [];
+      }
 
       // sessionId (not channelId) is the key the mobile notification-tap
       // handler already reads (NotificationResponse.sessionId — see

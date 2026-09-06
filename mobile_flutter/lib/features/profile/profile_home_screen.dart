@@ -381,7 +381,7 @@ class ProfileHomeScreen extends ConsumerWidget {
                           _MenuRow(
                             icon: Icons.support_agent_rounded,
                             label: 'Need Help?',
-                            onTap: () => context.push('/chats/support'),
+                            onTap: () => context.push('/help'),
                             isLast: true,
                           ),
                         ],
