@@ -8,13 +8,13 @@ import '../../widgets/app_widgets.dart';
 import 'support_contact.dart';
 
 /// Help Centre landing screen (route `/help`). Self-serve topics + FAQ
-/// first, then two ways to reach a human — the "Chat with Support" card
-/// (the existing persistent `/support` thread) and the "Report a technical
-/// issue" button (route `/report-issue`, which also has Chat with us +
-/// Call us). All topic/FAQ content is static and shipped in the app (see
-/// [_kArticles] / [_kTopics]) so it works offline and needs no CMS.
-/// Role-aware: mentor-only articles and the "Verification & payouts" topic
-/// render only for MENTOR accounts.
+/// first, then the ways to reach a human further down — the "Still need
+/// help?" band (Chat with us → the persistent `/support` thread, Call us)
+/// and the "Report a technical issue" button (route `/report-issue`). All
+/// topic/FAQ content is static and shipped in the app (see [_kArticles] /
+/// [_kTopics]) so it works offline and needs no CMS. Role-aware:
+/// mentor-only articles and the "Verification & payouts" topic render only
+/// for MENTOR accounts.
 class HelpScreen extends ConsumerStatefulWidget {
   const HelpScreen({super.key});
 
@@ -97,10 +97,7 @@ class _HelpScreenState extends ConsumerState<HelpScreen> {
               const _NoResultsHint()
             else
               _ArticleCard(articles: matches),
-            const SizedBox(height: AppSpacing.md),
-            _ContactCard(onStart: () => context.push('/support')),
           ] else ...[
-            _ContactCard(onStart: () => context.push('/support')),
             const _SectionLabel('Browse topics'),
             _TopicsCard(
               topics: topics,
@@ -209,93 +206,6 @@ class _SearchField extends StatelessWidget {
           border: InputBorder.none,
           contentPadding: EdgeInsets.symmetric(vertical: 14),
         ),
-      ),
-    );
-  }
-}
-
-class _ContactCard extends StatelessWidget {
-  const _ContactCard({required this.onStart});
-
-  final VoidCallback onStart;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(AppSpacing.md),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(AppRadius.lg),
-        boxShadow: AppShadows.card,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Row(
-            children: [
-              Container(
-                width: 42,
-                height: 42,
-                decoration: BoxDecoration(
-                  color: AppColors.primaryLight,
-                  borderRadius: BorderRadius.circular(AppRadius.md),
-                ),
-                child: const Icon(
-                  Icons.forum_rounded,
-                  color: AppColors.primary,
-                  size: 20,
-                ),
-              ),
-              const SizedBox(width: AppSpacing.sm),
-              const Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Chat with Support',
-                      style: TextStyle(
-                        fontSize: AppFont.md,
-                        fontWeight: AppFont.extraBold,
-                      ),
-                    ),
-                    SizedBox(height: 2),
-                    Text(
-                      'Our team usually replies within a few hours',
-                      style: TextStyle(
-                        fontSize: AppFont.xs,
-                        color: AppColors.textSecondary,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: AppSpacing.md),
-          FilledButton.icon(
-            onPressed: onStart,
-            icon: const Icon(Icons.chat_bubble_rounded, size: 18),
-            label: const Text('Chat with us'),
-            style: FilledButton.styleFrom(
-              backgroundColor: AppColors.primary,
-              foregroundColor: Colors.white,
-              minimumSize: const Size.fromHeight(48),
-              textStyle: const TextStyle(
-                fontSize: AppFont.sm,
-                fontWeight: AppFont.extraBold,
-              ),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(AppRadius.md),
-              ),
-            ),
-          ),
-          const SizedBox(height: AppSpacing.sm),
-          const Text(
-            'Mon–Sat · 10 AM – 7 PM IST · replies continue after hours',
-            textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 11, color: AppColors.textMuted),
-          ),
-        ],
       ),
     );
   }
