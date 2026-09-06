@@ -174,7 +174,13 @@ class _UniversityReviewScreenState
 
   @override
   Widget build(BuildContext context) {
-    if (_done) return _SuccessView(universityName: widget.universityName);
+    if (_done) {
+      return _SuccessView(
+        universityName: widget.universityName,
+        isMentor:
+            ref.read(myProfileProvider).asData?.value.role == UserRole.mentor,
+      );
+    }
 
     final pct = ((_answered / _total) * 100).round();
     return Scaffold(
@@ -830,8 +836,15 @@ class CollegeReviewPromptBanner extends ConsumerWidget {
 }
 
 class _SuccessView extends StatelessWidget {
-  const _SuccessView({required this.universityName});
+  const _SuccessView({required this.universityName, this.isMentor = false});
   final String universityName;
+
+  /// A mentor's own-college review is the gate that unlocks accepting paid
+  /// call bookings, so the confirmation tells them they can start earning
+  /// now — not that the review helps other students (that's the aspirant
+  /// framing). Deliberately says nothing about editing the review either
+  /// way.
+  final bool isMentor;
 
   @override
   Widget build(BuildContext context) {
@@ -849,9 +862,9 @@ class _SuccessView extends StatelessWidget {
                 color: AppColors.primary,
               ),
               const SizedBox(height: AppSpacing.lg),
-              const Text(
-                'Review submitted',
-                style: TextStyle(
+              Text(
+                isMentor ? "You're all set" : 'Review submitted',
+                style: const TextStyle(
                   fontSize: AppFont.xl,
                   fontWeight: AppFont.extraBold,
                   color: AppColors.textPrimary,
@@ -859,7 +872,11 @@ class _SuccessView extends StatelessWidget {
               ),
               const SizedBox(height: AppSpacing.sm),
               Text(
-                'Thanks for the honest take on $universityName — it helps the next batch decide.',
+                isMentor
+                    ? 'Your review of $universityName is in. You can now '
+                          'accept call bookings and start earning as a mentor.'
+                    : 'Thanks for the honest take on $universityName — it '
+                          'helps the next batch decide.',
                 textAlign: TextAlign.center,
                 style: const TextStyle(
                   fontSize: AppFont.sm,
