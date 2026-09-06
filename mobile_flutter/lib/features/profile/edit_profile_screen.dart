@@ -189,6 +189,28 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                       const SizedBox(height: AppSpacing.xs),
                       TextField(controller: _displayNameController),
                       const SizedBox(height: AppSpacing.md),
+                      if ((profile.gender ?? '').isNotEmpty) ...[
+                        const Text(
+                          'Gender',
+                          style: TextStyle(
+                            fontSize: AppFont.sm,
+                            fontWeight: AppFont.semibold,
+                          ),
+                        ),
+                        const SizedBox(height: AppSpacing.xs),
+                        // Read-only: gender is set once at sign-up and can't
+                        // be changed here (see UsersService.updateProfile —
+                        // it silently no-ops a gender change).
+                        TextFormField(
+                          initialValue: profile.gender,
+                          readOnly: true,
+                          enabled: false,
+                          decoration: const InputDecoration(
+                            helperText: 'Set at sign-up — can\'t be changed',
+                          ),
+                        ),
+                        const SizedBox(height: AppSpacing.md),
+                      ],
                       if (isMentor) ...[
                         const Text(
                           'Stream / Field',
