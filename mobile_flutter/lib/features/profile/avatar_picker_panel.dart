@@ -428,17 +428,29 @@ class _StickyPreviewAvatarPickerState extends State<StickyPreviewAvatarPicker> {
             color: AppColors.surface,
             border: Border(bottom: BorderSide(color: AppColors.border)),
           ),
+          // The avatar SVG is transparent-backed — sit it on a light-green
+          // disc so the preview reads as a finished avatar, not a
+          // floating cutout.
           child: Center(
-            child: _previewSvg != null
-                ? ClipOval(
-                    child: SvgPicture.string(
-                      _previewSvg!,
-                      width: 80,
-                      height: 80,
-                      fit: BoxFit.cover,
-                    ),
-                  )
-                : AppAvatar(name: '?', size: 80, avatarUrl: _previewUrl),
+            child: Container(
+              width: 96,
+              height: 96,
+              alignment: Alignment.center,
+              decoration: const BoxDecoration(
+                shape: BoxShape.circle,
+                color: AppColors.primaryLight,
+              ),
+              child: _previewSvg != null
+                  ? ClipOval(
+                      child: SvgPicture.string(
+                        _previewSvg!,
+                        width: 88,
+                        height: 88,
+                        fit: BoxFit.cover,
+                      ),
+                    )
+                  : AppAvatar(name: '?', size: 88, avatarUrl: _previewUrl),
+            ),
           ),
         ),
         Expanded(
