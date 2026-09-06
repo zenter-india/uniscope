@@ -118,7 +118,7 @@ class _GradientHeader extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     return Container(
       width: double.infinity,
-      decoration: const BoxDecoration(gradient: AppGradients.canopy),
+      color: AppColors.background,
       padding: EdgeInsets.only(top: MediaQuery.of(context).padding.top),
       child: Padding(
         padding: const EdgeInsets.fromLTRB(
@@ -131,7 +131,10 @@ class _GradientHeader extends ConsumerWidget {
           children: [
             IconButton(
               onPressed: () => Navigator.of(context).maybePop(),
-              icon: const Icon(Icons.arrow_back_rounded, color: Colors.white),
+              icon: const Icon(
+                Icons.arrow_back_rounded,
+                color: AppColors.textPrimary,
+              ),
               tooltip: 'Back',
             ),
             const Expanded(
@@ -139,7 +142,7 @@ class _GradientHeader extends ConsumerWidget {
                 'MENTOR PROFILE',
                 textAlign: TextAlign.center,
                 style: TextStyle(
-                  color: Colors.white,
+                  color: AppColors.textPrimary,
                   fontSize: AppFont.sm,
                   fontWeight: AppFont.bold,
                   letterSpacing: 1.4,
@@ -154,7 +157,10 @@ class _GradientHeader extends ConsumerWidget {
                   userId: mentorId!,
                   userLabel: mentorName!,
                 ),
-                icon: const Icon(Icons.more_vert_rounded, color: Colors.white),
+                icon: const Icon(
+                  Icons.more_vert_rounded,
+                  color: AppColors.textPrimary,
+                ),
                 tooltip: 'Report or block',
               )
             else

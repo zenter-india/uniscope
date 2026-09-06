@@ -131,14 +131,13 @@ class HomeScreen extends ConsumerWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // ─── Canopy ─────────────────────────────────────────────
-              // The gradient is scoped to this container (not the whole
-              // screen) so the full teal→blue run resolves inside the
-              // canopy's own height — stretched screen-wide, the blue
-              // stop lands below the fold and only flat teal shows.
+              // ─── Header ─────────────────────────────────────────────
+              // Plain neutral ground (matches the theme bar / the mentor
+              // Home), per explicit request — no green canopy box. Text and
+              // icons here are near-black, not white.
               Container(
                 width: double.infinity,
-                decoration: const BoxDecoration(gradient: AppGradients.canopy),
+                color: AppColors.background,
                 padding: EdgeInsets.only(
                   top: MediaQuery.of(context).padding.top,
                   // Trailing space the sheet is pulled up over, so the
@@ -161,24 +160,14 @@ class HomeScreen extends ConsumerWidget {
                           Flexible(
                             child: Row(
                               children: [
-                                // The logo mark is dark navy/teal, so on the
-                                // green canopy it all but disappears — sit it
-                                // on a white chip so it reads, same as the
-                                // avatar's white ring on the other side.
-                                Container(
-                                  padding: const EdgeInsets.all(5),
-                                  decoration: BoxDecoration(
-                                    color: Colors.white,
-                                    borderRadius: BorderRadius.circular(
-                                      AppRadius.sm,
-                                    ),
-                                  ),
-                                  child: Image.asset(
-                                    'assets/logo/uniscope_icon.png',
-                                    width: 30,
-                                    height: 30,
-                                    fit: BoxFit.contain,
-                                  ),
+                                // The logo mark is dark navy/teal — reads
+                                // fine directly on the neutral header now
+                                // that it's no longer a green canopy.
+                                Image.asset(
+                                  'assets/logo/uniscope_icon.png',
+                                  width: 30,
+                                  height: 30,
+                                  fit: BoxFit.contain,
                                 ),
                                 const SizedBox(width: AppSpacing.sm),
                                 Flexible(
@@ -207,8 +196,8 @@ class HomeScreen extends ConsumerWidget {
                                   decoration: BoxDecoration(
                                     shape: BoxShape.circle,
                                     border: Border.all(
-                                      color: Colors.white.withValues(
-                                        alpha: 0.85,
+                                      color: AppColors.primary.withValues(
+                                        alpha: 0.35,
                                       ),
                                       width: 2,
                                     ),
@@ -245,7 +234,7 @@ class HomeScreen extends ConsumerWidget {
                                         : [
                                             TextSpan(text: '$_greeting, '),
                                             // The name alone in the logo
-                                            // navy — the rest stays white.
+                                            // navy for a subtle accent.
                                             TextSpan(
                                               text: firstName,
                                               style: const TextStyle(
@@ -257,21 +246,21 @@ class HomeScreen extends ConsumerWidget {
                                   style: const TextStyle(
                                     fontSize: AppFont.lg,
                                     fontWeight: AppFont.extraBold,
-                                    color: Colors.white,
+                                    color: AppColors.textPrimary,
                                   ),
                                 ),
                                 const SizedBox(height: 2),
-                                Text(
+                                const Text(
                                   'What are you looking for today?',
                                   style: TextStyle(
                                     fontSize: AppFont.xs,
-                                    color: Colors.white.withValues(alpha: 0.82),
+                                    color: AppColors.textSecondary,
                                   ),
                                 ),
                               ],
                             ),
                           ),
-                          const NotificationBell(color: Colors.white),
+                          const NotificationBell(color: AppColors.textPrimary),
                         ],
                       ),
                     ),
@@ -289,6 +278,7 @@ class HomeScreen extends ConsumerWidget {
                           decoration: BoxDecoration(
                             color: AppColors.surface,
                             borderRadius: BorderRadius.circular(AppRadius.full),
+                            border: Border.all(color: AppColors.border),
                           ),
                           child: Row(
                             children: [

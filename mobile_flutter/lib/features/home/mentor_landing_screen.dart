@@ -52,7 +52,7 @@ class MentorLandingScreen extends ConsumerWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Container(
-                decoration: const BoxDecoration(gradient: AppGradients.hero),
+                color: AppColors.background,
                 child: SafeArea(
                   bottom: false,
                   child: Column(
