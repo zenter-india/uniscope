@@ -205,9 +205,6 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                           initialValue: profile.gender,
                           readOnly: true,
                           enabled: false,
-                          decoration: const InputDecoration(
-                            helperText: 'Set at sign-up — can\'t be changed',
-                          ),
                         ),
                         const SizedBox(height: AppSpacing.md),
                       ],
