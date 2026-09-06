@@ -129,13 +129,22 @@ export class UsersService {
    * derivation) logs straight into an already fully set-up account instead
    * of a blank one that still needs the onboarding wizard.
    *
-   * Deliberately conservative: only ever CREATES a brand-new account. If a
-   * User already exists for this phoneHash — they already have a real app
-   * account, or an earlier lead submission already provisioned one — this
-   * is a no-op that just returns the existing user, so a web-form
-   * resubmission (or someone re-registering with a phone number that's
-   * already a real, possibly-since-changed account) can never clobber real
-   * account data.
+   * Deliberately conservative: for an existing account, this only ever
+   * applies the one already-legitimate role transition the app itself
+   * allows self-service (ASPIRANT -> MENTOR, see ALLOWED_ROLE_TRANSITIONS)
+   * -- someone who already has an Aspirant account (e.g. from using the
+   * app first) and then registers as a Mentor on the website gets promoted
+   * and their submitted mentor profile applied, exactly as if they'd used
+   * the app's own role-switch. This was a real gap found live: before this,
+   * that case silently did nothing at all -- no role change, no profile
+   * update, and (since verification only ever fires for an existing
+   * role===MENTOR) no VerificationRequest either, even with a resolved
+   * college and uploaded document already attached to the lead. Every
+   * OTHER existing-account case (already MENTOR, still ASPIRANT registering
+   * again as ASPIRANT, or the disallowed MENTOR->ASPIRANT direction) is
+   * still a no-op that just returns the existing user untouched, so a
+   * web-form resubmission can never clobber real account data outside this
+   * one confirmed, deliberate exception.
    */
   async provisionAccountFromLead(params: {
     phoneHash: string;
@@ -148,6 +157,31 @@ export class UsersService {
       where: { phoneHash: params.phoneHash },
     });
     if (existing) {
+      if (
+        params.role === UserRole.MENTOR &&
+        existing.role === UserRole.ASPIRANT &&
+        (ALLOWED_ROLE_TRANSITIONS[existing.role] ?? []).includes(UserRole.MENTOR)
+      ) {
+        const [promoted] = await this.prisma.$transaction([
+          this.prisma.user.update({
+            where: { id: existing.id },
+            data: {
+              role: UserRole.MENTOR,
+              ...(params.displayName?.trim() && { displayName: params.displayName.trim() }),
+            },
+          }),
+          this.prisma.userProfile.update({
+            where: { userId: existing.id },
+            data: {
+              ...params.profile,
+              ...(params.realName?.trim() && {
+                realNameEncrypted: encryptRealName(params.realName.trim()),
+              }),
+            },
+          }),
+        ]);
+        return { user: promoted, isNewUser: false };
+      }
       return { user: existing, isNewUser: false };
     }
 
