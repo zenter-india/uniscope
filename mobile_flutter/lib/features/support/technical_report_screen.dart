@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 
 import '../../core/network/support_api.dart';
 import '../../core/theme/app_theme.dart';
 import '../../widgets/app_widgets.dart';
-import 'support_contact.dart';
 
 /// "Report a technical issue" — the form behind the Help Centre's
 /// "Report a technical issue" button. Posts to `/support/technical-reports`,
@@ -63,19 +61,9 @@ class _TechnicalReportScreenState extends ConsumerState<TechnicalReportScreen> {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: GradientAppBar(title: const Text('Report technical error')),
-      body: Column(
-        children: [
-          Expanded(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(AppSpacing.md),
-              child: _done ? _buildDone() : _buildForm(),
-            ),
-          ),
-          _StillNeedHelpBand(
-            onChat: () => context.push('/support'),
-            onCall: () => callSupport(context),
-          ),
-        ],
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(AppSpacing.md),
+        child: _done ? _buildDone() : _buildForm(),
       ),
     );
   }
@@ -220,79 +208,6 @@ class _TechnicalReportScreenState extends ConsumerState<TechnicalReportScreen> {
           child: const Text('Done'),
         ),
       ],
-    );
-  }
-}
-
-/// The grey "Still can't find what you're looking for?" band, matching the
-/// reference design — a persistent help affordance at the bottom of the
-/// technical-report screen.
-class _StillNeedHelpBand extends StatelessWidget {
-  const _StillNeedHelpBand({required this.onChat, required this.onCall});
-
-  final VoidCallback onChat;
-  final VoidCallback onCall;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      color: AppColors.primaryLight.withValues(alpha: 0.5),
-      padding: EdgeInsets.fromLTRB(
-        AppSpacing.md,
-        AppSpacing.md,
-        AppSpacing.md,
-        AppSpacing.md + MediaQuery.of(context).padding.bottom,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            "Still can't find what you're looking for? Don't worry we're "
-            'here to help',
-            style: TextStyle(
-              fontSize: AppFont.sm,
-              fontWeight: AppFont.bold,
-              color: AppColors.textPrimary,
-            ),
-          ),
-          const SizedBox(height: AppSpacing.sm),
-          Wrap(
-            spacing: AppSpacing.sm,
-            runSpacing: AppSpacing.sm,
-            children: [
-              FilledButton.icon(
-                onPressed: onChat,
-                icon: const Icon(Icons.chat_bubble_rounded, size: 16),
-                label: const Text('Chat with us'),
-                style: FilledButton.styleFrom(
-                  backgroundColor: AppColors.primary,
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(AppRadius.xl),
-                  ),
-                ),
-              ),
-              OutlinedButton.icon(
-                onPressed: onCall,
-                icon: const Icon(
-                  Icons.call_rounded,
-                  size: 16,
-                  color: Colors.green,
-                ),
-                label: const Text('Call us'),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: AppColors.textPrimary,
-                  side: const BorderSide(color: AppColors.border),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(AppRadius.xl),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
     );
   }
 }

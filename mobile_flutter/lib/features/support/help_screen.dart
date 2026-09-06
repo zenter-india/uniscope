@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../core/theme/app_theme.dart';
 import '../../state/auth_controller.dart';
 import '../../widgets/app_widgets.dart';
+import 'support_contact.dart';
 
 /// Help Centre landing screen (route `/help`). Self-serve topics + FAQ
 /// first, then two ways to reach a human — the "Chat with Support" card
@@ -122,6 +123,8 @@ class _HelpScreenState extends ConsumerState<HelpScreen> {
             ),
             const SizedBox(height: AppSpacing.lg),
             const _TechDifficultyBlock(),
+            const SizedBox(height: AppSpacing.lg),
+            const _StillNeedHelpBand(),
             const SizedBox(height: AppSpacing.lg),
             const _HelpFooter(),
           ],
@@ -572,6 +575,91 @@ class _TechDifficultyBlock extends StatelessWidget {
           child: const Text('Report a technical issue'),
         ),
       ],
+    );
+  }
+}
+
+/// The grey "Still can't find what you're looking for?" band — moved here
+/// from the Report-a-technical-issue screen (2026-09-06) so it lives once,
+/// at the bottom of the Help Centre, right after the technical-difficulty
+/// block rather than duplicated on a form the user may never open. Gained a
+/// third "Mail us" option alongside the existing Chat/Call ones.
+class _StillNeedHelpBand extends StatelessWidget {
+  const _StillNeedHelpBand();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.md),
+      decoration: BoxDecoration(
+        color: AppColors.primaryLight.withValues(alpha: 0.5),
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            "Still can't find what you're looking for? Don't worry we're "
+            'here to help',
+            style: TextStyle(
+              fontSize: AppFont.sm,
+              fontWeight: AppFont.bold,
+              color: AppColors.textPrimary,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          Wrap(
+            spacing: AppSpacing.sm,
+            runSpacing: AppSpacing.sm,
+            children: [
+              FilledButton.icon(
+                onPressed: () => context.push('/support'),
+                icon: const Icon(Icons.chat_bubble_rounded, size: 16),
+                label: const Text('Chat with us'),
+                style: FilledButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(AppRadius.xl),
+                  ),
+                ),
+              ),
+              OutlinedButton.icon(
+                onPressed: () => callSupport(context),
+                icon: const Icon(
+                  Icons.call_rounded,
+                  size: 16,
+                  color: Colors.green,
+                ),
+                label: const Text('Call us'),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppColors.textPrimary,
+                  side: const BorderSide(color: AppColors.border),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(AppRadius.xl),
+                  ),
+                ),
+              ),
+              OutlinedButton.icon(
+                onPressed: () => mailSupport(context),
+                icon: const Icon(
+                  Icons.email_rounded,
+                  size: 16,
+                  color: AppColors.primary,
+                ),
+                label: const Text('Mail us'),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppColors.textPrimary,
+                  side: const BorderSide(color: AppColors.border),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(AppRadius.xl),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 }
