@@ -63,7 +63,7 @@ export default function PrivacyPage() {
             <p className="font-bold text-ink">UNISCOPE</p>
             <p>Owned and operated by: AMSEL GOLD (Sole Proprietorship)</p>
             <p>Proprietor: PON BUVANESHWARAN</p>
-            <p>Registered office: No. 8, Selva Nagar, Mettuppatti, Pudukkottai, Tamil Nadu, India – 622303</p>
+            <p>Registered office: No. 8, Selva Nagar, Eetti Theru, Mettuppatti, Pudukkottai, Tamil Nadu, India – 622303</p>
             <p>
               Email:{" "}
               <a href={`mailto:${CONTACT_EMAIL}`} className="text-blue-600 font-bold hover:underline">
@@ -868,7 +868,7 @@ export default function PrivacyPage() {
               </a>
             </p>
             <p>Address: No. 8, Selva Nagar, Eetti Theru, Mettuppatti, Pudukkottai, Tamil Nadu, India – 622303</p>
-            <p>Legal Entity: UNISCOPE, a platform owned and operated by AMSEL GOLD</p>
+            <p>Legal Entity: AMSEL GOLD, operating under the trade name &ldquo;UNISCOPE&rdquo;</p>
             <p>
               Website:{" "}
               <a href="https://www.uniscope.in/" className="text-blue-600 font-bold hover:underline">
