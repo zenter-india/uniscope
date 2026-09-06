@@ -22,6 +22,8 @@ class _Slide {
     this.image,
     this.useLogo = false,
     this.features,
+    this.quote,
+    this.quoteAuthor,
   });
 
   /// Small pill label above the headline (slide 2's "Mentorship Program").
@@ -37,6 +39,10 @@ class _Slide {
   final bool useLogo;
   /// Slide 4's feature list — rendered instead of a photo when present.
   final List<_Feature>? features;
+
+  /// Slide 4's closing pull-quote, shown under the feature list.
+  final String? quote;
+  final String? quoteAuthor;
 }
 
 /// Onboarding carousel shown before login/signup — content and structure
@@ -85,15 +91,21 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
           icon: Icons.groups_rounded,
           title: 'Mentor Guidance',
           description:
-              'Connect with alumni and admissions experts who have walked the path before you.',
+              'Know your college completely before you step in. Make your '
+              'biggest decision with confidence 💪',
         ),
         _Feature(
           icon: Icons.forum_rounded,
           title: 'The Right Mentors',
           description:
-              'Find mentors who share your interests and can give you real insights into campus life and culture.',
+              'Connect with currently studying or graduated students who can '
+              'give you real insights about campus life and culture.',
         ),
       ],
+      quote:
+          'The best people to help you choose a college are the people who '
+          'are already studying there.',
+      quoteAuthor: 'someone wise',
     ),
   ];
 
@@ -370,6 +382,30 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                                   ),
                                 ),
                               )),
+                        ],
+                        if (slide.quote != null) ...[
+                          const SizedBox(height: AppSpacing.md),
+                          Text(
+                            '“${slide.quote!}”',
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(
+                              fontSize: AppFont.sm,
+                              fontStyle: FontStyle.italic,
+                              color: AppColors.textSecondary,
+                              height: 1.5,
+                            ),
+                          ),
+                          if (slide.quoteAuthor != null) ...[
+                            const SizedBox(height: 4),
+                            Text(
+                              '— ${slide.quoteAuthor!}',
+                              textAlign: TextAlign.center,
+                              style: const TextStyle(
+                                fontSize: AppFont.xs,
+                                color: AppColors.textMuted,
+                              ),
+                            ),
+                          ],
                         ],
                       ],
                     ),

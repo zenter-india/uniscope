@@ -187,6 +187,25 @@ class _IdentityCard extends StatelessWidget {
     return parts.isEmpty ? null : parts.join(' · ');
   }
 
+  /// The mentor's academic identity — field of study, degree, and
+  /// specialisation — shown right under the college line. These used to be
+  /// mixed into the "Can help with" chips alongside languages; they belong
+  /// with the name/affiliation, not the "topics" list.
+  List<(IconData, String)> get _academicTags {
+    final field = mentor.stream?.trim().isNotEmpty == true
+        ? mentor.stream!.trim()
+        : (mentor.specialty?.trim().isNotEmpty == true
+              ? mentor.specialty!.trim()
+              : null);
+    return [
+      if (field != null) (Icons.school_rounded, field),
+      if (mentor.qualification?.trim().isNotEmpty == true)
+        (Icons.school_rounded, mentor.qualification!.trim()),
+      if (mentor.specialization?.trim().isNotEmpty == true)
+        (Icons.workspace_premium_rounded, mentor.specialization!.trim()),
+    ];
+  }
+
   @override
   Widget build(BuildContext context) {
     return AppCard(
@@ -272,6 +291,17 @@ class _IdentityCard extends StatelessWidget {
                           fontSize: AppFont.sm,
                           color: AppColors.textSecondary,
                         ),
+                      ),
+                    ],
+                    if (_academicTags.isNotEmpty) ...[
+                      const SizedBox(height: 8),
+                      Wrap(
+                        spacing: 6,
+                        runSpacing: 6,
+                        children: [
+                          for (final (icon, label) in _academicTags)
+                            _ExpertiseChip(icon: icon, label: label),
+                        ],
                       ),
                     ],
                     if (mentor.rating != null) ...[
@@ -381,32 +411,13 @@ class _AboutCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final hasBio = mentor.bio != null && mentor.bio!.trim().isNotEmpty;
-    final hasSpecialty =
-        mentor.specialty != null && mentor.specialty!.trim().isNotEmpty;
-    // `stream` (college field of study) is the field new mentors set —
-    // `specialty` only remains for mentors who onboarded before the
-    // Areas-of-Guidance step was removed.
-    final hasStream =
-        !hasSpecialty &&
-        mentor.stream != null &&
-        mentor.stream!.trim().isNotEmpty;
-    // Collected at onboarding ("Degree" / Medical-only specialization
-    // steps) and already flowing through the API — just never surfaced to
-    // a student before. Same chip treatment as stream/languages below.
-    final hasQualification =
-        mentor.qualification != null && mentor.qualification!.trim().isNotEmpty;
-    final hasSpecialization =
-        mentor.specialization != null &&
-        mentor.specialization!.trim().isNotEmpty;
-    final hasExpertise =
-        hasSpecialty ||
-        hasStream ||
-        hasQualification ||
-        hasSpecialization ||
-        mentor.languages.isNotEmpty;
+    // Field of study / degree / specialisation moved up to _IdentityCard
+    // (right under the college line) — this section is now just the
+    // languages the mentor speaks.
+    final hasLanguages = mentor.languages.isNotEmpty;
     final hasDays = mentor.availableDays.isNotEmpty;
 
-    if (!hasBio && !hasExpertise && !hasDays) return const SizedBox.shrink();
+    if (!hasBio && !hasLanguages && !hasDays) return const SizedBox.shrink();
 
     return AppCard(
       child: Column(
@@ -454,10 +465,10 @@ class _AboutCard extends StatelessWidget {
               ),
             ),
           ],
-          if (hasExpertise) ...[
+          if (hasLanguages) ...[
             if (hasBio || hasDays) const SizedBox(height: AppSpacing.md),
             const Text(
-              'Can help with',
+              'Speaks',
               style: TextStyle(
                 fontSize: AppFont.md,
                 fontWeight: AppFont.bold,
@@ -469,26 +480,6 @@ class _AboutCard extends StatelessWidget {
               spacing: 8,
               runSpacing: 8,
               children: [
-                if (hasSpecialty)
-                  _ExpertiseChip(
-                    icon: Icons.school_rounded,
-                    label: mentor.specialty!,
-                  ),
-                if (hasStream)
-                  _ExpertiseChip(
-                    icon: Icons.school_rounded,
-                    label: mentor.stream!,
-                  ),
-                if (hasQualification)
-                  _ExpertiseChip(
-                    icon: Icons.school_rounded,
-                    label: mentor.qualification!,
-                  ),
-                if (hasSpecialization)
-                  _ExpertiseChip(
-                    icon: Icons.workspace_premium_rounded,
-                    label: mentor.specialization!,
-                  ),
                 for (final language in mentor.languages)
                   _ExpertiseChip(
                     icon: Icons.translate_rounded,
