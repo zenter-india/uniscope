@@ -131,29 +131,67 @@ export class EnrollmentsService {
       profile,
     });
 
-    if (
-      isNewUser &&
-      role === EnrollmentLeadRole.MENTOR &&
+    // Turn a web-form doc + resolved college into a real VerificationRequest
+    // so it lands in the admin queue — instead of silently dropping it. This
+    // fires for a brand-new mentor account AND for an EXISTING mentor account
+    // (same phone) that still isn't verified and has nothing pending: before,
+    // a re-submission on an existing number threw the doc/college away
+    // entirely. Skipped when the college was only free-typed (no University
+    // row — VerificationRequest.universityId is required) or no doc was
+    // attached.
+    const verifDoc =
+      user.role === UserRole.MENTOR &&
       mentorVerification?.universityId &&
       mentorVerification.documentType &&
       mentorVerification.documentKey
-    ) {
-      await this.prisma.$transaction([
-        this.prisma.verificationRequest.create({
-          data: {
-            userId: user.id,
+        ? {
             universityId: mentorVerification.universityId,
             documentType: mentorVerification.documentType,
             documentKey: mentorVerification.documentKey,
-            status: VerificationStatus.SUBMITTED,
-            submittedAt: new Date(),
-          },
-        }),
-        this.prisma.user.update({
-          where: { id: user.id },
-          data: { verificationStatus: VerificationStatus.SUBMITTED },
-        }),
-      ]);
+          }
+        : null;
+
+    if (verifDoc) {
+      // For an existing account: only (re)submit from a state that can be —
+      // not already VERIFIED/SUSPENDED, and not with a request already in
+      // the review queue (SUBMITTED/UNDER_REVIEW).
+      const pendingCount = isNewUser
+        ? 0
+        : await this.prisma.verificationRequest.count({
+            where: {
+              userId: user.id,
+              status: {
+                in: [
+                  VerificationStatus.SUBMITTED,
+                  VerificationStatus.UNDER_REVIEW,
+                ],
+              },
+            },
+          });
+      const canSubmit =
+        isNewUser ||
+        (pendingCount === 0 &&
+          user.verificationStatus !== VerificationStatus.VERIFIED &&
+          user.verificationStatus !== VerificationStatus.SUSPENDED);
+
+      if (canSubmit) {
+        await this.prisma.$transaction([
+          this.prisma.verificationRequest.create({
+            data: {
+              userId: user.id,
+              universityId: verifDoc.universityId,
+              documentType: verifDoc.documentType,
+              documentKey: verifDoc.documentKey,
+              status: VerificationStatus.SUBMITTED,
+              submittedAt: new Date(),
+            },
+          }),
+          this.prisma.user.update({
+            where: { id: user.id },
+            data: { verificationStatus: VerificationStatus.SUBMITTED },
+          }),
+        ]);
+      }
     }
 
     await this.prisma.enrollmentLead.update({
