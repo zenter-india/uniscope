@@ -376,7 +376,6 @@ class HomeScreen extends ConsumerWidget {
                             label: 'Find Mentors',
                             sub: 'Expert Guidance',
                             icon: Icons.school_rounded,
-                            accentColor: AppColors.textPrimary,
                             onTap: () => context.go('/mentors'),
                           ),
                         ),
@@ -390,7 +389,6 @@ class HomeScreen extends ConsumerWidget {
                             label: 'Saved Mentors',
                             sub: 'Your shortlist',
                             icon: Icons.favorite_border_rounded,
-                            accentColor: AppColors.error,
                             onTap: () => context.push('/mentors/saved'),
                           ),
                         ),
@@ -400,7 +398,6 @@ class HomeScreen extends ConsumerWidget {
                             label: 'Saved Colleges',
                             sub: 'Favorites',
                             icon: Icons.bookmark_outline_rounded,
-                            accentColor: AppColors.textPrimary,
                             onTap: () => context.push('/colleges/saved'),
                           ),
                         ),
@@ -547,7 +544,6 @@ class _QuickCard extends StatelessWidget {
     required this.icon,
     required this.onTap,
     this.sub,
-    this.accentColor = authBrandTeal,
   });
 
   final String label;
@@ -555,9 +551,9 @@ class _QuickCard extends StatelessWidget {
   final IconData icon;
   final VoidCallback onTap;
 
-  /// Each card gets its own accent instead of a uniform teal tint — matches
-  /// the reference's mix of colors per icon rather than one repeated hue.
-  final Color accentColor;
+  // Every quick-action icon uses the logo navy — one uniform accent, not
+  // a per-card mix.
+  static const _accent = AppColors.logoNavy;
 
   @override
   Widget build(BuildContext context) {
@@ -569,10 +565,10 @@ class _QuickCard extends StatelessWidget {
             width: 36,
             height: 36,
             decoration: BoxDecoration(
-              color: accentColor.withValues(alpha: 0.12),
+              color: _accent.withValues(alpha: 0.12),
               shape: BoxShape.circle,
             ),
-            child: Icon(icon, size: 18, color: accentColor),
+            child: Icon(icon, size: 18, color: _accent),
           ),
           const SizedBox(width: AppSpacing.sm),
           Expanded(
