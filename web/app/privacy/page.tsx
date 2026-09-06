@@ -7,7 +7,6 @@ export const metadata: Metadata = {
   description: "How Uniscope collects, stores, and uses the information you share when you enrol as a student or mentor.",
 };
 
-const LAST_UPDATED = "12 August 2026";
 const CONTACT_EMAIL = "support@uniscope.in";
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
@@ -29,7 +28,6 @@ export default function PrivacyPage() {
           <h1 className="mt-2 text-[clamp(26px,4vw,36px)] font-extrabold text-ink text-wrap-balance">
             Privacy Policy
           </h1>
-          <p className="mt-2 text-[13.5px] font-semibold text-slate-400">Last updated: {LAST_UPDATED}</p>
 
           <p className="mt-6 text-[14.5px] leading-relaxed text-slate-600">
             This page explains what happens to the information you share when you fill out the &ldquo;I&apos;m a
