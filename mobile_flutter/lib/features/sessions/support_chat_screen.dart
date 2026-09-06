@@ -56,9 +56,10 @@ class _SupportChatScreenState extends ConsumerState<SupportChatScreen> {
     }
 
     if (_connection == null) {
-      return const Scaffold(
+      return Scaffold(
         backgroundColor: AppColors.background,
-        body: Center(
+        appBar: AppBar(title: const Text('UniScope Support')),
+        body: const Center(
           child: CircularProgressIndicator(color: AppColors.primary),
         ),
       );

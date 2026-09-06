@@ -7,8 +7,8 @@ import '../../state/auth_controller.dart';
 import '../../widgets/app_widgets.dart';
 
 /// Help & Support landing screen (route `/help`). Self-serve topics + FAQ
-/// first, one clear way to reach a human ("Start a conversation" → the
-/// existing persistent `/chats/support` thread). All topic/FAQ content is
+/// first, one clear way to reach a human ("Chat with us" → the
+/// existing persistent `/support` thread). All topic/FAQ content is
 /// static and shipped in the app (see [_kArticles] / [_kTopics]) so it
 /// works offline and needs no CMS. Role-aware: mentor-only articles and
 /// the "Verification & payouts" topic render only for MENTOR accounts.
@@ -95,9 +95,9 @@ class _HelpScreenState extends ConsumerState<HelpScreen> {
             else
               _ArticleCard(articles: matches),
             const SizedBox(height: AppSpacing.md),
-            _ContactCard(onStart: () => context.push('/chats/support')),
+            _ContactCard(onStart: () => context.push('/support')),
           ] else ...[
-            _ContactCard(onStart: () => context.push('/chats/support')),
+            _ContactCard(onStart: () => context.push('/support')),
             const _SectionLabel('Browse topics'),
             _TopicsCard(
               topics: topics,
@@ -268,7 +268,7 @@ class _ContactCard extends StatelessWidget {
           FilledButton.icon(
             onPressed: onStart,
             icon: const Icon(Icons.chat_bubble_rounded, size: 18),
-            label: const Text('Start a conversation'),
+            label: const Text('Chat with us'),
             style: FilledButton.styleFrom(
               backgroundColor: AppColors.primary,
               foregroundColor: Colors.white,

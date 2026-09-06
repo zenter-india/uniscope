@@ -313,8 +313,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/', builder: (_, __) => const UniscopeSplashScreen()),
 
       // Help & Support landing — reached from every "Need Help?" entry
-      // point; "Start a conversation" from here opens /chats/support.
+      // point. Both are top-level (not shell-nested) so they can be pushed
+      // from anywhere; "Chat with us" from /help opens /support.
       GoRoute(path: '/help', builder: (_, __) => const HelpScreen()),
+      GoRoute(path: '/support', builder: (_, __) => const SupportChatScreen()),
 
       // ─── Auth flow ──────────────────────────────────────────────
       GoRoute(path: '/welcome', builder: (_, __) => const WelcomeScreen()),
