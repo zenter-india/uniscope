@@ -487,7 +487,7 @@ class _OverviewTab extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final rows = <(String, String)>[
-      ('Type', _typeLabel(university.type)),
+      if (university.type != null) ('Type', _typeLabel(university.type!)),
       // Field name is still mbbsSeats in the schema (pre-dates the
       // multi-stream pivot), but the label shown here is stream-neutral —
       // this same count backs seat totals for any institution type now.

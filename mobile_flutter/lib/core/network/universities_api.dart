@@ -20,7 +20,7 @@ class University {
     required this.id,
     required this.name,
     required this.slug,
-    required this.type,
+    this.type,
     required this.state,
     this.city,
     this.stream,
@@ -39,7 +39,7 @@ class University {
   final String id;
   final String name;
   final String slug;
-  final String type;
+  final String? type;
   final String state;
   /// Nullable: the NMC seat matrix the medical colleges were seeded from
   /// has no city column, so bulk-loaded rows may have only a state.
@@ -65,7 +65,7 @@ class University {
         id: json['id'] as String,
         name: json['name'] as String,
         slug: json['slug'] as String,
-        type: json['type'] as String,
+        type: json['type'] as String?,
         state: json['state'] as String,
         city: json['city'] as String?,
         stream: json['stream'] as String?,

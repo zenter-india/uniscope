@@ -5,7 +5,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { Prisma, University, UniversityType } from '@prisma/client';
+import { Prisma, University } from '@prisma/client';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { PrismaService } from '../../database/prisma/prisma.service.js';
 import { SUPABASE_BUCKETS, SUPABASE_CLIENT } from '../../supabase/index.js';
@@ -89,7 +89,6 @@ export class UniversitiesService {
     const where: Prisma.UniversityWhereInput = {
       isActive: true,
       ...(query.state && { state: query.state }),
-      ...(query.type && { type: query.type }),
       ...(query.stream && { stream: query.stream }),
       ...(query.level && { levels: { has: query.level } }),
       ...(query.search && {
@@ -254,7 +253,6 @@ export class UniversitiesService {
 
     const where: Prisma.UniversityWhereInput = {
       ...(query.state && { state: query.state }),
-      ...(query.type && { type: query.type }),
       ...(query.stream && { stream: query.stream }),
       ...(query.search && {
         OR: [
@@ -333,7 +331,6 @@ export class UniversitiesService {
       data: {
         name,
         slug,
-        type: UniversityType.PRIVATE,
         state,
         city: dto.city.trim(),
         stream: dto.stream,
