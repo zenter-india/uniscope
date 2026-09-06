@@ -7,8 +7,6 @@ export const metadata: Metadata = {
   description: "How Uniscope collects, uses, stores, processes, shares, and protects your personal information.",
 };
 
-const EFFECTIVE_DATE = "01/08/2026";
-const LAST_UPDATED = "08/08/2026";
 const CONTACT_EMAIL = "support@uniscope.in";
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
@@ -39,9 +37,6 @@ export default function PrivacyPage() {
           <h1 className="mt-2 text-[clamp(26px,4vw,36px)] font-extrabold text-ink text-wrap-balance">
             Privacy Policy
           </h1>
-          <p className="mt-2 text-[13.5px] font-semibold text-slate-400">
-            Effective date: {EFFECTIVE_DATE} · Last updated: {LAST_UPDATED}
-          </p>
 
           <p className="mt-6 text-[14.5px] leading-relaxed text-slate-600">
             This Privacy Policy (&ldquo;Policy&rdquo;) explains how Uniscope, operating the platform Uniscope

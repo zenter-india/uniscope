@@ -7,8 +7,6 @@ export const metadata: Metadata = {
   description: "The standards expected from all Aspirants, Mentors, and other Users of the Uniscope platform.",
 };
 
-const EFFECTIVE_DATE = "01/08/2026";
-const LAST_UPDATED = "08/08/2026";
 const CONTACT_EMAIL = "support@uniscope.in";
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
@@ -30,9 +28,6 @@ export default function CommunityGuidelinesPage() {
           <h1 className="mt-2 text-[clamp(26px,4vw,36px)] font-extrabold text-ink text-wrap-balance">
             Community Guidelines
           </h1>
-          <p className="mt-2 text-[13.5px] font-semibold text-slate-400">
-            Effective date: {EFFECTIVE_DATE} · Last updated: {LAST_UPDATED}
-          </p>
 
           <Section title="Acceptance & Legal Framework">
             <p>{`Welcome to Uniscope. By accessing, registering on, or using Uniscope ("Platform", "Website", "Company", "we", "our", or "us"), you ("User", "Member", or "you") agree to be bound by these Terms and Conditions. This Platform operates as an "intermediary" as defined under Section 2(1)(w) of the Information Technology Act, 2000 and complies with the Digital Personal Data Protection Act, 2023.`}</p>
