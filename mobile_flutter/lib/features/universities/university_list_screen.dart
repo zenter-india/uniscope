@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/network/college_wishlist_api.dart';
@@ -10,6 +9,7 @@ import '../../core/theme/app_theme.dart';
 import '../../widgets/app_widgets.dart';
 import '../profile/profile_options.dart';
 import 'review_summary_card.dart';
+import 'stream_visuals.dart';
 
 // 'All' plus the same academic-field picklist mentors/aspirants use, so
 // Discover can narrow a mixed-stream list down to e.g. "just Engineering".
@@ -39,91 +39,16 @@ const _stateFilters = ['All', ...kIndianStates];
 /// combination has no curated dataset — the caller falls back to
 /// [kMedicalSpecializations] for Medical, or hides the pill).
 List<String> _specializationOptionsFor(List<CuratedCollege> curated) {
-  final values = <String>{for (final c in curated) ...c.specializations}.toList()
-    ..sort();
+  final values = <String>{
+    for (final c in curated) ...c.specializations,
+  }.toList()..sort();
   return ['All', ...values];
 }
 
-/// A stream's icon + colour + light tint — the "duotone thumbnail" look on
-/// a college card, and the tint a filter pill takes on once that stream is
-/// picked. One hue per stream, tuned to sit together rather than clash.
-class _StreamVisual {
-  const _StreamVisual(this.icon, this.color, this.tint, {this.assetPath});
-
-  /// Fallback glyph, used unless [assetPath] is set.
-  final IconData icon;
-  final Color color;
-  final Color tint;
-
-  /// An SVG in assets/icons/ for streams that have no fitting Material icon
-  /// (e.g. a tooth for Dental, a stethoscope for Medical). Tinted to [color].
-  final String? assetPath;
-}
-
-/// The 20px stream glyph — an asset SVG when the stream has one, else the
-/// Material [IconData] fallback. Both tinted to [v.color].
-Widget _streamGlyph(_StreamVisual v) => v.assetPath != null
-    ? SvgPicture.asset(
-        v.assetPath!,
-        width: 20,
-        height: 20,
-        colorFilter: ColorFilter.mode(v.color, BlendMode.srcIn),
-      )
-    : Icon(v.icon, size: 20, color: v.color);
-
-const _defaultStreamVisual = _StreamVisual(
-  Icons.account_balance_rounded,
-  AppColors.primary,
-  AppColors.primaryLight,
-);
-
-const _streamVisuals = <String, _StreamVisual>{
-  'Medical': _StreamVisual(
-    Icons.medical_services_rounded,
-    Color(0xFF0B8F6A),
-    Color(0xFFE3F4EE),
-    assetPath: 'assets/icons/stethoscope.svg',
-  ),
-  'Dental': _StreamVisual(
-    Icons.health_and_safety_rounded,
-    Color(0xFF7A63D4),
-    Color(0xFFECE8FA),
-    assetPath: 'assets/icons/tooth.svg',
-  ),
-  'Engineering': _StreamVisual(
-    Icons.engineering_rounded,
-    Color(0xFFE08A2B),
-    Color(0xFFFBEEDB),
-  ),
-  'Commerce & Business': _StreamVisual(
-    Icons.business_center_rounded,
-    Color(0xFF3C79D4),
-    Color(0xFFE5EEFB),
-  ),
-  'Law': _StreamVisual(
-    Icons.gavel_rounded,
-    Color(0xFFD8566F),
-    Color(0xFFFBE6EB),
-  ),
-  'Arts & Humanities': _StreamVisual(
-    Icons.palette_rounded,
-    Color(0xFF12A5A0),
-    Color(0xFFDFF3F2),
-  ),
-  'Design': _StreamVisual(
-    Icons.brush_rounded,
-    Color(0xFF5B5FC7),
-    Color(0xFFE7E8FB),
-  ),
-  'Others': _StreamVisual(
-    Icons.account_balance_rounded,
-    Color(0xFF59636E),
-    Color(0xFFEEF1F0),
-  ),
-};
-
-_StreamVisual _visualFor(String? stream) =>
-    _streamVisuals[stream] ?? _defaultStreamVisual;
+// Per-stream icon/colour/tint ("duotone thumbnail") moved to
+// stream_visuals.dart so the Home "Top colleges for you" rail can render
+// the exact same glyphs. `streamVisualFor` / `streamGlyph` / `StreamVisual`
+// are imported above.
 
 /// Whether the college list is currently narrowed to the aspirant's own
 /// state. Lives outside the screen so Home's `Colleges in <state>` card can
@@ -354,7 +279,8 @@ class _UniversityListScreenState extends ConsumerState<UniversityListScreen> {
               degree: curatedKey,
             )),
           );
-    final curatedColleges = curatedAsync?.asData?.value ?? const <CuratedCollege>[];
+    final curatedColleges =
+        curatedAsync?.asData?.value ?? const <CuratedCollege>[];
     // college id → its curated specializations, for the specialization filter.
     final curatedById = {for (final c in curatedColleges) c.id: c};
 
@@ -372,13 +298,14 @@ class _UniversityListScreenState extends ConsumerState<UniversityListScreen> {
     } else {
       specializationOptions = const ['All'];
     }
-    final specializationFilter = specializationOptions.contains(
-          _specializationFilter,
-        )
+    final specializationFilter =
+        specializationOptions.contains(_specializationFilter)
         ? _specializationFilter
         : 'All';
     final showSpecializationPill =
-        streamPicked && degreeFilter != 'All' && specializationOptions.length > 1;
+        streamPicked &&
+        degreeFilter != 'All' &&
+        specializationOptions.length > 1;
     final curatedLoading = curatedAsync?.isLoading ?? false;
 
     return Scaffold(
@@ -451,8 +378,8 @@ class _UniversityListScreenState extends ConsumerState<UniversityListScreen> {
                           ? 'Stream'
                           : effectiveStream,
                       active: effectiveStream != 'All',
-                      activeColor: _visualFor(effectiveStream).color,
-                      activeTint: _visualFor(effectiveStream).tint,
+                      activeColor: streamVisualFor(effectiveStream).color,
+                      activeTint: streamVisualFor(effectiveStream).tint,
                       trailing: Icons.keyboard_arrow_down_rounded,
                       onTap: () => _pickOption(
                         title: 'Stream',
@@ -713,7 +640,7 @@ class UniversityCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final visual = _visualFor(university.stream);
+    final visual = streamVisualFor(university.stream);
 
     return AppCard(
       onTap: onTap,
@@ -724,7 +651,7 @@ class UniversityCard extends ConsumerWidget {
           Row(
             children: [
               // Stream-tinted "thumbnail" — a colour + icon per stream
-              // (see _StreamVisual) instead of one generic grey building
+              // (see StreamVisual) instead of one generic grey building
               // icon, so a scanned list reads by field at a glance.
               Container(
                 width: 44,
@@ -734,7 +661,7 @@ class UniversityCard extends ConsumerWidget {
                   borderRadius: BorderRadius.circular(AppRadius.sm),
                 ),
                 alignment: Alignment.center,
-                child: _streamGlyph(visual),
+                child: streamGlyph(visual),
               ),
               const SizedBox(width: AppSpacing.md),
               Expanded(
@@ -880,7 +807,7 @@ class _FilterPill extends StatelessWidget {
 
   /// Colour the pill takes on once it's active — defaults to brand green,
   /// overridden by the Stream pill with that stream's own colour (see
-  /// [_visualFor]) so picking "Engineering" tints the pill amber, etc.
+  /// [streamVisualFor]) so picking "Engineering" tints the pill amber, etc.
   final Color activeColor;
   final Color activeTint;
 
@@ -899,9 +826,7 @@ class _FilterPill extends StatelessWidget {
           ),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(AppRadius.full),
-            border: Border.all(
-              color: active ? activeTint : AppColors.border,
-            ),
+            border: Border.all(color: active ? activeTint : AppColors.border),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,

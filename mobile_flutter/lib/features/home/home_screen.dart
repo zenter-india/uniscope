@@ -13,6 +13,7 @@ import '../auth/auth_background.dart' show authBrandTeal;
 import '../mentors/mentor_list_screen.dart';
 import '../profile/profile_options.dart' show kStreamOptions;
 import '../sessions/session_list_screen.dart' show sessionsListProvider;
+import '../universities/stream_visuals.dart';
 import '../universities/university_list_screen.dart'
     show collegeStateFilterProvider;
 
@@ -992,6 +993,11 @@ class _CollegeSpotlightCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Same per-stream "duotone thumbnail" the Discover/Colleges tab uses —
+    // a stethoscope for Medical, a tooth for Dental, etc. (see
+    // stream_visuals.dart) — instead of one generic building icon.
+    final visual = streamVisualFor(university.stream);
+
     // Fills the rail's fixed height so every card is the same size — the
     // name always reserves two lines so shorter names don't shrink the
     // card. No rating row here; the full rating is on the detail screen.
@@ -1018,13 +1024,9 @@ class _CollegeSpotlightCard extends StatelessWidget {
               Container(
                 height: 60,
                 width: double.infinity,
-                color: AppColors.primaryLight,
+                color: visual.tint,
                 alignment: Alignment.center,
-                child: const Icon(
-                  Icons.account_balance_rounded,
-                  size: 28,
-                  color: authBrandTeal,
-                ),
+                child: streamGlyph(visual, size: 28),
               ),
               Padding(
                 padding: const EdgeInsets.fromLTRB(10, 8, 10, 8),
