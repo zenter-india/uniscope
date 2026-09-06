@@ -80,6 +80,9 @@ class _CallScreenState extends ConsumerState<CallScreen> {
     _callStateSub?.cancel();
     _call?.leave();
     _client?.dispose();
+    if (sv.StreamVideo.isInitialized()) {
+      sv.StreamVideo.reset(disconnect: true);
+    }
     super.dispose();
   }
 
@@ -107,6 +110,21 @@ class _CallScreenState extends ConsumerState<CallScreen> {
       );
       if (session.type != 'AUDIO_CALL') {
         throw Exception('Not an audio call session');
+      }
+      const terminalStatuses = {
+        SessionStatus.completed,
+        SessionStatus.failed,
+        SessionStatus.cancelled,
+        SessionStatus.expired,
+        SessionStatus.rejected,
+      };
+      if (terminalStatuses.contains(session.status)) {
+        if (!mounted) return;
+        setState(() {
+          _phase = _Phase.error;
+          _errorMessage = 'This call has already ended.';
+        });
+        return;
       }
       setState(() {
         _session = session;
@@ -160,6 +178,13 @@ class _CallScreenState extends ConsumerState<CallScreen> {
 
   Future<void> _joinStreamCall(CallCredentials creds) async {
     debugPrint('[call] Stream Video client connecting call=${creds.channelName}');
+    // StreamVideo(...) is a process-wide singleton — a previous call
+    // attempt (or re-entering this screen) leaves it initialised, and
+    // constructing it again throws "StreamVideo has already been
+    // initialised". Tear any existing instance down first.
+    if (sv.StreamVideo.isInitialized()) {
+      await sv.StreamVideo.reset(disconnect: true);
+    }
     final client = sv.StreamVideo(
       creds.apiKey,
       user: sv.User.regular(userId: creds.uid),
