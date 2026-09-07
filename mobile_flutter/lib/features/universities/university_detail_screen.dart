@@ -497,6 +497,24 @@ class _OverviewTab extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Rating summary lives here now, not on the Reviews tab — it's a
+          // snapshot of the college, and the Reviews tab is for reading (and
+          // writing) the actual reviews underneath it.
+          if (university.reviewCount > 0) ...[
+            ReviewSummaryCard(
+              universityId: university.id,
+              fallbackRating: university.rating,
+              fallbackReviewCount: university.reviewCount,
+              onTap: () => context.push(
+                '/colleges/detail/reviews',
+                extra: {
+                  'universityId': university.id,
+                  'universityName': university.name,
+                },
+              ),
+            ),
+            const SizedBox(height: AppSpacing.md),
+          ],
           if (university.description != null) ...[
             AppCard(
               child: Text(
@@ -607,24 +625,6 @@ class _ReviewsTab extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Nothing to summarize with zero reviews — the list below already
-          // shows its own "no reviews" state, so skip this to avoid saying
-          // "no reviews yet" twice on the same screen.
-          if (university.reviewCount > 0) ...[
-            ReviewSummaryCard(
-              universityId: university.id,
-              fallbackRating: university.rating,
-              fallbackReviewCount: university.reviewCount,
-              onTap: () => context.push(
-                '/colleges/detail/reviews',
-                extra: {
-                  'universityId': university.id,
-                  'universityName': university.name,
-                },
-              ),
-            ),
-            const SizedBox(height: AppSpacing.md),
-          ],
           if (canReview)
             SizedBox(
               width: double.infinity,

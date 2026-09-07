@@ -338,66 +338,6 @@ class _IdentityCard extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: AppSpacing.md),
-          const Divider(height: 1, color: AppColors.border),
-          const SizedBox(height: AppSpacing.md),
-          // Rating is the only track-record stat surfaced here now — a
-          // per-minute "minutes mentored" / "students helped" count read as
-          // noise more than signal. The full review list is below.
-          Row(
-            children: [
-              _TrackStat(
-                icon: Icons.star_rounded,
-                value: mentor.rating != null
-                    ? mentor.rating!.toStringAsFixed(1)
-                    : '—',
-                label: mentor.reviewCount == 1
-                    ? '1 review'
-                    : '${mentor.reviewCount} reviews',
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _TrackStat extends StatelessWidget {
-  const _TrackStat({
-    required this.icon,
-    required this.value,
-    required this.label,
-  });
-
-  final IconData icon;
-  final String value;
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    return Expanded(
-      child: Column(
-        children: [
-          Icon(icon, size: 18, color: AppColors.primary),
-          const SizedBox(height: 5),
-          Text(
-            value,
-            style: const TextStyle(
-              fontSize: AppFont.md,
-              fontWeight: AppFont.extraBold,
-              color: AppColors.textPrimary,
-            ),
-          ),
-          const SizedBox(height: 2),
-          Text(
-            label,
-            textAlign: TextAlign.center,
-            style: const TextStyle(
-              fontSize: AppFont.xs,
-              color: AppColors.textSecondary,
-            ),
-          ),
         ],
       ),
     );

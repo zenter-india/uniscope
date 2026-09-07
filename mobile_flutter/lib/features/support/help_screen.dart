@@ -762,7 +762,7 @@ const _kArticles = <_HelpArticle>[
     popular: true,
     answer:
         'Open the Wallet tab and tap Recharge. The minimum recharge is ₹250, '
-        'which credits 20 Uniminutes. Payment is handled securely by '
+        'which credits 10 Uniminutes. Payment is handled securely by '
         'Razorpay. Your Uniminutes appear as soon as the payment succeeds.',
   ),
   _HelpArticle(

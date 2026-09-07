@@ -69,21 +69,19 @@ class MentorLandingScreen extends ConsumerWidget {
                           children: [
                             Image.asset(
                               'assets/logo/uniscope_icon.png',
-                              width: 22,
-                              height: 22,
+                              width: 30,
+                              height: 30,
                               fit: BoxFit.contain,
                             ),
-                            const SizedBox(width: AppSpacing.xs),
+                            const SizedBox(width: AppSpacing.sm),
                             Expanded(
                               child: Text(
                                 'Uniscope',
                                 overflow: TextOverflow.ellipsis,
-                                style: TextStyle(
-                                  fontSize: AppFont.sm,
-                                  fontWeight: AppFont.bold,
-                                  color: AppColors.textPrimary.withValues(
-                                    alpha: 0.75,
-                                  ),
+                                style: const TextStyle(
+                                  fontSize: AppFont.xxl,
+                                  fontWeight: AppFont.extraBold,
+                                  color: AppColors.logoNavy,
                                 ),
                               ),
                             ),

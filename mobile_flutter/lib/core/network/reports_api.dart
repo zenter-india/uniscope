@@ -21,7 +21,7 @@ enum ReportReason {
   spam,
   harassment,
   impersonation,
-  inappropriate,
+  callDropped,
   abusiveLanguage,
   offPlatformPaymentRequest,
   other,
@@ -32,17 +32,24 @@ extension ReportReasonValue on ReportReason {
         ReportReason.spam => 'SPAM',
         ReportReason.harassment => 'HARASSMENT',
         ReportReason.impersonation => 'IMPERSONATION',
-        ReportReason.inappropriate => 'INAPPROPRIATE',
+        // Backend already had this value (see the CALL_DROPPED doc comment
+        // on ReportReason in schema.prisma) — it just wasn't wired into the
+        // mobile picker until now.
+        ReportReason.callDropped => 'CALL_DROPPED',
         ReportReason.abusiveLanguage => 'ABUSIVE_LANGUAGE',
         ReportReason.offPlatformPaymentRequest => 'OFF_PLATFORM_PAYMENT_REQUEST',
         ReportReason.other => 'OTHER',
       };
 
   String get label => switch (this) {
-        ReportReason.spam => 'Spam',
+        // Merged with "Inappropriate content" into one option, per request —
+        // the two overlapped enough in a user's mind to be confusing as
+        // separate radio choices. INAPPROPRIATE stays a valid backend value
+        // for old reports; it's just not offered as a new pick anymore.
+        ReportReason.spam => 'Spam/inappropriate content',
         ReportReason.harassment => 'Harassment or bullying',
         ReportReason.impersonation => 'Impersonation',
-        ReportReason.inappropriate => 'Inappropriate content',
+        ReportReason.callDropped => 'Call ended before the booked slot',
         ReportReason.abusiveLanguage => 'Abusive language',
         ReportReason.offPlatformPaymentRequest => 'Asked to pay/contact outside the app',
         ReportReason.other => 'Something else',

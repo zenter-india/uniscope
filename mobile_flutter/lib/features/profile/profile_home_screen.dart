@@ -215,11 +215,13 @@ class ProfileHomeScreen extends ConsumerWidget {
                             _Stat(
                               value: '$savedColleges',
                               label: 'Saved Colleges',
+                              onTap: () => context.push('/colleges/saved'),
                             ),
                             const _StatDivider(),
                             _Stat(
                               value: '$savedMentors',
                               label: 'Saved Mentors',
+                              onTap: () => context.push('/mentors/saved'),
                             ),
                           ],
                         ),
@@ -507,34 +509,39 @@ class _MentorAvailabilityCardState
 }
 
 class _Stat extends StatelessWidget {
-  const _Stat({required this.value, required this.label});
+  const _Stat({required this.value, required this.label, this.onTap});
   final String value;
   final String label;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
     return Expanded(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
-        child: Column(
-          children: [
-            Text(
-              value,
-              style: const TextStyle(
-                fontSize: AppFont.xl,
-                fontWeight: AppFont.extraBold,
-                color: AppColors.textPrimary,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(AppRadius.sm),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
+          child: Column(
+            children: [
+              Text(
+                value,
+                style: const TextStyle(
+                  fontSize: AppFont.xl,
+                  fontWeight: AppFont.extraBold,
+                  color: AppColors.textPrimary,
+                ),
               ),
-            ),
-            const SizedBox(height: 2),
-            Text(
-              label,
-              style: const TextStyle(
-                fontSize: AppFont.xs,
-                color: AppColors.textSecondary,
+              const SizedBox(height: 2),
+              Text(
+                label,
+                style: const TextStyle(
+                  fontSize: AppFont.xs,
+                  color: AppColors.textSecondary,
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
