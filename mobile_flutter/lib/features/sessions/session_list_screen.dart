@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../calls/call_overlay.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/network/reviews_api.dart';
@@ -942,7 +944,7 @@ class _SessionActionsState extends ConsumerState<_SessionActions> {
       ref.invalidate(sessionsListProvider);
       if (!mounted) return;
       if (updated.type == 'AUDIO_CALL') {
-        context.push('/call/${updated.id}');
+        CallOverlayController.instance.open(updated.id);
       }
     } catch (e) {
       if (!mounted) return;
@@ -1197,14 +1199,16 @@ class _SessionActionsState extends ConsumerState<_SessionActions> {
                   ? _CompactIconAction(
                       icon: Icons.call_rounded,
                       tooltip: 'Join Call',
-                      onPressed: () => context.push('/call/${session.id}'),
+                      onPressed: () =>
+                          CallOverlayController.instance.open(session.id),
                     )
                   : Expanded(
                       child: FilledButton.icon(
                         style: FilledButton.styleFrom(
                           backgroundColor: AppColors.primary,
                         ),
-                        onPressed: () => context.push('/call/${session.id}'),
+                        onPressed: () =>
+                            CallOverlayController.instance.open(session.id),
                         icon: const Icon(Icons.call_rounded, size: 17),
                         label: const Text('Join Call'),
                       ),

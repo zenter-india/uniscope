@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
+import '../calls/call_overlay.dart';
 
 import '../../core/network/sessions_api.dart';
 import '../../core/theme/app_theme.dart';
@@ -136,7 +136,7 @@ class _DockRowState extends ConsumerState<_DockRow> {
           .accept(widget.session.id);
       ref.invalidate(sessionsListProvider);
       if (!mounted) return;
-      context.push('/call/${updated.id}');
+      CallOverlayController.instance.open(updated.id);
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(
@@ -239,7 +239,7 @@ class _DockRowState extends ConsumerState<_DockRow> {
         ] else if (canJoin) ...[
           _DockButton(
             label: 'Join',
-            onPressed: () => context.push('/call/${session.id}'),
+            onPressed: () => CallOverlayController.instance.open(session.id),
           ),
         ] else if (!widget.isMentor &&
             session.status == SessionStatus.pending) ...[

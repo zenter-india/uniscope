@@ -9,6 +9,7 @@ import '../../core/network/users_api.dart';
 import '../../core/theme/app_theme.dart';
 import '../../state/auth_controller.dart';
 import '../../widgets/app_widgets.dart';
+import '../calls/call_overlay.dart';
 import '../auth/auth_background.dart' show authBrandTeal;
 import '../mentors/mentor_list_screen.dart';
 import '../profile/profile_options.dart' show kStreamOptions;
@@ -865,7 +866,7 @@ class _ActiveSessionRow extends ConsumerWidget {
                 : 'Open',
             onTap: () {
               if (joinable) {
-                context.push('/call/${session.id}');
+                CallOverlayController.instance.open(session.id);
               } else if (isCall) {
                 startChatWithMentor(context, ref, session.mentorId);
               } else {

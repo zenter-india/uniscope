@@ -16,6 +16,7 @@ import '../../widgets/app_widgets.dart';
 import '../reports/report_sheet.dart';
 import '../sessions/rate_mentor_sheet.dart';
 import '../wallet/wallet_screen.dart' show walletBalanceProvider;
+import 'call_overlay.dart';
 
 /// Hand-rolled native channels — see MainActivity.kt for why these bypass
 /// the permission_handler plugin. `uniscope/call` drives the Android
@@ -56,8 +57,16 @@ enum _Phase {
 enum _SignalLevel { unknown, strong, fair, weak }
 
 class CallScreen extends ConsumerStatefulWidget {
-  const CallScreen({super.key, required this.sessionId});
+  const CallScreen({
+    super.key,
+    required this.sessionId,
+    this.inOverlay = false,
+  });
   final String sessionId;
+
+  /// True when hosted by [CallOverlayHost] (the minimize-able path). Back
+  /// then minimizes instead of ending; End/Done tears the overlay down.
+  final bool inOverlay;
 
   @override
   ConsumerState<CallScreen> createState() => _CallScreenState();
@@ -188,6 +197,10 @@ class _CallScreenState extends ConsumerState<CallScreen> {
         _endCall();
       }
     });
+    if (widget.inOverlay) {
+      CallPresence.instance.onToggleMute = _toggleMute;
+      CallPresence.instance.onEnd = () => _endCall();
+    }
     WidgetsBinding.instance.addPostFrameCallback((_) => _start());
   }
 
@@ -200,6 +213,10 @@ class _CallScreenState extends ConsumerState<CallScreen> {
     _engine?.release();
     _stopCallService();
     _callChannel.setMethodCallHandler(null);
+    if (widget.inOverlay) {
+      CallPresence.instance.onToggleMute = null;
+      CallPresence.instance.onEnd = null;
+    }
     super.dispose();
   }
 
@@ -433,6 +450,7 @@ class _CallScreenState extends ConsumerState<CallScreen> {
           HapticFeedback.mediumImpact();
         }
         setState(() => _phase = _Phase.active);
+        _syncPresence();
         _tickTimer ??= Timer.periodic(
           const Duration(seconds: 1),
           (_) => _tick(),
@@ -441,6 +459,7 @@ class _CallScreenState extends ConsumerState<CallScreen> {
       _checkSlotCutoff(session);
     } else {
       setState(() => _phase = _Phase.waiting);
+      _syncPresence();
       // A push failing to deliver (stale token, device offline, permission
       // denied) is exactly the "stuck ringing forever" failure mode the
       // deep-link fix targets on the happy path — this is the fallback for
@@ -472,6 +491,7 @@ class _CallScreenState extends ConsumerState<CallScreen> {
     // late (and it did: it keyed off billedMinutes, which stays 0 until
     // billing settles, so nothing fired at the real slot end).
     _checkSlotCutoff(session);
+    _syncPresence();
   }
 
   void _checkSlotCutoff(Session session) {
@@ -693,6 +713,53 @@ class _CallScreenState extends ConsumerState<CallScreen> {
     _engine?.leaveChannel();
     _stopCallService();
     if (mounted) setState(() => _phase = _Phase.ended);
+    _syncPresence();
+    // If the call ended while minimized, pop the summary back up so the
+    // user sees why (and can rate / report) instead of a stuck bar.
+    if (widget.inOverlay) CallOverlayController.instance.expand();
+  }
+
+  /// Dismiss the whole call surface. In the overlay path this removes the
+  /// host; otherwise it pops the route.
+  void _leave() {
+    if (widget.inOverlay) {
+      CallOverlayController.instance.close();
+    } else if (mounted) {
+      context.pop();
+    }
+  }
+
+  Future<void> _toggleMute() async {
+    HapticFeedback.selectionClick();
+    final next = !_muted;
+    await _engine?.muteLocalAudioStream(next);
+    if (mounted) setState(() => _muted = next);
+    _syncPresence();
+  }
+
+  /// Push the handful of fields the minimized bar shows.
+  void _syncPresence() {
+    if (!widget.inOverlay) return;
+    final rem = _slotRemaining;
+    final String status;
+    if (_phase == _Phase.active) {
+      status = rem != null && rem.inSeconds > 0
+          ? '${rem.inSeconds ~/ 60}:${(rem.inSeconds % 60).toString().padLeft(2, '0')} left'
+          : _fmt(_elapsed);
+    } else if (_phase == _Phase.waiting) {
+      status = 'Ringing…';
+    } else if (_phase == _Phase.ended) {
+      status = 'Call ended';
+    } else {
+      status = 'Connecting…';
+    }
+    CallPresence.instance.publish(
+      peerName: _peerName,
+      peerAvatarUrl: _peerAvatarUrl,
+      status: status,
+      muted: _muted,
+      active: _phase == _Phase.active,
+    );
   }
 
   String _fmt(Duration d) {
@@ -712,7 +779,14 @@ class _CallScreenState extends ConsumerState<CallScreen> {
     if (_phase == _Phase.ended ||
         _phase == _Phase.error ||
         _phase == _Phase.permissionDenied) {
-      if (mounted) context.pop();
+      _leave();
+      return;
+    }
+    // A live call just minimizes on back (overlay path) — it keeps
+    // running and the floating bar stays. Nothing is ended by a stray
+    // swipe.
+    if (widget.inOverlay) {
+      CallOverlayController.instance.minimize();
       return;
     }
     if (_phase == _Phase.active) {
@@ -805,7 +879,7 @@ class _CallScreenState extends ConsumerState<CallScreen> {
               child: const Text('Open Settings'),
             ),
             TextButton(
-              onPressed: () => context.pop(),
+              onPressed: _leave,
               style: TextButton.styleFrom(foregroundColor: Colors.white70),
               child: const Text('Go Back'),
             ),
@@ -818,7 +892,7 @@ class _CallScreenState extends ConsumerState<CallScreen> {
           message: _errorMessage ?? 'Something went wrong.',
           actions: [
             TextButton(
-              onPressed: () => context.pop(),
+              onPressed: _leave,
               style: TextButton.styleFrom(foregroundColor: Colors.white70),
               child: const Text('Go Back'),
             ),
@@ -846,16 +920,14 @@ class _CallScreenState extends ConsumerState<CallScreen> {
           weakSignal: _weakSignal,
           signal: _signal,
           contextLine: _peerContext,
+          onMinimize: widget.inOverlay
+              ? () => CallOverlayController.instance.minimize()
+              : null,
           peerMuted: _peerMuted,
           peerSpeaking: _peerSpeaking && !_peerMuted && !_reconnecting,
           routeIcon: _routeGlyph().$1,
           routeLabel: _routeGlyph().$2,
-          onToggleMute: () async {
-            HapticFeedback.selectionClick();
-            final next = !_muted;
-            await _engine?.muteLocalAudioStream(next);
-            setState(() => _muted = next);
-          },
+          onToggleMute: _toggleMute,
           onPickRoute: _pickAudioRoute,
           onEnd: () => _endCall(),
         );
@@ -879,7 +951,7 @@ class _CallScreenState extends ConsumerState<CallScreen> {
                   targetId: _isAspirant ? s.mentorId : s.aspirantId,
                   targetLabel: _peerName,
                 ),
-          onDone: () => context.go('/chats'),
+          onDone: _leave,
         );
     }
   }
@@ -984,6 +1056,7 @@ class _CallStage extends StatelessWidget {
     this.statusFontSize,
     this.signal = _SignalLevel.unknown,
     this.contextLine,
+    this.onMinimize,
   });
 
   /// Overrides for the status line under the @id (the active-call view puts
@@ -1001,6 +1074,7 @@ class _CallStage extends StatelessWidget {
   final bool speaking;
   final _SignalLevel signal;
   final String? contextLine;
+  final VoidCallback? onMinimize;
   final List<Widget> controls;
 
   @override
@@ -1014,11 +1088,34 @@ class _CallStage extends StatelessWidget {
             alignment: Alignment.center,
             children: [
               Center(child: topPill),
-              if (signal != _SignalLevel.unknown)
-                Positioned(
-                  left: AppSpacing.lg,
-                  child: _SignalChip(level: signal),
+              Positioned(
+                left: AppSpacing.sm,
+                child: Row(
+                  children: [
+                    if (onMinimize != null)
+                      GestureDetector(
+                        onTap: onMinimize,
+                        child: Container(
+                          width: 30,
+                          height: 30,
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.12),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(
+                            Icons.keyboard_arrow_down_rounded,
+                            size: 20,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    if (onMinimize != null && signal != _SignalLevel.unknown)
+                      const SizedBox(width: 8),
+                    if (signal != _SignalLevel.unknown)
+                      _SignalChip(level: signal),
+                  ],
                 ),
+              ),
             ],
           ),
         ),
@@ -1316,6 +1413,7 @@ class _ActiveCallView extends StatelessWidget {
     required this.weakSignal,
     required this.signal,
     required this.contextLine,
+    required this.onMinimize,
     required this.peerMuted,
     required this.peerSpeaking,
     required this.routeIcon,
@@ -1336,6 +1434,7 @@ class _ActiveCallView extends StatelessWidget {
   final bool weakSignal;
   final _SignalLevel signal;
   final String? contextLine;
+  final VoidCallback? onMinimize;
   final bool peerMuted;
   final bool peerSpeaking;
   final IconData routeIcon;
@@ -1406,6 +1505,7 @@ class _ActiveCallView extends StatelessWidget {
       speaking: peerSpeaking,
       signal: signal,
       contextLine: contextLine,
+      onMinimize: onMinimize,
       controls: [
         _CallControl(
           icon: muted ? Icons.mic_off_rounded : Icons.mic_rounded,

@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'core/push/push_service.dart';
 import 'core/theme/app_theme.dart';
+import 'features/calls/call_overlay.dart';
 import 'router/app_router.dart';
 import 'state/auth_controller.dart';
 
@@ -61,7 +62,10 @@ class _UniscopeAppState extends ConsumerState<UniscopeApp> {
       builder: (context, child) => MediaQuery.withClampedTextScaling(
         minScaleFactor: 0.9,
         maxScaleFactor: 1.2,
-        child: child!,
+        // Hosts the audio call above every screen so it can be minimized to
+        // a floating bar while the user browses other tabs (see
+        // CallOverlayHost / CallOverlayController).
+        child: CallOverlayHost(child: child!),
       ),
     );
   }

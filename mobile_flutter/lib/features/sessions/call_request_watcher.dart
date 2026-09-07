@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
+import '../calls/call_overlay.dart';
 
 import '../../core/network/sessions_api.dart';
 import '../../state/auth_controller.dart';
@@ -110,7 +110,7 @@ class _CallRequestWatcherState extends ConsumerState<CallRequestWatcher>
             _navigatedFor.add(s.id)) {
           final id = s.id;
           WidgetsBinding.instance.addPostFrameCallback((_) {
-            if (mounted) context.push('/call/$id');
+            if (mounted) CallOverlayController.instance.open(id);
           });
         }
       }

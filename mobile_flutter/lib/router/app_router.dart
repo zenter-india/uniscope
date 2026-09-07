@@ -12,7 +12,7 @@ import '../features/auth/profile_setup_screen.dart';
 import '../features/auth/role_selection_screen.dart';
 import '../features/auth/splash_screen.dart';
 import '../features/auth/welcome_screen.dart';
-import '../features/calls/call_screen.dart';
+import '../features/calls/call_overlay.dart';
 import '../features/common/placeholder_screen.dart';
 import '../features/common/web_page_screen.dart';
 import '../features/home/home_screen.dart';
@@ -361,10 +361,22 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (_, __) => const MentorOnboardingScreen(),
       ),
 
-      // ─── Audio call (full-screen, outside the bottom-nav shell) ──
+      // ─── Audio call ─────────────────────────────────────────────
+      // The call is no longer a route — it's a minimize-able overlay
+      // (CallOverlayHost, mounted above the whole app). This path stays so
+      // deep links / FCM taps still reach a call: it hands off to the
+      // overlay and bounces back to Home (the overlay covers it anyway).
       GoRoute(
         path: '/call/:sessionId',
-        builder: (_, state) => CallScreen(sessionId: state.pathParameters['sessionId']!),
+        redirect: (context, state) {
+          final id = state.pathParameters['sessionId'];
+          if (id != null && id.isNotEmpty) {
+            WidgetsBinding.instance.addPostFrameCallback(
+              (_) => CallOverlayController.instance.open(id),
+            );
+          }
+          return '/home';
+        },
       ),
 
       // ─── Notifications (pushed from the bell icon anywhere) ──────

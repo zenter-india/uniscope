@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../features/calls/call_overlay.dart';
 import '../../router/app_router.dart';
 import '../network/users_api.dart';
 
@@ -93,7 +94,7 @@ class PushService {
     // /call/:id is a full-screen route outside the tab shell — stack it.
     // /chats is a tab — switch to it rather than pushing a duplicate.
     if (target.startsWith('/call/')) {
-      router.push(target);
+      CallOverlayController.instance.open(sessionId!);
     } else {
       router.go(target);
     }
