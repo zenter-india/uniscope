@@ -151,6 +151,13 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
             else ...[
               ('Qualification', _orDash(profile.qualification)),
               ('Field of interest', _orDash(profile.stream)),
+              // Only set once a qualification beyond "Higher Secondary
+              // (12th)" is picked in onboarding (see AspirantOnboarding
+              // Screen's Academics step) — a 12th-grader has no college yet,
+              // so this row just doesn't appear for them rather than
+              // showing a dash.
+              if (profile.universityName != null)
+                ('College', profile.universityName!),
               ('State', _orDash(profile.state)),
               ('City', _orDash(profile.city)),
             ],
