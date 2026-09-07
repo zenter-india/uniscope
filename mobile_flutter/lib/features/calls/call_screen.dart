@@ -187,6 +187,22 @@ class _CallScreenState extends ConsumerState<CallScreen> {
 
   bool _callServiceRunning = false;
 
+  /// 0..1 of the booked slot elapsed (drives the avatar ring). Null until
+  /// the call is live and the slot length is known.
+  double? get _slotProgress {
+    final s = _session;
+    final startedAt = s?.startedAt;
+    if (s == null || startedAt == null) return null;
+    final totalSec =
+        (s.billedMinutes > 0 ? s.billedMinutes : (s.callSlotMinutes ?? 0)) * 60;
+    if (totalSec <= 0) return null;
+    final elapsedSec = DateTime.now()
+        .toUtc()
+        .difference(DateTime.parse(startedAt).toUtc())
+        .inSeconds;
+    return (elapsedSec / totalSec).clamp(0.0, 1.0);
+  }
+
   @override
   void initState() {
     super.initState();
@@ -923,6 +939,8 @@ class _CallScreenState extends ConsumerState<CallScreen> {
           onMinimize: widget.inOverlay
               ? () => CallOverlayController.instance.minimize()
               : null,
+          slotProgress: _slotProgress,
+          progressTint: _isAspirant ? const Color(0xFF6FE3B4) : Colors.white,
           peerMuted: _peerMuted,
           peerSpeaking: _peerSpeaking && !_peerMuted && !_reconnecting,
           routeIcon: _routeGlyph().$1,
@@ -1057,6 +1075,8 @@ class _CallStage extends StatelessWidget {
     this.signal = _SignalLevel.unknown,
     this.contextLine,
     this.onMinimize,
+    this.slotProgress,
+    this.progressTint = Colors.white,
   });
 
   /// Overrides for the status line under the @id (the active-call view puts
@@ -1075,6 +1095,8 @@ class _CallStage extends StatelessWidget {
   final _SignalLevel signal;
   final String? contextLine;
   final VoidCallback? onMinimize;
+  final double? slotProgress;
+  final Color progressTint;
   final List<Widget> controls;
 
   @override
@@ -1130,6 +1152,8 @@ class _CallStage extends StatelessWidget {
           pulsing: pulsing,
           speaking: speaking,
           contextLine: contextLine,
+          slotProgress: slotProgress,
+          progressTint: progressTint,
         ),
         const Spacer(),
         Padding(
@@ -1144,6 +1168,61 @@ class _CallStage extends StatelessWidget {
       ],
     );
   }
+}
+
+/// Thin progress arc drawn just outside the call avatar — how much of the
+/// booked slot has elapsed. Green for the aspirant (a quiet "your spend is
+/// running down" cue), plain white for the mentor.
+class _SlotRing extends StatelessWidget {
+  const _SlotRing({required this.progress, required this.tint});
+  final double progress;
+  final Color tint;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: 132,
+      height: 132,
+      child: CustomPaint(
+        painter: _SlotRingPainter(progress.clamp(0.0, 1.0), tint),
+      ),
+    );
+  }
+}
+
+class _SlotRingPainter extends CustomPainter {
+  _SlotRingPainter(this.progress, this.tint);
+  final double progress;
+  final Color tint;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final rect = Offset.zero & size;
+    final center = rect.center;
+    final radius = size.width / 2 - 3;
+    final track = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 4
+      ..color = Colors.white.withValues(alpha: 0.14);
+    canvas.drawCircle(center, radius, track);
+    if (progress <= 0) return;
+    final fg = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 4
+      ..strokeCap = StrokeCap.round
+      ..color = tint;
+    canvas.drawArc(
+      Rect.fromCircle(center: center, radius: radius),
+      -1.5707963267948966,
+      6.283185307179586 * progress,
+      false,
+      fg,
+    );
+  }
+
+  @override
+  bool shouldRepaint(_SlotRingPainter old) =>
+      old.progress != progress || old.tint != tint;
 }
 
 /// Shared avatar + name + status block, centred, for the call screen's dark
@@ -1161,6 +1240,8 @@ class _CallPeerHeader extends StatefulWidget {
     this.pulsing = false,
     this.speaking = false,
     this.contextLine,
+    this.slotProgress,
+    this.progressTint = Colors.white,
   });
 
   final String name;
@@ -1179,6 +1260,11 @@ class _CallPeerHeader extends StatefulWidget {
   /// One-line context about the other party (college · rating · specialty,
   /// or aspirant · stream · qualification · target). Null → not shown.
   final String? contextLine;
+
+  /// 0..1 of the booked slot elapsed — draws the ring around the avatar.
+  /// Null → no ring (connecting / ringing).
+  final double? slotProgress;
+  final Color progressTint;
 
   @override
   State<_CallPeerHeader> createState() => _CallPeerHeaderState();
@@ -1251,6 +1337,22 @@ class _CallPeerHeaderState extends State<_CallPeerHeader>
         ),
       ),
     );
+    if (widget.slotProgress != null) {
+      avatar = SizedBox(
+        width: 132,
+        height: 132,
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            _SlotRing(
+              progress: widget.slotProgress!,
+              tint: widget.progressTint,
+            ),
+            avatar,
+          ],
+        ),
+      );
+    }
     if (widget.pulsing) {
       avatar = SizedBox(
         width: 148,
@@ -1414,6 +1516,8 @@ class _ActiveCallView extends StatelessWidget {
     required this.signal,
     required this.contextLine,
     required this.onMinimize,
+    required this.slotProgress,
+    required this.progressTint,
     required this.peerMuted,
     required this.peerSpeaking,
     required this.routeIcon,
@@ -1435,6 +1539,8 @@ class _ActiveCallView extends StatelessWidget {
   final _SignalLevel signal;
   final String? contextLine;
   final VoidCallback? onMinimize;
+  final double? slotProgress;
+  final Color progressTint;
   final bool peerMuted;
   final bool peerSpeaking;
   final IconData routeIcon;
@@ -1506,6 +1612,8 @@ class _ActiveCallView extends StatelessWidget {
       signal: signal,
       contextLine: contextLine,
       onMinimize: onMinimize,
+      slotProgress: slotProgress,
+      progressTint: progressTint,
       controls: [
         _CallControl(
           icon: muted ? Icons.mic_off_rounded : Icons.mic_rounded,
