@@ -252,24 +252,25 @@ class HomeScreen extends ConsumerWidget {
                               children: [
                                 Text.rich(
                                   TextSpan(
+                                    // Whole greeting in the same brand green
+                                    // as the name (2026-09-07 per request —
+                                    // was white prefix / navy name, an
+                                    // inconsistent split). Smaller than
+                                    // before too, so a long display name
+                                    // doesn't wrap awkwardly.
                                     children: firstName == null
                                         ? [TextSpan(text: _greeting)]
                                         : [
                                             TextSpan(text: '$_greeting, '),
-                                            // The name alone in the logo
-                                            // navy — the rest stays white.
-                                            TextSpan(
-                                              text: firstName,
-                                              style: const TextStyle(
-                                                color: AppColors.logoNavy,
-                                              ),
-                                            ),
+                                            TextSpan(text: firstName),
                                           ],
                                   ),
+                                  overflow: TextOverflow.ellipsis,
+                                  maxLines: 1,
                                   style: const TextStyle(
-                                    fontSize: AppFont.lg,
+                                    fontSize: AppFont.md,
                                     fontWeight: AppFont.extraBold,
-                                    color: Colors.white,
+                                    color: AppColors.primary,
                                   ),
                                 ),
                                 const SizedBox(height: 2),
@@ -330,25 +331,32 @@ class HomeScreen extends ConsumerWidget {
               ),
 
               // ─── Sheet: opaque, pulled up over the canopy's foot ─────
-              Container(
-                width: double.infinity,
-                transform: Matrix4.translationValues(0, -AppRadius.xl, 0),
-                constraints: BoxConstraints(
-                  minHeight: MediaQuery.of(context).size.height * 0.62,
-                ),
-                decoration: const BoxDecoration(
-                  color: AppColors.background,
-                  borderRadius: BorderRadius.vertical(
-                    top: Radius.circular(AppRadius.xl),
-                  ),
-                ),
-                padding: const EdgeInsets.fromLTRB(
-                  AppSpacing.md,
-                  AppSpacing.lg,
-                  AppSpacing.md,
-                  AppSpacing.xl,
-                ),
-                child: Column(
+              // Wrapped in a Stack (2026-09-07 per request) so a small
+              // glowing handle bar can sit right on the seam between the
+              // canopy and this sheet — a clearer boundary than the plain
+              // rounded corner alone gave.
+              Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  Container(
+                    width: double.infinity,
+                    transform: Matrix4.translationValues(0, -AppRadius.xl, 0),
+                    constraints: BoxConstraints(
+                      minHeight: MediaQuery.of(context).size.height * 0.62,
+                    ),
+                    decoration: const BoxDecoration(
+                      color: AppColors.background,
+                      borderRadius: BorderRadius.vertical(
+                        top: Radius.circular(AppRadius.xl),
+                      ),
+                    ),
+                    padding: const EdgeInsets.fromLTRB(
+                      AppSpacing.md,
+                      AppSpacing.lg,
+                      AppSpacing.md,
+                      AppSpacing.xl,
+                    ),
+                    child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const Text(
@@ -581,6 +589,31 @@ class HomeScreen extends ConsumerWidget {
                     const SizedBox(height: AppSpacing.xl),
                   ],
                 ),
+              ),
+                  // Glowing handle bar marking the canopy/sheet seam.
+                  Positioned(
+                    top: -AppRadius.xl - 6,
+                    left: 0,
+                    right: 0,
+                    child: Center(
+                      child: Container(
+                        width: 56,
+                        height: 5,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(999),
+                          boxShadow: [
+                            BoxShadow(
+                              color: AppColors.primary.withValues(alpha: 0.65),
+                              blurRadius: 14,
+                              spreadRadius: 1,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
