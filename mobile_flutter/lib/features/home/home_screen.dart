@@ -41,10 +41,11 @@ List<Mentor> _topMentors(List<Mentor> mentors, {int take = 8}) {
   return sorted.take(take).toList();
 }
 
-/// First N colleges for the "Colleges for you" rail — the catalogue has no
-/// quality/ranking signal to order by, so this is just the stream-filtered
-/// set alphabetically, matching how the Colleges tab itself lists them.
-List<University> _collegesForYou(
+/// Fallback for the "Top colleges for you" rail when the real ranked list
+/// (below) is empty — e.g. nothing in the aspirant's stream has been
+/// reviewed yet. Alphabetical, since the plain catalogue has no ranking
+/// signal of its own, matching how the Colleges tab lists them.
+List<University> _collegesForYouFallback(
   List<University> universities, {
   int take = 8,
 }) {
@@ -72,6 +73,12 @@ class HomeScreen extends ConsumerWidget {
     final myProfile = ref.watch(myProfileProvider).asData?.value;
     final myState = myProfile?.state;
     final myAvatarUrl = myProfile?.avatarUrl;
+    // Real rating-ranked colleges in the aspirant's own stream (2026-09-07 —
+    // was alphabetical; this is the same backend endpoint the mentor Home
+    // rail already used). Falls back to the plain alphabetical set below
+    // when empty (no stream yet, or nothing in it reviewed yet) so the rail
+    // isn't just blank for a new user.
+    final rankedCollegesAsync = ref.watch(topCollegesForMentorProvider);
 
     // Same deferred-default pattern as the Mentors/Discover tabs' Stream
     // pill: personalize by the stream chosen at signup, as long as it's a
@@ -112,9 +119,12 @@ class HomeScreen extends ConsumerWidget {
     final streamColleges = effectiveStream == null
         ? const <University>[]
         : allColleges.where((u) => u.stream == effectiveStream).toList();
-    final collegesForYou = _collegesForYou(
-      streamColleges.isNotEmpty ? streamColleges : allColleges,
-    );
+    final rankedColleges = rankedCollegesAsync.asData?.value ?? const [];
+    final collegesForYou = rankedColleges.isNotEmpty
+        ? rankedColleges.take(8).toList()
+        : _collegesForYouFallback(
+            streamColleges.isNotEmpty ? streamColleges : allColleges,
+          );
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -123,6 +133,7 @@ class HomeScreen extends ConsumerWidget {
         onRefresh: () async {
           ref.invalidate(universitiesListProvider);
           ref.invalidate(mentorsListProvider(kNoMentorFilters));
+          ref.invalidate(topCollegesForMentorProvider);
           if (personalizedMentorFilters != null) {
             ref.invalidate(mentorsListProvider(personalizedMentorFilters));
           }

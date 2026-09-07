@@ -2,18 +2,36 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/network/universities_api.dart';
 import '../../core/network/users_api.dart';
 import '../../core/theme/app_theme.dart';
 import '../../state/auth_controller.dart';
 import '../../widgets/primary_button.dart';
 import '../profile/avatar_picker_panel.dart';
 import '../profile/profile_options.dart';
+import 'college_search_field.dart';
 import 'onboarding_widgets.dart';
 
-/// Post-signup 6-step wizard for ASPIRANT users — Basic Information →
-/// Location → Academic Qualification → Stream/Field of Interest →
-/// Preferences → Choose Your Avatar. Runs once after role selection. Only
-/// the final avatar step is skippable — the rest are mandatory.
+/// Post-signup 5-step wizard for ASPIRANT users — Basic Information →
+/// Location → Academics → Preferences → Choose Your Avatar. Runs once after
+/// role selection. Only the final avatar step is skippable — the rest are
+/// mandatory.
+///
+/// **Academics (2026-09-07 rework)** replaces what used to be two separate
+/// steps ("Academic Qualification" then "Stream / Field of Interest") with
+/// one step ordered and gated the same way the web enrollment form's own
+/// "Academics" step (AspirantForm.tsx) already works: Field of interest is
+/// picked first, Current qualification's options then depend on it
+/// (`degreesForStream`, "Higher Secondary (12th)" always prepended since a
+/// 12th-grader hasn't picked a track yet), then College + Specialization
+/// show once qualification isn't 12th — reusing the same `CollegeSearchField`
+/// find-or-create pattern the mentor onboarding wizard already uses for its
+/// own College field. "Course you're aiming for" moved here too, matching
+/// the website (it was never really a "preference"). The old separate
+/// "Current Status" chip (Currently Studying/Graduated) is dropped entirely
+/// — the website's aspirant form never asked it, and tracing `_finish()`
+/// showed the old mobile-only field was never actually sent to the backend
+/// either, so nothing regresses by removing it.
 ///
 /// No Date of Birth here (aspirant-only — the mentor wizard keeps its 16+
 /// gate). Collects a real name (private, encrypted — same handling as the
@@ -32,6 +50,7 @@ class _AspirantOnboardingScreenState
   final _avatarPanelKey = GlobalKey<AvatarPickerPanelState>();
   int _step = 0;
   bool _saving = false;
+  bool _resolvingCollege = false;
 
   final _fullNameController = TextEditingController();
   String? _gender;
@@ -41,11 +60,14 @@ class _AspirantOnboardingScreenState
   final _cityOtherController = TextEditingController();
 
   String? _qualification;
-  String? _currentStatus;
+  final _qualificationOtherController = TextEditingController();
 
   String? _stream;
   final _streamOtherController = TextEditingController();
-  final _specializationController = TextEditingController();
+
+  University? _university;
+  final _collegeNameController = TextEditingController();
+  String? _specialization;
 
   final _courseInterestedController = TextEditingController();
   final Set<String> _preferredLanguages = {};
@@ -55,16 +77,14 @@ class _AspirantOnboardingScreenState
   static const _stepTitles = [
     'Basic Information',
     'Location',
-    'Academic Qualification',
-    'Stream / Field of Interest',
+    'Academics',
     'Preferences',
     'Choose Your Avatar',
   ];
   static const _stepSubtitles = [
     'Core identity details.',
     'Helps us suggest mentors from your region.',
-    'Current or highest education level.',
-    'Used to recommend relevant mentors.',
+    'What stage are you at, and what are you aiming for?',
     'Helps us find the right mentors for you.',
     'Pick a look — you can always change this later from your profile.',
   ];
@@ -74,12 +94,45 @@ class _AspirantOnboardingScreenState
     _pageController.dispose();
     _fullNameController.dispose();
     _cityOtherController.dispose();
+    _qualificationOtherController.dispose();
     _streamOtherController.dispose();
-    _specializationController.dispose();
+    _collegeNameController.dispose();
     _courseInterestedController.dispose();
     _preferredLanguageOtherController.dispose();
     super.dispose();
   }
+
+  bool get _showCollege =>
+      _qualification != null && _qualification != 'Higher Secondary (12th)';
+
+  // Specialization is scoped to Medical only, same limitation the mentor
+  // onboarding wizard has today — mobile has no curated-per-degree
+  // specialization data source for other streams yet (the web form's
+  // broader per-stream version isn't ported here; see profile_options.dart
+  // and CLAUDE.md's "Profile creation & college entries" note).
+  bool get _needsSpecialization =>
+      _showCollege && _stream == 'Medical' && _qualification != 'MBBS';
+
+  bool get _needsMedicalStreamWideSpecialization =>
+      _stream == 'Medical' &&
+      (_qualification == 'Doctorate' || _qualification == 'Others');
+
+  List<String> _medicalStreamWideSpecializationOptions() {
+    final curatedDegrees =
+        kCuratedDegreeMapByStream['Medical']!.values.toSet().toList();
+    final fetched = ref.watch(
+      streamWideSpecializationsProvider(
+        (stream: 'Medical', curatedDegrees: curatedDegrees),
+      ),
+    );
+    final merged = {...kMedicalSpecializations, ...fetched.value ?? const []}
+        .toList()
+      ..sort();
+    return merged;
+  }
+
+  String get _resolvedCity =>
+      _city == 'Other' ? _cityOtherController.text.trim() : (_city ?? '');
 
   /// Gates the Continue button per step — previously an empty tap silently
   /// advanced with nothing entered despite the doc comment above claiming
@@ -94,14 +147,18 @@ class _AspirantOnboardingScreenState
             _city != null &&
             (_city != 'Other' || _cityOtherController.text.trim().isNotEmpty);
       case 2:
-        return _qualification != null && _currentStatus != null;
-      case 3:
         final streamOk = _stream != null &&
-            (_stream != 'Others' || _streamOtherController.text.trim().isNotEmpty);
+            (_stream != 'Others' ||
+                _streamOtherController.text.trim().isNotEmpty);
+        final qualificationOk = _qualification != null &&
+            (_qualification != 'Others' ||
+                _qualificationOtherController.text.trim().isNotEmpty);
+        final collegeOk =
+            !_showCollege || _collegeNameController.text.trim().isNotEmpty;
         final specializationOk =
-            !_needsSpecialization || _specializationController.text.trim().isNotEmpty;
-        return streamOk && specializationOk;
-      case 4:
+            !_needsSpecialization || _specialization != null;
+        return streamOk && qualificationOk && collegeOk && specializationOk;
+      case 3:
         return _preferredLanguages.isNotEmpty &&
             (!_preferredLanguages.contains('Others') ||
                 _preferredLanguageOtherController.text.trim().isNotEmpty) &&
@@ -111,23 +168,59 @@ class _AspirantOnboardingScreenState
     }
   }
 
-  bool get _needsSpecialization =>
-      _stream == 'Medical' &&
-      _qualification != null &&
-      _qualification != 'Higher Secondary (12th)' &&
-      _qualification != 'UG';
+  void _goTo(int step) {
+    setState(() => _step = step);
+    _pageController.animateToPage(
+      step,
+      duration: const Duration(milliseconds: 250),
+      curve: Curves.easeOut,
+    );
+  }
 
   void _next() {
+    if (_step == 2) {
+      _resolveCollegeThenAdvance();
+      return;
+    }
     if (_step == _stepTitles.length - 1) {
       _finish();
       return;
     }
-    setState(() => _step++);
-    _pageController.animateToPage(
-      _step,
-      duration: const Duration(milliseconds: 250),
-      curve: Curves.easeOut,
-    );
+    _goTo(_step + 1);
+  }
+
+  /// Academics is the step that collects College — if a real one wasn't
+  /// picked from the search suggestions, it needs to resolve (find-or-
+  /// create) to a real University row before moving on, same pattern the
+  /// mentor onboarding wizard uses (see MentorOnboardingScreen's own
+  /// `_resolveCollegeThenSave`). Skipped entirely for a 12th-grade aspirant,
+  /// who never sees the College field.
+  Future<void> _resolveCollegeThenAdvance() async {
+    if (!_showCollege || _university != null) {
+      _goTo(_step + 1);
+      return;
+    }
+    setState(() => _resolvingCollege = true);
+    try {
+      final university = await ref.read(universitiesApiProvider).findOrCreate(
+            name: _collegeNameController.text.trim(),
+            state: _state ?? '',
+            city: _resolvedCity,
+            stream:
+                _stream == 'Others' ? _streamOtherController.text.trim() : _stream,
+          );
+      if (!mounted) return;
+      setState(() {
+        _university = university;
+        _resolvingCollege = false;
+      });
+      _goTo(_step + 1);
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _resolvingCollege = false);
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('Could not save your college: $e')));
+    }
   }
 
   /// [saveAvatar] is false when the user taps "Skip for now" on the final
@@ -140,18 +233,21 @@ class _AspirantOnboardingScreenState
               _streamOtherController.text.trim().isNotEmpty
           ? _streamOtherController.text.trim()
           : _stream;
+      final resolvedQualification = _qualification == 'Others' &&
+              _qualificationOtherController.text.trim().isNotEmpty
+          ? _qualificationOtherController.text.trim()
+          : _qualification;
       await ref.read(usersApiProvider).updateProfile(
             realName: _fullNameController.text.trim().isEmpty
                 ? null
                 : _fullNameController.text.trim(),
             gender: _gender,
             state: _state,
-            city: _city == 'Other' ? _cityOtherController.text.trim() : _city,
-            qualification: _qualification,
-            specialization: _needsSpecialization
-                ? _specializationController.text.trim()
-                : null,
+            city: _resolvedCity.isEmpty ? null : _resolvedCity,
+            qualification: resolvedQualification,
+            specialization: _needsSpecialization ? _specialization : null,
             stream: resolvedStream,
+            universityId: _showCollege ? _university?.id : null,
             courseInterested: _courseInterestedController.text.trim().isEmpty
                 ? null
                 : _courseInterestedController.text.trim(),
@@ -275,31 +371,22 @@ class _AspirantOnboardingScreenState
                     title: _stepTitles[2],
                     subtitle: _stepSubtitles[2],
                     children: [
-                      const OnboardingFieldLabel('Qualification Level'),
-                      OnboardingSingleChipGroup(
-                        options: kQualifications,
-                        selected: _qualification,
-                        onSelect: (v) => setState(() => _qualification = v),
-                      ),
-                      const SizedBox(height: AppSpacing.md),
-                      const OnboardingFieldLabel('Current Status'),
-                      OnboardingSingleChipGroup(
-                        options: kCurrentStatuses,
-                        selected: _currentStatus,
-                        onSelect: (v) => setState(() => _currentStatus = v),
-                      ),
-                    ],
-                  ),
-                  OnboardingStepScaffold(
-                    title: _stepTitles[3],
-                    subtitle: _stepSubtitles[3],
-                    children: [
+                      const OnboardingFieldLabel('Field of interest'),
                       OnboardingSingleChipGroup(
                         options: kStreamOptions,
                         selected: _stream,
+                        // Qualification's options, and College/Specialization's
+                        // data, are all stream-specific — the previously
+                        // picked values may no longer be valid for the newly
+                        // picked stream, so reset them (same reasoning the
+                        // web AspirantForm's own Field-of-interest change
+                        // handler uses).
                         onSelect: (v) => setState(() {
                           _stream = v;
-                          _specializationController.clear();
+                          _qualification = null;
+                          _university = null;
+                          _collegeNameController.clear();
+                          _specialization = null;
                         }),
                       ),
                       if (_stream == 'Others') ...[
@@ -308,33 +395,70 @@ class _AspirantOnboardingScreenState
                           controller: _streamOtherController,
                           onChanged: (_) => setState(() {}),
                           decoration: const InputDecoration(
-                              hintText: 'Tell us your field of interest'),
+                              hintText: 'Enter your field of interest'),
+                        ),
+                      ],
+                      const SizedBox(height: AppSpacing.md),
+                      const OnboardingFieldLabel('Current qualification'),
+                      OnboardingSingleChipGroup(
+                        options: [
+                          'Higher Secondary (12th)',
+                          ...degreesForStream(_stream),
+                        ],
+                        selected: _qualification,
+                        onSelect: (v) => setState(() {
+                          _qualification = v;
+                          _university = null;
+                          _collegeNameController.clear();
+                          _specialization = null;
+                        }),
+                      ),
+                      if (_qualification == 'Others') ...[
+                        const SizedBox(height: AppSpacing.sm),
+                        TextFormField(
+                          controller: _qualificationOtherController,
+                          onChanged: (_) => setState(() {}),
+                          decoration: const InputDecoration(
+                              hintText: 'Enter your qualification'),
+                        ),
+                      ],
+                      if (_showCollege) ...[
+                        const SizedBox(height: AppSpacing.md),
+                        const OnboardingFieldLabel('College / university'),
+                        CollegeSearchField(
+                          initialText: _collegeNameController.text,
+                          onPick: (university, text) => setState(() {
+                            _university = university;
+                            _collegeNameController.text = text;
+                          }),
                         ),
                       ],
                       if (_needsSpecialization) ...[
                         const SizedBox(height: AppSpacing.md),
                         const OnboardingFieldLabel('Specialization'),
-                        TextFormField(
-                          controller: _specializationController,
-                          onChanged: (_) => setState(() {}),
-                          decoration:
-                              const InputDecoration(hintText: 'e.g. Cardiology'),
+                        OnboardingDropdown(
+                          value: _specialization,
+                          hint: 'Select specialization',
+                          options: _needsMedicalStreamWideSpecialization
+                              ? _medicalStreamWideSpecializationOptions()
+                              : kMedicalSpecializations,
+                          onChanged: (v) => setState(() => _specialization = v),
                         ),
                       ],
-                    ],
-                  ),
-                  OnboardingStepScaffold(
-                    title: _stepTitles[4],
-                    subtitle: _stepSubtitles[4],
-                    children: [
-                      const OnboardingFieldLabel('Course you\'re aiming for'),
+                      const SizedBox(height: AppSpacing.md),
+                      const OnboardingFieldLabel('Course you\'re aiming for (optional)'),
                       TextFormField(
                         controller: _courseInterestedController,
                         onChanged: (_) => setState(() {}),
                         decoration:
                             const InputDecoration(hintText: 'e.g. MBBS, B.Tech, BL'),
                       ),
-                      const SizedBox(height: AppSpacing.md),
+                    ],
+                  ),
+                  OnboardingStepScaffold(
+                    title: _stepTitles[3],
+                    subtitle: _stepSubtitles[3],
+                    children: [
                       const OnboardingFieldLabel('Preferred Language'),
                       OnboardingChipGroup(
                         options: kLanguageOptions,
@@ -357,10 +481,16 @@ class _AspirantOnboardingScreenState
                         ),
                       ],
                       const SizedBox(height: AppSpacing.md),
-                      const OnboardingFieldLabel('Preferred Timing'),
+                      const OnboardingFieldLabel(
+                        'Preferred Timing (choose up to 2)',
+                      ),
                       OnboardingChipGroup(
                         options: kTimeSlots,
                         selected: _preferredTimings,
+                        // Capped at 2 (2026-09-07 per request) — matches the
+                        // mentor onboarding wizard's own "Preferred Timing"
+                        // step exactly (see mentor_onboarding_screen.dart).
+                        maxSelections: 2,
                         onToggle: (option, value) => setState(() {
                           if (value) {
                             _preferredTimings.add(option);
@@ -372,8 +502,8 @@ class _AspirantOnboardingScreenState
                     ],
                   ),
                   OnboardingStepScaffold(
-                    title: _stepTitles[5],
-                    subtitle: _stepSubtitles[5],
+                    title: _stepTitles[4],
+                    subtitle: _stepSubtitles[4],
                     expandedChild: StickyPreviewAvatarPicker(
                         panelKey: _avatarPanelKey,
                         initialGenderText: _gender,
@@ -389,7 +519,7 @@ class _AspirantOnboardingScreenState
                 children: [
                   PrimaryButton(
                     label: _step == _stepTitles.length - 1 ? 'Finish' : 'Continue',
-                    loading: _saving,
+                    loading: _saving || _resolvingCollege,
                     enabled: _canContinue,
                     onPressed: _next,
                   ),

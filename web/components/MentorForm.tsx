@@ -22,7 +22,7 @@ import {
   recentYears,
 } from "../lib/options";
 import { useMultiStep } from "../lib/useMultiStep";
-import { Field, TextInput, Select, ChipGroup, Toggle, toggleInArray, ProgressBar, ErrorText } from "./form-bits";
+import { Field, TextInput, Select, ChipGroup, Toggle, toggleInArray, ProgressBar, ErrorText, ConsentCheckbox } from "./form-bits";
 
 type FormState = {
   fullName: string;
@@ -255,6 +255,7 @@ export function MentorForm({ onExit }: { onExit: () => void }) {
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState(false);
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
 
   // Curated College/University picker — populated for the Medical-stream
   // degrees in CURATED_DEGREE_MAP (see UniversitiesService.findCurated).
@@ -447,6 +448,7 @@ export function MentorForm({ onExit }: { onExit: () => void }) {
     }
     if (wizard.step === 5) {
       if (!form.documentFile) return "Upload your college ID / student portal screenshot.";
+      if (!agreedToTerms) return "Please agree to the Terms & Privacy Policy to continue.";
     }
     return null;
   }
@@ -1101,6 +1103,9 @@ export function MentorForm({ onExit }: { onExit: () => void }) {
               onChange={(e) => set("documentFile", e.target.files?.[0] ?? null)}
             />
           </label>
+          <div className="mt-5">
+            <ConsentCheckbox checked={agreedToTerms} onChange={setAgreedToTerms} />
+          </div>
         </div>
       )}
 

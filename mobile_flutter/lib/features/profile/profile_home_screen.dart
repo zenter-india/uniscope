@@ -253,27 +253,54 @@ class ProfileHomeScreen extends ConsumerWidget {
                           // universityId (see VerificationService.review's
                           // link) — that's also exactly the same eligibility
                           // the backend enforces for posting a review of it
-                          // (see UniversityReviewsService.create), so gating
-                          // the entry point on it here just avoids a dead tap
-                          // that 403s.
-                          if (isMentor &&
-                              isVerified &&
-                              myProfileAsync.asData?.value.universityId != null)
-                            _MenuRow(
-                              icon: Icons.rate_review_rounded,
-                              label: 'Rate Your College',
-                              onTap: () => openUniversityReview(
-                                context,
-                                ref,
-                                universityId:
-                                    myProfileAsync.asData!.value.universityId!,
-                                universityName:
-                                    myProfileAsync
-                                        .asData
-                                        ?.value
-                                        .universityName ??
-                                    'Your college',
-                              ),
+                          // (see UniversityReviewsService.create). The row
+                          // always shows for a mentor now (2026-09-07, per
+                          // request) rather than disappearing until eligible
+                          // — a locked row with a lock glyph explains why
+                          // instead of the feature looking simply missing;
+                          // tapping it early routes to Verification instead
+                          // of a form that would just 403.
+                          if (isMentor)
+                            Builder(
+                              builder: (context) {
+                                final universityId =
+                                    myProfileAsync.asData?.value.universityId;
+                                final canReview = isVerified &&
+                                    universityId != null;
+                                return _MenuRow(
+                                  icon: Icons.rate_review_rounded,
+                                  label: 'Rate Your College',
+                                  locked: !canReview,
+                                  subtitle: canReview
+                                      ? null
+                                      : !isVerified
+                                      ? 'Verify your account first'
+                                      : 'No college linked to your account yet',
+                                  onTap: canReview
+                                      ? () => openUniversityReview(
+                                          context,
+                                          ref,
+                                          universityId: universityId,
+                                          universityName: myProfileAsync
+                                                  .asData
+                                                  ?.value
+                                                  .universityName ??
+                                              'Your college',
+                                        )
+                                      : !isVerified
+                                      ? () =>
+                                          context.go('/profile/verification')
+                                      : () => ScaffoldMessenger.of(
+                                          context,
+                                        ).showSnackBar(
+                                          const SnackBar(
+                                            content: Text(
+                                              'No college is linked to your account — message support to get this fixed.',
+                                            ),
+                                          ),
+                                        ),
+                                );
+                              },
                             ),
                           // Mentors already have Wallet as the top-level
                           // "Earnings" tab — this row is aspirant-only, since
@@ -563,12 +590,22 @@ class _MenuRow extends StatelessWidget {
     required this.label,
     required this.onTap,
     this.isLast = false,
+    this.subtitle,
+    this.locked = false,
   });
 
   final IconData icon;
   final String label;
   final VoidCallback onTap;
   final bool isLast;
+
+  /// Shown under the label — e.g. "Verify your account first" while [locked].
+  final String? subtitle;
+
+  /// Renders the row dimmed with a lock glyph instead of the usual chevron.
+  /// The row still handles [onTap] — a locked row explains why rather than
+  /// disappearing, so the feature isn't invisible before it unlocks.
+  final bool locked;
 
   @override
   Widget build(BuildContext context) {
@@ -589,26 +626,49 @@ class _MenuRow extends StatelessWidget {
             Container(
               width: 34,
               height: 34,
-              decoration: const BoxDecoration(
-                color: AppColors.primaryLight,
+              decoration: BoxDecoration(
+                color: locked
+                    ? AppColors.textMuted.withValues(alpha: 0.12)
+                    : AppColors.primaryLight,
                 shape: BoxShape.circle,
               ),
-              child: Icon(icon, size: 17, color: AppColors.primary),
+              child: Icon(
+                icon,
+                size: 17,
+                color: locked ? AppColors.textMuted : AppColors.primary,
+              ),
             ),
             const SizedBox(width: AppSpacing.md),
             Expanded(
-              child: Text(
-                label,
-                style: const TextStyle(
-                  fontSize: AppFont.md,
-                  fontWeight: AppFont.medium,
-                  color: AppColors.textPrimary,
-                ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    label,
+                    style: TextStyle(
+                      fontSize: AppFont.md,
+                      fontWeight: AppFont.medium,
+                      color: locked
+                          ? AppColors.textMuted
+                          : AppColors.textPrimary,
+                    ),
+                  ),
+                  if (subtitle != null) ...[
+                    const SizedBox(height: 1),
+                    Text(
+                      subtitle!,
+                      style: const TextStyle(
+                        fontSize: AppFont.xs,
+                        color: AppColors.textMuted,
+                      ),
+                    ),
+                  ],
+                ],
               ),
             ),
-            const Icon(
-              Icons.chevron_right_rounded,
-              size: 22,
+            Icon(
+              locked ? Icons.lock_outline_rounded : Icons.chevron_right_rounded,
+              size: locked ? 18 : 22,
               color: AppColors.textMuted,
             ),
           ],

@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+
 /** Small shared building blocks for the two enrollment forms. Kept dumb and
  * prop-driven — no fetching, no form-library dependency — since the forms
  * are short enough that plain useState per field is easier to read than
@@ -147,6 +149,53 @@ export function Toggle({
         {hint && <span className="block font-semibold text-slate-400 mt-0.5">{hint}</span>}
       </span>
     </div>
+  );
+}
+
+/** Age/terms consent checkbox shown on the final step of both AspirantForm
+ * and MentorForm, right before Submit — required before the submission can
+ * go through. Deliberately worded as a consent notice, not a hard "I am 18+"
+ * claim: aspirants can legitimately be 15-17 (Higher Secondary/12th is a
+ * valid qualification), so a literal age assertion would be false for a
+ * real chunk of the target audience. */
+export function ConsentCheckbox({
+  checked,
+  onChange,
+}: {
+  checked: boolean;
+  onChange: (checked: boolean) => void;
+}) {
+  return (
+    <label className="flex items-start gap-2.5 mb-4 cursor-pointer select-none">
+      <input
+        type="checkbox"
+        checked={checked}
+        onChange={(e) => onChange(e.target.checked)}
+        className="mt-0.5 h-4.5 w-4.5 shrink-0 rounded border-2 border-border text-blue-600 focus:ring-blue-600"
+      />
+      <span className="text-[13px] font-semibold text-slate-600 leading-snug">
+        I have read and agree to Uniscope&rsquo;s{" "}
+        <Link
+          href="/terms"
+          target="_blank"
+          className="text-blue-600 underline underline-offset-2"
+          onClick={(e) => e.stopPropagation()}
+        >
+          Terms
+        </Link>{" "}
+        &amp;{" "}
+        <Link
+          href="/privacy"
+          target="_blank"
+          className="text-blue-600 underline underline-offset-2"
+          onClick={(e) => e.stopPropagation()}
+        >
+          Privacy Policy
+        </Link>
+        . If you&rsquo;re under 18, please use Uniscope only under the
+        supervision of a parent or legal guardian.
+      </span>
+    </label>
   );
 }
 

@@ -5,6 +5,7 @@ import {
   IsInt,
   IsOptional,
   IsString,
+  IsUUID,
   Max,
   MaxLength,
   Min,
@@ -127,4 +128,15 @@ export class UpdateProfileDto {
   @Min(1950)
   @Max(2100)
   graduationYear?: number;
+
+  /** ASPIRANT onboarding only (2026-09-07, added for the college+
+   * specialization step ported from the web enrollment form) — the college
+   * they're aiming for/attending, resolved via findOrCreate the same way
+   * the mentor onboarding wizard resolves its own college field. Rejected
+   * for a MENTOR at the service layer: a mentor's `universityId` is
+   * verification-linked (see VerificationService.review) and must never be
+   * overwritten by this self-service path. */
+  @IsOptional()
+  @IsUUID()
+  universityId?: string;
 }

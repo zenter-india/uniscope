@@ -411,6 +411,19 @@ export class UsersService {
       if (existing?.gender) applyGender = false;
     }
 
+    // A MENTOR's universityId is verification-linked (VerificationService.
+    // review) — never let this self-service path touch it. Only fetched
+    // when actually needed, same lazy pattern as the isMentorAvailable
+    // block below.
+    let applyUniversityId = dto.universityId !== undefined;
+    if (applyUniversityId) {
+      const user = await this.prisma.user.findUniqueOrThrow({
+        where: { id: userId },
+        select: { role: true },
+      });
+      if (user.role !== UserRole.ASPIRANT) applyUniversityId = false;
+    }
+
     if (dto.isMentorAvailable !== undefined) {
       const user = await this.prisma.user.findUniqueOrThrow({
         where: { id: userId },
@@ -475,6 +488,7 @@ export class UsersService {
       ...(dto.yearOfStudy !== undefined && { yearOfStudy: dto.yearOfStudy }),
       ...(dto.graduationYear !== undefined && { graduationYear: dto.graduationYear }),
       ...(dto.yearInfoPrivate !== undefined && { yearInfoPrivate: dto.yearInfoPrivate }),
+      ...(applyUniversityId && { universityId: dto.universityId }),
     };
 
     try {

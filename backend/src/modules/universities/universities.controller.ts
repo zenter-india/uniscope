@@ -78,11 +78,15 @@ export class UniversitiesController {
     return this.universitiesService.findCurated(query);
   }
 
-  /** "Top Colleges For You" rail on the mentor Home screen — colleges in
-   * the mentor's own stream, ranked by rating. Declared before `:slug` so
-   * the literal path isn't swallowed by the slug param. */
+  /** "Top Colleges For You" rail on both the mentor and (2026-09-07) the
+   * aspirant Home screens — colleges in the caller's own stream, ranked by
+   * rating. `topForMentor` (the service method) has always been role-agnostic
+   * — it only ever reads the caller's own `profile.stream`/`universityId`,
+   * never their role — so opening this up to ASPIRANT too needed no service
+   * change, just widening the guard. Declared before `:slug` so the literal
+   * path isn't swallowed by the slug param. */
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.MENTOR)
+  @Roles(UserRole.MENTOR, UserRole.ASPIRANT)
   @Get('top-for-mentor')
   topForMentor(@CurrentUser() user: JwtPayload) {
     return this.universitiesService.topForMentor(user.sub);

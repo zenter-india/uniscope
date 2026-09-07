@@ -15,7 +15,7 @@ import {
   LANGUAGES,
 } from "../lib/options";
 import { useMultiStep } from "../lib/useMultiStep";
-import { Field, TextInput, Select, ChipGroup, toggleInArray, ProgressBar, ErrorText } from "./form-bits";
+import { Field, TextInput, Select, ChipGroup, toggleInArray, ProgressBar, ErrorText, ConsentCheckbox } from "./form-bits";
 import { CollegeSearch } from "./CollegeSearch";
 import { CuratedCollegeSearch } from "./CuratedCollegeSearch";
 import { SearchableCombobox } from "./SearchableCombobox";
@@ -73,6 +73,7 @@ export function AspirantForm({ onExit }: { onExit: () => void }) {
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState(false);
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
 
   const set = <K extends keyof FormState>(key: K, value: FormState[K]) =>
     setForm((f) => ({ ...f, [key]: value }));
@@ -209,6 +210,7 @@ export function AspirantForm({ onExit }: { onExit: () => void }) {
         return "Enter your language.";
       }
       if (form.preferredMentorshipTimings.length === 0) return "Select at least one preferred timing.";
+      if (!agreedToTerms) return "Please agree to the Terms & Privacy Policy to continue.";
     }
     return null;
   }
@@ -612,6 +614,7 @@ export function AspirantForm({ onExit }: { onExit: () => void }) {
               onToggle={(v) => set("preferredMentorshipTimings", toggleInArray(form.preferredMentorshipTimings, v))}
             />
           </Field>
+          <ConsentCheckbox checked={agreedToTerms} onChange={setAgreedToTerms} />
         </div>
       )}
 

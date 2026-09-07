@@ -71,6 +71,7 @@ class _FakeUsersApi extends UsersApi {
     int? yearOfStudy,
     int? graduationYear,
     bool? yearInfoPrivate,
+    String? universityId,
   }) async =>
       _profile(displayName ?? 'Test User');
 }
@@ -84,6 +85,7 @@ Widget _app() => ProviderScope(
         // backend, which isn't reachable from a test runner.
         universitiesListProvider.overrideWith((ref) async => const []),
         mentorsListProvider.overrideWith((ref, filters) async => const []),
+        topCollegesForMentorProvider.overrideWith((ref) async => const []),
       ],
       child: const UniscopeApp(),
     );

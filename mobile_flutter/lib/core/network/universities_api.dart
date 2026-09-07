@@ -204,9 +204,12 @@ class UniversitiesApi {
   }
 
   /// "Top Colleges For You" for the mentor Home rail — colleges in the
-  /// mentor's own stream, ranked by rating (computed server-side), each
-  /// with `rating`/`reviewCount` populated. Empty when the mentor has no
-  /// stream or nothing in it has been reviewed yet. MENTOR-only endpoint.
+  /// caller's own stream, ranked by rating (computed server-side), each
+  /// with `rating`/`reviewCount` populated. Empty when the caller has no
+  /// stream or nothing in it has been reviewed yet. Open to both MENTOR and
+  /// ASPIRANT accounts (2026-09-07 — was MENTOR-only; the backend logic
+  /// only ever read the caller's own profile, so widening the route guard
+  /// was the whole change).
   Future<List<University>> topForMentor() async {
     final res = await _dio.get<List<dynamic>>('/universities/top-for-mentor');
     return (res.data ?? const [])
@@ -247,7 +250,11 @@ final universitiesListProvider = FutureProvider.autoDispose<List<University>>(
   (ref) => ref.watch(universitiesApiProvider).list(),
 );
 
-/// "Top Colleges For You" for the mentor Home rail (MENTOR accounts only).
+/// "Top Colleges For You" — shared by the mentor and (2026-09-07) aspirant
+/// Home rails. Kept under its original name (`...ForMentor`) even though
+/// aspirants use it too, since the underlying endpoint path is
+/// `/universities/top-for-mentor` and renaming would just add churn for no
+/// behavior change.
 final topCollegesForMentorProvider =
     FutureProvider.autoDispose<List<University>>(
       (ref) => ref.watch(universitiesApiProvider).topForMentor(),

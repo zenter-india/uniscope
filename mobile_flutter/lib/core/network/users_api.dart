@@ -164,6 +164,7 @@ class UsersApi {
     int? yearOfStudy,
     int? graduationYear,
     bool? yearInfoPrivate,
+    String? universityId,
   }) async {
     final res = await _dio.patch<Map<String, dynamic>>(
       '/users/me',
@@ -190,6 +191,7 @@ class UsersApi {
         if (yearOfStudy != null) 'yearOfStudy': yearOfStudy,
         if (graduationYear != null) 'graduationYear': graduationYear,
         if (yearInfoPrivate != null) 'yearInfoPrivate': yearInfoPrivate,
+        if (universityId != null) 'universityId': universityId,
       },
     );
     return UserProfile.fromJson(res.data!);
