@@ -83,6 +83,17 @@ export class VerificationService {
       }),
     ]);
 
+    await this.notificationsService
+      .send({
+        userId,
+        type: NotificationType.VERIFICATION,
+        title: 'Verification received',
+        body: "We've got your documents — you'll be notified once an admin reviews them.",
+      })
+      .catch(() => {
+        /* best-effort — the request is saved regardless */
+      });
+
     return toVerificationRequestResponse(request);
   }
 

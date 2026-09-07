@@ -7,11 +7,13 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { HoldStatus, LedgerEntryType, Prisma } from '@prisma/client';
+import { HoldStatus, LedgerEntryType, NotificationType, Prisma } from '@prisma/client';
 import { createHmac, randomUUID, timingSafeEqual } from 'crypto';
 import Razorpay from 'razorpay';
 import type { RazorpayConfig } from '../../config/index.js';
+import { uniminutesLabel } from '../../common/helpers/notification-format.helper.js';
 import { PrismaService } from '../../database/prisma/prisma.service.js';
+import { NotificationsService } from '../notifications/notifications.service.js';
 import { AdjustWalletDto } from './dto/adjust-wallet.dto.js';
 import {
   CreateTopupDto,
@@ -98,6 +100,7 @@ export class WalletService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly config: ConfigService,
+    private readonly notifications: NotificationsService,
   ) {
     this.cfg = this.config.get<RazorpayConfig>('razorpay')!;
     this.razorpay = new Razorpay({
@@ -250,13 +253,16 @@ export class WalletService {
     const wallet = await this.requireWallet(userId);
     const paidAmountMinor = Number(order.amount);
     const { uniminutes, creditedAmountMinor } = computeTopupCredit(paidAmountMinor);
-    await this.applyLedgerEntry({
+    const applied = await this.applyLedgerEntry({
       walletId: wallet.id,
       type: LedgerEntryType.TOPUP,
       amountMinor: creditedAmountMinor,
       idempotencyKey: `razorpay:${dto.razorpayPaymentId}`,
       note: `Razorpay order ${dto.razorpayOrderId} — paid ${paidAmountMinor} minor, credited ${uniminutes} Uniminutes`,
     });
+    if (applied) {
+      await this.notifyTopupCredited(userId, creditedAmountMinor);
+    }
 
     return toWalletResponse(await this.requireWallet(userId));
   }
@@ -317,7 +323,28 @@ export class WalletService {
 
     if (!applied) {
       this.logger.log(`Payment ${payment.id} already processed — webhook retry, no-op`);
+    } else {
+      await this.notifyTopupCredited(userId, creditedAmountMinor);
     }
+  }
+
+  /** Fire-and-forget "wallet topped up" confirmation. A push failure never
+   * matters here — the credit already landed and the in-app row is the
+   * durable part — so this swallows its own errors rather than bubbling a
+   * 500 out of a successful top-up. */
+  private async notifyTopupCredited(
+    userId: string,
+    creditedAmountMinor: number,
+  ): Promise<void> {
+    await this.notifications
+      .send({
+        userId,
+        type: NotificationType.PAYMENT,
+        title: 'Wallet topped up',
+        body: `${uniminutesLabel(creditedAmountMinor)} added to your wallet.`,
+        metadata: { kind: 'topup' },
+      })
+      .catch((err) => this.logger.warn(`Top-up notification failed for ${userId}: ${err}`));
   }
 
   /**

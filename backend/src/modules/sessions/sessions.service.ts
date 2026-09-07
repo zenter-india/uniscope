@@ -17,6 +17,10 @@ import {
   SessionType,
 } from '@prisma/client';
 import { adminOrderBy } from '../../common/helpers/admin-sort.helper.js';
+import {
+  rupeesLabel,
+  uniminutesLabel,
+} from '../../common/helpers/notification-format.helper.js';
 import { PrismaService } from '../../database/prisma/prisma.service.js';
 import { AgoraService } from '../agora/agora.service.js';
 import { ReviewsService } from '../reviews/reviews.service.js';
@@ -363,6 +367,13 @@ export class SessionsService {
       },
     });
 
+    const heldMinor =
+      (
+        await this.prisma.walletHold.aggregate({
+          where: { sessionId, status: HoldStatus.ACTIVE },
+          _sum: { amountMinor: true },
+        })
+      )._sum.amountMinor ?? 0;
     await this.releaseHoldsForSession(sessionId);
     this.logger.log(`[call] session rejected sessionId=${sessionId} mentor=${mentorUserId}`);
 
@@ -370,7 +381,10 @@ export class SessionsService {
       userId: session.aspirantId,
       type: NotificationType.SESSION_REJECTED,
       title: 'Request declined',
-      body: 'Your mentor is unavailable for this request.',
+      body:
+        heldMinor > 0
+          ? `Your mentor is unavailable for this request. Your ${uniminutesLabel(heldMinor)} hold has been released.`
+          : 'Your mentor is unavailable for this request.',
       metadata: { sessionId: session.id },
     });
 
@@ -528,6 +542,42 @@ export class SessionsService {
         data: { totalCostMinor: slotCostMinor },
       });
       this.logger.log(`[call] billing settled (paid hold) sessionId=${sessionId} slotMinutes=${slotMinutes}`);
+
+      const { aspirantName, mentorName } = await this.partyNames(
+        session.aspirantId,
+        session.mentorId,
+      );
+      await Promise.all([
+        this.notifySafe({
+          userId: session.aspirantId,
+          type: NotificationType.PAYMENT,
+          title: 'Call charged',
+          body: `${uniminutesLabel(slotCostMinor)} used for your ${slotMinutes}-min call with ${mentorName}.`,
+          metadata: { sessionId },
+        }),
+        this.notifySafe({
+          userId: session.mentorId,
+          type: NotificationType.PAYMENT,
+          title: 'You earned',
+          body: `${rupeesLabel(slotCostMinor)} for your ${slotMinutes}-min call with ${aspirantName}.`,
+          metadata: { sessionId },
+        }),
+      ]);
+
+      // Nudge the aspirant if this call left them unable to book the
+      // shortest slot again — mirrors the client-side low-balance gate.
+      const availableAfter = await this.walletService.getAvailableBalanceMinor(
+        hold.walletId,
+      );
+      if (availableAfter < CALL_SLOT_MINUTES[0] * MENTOR_RATE_PER_MINUTE_MINOR) {
+        await this.notifySafe({
+          userId: session.aspirantId,
+          type: NotificationType.LOW_BALANCE,
+          title: 'Low balance',
+          body: `You have ${uniminutesLabel(availableAfter)} left — top up to book another call.`,
+          metadata: { kind: 'low_balance' },
+        });
+      }
     } else {
       // Free-tier slot — decrement the aspirant's remaining free minutes,
       // never below 0.
@@ -603,6 +653,27 @@ export class SessionsService {
         totalCostMinor: { increment: extensionCostMinor },
       },
     });
+
+    const { aspirantName, mentorName } = await this.partyNames(
+      session.aspirantId,
+      session.mentorId,
+    );
+    await Promise.all([
+      this.notifySafe({
+        userId: session.aspirantId,
+        type: NotificationType.PAYMENT,
+        title: 'Call extended',
+        body: `${uniminutesLabel(extensionCostMinor)} used to add ${extensionMinutes} minutes with ${mentorName}.`,
+        metadata: { sessionId },
+      }),
+      this.notifySafe({
+        userId: session.mentorId,
+        type: NotificationType.PAYMENT,
+        title: 'You earned',
+        body: `${rupeesLabel(extensionCostMinor)} for a ${extensionMinutes}-min extension with ${aspirantName}.`,
+        metadata: { sessionId },
+      }),
+    ]);
 
     return this.toResponseById(sessionId);
   }
@@ -786,12 +857,18 @@ export class SessionsService {
       await this.walletService.releaseHold(hold.id);
     }
 
+    // MENTOR_NO_SHOW / NO_ANSWER released the hold above — tell the aspirant
+    // their reserved Uniminutes are back.
+    const releasedSuffix =
+      hold && endReason !== 'ASPIRANT_NO_SHOW'
+        ? ` Your ${uniminutesLabel(hold.amountMinor)} hold has been released.`
+        : '';
     const body =
       endReason === 'ASPIRANT_NO_SHOW'
         ? 'You were charged a no-show fee for not joining in time.'
         : endReason === 'MENTOR_NO_SHOW'
-          ? "Your mentor didn't join in time — nothing was charged."
-          : "Nobody joined in time — nothing was charged.";
+          ? `Your mentor didn't join in time — nothing was charged.${releasedSuffix}`
+          : `Nobody joined in time — nothing was charged.${releasedSuffix}`;
     const mentorBody =
       endReason === 'ASPIRANT_NO_SHOW'
         ? "The aspirant didn't join — you've been compensated for waiting."
@@ -1086,5 +1163,36 @@ export class SessionsService {
       where: { sessionId, status: HoldStatus.ACTIVE },
     });
     await Promise.all(holds.map((hold) => this.walletService.releaseHold(hold.id)));
+  }
+
+  /** Billing notifications must never break a settled call: the money has
+   * already moved by the time these fire, so a failed in-app write or push
+   * is logged and swallowed rather than bubbling a 500 back to the client. */
+  private notifySafe(params: {
+    userId: string;
+    type: NotificationType;
+    title: string;
+    body: string;
+    metadata?: Record<string, string>;
+  }): Promise<unknown> {
+    return this.notificationsService
+      .send(params)
+      .catch((err) => this.logger.warn(`[notify] billing notification failed: ${err}`));
+  }
+
+  /** Aspirant + mentor display names for a session, with safe fallbacks —
+   * used only to personalise notification copy. */
+  private async partyNames(
+    aspirantId: string,
+    mentorId: string,
+  ): Promise<{ aspirantName: string; mentorName: string }> {
+    const rows = await this.prisma.user.findMany({
+      where: { id: { in: [aspirantId, mentorId] } },
+      select: { id: true, displayName: true },
+    });
+    return {
+      aspirantName: rows.find((r) => r.id === aspirantId)?.displayName ?? 'the student',
+      mentorName: rows.find((r) => r.id === mentorId)?.displayName ?? 'your mentor',
+    };
   }
 }

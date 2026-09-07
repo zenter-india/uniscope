@@ -6,8 +6,15 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
-import { LedgerEntryType, PayoutStatus, Prisma, UserRole } from '@prisma/client';
+import {
+  LedgerEntryType,
+  NotificationType,
+  PayoutStatus,
+  Prisma,
+  UserRole,
+} from '@prisma/client';
 import { adminOrderBy } from '../../common/helpers/admin-sort.helper.js';
+import { rupeesLabel } from '../../common/helpers/notification-format.helper.js';
 import { PrismaService } from '../../database/prisma/prisma.service.js';
 import { NotificationsService } from '../notifications/notifications.service.js';
 import { WalletService } from '../wallet/wallet.service.js';
@@ -287,6 +294,26 @@ export class PayoutsService {
         }),
       },
     });
+
+    if (dto.status === PayoutStatus.COMPLETED) {
+      await this.notifications
+        .send({
+          userId: payout.mentorId,
+          type: NotificationType.PAYMENT,
+          title: 'Payout sent',
+          body: `${rupeesLabel(payout.amountMinor)} has been transferred to your bank${dto.bankReference ? ` (ref ${dto.bankReference})` : ''}.`,
+        })
+        .catch((err) => this.logger.warn(`Payout-completed notification failed for ${payout.id}: ${err}`));
+    } else if (dto.status === PayoutStatus.FAILED) {
+      await this.notifications
+        .send({
+          userId: payout.mentorId,
+          type: NotificationType.PAYMENT,
+          title: 'Payout could not be completed',
+          body: `Your ${rupeesLabel(payout.amountMinor)} payout didn't go through. Your earnings stay claimable — you can request again.`,
+        })
+        .catch((err) => this.logger.warn(`Payout-failed notification failed for ${payout.id}: ${err}`));
+    }
 
     return toPayoutRequestResponse(updated);
   }

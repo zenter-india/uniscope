@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { PrismaModule } from '../../database/prisma/prisma.module.js';
+import { NotificationsModule } from '../notifications/notifications.module.js';
 import { WalletModule } from '../wallet/wallet.module.js';
 import { ReportsController } from './reports.controller.js';
 import { ReportsService } from './reports.service.js';
@@ -11,7 +12,7 @@ import { ReportsService } from './reports.service.js';
  * deliberately never automatic (see ReportsService).
  */
 @Module({
-  imports: [PrismaModule, WalletModule],
+  imports: [PrismaModule, WalletModule, NotificationsModule],
   controllers: [ReportsController],
   providers: [ReportsService],
   exports: [ReportsService],

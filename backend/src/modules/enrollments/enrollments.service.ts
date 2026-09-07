@@ -4,6 +4,7 @@ import { Cron, CronExpression } from '@nestjs/schedule';
 import {
   EnrollmentLeadRole,
   EnrollmentLeadStatus,
+  NotificationType,
   Prisma,
   UserRole,
   VerificationStatus,
@@ -13,6 +14,7 @@ import { parsePhoneNumberFromString } from 'libphonenumber-js';
 import { adminOrderBy } from '../../common/helpers/admin-sort.helper.js';
 import { SlackNotifierService } from '../../common/slack/slack-notifier.service.js';
 import { PrismaService } from '../../database/prisma/prisma.service.js';
+import { NotificationsService } from '../notifications/notifications.service.js';
 import { SUPABASE_BUCKETS, SUPABASE_CLIENT } from '../../supabase/index.js';
 import { UsersService } from '../users/users.service.js';
 import {
@@ -45,6 +47,7 @@ export class EnrollmentsService {
     @Inject(SUPABASE_CLIENT) private readonly supabase: SupabaseClient,
     private readonly slack: SlackNotifierService,
     private readonly usersService: UsersService,
+    private readonly notifications: NotificationsService,
   ) {}
 
   /** Same phoneHash derivation as AuthService.verifyOtp's production
@@ -191,6 +194,17 @@ export class EnrollmentsService {
             data: { verificationStatus: VerificationStatus.SUBMITTED },
           }),
         ]);
+
+        await this.notifications
+          .send({
+            userId: user.id,
+            type: NotificationType.VERIFICATION,
+            title: 'Verification received',
+            body: "We've got your documents from your web registration — you'll be notified once an admin reviews them.",
+          })
+          .catch((err) =>
+            this.logger.warn(`Web verification notification failed for ${user.id}: ${err}`),
+          );
       }
     }
 

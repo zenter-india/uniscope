@@ -1,6 +1,13 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
-import { LedgerEntryType, ReportStatus, ReportTargetType } from '@prisma/client';
+import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import {
+  LedgerEntryType,
+  NotificationType,
+  ReportStatus,
+  ReportTargetType,
+} from '@prisma/client';
+import { uniminutesLabel } from '../../common/helpers/notification-format.helper.js';
 import { PrismaService } from '../../database/prisma/prisma.service.js';
+import { NotificationsService } from '../notifications/notifications.service.js';
 import { WalletService } from '../wallet/wallet.service.js';
 import { CreateReportDto } from './dto/create-report.dto.js';
 import { ResolveReportDto } from './dto/resolve-report.dto.js';
@@ -20,9 +27,12 @@ const MAX_LIMIT = 50;
  */
 @Injectable()
 export class ReportsService {
+  private readonly logger = new Logger(ReportsService.name);
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly walletService: WalletService,
+    private readonly notifications: NotificationsService,
   ) {}
 
   async create(reporterId: string, dto: CreateReportDto): Promise<ReportResponse> {
@@ -119,6 +129,36 @@ export class ReportsService {
         actionedBy: adminUserId,
       },
     });
+
+    // Close the loop with the person who filed it — otherwise a report just
+    // silently disappears from their side, refund included.
+    if (
+      dto.status === ReportStatus.RESOLVED ||
+      dto.status === ReportStatus.DISMISSED
+    ) {
+      const refundLine = dto.refundAmountMinor
+        ? ` A refund of ${uniminutesLabel(dto.refundAmountMinor)} has been added to your wallet.`
+        : '';
+      await this.notifications
+        .send({
+          userId: report.reporterId,
+          type: NotificationType.SYSTEM,
+          title:
+            dto.status === ReportStatus.RESOLVED
+              ? 'Your report was reviewed'
+              : 'Your report was closed',
+          body: `We've finished reviewing the report you filed.${refundLine}`,
+          metadata: {
+            reportId: report.id,
+            ...(report.targetType === ReportTargetType.SESSION
+              ? { sessionId: report.targetId }
+              : {}),
+          },
+        })
+        .catch((err) =>
+          this.logger.warn(`Report-resolution notification failed for ${report.id}: ${err}`),
+        );
+    }
 
     return toReportResponse(updated);
   }
