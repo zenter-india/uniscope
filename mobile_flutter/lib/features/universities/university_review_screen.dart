@@ -11,7 +11,7 @@ import '../../widgets/app_widgets.dart';
 import '../profile/profile_options.dart' show kReviewTags;
 import 'review_choices.dart';
 
-/// Opens the 12-question review screen for [universityId], pre-filled for an
+/// Opens the 13-question review screen for [universityId], pre-filled for an
 /// edit when the caller already has a review. Returns `true` when a review
 /// was posted/updated (the screen itself invalidates the four
 /// university-review providers; a caller with extra providers to refresh —
@@ -42,9 +42,11 @@ Future<bool?> openUniversityReview(
   );
 }
 
-/// The client-confirmed 12-question college review, in Uniscope's own
+/// The client-confirmed 13-question college review, in Uniscope's own
 /// light-green system (structure + wording from the approved mockup, not
-/// its dark palette). All 12 answers are required — Submit stays disabled
+/// its dark palette). Restroom Facilities (Q5, added 2026-09-07) is the one
+/// exception to "from the approved mockup" — everything else is verbatim.
+/// All 13 answers are required — Submit stays disabled
 /// until every one is set; the tag chips and the free-text summary are
 /// optional. Reached from "Rate Your College" (Profile), the college detail
 /// screen, and the review breakdown screen. Opens pre-filled and submits
@@ -68,10 +70,10 @@ class UniversityReviewScreen extends ConsumerStatefulWidget {
 
 class _UniversityReviewScreenState
     extends ConsumerState<UniversityReviewScreen> {
-  // Q1–Q4 sliders, keyed by field name; Q5–Q11 choices, keyed by field name.
+  // Q1–Q4 sliders, keyed by field name; Q5–Q12 choices, keyed by field name.
   final Map<String, int> _sliders = {};
   final Map<String, String> _choices = {};
-  int? _overall; // Q12
+  int? _overall; // Q13
   final Set<String> _tags = {};
   final _bodyController = TextEditingController();
 
@@ -80,7 +82,7 @@ class _UniversityReviewScreenState
   bool _done = false;
 
   bool get _isEditing => widget.existingReview != null;
-  static const int _total = 12;
+  static const int _total = 13;
 
   @override
   void initState() {
@@ -92,6 +94,7 @@ class _UniversityReviewScreenState
       _sliders['campusLifeRating'] = d.campusCulture;
       _sliders['workloadRating'] = d.workload;
       _sliders['placementsRating'] = d.futureValue;
+      _choices['restroomFacilities'] = d.restroomFacilities;
       _choices['raggingCulture'] = d.raggingCulture;
       _choices['facultyApproachability'] = d.facultyApproachability;
       _choices['stipendStatus'] = d.stipendStatus;
@@ -128,6 +131,7 @@ class _UniversityReviewScreenState
       campusCulture: _sliders['campusLifeRating']!,
       workload: _sliders['workloadRating']!,
       futureValue: _sliders['placementsRating']!,
+      restroomFacilities: _choices['restroomFacilities']!,
       raggingCulture: _choices['raggingCulture']!,
       facultyApproachability: _choices['facultyApproachability']!,
       stipendStatus: _choices['stipendStatus']!,
@@ -563,7 +567,7 @@ class _ChoiceCard extends StatelessWidget {
   }
 }
 
-// ─────────────────────────── Q12 ────────────────────────────────
+// ─────────────────────────── Q13 ────────────────────────────────
 
 class _StarCard extends StatelessWidget {
   const _StarCard({required this.value, required this.onChanged});
@@ -573,7 +577,7 @@ class _StarCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return _QCard(
-      eyebrow: 'Q12 · Final rating',
+      eyebrow: 'Q13 · Final rating',
       title: 'Overall Experience',
       subtitle:
           "You've reflected on everything — now give this college your final overall verdict.",
@@ -756,7 +760,7 @@ class _SubmitBar extends StatelessWidget {
 /// Nudge shown to a mentor who was verified under the college-review
 /// requirement and hasn't posted one yet — on the Home and Profile tabs.
 /// Renders nothing for anyone else (aspirants, exempt/existing mentors, or
-/// a mentor who's already reviewed). Tapping it opens the 12-question form.
+/// a mentor who's already reviewed). Tapping it opens the 13-question form.
 class CollegeReviewPromptBanner extends ConsumerWidget {
   const CollegeReviewPromptBanner({super.key});
 

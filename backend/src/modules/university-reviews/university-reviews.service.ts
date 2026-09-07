@@ -43,7 +43,7 @@ export interface UniversityReviewSummary {
   /** Only tags that were actually picked at least once appear here — the
    * client shows real counts, never a zero-count tag from the picklist. */
   tagCounts: Record<string, number>;
-  /** For each of the 7 single-choice questions (Q5–Q11), a code→count map
+  /** For each of the 8 single-choice questions (Q5–Q12), a code→count map
    * of how the answers split. Only codes that were actually chosen appear.
    * Backs the "Student Experience Breakdown" bars on the summary card
    * (Phase 2) — computed here now so the aggregate endpoint stays a single
@@ -233,11 +233,12 @@ export class UniversityReviewsService {
         where: { ...where, wouldRecommend: { not: null } },
       }),
       // Review volume per university is small, so pulling the choice/tag
-      // columns and folding them in JS is cheaper than 8 more round trips.
+      // columns and folding them in JS is cheaper than 9 more round trips.
       this.prisma.review.findMany({
         where,
         select: {
           tags: true,
+          restroomFacilities: true,
           raggingCulture: true,
           facultyApproachability: true,
           stipendStatus: true,

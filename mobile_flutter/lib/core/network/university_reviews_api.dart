@@ -3,10 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'dio_client.dart';
 
-/// One submitted university review — the client-confirmed 12-question shape.
-/// Q1–Q4 are 1–5 slider ratings, Q5–Q11 are choice codes (see
-/// `review_choices.dart` for code → label), Q12 is [overallRating].
-/// Anonymised server-side: only [authorRole] is ever attached, never a name.
+/// One submitted university review — the client-confirmed 13-question shape.
+/// Q1–Q4 are 1–5 slider ratings, Q5–Q12 are choice codes (see
+/// `review_choices.dart` for code → label; restroomFacilities/Q5 was added
+/// 2026-09-07), Q13 is [overallRating]. Anonymised server-side: only
+/// [authorRole] is ever attached, never a name.
 class UniversityReview {
   const UniversityReview({
     required this.id,
@@ -16,6 +17,7 @@ class UniversityReview {
     this.campusCulture,
     this.workload,
     this.futureValue,
+    this.restroomFacilities,
     this.raggingCulture,
     this.facultyApproachability,
     this.stipendStatus,
@@ -32,7 +34,7 @@ class UniversityReview {
 
   final String id;
   final String universityId;
-  final int overallRating; // Q12
+  final int overallRating; // Q13
 
   // Q1–Q4 sliders (server column names: clinicalExposure/campusLife/workload/placements)
   final int? academicExposure;
@@ -40,7 +42,8 @@ class UniversityReview {
   final int? workload;
   final int? futureValue;
 
-  // Q5–Q11 choice codes
+  // Q5–Q12 choice codes
+  final String? restroomFacilities;
   final String? raggingCulture;
   final String? facultyApproachability;
   final String? stipendStatus;
@@ -66,6 +69,7 @@ class UniversityReview {
         campusCulture: (json['campusLifeRating'] as num?)?.toInt(),
         workload: (json['workloadRating'] as num?)?.toInt(),
         futureValue: (json['placementsRating'] as num?)?.toInt(),
+        restroomFacilities: json['restroomFacilities'] as String?,
         raggingCulture: json['raggingCulture'] as String?,
         facultyApproachability: json['facultyApproachability'] as String?,
         stipendStatus: json['stipendStatus'] as String?,
@@ -83,7 +87,7 @@ class UniversityReview {
       );
 }
 
-/// Everything the 12-question form collects, ready to POST/PATCH. Every
+/// Everything the 13-question form collects, ready to POST/PATCH. Every
 /// field is non-null by the time Submit is enabled; [tags] and [body] are
 /// the only optional parts.
 class UniversityReviewDraft {
@@ -93,6 +97,7 @@ class UniversityReviewDraft {
     required this.campusCulture,
     required this.workload,
     required this.futureValue,
+    required this.restroomFacilities,
     required this.raggingCulture,
     required this.facultyApproachability,
     required this.stipendStatus,
@@ -109,6 +114,7 @@ class UniversityReviewDraft {
   final int campusCulture;
   final int workload;
   final int futureValue;
+  final String restroomFacilities;
   final String raggingCulture;
   final String facultyApproachability;
   final String stipendStatus;
@@ -125,6 +131,7 @@ class UniversityReviewDraft {
         'campusLifeRating': campusCulture,
         'workloadRating': workload,
         'placementsRating': futureValue,
+        'restroomFacilities': restroomFacilities,
         'raggingCulture': raggingCulture,
         'facultyApproachability': facultyApproachability,
         'stipendStatus': stipendStatus,
@@ -145,6 +152,7 @@ class UniversityReviewDraft {
         campusCulture: r.campusCulture ?? 3,
         workload: r.workload ?? 3,
         futureValue: r.futureValue ?? 3,
+        restroomFacilities: r.restroomFacilities ?? 'ADEQUATE',
         raggingCulture: r.raggingCulture ?? 'MINOR_ISSUES',
         facultyApproachability: r.facultyApproachability ?? 'SCHEDULED_HOURS',
         stipendStatus: r.stipendStatus ?? 'NONE',

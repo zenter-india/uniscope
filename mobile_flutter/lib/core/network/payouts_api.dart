@@ -43,8 +43,9 @@ class PayoutsApi {
   final Dio _dio;
 
   /// Amount is always server-derived from unpaid SESSION_CREDIT ledger
-  /// history — never mentor-chosen. Throws (via DioException) if under the
-  /// ₹200 minimum.
+  /// history — never mentor-chosen. No minimum amount; throws (via
+  /// DioException) if called again within the same 7-day cooldown as the
+  /// mentor's last request, or if there's nothing unpaid to withdraw yet.
   Future<PayoutRequest> requestPayout() async {
     final res = await _dio.post<Map<String, dynamic>>('/payouts');
     return PayoutRequest.fromJson(res.data!);

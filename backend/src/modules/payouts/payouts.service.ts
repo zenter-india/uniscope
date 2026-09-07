@@ -14,11 +14,6 @@ import { WalletService } from '../wallet/wallet.service.js';
 import { ProcessPayoutDto } from './dto/process-payout.dto.js';
 import { PayoutRequestResponse, toPayoutRequestResponse } from './payout-response.js';
 
-/** ₹200 minimum withdrawal — agreed product term, previously undocumented
- * in code (see CLAUDE.md "Payout automation"). Same minor-unit currency as
- * the wallet (1000 minor = ₹10), so ₹200 = 20,000 minor. */
-export const MIN_PAYOUT_MINOR = 20_000;
-
 const OPEN_STATUSES: PayoutStatus[] = [PayoutStatus.PENDING, PayoutStatus.PROCESSING];
 
 /**
@@ -28,10 +23,15 @@ const OPEN_STATUSES: PayoutStatus[] = [PayoutStatus.PENDING, PayoutStatus.PROCES
  * admin confirms the bank transfer actually happened; it never touches a
  * bank or payment processor itself.
  */
-/** How often a mentor can be reminded — checked against their own
- * notification history (see remindEligibleMentors) rather than a separate
- * "last reminded" column, so this needed no schema change to add. */
-const REMINDER_COOLDOWN_DAYS = 7;
+/** Weekly cadence, not a minimum amount (2026-09-07, replaces the old ₹200
+ * minimum — MIN_PAYOUT_MINOR — per explicit product decision). A mentor can
+ * request a payout once every 7 days, for whatever they've earned since
+ * their last request, however small. Checked against the mentor's own most
+ * recent PayoutRequest row (any status — a rejected/failed one still used up
+ * that week's request), so this needed no schema change either. Also reused
+ * as the daily reminder's own cooldown — no point nudging someone who isn't
+ * eligible to request again yet. */
+const PAYOUT_REQUEST_COOLDOWN_DAYS = 7;
 
 @Injectable()
 export class PayoutsService {
@@ -68,7 +68,7 @@ export class PayoutsService {
             userId: mentor.id,
             type: 'SYSTEM',
             title: "You've got Uniminutes ready to withdraw",
-            body: `You're above the ₹${MIN_PAYOUT_MINOR / 100} minimum — request a payout from your Earnings tab whenever you're ready.`,
+            body: "You're eligible to request a payout again — request it from your Earnings tab whenever you're ready.",
           });
           reminded += 1;
         }
@@ -89,12 +89,26 @@ export class PayoutsService {
     });
     if (existingOpen) return false;
 
+    // Not eligible to request again yet — no point reminding.
+    const lastRequest = await this.prisma.payoutRequest.findFirst({
+      where: { mentorId },
+      orderBy: { createdAt: 'desc' },
+    });
+    if (lastRequest) {
+      const cooldownEndsAt = new Date(
+        lastRequest.createdAt.getTime() + PAYOUT_REQUEST_COOLDOWN_DAYS * 24 * 60 * 60 * 1000,
+      );
+      if (cooldownEndsAt > new Date()) return false;
+    }
+
     const recentReminder = await this.prisma.notification.findFirst({
       where: {
         userId: mentorId,
         type: 'SYSTEM',
         title: "You've got Uniminutes ready to withdraw",
-        createdAt: { gt: new Date(Date.now() - REMINDER_COOLDOWN_DAYS * 24 * 60 * 60 * 1000) },
+        createdAt: {
+          gt: new Date(Date.now() - PAYOUT_REQUEST_COOLDOWN_DAYS * 24 * 60 * 60 * 1000),
+        },
       },
     });
     if (recentReminder) return false;
@@ -114,7 +128,9 @@ export class PayoutsService {
       _sum: { amountMinor: true },
     });
 
-    return (earned._sum.amountMinor ?? 0) >= MIN_PAYOUT_MINOR;
+    // No minimum anymore — any unpaid earnings at all makes a reminder
+    // worthwhile once the mentor is otherwise eligible to request.
+    return (earned._sum.amountMinor ?? 0) > 0;
   }
 
   /**
@@ -123,7 +139,10 @@ export class PayoutsService {
    * account start), so a mentor can't request more than they've actually
    * earned and unpaid-out. Only one PENDING/PROCESSING request may be
    * outstanding at a time to prevent the same earnings window being claimed
-   * twice while the first request is still in flight.
+   * twice while the first request is still in flight. **No minimum amount**
+   * (2026-09-07, replaces the old ₹200 floor) — instead capped to once every
+   * PAYOUT_REQUEST_COOLDOWN_DAYS, checked against the mentor's own most
+   * recent request regardless of its outcome.
    */
   async requestPayout(mentorId: string): Promise<PayoutRequestResponse> {
     const existingOpen = await this.prisma.payoutRequest.findFirst({
@@ -133,6 +152,21 @@ export class PayoutsService {
       throw new ConflictException(
         'You already have a payout request in progress. Wait for it to be processed before requesting another.',
       );
+    }
+
+    const lastRequest = await this.prisma.payoutRequest.findFirst({
+      where: { mentorId },
+      orderBy: { createdAt: 'desc' },
+    });
+    if (lastRequest) {
+      const cooldownEndsAt = new Date(
+        lastRequest.createdAt.getTime() + PAYOUT_REQUEST_COOLDOWN_DAYS * 24 * 60 * 60 * 1000,
+      );
+      if (cooldownEndsAt > new Date()) {
+        throw new BadRequestException(
+          `You can request a payout once every ${PAYOUT_REQUEST_COOLDOWN_DAYS} days — next eligible ${cooldownEndsAt.toISOString()}.`,
+        );
+      }
     }
 
     const wallet = await this.prisma.wallet.findUniqueOrThrow({ where: { userId: mentorId } });
@@ -154,10 +188,8 @@ export class PayoutsService {
     });
     const amountMinor = earned._sum.amountMinor ?? 0;
 
-    if (amountMinor < MIN_PAYOUT_MINOR) {
-      throw new BadRequestException(
-        `Minimum payout is ₹${MIN_PAYOUT_MINOR / 100} — you have ₹${(amountMinor / 100).toFixed(2)} in unpaid earnings.`,
-      );
+    if (amountMinor <= 0) {
+      throw new BadRequestException('No unpaid earnings to withdraw yet.');
     }
 
     const payout = await this.prisma.payoutRequest.create({

@@ -1,4 +1,4 @@
-/// Content spec for the client-confirmed 12-question university review.
+/// Content spec for the client-confirmed 13-question university review.
 /// Question wording, choice labels and sub-copy are verbatim from the
 /// approved design; the choice *codes* mirror
 /// backend/src/modules/university-reviews/dto/review-choices.ts exactly —
@@ -73,7 +73,7 @@ class ReviewChoiceOption {
   final String label;
 }
 
-/// Q5–Q11: single-choice questions.
+/// Q5–Q12: single-choice questions.
 class ReviewChoiceSpec {
   const ReviewChoiceSpec({
     required this.field,
@@ -124,7 +124,30 @@ Color reviewChoiceSeverityColor(String code, int index, int optionCount) {
 
 const kReviewChoices = <ReviewChoiceSpec>[
   ReviewChoiceSpec(
-    field: 'raggingCulture', // Q5
+    field: 'restroomFacilities', // Q5 (added 2026-09-07)
+    title: 'Restroom Facilities',
+    subtitle:
+        'How clean and well-maintained are the restroom/washroom facilities?',
+    positiveCodes: ['CLEAN', 'ADEQUATE'],
+    positivePhrase: 'say restroom facilities are clean or adequate',
+    options: [
+      ReviewChoiceOption('CLEAN', '🚻', 'Clean and well maintained'),
+      ReviewChoiceOption(
+        'ADEQUATE',
+        '🙂',
+        'Adequate — used regularly, kept usable',
+      ),
+      ReviewChoiceOption(
+        'INCONSISTENT',
+        '😐',
+        'Inconsistent — varies by building/block',
+      ),
+      ReviewChoiceOption('POOR', '😟', 'Poor — needs real improvement'),
+      ReviewChoiceOption('UNUSABLE', '🚨', 'Unusable / unhygienic'),
+    ],
+  ),
+  ReviewChoiceSpec(
+    field: 'raggingCulture', // Q6
     title: 'Ragging & Toxicity',
     subtitle: 'How would you describe the senior-junior relationship?',
     positiveCodes: ['HEALTHY', 'MINOR_ISSUES'],
@@ -138,7 +161,7 @@ const kReviewChoices = <ReviewChoiceSpec>[
     ],
   ),
   ReviewChoiceSpec(
-    field: 'facultyApproachability', // Q6
+    field: 'facultyApproachability', // Q7
     title: 'Faculty Approachability',
     subtitle: 'How accessible and approachable are the faculty members?',
     positiveCodes: ['OPEN_DOOR', 'SCHEDULED_HOURS'],
@@ -159,7 +182,7 @@ const kReviewChoices = <ReviewChoiceSpec>[
     ],
   ),
   ReviewChoiceSpec(
-    field: 'stipendStatus', // Q7
+    field: 'stipendStatus', // Q8
     title: 'Stipend',
     subtitle: 'Is stipend paid to students / residents at this college?',
     positiveCodes: ['ON_TIME'],
@@ -173,7 +196,7 @@ const kReviewChoices = <ReviewChoiceSpec>[
     ],
   ),
   ReviewChoiceSpec(
-    field: 'hostelAvailability', // Q8
+    field: 'hostelAvailability', // Q9
     title: 'Hostel & Residential Facility',
     subtitle:
         'Is hostel or residential accommodation available at this college?',
@@ -187,7 +210,7 @@ const kReviewChoices = <ReviewChoiceSpec>[
     ],
   ),
   ReviewChoiceSpec(
-    field: 'hostelSafety', // Q9
+    field: 'hostelSafety', // Q10
     title: 'Hostel Safety & Comfort',
     subtitle: 'How safe, clean and comfortable is the hostel environment?',
     positiveCodes: ['VERY_SAFE', 'DECENT'],
@@ -201,7 +224,7 @@ const kReviewChoices = <ReviewChoiceSpec>[
     ],
   ),
   ReviewChoiceSpec(
-    field: 'wouldRecommend', // Q10
+    field: 'wouldRecommend', // Q11
     title: 'Would You Recommend?',
     subtitle:
         'Would you recommend this college to a student with similar goals?',
@@ -215,7 +238,7 @@ const kReviewChoices = <ReviewChoiceSpec>[
     ],
   ),
   ReviewChoiceSpec(
-    field: 'valueForMoney', // Q11
+    field: 'valueForMoney', // Q12
     title: 'Value for Money',
     subtitle:
         'Considering fees, facilities and outcomes — is this college worth it?',
@@ -234,7 +257,7 @@ const kReviewChoices = <ReviewChoiceSpec>[
   ),
 ];
 
-/// Q12 star labels (1-indexed via `[value - 1]`).
+/// Q13 star labels (1-indexed via `[value - 1]`).
 const kOverallStarLabels = <String>[
   'Poor',
   'Below Average',

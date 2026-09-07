@@ -139,7 +139,8 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
         title: const Text('Request payout'),
         content: const Text(
           "We'll transfer your full unpaid session earnings to your bank "
-          'account (minimum ₹200). This can take up to 48 hours.',
+          'account. You can request a payout once a week. This can take up '
+          'to 48 hours.',
         ),
         actions: [
           TextButton(

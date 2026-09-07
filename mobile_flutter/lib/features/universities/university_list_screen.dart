@@ -496,9 +496,18 @@ class _UniversityListScreenState extends ConsumerState<UniversityListScreen> {
                     final curatedIds = curatedById.keys.toSet();
 
                     final filtered = universities.where((u) {
-                      final matchesQuery = u.name.toLowerCase().contains(
-                        _query.toLowerCase(),
-                      );
+                      final q = _query.toLowerCase();
+                      // Widened beyond just the name (2026-09-07 per
+                      // feedback) so a district/city term like "basti" also
+                      // finds colleges there — there's no dedicated
+                      // "district" field on University, only city/state, so
+                      // this is the closest real match without a new data
+                      // source.
+                      final matchesQuery =
+                          q.isEmpty ||
+                          u.name.toLowerCase().contains(q) ||
+                          (u.city ?? '').toLowerCase().contains(q) ||
+                          u.state.toLowerCase().contains(q);
                       final matchesStream =
                           effectiveStream == 'All' ||
                           u.stream == effectiveStream;

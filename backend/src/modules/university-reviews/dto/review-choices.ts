@@ -8,6 +8,17 @@
  * treat index as severity without a separate weight table.
  */
 
+/** Q5 (2026-09-07 addition — inserted before the original 7 Q5–Q11 sets
+ * below, which all shift down one slot in the mobile form's question order;
+ * their field names/DB columns are unchanged). */
+export const RESTROOM_FACILITIES = [
+  'CLEAN', // Clean and well maintained
+  'ADEQUATE', // Adequate — used regularly, kept usable
+  'INCONSISTENT', // Inconsistent — varies by building/block
+  'POOR', // Poor — needs real improvement
+  'UNUSABLE', // Unusable / unhygienic
+] as const;
+
 export const RAGGING_CULTURE = [
   'HEALTHY', // Very healthy and supportive
   'MINOR_ISSUES', // Generally fine, minor issues
@@ -64,6 +75,7 @@ export const VALUE_FOR_MONEY = [
   'NOT_WORTH', // Not worth the fees at all
 ] as const;
 
+export type RestroomFacilities = (typeof RESTROOM_FACILITIES)[number];
 export type RaggingCulture = (typeof RAGGING_CULTURE)[number];
 export type FacultyApproachability = (typeof FACULTY_APPROACHABILITY)[number];
 export type StipendStatus = (typeof STIPEND_STATUS)[number];
@@ -72,10 +84,11 @@ export type HostelSafety = (typeof HOSTEL_SAFETY)[number];
 export type WouldRecommend = (typeof WOULD_RECOMMEND)[number];
 export type ValueForMoney = (typeof VALUE_FOR_MONEY)[number];
 
-/** The 7 choice fields, keyed by their `Review` column name — used by
+/** The 8 choice fields, keyed by their `Review` column name — used by
  * `reviewSummary` to build a code→count distribution per question without
  * repeating the field list. */
 export const REVIEW_CHOICE_FIELDS = {
+  restroomFacilities: RESTROOM_FACILITIES,
   raggingCulture: RAGGING_CULTURE,
   facultyApproachability: FACULTY_APPROACHABILITY,
   stipendStatus: STIPEND_STATUS,

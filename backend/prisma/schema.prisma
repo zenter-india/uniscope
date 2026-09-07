@@ -451,6 +451,11 @@ model Review {
   hostelAvailability     String?                  @map("hostel_availability")
   hostelSafety           String?                  @map("hostel_safety")
   valueForMoney          String?                  @map("value_for_money")
+  /// Q5 of the 13-question form (2026-09-07 addition — the other six
+  /// Q5–Q11 choice fields above were the original 7; this is the 8th,
+  /// inserted at position 5 so the mockup's ragging/faculty/etc. all shift
+  /// down one slot in the mobile form's rendering order, not in this list).
+  restroomFacilities     String?                  @map("restroom_facilities")
   /// Q10 "Would You Recommend?" — a 4-way choice code (was a plain
   /// Boolean before the structured form; ABSOLUTELY/RIGHT_PERSON count as
   /// "yes" for the aggregated recommend %, see WOULD_RECOMMEND_POSITIVE).

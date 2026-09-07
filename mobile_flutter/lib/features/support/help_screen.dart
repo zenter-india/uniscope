@@ -842,9 +842,11 @@ const _kArticles = <_HelpArticle>[
     category: _HelpCategory.gettingStarted,
     question: 'How do I edit my profile?',
     answer:
-        'Go to the Profile tab and tap the edit button next to your avatar. '
-        'You can update your photo, location, field of interest and the '
-        'other details you set during sign-up.',
+        'Most profile details are set at sign-up and can\'t be changed '
+        'afterwards — your profile photo is always editable from the '
+        'Profile tab. If you\'re a mentor, you can also keep your year of '
+        'study or graduation year, bio, languages and available call times '
+        'up to date from Profile → Profile Details.',
   ),
   _HelpArticle(
     category: _HelpCategory.gettingStarted,
@@ -941,8 +943,9 @@ const _kArticles = <_HelpArticle>[
     question: 'How and when do I get paid?',
     answer:
         'Calls pay a flat ₹10 per minute. Your earnings build up as sessions '
-        'complete. When your balance is at least ₹200 you can request a '
-        'payout to your bank account from the wallet screen; our team '
+        'complete. You can request a payout to your bank account from the '
+        'wallet screen once a week, for whatever you\'ve earned since your '
+        'last request — there\'s no minimum amount; our team '
         'processes it and marks it paid.',
   ),
   _HelpArticle(
