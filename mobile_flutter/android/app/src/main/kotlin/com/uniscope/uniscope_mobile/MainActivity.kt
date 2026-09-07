@@ -3,6 +3,8 @@ package com.uniscope.uniscope_mobile
 import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.media.AudioManager
+import android.media.ToneGenerator
 import android.net.Uri
 import android.os.Build
 import android.os.PowerManager
@@ -125,6 +127,14 @@ class MainActivity : FlutterActivity() {
                         }
                         result.success(null)
                     }
+                    // Short in-call warning tone (the "1 minute left" beep).
+                    // STREAM_VOICE_CALL so it mixes with the live call audio
+                    // and follows the in-call volume. Best-effort — a device
+                    // that can't build a ToneGenerator just gets no tone.
+                    "beep" -> {
+                        playWarningBeep()
+                        result.success(null)
+                    }
                     else -> result.notImplemented()
                 }
             }
@@ -132,6 +142,18 @@ class MainActivity : FlutterActivity() {
 
         // A cold start via the notification's "End call" action.
         maybeReportEndFromNotification(intent)
+    }
+
+    private fun playWarningBeep() {
+        try {
+            val tone = ToneGenerator(AudioManager.STREAM_VOICE_CALL, 90)
+            tone.startTone(ToneGenerator.TONE_PROP_BEEP, 200)
+            // Release after the tone has finished playing (releasing mid-tone
+            // clips it on some devices).
+            window.decorView.postDelayed({ tone.release() }, 350)
+        } catch (_: Exception) {
+            // best-effort: no tone rather than a crash
+        }
     }
 
     private fun setProximityScreenOff(on: Boolean) {

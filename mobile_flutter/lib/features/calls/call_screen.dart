@@ -71,6 +71,10 @@ class _CallScreenState extends ConsumerState<CallScreen> {
   bool _speakerOn = true;
   bool _remoteJoinedChannel = false;
   bool _extendDialogShowing = false;
+  // The "1 minute left" extend prompt + warning beep fire once per slot;
+  // this latches after they do and re-arms once the remaining time climbs
+  // well clear of the warning window again (i.e. after an extension).
+  bool _oneMinWarned = false;
   DateTime? _slotExpiredAt;
   Timer? _noAnswerTimer;
   // Live call-quality signals from the Agora engine (see _joinAgoraChannel's
@@ -434,7 +438,10 @@ class _CallScreenState extends ConsumerState<CallScreen> {
 
     if (remaining.isNegative) {
       _slotExpiredAt ??= DateTime.now();
-      if (_isAspirant && !_extendDialogShowing) {
+      // Fallback — if the 1-min warning was missed (app backgrounded through
+      // it), surface the prompt now rather than only enforcing the cutoff.
+      if (_isAspirant && !_extendDialogShowing && !_oneMinWarned) {
+        _oneMinWarned = true;
         _extendDialogShowing = true;
         _showExtendDialog();
       }
@@ -449,6 +456,34 @@ class _CallScreenState extends ConsumerState<CallScreen> {
       }
     } else {
       _slotExpiredAt = null;
+      // 1 minute left: a warning beep + the extend prompt, once per slot.
+      if (remaining.inSeconds <= 60 &&
+          _isAspirant &&
+          !_oneMinWarned &&
+          !_extendDialogShowing &&
+          _phase == _Phase.active) {
+        _oneMinWarned = true;
+        _extendDialogShowing = true;
+        _beepWarning();
+        _showExtendDialog();
+      } else if (remaining.inSeconds > 75) {
+        // Comfortably past the warning window (e.g. after an extension) —
+        // re-arm so the next slot's final minute warns again.
+        _oneMinWarned = false;
+      }
+    }
+  }
+
+  /// Short in-call warning tone (native ToneGenerator via the call channel —
+  /// no audio plugin, same hand-rolled pattern as the rest of this screen's
+  /// native bits) plus a heavy haptic. Best-effort: a device without a tone
+  /// generator just gets the haptic.
+  Future<void> _beepWarning() async {
+    HapticFeedback.heavyImpact();
+    try {
+      await _callChannel.invokeMethod('beep');
+    } catch (_) {
+      // ignore — the haptic already fired
     }
   }
 
@@ -464,12 +499,12 @@ class _CallScreenState extends ConsumerState<CallScreen> {
       context: context,
       barrierDismissible: false,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('Time\'s up'),
+        title: const Text('1 minute left'),
         content: Text(
           // Extension length always mirrors the shortest bookable slot
           // (kCallSlotMinutes.first) and is billed at that slot's price —
           // see SessionsService.extendCall.
-          'Your slot has ended. Continue for another '
+          'Your slot is almost up. Continue for another '
           '${kCallSlotMinutes.first} minutes? '
           '${uniminutesLabel(extendCost)} will be deducted.'
           '${available == null ? '' : ' You have ${uniminutesLabel(available)} available.'}',
@@ -497,6 +532,8 @@ class _CallScreenState extends ConsumerState<CallScreen> {
             .read(sessionsApiProvider)
             .extendCall(widget.sessionId);
         if (!mounted) return;
+        // Re-arm the 1-min warning for the freshly-added block.
+        _oneMinWarned = false;
         setState(() => _session = updated);
       } catch (e) {
         if (!mounted) return;
