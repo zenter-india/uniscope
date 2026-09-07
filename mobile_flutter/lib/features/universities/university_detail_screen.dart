@@ -202,8 +202,7 @@ class _Hero extends StatelessWidget {
                   Consumer(
                     builder: (context, ref, _) {
                       final savedIds = ref.watch(savedCollegeIdsProvider).value;
-                      final saved =
-                          savedIds?.contains(university.id) ?? false;
+                      final saved = savedIds?.contains(university.id) ?? false;
                       return _CircleIconButton(
                         icon: saved
                             ? Icons.favorite_rounded
@@ -669,11 +668,25 @@ class _ReviewsTab extends ConsumerWidget {
                       'Waiting for a verified mentor from this college to write one.',
                 );
               }
+              // Compact cards show only star + the written comment, so
+              // rating-only reviews (no free text) contribute to the
+              // summary above but have no card of their own.
+              final written = reviews
+                  .where((r) => (r.body ?? '').trim().isNotEmpty)
+                  .toList();
+              if (written.isEmpty) {
+                return const EmptyState(
+                  icon: Icons.rate_review_rounded,
+                  title: 'No written reviews yet',
+                  message:
+                      'Ratings so far, but nobody has left a comment — check the breakdown above.',
+                );
+              }
               return Column(
                 children: [
-                  for (final review in reviews) ...[
-                    ReviewCard(review: review),
-                    const SizedBox(height: AppSpacing.md),
+                  for (final review in written) ...[
+                    CompactReviewCard(review: review),
+                    const SizedBox(height: AppSpacing.sm),
                   ],
                 ],
               );

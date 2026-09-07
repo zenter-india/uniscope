@@ -299,6 +299,51 @@ class ReviewCard extends StatelessWidget {
   }
 }
 
+/// Compact review card — just the star rating and the writer's own words.
+/// No role chip, date, or tag chips (see [ReviewCard] for the full version,
+/// still used on the Review Breakdown screen). Returns [SizedBox.shrink]
+/// when the writer left the free-text answer blank, so a wall of empty
+/// cards never appears — those reviews still count toward the aggregate.
+class CompactReviewCard extends StatelessWidget {
+  const CompactReviewCard({super.key, required this.review});
+  final UniversityReview review;
+
+  @override
+  Widget build(BuildContext context) {
+    final body = review.body?.trim() ?? '';
+    if (body.isEmpty) return const SizedBox.shrink();
+    return AppCard(
+      padding: const EdgeInsets.all(AppSpacing.sm),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              for (var i = 1; i <= 5; i++)
+                Icon(
+                  i <= review.overallRating
+                      ? Icons.star_rounded
+                      : Icons.star_border_rounded,
+                  size: 15,
+                  color: AppColors.warning,
+                ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Text(
+            body,
+            style: const TextStyle(
+              fontSize: AppFont.sm,
+              color: AppColors.textPrimary,
+              height: 1.4,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 /// One "Student Experience Breakdown" card (Q5–Q11) — a headline sentence,
 /// a stacked severity bar, and an expandable per-option legend. Every % is
 /// real: it comes from `summary.choiceDistributions[spec.field]`, a
@@ -321,8 +366,7 @@ class ChoiceDistributionCard extends StatefulWidget {
 class _ChoiceDistributionCardState extends State<ChoiceDistributionCard> {
   bool _expanded = false;
 
-  int get _total =>
-      widget.distribution.values.fold(0, (sum, n) => sum + n);
+  int get _total => widget.distribution.values.fold(0, (sum, n) => sum + n);
 
   int _pct(int count) => _total == 0 ? 0 : ((count / _total) * 100).round();
 
@@ -334,7 +378,9 @@ class _ChoiceDistributionCardState extends State<ChoiceDistributionCard> {
       0,
       (sum, code) => sum + (widget.distribution[code] ?? 0),
     );
-    final positivePct = total == 0 ? 0 : ((positiveCount / total) * 100).round();
+    final positivePct = total == 0
+        ? 0
+        : ((positiveCount / total) * 100).round();
 
     return AppCard(
       margin: const EdgeInsets.only(bottom: AppSpacing.sm),
