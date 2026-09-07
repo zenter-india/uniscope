@@ -8,6 +8,7 @@ import '../../core/network/users_api.dart';
 import '../../core/theme/app_theme.dart';
 import '../../widgets/app_widgets.dart';
 import '../profile/profile_options.dart';
+import 'review_breakdown_screen.dart';
 import 'review_summary_card.dart';
 import 'stream_visuals.dart';
 
@@ -754,12 +755,17 @@ class UniversityCard extends ConsumerWidget {
               color: Colors.transparent,
               child: InkWell(
                 borderRadius: BorderRadius.circular(AppRadius.md),
-                onTap: () => context.push(
-                  '/colleges/detail/reviews',
-                  extra: {
-                    'universityId': university.id,
-                    'universityName': university.name,
-                  },
+                // Direct push, not the nested go_router location — see the
+                // matching note in university_detail_screen.dart's Overview
+                // tab; the deep `/colleges/detail/reviews` match was not
+                // surfacing the screen.
+                onTap: () => Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (_) => ReviewBreakdownScreen(
+                      universityId: university.id,
+                      universityName: university.name,
+                    ),
+                  ),
                 ),
                 child: ReviewSummaryBody(
                   universityId: university.id,

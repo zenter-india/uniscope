@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 
 import '../../core/network/college_wishlist_api.dart';
 import '../../core/network/universities_api.dart';
@@ -11,6 +10,7 @@ import '../../state/auth_controller.dart' show UserRole;
 import '../../widgets/app_widgets.dart';
 import '../auth/auth_background.dart' show authBrandTeal, authBrandNavy;
 import '../mentors/mentor_list_screen.dart';
+import 'review_breakdown_screen.dart';
 import 'review_summary_card.dart';
 import 'review_widgets.dart';
 import 'university_review_screen.dart';
@@ -504,12 +504,20 @@ class _OverviewTab extends ConsumerWidget {
               universityId: university.id,
               fallbackRating: university.rating,
               fallbackReviewCount: university.reviewCount,
-              onTap: () => context.push(
-                '/colleges/detail/reviews',
-                extra: {
-                  'universityId': university.id,
-                  'universityName': university.name,
-                },
+              // Push the breakdown screen directly rather than routing to
+              // the nested go_router location `/colleges/detail/reviews` —
+              // that path re-runs the intermediate `detail` builder without
+              // a `universitySlug` in `extra`, and the deep nested match
+              // was silently failing to surface the screen at all. A plain
+              // MaterialPageRoute is the same pattern used elsewhere
+              // (help_screen, call_request_sheet) and has no such fragility.
+              onTap: () => Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => ReviewBreakdownScreen(
+                    universityId: university.id,
+                    universityName: university.name,
+                  ),
+                ),
               ),
             ),
             const SizedBox(height: AppSpacing.md),
