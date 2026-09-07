@@ -279,13 +279,40 @@ export class SessionsService {
     if (isAudioCall) {
       this.logger.log(`[call] sending SESSION_REQUEST sessionId=${session.id} mentor=${dto.mentorId}`);
     }
+
+    // The mentor decides whether to accept now or plan for later, so the
+    // notification itself has to say which kind of request this is and, when
+    // scheduled, the time(s) the student offered. Times are rendered in IST
+    // (the app's only market) — Node's Intl has the tz data built in.
+    const fmtIst = (d: Date): string =>
+      new Intl.DateTimeFormat('en-US', {
+        weekday: 'short',
+        month: 'short',
+        day: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true,
+        timeZone: 'Asia/Kolkata',
+      }).format(d);
+
+    let callTitle = 'New audio call request';
+    let callBody = `A student booked a ${slotMinutes}-min audio call with you.`;
+    if (isAudioCall && !requestedFor) {
+      callTitle = 'New instant call request';
+      callBody = `A student wants a ${slotMinutes}-min call now — accept to connect.`;
+    } else if (isAudioCall && requestedForAlt) {
+      callBody =
+        `A student booked a ${slotMinutes}-min call — ` +
+        `${fmtIst(requestedFor!)} or ${fmtIst(requestedForAlt)}.`;
+    } else if (isAudioCall && requestedFor) {
+      callBody = `A student booked a ${slotMinutes}-min call for ${fmtIst(requestedFor)}.`;
+    }
+
     await this.notificationsService.send({
       userId: dto.mentorId,
       type: isAudioCall ? NotificationType.SESSION_REQUEST : NotificationType.MESSAGE,
-      title: isAudioCall ? 'New audio call request' : 'New chat',
-      body: isAudioCall
-        ? `A student booked a ${slotMinutes}-min audio call with you.`
-        : 'A student started a chat with you.',
+      title: isAudioCall ? callTitle : 'New chat',
+      body: isAudioCall ? callBody : 'A student started a chat with you.',
       metadata: { sessionId: session.id },
     });
 

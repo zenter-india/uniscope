@@ -319,8 +319,9 @@ class _MentorStudentRow extends StatelessWidget {
     final latest = sessions.reduce(
       (a, b) => a.requestedAt.compareTo(b.requestedAt) >= 0 ? a : b,
     );
-    final activeSessions = sessions.where((s) => _isActiveStatus(s.status)).toList()
-      ..sort((a, b) => a.requestedAt.compareTo(b.requestedAt));
+    final activeSessions =
+        sessions.where((s) => _isActiveStatus(s.status)).toList()
+          ..sort((a, b) => a.requestedAt.compareTo(b.requestedAt));
     final aspirantName = first.aspirantName;
     final showDot =
         latest.type == 'AUDIO_CALL' || _isActiveStatus(latest.status);
@@ -519,8 +520,13 @@ String _lastActivityLabel(Session session) {
   switch (session.status) {
     case SessionStatus.pending:
       if (session.type != 'AUDIO_CALL') return 'Chat started';
-      if (session.requestedFor == null) return 'Call requested';
-      if (session.requestedForAlt != null) return 'Call requested · 2 times';
+      // Always say *what kind* of call request this is and *when* — the
+      // mentor needs both to decide whether to accept now or plan for later.
+      if (session.requestedFor == null) return 'Instant call requested · connect now';
+      if (session.requestedForAlt != null) {
+        return 'Call requested · ${clockLabel(session.requestedFor!)} '
+            'or ${clockLabel(session.requestedForAlt!)}';
+      }
       return 'Call requested · ${friendlyCallTime(session.requestedFor!)}';
     case SessionStatus.accepted:
       return 'Ready — accepted';

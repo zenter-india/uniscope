@@ -6,6 +6,7 @@ import '../../core/network/sessions_api.dart';
 import '../../core/theme/app_theme.dart';
 import '../../state/auth_controller.dart';
 import '../../widgets/app_widgets.dart';
+import 'call_time_windows.dart';
 import 'cancel_deflection_sheet.dart';
 import 'session_list_screen.dart' show sessionsListProvider;
 
@@ -152,7 +153,16 @@ class _DockRowState extends ConsumerState<_DockRow> {
     if (widget.isMentor) {
       switch (session.status) {
         case SessionStatus.pending:
-          return 'New call request';
+          // Spell out instant vs. scheduled (and the time) right here — this
+          // banner is often the first place the mentor sees the request.
+          if (session.requestedFor == null) {
+            return 'Instant call request · connect now';
+          }
+          if (session.requestedForAlt != null) {
+            return 'Call request · ${clockLabel(session.requestedFor!)} '
+                'or ${clockLabel(session.requestedForAlt!)}';
+          }
+          return 'Call request · ${friendlyCallTime(session.requestedFor!)}';
         case SessionStatus.accepted:
           return 'Accepted — ready to call';
         case SessionStatus.ringing:
