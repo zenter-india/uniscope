@@ -5,6 +5,7 @@ import { BlocksModule } from '../blocks/blocks.module.js';
 import { ChatModule } from '../chat/chat.module.js';
 import { MentorsModule } from '../mentors/mentors.module.js';
 import { NotificationsModule } from '../notifications/notifications.module.js';
+import { ReviewsModule } from '../reviews/reviews.module.js';
 import { WalletModule } from '../wallet/wallet.module.js';
 import { SessionsController } from './sessions.controller.js';
 import { SessionsService } from './sessions.service.js';
@@ -28,6 +29,7 @@ import { SessionsService } from './sessions.service.js';
     AgoraModule,
     NotificationsModule,
     BlocksModule,
+    ReviewsModule,
   ],
   controllers: [SessionsController],
   providers: [SessionsService],

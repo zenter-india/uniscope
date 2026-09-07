@@ -19,6 +19,7 @@ import {
 import { adminOrderBy } from '../../common/helpers/admin-sort.helper.js';
 import { PrismaService } from '../../database/prisma/prisma.service.js';
 import { AgoraService } from '../agora/agora.service.js';
+import { ReviewsService } from '../reviews/reviews.service.js';
 import { AvatarService } from '../avatar/avatar.service.js';
 import { BlocksService } from '../blocks/blocks.service.js';
 import { ChatService } from '../chat/chat.service.js';
@@ -92,6 +93,7 @@ export class SessionsService {
     private readonly notificationsService: NotificationsService,
     private readonly blocksService: BlocksService,
     private readonly avatarService: AvatarService,
+    private readonly reviewsService: ReviewsService,
   ) {}
 
   /** Passed to toSessionResponse at every call site — keeps that file DI-free. */
@@ -1031,7 +1033,13 @@ export class SessionsService {
       where: { id: sessionId },
       include: SESSION_WITH_NAMES_INCLUDE,
     });
-    return toSessionResponse(session, this.resolveAvatarUrl);
+    // Rating for the in-call context card the aspirant sees — cheap
+    // (one indexed groupBy for a single mentor), and this path is a single
+    // session, not the list.
+    const mentorRating = await this.reviewsService.ratingSummary(
+      session.mentorId,
+    );
+    return toSessionResponse(session, this.resolveAvatarUrl, mentorRating);
   }
 
   private async requireSession(sessionId: string): Promise<Session> {

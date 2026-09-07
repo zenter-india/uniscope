@@ -51,6 +51,10 @@ enum _Phase {
 /// ended summary. One screen, one state machine — matches how short-lived
 /// and linear this flow actually is; splitting it into separate routes would
 /// just mean threading the same session/engine state across screens.
+/// Rough call-signal buckets derived from Agora's per-second network
+/// quality report — drives the always-visible signal chip.
+enum _SignalLevel { unknown, strong, fair, weak }
+
 class CallScreen extends ConsumerStatefulWidget {
   const CallScreen({super.key, required this.sessionId});
   final String sessionId;
@@ -84,6 +88,7 @@ class _CallScreenState extends ConsumerState<CallScreen> {
   bool _reconnecting = false;
   bool _peerMuted = false;
   bool _weakSignal = false;
+  _SignalLevel _signal = _SignalLevel.unknown;
   bool _connectHapticDone = false;
   // Set from Agora's onAudioVolumeIndication — true while the other party's
   // mic level is above a small floor, so the avatar can show a "speaking"
@@ -98,6 +103,42 @@ class _CallScreenState extends ConsumerState<CallScreen> {
   bool get _isAspirant =>
       _session != null &&
       ref.read(authControllerProvider).user?.id == _session!.aspirantId;
+
+  /// One-line context about the *other* party for the in-call card.
+  /// Aspirant sees the mentor: "College · ★4.8 · Cardiology".
+  /// Mentor sees the student: "Aspirant · PCB · Class 12 · Target: MBBS".
+  /// Null when there isn't at least two facts worth showing.
+  String? get _peerContext {
+    final s = _session;
+    if (s == null) return null;
+    final isAspirant =
+        ref.read(authControllerProvider).user?.role == UserRole.aspirant;
+    String clean(String? v) => (v ?? '').trim();
+    final parts = <String>[];
+    if (isAspirant) {
+      if (clean(s.mentorCollege).isNotEmpty) {
+        parts.add(clean(s.mentorCollege));
+      }
+      if (s.mentorRating != null) {
+        parts.add('★ ${s.mentorRating!.toStringAsFixed(1)}');
+      }
+      if (clean(s.mentorSpecialty).isNotEmpty) {
+        parts.add(clean(s.mentorSpecialty));
+      }
+    } else {
+      parts.add('Aspirant');
+      if (clean(s.aspirantStream).isNotEmpty) {
+        parts.add(clean(s.aspirantStream));
+      }
+      if (clean(s.aspirantQualification).isNotEmpty) {
+        parts.add(clean(s.aspirantQualification));
+      }
+      if (clean(s.aspirantCourse).isNotEmpty) {
+        parts.add('Target: ${clean(s.aspirantCourse)}');
+      }
+    }
+    return parts.length < 2 ? null : parts.join('  ·  ');
+  }
 
   /// The other party — a mentor's name/avatar when the aspirant is looking,
   /// and vice versa. Falls back to a generic label before the session loads.
@@ -320,16 +361,29 @@ class _CallScreenState extends ConsumerState<CallScreen> {
           });
         },
         onNetworkQuality: (connection, remoteUid, txQuality, rxQuality) {
-          // rxQuality is the more useful "how well am I hearing them" number.
-          final bad = {
-            QualityType.qualityPoor,
-            QualityType.qualityBad,
-            QualityType.qualityVbad,
-            QualityType.qualityDown,
+          // rxQuality is the more useful "how well am I hearing them" number;
+          // fold in txQuality so a bad uplink also shows.
+          _SignalLevel levelOf(QualityType q) => switch (q) {
+            QualityType.qualityExcellent ||
+            QualityType.qualityGood => _SignalLevel.strong,
+            QualityType.qualityPoor => _SignalLevel.fair,
+            QualityType.qualityBad ||
+            QualityType.qualityVbad ||
+            QualityType.qualityDown => _SignalLevel.weak,
+            _ => _SignalLevel.unknown,
           };
-          final weak = bad.contains(rxQuality) || bad.contains(txQuality);
-          if (mounted && weak != _weakSignal) {
-            setState(() => _weakSignal = weak);
+          final rx = levelOf(rxQuality);
+          final tx = levelOf(txQuality);
+          // Worst of the two that we actually have a reading for.
+          final level = [rx, tx]
+              .where((l) => l != _SignalLevel.unknown)
+              .fold(_SignalLevel.unknown, (a, b) => b.index > a.index ? b : a);
+          final weak = level == _SignalLevel.weak;
+          if (mounted && (level != _signal || weak != _weakSignal)) {
+            setState(() {
+              _signal = level;
+              _weakSignal = weak;
+            });
           }
         },
         onError: (err, msg) {
@@ -495,8 +549,9 @@ class _CallScreenState extends ConsumerState<CallScreen> {
     // available" line silently drops off.
     int? available;
     try {
-      available = (await ref.read(walletBalanceProvider.future))
-          .availableUniminutes;
+      available = (await ref.read(
+        walletBalanceProvider.future,
+      )).availableUniminutes;
     } catch (_) {
       available = ref
           .read(walletBalanceProvider)
@@ -789,6 +844,8 @@ class _CallScreenState extends ConsumerState<CallScreen> {
           speakerOn: _speakerOn,
           reconnecting: _reconnecting,
           weakSignal: _weakSignal,
+          signal: _signal,
+          contextLine: _peerContext,
           peerMuted: _peerMuted,
           peerSpeaking: _peerSpeaking && !_peerMuted && !_reconnecting,
           routeIcon: _routeGlyph().$1,
@@ -925,6 +982,8 @@ class _CallStage extends StatelessWidget {
     this.speaking = false,
     this.statusColor,
     this.statusFontSize,
+    this.signal = _SignalLevel.unknown,
+    this.contextLine,
   });
 
   /// Overrides for the status line under the @id (the active-call view puts
@@ -940,6 +999,8 @@ class _CallStage extends StatelessWidget {
   final Widget? topPill;
   final bool pulsing;
   final bool speaking;
+  final _SignalLevel signal;
+  final String? contextLine;
   final List<Widget> controls;
 
   @override
@@ -947,7 +1008,20 @@ class _CallStage extends StatelessWidget {
     return Column(
       children: [
         const SizedBox(height: AppSpacing.md),
-        SizedBox(height: 34, child: Center(child: topPill)),
+        SizedBox(
+          height: 34,
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              Center(child: topPill),
+              if (signal != _SignalLevel.unknown)
+                Positioned(
+                  left: AppSpacing.lg,
+                  child: _SignalChip(level: signal),
+                ),
+            ],
+          ),
+        ),
         const SizedBox(height: AppSpacing.xl),
         _CallPeerHeader(
           name: peerName,
@@ -958,6 +1032,7 @@ class _CallStage extends StatelessWidget {
           statusFontSize: statusFontSize,
           pulsing: pulsing,
           speaking: speaking,
+          contextLine: contextLine,
         ),
         const Spacer(),
         Padding(
@@ -988,6 +1063,7 @@ class _CallPeerHeader extends StatefulWidget {
     this.statusFontSize,
     this.pulsing = false,
     this.speaking = false,
+    this.contextLine,
   });
 
   final String name;
@@ -1002,6 +1078,10 @@ class _CallPeerHeader extends StatefulWidget {
   /// green halo + a barely-there scale-up so a working call never looks
   /// frozen.
   final bool speaking;
+
+  /// One-line context about the other party (college · rating · specialty,
+  /// or aspirant · stream · qualification · target). Null → not shown.
+  final String? contextLine;
 
   @override
   State<_CallPeerHeader> createState() => _CallPeerHeaderState();
@@ -1131,13 +1211,16 @@ class _CallPeerHeaderState extends State<_CallPeerHeader>
             ),
           ),
         ],
+        if (widget.contextLine != null) ...[
+          const SizedBox(height: 10),
+          _ContextCard(text: widget.contextLine!),
+        ],
         const SizedBox(height: 6),
         Text(
           widget.status,
           textAlign: TextAlign.center,
           style: TextStyle(
-            color:
-                widget.statusColor ?? Colors.white.withValues(alpha: 0.72),
+            color: widget.statusColor ?? Colors.white.withValues(alpha: 0.72),
             fontSize: widget.statusFontSize ?? AppFont.sm,
             fontWeight: AppFont.medium,
             letterSpacing: 0.2,
@@ -1231,6 +1314,8 @@ class _ActiveCallView extends StatelessWidget {
     required this.speakerOn,
     required this.reconnecting,
     required this.weakSignal,
+    required this.signal,
+    required this.contextLine,
     required this.peerMuted,
     required this.peerSpeaking,
     required this.routeIcon,
@@ -1249,6 +1334,8 @@ class _ActiveCallView extends StatelessWidget {
   final bool speakerOn;
   final bool reconnecting;
   final bool weakSignal;
+  final _SignalLevel signal;
+  final String? contextLine;
   final bool peerMuted;
   final bool peerSpeaking;
   final IconData routeIcon;
@@ -1317,6 +1404,8 @@ class _ActiveCallView extends StatelessWidget {
       statusFontSize: AppFont.xs,
       topPill: pill,
       speaking: peerSpeaking,
+      signal: signal,
+      contextLine: contextLine,
       controls: [
         _CallControl(
           icon: muted ? Icons.mic_off_rounded : Icons.mic_rounded,
@@ -1380,6 +1469,82 @@ class _StatusPill extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// The `.mcard` from the design — a translucent pill under the peer's name
+/// carrying one line of context (mentor's college · rating · specialty, or
+/// the student's stream · qualification · target course).
+class _ContextCard extends StatelessWidget {
+  const _ContextCard({required this.text});
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      constraints: const BoxConstraints(maxWidth: 300),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(AppRadius.full),
+        color: Colors.white.withValues(alpha: 0.08),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.14)),
+      ),
+      child: Text(
+        text,
+        textAlign: TextAlign.center,
+        maxLines: 2,
+        overflow: TextOverflow.ellipsis,
+        style: TextStyle(
+          color: Colors.white.withValues(alpha: 0.78),
+          fontSize: 11,
+          fontWeight: AppFont.medium,
+          height: 1.3,
+        ),
+      ),
+    );
+  }
+}
+
+/// Always-visible signal-strength chip (top-left of the call stage) — three
+/// bars + a word. Only hidden when Agora hasn't reported quality yet.
+class _SignalChip extends StatelessWidget {
+  const _SignalChip({required this.level});
+  final _SignalLevel level;
+
+  @override
+  Widget build(BuildContext context) {
+    final (label, color, filled) = switch (level) {
+      _SignalLevel.strong => ('Strong', const Color(0xFF6FE3B4), 3),
+      _SignalLevel.fair => ('Fair', const Color(0xFFFAC775), 2),
+      _SignalLevel.weak => ('Weak', const Color(0xFFF0997B), 1),
+      _SignalLevel.unknown => ('', Colors.white, 0),
+    };
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        for (var i = 0; i < 3; i++) ...[
+          if (i > 0) const SizedBox(width: 2),
+          Container(
+            width: 3,
+            height: 5.0 + i * 3,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(1),
+              color: i < filled ? color : Colors.white.withValues(alpha: 0.22),
+            ),
+          ),
+        ],
+        const SizedBox(width: 6),
+        Text(
+          label.toUpperCase(),
+          style: TextStyle(
+            color: color.withValues(alpha: 0.9),
+            fontSize: 9,
+            fontWeight: AppFont.bold,
+            letterSpacing: 0.8,
+          ),
+        ),
+      ],
     );
   }
 }

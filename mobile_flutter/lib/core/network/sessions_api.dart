@@ -62,6 +62,13 @@ class Session {
     this.mentorJoinedAt,
     this.mentorIsAvailable = false,
     this.mentorAvailableDays = const [],
+    this.mentorCollege,
+    this.mentorSpecialty,
+    this.mentorRating,
+    this.mentorReviewCount = 0,
+    this.aspirantStream,
+    this.aspirantQualification,
+    this.aspirantCourse,
   });
 
   final String id;
@@ -109,6 +116,25 @@ class Session {
   /// offer them as quick-picks straight from a session row.
   final List<String> mentorAvailableDays;
 
+  // ── In-call context card (populated on GET /sessions/:id) ──────────────
+  /// The mentor's college — shown to the aspirant during a call.
+  final String? mentorCollege;
+
+  /// The mentor's specialty/specialization (falls back to their stream) —
+  /// shown to the aspirant during a call.
+  final String? mentorSpecialty;
+
+  /// The mentor's average rating (1–5) and review count. Null with no
+  /// reviews yet.
+  final double? mentorRating;
+  final int mentorReviewCount;
+
+  /// The aspirant's school stream / qualification / target course — shown
+  /// to the mentor during a call.
+  final String? aspirantStream;
+  final String? aspirantQualification;
+  final String? aspirantCourse;
+
   factory Session.fromJson(Map<String, dynamic> json) => Session(
     id: json['id'] as String,
     aspirantId: json['aspirantId'] as String,
@@ -143,6 +169,13 @@ class Session {
             ?.map((e) => e as String)
             .toList() ??
         const [],
+    mentorCollege: json['mentorCollege'] as String?,
+    mentorSpecialty: json['mentorSpecialty'] as String?,
+    mentorRating: (json['mentorRating'] as num?)?.toDouble(),
+    mentorReviewCount: (json['mentorReviewCount'] as num?)?.toInt() ?? 0,
+    aspirantStream: json['aspirantStream'] as String?,
+    aspirantQualification: json['aspirantQualification'] as String?,
+    aspirantCourse: json['aspirantCourse'] as String?,
   );
 }
 
