@@ -490,11 +490,21 @@ class _CallScreenState extends ConsumerState<CallScreen> {
   Future<void> _showExtendDialog() async {
     if (!mounted) return;
     final extendCost = slotUniminutes(kCallSlotMinutes.first);
-    final available = ref
-        .read(walletBalanceProvider)
-        .asData
-        ?.value
-        .availableUniminutes;
+    // Await the balance rather than reading whatever's cached — otherwise on
+    // the first extend of a call (provider not yet resolved) the "You have N
+    // available" line silently drops off.
+    int? available;
+    try {
+      available = (await ref.read(walletBalanceProvider.future))
+          .availableUniminutes;
+    } catch (_) {
+      available = ref
+          .read(walletBalanceProvider)
+          .asData
+          ?.value
+          .availableUniminutes;
+    }
+    if (!mounted) return;
     final continue_ = await showDialog<bool>(
       context: context,
       barrierDismissible: false,
