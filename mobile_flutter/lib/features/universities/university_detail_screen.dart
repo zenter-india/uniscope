@@ -88,37 +88,48 @@ class _UniversityDetailScreenState
               ),
             ),
             Expanded(
-              child: SingleChildScrollView(child: _buildContent(context, uni)),
-            ),
-            SafeArea(
-              top: false,
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(
-                  AppSpacing.md,
-                  0,
-                  AppSpacing.md,
-                  AppSpacing.md,
+              child: SafeArea(
+                top: false,
+                // Keep the bottom inset on the scroll area when the CTA
+                // below isn't there to provide it (Mentors tab).
+                bottom: _active == 'mentors',
+                child: SingleChildScrollView(
+                  child: _buildContent(context, uni),
                 ),
-                child: SizedBox(
-                  width: double.infinity,
-                  child: FilledButton.icon(
-                    style: FilledButton.styleFrom(
-                      backgroundColor: authBrandTeal,
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(AppRadius.md),
+              ),
+            ),
+            // The CTA only jumps to the Mentors tab, so it's dead weight
+            // once you're already on it — show it on Overview / Reviews only.
+            if (_active != 'mentors')
+              SafeArea(
+                top: false,
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(
+                    AppSpacing.md,
+                    0,
+                    AppSpacing.md,
+                    AppSpacing.md,
+                  ),
+                  child: SizedBox(
+                    width: double.infinity,
+                    child: FilledButton.icon(
+                      style: FilledButton.styleFrom(
+                        backgroundColor: authBrandTeal,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(AppRadius.md),
+                        ),
                       ),
-                    ),
-                    onPressed: () => setState(() => _active = 'mentors'),
-                    icon: const Icon(Icons.people_alt_rounded, size: 20),
-                    label: const Text(
-                      'See mentors from this college',
-                      style: TextStyle(fontWeight: AppFont.bold),
+                      onPressed: () => setState(() => _active = 'mentors'),
+                      icon: const Icon(Icons.people_alt_rounded, size: 20),
+                      label: const Text(
+                        'See mentors from this college',
+                        style: TextStyle(fontWeight: AppFont.bold),
+                      ),
                     ),
                   ),
                 ),
               ),
-            ),
           ],
         ),
       ),
