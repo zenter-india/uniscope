@@ -8,6 +8,7 @@ import '../../core/theme/app_theme.dart';
 import 'call_time_windows.dart';
 import 'custom_call_time_screen.dart';
 import 'session_list_screen.dart' show sessionsListProvider;
+import '../wallet/wallet_screen.dart' show walletBalanceProvider;
 
 /// What the sheet hands back: the slot length plus the aspirant's preferred
 /// time(s). [times] is empty for Instant, or holds 1–2 options for the
@@ -86,16 +87,16 @@ Future<void> showCallRequestSheet(
   }
 }
 
-class _CallRequestSheet extends StatefulWidget {
+class _CallRequestSheet extends ConsumerStatefulWidget {
   const _CallRequestSheet({this.mentorName, this.mentorWindows = const []});
   final String? mentorName;
   final List<String> mentorWindows;
 
   @override
-  State<_CallRequestSheet> createState() => _CallRequestSheetState();
+  ConsumerState<_CallRequestSheet> createState() => _CallRequestSheetState();
 }
 
-class _CallRequestSheetState extends State<_CallRequestSheet> {
+class _CallRequestSheetState extends ConsumerState<_CallRequestSheet> {
   static const _maxTimes = 2;
 
   int _slotMinutes = kCallSlotMinutes.first;
@@ -248,7 +249,32 @@ class _CallRequestSheetState extends State<_CallRequestSheet> {
             ],
 
             const SizedBox(height: AppSpacing.lg),
-            _sectionLabel('How long?'),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              crossAxisAlignment: CrossAxisAlignment.baseline,
+              textBaseline: TextBaseline.alphabetic,
+              children: [
+                _sectionLabel('How long?'),
+                Builder(
+                  builder: (_) {
+                    final avail = ref
+                        .watch(walletBalanceProvider)
+                        .asData
+                        ?.value
+                        .availableUniminutes;
+                    if (avail == null) return const SizedBox.shrink();
+                    return Text(
+                      '${uniminutesLabel(avail)} available',
+                      style: const TextStyle(
+                        fontSize: AppFont.xs,
+                        fontWeight: AppFont.bold,
+                        color: AppColors.textSecondary,
+                      ),
+                    );
+                  },
+                ),
+              ],
+            ),
             const SizedBox(height: AppSpacing.sm),
             Row(
               children: kCallSlotMinutes.map((m) {

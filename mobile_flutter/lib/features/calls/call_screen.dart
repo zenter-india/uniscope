@@ -15,6 +15,7 @@ import '../../state/auth_controller.dart';
 import '../../widgets/app_widgets.dart';
 import '../reports/report_sheet.dart';
 import '../sessions/rate_mentor_sheet.dart';
+import '../wallet/wallet_screen.dart' show walletBalanceProvider;
 
 /// Hand-rolled native channels — see MainActivity.kt for why these bypass
 /// the permission_handler plugin. `uniscope/call` drives the Android
@@ -400,17 +401,29 @@ class _CallScreenState extends ConsumerState<CallScreen> {
   }
 
   void _tick() {
-    final startedAt = _session?.startedAt;
-    if (startedAt == null || !mounted) return;
+    final session = _session;
+    final startedAt = session?.startedAt;
+    if (session == null || startedAt == null || !mounted) return;
     setState(
       () => _elapsed = DateTime.now().toUtc().difference(
         DateTime.parse(startedAt).toUtc(),
       ),
     );
+    // Also re-check the slot boundary every second, not just on the 2s
+    // poll — otherwise the "Time's up" prompt could land several seconds
+    // late (and it did: it keyed off billedMinutes, which stays 0 until
+    // billing settles, so nothing fired at the real slot end).
+    _checkSlotCutoff(session);
   }
 
   void _checkSlotCutoff(Session session) {
-    final slotSeconds = session.billedMinutes * 60;
+    // Same fallback the countdown display uses (see _slotRemaining) —
+    // billedMinutes is 0 until the call's billing settles, so on its own
+    // it would leave the slot boundary undefined for most of the call.
+    final slotMinutes = session.billedMinutes > 0
+        ? session.billedMinutes
+        : (session.callSlotMinutes ?? 0);
+    final slotSeconds = slotMinutes * 60;
     final startedAt = session.startedAt;
     if (startedAt == null || slotSeconds <= 0) return;
 
@@ -441,6 +454,12 @@ class _CallScreenState extends ConsumerState<CallScreen> {
 
   Future<void> _showExtendDialog() async {
     if (!mounted) return;
+    final extendCost = slotUniminutes(kCallSlotMinutes.first);
+    final available = ref
+        .read(walletBalanceProvider)
+        .asData
+        ?.value
+        .availableUniminutes;
     final continue_ = await showDialog<bool>(
       context: context,
       barrierDismissible: false,
@@ -452,7 +471,8 @@ class _CallScreenState extends ConsumerState<CallScreen> {
           // see SessionsService.extendCall.
           'Your slot has ended. Continue for another '
           '${kCallSlotMinutes.first} minutes? '
-          '${uniminutesLabel(slotUniminutes(kCallSlotMinutes.first))} will be deducted.',
+          '${uniminutesLabel(extendCost)} will be deducted.'
+          '${available == null ? '' : ' You have ${uniminutesLabel(available)} available.'}',
         ),
         actions: [
           TextButton(
@@ -856,7 +876,15 @@ class _CallStage extends StatelessWidget {
     this.topPill,
     this.pulsing = false,
     this.speaking = false,
+    this.statusColor,
+    this.statusFontSize,
   });
+
+  /// Overrides for the status line under the @id (the active-call view puts
+  /// the countdown there, small and tinted). Null → the default "Ringing…"
+  /// / "Connecting…" style.
+  final Color? statusColor;
+  final double? statusFontSize;
 
   final String peerName;
   final String? peerUniqueId;
@@ -879,6 +907,8 @@ class _CallStage extends StatelessWidget {
           uniqueId: peerUniqueId,
           avatarUrl: peerAvatarUrl,
           status: status,
+          statusColor: statusColor,
+          statusFontSize: statusFontSize,
           pulsing: pulsing,
           speaking: speaking,
         ),
@@ -907,6 +937,8 @@ class _CallPeerHeader extends StatefulWidget {
     required this.uniqueId,
     required this.avatarUrl,
     required this.status,
+    this.statusColor,
+    this.statusFontSize,
     this.pulsing = false,
     this.speaking = false,
   });
@@ -915,6 +947,8 @@ class _CallPeerHeader extends StatefulWidget {
   final String? uniqueId;
   final String? avatarUrl;
   final String status;
+  final Color? statusColor;
+  final double? statusFontSize;
   final bool pulsing;
 
   /// The other party's mic is live right now — the avatar gets a soft
@@ -1055,8 +1089,9 @@ class _CallPeerHeaderState extends State<_CallPeerHeader>
           widget.status,
           textAlign: TextAlign.center,
           style: TextStyle(
-            color: Colors.white.withValues(alpha: 0.72),
-            fontSize: AppFont.sm,
+            color:
+                widget.statusColor ?? Colors.white.withValues(alpha: 0.72),
+            fontSize: widget.statusFontSize ?? AppFont.sm,
             fontWeight: AppFont.medium,
             letterSpacing: 0.2,
             fontFeatures: const [FontFeature.tabularFigures()],
@@ -1198,13 +1233,18 @@ class _ActiveCallView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final rem = _remainingLabel();
-    final status = peerMuted && !reconnecting
-        ? '$elapsed  ·  $peerName is muted'
-        : elapsed;
 
-    // One pill above the avatar, by priority: a live connection problem
-    // outranks the countdown.
-    Widget? pill;
+    // The elapsed running time now sits in the top pill (same size/place
+    // the countdown used to). Time-left drops to the small line under the
+    // @id — kept its amber/coral urgency tint.
+    final belowIdText = rem?.$1 ?? 'In call';
+    final belowIdColor = rem?.$2 ?? Colors.white.withValues(alpha: 0.6);
+    final status = peerMuted && !reconnecting
+        ? '$belowIdText  ·  $peerName is muted'
+        : belowIdText;
+
+    // A live connection problem still outranks the elapsed time in the pill.
+    final Widget pill;
     if (reconnecting) {
       pill = const _StatusPill(
         icon: Icons.sync_rounded,
@@ -1217,12 +1257,8 @@ class _ActiveCallView extends StatelessWidget {
         text: 'Weak signal',
         tone: Color(0xFFFAC775),
       );
-    } else if (rem != null) {
-      pill = _StatusPill(
-        icon: Icons.schedule_rounded,
-        text: rem.$1,
-        tone: rem.$2,
-      );
+    } else {
+      pill = _StatusPill(icon: Icons.schedule_rounded, text: elapsed);
     }
 
     return _CallStage(
@@ -1230,6 +1266,8 @@ class _ActiveCallView extends StatelessWidget {
       peerUniqueId: peerUniqueId,
       peerAvatarUrl: peerAvatarUrl,
       status: status,
+      statusColor: belowIdColor,
+      statusFontSize: AppFont.xs,
       topPill: pill,
       speaking: peerSpeaking,
       controls: [

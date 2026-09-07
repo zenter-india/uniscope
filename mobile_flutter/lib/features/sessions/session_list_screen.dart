@@ -1090,6 +1090,34 @@ class _SessionActionsState extends ConsumerState<_SessionActions> {
                 ),
               ],
             ),
+          ] else if (isCall &&
+              widget.isMentor &&
+              session.status == SessionStatus.pending) ...[
+            // Instant request (no requestedFor). The mentor needs to know
+            // Accept isn't a "confirm for later" — it drops straight into
+            // the call.
+            SizedBox(height: widget.dense ? 2 : AppSpacing.xs),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Icon(
+                  Icons.bolt_rounded,
+                  size: 12,
+                  color: AppColors.primary,
+                ),
+                const SizedBox(width: 4),
+                const Flexible(
+                  child: Text(
+                    'Instant request — Accept connects the call now. '
+                    'Make sure you can talk.',
+                    style: TextStyle(
+                      fontSize: AppFont.xs,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ],
           SizedBox(height: widget.dense ? AppSpacing.xs : AppSpacing.sm),
         ],
@@ -1108,7 +1136,9 @@ class _SessionActionsState extends ConsumerState<_SessionActions> {
               ),
               const SizedBox(width: AppSpacing.sm),
               _ActionButton(
-                label: 'Accept',
+                label: isCall && session.requestedFor == null
+                    ? 'Accept & join'
+                    : 'Accept',
                 dense: widget.dense,
                 busy: _busy,
                 onPressed: _busy ? null : () => _acceptAndMaybeJoin(api),
