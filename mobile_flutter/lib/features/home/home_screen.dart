@@ -263,26 +263,24 @@ class HomeScreen extends ConsumerWidget {
                           ),
                           child: Text.rich(
                             TextSpan(
-                              // One dark run (no green — matches the
-                              // "Good afternoon," colour in the reference).
-                              // The prefix is a size smaller than the name
-                              // so a long first name still fits on one line.
+                              // "Good afternoon," dark, the first name in
+                              // brand teal — matches the header mockup.
                               children: firstName == null
                                   ? [TextSpan(text: _greeting)]
                                   : [
+                                      TextSpan(text: '$_greeting, '),
                                       TextSpan(
-                                        text: '$_greeting, ',
+                                        text: firstName,
                                         style: const TextStyle(
-                                          fontSize: AppFont.md,
+                                          color: authBrandTeal,
                                         ),
                                       ),
-                                      TextSpan(text: firstName),
                                     ],
                             ),
                             overflow: TextOverflow.ellipsis,
                             maxLines: 1,
                             style: const TextStyle(
-                              fontSize: AppFont.xl,
+                              fontSize: AppFont.xxl,
                               fontWeight: AppFont.extraBold,
                               color: AppColors.textPrimary,
                               height: 1.1,
@@ -352,9 +350,9 @@ class HomeScreen extends ConsumerWidget {
               ),
 
               // ─── Sheet: opaque, pulled up over the canopy's foot ─────
-              // A thin green glowing rule sits right on the seam between the
-              // header and this sheet (per request — the pale wash alone
-              // read as no boundary at all).
+              // The mint wash above fades into this sheet's background
+              // colour, so the join is seamless — no handle bar (removed
+              // when the canopy went pale, per the header mockup).
               Stack(
                 clipBehavior: Clip.none,
                 children: [
@@ -612,31 +610,6 @@ class HomeScreen extends ConsumerWidget {
                   ],
                 ),
               ),
-                  // Soft glowing rule marking the header ↔ content seam —
-                  // dark (no green), matching the greeting text colour.
-                  Positioned(
-                    top: -AppRadius.xl - 1,
-                    left: AppSpacing.lg,
-                    right: AppSpacing.lg,
-                    child: IgnorePointer(
-                      child: Container(
-                        height: 4,
-                        decoration: BoxDecoration(
-                          color: AppColors.textPrimary,
-                          borderRadius: BorderRadius.circular(999),
-                          boxShadow: [
-                            BoxShadow(
-                              color: AppColors.textPrimary.withValues(
-                                alpha: 0.28,
-                              ),
-                              blurRadius: 16,
-                              spreadRadius: 1,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
                 ],
               ),
             ],
