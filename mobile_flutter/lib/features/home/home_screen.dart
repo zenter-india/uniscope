@@ -459,30 +459,7 @@ class HomeScreen extends ConsumerWidget {
                             ),
                     ),
                     const SizedBox(height: AppSpacing.lg),
-                    // ─── Pick up where you left off ───────────────────
-                    // Only renders when there's an open chat or a live/
-                    // pending call — otherwise it takes no space.
-                    sessionsAsync.maybeWhen(
-                      orElse: () => const SizedBox.shrink(),
-                      data: (sessions) {
-                        final active = _activeByMentor(sessions);
-                        if (active.isEmpty) return const SizedBox.shrink();
-                        return Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            SectionHeader(
-                              title: 'Pick up where you left off',
-                              accentColor: authBrandTeal,
-                              onSeeAll: () => context.go('/chats'),
-                            ),
-                            const SizedBox(height: AppSpacing.md),
-                            for (final s in active.take(3))
-                              _ActiveSessionRow(session: s),
-                            const SizedBox(height: AppSpacing.lg),
-                          ],
-                        );
-                      },
-                    ),
+                    // ─── Top mentors for you ──────────────────────────
                     SectionHeader(
                       title: 'Top mentors for you',
                       accentColor: authBrandTeal,
@@ -516,6 +493,31 @@ class HomeScreen extends ConsumerWidget {
                             ),
                     ),
                     const SizedBox(height: AppSpacing.lg),
+                    // ─── Pick up where you left off ───────────────────
+                    // Sits below Top mentors (per request). Only renders
+                    // when there's an open chat or a live/pending call —
+                    // otherwise it takes no space.
+                    sessionsAsync.maybeWhen(
+                      orElse: () => const SizedBox.shrink(),
+                      data: (sessions) {
+                        final active = _activeByMentor(sessions);
+                        if (active.isEmpty) return const SizedBox.shrink();
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            SectionHeader(
+                              title: 'Pick up where you left off',
+                              accentColor: authBrandTeal,
+                              onSeeAll: () => context.go('/chats'),
+                            ),
+                            const SizedBox(height: AppSpacing.md),
+                            for (final s in active.take(3))
+                              _ActiveSessionRow(session: s),
+                            const SizedBox(height: AppSpacing.lg),
+                          ],
+                        );
+                      },
+                    ),
                     SectionHeader(
                       title: 'Keep Exploring',
                       accentColor: authBrandTeal,
