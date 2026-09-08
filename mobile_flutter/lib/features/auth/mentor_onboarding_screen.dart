@@ -524,23 +524,11 @@ class _MentorOnboardingScreenState extends ConsumerState<MentorOnboardingScreen>
                   OnboardingStepScaffold(
                     title: _stepTitles[2],
                     subtitle: _stepSubtitles[2],
+                    // Field order: Stream -> Degree -> College -> Specialization
+                    // (Degree options and the College/Specialization data are
+                    // all stream-specific, so Stream has to be answered first;
+                    // each field appears once the one before it is answered).
                     children: [
-                      const OnboardingFieldLabel('Degree'),
-                      OnboardingSingleChipGroup(
-                        options: degreesForStream(_stream),
-                        selected: _degree,
-                        // The curated college dataset is degree-specific
-                        // (MD/MS vs Diploma vs DM/MCh), so a college picked
-                        // under the old degree may not exist under the new
-                        // one — clear it, same as the web MentorForm.
-                        onSelect: (v) => setState(() {
-                          _degree = v;
-                          _universityId = null;
-                          _collegeNameController.clear();
-                          _specialization = null;
-                        }),
-                      ),
-                      const SizedBox(height: AppSpacing.md),
                       const OnboardingFieldLabel('Stream / Field'),
                       OnboardingSingleChipGroup(
                         options: kStreamOptions,
@@ -566,21 +554,41 @@ class _MentorOnboardingScreenState extends ConsumerState<MentorOnboardingScreen>
                               hintText: 'Tell us your field of study'),
                         ),
                       ],
-                      const SizedBox(height: AppSpacing.md),
-                      const OnboardingFieldLabel('College'),
-                      CollegeSearchField(
-                        key: ValueKey('${_stream}_$_degree'),
-                        initialText: _collegeNameController.text,
-                        stream: _stream == 'Others'
-                            ? _streamOtherController.text.trim()
-                            : _stream,
-                        curatedDegree: _curatedDegree,
-                        level: _collegeLevel,
-                        onPick: (universityId, text) => setState(() {
-                          _universityId = universityId;
-                          _collegeNameController.text = text;
-                        }),
-                      ),
+                      if (_stream != null) ...[
+                        const SizedBox(height: AppSpacing.md),
+                        const OnboardingFieldLabel('Degree'),
+                        OnboardingSingleChipGroup(
+                          options: degreesForStream(_stream),
+                          selected: _degree,
+                          // The curated college dataset is degree-specific
+                          // (MD/MS vs Diploma vs DM/MCh), so a college picked
+                          // under the old degree may not exist under the new
+                          // one — clear it, same as the web MentorForm.
+                          onSelect: (v) => setState(() {
+                            _degree = v;
+                            _universityId = null;
+                            _collegeNameController.clear();
+                            _specialization = null;
+                          }),
+                        ),
+                      ],
+                      if (_degree != null) ...[
+                        const SizedBox(height: AppSpacing.md),
+                        const OnboardingFieldLabel('College'),
+                        CollegeSearchField(
+                          key: ValueKey('${_stream}_$_degree'),
+                          initialText: _collegeNameController.text,
+                          stream: _stream == 'Others'
+                              ? _streamOtherController.text.trim()
+                              : _stream,
+                          curatedDegree: _curatedDegree,
+                          level: _collegeLevel,
+                          onPick: (universityId, text) => setState(() {
+                            _universityId = universityId;
+                            _collegeNameController.text = text;
+                          }),
+                        ),
+                      ],
                       if (_needsSpecialization) ...[
                         const SizedBox(height: AppSpacing.md),
                         const OnboardingFieldLabel('Specialization'),
