@@ -52,6 +52,7 @@ class _MentorOnboardingScreenState extends ConsumerState<MentorOnboardingScreen>
   String? _gender;
 
   String? _state;
+  final _stateOtherController = TextEditingController();
   String? _city;
   final _cityOtherController = TextEditingController();
 
@@ -95,6 +96,7 @@ class _MentorOnboardingScreenState extends ConsumerState<MentorOnboardingScreen>
   void dispose() {
     _pageController.dispose();
     _fullNameController.dispose();
+    _stateOtherController.dispose();
     _cityOtherController.dispose();
     _collegeNameController.dispose();
     _streamOtherController.dispose();
@@ -115,6 +117,8 @@ class _MentorOnboardingScreenState extends ConsumerState<MentorOnboardingScreen>
         return _fullNameController.text.trim().isNotEmpty && _gender != null;
       case 1:
         return _state != null &&
+            (_state != 'Other' ||
+                _stateOtherController.text.trim().isNotEmpty) &&
             _city != null &&
             (_city != 'Other' || _cityOtherController.text.trim().isNotEmpty);
       case 2:
@@ -205,6 +209,12 @@ class _MentorOnboardingScreenState extends ConsumerState<MentorOnboardingScreen>
 
   String get _resolvedCity => _city == 'Other' ? _cityOtherController.text.trim() : (_city ?? '');
 
+  String? get _resolvedState => _state == 'Other'
+      ? (_stateOtherController.text.trim().isEmpty
+          ? null
+          : _stateOtherController.text.trim())
+      : _state;
+
   void _goTo(int step) {
     setState(() => _step = step);
     _pageController.animateToPage(
@@ -254,7 +264,7 @@ class _MentorOnboardingScreenState extends ConsumerState<MentorOnboardingScreen>
       try {
         final university = await ref.read(universitiesApiProvider).findOrCreate(
               name: _collegeNameController.text.trim(),
-              state: _state ?? '',
+              state: _resolvedState ?? '',
               city: _resolvedCity,
               stream: _stream == 'Others' ? _streamOtherController.text.trim() : _stream,
             );
@@ -317,7 +327,7 @@ class _MentorOnboardingScreenState extends ConsumerState<MentorOnboardingScreen>
                 ? null
                 : _fullNameController.text.trim(),
             gender: _gender,
-            state: _state,
+            state: _resolvedState,
             city: _resolvedCity.isEmpty ? null : _resolvedCity,
             qualification: _degree,
             specialization: _needsSpecialization ? _specialization : null,
@@ -465,8 +475,18 @@ class _MentorOnboardingScreenState extends ConsumerState<MentorOnboardingScreen>
                           _state = v;
                           _city = null;
                           _cityOtherController.clear();
+                          if (v != 'Other') _stateOtherController.clear();
                         }),
                       ),
+                      if (_state == 'Other') ...[
+                        const SizedBox(height: AppSpacing.sm),
+                        TextFormField(
+                          controller: _stateOtherController,
+                          onChanged: (_) => setState(() {}),
+                          decoration: const InputDecoration(
+                              hintText: 'Enter your state'),
+                        ),
+                      ],
                       const SizedBox(height: AppSpacing.md),
                       const OnboardingFieldLabel('City'),
                       OnboardingDropdown(

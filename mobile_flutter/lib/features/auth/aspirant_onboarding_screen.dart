@@ -57,6 +57,7 @@ class _AspirantOnboardingScreenState
   String? _gender;
 
   String? _state;
+  final _stateOtherController = TextEditingController();
   String? _city;
   final _cityOtherController = TextEditingController();
 
@@ -94,6 +95,7 @@ class _AspirantOnboardingScreenState
   void dispose() {
     _pageController.dispose();
     _fullNameController.dispose();
+    _stateOtherController.dispose();
     _cityOtherController.dispose();
     _qualificationOtherController.dispose();
     _streamOtherController.dispose();
@@ -166,6 +168,12 @@ class _AspirantOnboardingScreenState
   String get _resolvedCity =>
       _city == 'Other' ? _cityOtherController.text.trim() : (_city ?? '');
 
+  String? get _resolvedState => _state == 'Other'
+      ? (_stateOtherController.text.trim().isEmpty
+          ? null
+          : _stateOtherController.text.trim())
+      : _state;
+
   /// Gates the Continue button per step — previously an empty tap silently
   /// advanced with nothing entered despite the doc comment above claiming
   /// steps 0-3 are mandatory. Step 4 (avatar) stays unconditionally
@@ -176,6 +184,8 @@ class _AspirantOnboardingScreenState
         return _fullNameController.text.trim().isNotEmpty && _gender != null;
       case 1:
         return _state != null &&
+            (_state != 'Other' ||
+                _stateOtherController.text.trim().isNotEmpty) &&
             _city != null &&
             (_city != 'Other' || _cityOtherController.text.trim().isNotEmpty);
       case 2:
@@ -243,7 +253,7 @@ class _AspirantOnboardingScreenState
     try {
       final university = await ref.read(universitiesApiProvider).findOrCreate(
             name: _collegeNameController.text.trim(),
-            state: _state ?? '',
+            state: _resolvedState ?? '',
             city: _resolvedCity,
             stream:
                 _stream == 'Others' ? _streamOtherController.text.trim() : _stream,
@@ -288,7 +298,7 @@ class _AspirantOnboardingScreenState
                 ? null
                 : _fullNameController.text.trim(),
             gender: _gender,
-            state: _state,
+            state: _resolvedState,
             city: _resolvedCity.isEmpty ? null : _resolvedCity,
             qualification: resolvedQualification,
             specialization: _needsSpecialization ? _specialization : null,
@@ -406,8 +416,18 @@ class _AspirantOnboardingScreenState
                           _state = v;
                           _city = null;
                           _cityOtherController.clear();
+                          if (v != 'Other') _stateOtherController.clear();
                         }),
                       ),
+                      if (_state == 'Other') ...[
+                        const SizedBox(height: AppSpacing.sm),
+                        TextFormField(
+                          controller: _stateOtherController,
+                          onChanged: (_) => setState(() {}),
+                          decoration: const InputDecoration(
+                              hintText: 'Enter your state'),
+                        ),
+                      ],
                       const SizedBox(height: AppSpacing.md),
                       const OnboardingFieldLabel('City'),
                       OnboardingDropdown(
