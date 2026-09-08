@@ -433,7 +433,7 @@ class HomeScreen extends ConsumerWidget {
                     const SizedBox(height: AppSpacing.md),
                     universitiesAsync.when(
                       loading: () => const SizedBox(
-                        height: 128,
+                        height: 150,
                         child: Row(
                           children: [
                             Expanded(child: SkeletonCard()),
@@ -446,7 +446,7 @@ class HomeScreen extends ConsumerWidget {
                       data: (_) => collegesForYou.isEmpty
                           ? const SizedBox.shrink()
                           : SizedBox(
-                              height: 128,
+                              height: 150,
                               child: ListView.separated(
                                 scrollDirection: Axis.horizontal,
                                 itemCount: collegesForYou.length,
@@ -1045,7 +1045,9 @@ class _CollegeSpotlightCard extends StatelessWidget {
 
     // Fills the rail's fixed height so every card is the same size — the
     // name always reserves two lines so shorter names don't shrink the
-    // card. No rating row here; the full rating is on the detail screen.
+    // card. A star rating row shows when the college has reviews (the
+    // ranked "top-for-mentor" feed carries it; the browse fallback
+    // leaves it null and the row is simply omitted).
     return SizedBox(
       width: 176,
       child: Container(
@@ -1106,6 +1108,28 @@ class _CollegeSpotlightCard extends StatelessWidget {
                         color: AppColors.textSecondary,
                       ),
                     ),
+                    if (university.rating != null) ...[
+                      const SizedBox(height: 6),
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(
+                            Icons.star_rounded,
+                            size: 13,
+                            color: AppColors.warning,
+                          ),
+                          const SizedBox(width: 2),
+                          Text(
+                            '${university.rating!.toStringAsFixed(1)} (${university.reviewCount})',
+                            style: const TextStyle(
+                              fontSize: 11,
+                              fontWeight: AppFont.semibold,
+                              color: AppColors.textPrimary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
                   ],
                 ),
               ),

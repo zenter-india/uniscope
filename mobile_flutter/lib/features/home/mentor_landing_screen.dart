@@ -670,7 +670,7 @@ class _TopCollegeCard extends StatelessWidget {
                           ),
                           const SizedBox(width: 2),
                           Text(
-                            rating.toStringAsFixed(1),
+                            '${rating.toStringAsFixed(1)} (${university.reviewCount})',
                             style: const TextStyle(
                               fontSize: 11,
                               fontWeight: AppFont.bold,
