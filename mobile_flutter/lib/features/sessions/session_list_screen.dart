@@ -38,6 +38,29 @@ bool _isActiveStatus(SessionStatus status) =>
     status == SessionStatus.ringing ||
     status == SessionStatus.inProgress;
 
+/// The single session a grouped mentor row should show actions for, picked
+/// from that student's active sessions by urgency: a call awaiting the
+/// mentor's decision → a live call to join → an open chat → nothing. Returns
+/// null when there's nothing actionable (the row falls back to a history
+/// chevron). Everything not picked stays reachable via the row's history.
+Session? _pickPrimaryAction(List<Session> active) {
+  bool isCall(Session s) => s.type == 'AUDIO_CALL';
+  Session? lastWhere(bool Function(Session) test) {
+    final hits = active.where(test);
+    return hits.isEmpty ? null : hits.last;
+  }
+
+  return lastWhere((s) => isCall(s) && s.status == SessionStatus.pending) ??
+      lastWhere(
+        (s) =>
+            isCall(s) &&
+            (s.status == SessionStatus.accepted ||
+                s.status == SessionStatus.ringing ||
+                s.status == SessionStatus.inProgress),
+      ) ??
+      lastWhere((s) => s.type == 'CHAT');
+}
+
 /// Groups currently-actionable sessions (pending/accepted/ringing/in
 /// progress) with the same counterpart into a single list entry, so a
 /// Aspirant-side grouping: collapses EVERY session with the same mentor into
@@ -303,6 +326,11 @@ class _MentorStudentRow extends StatelessWidget {
     final activeSessions =
         sessions.where((s) => _isActiveStatus(s.status)).toList()
           ..sort((a, b) => a.requestedAt.compareTo(b.requestedAt));
+    // Surface actions for ONE session, not every active one — a student with
+    // several open chats/calls used to render a wall of buttons. A call that
+    // needs a decision (or a join) wins over a chat; the rest stay reachable
+    // by tapping the row (→ history).
+    final primaryAction = _pickPrimaryAction(activeSessions);
     final aspirantName = first.aspirantName;
     final showDot =
         latest.type == 'AUDIO_CALL' || _isActiveStatus(latest.status);
@@ -379,23 +407,19 @@ class _MentorStudentRow extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: AppSpacing.xs),
-              if (activeSessions.isEmpty)
+              if (primaryAction == null)
                 _RowIconButton(
                   icon: Icons.chevron_right_rounded,
                   tooltip: 'View history',
                   onTap: openHistory,
                 )
               else
-                for (final s in activeSessions)
-                  Padding(
-                    padding: const EdgeInsets.only(left: 2),
-                    child: _SessionActions(
-                      session: s,
-                      isMentor: true,
-                      dense: true,
-                      showLabel: false,
-                    ),
-                  ),
+                _SessionActions(
+                  session: primaryAction,
+                  isMentor: true,
+                  dense: true,
+                  showLabel: false,
+                ),
             ],
           ),
         ),
