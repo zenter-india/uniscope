@@ -149,16 +149,28 @@ class PushService {
 
     final type = data['type'];
 
-    // Where a tapped push should land:
-    //  - the aspirant's "mentor accepted an audio call" → straight into the
-    //    call (they still need to join; CallScreen handles that).
-    //  - the mentor's "new audio call request" → the Sessions tab, where
-    //    the request shows with an Accept button (and the global dock).
-    //    A CHAT never goes through PENDING, so SESSION_REQUEST is always a
-    //    call.
+    // Where a push should land:
+    //  - SESSION_STARTING (audio call) → straight into the call. This fires
+    //    only when the call is actually live/imminent (first party joined,
+    //    or the ~2-min-before sweep), so auto-routing on receipt is right.
+    //  - SESSION_ACCEPTED (audio call) → into the call ONLY for an Instant
+    //    accept. A scheduled accept carries `confirmedFor` (and no
+    //    `sessionType`) — routing that into a call would drag the student in
+    //    hours early. Belt-and-suspenders: even with `sessionType` set, bail
+    //    if `confirmedFor` is more than ~2 min away.
+    //  - SESSION_REQUEST (mentor) → the Sessions tab (Accept button + dock).
     final String target;
-    if (type == 'SESSION_ACCEPTED' && data['sessionType'] == 'AUDIO_CALL') {
+    if (type == 'SESSION_STARTING' && data['sessionType'] == 'AUDIO_CALL') {
       target = '/call/$sessionId';
+    } else if (type == 'SESSION_ACCEPTED' && data['sessionType'] == 'AUDIO_CALL') {
+      final confirmedForRaw = data['confirmedFor'] as String?;
+      final confirmedFor = confirmedForRaw == null
+          ? null
+          : DateTime.tryParse(confirmedForRaw);
+      final imminent = confirmedFor == null ||
+          confirmedFor.difference(DateTime.now()) <
+              const Duration(minutes: 2);
+      target = imminent ? '/call/$sessionId' : '/chats';
     } else if (type == 'SESSION_REQUEST') {
       target = '/chats';
     } else {

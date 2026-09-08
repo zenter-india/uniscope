@@ -416,15 +416,22 @@ export class SessionsService {
     } else {
       body = 'Your mentor accepted — join the call when ready.';
     }
+    // `sessionType: 'AUDIO_CALL'` is the flag the mobile push handler uses to
+    // deep-link STRAIGHT into the call screen on receipt. That is correct for
+    // an Instant accept (connect now) but wrong for a scheduled one — it would
+    // yank the student into a call hours before the confirmed slot. So a
+    // scheduled accept carries `confirmedFor` for reference but NOT
+    // `sessionType`; the student just gets the "confirmed for {time}" notice,
+    // and the SESSION_STARTING push (first-join, and the ~2-min-before sweep)
+    // is what actually pulls both sides in at call time.
     await this.notificationsService.send({
       userId: session.aspirantId,
       type: NotificationType.SESSION_ACCEPTED,
       title: 'Request accepted',
       body,
-      // sessionType lets the mobile push handler deep-link straight into
-      // the call screen for AUDIO_CALL (vs the chat screen) without an
-      // extra round-trip — see mobile_flutter/lib/core/push/push_service.dart.
-      metadata: { sessionId: session.id, sessionType: session.type },
+      metadata: confirmedFor
+        ? { sessionId: session.id, confirmedFor: confirmedFor.toISOString() }
+        : { sessionId: session.id, sessionType: session.type },
     });
 
     return this.toResponseById(sessionId);
@@ -636,6 +643,23 @@ export class SessionsService {
     const bothJoined = updated.aspirantJoinedAt && updated.mentorJoinedAt;
     if (!bothJoined) {
       this.logger.log(`[call] waiting on other party sessionId=${sessionId}`);
+      // Tell the party who ISN'T here yet that the call is live — this is
+      // the alert the mentor was missing on a scheduled call (they'd
+      // confirmed a slot hours earlier and moved on). sessionType routes
+      // the mobile push handler straight into the call screen.
+      const waitingOn = isAspirant ? session.mentorId : session.aspirantId;
+      const { aspirantName, mentorName } = await this.partyNames(
+        session.aspirantId,
+        session.mentorId,
+      );
+      const joinerName = isAspirant ? aspirantName : mentorName;
+      await this.notifySafe({
+        userId: waitingOn,
+        type: NotificationType.SESSION_STARTING,
+        title: 'Call starting',
+        body: `${joinerName} is on the call — join now.`,
+        metadata: { sessionId: session.id, sessionType: 'AUDIO_CALL' },
+      });
       return this.toResponseById(sessionId);
     }
 
@@ -863,6 +887,74 @@ export class SessionsService {
     });
 
     return this.toResponseById(sessionId);
+  }
+
+  /**
+   * ~2 minutes before a scheduled call's `confirmedFor`, pushes a
+   * "your call is starting" notification to BOTH parties exactly once
+   * (`startingNotifiedAt` guards against repeats). This is what pulls in a
+   * party whose app was closed since the slot was confirmed hours earlier —
+   * the first-join push in confirmJoined only helps once someone is already
+   * on the call screen. Instant calls (no `confirmedFor`) are handled by the
+   * accept flow and never reach here.
+   */
+  @Interval(NO_SHOW_SWEEP_INTERVAL_MS)
+  async remindScheduledCallsStarting(): Promise<void> {
+    const now = new Date();
+    const due = await this.prisma.session.findMany({
+      where: {
+        type: SessionType.AUDIO_CALL,
+        status: SessionStatus.ACCEPTED,
+        startingNotifiedAt: null,
+        confirmedFor: {
+          not: null,
+          lte: new Date(now.getTime() + 2 * 60_000),
+          gte: new Date(now.getTime() - 10 * 60_000),
+        },
+      },
+      select: {
+        id: true,
+        aspirantId: true,
+        mentorId: true,
+        confirmedFor: true,
+      },
+    });
+
+    for (const s of due) {
+      try {
+        // Claim it first so a slow push can't cause a double-fire on the
+        // next tick.
+        const claimed = await this.prisma.session.updateMany({
+          where: { id: s.id, startingNotifiedAt: null },
+          data: { startingNotifiedAt: now },
+        });
+        if (claimed.count === 0) continue;
+
+        const { aspirantName, mentorName } = await this.partyNames(
+          s.aspirantId,
+          s.mentorId,
+        );
+        const when = s.confirmedFor ? fmtIst(s.confirmedFor) : 'now';
+        await Promise.all([
+          this.notifySafe({
+            userId: s.aspirantId,
+            type: NotificationType.SESSION_STARTING,
+            title: 'Call starting soon',
+            body: `Your call with ${mentorName} is at ${when} — open the app to join.`,
+            metadata: { sessionId: s.id, sessionType: 'AUDIO_CALL' },
+          }),
+          this.notifySafe({
+            userId: s.mentorId,
+            type: NotificationType.SESSION_STARTING,
+            title: 'Call starting soon',
+            body: `Your call with ${aspirantName} is at ${when} — open the app to join.`,
+            metadata: { sessionId: s.id, sessionType: 'AUDIO_CALL' },
+          }),
+        ]);
+      } catch (err) {
+        this.logger.error(`[call] starting-reminder FAILED sessionId=${s.id}`, err);
+      }
+    }
   }
 
   /**

@@ -607,6 +607,10 @@ model Session {
   /// grace clock runs from max(respondedAt, confirmedFor), so a call
   /// confirmed days ahead survives to its own start time.
   confirmedFor       DateTime?     @map("confirmed_for") @db.Timestamptz
+  /// AUDIO_CALL only: set the first time a "your call is starting" push goes
+  /// out for this session (the ~2-min-before-confirmedFor reminder), so the
+  /// scheduled-call sweep fires it exactly once.
+  startingNotifiedAt DateTime?     @map("starting_notified_at") @db.Timestamptz
   requestedAt        DateTime      @default(now()) @map("requested_at") @db.Timestamptz
   respondedAt        DateTime?     @map("responded_at") @db.Timestamptz
   /// Set only on a server-confirmed connection event — never client-reported.
