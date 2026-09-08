@@ -54,7 +54,7 @@ class _MentorOnboardingScreenState extends ConsumerState<MentorOnboardingScreen>
   String? _city;
   final _cityOtherController = TextEditingController();
 
-  University? _university;
+  String? _universityId;
   final _collegeNameController = TextEditingController();
   bool _resolvingCollege = false;
   String? _stream;
@@ -137,8 +137,30 @@ class _MentorOnboardingScreenState extends ConsumerState<MentorOnboardingScreen>
     }
   }
 
-  bool get _needsSpecialization =>
-      _stream == 'Medical' && _degree != null && _degree != 'MBBS';
+  /// Backend curated key for the picked stream+degree, or null when the
+  /// combination has no per-college dataset — drives both the curated
+  /// College picker (district in the label) and the Specialization options.
+  String? get _curatedDegree => curatedDegreeKey(_stream, _degree);
+
+  /// `level` for the *general* (non-curated) college search.
+  String? get _collegeLevel {
+    if (_stream == 'Medical' && _degree == 'MBBS') return 'UG';
+    if (_stream == 'Dental' && _degree == 'BDS') return 'UG';
+    return null;
+  }
+
+  /// Specialization shows for any stream+degree with real data behind it (a
+  /// specific curated degree, or Medical's stream-wide union), never for an
+  /// undergraduate degree — matching the web MentorForm.
+  bool get _needsSpecialization {
+    if (_degree == null ||
+        _degree == 'MBBS' ||
+        _degree == 'BDS' ||
+        _degree == 'UG') {
+      return false;
+    }
+    return _curatedDegree != null || _needsMedicalStreamWideSpecialization;
+  }
 
   /// Real bug fix (ported from web/components/MentorForm.tsx's own
   /// shouldFetchMedicalStreamWideSpecialization): Doctorate/Others used to
@@ -151,21 +173,33 @@ class _MentorOnboardingScreenState extends ConsumerState<MentorOnboardingScreen>
   bool get _needsMedicalStreamWideSpecialization =>
       _stream == 'Medical' && (_degree == 'Doctorate' || _degree == 'Others');
 
-  /// Merges kMedicalSpecializations with streamWideSpecializationsProvider's
-  /// real data-driven union across every one of Medical's curated degrees
-  /// (see _needsMedicalStreamWideSpecialization above). Merged rather than
-  /// replaced so the field never regresses to fewer options while the
-  /// fetch is still in flight or if it fails.
-  List<String> _medicalStreamWideSpecializationOptions() {
-    final curatedDegrees =
-        kCuratedDegreeMapByStream['Medical']!.values.toSet().toList();
-    final fetched = ref.watch(
-      streamWideSpecializationsProvider(
-        (stream: 'Medical', curatedDegrees: curatedDegrees),
-      ),
-    );
-    final merged = {...kMedicalSpecializations, ...fetched.value ?? const []}.toList()..sort();
-    return merged;
+  /// Specialization options for the picked stream+degree — a specific
+  /// curated degree's real union (specializationsForDegreeProvider), or
+  /// Medical's stream-wide union for Doctorate/Others, or the static
+  /// kMedicalSpecializations fallback for Medical. Merged/fallback so the
+  /// field never regresses to fewer options while a fetch is in flight.
+  List<String> _specializationOptions() {
+    if (_needsMedicalStreamWideSpecialization) {
+      final curatedDegrees =
+          kCuratedDegreeMapByStream['Medical']!.values.toSet().toList();
+      final fetched = ref.watch(
+        streamWideSpecializationsProvider(
+          (stream: 'Medical', curatedDegrees: curatedDegrees),
+        ),
+      );
+      return {...kMedicalSpecializations, ...fetched.value ?? const []}.toList()
+        ..sort();
+    }
+    if (_curatedDegree != null) {
+      final fetched = ref
+          .watch(specializationsForDegreeProvider(
+            (stream: _stream!, degree: _curatedDegree!),
+          ))
+          .value ??
+          const [];
+      if (fetched.isNotEmpty) return fetched;
+    }
+    return _stream == 'Medical' ? kMedicalSpecializations : const [];
   }
 
   String get _resolvedCity => _city == 'Other' ? _cityOtherController.text.trim() : (_city ?? '');
@@ -200,7 +234,7 @@ class _MentorOnboardingScreenState extends ConsumerState<MentorOnboardingScreen>
   /// to resolve (find-or-create) to a real University row before the profile
   /// save, since verification requires one. See UniversitiesApi.findOrCreate.
   Future<void> _resolveCollegeThenSave() async {
-    if (_university == null) {
+    if (_universityId == null) {
       setState(() => _resolvingCollege = true);
       try {
         final university = await ref.read(universitiesApiProvider).findOrCreate(
@@ -211,7 +245,7 @@ class _MentorOnboardingScreenState extends ConsumerState<MentorOnboardingScreen>
             );
         if (!mounted) return;
         setState(() {
-          _university = university;
+          _universityId = university.id;
           _resolvingCollege = false;
         });
       } catch (e) {
@@ -314,12 +348,12 @@ class _MentorOnboardingScreenState extends ConsumerState<MentorOnboardingScreen>
   }
 
   Future<void> _submitVerification() async {
-    if (_university == null || _imageBytes == null) return;
+    if (_universityId == null || _imageBytes == null) return;
     setState(() => _saving = true);
     try {
       final base64Image = base64Encode(_imageBytes!);
       await ref.read(verificationApiProvider).submit(
-            universityId: _university!.id,
+            universityId: _universityId!,
             documentType: _docType,
             documentBase64: base64Image,
           );
@@ -519,8 +553,14 @@ class _MentorOnboardingScreenState extends ConsumerState<MentorOnboardingScreen>
                       OnboardingSingleChipGroup(
                         options: degreesForStream(_stream),
                         selected: _degree,
+                        // The curated college dataset is degree-specific
+                        // (MD/MS vs Diploma vs DM/MCh), so a college picked
+                        // under the old degree may not exist under the new
+                        // one — clear it, same as the web MentorForm.
                         onSelect: (v) => setState(() {
                           _degree = v;
+                          _universityId = null;
+                          _collegeNameController.clear();
                           _specialization = null;
                         }),
                       ),
@@ -535,7 +575,7 @@ class _MentorOnboardingScreenState extends ConsumerState<MentorOnboardingScreen>
                         // longer be a valid option for the new stream.
                         onSelect: (v) => setState(() {
                           _stream = v;
-                          _university = null;
+                          _universityId = null;
                           _collegeNameController.clear();
                           _degree = null;
                           _specialization = null;
@@ -553,21 +593,25 @@ class _MentorOnboardingScreenState extends ConsumerState<MentorOnboardingScreen>
                       const SizedBox(height: AppSpacing.md),
                       const OnboardingFieldLabel('College'),
                       CollegeSearchField(
+                        key: ValueKey('${_stream}_$_degree'),
                         initialText: _collegeNameController.text,
-                        onPick: (university, text) => setState(() {
-                          _university = university;
+                        stream: _stream == 'Others'
+                            ? _streamOtherController.text.trim()
+                            : _stream,
+                        curatedDegree: _curatedDegree,
+                        level: _collegeLevel,
+                        onPick: (universityId, text) => setState(() {
+                          _universityId = universityId;
                           _collegeNameController.text = text;
                         }),
                       ),
                       if (_needsSpecialization) ...[
                         const SizedBox(height: AppSpacing.md),
                         const OnboardingFieldLabel('Specialization'),
-                        OnboardingDropdown(
+                        OnboardingSearchableField(
                           value: _specialization,
                           hint: 'Select specialization',
-                          options: _needsMedicalStreamWideSpecialization
-                              ? _medicalStreamWideSpecializationOptions()
-                              : kMedicalSpecializations,
+                          options: _specializationOptions(),
                           onChanged: (v) => setState(() => _specialization = v),
                         ),
                       ],
@@ -654,7 +698,7 @@ class _MentorOnboardingScreenState extends ConsumerState<MentorOnboardingScreen>
                     label: _step == 5 ? 'Submit for Verification' : 'Continue',
                     loading: _saving || _resolvingCollege,
                     enabled: _step == 5
-                        ? (_university != null && _imageBytes != null)
+                        ? (_universityId != null && _imageBytes != null)
                         : _canContinue,
                     onPressed: _next,
                   ),

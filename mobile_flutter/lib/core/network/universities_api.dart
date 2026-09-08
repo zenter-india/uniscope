@@ -172,11 +172,25 @@ class UniversitiesApi {
   /// to the first 50 of the (already relevance-ranked) results client-side
   /// — generous enough for any real search, but bounded against a
   /// pathological 2-character query matching thousands of rows.
-  Future<List<University>> search(String query) async {
-    if (query.trim().length < 2) return const [];
+  Future<List<University>> search(
+    String query, {
+    String? stream,
+    String? level,
+  }) async {
+    final q = query.trim();
+    // An empty/1-char query is allowed only when it's scoped to a stream
+    // (and optionally a level) — that's what makes the field browsable on
+    // focus, the same as the web CollegeSearch. An *unscoped* short query
+    // would pull the whole ~10k catalogue, so keep the >=2 gate there.
+    if (q.length < 2 && stream == null) return const [];
     final res = await _dio.get<Map<String, dynamic>>(
       '/universities',
-      queryParameters: {'browse': 'true', 'search': query},
+      queryParameters: {
+        'browse': 'true',
+        if (q.isNotEmpty) 'search': query,
+        if (stream != null) 'stream': stream,
+        if (level != null) 'level': level,
+      },
     );
     final data = res.data!['data'] as List<dynamic>;
     return data
@@ -275,6 +289,23 @@ final topCollegesForMentorProvider =
     FutureProvider.autoDispose<List<University>>(
       (ref) => ref.watch(universitiesApiProvider).topForMentor(),
     );
+
+/// Every specialization offered for a stream + curated degree, unioned
+/// across every college that offers it and sorted — the same list the web
+/// enrollment form's Specialization field shows for a specific curated
+/// degree (`allSpecializationsForDegree` in AspirantForm.tsx / MentorForm.tsx).
+/// `degree` is the backend curated key (`curatedDegreeKey(stream, degree)`),
+/// not the user-facing label.
+final specializationsForDegreeProvider = FutureProvider.autoDispose
+    .family<List<String>, ({String stream, String degree})>((ref, key) async {
+      final colleges = await ref
+          .watch(universitiesApiProvider)
+          .curated(stream: key.stream, degree: key.degree);
+      final specs = <String>{
+        for (final c in colleges) ...c.specializations,
+      }.toList()..sort();
+      return specs;
+    });
 
 /// `(stream, curatedDegreeKey)` → curated colleges for that combination.
 /// Keyed by a record so Riverpod dedupes/caches per stream+degree; used by

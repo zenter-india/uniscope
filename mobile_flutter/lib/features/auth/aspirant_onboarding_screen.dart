@@ -65,7 +65,7 @@ class _AspirantOnboardingScreenState
   String? _stream;
   final _streamOtherController = TextEditingController();
 
-  University? _university;
+  String? _universityId;
   final _collegeNameController = TextEditingController();
   String? _specialization;
 
@@ -105,30 +105,61 @@ class _AspirantOnboardingScreenState
   bool get _showCollege =>
       _qualification != null && _qualification != 'Higher Secondary (12th)';
 
-  // Specialization is scoped to Medical only, same limitation the mentor
-  // onboarding wizard has today — mobile has no curated-per-degree
-  // specialization data source for other streams yet (the web form's
-  // broader per-stream version isn't ported here; see profile_options.dart
-  // and CLAUDE.md's "Profile creation & college entries" note).
-  bool get _needsSpecialization =>
-      _showCollege && _stream == 'Medical' && _qualification != 'MBBS';
+  /// Backend curated key for the picked stream+qualification, or null when
+  /// that combination has no per-college dataset (see
+  /// [kCuratedDegreeMapByStream]). Drives both the College picker (curated
+  /// list, with district in the label) and the Specialization options.
+  String? get _curatedDegree => curatedDegreeKey(_stream, _qualification);
+
+  /// `level` for the *general* (non-curated) college search — an undergrad
+  /// medical/dental degree searches only UG-tagged colleges, matching the
+  /// web forms' COLLEGE_SEARCH_LEVEL_MAP / Medical-MBBS handling.
+  String? get _collegeLevel {
+    if (_stream == 'Medical' && _qualification == 'MBBS') return 'UG';
+    if (_stream == 'Dental' && _qualification == 'BDS') return 'UG';
+    return null;
+  }
 
   bool get _needsMedicalStreamWideSpecialization =>
       _stream == 'Medical' &&
       (_qualification == 'Doctorate' || _qualification == 'Others');
 
-  List<String> _medicalStreamWideSpecializationOptions() {
-    final curatedDegrees =
-        kCuratedDegreeMapByStream['Medical']!.values.toSet().toList();
-    final fetched = ref.watch(
-      streamWideSpecializationsProvider(
-        (stream: 'Medical', curatedDegrees: curatedDegrees),
-      ),
-    );
-    final merged = {...kMedicalSpecializations, ...fetched.value ?? const []}
-        .toList()
-      ..sort();
-    return merged;
+  /// Specialization shows for any stream+degree that has real data behind it
+  /// — a specific curated degree, or Medical's stream-wide union — but never
+  /// for an undergraduate degree (MBBS / BDS / plain UG have no
+  /// specialization concept), matching the web enrollment form.
+  bool get _needsSpecialization {
+    if (!_showCollege) return false;
+    if (_qualification == 'MBBS' ||
+        _qualification == 'BDS' ||
+        _qualification == 'UG') {
+      return false;
+    }
+    return _curatedDegree != null || _needsMedicalStreamWideSpecialization;
+  }
+
+  List<String> _specializationOptions() {
+    if (_needsMedicalStreamWideSpecialization) {
+      final curatedDegrees =
+          kCuratedDegreeMapByStream['Medical']!.values.toSet().toList();
+      final fetched = ref.watch(
+        streamWideSpecializationsProvider(
+          (stream: 'Medical', curatedDegrees: curatedDegrees),
+        ),
+      );
+      return {...kMedicalSpecializations, ...fetched.value ?? const []}.toList()
+        ..sort();
+    }
+    if (_curatedDegree != null) {
+      final fetched = ref
+          .watch(specializationsForDegreeProvider(
+            (stream: _stream!, degree: _curatedDegree!),
+          ))
+          .value ??
+          const [];
+      if (fetched.isNotEmpty) return fetched;
+    }
+    return _stream == 'Medical' ? kMedicalSpecializations : const [];
   }
 
   String get _resolvedCity =>
@@ -196,7 +227,7 @@ class _AspirantOnboardingScreenState
   /// `_resolveCollegeThenSave`). Skipped entirely for a 12th-grade aspirant,
   /// who never sees the College field.
   Future<void> _resolveCollegeThenAdvance() async {
-    if (!_showCollege || _university != null) {
+    if (!_showCollege || _universityId != null) {
       _goTo(_step + 1);
       return;
     }
@@ -211,7 +242,7 @@ class _AspirantOnboardingScreenState
           );
       if (!mounted) return;
       setState(() {
-        _university = university;
+        _universityId = university.id;
         _resolvingCollege = false;
       });
       _goTo(_step + 1);
@@ -247,7 +278,7 @@ class _AspirantOnboardingScreenState
             qualification: resolvedQualification,
             specialization: _needsSpecialization ? _specialization : null,
             stream: resolvedStream,
-            universityId: _showCollege ? _university?.id : null,
+            universityId: _showCollege ? _universityId : null,
             courseInterested: _courseInterestedController.text.trim().isEmpty
                 ? null
                 : _courseInterestedController.text.trim(),
@@ -384,7 +415,7 @@ class _AspirantOnboardingScreenState
                         onSelect: (v) => setState(() {
                           _stream = v;
                           _qualification = null;
-                          _university = null;
+                          _universityId = null;
                           _collegeNameController.clear();
                           _specialization = null;
                         }),
@@ -408,7 +439,7 @@ class _AspirantOnboardingScreenState
                         selected: _qualification,
                         onSelect: (v) => setState(() {
                           _qualification = v;
-                          _university = null;
+                          _universityId = null;
                           _collegeNameController.clear();
                           _specialization = null;
                         }),
@@ -426,9 +457,18 @@ class _AspirantOnboardingScreenState
                         const SizedBox(height: AppSpacing.md),
                         const OnboardingFieldLabel('College / university'),
                         CollegeSearchField(
+                          // Keyed so switching stream/qualification rebuilds
+                          // the field fresh (clears the old typed text + list)
+                          // rather than reusing the previous data set's state.
+                          key: ValueKey('${_stream}_$_qualification'),
                           initialText: _collegeNameController.text,
-                          onPick: (university, text) => setState(() {
-                            _university = university;
+                          stream: _stream == 'Others'
+                              ? _streamOtherController.text.trim()
+                              : _stream,
+                          curatedDegree: _curatedDegree,
+                          level: _collegeLevel,
+                          onPick: (universityId, text) => setState(() {
+                            _universityId = universityId;
                             _collegeNameController.text = text;
                           }),
                         ),
@@ -436,12 +476,10 @@ class _AspirantOnboardingScreenState
                       if (_needsSpecialization) ...[
                         const SizedBox(height: AppSpacing.md),
                         const OnboardingFieldLabel('Specialization'),
-                        OnboardingDropdown(
+                        OnboardingSearchableField(
                           value: _specialization,
                           hint: 'Select specialization',
-                          options: _needsMedicalStreamWideSpecialization
-                              ? _medicalStreamWideSpecializationOptions()
-                              : kMedicalSpecializations,
+                          options: _specializationOptions(),
                           onChanged: (v) => setState(() => _specialization = v),
                         ),
                       ],

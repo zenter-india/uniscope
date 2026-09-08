@@ -280,6 +280,159 @@ class OnboardingSingleChipGroup extends StatelessWidget {
 
 /// On/off switch with a label and optional hint below it — used for the
 /// "keep this private" choice on year-of-study / graduation year.
+/// A read-only field that opens a searchable, scrollable option sheet on
+/// tap — for lists too long for a plain [OnboardingDropdown] (Medical has
+/// ~100 specializations). Same idea as the web enrollment form's
+/// SearchableCombobox and the Discover tab's own picker sheet.
+class OnboardingSearchableField extends StatelessWidget {
+  const OnboardingSearchableField({
+    super.key,
+    required this.value,
+    required this.hint,
+    required this.options,
+    required this.onChanged,
+    this.sheetTitle,
+  });
+
+  final String? value;
+  final String hint;
+  final List<String> options;
+  final ValueChanged<String?> onChanged;
+  final String? sheetTitle;
+
+  Future<void> _open(BuildContext context) async {
+    final picked = await showModalBottomSheet<String>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: AppColors.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.xl)),
+      ),
+      builder: (_) => _SearchableOptionSheet(
+        title: sheetTitle ?? hint,
+        options: options,
+        selected: value,
+      ),
+    );
+    if (picked != null) onChanged(picked);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final enabled = options.isNotEmpty;
+    return InkWell(
+      onTap: enabled ? () => _open(context) : null,
+      borderRadius: BorderRadius.circular(AppRadius.sm),
+      child: InputDecorator(
+        decoration: const InputDecoration(),
+        isEmpty: value == null,
+        child: Row(
+          children: [
+            Expanded(
+              child: Text(
+                value ?? hint,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: AppFont.md,
+                  color: value == null
+                      ? AppColors.textMuted
+                      : AppColors.textPrimary,
+                ),
+              ),
+            ),
+            const Icon(Icons.expand_more_rounded, color: AppColors.textMuted),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _SearchableOptionSheet extends StatefulWidget {
+  const _SearchableOptionSheet({
+    required this.title,
+    required this.options,
+    required this.selected,
+  });
+  final String title;
+  final List<String> options;
+  final String? selected;
+
+  @override
+  State<_SearchableOptionSheet> createState() => _SearchableOptionSheetState();
+}
+
+class _SearchableOptionSheetState extends State<_SearchableOptionSheet> {
+  String _query = '';
+
+  @override
+  Widget build(BuildContext context) {
+    final q = _query.trim().toLowerCase();
+    final filtered = q.isEmpty
+        ? widget.options
+        : widget.options
+            .where((o) => o.toLowerCase().contains(q))
+            .toList(growable: false);
+    return Padding(
+      padding: EdgeInsets.only(
+        left: AppSpacing.lg,
+        right: AppSpacing.lg,
+        top: AppSpacing.md,
+        bottom: MediaQuery.of(context).viewInsets.bottom + AppSpacing.md,
+      ),
+      child: SizedBox(
+        height: MediaQuery.of(context).size.height * 0.7,
+        child: Column(
+          children: [
+            Text(
+              widget.title,
+              style: const TextStyle(
+                fontSize: AppFont.md,
+                fontWeight: AppFont.bold,
+                color: AppColors.textPrimary,
+              ),
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            TextField(
+              autofocus: true,
+              onChanged: (v) => setState(() => _query = v),
+              decoration: const InputDecoration(
+                hintText: 'Search…',
+                prefixIcon: Icon(Icons.search_rounded),
+              ),
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            Expanded(
+              child: filtered.isEmpty
+                  ? const Center(
+                      child: Text(
+                        'No matches',
+                        style: TextStyle(color: AppColors.textMuted),
+                      ),
+                    )
+                  : ListView.builder(
+                      itemCount: filtered.length,
+                      itemBuilder: (context, i) {
+                        final o = filtered[i];
+                        final isSelected = o == widget.selected;
+                        return ListTile(
+                          title: Text(o),
+                          trailing: isSelected
+                              ? const Icon(Icons.check_rounded,
+                                  color: AppColors.primary)
+                              : null,
+                          onTap: () => Navigator.of(context).pop(o),
+                        );
+                      },
+                    ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class OnboardingToggle extends StatelessWidget {
   const OnboardingToggle({
     super.key,
