@@ -343,6 +343,44 @@ export class SessionsService {
     // validation here — the sheet already keeps it in range.
     const confirmedFor = this.resolveConfirmedSlot(session, dto.confirmedFor);
 
+    // Double-booking guard: a confirmed slot is a real commitment (the
+    // no-show clock runs from it), so the mentor can't hand the same window
+    // to two students. Reject if this slot's [start, start+thisSlot)
+    // interval overlaps another of the mentor's still-live confirmed calls.
+    // The mobile confirm sheet greys these out, but a stale sheet or a
+    // second device could still send one — this is the authority.
+    if (confirmedFor) {
+      const thisSlotMin = session.callSlotMinutes ?? 20;
+      const thisStart = confirmedFor.getTime();
+      const thisEnd = thisStart + thisSlotMin * 60_000;
+      // Widest a slot can be is 20 min, so anything starting > 20 min either
+      // side cannot overlap — bound the scan, then check intervals exactly.
+      const nearby = await this.prisma.session.findMany({
+        where: {
+          id: { not: sessionId },
+          mentorId: mentorUserId,
+          type: SessionType.AUDIO_CALL,
+          status: { in: ACTIVE_STATUSES },
+          confirmedFor: {
+            gt: new Date(thisStart - 20 * 60_000),
+            lt: new Date(thisEnd + 20 * 60_000),
+          },
+        },
+        select: { confirmedFor: true, callSlotMinutes: true },
+      });
+      const clash = nearby.find((o) => {
+        const oStart = o.confirmedFor!.getTime();
+        const oEnd = oStart + (o.callSlotMinutes ?? 20) * 60_000;
+        return thisStart < oEnd && oStart < thisEnd;
+      });
+      if (clash) {
+        throw new ConflictException(
+          `You already have a call confirmed around ${fmtIst(clash.confirmedFor!)}. ` +
+            `Pick a slot that doesn't overlap it.`,
+        );
+      }
+    }
+
     // For CHAT sessions the chat channel is the messaging surface itself,
     // so it's provisioned right on accept (AUDIO_CALL sessions provision
     // their call room later, at the connect leg). In practice CHAT
@@ -1037,7 +1075,60 @@ export class SessionsService {
 
     const hasMore = rows.length > take;
     const rowsPage = hasMore ? rows.slice(0, take) : rows;
-    const data = rowsPage.map((row) => toSessionResponse(row, this.resolveAvatarUrl));
+
+    // Attach a last-message preview to each CHAT session (the Sessions list
+    // renders WhatsApp-style). One query for the channels on this page, one
+    // for the newest message per channel (distinct on channelId, index
+    // (channel_id, created_at) backs the ordering). AUDIO_CALL rows have no
+    // channel and stay null.
+    const chatSessionIds = rowsPage
+      .filter((r) => r.type === SessionType.CHAT)
+      .map((r) => r.id);
+    const lastMsgBySessionId = new Map<
+      string,
+      { text: string; senderId: string; createdAt: Date }
+    >();
+    if (chatSessionIds.length > 0) {
+      const channels = await this.prisma.chatChannel.findMany({
+        where: { sessionId: { in: chatSessionIds } },
+        select: { id: true, sessionId: true },
+      });
+      const sessionIdByChannelId = new Map(
+        channels.map((c) => [c.id, c.sessionId as string]),
+      );
+      if (channels.length > 0) {
+        const latest = await this.prisma.chatMessage.findMany({
+          where: { channelId: { in: channels.map((c) => c.id) } },
+          orderBy: [{ channelId: 'asc' }, { createdAt: 'desc' }],
+          distinct: ['channelId'],
+          select: {
+            channelId: true,
+            text: true,
+            senderId: true,
+            createdAt: true,
+          },
+        });
+        for (const m of latest) {
+          const sid = sessionIdByChannelId.get(m.channelId);
+          if (sid) {
+            lastMsgBySessionId.set(sid, {
+              text: m.text,
+              senderId: m.senderId,
+              createdAt: m.createdAt,
+            });
+          }
+        }
+      }
+    }
+
+    const data = rowsPage.map((row) =>
+      toSessionResponse(
+        row,
+        this.resolveAvatarUrl,
+        undefined,
+        lastMsgBySessionId.get(row.id) ?? null,
+      ),
+    );
     const nextCursor = hasMore ? rowsPage[rowsPage.length - 1].id : null;
 
     return { data, nextCursor };

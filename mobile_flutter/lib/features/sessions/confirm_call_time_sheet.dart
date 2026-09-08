@@ -4,6 +4,34 @@ import '../../core/network/sessions_api.dart';
 import '../../core/theme/app_theme.dart';
 import 'call_time_windows.dart';
 
+/// A time window the mentor has already committed to — a `[start, end)`
+/// half-open interval. Used to grey out clashing slots in the confirm sheet
+/// (the backend rejects a clash on accept regardless — see
+/// SessionsService.accept — this is the matching UX).
+typedef BusyInterval = (DateTime start, DateTime end);
+
+/// The mentor's other still-live confirmed calls, as busy intervals. Feed it
+/// `ref.read(sessionsListProvider)` — every session the mentor is a party to
+/// is already in memory, so no extra fetch. Excludes [excludeSessionId] (the
+/// request currently being confirmed).
+List<BusyInterval> mentorBusyIntervals(
+  List<Session> all, {
+  required String excludeSessionId,
+}) {
+  const activeWire = {'PENDING', 'ACCEPTED', 'RINGING', 'IN_PROGRESS'};
+  final out = <BusyInterval>[];
+  for (final s in all) {
+    if (s.id == excludeSessionId) continue;
+    if (s.type != 'AUDIO_CALL') continue;
+    if (s.confirmedFor == null) continue;
+    if (!activeWire.contains(s.status.wire)) continue;
+    final start = s.confirmedFor!.toLocal();
+    final end = start.add(Duration(minutes: s.callSlotMinutes ?? 20));
+    out.add((start, end));
+  }
+  return out;
+}
+
 /// The mentor's "Confirm a time" sheet. The aspirant offered 1–2 preferred
 /// times; each is a *soft anchor* — this sheet expands each into the 30-min
 /// slots of its 4-hour block so a busy mentor can pick the exact half hour
@@ -12,9 +40,14 @@ import 'call_time_windows.dart';
 ///
 /// Only call this for a scheduled AUDIO_CALL request (`requestedFor != null`).
 /// Instant requests connect straight away with no slot to confirm.
+///
+/// [busy] — the mentor's already-confirmed call windows; any slot that would
+/// overlap one is shown greyed and can't be picked (the backend enforces
+/// this too).
 Future<DateTime?> showConfirmCallTimeSheet(
   BuildContext context, {
   required Session session,
+  List<BusyInterval> busy = const [],
 }) {
   return showModalBottomSheet<DateTime>(
     context: context,
@@ -24,13 +57,14 @@ Future<DateTime?> showConfirmCallTimeSheet(
     shape: const RoundedRectangleBorder(
       borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.xl)),
     ),
-    builder: (_) => _ConfirmCallTimeSheet(session: session),
+    builder: (_) => _ConfirmCallTimeSheet(session: session, busy: busy),
   );
 }
 
 class _ConfirmCallTimeSheet extends StatefulWidget {
-  const _ConfirmCallTimeSheet({required this.session});
+  const _ConfirmCallTimeSheet({required this.session, this.busy = const []});
   final Session session;
+  final List<BusyInterval> busy;
 
   @override
   State<_ConfirmCallTimeSheet> createState() => _ConfirmCallTimeSheetState();
@@ -38,6 +72,18 @@ class _ConfirmCallTimeSheet extends StatefulWidget {
 
 class _ConfirmCallTimeSheetState extends State<_ConfirmCallTimeSheet> {
   DateTime? _picked;
+
+  /// True when a call of this length starting at [slot] would overlap one of
+  /// the mentor's already-confirmed windows.
+  bool _slotBusy(DateTime slot) {
+    final end = slot.add(
+      Duration(minutes: widget.session.callSlotMinutes ?? 20),
+    );
+    for (final (bStart, bEnd) in widget.busy) {
+      if (slot.isBefore(bEnd) && bStart.isBefore(end)) return true;
+    }
+    return false;
+  }
 
   List<({DateTime anchor, List<DateTime> slots})> get _groups {
     final s = widget.session;
@@ -87,6 +133,28 @@ class _ConfirmCallTimeSheetState extends State<_ConfirmCallTimeSheet> {
                 color: AppColors.textSecondary,
               ),
             ),
+            if (widget.busy.isNotEmpty) ...[
+              const SizedBox(height: 6),
+              Row(
+                children: [
+                  const Icon(
+                    Icons.event_busy_rounded,
+                    size: 14,
+                    color: AppColors.textMuted,
+                  ),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      "Greyed slots overlap a call you've already confirmed.",
+                      style: const TextStyle(
+                        fontSize: AppFont.xs,
+                        color: AppColors.textMuted,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
             const SizedBox(height: AppSpacing.md),
 
             if (groups.isEmpty)
@@ -118,6 +186,7 @@ class _ConfirmCallTimeSheetState extends State<_ConfirmCallTimeSheet> {
                               _SlotChip(
                                 label: clockLabel(slot),
                                 selected: _picked == slot,
+                                busy: _slotBusy(slot),
                                 isAnchor:
                                     slot ==
                                     DateTime(
@@ -127,7 +196,9 @@ class _ConfirmCallTimeSheetState extends State<_ConfirmCallTimeSheet> {
                                       g.anchor.hour,
                                       g.anchor.minute >= 30 ? 30 : 0,
                                     ),
-                                onTap: () => setState(() => _picked = slot),
+                                onTap: _slotBusy(slot)
+                                    ? null
+                                    : () => setState(() => _picked = slot),
                               ),
                           ],
                         ),
@@ -239,15 +310,39 @@ class _SlotChip extends StatelessWidget {
     required this.selected,
     required this.isAnchor,
     required this.onTap,
+    this.busy = false,
   });
 
   final String label;
   final bool selected;
   final bool isAnchor;
-  final VoidCallback onTap;
+  final bool busy;
+
+  /// Null when the slot can't be picked (it clashes with another confirmed
+  /// call) — the chip renders greyed and inert.
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
+    if (busy) {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: AppColors.background,
+          borderRadius: BorderRadius.circular(AppRadius.md),
+          border: Border.all(color: AppColors.border, width: 1.5),
+        ),
+        child: Text(
+          label,
+          style: const TextStyle(
+            fontSize: AppFont.sm,
+            fontWeight: AppFont.medium,
+            color: AppColors.textMuted,
+            decoration: TextDecoration.lineThrough,
+          ),
+        ),
+      );
+    }
     return GestureDetector(
       onTap: onTap,
       child: Container(

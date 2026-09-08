@@ -137,7 +137,14 @@ class _DockRowState extends ConsumerState<_DockRow> {
 
     DateTime? confirmedFor;
     if (scheduled) {
-      confirmedFor = await showConfirmCallTimeSheet(context, session: session);
+      confirmedFor = await showConfirmCallTimeSheet(
+        context,
+        session: session,
+        busy: mentorBusyIntervals(
+          ref.read(sessionsListProvider).asData?.value ?? const [],
+          excludeSessionId: session.id,
+        ),
+      );
       if (confirmedFor == null || !mounted) return;
     }
 

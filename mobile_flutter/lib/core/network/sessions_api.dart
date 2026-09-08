@@ -70,6 +70,9 @@ class Session {
     this.aspirantStream,
     this.aspirantQualification,
     this.aspirantCourse,
+    this.lastMessageText,
+    this.lastMessageAt,
+    this.lastMessageSenderId,
   });
 
   final String id;
@@ -143,6 +146,17 @@ class Session {
   final String? aspirantQualification;
   final String? aspirantCourse;
 
+  // ── Sessions-list chat preview (CHAT sessions only, GET /sessions) ─────
+  /// Text of the most recent message on this chat, or null (an AUDIO_CALL,
+  /// or a chat nobody has messaged in yet). Only the list response carries
+  /// it — GET /sessions/:id leaves it null.
+  final String? lastMessageText;
+  final DateTime? lastMessageAt;
+
+  /// User id of whoever sent [lastMessageText] — so the row can show a
+  /// "You: " prefix without another lookup.
+  final String? lastMessageSenderId;
+
   factory Session.fromJson(Map<String, dynamic> json) => Session(
     id: json['id'] as String,
     aspirantId: json['aspirantId'] as String,
@@ -187,6 +201,11 @@ class Session {
     aspirantStream: json['aspirantStream'] as String?,
     aspirantQualification: json['aspirantQualification'] as String?,
     aspirantCourse: json['aspirantCourse'] as String?,
+    lastMessageText: json['lastMessageText'] as String?,
+    lastMessageAt: json['lastMessageAt'] != null
+        ? DateTime.tryParse(json['lastMessageAt'] as String)
+        : null,
+    lastMessageSenderId: json['lastMessageSenderId'] as String?,
   );
 }
 

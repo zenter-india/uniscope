@@ -39,6 +39,107 @@ bool _isActiveStatus(SessionStatus status) =>
     status == SessionStatus.ringing ||
     status == SessionStatus.inProgress;
 
+const _kWeekdayAbbr = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+const _kMonthAbbr = [
+  'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+  'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+];
+
+/// Compact chat-list timestamp: "now" / "8m" / "2:30 PM" (today) /
+/// "Yesterday" / "Mon" (this week) / "Sep 3" (older).
+String chatTimeLabel(DateTime dt) {
+  final local = dt.toLocal();
+  final now = DateTime.now();
+  final mins = now.difference(local).inMinutes;
+  if (mins < 1) return 'now';
+  if (mins < 60) return '${mins}m';
+  final today = DateTime(now.year, now.month, now.day);
+  final day = DateTime(local.year, local.month, local.day);
+  final dayDiff = today.difference(day).inDays;
+  if (dayDiff == 0) return clockLabel(local);
+  if (dayDiff == 1) return 'Yesterday';
+  if (dayDiff < 7) return _kWeekdayAbbr[local.weekday - 1];
+  return '${_kMonthAbbr[local.month - 1]} ${local.day}';
+}
+
+/// The subtitle for a grouped Sessions-tab row. When the latest thing that
+/// happened is a chat message, it reads WhatsApp-style — the message text,
+/// prefixed "You: " when the viewer sent it, with a relative time — and no
+/// status dot. Otherwise it falls back to the plain status label + dot
+/// (calls, or a chat that has no messages yet). [viewerIsMentor] says which
+/// side of `latest` is "me".
+({String text, Color? dotColor, String? time}) _rowSubtitle(
+  Session latest, {
+  required bool viewerIsMentor,
+}) {
+  final hasMsg =
+      latest.type == 'CHAT' && (latest.lastMessageText ?? '').trim().isNotEmpty;
+  if (hasMsg) {
+    final myId = viewerIsMentor ? latest.mentorId : latest.aspirantId;
+    final mine = latest.lastMessageSenderId == myId;
+    return (
+      text: mine ? 'You: ${latest.lastMessageText}' : latest.lastMessageText!,
+      dotColor: null,
+      time: latest.lastMessageAt == null
+          ? null
+          : chatTimeLabel(latest.lastMessageAt!),
+    );
+  }
+  final sv = sessionStatusView(
+    latest,
+    isMentor: viewerIsMentor,
+    style: SessionStatusStyle.compact,
+  );
+  final showDot =
+      latest.type == 'AUDIO_CALL' || _isActiveStatus(latest.status);
+  return (text: sv.label, dotColor: showDot ? sv.color : null, time: null);
+}
+
+/// Renders a [_rowSubtitle] result — optional status dot, the preview /
+/// status text (ellipsised), and an optional relative time pinned to the
+/// right. Shared by the aspirant and mentor grouped rows.
+class _SubtitleRow extends StatelessWidget {
+  const _SubtitleRow({required this.sub});
+  final ({String text, Color? dotColor, String? time}) sub;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        if (sub.dotColor != null) ...[
+          Container(
+            width: 7,
+            height: 7,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: sub.dotColor,
+            ),
+          ),
+          const SizedBox(width: 6),
+        ],
+        Flexible(
+          child: Text(
+            sub.text,
+            style: const TextStyle(
+              fontSize: AppFont.xs,
+              color: AppColors.textSecondary,
+            ),
+            overflow: TextOverflow.ellipsis,
+            maxLines: 1,
+          ),
+        ),
+        if (sub.time != null) ...[
+          const SizedBox(width: 6),
+          Text(
+            sub.time!,
+            style: const TextStyle(fontSize: 10, color: AppColors.textMuted),
+          ),
+        ],
+      ],
+    );
+  }
+}
+
 /// The single session a grouped mentor row should show actions for, picked
 /// from that student's active sessions by urgency: a call awaiting the
 /// mentor's decision → a live call to join → an open chat → nothing. Returns
@@ -333,13 +434,7 @@ class _MentorStudentRow extends StatelessWidget {
     // by tapping the row (→ history).
     final primaryAction = _pickPrimaryAction(activeSessions);
     final aspirantName = first.aspirantName;
-    final showDot =
-        latest.type == 'AUDIO_CALL' || _isActiveStatus(latest.status);
-    final statusView = sessionStatusView(
-      latest,
-      isMentor: true,
-      style: SessionStatusStyle.compact,
-    );
+    final sub = _rowSubtitle(latest, viewerIsMentor: true);
 
     void openHistory() => showMentorSessionHistory(
       context,
@@ -379,31 +474,7 @@ class _MentorStudentRow extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(height: 2),
-                    Row(
-                      children: [
-                        if (showDot) ...[
-                          Container(
-                            width: 7,
-                            height: 7,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: statusView.color,
-                            ),
-                          ),
-                          const SizedBox(width: 6),
-                        ],
-                        Flexible(
-                          child: Text(
-                            statusView.label,
-                            style: const TextStyle(
-                              fontSize: AppFont.xs,
-                              color: AppColors.textSecondary,
-                            ),
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                      ],
-                    ),
+                    _SubtitleRow(sub: sub),
                   ],
                 ),
               ),
@@ -575,15 +646,7 @@ class _AspirantMentorRow extends ConsumerWidget {
     );
     final mentorId = first.mentorId;
     final mentorName = first.mentorName;
-    // The dot only earns its place when the status is something other than
-    // a plain "Chat" — a call request/outcome, or a live session.
-    final showDot =
-        latest.type == 'AUDIO_CALL' || _isActiveStatus(latest.status);
-    final statusView = sessionStatusView(
-      latest,
-      isMentor: false,
-      style: SessionStatusStyle.compact,
-    );
+    final sub = _rowSubtitle(latest, viewerIsMentor: false);
 
     return Material(
       color: AppColors.surface,
@@ -618,31 +681,7 @@ class _AspirantMentorRow extends ConsumerWidget {
                       overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(height: 2),
-                    Row(
-                      children: [
-                        if (showDot) ...[
-                          Container(
-                            width: 7,
-                            height: 7,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: statusView.color,
-                            ),
-                          ),
-                          const SizedBox(width: 6),
-                        ],
-                        Flexible(
-                          child: Text(
-                            statusView.label,
-                            style: const TextStyle(
-                              fontSize: AppFont.xs,
-                              color: AppColors.textSecondary,
-                            ),
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                      ],
-                    ),
+                    _SubtitleRow(sub: sub),
                   ],
                 ),
               ),
@@ -947,7 +986,14 @@ class _SessionActionsState extends ConsumerState<_SessionActions> {
     // A scheduled request: the mentor picks the concrete 30-min slot first.
     DateTime? confirmedFor;
     if (scheduled) {
-      confirmedFor = await showConfirmCallTimeSheet(context, session: session);
+      confirmedFor = await showConfirmCallTimeSheet(
+        context,
+        session: session,
+        busy: mentorBusyIntervals(
+          ref.read(sessionsListProvider).asData?.value ?? const [],
+          excludeSessionId: session.id,
+        ),
+      );
       if (confirmedFor == null || !mounted) return; // backed out
     }
 

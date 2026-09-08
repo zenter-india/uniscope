@@ -88,6 +88,15 @@ type MentorSessionParty = {
  * the single-session path (toResponseById) computes it. */
 export type MentorRatingLite = { average: number | null; count: number };
 
+/** Last chat message on a CHAT session's channel — for the Sessions list's
+ * WhatsApp-style preview line. Only the list path (findAll) resolves it;
+ * AUDIO_CALL sessions have no channel and pass null. */
+export type LastChatMessageLite = {
+  text: string;
+  senderId: string;
+  createdAt: Date;
+};
+
 type SessionWithNames = Session & {
   aspirant: SessionParty;
   mentor: MentorSessionParty;
@@ -167,12 +176,21 @@ export interface SessionResponse {
   aspirantStream: string | null;
   aspirantQualification: string | null;
   aspirantCourse: string | null;
+  // ── Sessions-list chat preview (CHAT sessions only) ──────────────────
+  /** Text of the most recent message on this chat, or null (AUDIO_CALL, or
+   * a chat with no messages yet). Only the list path (findAll) fills these. */
+  lastMessageText: string | null;
+  lastMessageAt: Date | null;
+  /** User id of whoever sent `lastMessageText` — lets the client show a
+   * "You: " prefix without another lookup. */
+  lastMessageSenderId: string | null;
 }
 
 export function toSessionResponse(
   session: SessionWithNames,
   resolveAvatarUrl: AvatarUrlResolver,
   mentorRating?: MentorRatingLite,
+  lastMessage?: LastChatMessageLite | null,
 ): SessionResponse {
   const mp = session.mentor.profile;
   const ap = session.aspirant.profile;
@@ -227,5 +245,8 @@ export function toSessionResponse(
     aspirantStream: ap?.stream ?? null,
     aspirantQualification: ap?.qualification ?? null,
     aspirantCourse: ap?.courseInterested ?? null,
+    lastMessageText: lastMessage?.text ?? null,
+    lastMessageAt: lastMessage?.createdAt ?? null,
+    lastMessageSenderId: lastMessage?.senderId ?? null,
   };
 }
