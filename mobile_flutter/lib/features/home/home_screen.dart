@@ -1014,7 +1014,7 @@ class _MentorSpotlightCard extends ConsumerWidget {
                   SizedBox(
                     width: double.infinity,
                     child: _MiniButton(
-                      label: 'Start free chat',
+                      label: 'Chat',
                       onTap: () => startChatWithMentor(context, ref, mentor.id),
                     ),
                   ),
