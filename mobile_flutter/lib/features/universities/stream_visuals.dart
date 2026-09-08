@@ -24,15 +24,19 @@ class StreamVisual {
 }
 
 /// The stream glyph — an asset SVG when the stream has one, else the
-/// Material [StreamVisual.icon] fallback. Both tinted to [v.color].
-Widget streamGlyph(StreamVisual v, {double size = 20}) => v.assetPath != null
-    ? SvgPicture.asset(
-        v.assetPath!,
-        width: size,
-        height: size,
-        colorFilter: ColorFilter.mode(v.color, BlendMode.srcIn),
-      )
-    : Icon(v.icon, size: size, color: v.color);
+/// Material [StreamVisual.icon] fallback. Tinted to [color] when given
+/// (e.g. white on a coloured header), otherwise to [v.color].
+Widget streamGlyph(StreamVisual v, {double size = 20, Color? color}) {
+  final tint = color ?? v.color;
+  return v.assetPath != null
+      ? SvgPicture.asset(
+          v.assetPath!,
+          width: size,
+          height: size,
+          colorFilter: ColorFilter.mode(tint, BlendMode.srcIn),
+        )
+      : Icon(v.icon, size: size, color: tint);
+}
 
 const kDefaultStreamVisual = StreamVisual(
   Icons.account_balance_rounded,

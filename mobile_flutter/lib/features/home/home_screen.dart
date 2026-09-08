@@ -708,13 +708,13 @@ class _CollegeCard extends StatelessWidget {
             width: 44,
             height: 44,
             decoration: BoxDecoration(
-              color: authBrandTeal.withValues(alpha: 0.12),
+              gradient: AppGradients.canopy,
               borderRadius: BorderRadius.circular(AppRadius.sm),
             ),
-            child: Icon(
+            child: const Icon(
               Icons.account_balance_rounded,
               size: 20,
-              color: authBrandTeal,
+              color: Colors.white,
             ),
           ),
           const SizedBox(width: AppSpacing.md),
@@ -1038,9 +1038,10 @@ class _CollegeSpotlightCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Same per-stream "duotone thumbnail" the Discover/Colleges tab uses —
-    // a stethoscope for Medical, a tooth for Dental, etc. (see
-    // stream_visuals.dart) — instead of one generic building icon.
+    // Per-stream glyph (a stethoscope for Medical, a tooth for Dental, etc.
+    // — see stream_visuals.dart), now sitting in white on the same green
+    // canopy gradient the Home header uses, instead of a pale per-stream
+    // tint, so the college cards read as part of the same surface.
     final visual = streamVisualFor(university.stream);
 
     // Fills the rail's fixed height so every card is the same size — the
@@ -1071,9 +1072,9 @@ class _CollegeSpotlightCard extends StatelessWidget {
               Container(
                 height: 60,
                 width: double.infinity,
-                color: visual.tint,
+                decoration: const BoxDecoration(gradient: AppGradients.canopy),
                 alignment: Alignment.center,
-                child: streamGlyph(visual, size: 28),
+                child: streamGlyph(visual, size: 28, color: Colors.white),
               ),
               Padding(
                 padding: const EdgeInsets.fromLTRB(10, 8, 10, 8),
