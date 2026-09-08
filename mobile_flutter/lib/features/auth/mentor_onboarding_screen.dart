@@ -78,16 +78,16 @@ class _MentorOnboardingScreenState extends ConsumerState<MentorOnboardingScreen>
   static const _stepTitles = [
     'Basic Information',
     'Location',
-    'Current Status',
     'College Details',
+    'Current Status',
     'Choose Your Avatar',
     'Verify it\'s really you',
   ];
   static const _stepSubtitles = [
     'Core identity details.',
     'Helps aspirants from your region find you.',
-    'Are you still studying or graduated? How can aspirants reach you?',
     'Your institution and degree.',
+    'Are you still studying or graduated? How can aspirants reach you?',
     'Pick a look — you can always change this later from your profile.',
     'Help us confirm your college identity and build trust with aspirants.',
   ];
@@ -122,6 +122,12 @@ class _MentorOnboardingScreenState extends ConsumerState<MentorOnboardingScreen>
             _city != null &&
             (_city != 'Other' || _cityOtherController.text.trim().isNotEmpty);
       case 2:
+        final streamOk = _stream != null &&
+            (_stream != 'Others' || _streamOtherController.text.trim().isNotEmpty);
+        final collegeOk = _collegeNameController.text.trim().isNotEmpty;
+        final specializationOk = !_needsSpecialization || _specialization != null;
+        return _degree != null && streamOk && collegeOk && specializationOk;
+      case 3:
         final statusOk = _currentStatus == 'Currently Studying'
             ? _yearOfStudyLabel != null
             : _currentStatus == 'Graduated'
@@ -131,12 +137,6 @@ class _MentorOnboardingScreenState extends ConsumerState<MentorOnboardingScreen>
             (!_languages.contains('Others') ||
                 _languagesOtherController.text.trim().isNotEmpty);
         return statusOk && languagesOk && _preferredTimings.isNotEmpty;
-      case 3:
-        final streamOk = _stream != null &&
-            (_stream != 'Others' || _streamOtherController.text.trim().isNotEmpty);
-        final collegeOk = _collegeNameController.text.trim().isNotEmpty;
-        final specializationOk = !_needsSpecialization || _specialization != null;
-        return _degree != null && streamOk && collegeOk && specializationOk;
       default:
         return true;
     }
@@ -225,8 +225,16 @@ class _MentorOnboardingScreenState extends ConsumerState<MentorOnboardingScreen>
   }
 
   void _next() {
+    if (_step == 2) {
+      // College Details — resolve the typed/picked college to a real row,
+      // then move on to Current Status. The profile isn't saved until the
+      // end of Current Status (it collects year-of-study / languages /
+      // availability that also need to go in the same updateProfile call).
+      _resolveCollege();
+      return;
+    }
     if (_step == 3) {
-      _resolveCollegeThenSave();
+      _confirmAgeThenSave();
       return;
     }
     if (_step == 4) {
@@ -247,18 +255,12 @@ class _MentorOnboardingScreenState extends ConsumerState<MentorOnboardingScreen>
     _goTo(_step - 1);
   }
 
-  /// College Details is the last data-collection step (index 3) — if the
-  /// typed college name wasn't picked from the search suggestions, it needs
-  /// to resolve (find-or-create) to a real University row before the profile
-  /// save, since verification requires one. See UniversitiesApi.findOrCreate.
-  Future<void> _resolveCollegeThenSave() async {
-    // Age-confirmation gate before the mentor profile is submitted — asked
-    // once, not again if the user steps back and forward through step 3.
-    if (!_ageConfirmed) {
-      if (!await showAgeConfirmationDialog(context)) return;
-      if (!mounted) return;
-      _ageConfirmed = true;
-    }
+  /// Leaving the College Details step (index 2) — if the typed college name
+  /// wasn't picked from the search suggestions, resolve it (find-or-create)
+  /// to a real University row now (verification later needs one). Then
+  /// advance to Current Status; the profile save happens at the end of that
+  /// step. See UniversitiesApi.findOrCreate.
+  Future<void> _resolveCollege() async {
     if (_universityId == null) {
       setState(() => _resolvingCollege = true);
       try {
@@ -280,6 +282,18 @@ class _MentorOnboardingScreenState extends ConsumerState<MentorOnboardingScreen>
             .showSnackBar(SnackBar(content: Text('Could not save your college: $e')));
         return;
       }
+    }
+    _goTo(3);
+  }
+
+  /// Leaving the Current Status step (index 3) — the last data step: show
+  /// the age-confirmation gate once, then persist everything collected so
+  /// far in one updateProfile call.
+  Future<void> _confirmAgeThenSave() async {
+    if (!_ageConfirmed) {
+      if (!await showAgeConfirmationDialog(context)) return;
+      if (!mounted) return;
+      _ageConfirmed = true;
     }
     await _saveProfile();
   }
@@ -511,6 +525,78 @@ class _MentorOnboardingScreenState extends ConsumerState<MentorOnboardingScreen>
                     title: _stepTitles[2],
                     subtitle: _stepSubtitles[2],
                     children: [
+                      const OnboardingFieldLabel('Degree'),
+                      OnboardingSingleChipGroup(
+                        options: degreesForStream(_stream),
+                        selected: _degree,
+                        // The curated college dataset is degree-specific
+                        // (MD/MS vs Diploma vs DM/MCh), so a college picked
+                        // under the old degree may not exist under the new
+                        // one — clear it, same as the web MentorForm.
+                        onSelect: (v) => setState(() {
+                          _degree = v;
+                          _universityId = null;
+                          _collegeNameController.clear();
+                          _specialization = null;
+                        }),
+                      ),
+                      const SizedBox(height: AppSpacing.md),
+                      const OnboardingFieldLabel('Stream / Field'),
+                      OnboardingSingleChipGroup(
+                        options: kStreamOptions,
+                        selected: _stream,
+                        // Switching streams invalidates whichever college
+                        // was picked/typed for the previous one, and the
+                        // previously chosen degree/specialization may no
+                        // longer be a valid option for the new stream.
+                        onSelect: (v) => setState(() {
+                          _stream = v;
+                          _universityId = null;
+                          _collegeNameController.clear();
+                          _degree = null;
+                          _specialization = null;
+                        }),
+                      ),
+                      if (_stream == 'Others') ...[
+                        const SizedBox(height: AppSpacing.sm),
+                        TextFormField(
+                          controller: _streamOtherController,
+                          onChanged: (_) => setState(() {}),
+                          decoration: const InputDecoration(
+                              hintText: 'Tell us your field of study'),
+                        ),
+                      ],
+                      const SizedBox(height: AppSpacing.md),
+                      const OnboardingFieldLabel('College'),
+                      CollegeSearchField(
+                        key: ValueKey('${_stream}_$_degree'),
+                        initialText: _collegeNameController.text,
+                        stream: _stream == 'Others'
+                            ? _streamOtherController.text.trim()
+                            : _stream,
+                        curatedDegree: _curatedDegree,
+                        level: _collegeLevel,
+                        onPick: (universityId, text) => setState(() {
+                          _universityId = universityId;
+                          _collegeNameController.text = text;
+                        }),
+                      ),
+                      if (_needsSpecialization) ...[
+                        const SizedBox(height: AppSpacing.md),
+                        const OnboardingFieldLabel('Specialization'),
+                        OnboardingSearchableField(
+                          value: _specialization,
+                          hint: 'Select specialization',
+                          options: _specializationOptions(),
+                          onChanged: (v) => setState(() => _specialization = v),
+                        ),
+                      ],
+                    ],
+                  ),
+                  OnboardingStepScaffold(
+                    title: _stepTitles[3],
+                    subtitle: _stepSubtitles[3],
+                    children: [
                       OnboardingSingleChipGroup(
                         options: kCurrentStatuses,
                         selected: _currentStatus,
@@ -593,78 +679,6 @@ class _MentorOnboardingScreenState extends ConsumerState<MentorOnboardingScreen>
                           }
                         }),
                       ),
-                    ],
-                  ),
-                  OnboardingStepScaffold(
-                    title: _stepTitles[3],
-                    subtitle: _stepSubtitles[3],
-                    children: [
-                      const OnboardingFieldLabel('Degree'),
-                      OnboardingSingleChipGroup(
-                        options: degreesForStream(_stream),
-                        selected: _degree,
-                        // The curated college dataset is degree-specific
-                        // (MD/MS vs Diploma vs DM/MCh), so a college picked
-                        // under the old degree may not exist under the new
-                        // one — clear it, same as the web MentorForm.
-                        onSelect: (v) => setState(() {
-                          _degree = v;
-                          _universityId = null;
-                          _collegeNameController.clear();
-                          _specialization = null;
-                        }),
-                      ),
-                      const SizedBox(height: AppSpacing.md),
-                      const OnboardingFieldLabel('Stream / Field'),
-                      OnboardingSingleChipGroup(
-                        options: kStreamOptions,
-                        selected: _stream,
-                        // Switching streams invalidates whichever college
-                        // was picked/typed for the previous one, and the
-                        // previously chosen degree/specialization may no
-                        // longer be a valid option for the new stream.
-                        onSelect: (v) => setState(() {
-                          _stream = v;
-                          _universityId = null;
-                          _collegeNameController.clear();
-                          _degree = null;
-                          _specialization = null;
-                        }),
-                      ),
-                      if (_stream == 'Others') ...[
-                        const SizedBox(height: AppSpacing.sm),
-                        TextFormField(
-                          controller: _streamOtherController,
-                          onChanged: (_) => setState(() {}),
-                          decoration: const InputDecoration(
-                              hintText: 'Tell us your field of study'),
-                        ),
-                      ],
-                      const SizedBox(height: AppSpacing.md),
-                      const OnboardingFieldLabel('College'),
-                      CollegeSearchField(
-                        key: ValueKey('${_stream}_$_degree'),
-                        initialText: _collegeNameController.text,
-                        stream: _stream == 'Others'
-                            ? _streamOtherController.text.trim()
-                            : _stream,
-                        curatedDegree: _curatedDegree,
-                        level: _collegeLevel,
-                        onPick: (universityId, text) => setState(() {
-                          _universityId = universityId;
-                          _collegeNameController.text = text;
-                        }),
-                      ),
-                      if (_needsSpecialization) ...[
-                        const SizedBox(height: AppSpacing.md),
-                        const OnboardingFieldLabel('Specialization'),
-                        OnboardingSearchableField(
-                          value: _specialization,
-                          hint: 'Select specialization',
-                          options: _specializationOptions(),
-                          onChanged: (v) => setState(() => _specialization = v),
-                        ),
-                      ],
                     ],
                   ),
                   OnboardingStepScaffold(
