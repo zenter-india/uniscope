@@ -504,11 +504,29 @@ class _UniversityListScreenState extends ConsumerState<UniversityListScreen> {
                       // "district" field on University, only city/state, so
                       // this is the closest real match without a new data
                       // source.
+                      //
+                      // Real bug found 2026-09-08, live-confirmed with the
+                      // exact "Medical + Diploma + bast" case from a
+                      // screenshot: for DNB/Diploma-granting hospitals the
+                      // base `University.name`/`.city` are generic ("District
+                      // Male Hospital", city null) with no district text at
+                      // all — the district only shows up in the *curated*
+                      // dataset's own richer `label`
+                      // ("District Male Hospital, Basti, Uttar Pradesh",
+                      // from GET /universities/curated) built for that
+                      // specific stream+degree. So once a curated degree is
+                      // picked, also match the query against that college's
+                      // curated label, not just the flat University fields.
                       final matchesQuery =
                           q.isEmpty ||
                           u.name.toLowerCase().contains(q) ||
                           (u.city ?? '').toLowerCase().contains(q) ||
-                          u.state.toLowerCase().contains(q);
+                          u.state.toLowerCase().contains(q) ||
+                          (curatedKey != null &&
+                              (curatedById[u.id]?.label.toLowerCase().contains(
+                                    q,
+                                  ) ??
+                                  false));
                       final matchesStream =
                           effectiveStream == 'All' ||
                           u.stream == effectiveStream;
