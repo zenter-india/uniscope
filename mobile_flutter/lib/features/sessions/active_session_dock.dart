@@ -6,7 +6,9 @@ import '../../core/network/sessions_api.dart';
 import '../../core/theme/app_theme.dart';
 import '../../state/auth_controller.dart';
 import '../../widgets/app_widgets.dart';
+import 'call_time_windows.dart';
 import 'cancel_deflection_sheet.dart';
+import 'confirm_call_time_sheet.dart';
 import 'session_list_screen.dart' show sessionsListProvider;
 import 'session_status.dart';
 
@@ -126,18 +128,35 @@ class _DockRowState extends ConsumerState<_DockRow> {
     }
   }
 
-  // Mirrors _acceptAndMaybeJoin in session_list_screen.dart — a mentor
-  // accepting from the dock is already in the app right now, so send them
-  // straight into the call instead of making them find "Join Call" again.
+  // Mirrors _acceptAndMaybeJoin in session_list_screen.dart. Instant → the
+  // mentor drops straight into the call. Scheduled → they pick a concrete
+  // 30-min slot first, and the call connects at that slot, not now.
   Future<void> _acceptAndJoin() async {
+    final session = widget.session;
+    final scheduled = session.requestedFor != null;
+
+    DateTime? confirmedFor;
+    if (scheduled) {
+      confirmedFor = await showConfirmCallTimeSheet(context, session: session);
+      if (confirmedFor == null || !mounted) return;
+    }
+
     setState(() => _busy = true);
     try {
       final updated = await ref
           .read(sessionsApiProvider)
-          .accept(widget.session.id);
+          .accept(session.id, confirmedFor: confirmedFor);
       ref.invalidate(sessionsListProvider);
       if (!mounted) return;
-      CallOverlayController.instance.open(updated.id);
+      if (confirmedFor == null) {
+        CallOverlayController.instance.open(updated.id);
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Confirmed for ${friendlyCallTime(confirmedFor)}'),
+          ),
+        );
+      }
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(
@@ -214,7 +233,7 @@ class _DockRowState extends ConsumerState<_DockRow> {
           ),
           const SizedBox(width: 6),
           _DockButton(
-            label: 'Accept',
+            label: session.requestedFor == null ? 'Accept' : 'Confirm a time',
             busy: _busy,
             onPressed: _busy ? null : _acceptAndJoin,
           ),

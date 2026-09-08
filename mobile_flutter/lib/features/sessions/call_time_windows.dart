@@ -100,6 +100,19 @@ List<DateTime> halfHourSlotsInWindow(
   return out;
 }
 
+/// The 30-minute slots the mentor can confirm around one of the aspirant's
+/// requested times: every half hour in the 4-hour block that [anchor] falls
+/// in, on [anchor]'s own day, with slots already in the past dropped. This
+/// is what each row of the mentor's "Confirm a time" sheet expands into —
+/// the aspirant's time is a soft anchor, the mentor picks the exact slot
+/// that fits their schedule.
+List<DateTime> slotsAroundAnchor(DateTime anchor, [DateTime? nowArg]) {
+  final local = anchor.toLocal();
+  final blockStart = (local.hour ~/ 4) * 4;
+  final day = DateTime(local.year, local.month, local.day);
+  return halfHourSlotsInWindow(blockStart, blockStart + 4, day, nowArg);
+}
+
 /// The next real datetime a "Morning/Evening/…" quick-pick resolves to:
 /// - window still ahead today  → today at its start
 /// - window live right now      → the next half-hour inside it

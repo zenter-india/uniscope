@@ -30,6 +30,7 @@ import { ChatService } from '../chat/chat.service.js';
 import { MentorsService } from '../mentors/mentors.service.js';
 import { NotificationsService } from '../notifications/notifications.service.js';
 import { MENTOR_RATE_PER_MINUTE_MINOR, WalletService } from '../wallet/wallet.service.js';
+import { AcceptSessionDto } from './dto/accept-session.dto.js';
 import { CALL_SLOT_MINUTES, CreateSessionDto } from './dto/create-session.dto.js';
 import { ListSessionsAdminDto } from './dto/list-sessions-admin.dto.js';
 import { ListSessionsDto } from './dto/list-sessions.dto.js';
@@ -61,6 +62,20 @@ const CALL_GRACE_FRACTION = 0.5;
  * shortest grace period (2.5 min on a 5-min slot) is caught within ~30s of
  * expiring, not minutes late. */
 const NO_SHOW_SWEEP_INTERVAL_MS = 30_000;
+
+/** e.g. "Tue, Sep 9, 4:30 PM" — IST (the app's only market). Node's Intl
+ * ships the tz data. Shared by the request push (create) and the
+ * confirmation push (accept). */
+const fmtIst = (d: Date): string =>
+  new Intl.DateTimeFormat('en-US', {
+    weekday: 'short',
+    month: 'short',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true,
+    timeZone: 'Asia/Kolkata',
+  }).format(d);
 
 /** Statuses that represent an unresolved, still-live booking against a given
  * mentor — used to block an aspirant from spamming a second request at the
@@ -282,19 +297,8 @@ export class SessionsService {
 
     // The mentor decides whether to accept now or plan for later, so the
     // notification itself has to say which kind of request this is and, when
-    // scheduled, the time(s) the student offered. Times are rendered in IST
-    // (the app's only market) — Node's Intl has the tz data built in.
-    const fmtIst = (d: Date): string =>
-      new Intl.DateTimeFormat('en-US', {
-        weekday: 'short',
-        month: 'short',
-        day: 'numeric',
-        hour: 'numeric',
-        minute: '2-digit',
-        hour12: true,
-        timeZone: 'Asia/Kolkata',
-      }).format(d);
-
+    // scheduled, the time(s) the student offered — see the module-level
+    // `fmtIst` (also used by the confirmation push in accept()).
     let callTitle = 'New audio call request';
     let callBody = `A student booked a ${slotMinutes}-min audio call with you.`;
     if (isAudioCall && !requestedFor) {
@@ -320,7 +324,11 @@ export class SessionsService {
   }
 
   /** Only the booked mentor may accept, and only while PENDING. */
-  async accept(sessionId: string, mentorUserId: string): Promise<SessionResponse> {
+  async accept(
+    sessionId: string,
+    mentorUserId: string,
+    dto: AcceptSessionDto = {},
+  ): Promise<SessionResponse> {
     const session = await this.requireSession(sessionId);
     this.requireParty(session, mentorUserId, 'mentor');
 
@@ -329,6 +337,11 @@ export class SessionsService {
         `Cannot accept a session in status ${session.status}`,
       );
     }
+
+    // The mentor picks a concrete 30-min slot from the strip the mobile
+    // confirm sheet offers around the aspirant's requested time(s). Backstop
+    // validation here — the sheet already keeps it in range.
+    const confirmedFor = this.resolveConfirmedSlot(session, dto.confirmedFor);
 
     // For CHAT sessions the chat channel is the messaging surface itself,
     // so it's provisioned right on accept (AUDIO_CALL sessions provision
@@ -345,21 +358,31 @@ export class SessionsService {
       data: {
         status: SessionStatus.ACCEPTED,
         respondedAt: new Date(),
+        ...(confirmedFor && { confirmedFor }),
       },
     });
 
     this.logger.log(
       `[call] session accepted sessionId=${session.id} type=${session.type} mentor=${mentorUserId} ` +
+        `confirmedFor=${confirmedFor?.toISOString() ?? 'none'} ` +
         `(SESSION_ACCEPTED will carry sessionType=${session.type} for mobile deep-link)`,
     );
+
+    let body: string;
+    if (session.type !== SessionType.AUDIO_CALL) {
+      body = 'Your mentor accepted — start chatting now.';
+    } else if (confirmedFor) {
+      body =
+        `Your mentor confirmed ${fmtIst(confirmedFor)} for your call. ` +
+        `Join within that 30-minute window.`;
+    } else {
+      body = 'Your mentor accepted — join the call when ready.';
+    }
     await this.notificationsService.send({
       userId: session.aspirantId,
       type: NotificationType.SESSION_ACCEPTED,
       title: 'Request accepted',
-      body:
-        session.type === SessionType.AUDIO_CALL
-          ? 'Your mentor accepted — join the call when ready.'
-          : 'Your mentor accepted — start chatting now.',
+      body,
       // sessionType lets the mobile push handler deep-link straight into
       // the call screen for AUDIO_CALL (vs the chat screen) without an
       // extra round-trip — see mobile_flutter/lib/core/push/push_service.dart.
@@ -367,6 +390,57 @@ export class SessionsService {
     });
 
     return this.toResponseById(sessionId);
+  }
+
+  /**
+   * Validates the mentor's chosen 30-minute slot against the aspirant's
+   * request. Returns the parsed Date, or null when no slot was supplied
+   * (legacy accept — behaves exactly as before). Throws BadRequestException
+   * on anything out of bounds. Rules: the request must be scheduled (an
+   * Instant request has no anchor to confirm against); the slot must be on
+   * a :00/:30 boundary, in the future, ≤ 5 days out, and within ~4 hours of
+   * `requestedFor` or `requestedForAlt`.
+   */
+  private resolveConfirmedSlot(
+    session: { type: SessionType; requestedFor: Date | null; requestedForAlt: Date | null },
+    value: string | undefined,
+  ): Date | null {
+    if (!value) return null;
+    if (session.type !== SessionType.AUDIO_CALL) {
+      throw new BadRequestException('confirmedFor is only valid for a call');
+    }
+    if (!session.requestedFor) {
+      throw new BadRequestException(
+        'This is an instant request — there is no time to confirm',
+      );
+    }
+    const slot = new Date(value);
+    const t = slot.getTime();
+    if (Number.isNaN(t)) {
+      throw new BadRequestException('confirmedFor is not a valid time');
+    }
+    if (slot.getUTCSeconds() !== 0 || slot.getUTCMilliseconds() !== 0 ||
+        (slot.getUTCMinutes() !== 0 && slot.getUTCMinutes() !== 30)) {
+      throw new BadRequestException('confirmedFor must be a 30-minute slot');
+    }
+    const now = Date.now();
+    if (t < now - 60_000) {
+      throw new BadRequestException('confirmedFor is in the past');
+    }
+    if (t > now + 5 * 24 * 60 * 60 * 1000) {
+      throw new BadRequestException('confirmedFor is more than 5 days ahead');
+    }
+    const WINDOW_MS = 4 * 60 * 60 * 1000 + 60_000; // one 4-hour block + slack
+    const anchors = [session.requestedFor, session.requestedForAlt].filter(
+      (d): d is Date => d != null,
+    );
+    const nearAnchor = anchors.some((a) => Math.abs(t - a.getTime()) <= WINDOW_MS);
+    if (!nearAnchor) {
+      throw new BadRequestException(
+        'confirmedFor must be close to one of the times the student offered',
+      );
+    }
+    return slot;
   }
 
   /** Only the booked mentor may reject, and only while PENDING. */
@@ -770,14 +844,26 @@ export class SessionsService {
         status: { in: JOINABLE_STATUSES },
         respondedAt: { not: null },
       },
-      select: { id: true, respondedAt: true, callSlotMinutes: true },
+      select: {
+        id: true,
+        respondedAt: true,
+        confirmedFor: true,
+        callSlotMinutes: true,
+      },
     });
 
     const now = Date.now();
     for (const candidate of candidates) {
       if (!candidate.respondedAt || !candidate.callSlotMinutes) continue;
       const graceMs = candidate.callSlotMinutes * CALL_GRACE_FRACTION * 60_000;
-      if (now < candidate.respondedAt.getTime() + graceMs) continue;
+      // The grace clock runs from whichever is later: the mentor's accept,
+      // or the confirmed slot start. A call confirmed for a slot days ahead
+      // must survive untouched until that slot actually arrives.
+      const clockStart = Math.max(
+        candidate.respondedAt.getTime(),
+        candidate.confirmedFor?.getTime() ?? 0,
+      );
+      if (now < clockStart + graceMs) continue;
 
       try {
         await this.resolveNoShow(candidate.id);

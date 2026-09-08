@@ -58,6 +58,7 @@ class Session {
     this.callSlotMinutes,
     this.requestedFor,
     this.requestedForAlt,
+    this.confirmedFor,
     this.aspirantJoinedAt,
     this.mentorJoinedAt,
     this.mentorIsAvailable = false,
@@ -103,6 +104,13 @@ class Session {
   /// AUDIO_CALL only: an optional second preferred time — the aspirant may
   /// offer the mentor two options to pick between.
   final DateTime? requestedForAlt;
+
+  /// AUDIO_CALL only: the concrete 30-minute slot the MENTOR confirmed on
+  /// accept, chosen from a strip of half-hour slots around requestedFor /
+  /// requestedForAlt. Null = accepted without a slot, or an Instant request.
+  /// Unlike requestedFor this is a real commitment (the no-show grace clock
+  /// runs from it server-side).
+  final DateTime? confirmedFor;
   final String? aspirantJoinedAt;
   final String? mentorJoinedAt;
 
@@ -160,6 +168,9 @@ class Session {
         : null,
     requestedForAlt: json['requestedForAlt'] != null
         ? DateTime.tryParse(json['requestedForAlt'] as String)
+        : null,
+    confirmedFor: json['confirmedFor'] != null
+        ? DateTime.tryParse(json['confirmedFor'] as String)
         : null,
     aspirantJoinedAt: json['aspirantJoinedAt'] as String?,
     mentorJoinedAt: json['mentorJoinedAt'] as String?,
@@ -260,9 +271,15 @@ class SessionsApi {
     return Session.fromJson(res.data!);
   }
 
-  Future<Session> accept(String sessionId) async {
+  /// [confirmedFor] — AUDIO_CALL only — is the 30-minute slot the mentor
+  /// picked in the confirm sheet. Omit it for an Instant request or to
+  /// accept without committing a slot. Sent as a UTC ISO-8601 string.
+  Future<Session> accept(String sessionId, {DateTime? confirmedFor}) async {
     final res = await _dio.post<Map<String, dynamic>>(
       '/sessions/$sessionId/accept',
+      data: confirmedFor == null
+          ? null
+          : {'confirmedFor': confirmedFor.toUtc().toIso8601String()},
     );
     return Session.fromJson(res.data!);
   }

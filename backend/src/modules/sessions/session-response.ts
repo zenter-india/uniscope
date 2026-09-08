@@ -136,6 +136,11 @@ export interface SessionResponse {
   /** AUDIO_CALL only: an optional second preferred time — the aspirant may
    * offer two options. Null unless requestedFor is also set. */
   requestedForAlt: Date | null;
+  /** AUDIO_CALL only: the concrete 30-minute slot the MENTOR confirmed on
+   * accept (chosen around requestedFor / requestedForAlt). Null = accepted
+   * without a slot, or an Instant request. Unlike requestedFor this is a
+   * real commitment — the no-show grace clock runs from here. */
+  confirmedFor: Date | null;
   aspirantJoinedAt: Date | null;
   mentorJoinedAt: Date | null;
   createdAt: Date;
@@ -206,6 +211,7 @@ export function toSessionResponse(
     callSlotMinutes: session.callSlotMinutes,
     requestedFor: session.requestedFor,
     requestedForAlt: session.requestedForAlt,
+    confirmedFor: session.confirmedFor,
     aspirantJoinedAt: session.aspirantJoinedAt,
     mentorJoinedAt: session.mentorJoinedAt,
     createdAt: session.createdAt,

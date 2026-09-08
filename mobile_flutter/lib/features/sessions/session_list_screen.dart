@@ -16,6 +16,7 @@ import '../wallet/wallet_screen.dart' show walletBalanceProvider;
 import 'call_request_sheet.dart';
 import 'call_time_windows.dart';
 import 'cancel_deflection_sheet.dart';
+import 'confirm_call_time_sheet.dart';
 import 'rate_mentor_sheet.dart';
 import 'session_status.dart';
 
@@ -939,13 +940,35 @@ class _SessionActionsState extends ConsumerState<_SessionActions> {
   /// tap "Join Call" later, which is why calls were getting stuck on the
   /// ringing screen for both parties — see CallScreen's dual-confirm join.
   Future<void> _acceptAndMaybeJoin(SessionsApi api) async {
+    final session = widget.session;
+    final scheduled =
+        session.type == 'AUDIO_CALL' && session.requestedFor != null;
+
+    // A scheduled request: the mentor picks the concrete 30-min slot first.
+    DateTime? confirmedFor;
+    if (scheduled) {
+      confirmedFor = await showConfirmCallTimeSheet(context, session: session);
+      if (confirmedFor == null || !mounted) return; // backed out
+    }
+
     setState(() => _busy = true);
     try {
-      final updated = await api.accept(widget.session.id);
+      final updated = await api.accept(
+        session.id,
+        confirmedFor: confirmedFor,
+      );
       ref.invalidate(sessionsListProvider);
       if (!mounted) return;
-      if (updated.type == 'AUDIO_CALL') {
+      if (updated.type == 'AUDIO_CALL' && confirmedFor == null) {
+        // Instant — drop straight into the call. A scheduled call connects
+        // at its slot, not now.
         CallOverlayController.instance.open(updated.id);
+      } else if (confirmedFor != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Confirmed for ${friendlyCallTime(confirmedFor)}'),
+          ),
+        );
       }
     } catch (e) {
       if (!mounted) return;
@@ -1071,9 +1094,11 @@ class _SessionActionsState extends ConsumerState<_SessionActions> {
               ),
               const SizedBox(width: AppSpacing.sm),
               _ActionButton(
-                label: isCall && session.requestedFor == null
+                label: !isCall
+                    ? 'Accept'
+                    : session.requestedFor == null
                     ? 'Accept & join'
-                    : 'Accept',
+                    : 'Confirm a time',
                 dense: widget.dense,
                 busy: _busy,
                 onPressed: _busy ? null : () => _acceptAndMaybeJoin(api),

@@ -599,6 +599,14 @@ model Session {
   /// and same now … now + 4 days bound as requestedFor. Never set without
   /// requestedFor also set.
   requestedForAlt    DateTime?     @map("requested_for_alt") @db.Timestamptz
+  /// AUDIO_CALL only: the concrete 30-minute slot the MENTOR confirmed on
+  /// accept, chosen from a strip of half-hour slots around the aspirant's
+  /// requestedFor / requestedForAlt anchor. Null = the mentor accepted
+  /// without picking a slot (legacy client) or the request was Instant.
+  /// Unlike requestedFor this is a real commitment: the no-show sweep's
+  /// grace clock runs from max(respondedAt, confirmedFor), so a call
+  /// confirmed days ahead survives to its own start time.
+  confirmedFor       DateTime?     @map("confirmed_for") @db.Timestamptz
   requestedAt        DateTime      @default(now()) @map("requested_at") @db.Timestamptz
   respondedAt        DateTime?     @map("responded_at") @db.Timestamptz
   /// Set only on a server-confirmed connection event — never client-reported.

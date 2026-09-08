@@ -90,11 +90,21 @@ class _CallRequestWatcherState extends ConsumerState<CallRequestWatcher>
         )
         .toList();
 
-    // Fast poll while a call is in flight; a slow mentor heartbeat so a new
-    // request appears without a manual refresh; nothing otherwise.
+    // A call is "due" if it's Instant (no confirmed slot — connect on
+    // accept) or its confirmed 30-min slot is within ~15 minutes. A call
+    // confirmed for a slot days away must NOT trigger the auto-navigate or
+    // the fast poll — it just sits until its slot approaches.
+    final now = DateTime.now();
+    bool dueSoon(Session s) =>
+        s.confirmedFor == null ||
+        now.isAfter(s.confirmedFor!.subtract(const Duration(minutes: 15)));
+    final active = mine.where(dueSoon).toList();
+
+    // Fast poll while a due call is in flight; a slow mentor heartbeat so a
+    // new request appears without a manual refresh; nothing otherwise.
     if (!_foreground || myId == null) {
       _setPoll(null);
-    } else if (mine.isNotEmpty) {
+    } else if (active.isNotEmpty) {
       _setPoll(const Duration(seconds: 4));
     } else if (isMentor) {
       _setPoll(const Duration(seconds: 10));
@@ -103,8 +113,9 @@ class _CallRequestWatcherState extends ConsumerState<CallRequestWatcher>
     }
 
     if (isAspirant) {
-      for (final s in mine) {
-        // Mentor accepted and this client hasn't already been sent in.
+      for (final s in active) {
+        // Mentor accepted, the slot is due, and this client hasn't already
+        // been sent in.
         if (s.status == SessionStatus.accepted &&
             s.aspirantJoinedAt == null &&
             _navigatedFor.add(s.id)) {

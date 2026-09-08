@@ -15,6 +15,7 @@ import type { JwtPayload } from '../../auth/decorators/current-user.decorator.js
 import { Roles } from '../../auth/decorators/roles.decorator.js';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard.js';
 import { RolesGuard } from '../../auth/guards/roles.guard.js';
+import { AcceptSessionDto } from './dto/accept-session.dto.js';
 import { CreateSessionDto } from './dto/create-session.dto.js';
 import { ListSessionsAdminDto } from './dto/list-sessions-admin.dto.js';
 import { ListSessionsDto } from './dto/list-sessions.dto.js';
@@ -82,8 +83,12 @@ export class SessionsController {
 
   @Post(':id/accept')
   @HttpCode(HttpStatus.OK)
-  accept(@CurrentUser() user: JwtPayload, @Param('id') id: string) {
-    return this.sessionsService.accept(id, user.sub);
+  accept(
+    @CurrentUser() user: JwtPayload,
+    @Param('id') id: string,
+    @Body() dto: AcceptSessionDto,
+  ) {
+    return this.sessionsService.accept(id, user.sub, dto);
   }
 
   @Post(':id/reject')

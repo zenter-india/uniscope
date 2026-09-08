@@ -48,6 +48,7 @@ SessionStatusView sessionStatusView(
       isCall: s.type == 'AUDIO_CALL',
       requestedFor: s.requestedFor,
       requestedForAlt: s.requestedForAlt,
+      confirmedFor: s.confirmedFor,
       isMentor: isMentor,
       style: style,
     );
@@ -68,6 +69,7 @@ SessionStatusView sessionStatusViewOf({
       isCall: isCall,
       requestedFor: null,
       requestedForAlt: null,
+      confirmedFor: null,
       isMentor: isMentor,
       style: style,
     );
@@ -78,6 +80,7 @@ SessionStatusView _view({
   required bool isCall,
   required DateTime? requestedFor,
   required DateTime? requestedForAlt,
+  required DateTime? confirmedFor,
   required bool isMentor,
   required SessionStatusStyle style,
 }) {
@@ -130,6 +133,23 @@ SessionStatusView _view({
       return SessionStatusView(label, AppColors.warning);
 
     case SessionStatus.accepted:
+      // A confirmed 30-min slot replaces the vague "Ready" / "join now" — the
+      // call isn't happening this second, it's happening at that slot.
+      if (confirmedFor != null) {
+        final when = friendlyCallTime(confirmedFor);
+        if (prompt) {
+          return SessionStatusView(
+            isMentor
+                ? 'Confirmed · $when'
+                : 'Mentor confirmed $when — join then',
+            AppColors.primary,
+          );
+        }
+        return SessionStatusView(
+          compact ? 'Confirmed · $when' : 'Confirmed for $when',
+          AppColors.primary,
+        );
+      }
       if (prompt) {
         return SessionStatusView(
           isMentor ? 'Accepted — ready to call' : 'Mentor is ready — join now',
