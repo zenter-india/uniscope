@@ -59,6 +59,11 @@ class _MentorOnboardingScreenState extends ConsumerState<MentorOnboardingScreen>
   String? _universityId;
   final _collegeNameController = TextEditingController();
   bool _resolvingCollege = false;
+  // The picked college's own specializations for this stream+degree (from
+  // the curated search) — the Specialization field is scoped to this list,
+  // matching the web MentorForm (a mentor picks from *their* college's real
+  // programs, not a merged list across every college).
+  List<String> _pickedSpecializations = const [];
   String? _stream;
   final _streamOtherController = TextEditingController();
   String? _degree;
@@ -178,11 +183,13 @@ class _MentorOnboardingScreenState extends ConsumerState<MentorOnboardingScreen>
   bool get _needsMedicalStreamWideSpecialization =>
       _stream == 'Medical' && (_degree == 'Doctorate' || _degree == 'Others');
 
-  /// Specialization options for the picked stream+degree — a specific
-  /// curated degree's real union (specializationsForDegreeProvider), or
-  /// Medical's stream-wide union for Doctorate/Others, or the static
-  /// kMedicalSpecializations fallback for Medical. Merged/fallback so the
-  /// field never regresses to fewer options while a fetch is in flight.
+  /// Specialization options — mirrors the web MentorForm:
+  ///  * Medical Doctorate/Others: the static/stream-wide Medical list (their
+  ///    specialty isn't tied to one MD/MS program).
+  ///  * every other curated degree (MD/MS, DNB, Diploma, DM/MCh, MDS,
+  ///    B.Tech, …): the **picked college's own** programs for this degree
+  ///    (`_pickedSpecializations`), falling back to the degree-wide union
+  ///    only when that college has none recorded yet.
   List<String> _specializationOptions() {
     if (_needsMedicalStreamWideSpecialization) {
       final curatedDegrees =
@@ -196,15 +203,19 @@ class _MentorOnboardingScreenState extends ConsumerState<MentorOnboardingScreen>
         ..sort();
     }
     if (_curatedDegree != null) {
-      final fetched = ref
-          .watch(specializationsForDegreeProvider(
-            (stream: _stream!, degree: _curatedDegree!),
-          ))
-          .value ??
+      if (_pickedSpecializations.isNotEmpty) {
+        return [..._pickedSpecializations]..sort();
+      }
+      // Picked college has no mapped programs for this degree — show the
+      // degree-wide union so the mentor still has something to pick.
+      return ref
+              .watch(specializationsForDegreeProvider(
+                (stream: _stream!, degree: _curatedDegree!),
+              ))
+              .value ??
           const [];
-      if (fetched.isNotEmpty) return fetched;
     }
-    return _stream == 'Medical' ? kMedicalSpecializations : const [];
+    return const [];
   }
 
   String get _resolvedCity => _city == 'Other' ? _cityOtherController.text.trim() : (_city ?? '');
@@ -541,6 +552,7 @@ class _MentorOnboardingScreenState extends ConsumerState<MentorOnboardingScreen>
                           _stream = v;
                           _universityId = null;
                           _collegeNameController.clear();
+                          _pickedSpecializations = const [];
                           _degree = null;
                           _specialization = null;
                         }),
@@ -568,6 +580,7 @@ class _MentorOnboardingScreenState extends ConsumerState<MentorOnboardingScreen>
                             _degree = v;
                             _universityId = null;
                             _collegeNameController.clear();
+                            _pickedSpecializations = const [];
                             _specialization = null;
                           }),
                         ),
@@ -583,13 +596,20 @@ class _MentorOnboardingScreenState extends ConsumerState<MentorOnboardingScreen>
                               : _stream,
                           curatedDegree: _curatedDegree,
                           level: _collegeLevel,
-                          onPick: (universityId, text) => setState(() {
+                          onPick: (universityId, text, specs) => setState(() {
                             _universityId = universityId;
                             _collegeNameController.text = text;
+                            _pickedSpecializations = specs;
+                            _specialization = null;
                           }),
                         ),
                       ],
-                      if (_needsSpecialization) ...[
+                      // Specialization appears once a college has been
+                      // entered (picked → its own programs scope the
+                      // options; free-typed → the degree-wide union) —
+                      // matches the web MentorForm's "Select a college first".
+                      if (_needsSpecialization &&
+                          _collegeNameController.text.trim().isNotEmpty) ...[
                         const SizedBox(height: AppSpacing.md),
                         const OnboardingFieldLabel('Specialization'),
                         OnboardingSearchableField(

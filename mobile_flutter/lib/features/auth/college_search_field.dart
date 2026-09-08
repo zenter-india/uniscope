@@ -45,10 +45,17 @@ class CollegeSearchField extends ConsumerStatefulWidget {
   /// e.g. "UG" — narrows the general search to colleges offering that level.
   final String? level;
 
-  /// `(universityId, displayText)` on a pick from the list (id non-null), or
-  /// `(null, rawText)` on every keystroke so the caller keeps the free-text
-  /// answer in sync.
-  final void Function(String? universityId, String text) onPick;
+  /// `(universityId, displayText, specializations)` on a pick from the list
+  /// (id non-null), or `(null, rawText, const [])` on every keystroke so the
+  /// caller keeps the free-text answer in sync. `specializations` is the
+  /// picked college's own list for this stream+degree (curated mode only —
+  /// empty in the general search) so the caller can scope its Specialization
+  /// field to that college, matching the web enrollment form.
+  final void Function(
+    String? universityId,
+    String text,
+    List<String> specializations,
+  ) onPick;
 
   @override
   ConsumerState<CollegeSearchField> createState() => _CollegeSearchFieldState();
@@ -102,7 +109,7 @@ class _CollegeSearchFieldState extends ConsumerState<CollegeSearchField> {
   }
 
   void _onChanged(String query) {
-    widget.onPick(null, query);
+    widget.onPick(null, query, const []);
     setState(() => _open = true);
     _fetch(query);
   }
@@ -122,7 +129,12 @@ class _CollegeSearchFieldState extends ConsumerState<CollegeSearchField> {
                 search: query.trim().isEmpty ? null : query.trim(),
               );
           options = [
-            for (final c in data) _Option(id: c.id, label: c.label),
+            for (final c in data)
+              _Option(
+                id: c.id,
+                label: c.label,
+                specializations: c.specializations,
+              ),
           ];
         } else {
           final data = await ref.read(universitiesApiProvider).search(
@@ -159,7 +171,7 @@ class _CollegeSearchFieldState extends ConsumerState<CollegeSearchField> {
 
   void _select(_Option o) {
     _controller.text = o.label;
-    widget.onPick(o.id, o.label);
+    widget.onPick(o.id, o.label, o.specializations);
     setState(() => _open = false);
     _focusNode.unfocus();
   }
@@ -181,7 +193,7 @@ class _CollegeSearchFieldState extends ConsumerState<CollegeSearchField> {
         if (showList)
           Container(
             margin: const EdgeInsets.only(top: AppSpacing.xs),
-            constraints: const BoxConstraints(maxHeight: 240),
+            constraints: const BoxConstraints(maxHeight: 320),
             decoration: BoxDecoration(
               color: AppColors.surface,
               border: Border.all(color: AppColors.border),
@@ -229,7 +241,12 @@ class _CollegeSearchFieldState extends ConsumerState<CollegeSearchField> {
 }
 
 class _Option {
-  const _Option({required this.id, required this.label});
+  const _Option({
+    required this.id,
+    required this.label,
+    this.specializations = const [],
+  });
   final String id;
   final String label;
+  final List<String> specializations;
 }

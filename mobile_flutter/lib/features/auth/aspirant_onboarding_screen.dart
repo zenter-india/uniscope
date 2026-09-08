@@ -517,7 +517,11 @@ class _AspirantOnboardingScreenState
                               : _stream,
                           curatedDegree: _curatedDegree,
                           level: _collegeLevel,
-                          onPick: (universityId, text) => setState(() {
+                          // Aspirant Specialization deliberately shows the
+                          // whole degree's list, not just the picked
+                          // college's (matches web AspirantForm), so the
+                          // pick's own specializations aren't used here.
+                          onPick: (universityId, text, _) => setState(() {
                             _universityId = universityId;
                             _collegeNameController.text = text;
                           }),
