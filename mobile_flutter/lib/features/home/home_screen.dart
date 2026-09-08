@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/network/mentors_api.dart';
@@ -145,197 +146,213 @@ class HomeScreen extends ConsumerWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // ─── Canopy ─────────────────────────────────────────────
-              // The gradient is scoped to this container (not the whole
-              // screen) so the full teal→blue run resolves inside the
-              // canopy's own height — stretched screen-wide, the blue
-              // stop lands below the fold and only flat teal shows.
+              // Soft mint→white wash (was the saturated brand-green
+              // gradient), with the columned "campus" illustration
+              // bleeding off the right edge behind the content — per the
+              // approved header mockup.
               Container(
                 width: double.infinity,
-                decoration: const BoxDecoration(gradient: AppGradients.canopy),
+                clipBehavior: Clip.hardEdge,
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [AppColors.primaryLight, AppColors.background],
+                  ),
+                ),
                 padding: EdgeInsets.only(
                   top: MediaQuery.of(context).padding.top,
                   // Trailing space the sheet is pulled up over, so the
-                  // rounded corners sit on gradient rather than on itself.
+                  // rounded corners sit on the wash rather than on itself.
                   bottom: AppSpacing.md + AppRadius.xl,
                 ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                child: Stack(
                   children: [
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(
-                        AppSpacing.md,
-                        AppSpacing.md,
-                        AppSpacing.md,
-                        0,
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Flexible(
-                            child: Row(
-                              children: [
-                                // The logo mark is dark navy/teal, so on the
-                                // green canopy it all but disappears — sit it
-                                // on a white chip so it reads, same as the
-                                // avatar's white ring on the other side.
-                                Container(
-                                  padding: const EdgeInsets.all(5),
-                                  decoration: BoxDecoration(
-                                    color: Colors.white,
-                                    borderRadius: BorderRadius.circular(
-                                      AppRadius.sm,
-                                    ),
-                                  ),
-                                  child: Image.asset(
-                                    'assets/logo/uniscope_icon.png',
-                                    width: 30,
-                                    height: 30,
-                                    fit: BoxFit.contain,
-                                  ),
-                                ),
-                                const SizedBox(width: AppSpacing.sm),
-                                Flexible(
-                                  child: Text(
-                                    'Uniscope',
-                                    overflow: TextOverflow.ellipsis,
-                                    style: const TextStyle(
-                                      fontSize: AppFont.xxl,
-                                      fontWeight: AppFont.extraBold,
-                                      color: AppColors.logoNavy,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
+                    Positioned(
+                      top: 4,
+                      right: -28,
+                      child: IgnorePointer(
+                        child: Opacity(
+                          opacity: 0.5,
+                          child: SvgPicture.asset(
+                            'assets/illustrations/home_header.svg',
+                            width: 128,
                           ),
-                          if (displayName != null)
-                            Material(
-                              color: Colors.transparent,
-                              shape: const CircleBorder(),
-                              child: InkWell(
-                                customBorder: const CircleBorder(),
-                                onTap: () => context.go('/profile'),
-                                child: Container(
-                                  padding: const EdgeInsets.all(2),
-                                  decoration: BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    border: Border.all(
-                                      color: Colors.white.withValues(
-                                        alpha: 0.85,
-                                      ),
-                                      width: 2,
-                                    ),
-                                  ),
-                                  child: AppAvatar(
-                                    name: displayName,
-                                    size: 40,
-                                    solid: true,
-                                    avatarUrl: myAvatarUrl,
-                                  ),
-                                ),
-                              ),
-                            ),
-                        ],
+                        ),
                       ),
                     ),
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(
-                        AppSpacing.md,
-                        AppSpacing.sm,
-                        AppSpacing.md,
-                        AppSpacing.md,
-                      ),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text.rich(
-                                  TextSpan(
-                                    // Whole greeting in the same brand green
-                                    // as the name (2026-09-07 per request —
-                                    // was white prefix / navy name, an
-                                    // inconsistent split). Smaller than
-                                    // before too, so a long display name
-                                    // doesn't wrap awkwardly.
-                                    children: firstName == null
-                                        ? [TextSpan(text: _greeting)]
-                                        : [
-                                            TextSpan(text: '$_greeting, '),
-                                            TextSpan(text: firstName),
-                                          ],
-                                  ),
-                                  overflow: TextOverflow.ellipsis,
-                                  maxLines: 1,
-                                  style: const TextStyle(
-                                    fontSize: AppFont.md,
-                                    fontWeight: AppFont.extraBold,
-                                    color: AppColors.primary,
-                                  ),
-                                ),
-                                const SizedBox(height: 2),
-                                Text(
-                                  'What are you looking for today?',
-                                  style: TextStyle(
-                                    fontSize: AppFont.xs,
-                                    color: Colors.white.withValues(alpha: 0.82),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          const NotificationBell(color: Colors.white),
-                        ],
-                      ),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: AppSpacing.md,
-                      ),
-                      child: GestureDetector(
-                        onTap: () => context.go('/colleges'),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: AppSpacing.md,
-                            vertical: 14,
-                          ),
-                          decoration: BoxDecoration(
-                            color: AppColors.surface,
-                            borderRadius: BorderRadius.circular(AppRadius.full),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(
+                            AppSpacing.md,
+                            AppSpacing.md,
+                            AppSpacing.md,
+                            0,
                           ),
                           child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              const Icon(
-                                Icons.search_rounded,
-                                size: 20,
-                                color: authBrandTeal,
-                              ),
-                              const SizedBox(width: AppSpacing.sm),
-                              const Expanded(
-                                child: Text(
-                                  'Search universities...',
-                                  style: TextStyle(
-                                    fontSize: AppFont.sm,
-                                    color: AppColors.textMuted,
-                                  ),
-                                  overflow: TextOverflow.ellipsis,
+                              Flexible(
+                                child: Row(
+                                  children: [
+                                    Image.asset(
+                                      'assets/logo/uniscope_icon.png',
+                                      width: 34,
+                                      height: 34,
+                                      fit: BoxFit.contain,
+                                    ),
+                                    const SizedBox(width: AppSpacing.sm),
+                                    const Flexible(
+                                      child: Text(
+                                        'Uniscope',
+                                        overflow: TextOverflow.ellipsis,
+                                        style: TextStyle(
+                                          fontSize: AppFont.xxl,
+                                          fontWeight: AppFont.extraBold,
+                                          color: AppColors.logoNavy,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
                                 ),
+                              ),
+                              Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const NotificationBell(
+                                    color: AppColors.textPrimary,
+                                  ),
+                                  if (displayName != null) ...[
+                                    const SizedBox(width: AppSpacing.sm),
+                                    Material(
+                                      color: Colors.transparent,
+                                      shape: const CircleBorder(),
+                                      child: InkWell(
+                                        customBorder: const CircleBorder(),
+                                        onTap: () => context.go('/profile'),
+                                        child: Container(
+                                          decoration: const BoxDecoration(
+                                            shape: BoxShape.circle,
+                                            color: Colors.white,
+                                            boxShadow: AppShadows.card,
+                                          ),
+                                          padding: const EdgeInsets.all(2),
+                                          child: AppAvatar(
+                                            name: displayName,
+                                            size: 38,
+                                            solid: true,
+                                            avatarUrl: myAvatarUrl,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ],
                               ),
                             ],
                           ),
                         ),
-                      ),
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(
+                            AppSpacing.md,
+                            AppSpacing.lg,
+                            AppSpacing.md,
+                            AppSpacing.xs,
+                          ),
+                          child: Text.rich(
+                            TextSpan(
+                              // "Good afternoon," dark, the first name in
+                              // brand teal — matches the header mockup.
+                              children: firstName == null
+                                  ? [TextSpan(text: _greeting)]
+                                  : [
+                                      TextSpan(text: '$_greeting, '),
+                                      TextSpan(
+                                        text: firstName,
+                                        style: const TextStyle(
+                                          color: authBrandTeal,
+                                        ),
+                                      ),
+                                    ],
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                            maxLines: 1,
+                            style: const TextStyle(
+                              fontSize: AppFont.xxl,
+                              fontWeight: AppFont.extraBold,
+                              color: AppColors.textPrimary,
+                              height: 1.1,
+                            ),
+                          ),
+                        ),
+                        const Padding(
+                          padding: EdgeInsets.fromLTRB(
+                            AppSpacing.md,
+                            0,
+                            AppSpacing.md,
+                            AppSpacing.md,
+                          ),
+                          child: Text(
+                            'What are you looking for today?',
+                            style: TextStyle(
+                              fontSize: AppFont.sm,
+                              color: AppColors.textSecondary,
+                            ),
+                          ),
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: AppSpacing.md,
+                          ),
+                          child: GestureDetector(
+                            onTap: () => context.go('/colleges'),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: AppSpacing.md,
+                                vertical: 14,
+                              ),
+                              decoration: BoxDecoration(
+                                color: AppColors.surface,
+                                borderRadius: BorderRadius.circular(
+                                  AppRadius.full,
+                                ),
+                                boxShadow: AppShadows.card,
+                              ),
+                              child: Row(
+                                children: [
+                                  const Icon(
+                                    Icons.search_rounded,
+                                    size: 20,
+                                    color: authBrandTeal,
+                                  ),
+                                  const SizedBox(width: AppSpacing.sm),
+                                  const Expanded(
+                                    child: Text(
+                                      'Search colleges, courses, or mentors...',
+                                      style: TextStyle(
+                                        fontSize: AppFont.sm,
+                                        color: AppColors.textMuted,
+                                      ),
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
               ),
 
               // ─── Sheet: opaque, pulled up over the canopy's foot ─────
-              // Wrapped in a Stack (2026-09-07 per request) so a small
-              // glowing handle bar can sit right on the seam between the
-              // canopy and this sheet — a clearer boundary than the plain
-              // rounded corner alone gave.
+              // The mint wash above fades into this sheet's background
+              // colour, so the join is seamless — no handle bar (removed
+              // when the canopy went pale, per the header mockup).
               Stack(
                 clipBehavior: Clip.none,
                 children: [
@@ -593,29 +610,6 @@ class HomeScreen extends ConsumerWidget {
                   ],
                 ),
               ),
-                  // Glowing handle bar marking the canopy/sheet seam.
-                  Positioned(
-                    top: -AppRadius.xl - 6,
-                    left: 0,
-                    right: 0,
-                    child: Center(
-                      child: Container(
-                        width: 56,
-                        height: 5,
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(999),
-                          boxShadow: [
-                            BoxShadow(
-                              color: AppColors.primary.withValues(alpha: 0.65),
-                              blurRadius: 14,
-                              spreadRadius: 1,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
                 ],
               ),
             ],
