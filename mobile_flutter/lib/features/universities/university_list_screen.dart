@@ -285,12 +285,26 @@ class _UniversityListScreenState extends ConsumerState<UniversityListScreen> {
     // college id → its curated specializations, for the specialization filter.
     final curatedById = {for (final c in curatedColleges) c.id: c};
 
-    // Specialization options: real per-college data when curated, else the
-    // flat medical list. Medical's MBBS (undergrad) has no curated key and
-    // no specialization concept (matches web "Hide Specialization for
-    // MBBS") — options stays just ['All'] and the pill hides.
+    // Real bug found 2026-09-08 (screenshot: Medical + Doctorate showing
+    // raw curated program names like "MD - Bio-Physics" instead of a
+    // general specialization list). `kCuratedDegreeMapByStream['Medical']`
+    // maps both 'Doctorate' and 'Others' to the 'MD/MS' curated key too —
+    // needed so the College picker still searches real MD/MS colleges for
+    // them — but per web/components/MentorForm.tsx's own explicit special
+    // case ("Others and Doctorate both use the old static
+    // MEDICAL_SPECIALIZATIONS picklist (not tied to the MD/MS dataset),
+    // always in full regardless of which college is picked, per explicit
+    // request"), the *Specialization* list for these two must NOT be the
+    // raw curated per-college dataset — it should be the flat, general
+    // kMedicalSpecializations list instead, same as every other stream
+    // whose Doctorate/Others has no curated data of its own. Only the
+    // College filter (`matchesDegree`/`curatedIds` above) keeps using the
+    // real MD/MS dataset; this is a specialization-list-only carve-out.
+    final isDoctorateOrOthers =
+        degreeFilter == 'Doctorate' || degreeFilter == 'Others';
     final List<String> specializationOptions;
-    if (curatedKey != null) {
+    if (curatedKey != null &&
+        !(effectiveStream == 'Medical' && isDoctorateOrOthers)) {
       specializationOptions = _specializationOptionsFor(curatedColleges);
     } else if (effectiveStream == 'Medical' &&
         degreeFilter != 'All' &&
@@ -555,13 +569,20 @@ class _UniversityListScreenState extends ConsumerState<UniversityListScreen> {
                       final bool matchesSpecialization;
                       if (specializationFilter == 'All') {
                         matchesSpecialization = true;
-                      } else if (curatedKey != null) {
+                      } else if (curatedKey != null &&
+                          !(effectiveStream == 'Medical' &&
+                              isDoctorateOrOthers)) {
                         matchesSpecialization =
                             curatedById[u.id]?.specializations.contains(
                               specializationFilter,
                             ) ??
                             false;
                       } else if (effectiveStream == 'Medical') {
+                        // Also covers the Doctorate/Others carve-out above
+                        // — specializationFilter there is now one of the
+                        // flat kMedicalSpecializations values, which only
+                        // ever lives on `University.specializations`, not
+                        // the raw curated MD/MS program strings.
                         matchesSpecialization = u.specializations.contains(
                           specializationFilter,
                         );
