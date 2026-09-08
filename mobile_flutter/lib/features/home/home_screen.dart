@@ -1002,7 +1002,7 @@ class _MentorSpotlightCard extends ConsumerWidget {
                           fontSize: 10,
                           fontWeight: AppFont.bold,
                           letterSpacing: 0.4,
-                          color: AppColors.primaryDark,
+                          color: AppColors.primary,
                         ),
                       ),
                     ),
@@ -1162,7 +1162,7 @@ class _MiniButton extends StatelessWidget {
             style: const TextStyle(
               fontSize: AppFont.xs,
               fontWeight: AppFont.bold,
-              color: AppColors.primaryDark,
+              color: AppColors.primary,
             ),
           ),
         ),
