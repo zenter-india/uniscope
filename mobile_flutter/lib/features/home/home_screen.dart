@@ -145,17 +145,15 @@ class HomeScreen extends ConsumerWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // ─── Canopy ─────────────────────────────────────────────
-              // The gradient is scoped to this container (not the whole
-              // screen) so the full teal→blue run resolves inside the
-              // canopy's own height — stretched screen-wide, the blue
-              // stop lands below the fold and only flat teal shows.
+              // Flat solid brand colour (no gradient, per request) — the
+              // curved pull-up of the sheet below is unchanged.
               Container(
                 width: double.infinity,
-                decoration: const BoxDecoration(gradient: AppGradients.canopy),
+                decoration: const BoxDecoration(color: AppColors.primary),
                 padding: EdgeInsets.only(
                   top: MediaQuery.of(context).padding.top,
                   // Trailing space the sheet is pulled up over, so the
-                  // rounded corners sit on gradient rather than on itself.
+                  // rounded corners sit on the fill rather than on itself.
                   bottom: AppSpacing.md + AppRadius.xl,
                 ),
                 child: Column(
@@ -253,12 +251,9 @@ class HomeScreen extends ConsumerWidget {
                               children: [
                                 Text.rich(
                                   TextSpan(
-                                    // Whole greeting in the same brand green
-                                    // as the name (2026-09-07 per request —
-                                    // was white prefix / navy name, an
-                                    // inconsistent split). Smaller than
-                                    // before too, so a long display name
-                                    // doesn't wrap awkwardly.
+                                    // White on the solid brand-colour canopy
+                                    // (was AppColors.primary — same colour as
+                                    // the fill now, so it would be invisible).
                                     children: firstName == null
                                         ? [TextSpan(text: _greeting)]
                                         : [
@@ -271,7 +266,7 @@ class HomeScreen extends ConsumerWidget {
                                   style: const TextStyle(
                                     fontSize: AppFont.md,
                                     fontWeight: AppFont.extraBold,
-                                    color: AppColors.primary,
+                                    color: Colors.white,
                                   ),
                                 ),
                                 const SizedBox(height: 2),

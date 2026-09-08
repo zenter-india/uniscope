@@ -8,14 +8,13 @@ import 'package:flutter/material.dart';
 /// mass rename. New concepts (shadows, gradients, text styles) get their
 /// own token classes below.
 class AppColors {
-  // Brand green. Was #008562 (picked from the app icon's own pixels,
-  // replacing the earlier teal #12A9A3); client's latest pick is #0B815A
-  // (2026-09-04) — close in hue/lightness to the previous value, so the
-  // existing primaryDark/primaryLight/canopyTop complements (independently
-  // chosen, not derived from this literal) still read consistently and
-  // were deliberately left as-is. No navy, no structural changes to the
-  // canopy/header (that exploration was reverted separately).
-  static const Color primary = Color(0xFF0B815A);
+  // Brand colour. History: teal #12A9A3 → #008562 → green #0B815A
+  // (2026-09-04) → teal #4C9E97 (2026-09-08, client-picked swatch — a
+  // lighter, more blue-leaning teal; the app is moving off the saturated
+  // green). primaryDark/primaryLight/canopyTop below are the older green
+  // complements and are NOT yet retuned to this — a fuller palette pass is
+  // pending; this change is the primary token + the Home header fill.
+  static const Color primary = Color(0xFF4C9E97);
   static const Color primaryLight = Color(0xFFE3F3EC);
   static const Color primaryDark = Color(0xFF005E44);
 
