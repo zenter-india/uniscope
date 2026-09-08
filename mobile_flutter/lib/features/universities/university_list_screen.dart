@@ -535,6 +535,7 @@ class _UniversityListScreenState extends ConsumerState<UniversityListScreen> {
                           q.isEmpty ||
                           u.name.toLowerCase().contains(q) ||
                           (u.city ?? '').toLowerCase().contains(q) ||
+                          (u.district ?? '').toLowerCase().contains(q) ||
                           u.state.toLowerCase().contains(q) ||
                           (curatedKey != null &&
                               (curatedById[u.id]?.label.toLowerCase().contains(
@@ -761,7 +762,7 @@ class UniversityCard extends ConsumerWidget {
                         ],
                         Flexible(
                           child: Text(
-                            university.state,
+                            university.locationLabel,
                             overflow: TextOverflow.ellipsis,
                             style: const TextStyle(
                               fontSize: AppFont.xs,

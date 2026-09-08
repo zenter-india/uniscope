@@ -20,6 +20,7 @@ class University {
     required this.slug,
     required this.state,
     this.city,
+    this.district,
     this.stream,
     this.levels = const ['UG'],
     required this.establishedYear,
@@ -40,6 +41,13 @@ class University {
   /// Nullable: the NMC seat matrix the medical colleges were seeded from
   /// has no city column, so bulk-loaded rows may have only a state.
   final String? city;
+
+  /// District — derived server-side from any of the college's programs'
+  /// `description` (the hospital-type DNB/Diploma/DM-MCh/MDS rows carry it;
+  /// see backend `withSpecializations`). Null when no program has one. Lets
+  /// the Discover list tell apart the many identically-named
+  /// "District Male Hospital" rows.
+  final String? district;
 
   /// Academic field (Medical/Engineering/Law/etc) — null for older rows
   /// seeded before the multi-stream pivot.
@@ -64,12 +72,32 @@ class University {
   /// the Medical stream because of this gap.
   final List<String> specializations;
 
+  /// `place, state` for a list row, where `place` is the district when
+  /// present (the disambiguator for identically-named hospitals), else the
+  /// city. The place is dropped when it equals the state or is already in
+  /// the name (so a name ending "…, Basti" doesn't render "…, Basti · Basti,
+  /// Uttar Pradesh").
+  String get locationLabel {
+    final place = (district?.trim().isNotEmpty ?? false)
+        ? district!.trim()
+        : (city?.trim().isNotEmpty ?? false)
+            ? city!.trim()
+            : null;
+    if (place == null ||
+        place.toLowerCase() == state.toLowerCase() ||
+        name.toLowerCase().contains(place.toLowerCase())) {
+      return state;
+    }
+    return '$place, $state';
+  }
+
   factory University.fromJson(Map<String, dynamic> json) => University(
     id: json['id'] as String,
     name: json['name'] as String,
     slug: json['slug'] as String,
     state: json['state'] as String,
     city: json['city'] as String?,
+    district: json['district'] as String?,
     stream: json['stream'] as String?,
     levels:
         (json['levels'] as List<dynamic>?)?.map((e) => e as String).toList() ??

@@ -51,25 +51,51 @@ function slugify(name: string): string {
 const UNIVERSITY_SPECIALIZATIONS_INCLUDE = {
   programs: {
     where: { isActive: true },
-    select: { specializations: true },
+    // `description` carries the district for the hospital-type rows
+    // (DNB / DM-MCh / Diploma / MDS — see findCurated's label doc comment);
+    // surfaced as `district` on the response so the Discover list can tell
+    // apart the many identically-named "District Male Hospital" rows.
+    select: { specializations: true, description: true },
   },
 } satisfies Prisma.UniversityInclude;
 
 type UniversityWithPrograms = University & {
-  programs: { specializations: string[] }[];
+  programs: { specializations: string[]; description: string | null }[];
 };
 
+/** `Program.description` carries the district for the hospital-type rows,
+ * but the source data isn't uniformly clean — some rows have `"nan"` /
+ * `"nan, PIN nan"` placeholders or a bare PIN. Returns a usable district
+ * string or null. (The web enrollment form's own curated label doesn't
+ * filter these yet — same underlying data, worth a follow-up there.) */
+function cleanDistrict(raw: string | null | undefined): string | null {
+  const value = raw?.trim();
+  if (!value) return null;
+  const lower = value.toLowerCase();
+  if (lower === 'nan' || lower.startsWith('nan,') || lower.startsWith('nan ')) {
+    return null;
+  }
+  // Needs at least one letter — filters bare PIN codes / punctuation.
+  if (!/[a-z]/i.test(value)) return null;
+  return value;
+}
+
 /** Flattens+dedupes+sorts a university's per-program specializations into
- * one list, and drops the `programs` relation from the response — callers
- * only need the union, not the underlying program rows. */
+ * one list, pulls the district off any program that carries one, and drops
+ * the `programs` relation from the response — callers only need the union
+ * and the district, not the underlying program rows. */
 function withSpecializations(
   university: UniversityWithPrograms,
-): University & { specializations: string[] } {
+): University & { specializations: string[]; district: string | null } {
   const { programs, ...rest } = university;
   const specializations = [
     ...new Set(programs.flatMap((program) => program.specializations)),
   ].sort();
-  return { ...rest, specializations };
+  const district =
+    programs
+      .map((program) => cleanDistrict(program.description))
+      .find((value) => value !== null) ?? null;
+  return { ...rest, specializations, district };
 }
 
 @Injectable()
@@ -116,7 +142,9 @@ export class UniversitiesService {
   async findAll(
     query: ListUniversitiesDto,
   ): Promise<{
-    data: Array<University & { specializations: string[] }>;
+    data: Array<
+      University & { specializations: string[]; district: string | null }
+    >;
     nextCursor: string | null;
   }> {
     const take = Math.min(query.limit ?? DEFAULT_LIMIT, MAX_LIMIT);
@@ -361,7 +389,16 @@ export class UniversitiesService {
     const rating = await this.universityReviewsService.ratingSummary(
       university.id,
     );
-    return { ...university, rating: rating.average, reviewCount: rating.count };
+    const district =
+      university.programs
+        .map((program) => cleanDistrict(program.description))
+        .find((value) => value !== null) ?? null;
+    return {
+      ...university,
+      district,
+      rating: rating.average,
+      reviewCount: rating.count,
+    };
   }
 
   /** Admin-only — includes inactive universities, unlike the public list. */
