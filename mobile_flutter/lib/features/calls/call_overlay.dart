@@ -84,6 +84,13 @@ class CallPresence extends ChangeNotifier {
   VoidCallback? onToggleMute;
   VoidCallback? onEnd;
 
+  /// The call screen's own back handler (`_handleBack`) — minimizes a live
+  /// call, closes a terminal one. Set by the mounted CallScreen (overlay
+  /// mode) so [CallOverlayHost] can route the Android system-back button to
+  /// it: the call screen lives in a detached Navigator, so its own PopScope
+  /// never sees the hardware back press.
+  VoidCallback? onBack;
+
   void publish({
     required String peerName,
     required String? peerAvatarUrl,
@@ -107,6 +114,7 @@ class CallPresence extends ChangeNotifier {
     active = false;
     onToggleMute = null;
     onEnd = null;
+    onBack = null;
     notifyListeners();
   }
 }
@@ -149,21 +157,46 @@ class _CallOverlayHostState extends State<CallOverlayHost> {
     final id = _controller.sessionId;
     final expanded = _controller.expanded;
 
+    Widget wrapBack(Widget child) {
+      // The expanded call covers the app but lives in a DETACHED Navigator,
+      // so its own PopScope never sees the Android back button — that press
+      // would otherwise fall through to the app router behind it (looking
+      // like "back does nothing"). While the call is expanded, catch back
+      // here and hand it to the call screen's handler (minimize a live
+      // call, close a terminal one); fall back to a plain minimize.
+      if (!expanded) return child;
+      return BackButtonListener(
+        onBackButtonPressed: () async {
+          final handler = CallPresence.instance.onBack;
+          if (handler != null) {
+            handler();
+          } else {
+            _controller.minimize();
+          }
+          return true; // consumed — don't also navigate the app
+        },
+        child: child,
+      );
+    }
+
     return Stack(
       children: [
         widget.child,
         if (id != null)
           Positioned.fill(
-            child: Offstage(
-              offstage: !expanded,
-              // Pause the pulse/ring animations while minimized; the
-              // billing/slot Timers are plain Timers and keep running.
-              child: TickerMode(
-                enabled: expanded,
-                child: Navigator(
-                  key: _callKey,
-                  onGenerateRoute: (_) => MaterialPageRoute<void>(
-                    builder: (_) => CallScreen(sessionId: id, inOverlay: true),
+            child: wrapBack(
+              Offstage(
+                offstage: !expanded,
+                // Pause the pulse/ring animations while minimized; the
+                // billing/slot Timers are plain Timers and keep running.
+                child: TickerMode(
+                  enabled: expanded,
+                  child: Navigator(
+                    key: _callKey,
+                    onGenerateRoute: (_) => MaterialPageRoute<void>(
+                      builder: (_) =>
+                          CallScreen(sessionId: id, inOverlay: true),
+                    ),
                   ),
                 ),
               ),
@@ -191,7 +224,10 @@ class _MiniCallBar extends StatelessWidget {
       builder: (context, _) {
         final p = CallPresence.instance;
         return Padding(
-          padding: const EdgeInsets.fromLTRB(10, 0, 10, 10),
+          // Floats clear of the app's bottom navigation bar (~56px + the
+          // home-indicator inset the SafeArea above already added) so the
+          // tabs stay tappable while a call is minimized.
+          padding: const EdgeInsets.fromLTRB(10, 0, 10, 64),
           child: Material(
             color: Colors.transparent,
             child: InkWell(

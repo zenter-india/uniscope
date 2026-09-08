@@ -217,6 +217,9 @@ class _CallScreenState extends ConsumerState<CallScreen> {
     if (widget.inOverlay) {
       CallPresence.instance.onToggleMute = _toggleMute;
       CallPresence.instance.onEnd = () => _endCall();
+      // The host routes the Android back button here — this screen's own
+      // PopScope is dead in overlay mode (detached Navigator).
+      CallPresence.instance.onBack = _handleBack;
     }
     WidgetsBinding.instance.addPostFrameCallback((_) => _start());
   }
@@ -233,6 +236,7 @@ class _CallScreenState extends ConsumerState<CallScreen> {
     if (widget.inOverlay) {
       CallPresence.instance.onToggleMute = null;
       CallPresence.instance.onEnd = null;
+      CallPresence.instance.onBack = null;
     }
     super.dispose();
   }
@@ -1107,29 +1111,37 @@ class _CallStage extends StatelessWidget {
       children: [
         const SizedBox(height: AppSpacing.md),
         SizedBox(
-          height: 34,
+          height: 44,
           child: Stack(
             alignment: Alignment.center,
             children: [
               Center(child: topPill),
               Positioned(
-                left: AppSpacing.sm,
+                left: AppSpacing.xs,
                 child: Row(
                   children: [
                     if (onMinimize != null)
                       GestureDetector(
                         onTap: onMinimize,
+                        behavior: HitTestBehavior.opaque,
                         child: Container(
-                          width: 30,
-                          height: 30,
-                          decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.12),
-                            shape: BoxShape.circle,
-                          ),
-                          child: const Icon(
-                            Icons.keyboard_arrow_down_rounded,
-                            size: 20,
-                            color: Colors.white,
+                          // Visible circle stays ~32px; the transparent
+                          // padding widens the real tap target to ~44px so
+                          // the minimize control is easy to hit.
+                          padding: const EdgeInsets.all(6),
+                          child: Container(
+                            width: 32,
+                            height: 32,
+                            alignment: Alignment.center,
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.16),
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(
+                              Icons.keyboard_arrow_down_rounded,
+                              size: 22,
+                              color: Colors.white,
+                            ),
                           ),
                         ),
                       ),
