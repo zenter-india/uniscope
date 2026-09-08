@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -62,6 +63,19 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
       } else {
         context.go('/mentor-onboarding');
       }
+    } on DioException catch (e) {
+      // A taken display name comes back as 409 with a specific message
+      // ("That name is already taken — try another.") — surface that rather
+      // than a generic failure, since it tells the user exactly what to fix.
+      final serverMsg = e.response?.data is Map
+          ? (e.response!.data['message'] as Object?)?.toString()
+          : null;
+      setState(() {
+        _error = e.response?.statusCode == 409 && serverMsg != null
+            ? serverMsg
+            : (serverMsg ?? 'Failed to save profile. Please try again.');
+        _loading = false;
+      });
     } catch (_) {
       setState(() {
         _error = 'Failed to save profile. Please try again.';
