@@ -28,6 +28,9 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
+        // Required by flutter_local_notifications 19.x (it uses java.time
+        // APIs that aren't in the minSdk's Android runtime).
+        isCoreLibraryDesugaringEnabled = true
     }
 
     defaultConfig {
@@ -135,4 +138,5 @@ configurations.all {
 
 dependencies {
     implementation(files("libs/iris-rtc-patched.aar"))
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
 }

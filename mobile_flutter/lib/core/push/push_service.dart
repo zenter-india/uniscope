@@ -1,7 +1,9 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -16,19 +18,38 @@ import '../network/users_api.dart';
 @pragma('vm:entry-point')
 Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   // In-app notifications are already durable server-side (see the
-  // `notifications` module) — this handler exists only so the OS shows the
-  // system tray notification; no local work is needed.
+  // `notifications` module), and when the app is backgrounded/terminated
+  // Android draws the system-tray notification itself from the payload's
+  // `notification` block — no local work is needed here.
 }
 
+/// The one Android notification channel the app posts to. Created once at
+/// startup; `importance: high` is what lets a foreground notification show
+/// as a heads-up banner rather than only landing silently in the shade.
+const _androidChannel = AndroidNotificationChannel(
+  'uniscope_default',
+  'Uniscope',
+  description: 'Session updates, messages and reminders.',
+  importance: Importance.high,
+);
+
 /// Wires up FCM: requests permission, uploads the device token to
-/// `POST /users/me/push-token` once a user is authenticated, and refreshes
-/// it if FCM rotates the token later. Web is skipped — FCM web push needs a
-/// VAPID key + service worker setup that hasn't been done for this project,
-/// and this app's only real target for push is the native mobile builds.
+/// `POST /users/me/push-token` once a user is authenticated, refreshes it
+/// if FCM rotates the token later, and — the part this file gained in
+/// 2026-09 — renders a real system notification for pushes that arrive
+/// while the app is in the FOREGROUND. Android only shows the tray
+/// notification by itself when the app is backgrounded/terminated; in the
+/// foreground the message is delivered straight to `onMessage` in Dart, so
+/// without this the user would only ever see it in the in-app list.
+///
+/// Web is skipped — FCM web push needs a VAPID key + service worker setup
+/// that hasn't been done for this project, and this app's only real target
+/// for push is the native mobile builds.
 class PushService {
   PushService(this._ref);
 
   final Ref _ref;
+  final _localNotifications = FlutterLocalNotificationsPlugin();
   bool _initialized = false;
 
   Future<void> initializeAndRegister() async {
@@ -39,6 +60,8 @@ class PushService {
     // missing Firebase config — this also covers running without
     // Firebase.initializeApp() at all, e.g. in a widget test harness.
     try {
+      await _initLocalNotifications();
+
       final messaging = FirebaseMessaging.instance;
       await messaging.requestPermission(alert: true, badge: true, sound: true);
 
@@ -47,17 +70,19 @@ class PushService {
 
       messaging.onTokenRefresh.listen(_upload);
 
-      // Deep-link on every path a push can reach the user through: tapped
-      // while backgrounded, tapped from a cold start (terminated), or
-      // received while the app is already open. Without this, a push
-      // arrives but nothing happens with it — which is exactly why "mentor
-      // accepted" never got either party onto the call screen (see
-      // CallScreen's _WaitingView: it only clears once BOTH sides' clients
-      // confirm they joined, so if the aspirant never learns the mentor
-      // accepted, they never open the call and the mentor's own screen
-      // just rings forever).
+      // Foreground push → draw a heads-up notification (Android won't do it
+      // for us here) AND run the deep-link handler, so e.g. "mentor
+      // accepted" still pulls the aspirant onto the call screen even if
+      // they had the app open on another tab.
+      FirebaseMessaging.onMessage.listen((message) {
+        _showLocalNotification(message);
+        _handleDeepLink(message);
+      });
+
+      // Deep-link on the paths a push reaches the user through while it's
+      // NOT foreground: tapped while backgrounded, or tapped from a cold
+      // start (terminated).
       FirebaseMessaging.onMessageOpenedApp.listen(_handleDeepLink);
-      FirebaseMessaging.onMessage.listen(_handleDeepLink);
       final initialMessage = await messaging.getInitialMessage();
       if (initialMessage != null) _handleDeepLink(initialMessage);
     } catch (_) {
@@ -65,11 +90,64 @@ class PushService {
     }
   }
 
-  void _handleDeepLink(RemoteMessage message) {
-    final sessionId = message.data['sessionId'];
+  Future<void> _initLocalNotifications() async {
+    await _localNotifications.initialize(
+      const InitializationSettings(
+        android: AndroidInitializationSettings('@mipmap/ic_launcher'),
+        iOS: DarwinInitializationSettings(),
+      ),
+      onDidReceiveNotificationResponse: (response) {
+        final payload = response.payload;
+        if (payload == null || payload.isEmpty) return;
+        try {
+          final data = (jsonDecode(payload) as Map).cast<String, dynamic>();
+          _handleDeepLinkData(data);
+        } catch (_) {
+          // Malformed payload — nothing to route to.
+        }
+      },
+    );
+    await _localNotifications
+        .resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin
+        >()
+        ?.createNotificationChannel(_androidChannel);
+  }
+
+  void _showLocalNotification(RemoteMessage message) {
+    final notification = message.notification;
+    // Data-only messages carry nothing to display — they're handled purely
+    // by the deep-link path.
+    if (notification == null) return;
+    if (notification.title == null && notification.body == null) return;
+
+    _localNotifications.show(
+      notification.hashCode,
+      notification.title,
+      notification.body,
+      NotificationDetails(
+        android: AndroidNotificationDetails(
+          _androidChannel.id,
+          _androidChannel.name,
+          channelDescription: _androidChannel.description,
+          importance: Importance.high,
+          priority: Priority.high,
+          icon: '@mipmap/ic_launcher',
+        ),
+        iOS: const DarwinNotificationDetails(),
+      ),
+      payload: message.data.isEmpty ? null : jsonEncode(message.data),
+    );
+  }
+
+  void _handleDeepLink(RemoteMessage message) =>
+      _handleDeepLinkData(message.data);
+
+  void _handleDeepLinkData(Map<String, dynamic> data) {
+    final sessionId = data['sessionId'] as String?;
     if (sessionId == null) return;
 
-    final type = message.data['type'];
+    final type = data['type'];
 
     // Where a tapped push should land:
     //  - the aspirant's "mentor accepted an audio call" → straight into the
@@ -79,8 +157,7 @@ class PushService {
     //    A CHAT never goes through PENDING, so SESSION_REQUEST is always a
     //    call.
     final String target;
-    if (type == 'SESSION_ACCEPTED' &&
-        message.data['sessionType'] == 'AUDIO_CALL') {
+    if (type == 'SESSION_ACCEPTED' && data['sessionType'] == 'AUDIO_CALL') {
       target = '/call/$sessionId';
     } else if (type == 'SESSION_REQUEST') {
       target = '/chats';
@@ -91,10 +168,11 @@ class PushService {
     final context = rootNavigatorKey.currentContext;
     if (context == null) return;
     final router = GoRouter.of(context);
-    // /call/:id is a full-screen route outside the tab shell — stack it.
-    // /chats is a tab — switch to it rather than pushing a duplicate.
+    // /call/:id is a full-screen overlay outside the tab shell — hand it to
+    // the overlay controller. /chats is a tab — switch to it rather than
+    // pushing a duplicate.
     if (target.startsWith('/call/')) {
-      CallOverlayController.instance.open(sessionId!);
+      CallOverlayController.instance.open(sessionId);
     } else {
       router.go(target);
     }
