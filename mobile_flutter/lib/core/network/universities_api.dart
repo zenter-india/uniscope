@@ -153,18 +153,34 @@ class UniversitiesApi {
         .toList();
   }
 
-  /// Single-page, top-8 typeahead search — unlike [list], this does NOT
-  /// paginate through the whole catalogue, since it backs a live-typing
-  /// search box (CollegeSearchField) that fires on every keystroke. Same
-  /// endpoint/shape as the web enrollment form's searchUniversities.
+  /// Live-typing typeahead search backing `CollegeSearchField` (mentor +
+  /// aspirant onboarding's College field). **Bug fixed 2026-09-08**: this
+  /// used to send a plain paginated `?search=&limit=8` request — capped to
+  /// the top 8 matches, ranked name-starts-with-query first, then
+  /// alphabetical among the rest. A district/area term almost never starts
+  /// a college's name (it's the *website* CollegeSearch.tsx's own comment:
+  /// backend `search` only matches `University.name`, since college names
+  /// in this dataset are frequently the full imported string with the
+  /// district/area baked in, e.g. "XYZ Medical College, Basti") — so a
+  /// district search matched dozens/hundreds of colleges via the "contains"
+  /// bucket, and the one the user wanted was routinely outside the
+  /// alphabetically-first 8 and silently invisible, while the website's own
+  /// CollegeSearch.tsx (`searchUniversities` in `web/lib/api.ts`) always
+  /// sends `browse=true` — the same uncapped mode `UniversitiesApi.list`
+  /// above already uses for Discover — and shows every match in a
+  /// scrollable dropdown. Fixed to match: send `browse=true` too, then cap
+  /// to the first 50 of the (already relevance-ranked) results client-side
+  /// — generous enough for any real search, but bounded against a
+  /// pathological 2-character query matching thousands of rows.
   Future<List<University>> search(String query) async {
     if (query.trim().length < 2) return const [];
     final res = await _dio.get<Map<String, dynamic>>(
       '/universities',
-      queryParameters: {'search': query, 'limit': 8},
+      queryParameters: {'browse': 'true', 'search': query},
     );
     final data = res.data!['data'] as List<dynamic>;
     return data
+        .take(50)
         .map((e) => University.fromJson(e as Map<String, dynamic>))
         .toList();
   }
