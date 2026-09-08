@@ -2,18 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/network/university_reviews_api.dart';
-import '../../core/network/users_api.dart';
 import '../../core/theme/app_theme.dart';
-import '../../state/auth_controller.dart' show UserRole;
 import '../../widgets/app_widgets.dart';
 import 'review_choices.dart';
 import 'review_widgets.dart';
-import 'university_review_screen.dart';
 
 /// Full review breakdown for one university — the screen the summary
-/// card's "See full review breakdown" arrow pushes into. Every number here
-/// comes from the same real aggregate (GET .../reviews/summary) or the
-/// actual review list — no fabricated categories or distributions.
+/// card's "See full review breakdown" arrow pushes into. Aggregate view
+/// only (category bars, per-question experience breakdown, student
+/// highlights) — every number comes from the real GET .../reviews/summary
+/// aggregate. The individual review cards live on the detail screen's
+/// Reviews tab, not here.
 class ReviewBreakdownScreen extends ConsumerWidget {
   const ReviewBreakdownScreen({
     super.key,
@@ -29,17 +28,6 @@ class ReviewBreakdownScreen extends ConsumerWidget {
     final summaryAsync = ref.watch(
       universityReviewSummaryProvider(universityId),
     );
-    final reviewsAsync = ref.watch(universityReviewsListProvider(universityId));
-    final hasReviewedAsync = ref.watch(
-      hasReviewedUniversityProvider(universityId),
-    );
-    final myProfile = ref.watch(myProfileProvider).asData?.value;
-    // A mentor's verification ties them to exactly one college — they can
-    // only review that one, not any college they're merely browsing.
-    final canReview =
-        myProfile?.role == UserRole.mentor &&
-        myProfile?.verificationStatus == 'VERIFIED' &&
-        myProfile?.universityId == universityId;
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -58,7 +46,6 @@ class ReviewBreakdownScreen extends ConsumerWidget {
             color: AppColors.primary,
             onRefresh: () async {
               ref.invalidate(universityReviewSummaryProvider(universityId));
-              ref.invalidate(universityReviewsListProvider(universityId));
             },
             child: ListView(
               padding: const EdgeInsets.all(AppSpacing.md),
@@ -198,58 +185,6 @@ class ReviewBreakdownScreen extends ConsumerWidget {
                   ),
                   const SizedBox(height: AppSpacing.lg),
                 ],
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text(
-                      'From the Reviews',
-                      style: TextStyle(
-                        fontSize: AppFont.md,
-                        fontWeight: AppFont.extraBold,
-                      ),
-                    ),
-                    if (canReview)
-                      TextButton.icon(
-                        onPressed: () => openUniversityReview(
-                          context,
-                          ref,
-                          universityId: universityId,
-                          universityName: universityName,
-                        ),
-                        icon: const Icon(Icons.edit_rounded, size: 16),
-                        label: Text(
-                          hasReviewedAsync.value == true
-                              ? 'Edit your review'
-                              : 'Write a review',
-                        ),
-                      ),
-                  ],
-                ),
-                const SizedBox(height: AppSpacing.sm),
-                reviewsAsync.when(
-                  loading: () =>
-                      const Column(children: [SkeletonCard(), SkeletonCard()]),
-                  error: (err, _) => const EmptyState(
-                    icon: Icons.wifi_off_rounded,
-                    title: 'Could not load reviews',
-                    message: 'Pull to refresh to try again.',
-                  ),
-                  data: (reviews) => reviews.isEmpty
-                      ? const EmptyState(
-                          icon: Icons.rate_review_rounded,
-                          title: 'No reviews yet',
-                          message:
-                              'Waiting for a verified mentor from this college to write one.',
-                        )
-                      : Column(
-                          children: [
-                            for (final review in reviews) ...[
-                              ReviewCard(review: review),
-                              const SizedBox(height: AppSpacing.md),
-                            ],
-                          ],
-                        ),
-                ),
               ],
             ),
           ),

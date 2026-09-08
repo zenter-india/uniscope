@@ -507,6 +507,73 @@ class _OverviewTab extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // The structured facts (Stream, Established, Programs offered) sit
+          // above the rating summary — they're the primary "what is this
+          // college" info; the review snapshot follows underneath.
+          if (rows.isNotEmpty) ...[
+            AppCard(
+              child: Column(
+                children: [
+                  for (var i = 0; i < rows.length; i++)
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        vertical: AppSpacing.sm,
+                      ),
+                      decoration: BoxDecoration(
+                        border: Border(
+                          bottom: BorderSide(
+                            color: i == rows.length - 1
+                                ? Colors.transparent
+                                : AppColors.border,
+                          ),
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            rows[i].$1,
+                            style: const TextStyle(
+                              fontSize: AppFont.sm,
+                              color: AppColors.textSecondary,
+                            ),
+                          ),
+                          Flexible(
+                            child: Text(
+                              rows[i].$2,
+                              textAlign: TextAlign.right,
+                              style: const TextStyle(
+                                fontSize: AppFont.sm,
+                                fontWeight: AppFont.semibold,
+                                color: AppColors.textPrimary,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                ],
+              ),
+            ),
+            const SizedBox(height: AppSpacing.md),
+          ],
+          if (university.programs != null &&
+              university.programs!.isNotEmpty) ...[
+            const Text(
+              'Programs offered',
+              style: TextStyle(fontSize: AppFont.md, fontWeight: AppFont.bold),
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            Wrap(
+              spacing: AppSpacing.sm,
+              runSpacing: AppSpacing.sm,
+              children: [
+                for (final p in university.programs!)
+                  StatusChip(label: p.name, color: AppColors.primary),
+              ],
+            ),
+            const SizedBox(height: AppSpacing.md),
+          ],
           // Rating summary lives here now, not on the Reviews tab — it's a
           // snapshot of the college, and the Reviews tab is for reading (and
           // writing) the actual reviews underneath it.
@@ -533,7 +600,7 @@ class _OverviewTab extends ConsumerWidget {
             ),
             const SizedBox(height: AppSpacing.md),
           ],
-          if (university.description != null) ...[
+          if (university.description != null)
             AppCard(
               child: Text(
                 university.description!,
@@ -544,69 +611,6 @@ class _OverviewTab extends ConsumerWidget {
                 ),
               ),
             ),
-            const SizedBox(height: AppSpacing.md),
-          ],
-          AppCard(
-            child: Column(
-              children: [
-                for (var i = 0; i < rows.length; i++)
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      vertical: AppSpacing.sm,
-                    ),
-                    decoration: BoxDecoration(
-                      border: Border(
-                        bottom: BorderSide(
-                          color: i == rows.length - 1
-                              ? Colors.transparent
-                              : AppColors.border,
-                        ),
-                      ),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          rows[i].$1,
-                          style: const TextStyle(
-                            fontSize: AppFont.sm,
-                            color: AppColors.textSecondary,
-                          ),
-                        ),
-                        Flexible(
-                          child: Text(
-                            rows[i].$2,
-                            textAlign: TextAlign.right,
-                            style: const TextStyle(
-                              fontSize: AppFont.sm,
-                              fontWeight: AppFont.semibold,
-                              color: AppColors.textPrimary,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-              ],
-            ),
-          ),
-          if (university.programs != null &&
-              university.programs!.isNotEmpty) ...[
-            const SizedBox(height: AppSpacing.md),
-            const Text(
-              'Programs offered',
-              style: TextStyle(fontSize: AppFont.md, fontWeight: AppFont.bold),
-            ),
-            const SizedBox(height: AppSpacing.sm),
-            Wrap(
-              spacing: AppSpacing.sm,
-              runSpacing: AppSpacing.sm,
-              children: [
-                for (final p in university.programs!)
-                  StatusChip(label: p.name, color: AppColors.primary),
-              ],
-            ),
-          ],
         ],
       ),
     );
@@ -687,25 +691,14 @@ class _ReviewsTab extends ConsumerWidget {
                       'Waiting for a verified mentor from this college to write one.',
                 );
               }
-              // Compact cards show only star + the written comment, so
-              // rating-only reviews (no free text) contribute to the
-              // summary above but have no card of their own.
-              final written = reviews
-                  .where((r) => (r.body ?? '').trim().isNotEmpty)
-                  .toList();
-              if (written.isEmpty) {
-                return const EmptyState(
-                  icon: Icons.rate_review_rounded,
-                  title: 'No written reviews yet',
-                  message:
-                      'Ratings so far, but nobody has left a comment — check the breakdown above.',
-                );
-              }
+              // The full review cards (badge · date · stars · tags · any
+              // written comment) live here now — the "See full review
+              // breakdown" screen is the aggregate view only.
               return Column(
                 children: [
-                  for (final review in written) ...[
-                    CompactReviewCard(review: review),
-                    const SizedBox(height: AppSpacing.sm),
+                  for (final review in reviews) ...[
+                    ReviewCard(review: review),
+                    const SizedBox(height: AppSpacing.md),
                   ],
                 ],
               );
