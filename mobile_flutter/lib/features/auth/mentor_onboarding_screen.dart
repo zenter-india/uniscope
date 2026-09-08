@@ -234,6 +234,9 @@ class _MentorOnboardingScreenState extends ConsumerState<MentorOnboardingScreen>
   /// to resolve (find-or-create) to a real University row before the profile
   /// save, since verification requires one. See UniversitiesApi.findOrCreate.
   Future<void> _resolveCollegeThenSave() async {
+    // Age-confirmation gate before the mentor profile is submitted.
+    if (!await showAgeConfirmationDialog(context)) return;
+    if (!mounted) return;
     if (_universityId == null) {
       setState(() => _resolvingCollege = true);
       try {

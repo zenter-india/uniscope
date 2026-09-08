@@ -6,6 +6,95 @@ import '../../core/theme/app_theme.dart';
 /// (AspirantOnboardingScreen, MentorOnboardingScreen) — kept in one place so
 /// the two flows share the same look and feel.
 
+/// Age-confirmation gate shown right before a profile is submitted in
+/// either onboarding wizard — same wording as the web enrollment site's
+/// dialog (product name is "Uniscope", not "Zenter"). Returns true only if
+/// the user ticked the box and hit Continue; false on Cancel or dismiss.
+Future<bool> showAgeConfirmationDialog(BuildContext context) async {
+  final result = await showDialog<bool>(
+    context: context,
+    barrierDismissible: false,
+    builder: (_) => const _AgeConfirmationDialog(),
+  );
+  return result ?? false;
+}
+
+class _AgeConfirmationDialog extends StatefulWidget {
+  const _AgeConfirmationDialog();
+
+  @override
+  State<_AgeConfirmationDialog> createState() => _AgeConfirmationDialogState();
+}
+
+class _AgeConfirmationDialogState extends State<_AgeConfirmationDialog> {
+  bool _agreed = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Age confirmation (18+)'),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'By continuing, you confirm that you are 18 years of age or '
+            'older. If you are under 18 years of age, please access Uniscope '
+            'only under the supervision and guidance of your parent or legal '
+            'guardian.',
+            style: TextStyle(
+              fontSize: AppFont.sm,
+              color: AppColors.textSecondary,
+              height: 1.4,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.md),
+          InkWell(
+            onTap: () => setState(() => _agreed = !_agreed),
+            borderRadius: BorderRadius.circular(AppRadius.sm),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Checkbox(
+                  value: _agreed,
+                  onChanged: (v) => setState(() => _agreed = v ?? false),
+                  activeColor: AppColors.primary,
+                  materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  visualDensity: VisualDensity.compact,
+                ),
+                const SizedBox(width: AppSpacing.xs),
+                const Expanded(
+                  child: Padding(
+                    padding: EdgeInsets.only(top: 10),
+                    child: Text(
+                      'I have read and agree to the above.',
+                      style: TextStyle(
+                        fontSize: AppFont.sm,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(false),
+          child: const Text('Cancel'),
+        ),
+        FilledButton(
+          onPressed:
+              _agreed ? () => Navigator.of(context).pop(true) : null,
+          child: const Text('Continue'),
+        ),
+      ],
+    );
+  }
+}
+
 class OnboardingProgressBar extends StatelessWidget {
   const OnboardingProgressBar({super.key, required this.step, required this.total});
   final int step;

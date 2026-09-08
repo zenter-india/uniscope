@@ -258,6 +258,10 @@ class _AspirantOnboardingScreenState
   /// avatar step — the rest of the profile is still mandatory and saved
   /// either way, only the avatar customisation itself is optional.
   Future<void> _finish({bool saveAvatar = true}) async {
+    // Age-confirmation gate before the profile is actually submitted — both
+    // "Finish" and "Skip for now" route through here.
+    if (!await showAgeConfirmationDialog(context)) return;
+    if (!mounted) return;
     setState(() => _saving = true);
     try {
       final resolvedStream = _stream == 'Others' &&
