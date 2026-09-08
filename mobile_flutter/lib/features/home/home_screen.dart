@@ -169,14 +169,14 @@ class HomeScreen extends ConsumerWidget {
                 child: Stack(
                   children: [
                     Positioned(
-                      top: 4,
-                      right: -28,
+                      top: 30,
+                      right: -46,
                       child: IgnorePointer(
                         child: Opacity(
-                          opacity: 0.5,
+                          opacity: 0.4,
                           child: SvgPicture.asset(
                             'assets/illustrations/home_header.svg',
-                            width: 128,
+                            width: 132,
                           ),
                         ),
                       ),
@@ -704,13 +704,13 @@ class _CollegeCard extends StatelessWidget {
             width: 44,
             height: 44,
             decoration: BoxDecoration(
-              gradient: AppGradients.canopy,
+              color: AppColors.primaryLight,
               borderRadius: BorderRadius.circular(AppRadius.sm),
             ),
             child: const Icon(
               Icons.account_balance_rounded,
               size: 20,
-              color: Colors.white,
+              color: AppColors.primary,
             ),
           ),
           const SizedBox(width: AppSpacing.md),
@@ -1035,9 +1035,10 @@ class _CollegeSpotlightCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // Per-stream glyph (a stethoscope for Medical, a tooth for Dental, etc.
-    // — see stream_visuals.dart), now sitting in white on the same green
-    // canopy gradient the Home header uses, instead of a pale per-stream
-    // tint, so the college cards read as part of the same surface.
+    // — see stream_visuals.dart). One uniform palette across every college
+    // card — the header's pale mint (primaryLight) behind the glyph in the
+    // brand green — rather than a per-stream hue, so the rail reads as one
+    // surface with the rest of the screen.
     final visual = streamVisualFor(university.stream);
 
     // Fills the rail's fixed height so every card is the same size — the
@@ -1068,9 +1069,9 @@ class _CollegeSpotlightCard extends StatelessWidget {
               Container(
                 height: 60,
                 width: double.infinity,
-                decoration: const BoxDecoration(gradient: AppGradients.canopy),
+                color: AppColors.primaryLight,
                 alignment: Alignment.center,
-                child: streamGlyph(visual, size: 28, color: Colors.white),
+                child: streamGlyph(visual, size: 28, color: AppColors.primary),
               ),
               Padding(
                 padding: const EdgeInsets.fromLTRB(10, 8, 10, 8),
