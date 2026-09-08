@@ -252,9 +252,10 @@ class MentorLandingScreen extends ConsumerWidget {
                       ),
                     ),
                     // Top Colleges For You — colleges in the mentor's own
-                    // stream ranked by rating (server-side). The whole
-                    // section (header + rail) is hidden until there's real
-                    // data — no lonely header, no fabricated filler.
+                    // stream ranked by rating (server-side), with an
+                    // alphabetical fallback so the rail always populates,
+                    // same as the aspirant Home. `isEmpty` now only hits
+                    // when the catalogue has no matching active college.
                     ref
                         .watch(topCollegesForMentorProvider)
                         .maybeWhen(

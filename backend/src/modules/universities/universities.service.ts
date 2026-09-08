@@ -169,16 +169,18 @@ export class UniversitiesService {
   }
 
   /**
-   * "Top Colleges For You" for the mentor Home rail. Colleges in the
-   * mentor's OWN stream (the field they studied), minus their own college,
-   * ranked by average rating then review count — computed fresh from ACTIVE
-   * reviews via UniversityReviewsService.ratingSummaries.
+   * "Top Colleges For You" for the mentor + aspirant Home rails. Colleges
+   * in the caller's OWN stream (the field they studied / want), minus their
+   * own linked college, ranked by average rating then review count —
+   * computed fresh from ACTIVE reviews via
+   * UniversityReviewsService.ratingSummaries.
    *
-   * "Top" is only meaningful where reviews exist, so this returns ONLY
-   * reviewed colleges — no alphabetical filler with a fake rating. Empty
-   * (→ the rail hides) when the mentor has no stream, or nothing in their
-   * stream has been reviewed yet. It fills in on its own as the review
-   * corpus grows.
+   * The rail is meant to always populate (parity with what the aspirant
+   * Home used to patch client-side): when nothing in the pool has reviews
+   * yet — or the caller has no stream set — it falls back to an
+   * alphabetical slice of the same pool, returned with `rating: null` so
+   * the card just omits the star row. Only genuinely empty when the
+   * catalogue itself has no matching active college.
    */
   async topForMentor(
     userId: string,
@@ -189,14 +191,28 @@ export class UniversitiesService {
       where: { userId },
       select: { stream: true, universityId: true },
     });
-    if (!profile?.stream) return [];
+
+    const poolWhere: Prisma.UniversityWhereInput = {
+      isActive: true,
+      ...(profile?.stream && { stream: profile.stream }),
+      ...(profile?.universityId && { id: { not: profile.universityId } }),
+    };
+
+    const alphabeticalFallback = async () => {
+      const rows = await this.prisma.university.findMany({
+        where: poolWhere,
+        orderBy: { name: 'asc' },
+        take: TOP_FOR_MENTOR_LIMIT,
+      });
+      return rows.map((u) => ({ ...u, rating: null, reviewCount: 0 }));
+    };
+
+    // No stream yet → nothing meaningful to rank; go straight to the
+    // alphabetical fallback rather than scoring the whole catalogue.
+    if (!profile?.stream) return alphabeticalFallback();
 
     const candidates = await this.prisma.university.findMany({
-      where: {
-        isActive: true,
-        stream: profile.stream,
-        ...(profile.universityId && { id: { not: profile.universityId } }),
-      },
+      where: poolWhere,
       select: { id: true },
     });
     if (candidates.length === 0) return [];
@@ -208,7 +224,8 @@ export class UniversitiesService {
       .map(([id, s]) => ({ id, average: s.average ?? 0, count: s.count }))
       .sort((a, b) => b.average - a.average || b.count - a.count)
       .slice(0, TOP_FOR_MENTOR_LIMIT);
-    if (ranked.length === 0) return [];
+    // Nothing in this stream reviewed yet — populate the rail anyway.
+    if (ranked.length === 0) return alphabeticalFallback();
 
     const rows = await this.prisma.university.findMany({
       where: { id: { in: ranked.map((r) => r.id) } },
