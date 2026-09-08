@@ -6,9 +6,9 @@ import '../../core/network/sessions_api.dart';
 import '../../core/theme/app_theme.dart';
 import '../../state/auth_controller.dart';
 import '../../widgets/app_widgets.dart';
-import 'call_time_windows.dart';
 import 'cancel_deflection_sheet.dart';
 import 'session_list_screen.dart' show sessionsListProvider;
+import 'session_status.dart';
 
 /// Surfaces any audio-call session that needs attention right now — request
 /// pending mentor acceptance, mentor decision needed, or ready to join.
@@ -148,43 +148,15 @@ class _DockRowState extends ConsumerState<_DockRow> {
     }
   }
 
-  String get _statusText {
-    final session = widget.session;
-    if (widget.isMentor) {
-      switch (session.status) {
-        case SessionStatus.pending:
-          // Spell out instant vs. scheduled (and the time) right here — this
-          // banner is often the first place the mentor sees the request.
-          if (session.requestedFor == null) {
-            return 'Instant call request · connect now';
-          }
-          if (session.requestedForAlt != null) {
-            return 'Call request · ${clockLabel(session.requestedFor!)} '
-                'or ${clockLabel(session.requestedForAlt!)}';
-          }
-          return 'Call request · ${friendlyCallTime(session.requestedFor!)}';
-        case SessionStatus.accepted:
-          return 'Accepted — ready to call';
-        case SessionStatus.ringing:
-        case SessionStatus.inProgress:
-          return 'Call in progress';
-        default:
-          return session.status.wire;
-      }
-    }
-    switch (session.status) {
-      case SessionStatus.pending:
-        return 'Waiting for mentor to accept';
-      case SessionStatus.accepted:
-        return 'Mentor is ready — join now';
-      case SessionStatus.ringing:
-        return 'Call connecting…';
-      case SessionStatus.inProgress:
-        return 'Call in progress';
-      default:
-        return session.status.wire;
-    }
-  }
+  // The dock only ever surfaces PENDING/ACCEPTED/RINGING/IN_PROGRESS calls, so
+  // the `prompt` style (imperative — "join now", not a status noun) always
+  // applies here. Everything about how a session state reads lives in
+  // sessionStatusView (session_status.dart).
+  String get _statusText => sessionStatusView(
+    widget.session,
+    isMentor: widget.isMentor,
+    style: SessionStatusStyle.prompt,
+  ).label;
 
   @override
   Widget build(BuildContext context) {

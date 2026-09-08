@@ -17,6 +17,7 @@ import 'call_request_sheet.dart';
 import 'call_time_windows.dart';
 import 'cancel_deflection_sheet.dart';
 import 'rate_mentor_sheet.dart';
+import 'session_status.dart';
 
 final sessionsListProvider = FutureProvider.autoDispose<List<Session>>(
   (ref) => ref.watch(sessionsApiProvider).list(),
@@ -30,26 +31,6 @@ final sessionsListProvider = FutureProvider.autoDispose<List<Session>>(
 /// booking at the exact same balance instead of one letting the sheet open
 /// only to fail at submit.
 final _minCallSlotUniminutes = slotUniminutes(kCallSlotMinutes.first);
-
-/// Dot colour for a mentor row's status subtitle — session state only.
-Color _statusDotColor(SessionStatus status) {
-  switch (status) {
-    case SessionStatus.pending:
-    case SessionStatus.ringing:
-      return AppColors.warning;
-    case SessionStatus.accepted:
-    case SessionStatus.inProgress:
-      return AppColors.primary;
-    case SessionStatus.completed:
-      return AppColors.textMuted;
-    case SessionStatus.rejected:
-    case SessionStatus.failed:
-      return AppColors.error;
-    case SessionStatus.cancelled:
-    case SessionStatus.expired:
-      return AppColors.textMuted;
-  }
-}
 
 bool _isActiveStatus(SessionStatus status) =>
     status == SessionStatus.pending ||
@@ -325,6 +306,11 @@ class _MentorStudentRow extends StatelessWidget {
     final aspirantName = first.aspirantName;
     final showDot =
         latest.type == 'AUDIO_CALL' || _isActiveStatus(latest.status);
+    final statusView = sessionStatusView(
+      latest,
+      isMentor: true,
+      style: SessionStatusStyle.compact,
+    );
 
     void openHistory() => showMentorSessionHistory(
       context,
@@ -372,14 +358,14 @@ class _MentorStudentRow extends StatelessWidget {
                             height: 7,
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
-                              color: _statusDotColor(latest.status),
+                              color: statusView.color,
                             ),
                           ),
                           const SizedBox(width: 6),
                         ],
                         Flexible(
                           child: Text(
-                            _lastActivityLabel(latest),
+                            statusView.label,
                             style: const TextStyle(
                               fontSize: AppFont.xs,
                               color: AppColors.textSecondary,
@@ -512,41 +498,6 @@ class _SessionCard extends StatelessWidget {
   }
 }
 
-/// Sentence-case status for a single row's subtitle — a lighter-weight
-/// twin of `_SessionActionsState._statusLabel` (that one also needs
-/// `isMentor`/dual endReason phrasing for a card's own action area; a
-/// one-line summary row just needs something short and true).
-String _lastActivityLabel(Session session) {
-  switch (session.status) {
-    case SessionStatus.pending:
-      if (session.type != 'AUDIO_CALL') return 'Chat started';
-      // Always say *what kind* of call request this is and *when* — the
-      // mentor needs both to decide whether to accept now or plan for later.
-      if (session.requestedFor == null) return 'Instant call requested · connect now';
-      if (session.requestedForAlt != null) {
-        return 'Call requested · ${clockLabel(session.requestedFor!)} '
-            'or ${clockLabel(session.requestedForAlt!)}';
-      }
-      return 'Call requested · ${friendlyCallTime(session.requestedFor!)}';
-    case SessionStatus.accepted:
-      return 'Ready — accepted';
-    case SessionStatus.ringing:
-      return 'Call connecting…';
-    case SessionStatus.inProgress:
-      return session.type == 'AUDIO_CALL' ? 'Call in progress' : 'Chatting';
-    case SessionStatus.completed:
-      return session.type == 'AUDIO_CALL' ? 'Call completed' : 'Chat';
-    case SessionStatus.rejected:
-      return 'Declined';
-    case SessionStatus.cancelled:
-      return 'Cancelled';
-    case SessionStatus.expired:
-      return 'Expired';
-    case SessionStatus.failed:
-      return 'No answer';
-  }
-}
-
 /// One row per mentor relationship, aspirant Sessions tab only (see
 /// `_groupAllSessionsByCounterpart`'s doc comment for why this consolidates
 /// every session with that mentor instead of listing each one).
@@ -603,6 +554,11 @@ class _AspirantMentorRow extends ConsumerWidget {
     // a plain "Chat" — a call request/outcome, or a live session.
     final showDot =
         latest.type == 'AUDIO_CALL' || _isActiveStatus(latest.status);
+    final statusView = sessionStatusView(
+      latest,
+      isMentor: false,
+      style: SessionStatusStyle.compact,
+    );
 
     return Material(
       color: AppColors.surface,
@@ -645,14 +601,14 @@ class _AspirantMentorRow extends ConsumerWidget {
                             height: 7,
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
-                              color: _statusDotColor(latest.status),
+                              color: statusView.color,
                             ),
                           ),
                           const SizedBox(width: 6),
                         ],
                         Flexible(
                           child: Text(
-                            _lastActivityLabel(latest),
+                            statusView.label,
                             style: const TextStyle(
                               fontSize: AppFont.xs,
                               color: AppColors.textSecondary,
@@ -962,73 +918,12 @@ class _SessionActionsState extends ConsumerState<_SessionActions> {
     }
   }
 
-  Color _statusColor(SessionStatus status) {
-    switch (status) {
-      case SessionStatus.pending:
-        return AppColors.warning;
-      case SessionStatus.accepted:
-      case SessionStatus.inProgress:
-        return AppColors.primary;
-      case SessionStatus.completed:
-        return AppColors.info;
-      case SessionStatus.rejected:
-      case SessionStatus.cancelled:
-      case SessionStatus.expired:
-      case SessionStatus.failed:
-        return AppColors.error;
-      case SessionStatus.ringing:
-        return AppColors.accent;
-    }
-  }
-
-  // Sentence-case, plain-language status instead of the raw wire enum
-  // (e.g. "PENDING") — a status code isn't self-explanatory at a glance.
-  // FAILED is a generic bucket for several distinct no-show outcomes (see
-  // SessionsService.sweepCallNoShows) — endReason (+ which side is viewing)
-  // picks the specific label so "Failed" never shows up as a mystery to
-  // either party, and each side sees their own outcome, not the other's.
-  String _statusLabel(SessionStatus status, String? endReason, bool isMentor) {
-    if (status == SessionStatus.failed) {
-      switch (endReason) {
-        case 'ASPIRANT_NO_SHOW':
-          return isMentor
-              ? 'Aspirant no-show — you were paid'
-              : 'No-show — you were charged';
-        case 'MENTOR_NO_SHOW':
-          return isMentor ? 'You missed it — no charge' : 'Mentor no-show';
-        case 'NO_ANSWER':
-          return 'No answer';
-        default:
-          return 'Failed';
-      }
-    }
-    switch (status) {
-      case SessionStatus.pending:
-        return 'Pending';
-      case SessionStatus.accepted:
-        return 'Accepted';
-      case SessionStatus.ringing:
-        return 'Connecting';
-      case SessionStatus.inProgress:
-        return 'In call';
-      case SessionStatus.completed:
-        return 'Completed';
-      case SessionStatus.rejected:
-        return 'Declined';
-      case SessionStatus.cancelled:
-        return 'Cancelled';
-      case SessionStatus.expired:
-        return 'Expired';
-      case SessionStatus.failed:
-        return 'Failed'; // unreachable — handled above
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final session = widget.session;
     final api = ref.read(sessionsApiProvider);
     final isCall = session.type == 'AUDIO_CALL';
+    final statusView = sessionStatusView(session, isMentor: widget.isMentor);
     final canOpenChat =
         session.type == 'CHAT' &&
         (session.status == SessionStatus.accepted ||
@@ -1063,14 +958,7 @@ class _SessionActionsState extends ConsumerState<_SessionActions> {
               // free, so a PENDING/ACCEPTED chip on a chat row is just
               // noise. Only calls have a real status worth surfacing.
               if (isCall)
-                StatusChip(
-                  label: _statusLabel(
-                    session.status,
-                    session.endReason,
-                    widget.isMentor,
-                  ),
-                  color: _statusColor(session.status),
-                ),
+                StatusChip(label: statusView.label, color: statusView.color),
             ],
           ),
           if (isCall && session.requestedFor != null) ...[
@@ -1161,12 +1049,8 @@ class _SessionActionsState extends ConsumerState<_SessionActions> {
                     session.status == SessionStatus.accepted)) ...[
               widget.dense
                   ? _TappableStatusChip(
-                      label: _statusLabel(
-                        session.status,
-                        session.endReason,
-                        widget.isMentor,
-                      ),
-                      color: _statusColor(session.status),
+                      label: statusView.label,
+                      color: statusView.color,
                       onTap: _busy ? null : () => _cancelWithDeflection(api),
                     )
                   : _ActionButton(

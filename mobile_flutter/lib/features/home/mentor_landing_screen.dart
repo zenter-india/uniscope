@@ -13,6 +13,7 @@ import '../../widgets/app_widgets.dart';
 import '../mentors/mentor_reviews_screen.dart' show myMentorReviewsProvider;
 import '../universities/university_review_screen.dart'
     show CollegeReviewPromptBanner;
+import '../sessions/session_status.dart';
 import 'mentor_home_screen.dart' show mentorDashboardStatsProvider;
 
 /// Mentor's Home tab — kept as the original rich overview (greeting,
@@ -468,6 +469,11 @@ class _RecentSessionCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final when = _whenLabel;
+    final statusView = sessionStatusViewOf(
+      statusWire: session.status,
+      isCall: session.isCall,
+      isMentor: true,
+    );
     return AppCard(
       margin: const EdgeInsets.only(bottom: AppSpacing.sm),
       onTap: () =>
@@ -519,7 +525,7 @@ class _RecentSessionCard extends StatelessWidget {
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              StatusChip(label: session.status, color: AppColors.success),
+              StatusChip(label: statusView.label, color: statusView.color),
               const SizedBox(height: 4),
               Text(
                 '₹${session.earnedRupees.toStringAsFixed(0)}',

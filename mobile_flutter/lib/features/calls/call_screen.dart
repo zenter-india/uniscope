@@ -15,6 +15,7 @@ import '../../state/auth_controller.dart';
 import '../../widgets/app_widgets.dart';
 import '../reports/report_sheet.dart';
 import '../sessions/rate_mentor_sheet.dart';
+import '../sessions/session_status.dart';
 import '../wallet/wallet_screen.dart' show walletBalanceProvider;
 import 'call_overlay.dart';
 
@@ -954,6 +955,7 @@ class _CallScreenState extends ConsumerState<CallScreen> {
         final completed = s?.status == SessionStatus.completed;
         return _EndedView(
           session: s,
+          isMentor: !_isAspirant,
           peerName: _peerName,
           // Aspirant rates the mentor after a real (completed) call.
           onRate: (completed && _isAspirant && s != null)
@@ -1836,30 +1838,27 @@ class _CallControl extends StatelessWidget {
 class _EndedView extends StatelessWidget {
   const _EndedView({
     required this.session,
+    required this.isMentor,
     required this.peerName,
     required this.onDone,
     this.onRate,
     this.onReport,
   });
   final Session? session;
+  final bool isMentor;
   final String peerName;
   final VoidCallback onDone;
   final VoidCallback? onRate;
   final VoidCallback? onReport;
 
-  String _reasonLabel(String? reason) {
-    switch (reason) {
-      case 'SLOT_EXPIRED':
-        return 'Slot ended';
-      case 'CANCELLED':
-        return 'Cancelled';
-      case 'REJECTED':
-        return 'Declined';
-      case 'NO_ANSWER':
-        return 'No answer';
-      default:
-        return 'Call ended';
-    }
+  String get _reasonLabel {
+    final s = session;
+    if (s == null) return 'Call ended';
+    return sessionStatusView(
+      s,
+      isMentor: isMentor,
+      style: SessionStatusStyle.compact,
+    ).label;
   }
 
   @override
@@ -1878,7 +1877,7 @@ class _EndedView extends StatelessWidget {
             const _GlyphBadge(icon: Icons.call_end_rounded),
             const SizedBox(height: AppSpacing.lg),
             Text(
-              _reasonLabel(session?.endReason),
+              _reasonLabel,
               textAlign: TextAlign.center,
               style: const TextStyle(
                 color: Colors.white,
