@@ -750,7 +750,7 @@ class _RowIconButton extends StatelessWidget {
 /// which is the actual "moved inside the mentor's chat" destination for
 /// this history per the product decision behind
 /// `_groupAllSessionsByCounterpart`.
-/// Every past chat/call with one counterpart, newest first. Originally
+/// Past *calls* with one counterpart, newest first. Originally
 /// aspirant-only (viewing history with a mentor, from `SessionChatScreen`'s
 /// history action); generalized 2026-09-07 with an `isMentor` flag so the
 /// mentor Sessions tab's per-student row (`_MentorStudentRow`) can reuse the
@@ -758,6 +758,11 @@ class _RowIconButton extends StatelessWidget {
 /// it — the name stays `showMentorSessionHistory` (about the mentor's own
 /// history, not who's viewing it) so the existing aspirant call site needs
 /// no change.
+///
+/// CHAT sessions are excluded (2026-09-08, per request): a chat is one
+/// continuous thread you're already looking at, so a "chat session" card
+/// with an "Open Chat" button here is redundant. This sheet is a record of
+/// calls only.
 Future<void> showMentorSessionHistory(
   BuildContext context, {
   required String mentorId,
@@ -765,8 +770,9 @@ Future<void> showMentorSessionHistory(
   required List<Session> sessions,
   bool isMentor = false,
 }) {
-  final sorted = [...sessions]
-    ..sort((a, b) => b.requestedAt.compareTo(a.requestedAt));
+  final sorted =
+      sessions.where((s) => s.type == 'AUDIO_CALL').toList()
+        ..sort((a, b) => b.requestedAt.compareTo(a.requestedAt));
   return showModalBottomSheet(
     context: context,
     backgroundColor: AppColors.surface,
@@ -807,13 +813,22 @@ Future<void> showMentorSessionHistory(
             ),
           ),
           Expanded(
-            child: ListView.builder(
-              controller: scrollController,
-              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
-              itemCount: sorted.length,
-              itemBuilder: (_, i) =>
-                  _SessionCard(session: sorted[i], isMentor: isMentor),
-            ),
+            child: sorted.isEmpty
+                ? const EmptyState(
+                    icon: Icons.call_rounded,
+                    title: 'No calls yet',
+                    message:
+                        'Past audio calls with this person will show up here.',
+                  )
+                : ListView.builder(
+                    controller: scrollController,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.md,
+                    ),
+                    itemCount: sorted.length,
+                    itemBuilder: (_, i) =>
+                        _SessionCard(session: sorted[i], isMentor: isMentor),
+                  ),
           ),
         ],
       ),
