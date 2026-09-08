@@ -51,6 +51,7 @@ class _AspirantOnboardingScreenState
   int _step = 0;
   bool _saving = false;
   bool _resolvingCollege = false;
+  bool _ageConfirmed = false;
 
   final _fullNameController = TextEditingController();
   String? _gender;
@@ -220,6 +221,13 @@ class _AspirantOnboardingScreenState
     _goTo(_step + 1);
   }
 
+  /// Step back one page — every field's value lives in this State, so a
+  /// half-filled wizard survives going back to fix something.
+  void _back() {
+    if (_step == 0 || _saving) return;
+    _goTo(_step - 1);
+  }
+
   /// Academics is the step that collects College — if a real one wasn't
   /// picked from the search suggestions, it needs to resolve (find-or-
   /// create) to a real University row before moving on, same pattern the
@@ -259,9 +267,12 @@ class _AspirantOnboardingScreenState
   /// either way, only the avatar customisation itself is optional.
   Future<void> _finish({bool saveAvatar = true}) async {
     // Age-confirmation gate before the profile is actually submitted — both
-    // "Finish" and "Skip for now" route through here.
-    if (!await showAgeConfirmationDialog(context)) return;
-    if (!mounted) return;
+    // "Finish" and "Skip for now" route through here. Asked once.
+    if (!_ageConfirmed) {
+      if (!await showAgeConfirmationDialog(context)) return;
+      if (!mounted) return;
+      _ageConfirmed = true;
+    }
     setState(() => _saving = true);
     try {
       final resolvedStream = _stream == 'Others' &&
@@ -329,8 +340,23 @@ class _AspirantOnboardingScreenState
       appBar: AppBar(
         title: Text('Step ${_step + 1} of ${_stepTitles.length}'),
         automaticallyImplyLeading: false,
+        // Back arrow appears from step 2 on — lets the user return to an
+        // earlier step to fix something without restarting the wizard.
+        leading: _step > 0
+            ? IconButton(
+                icon: const Icon(Icons.arrow_back_rounded),
+                onPressed: _saving ? null : _back,
+              )
+            : null,
       ),
-      body: SafeArea(
+      body: PopScope(
+        // Android system-back / edge swipe steps back through the wizard
+        // instead of dropping out of onboarding entirely.
+        canPop: _step == 0,
+        onPopInvokedWithResult: (didPop, _) {
+          if (!didPop) _back();
+        },
+        child: SafeArea(
         child: Column(
           children: [
             OnboardingProgressBar(step: _step, total: _stepTitles.length),
@@ -582,6 +608,7 @@ class _AspirantOnboardingScreenState
             ),
           ],
         ),
+      ),
       ),
     );
   }

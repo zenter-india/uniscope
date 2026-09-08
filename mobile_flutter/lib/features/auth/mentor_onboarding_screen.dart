@@ -46,6 +46,7 @@ class _MentorOnboardingScreenState extends ConsumerState<MentorOnboardingScreen>
   int _step = 0;
   bool _saving = false;
   bool _verificationSubmitted = false;
+  bool _ageConfirmed = false;
 
   final _fullNameController = TextEditingController();
   String? _gender;
@@ -229,14 +230,25 @@ class _MentorOnboardingScreenState extends ConsumerState<MentorOnboardingScreen>
     _goTo(_step + 1);
   }
 
+  /// Step back one page — every field's value lives in this State, so
+  /// going back to fix something doesn't lose the rest of the wizard.
+  void _back() {
+    if (_step == 0 || _saving || _resolvingCollege) return;
+    _goTo(_step - 1);
+  }
+
   /// College Details is the last data-collection step (index 3) — if the
   /// typed college name wasn't picked from the search suggestions, it needs
   /// to resolve (find-or-create) to a real University row before the profile
   /// save, since verification requires one. See UniversitiesApi.findOrCreate.
   Future<void> _resolveCollegeThenSave() async {
-    // Age-confirmation gate before the mentor profile is submitted.
-    if (!await showAgeConfirmationDialog(context)) return;
-    if (!mounted) return;
+    // Age-confirmation gate before the mentor profile is submitted — asked
+    // once, not again if the user steps back and forward through step 3.
+    if (!_ageConfirmed) {
+      if (!await showAgeConfirmationDialog(context)) return;
+      if (!mounted) return;
+      _ageConfirmed = true;
+    }
     if (_universityId == null) {
       setState(() => _resolvingCollege = true);
       try {
@@ -387,8 +399,23 @@ class _MentorOnboardingScreenState extends ConsumerState<MentorOnboardingScreen>
       appBar: AppBar(
         title: Text('Step ${_step + 1} of ${_stepTitles.length}'),
         automaticallyImplyLeading: false,
+        // Back arrow from step 2 on — return to an earlier step to fix
+        // something without restarting the wizard.
+        leading: _step > 0
+            ? IconButton(
+                icon: const Icon(Icons.arrow_back_rounded),
+                onPressed: (_saving || _resolvingCollege) ? null : _back,
+              )
+            : null,
       ),
-      body: SafeArea(
+      body: PopScope(
+        // Android system-back / edge swipe steps back through the wizard
+        // instead of dropping out of onboarding entirely.
+        canPop: _step == 0,
+        onPopInvokedWithResult: (didPop, _) {
+          if (!didPop) _back();
+        },
+        child: SafeArea(
         child: Column(
           children: [
             OnboardingProgressBar(step: _step, total: _stepTitles.length),
@@ -736,6 +763,7 @@ class _MentorOnboardingScreenState extends ConsumerState<MentorOnboardingScreen>
             ),
           ],
         ),
+      ),
       ),
     );
   }
