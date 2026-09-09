@@ -15,7 +15,10 @@
 -- idempotent structure as 20260909200000 (every id column here is Postgres
 -- text, not uuid).
 
--- programs: move to the winner unless it already has one with that name
+-- programs: move exactly one program per (winner, name) to the winner — the
+-- winner must not already have that name, AND when several losers feeding the
+-- same winner share a program name only the first is moved (DISTINCT ON), so
+-- the (university_id, name) unique index can't be violated mid-statement.
 WITH m("loser_id", "winner_id") AS (VALUES
   ('0028da61-b0ac-40e7-a7bd-ddfe68d6d974'::text, 'ec61b51b-8872-4ece-9206-978b66bc9882'::text),
   ('019e2a09-3085-4260-a4ce-a220e20dd303'::text, '7cdc02e2-b594-4383-b721-b0122ef63591'::text),
@@ -205,17 +208,24 @@ WITH m("loser_id", "winner_id") AS (VALUES
   ('fd76a97a-394b-45c2-9b5b-fa2923dc32f1'::text, '75ee342b-0c58-4621-92d2-4be5a172efdc'::text),
   ('fe7170bb-12b6-477e-a8ab-604b78bc5f31'::text, '46562838-a126-464b-898f-5167f7fabfbb'::text),
   ('ff8ad510-65ae-459e-bd60-5d54bc31bf9a'::text, 'a687fa67-ede8-42a9-8454-238f4866374c'::text)
-)
-UPDATE "programs" p
-SET "university_id" = m."winner_id"
-FROM m
-WHERE p."university_id" = m."loser_id"
-  AND NOT EXISTS (
+),
+p_move AS (
+  SELECT DISTINCT ON (m."winner_id", p."name") p."id" AS program_id, m."winner_id"
+  FROM "programs" p
+  JOIN m ON p."university_id" = m."loser_id"
+  WHERE NOT EXISTS (
     SELECT 1 FROM "programs" w
     WHERE w."university_id" = m."winner_id" AND w."name" = p."name"
-  );
+  )
+  ORDER BY m."winner_id", p."name", p."id"
+)
+UPDATE "programs" p
+SET "university_id" = pm."winner_id"
+FROM p_move pm
+WHERE p."id" = pm.program_id;
 
--- programs: drop the leftover colliding ones (winner already has that name)
+-- programs: drop every remaining loser program (winner already has that name,
+-- or it lost the DISTINCT ON tie above)
 WITH m("loser_id", "winner_id") AS (VALUES
   ('0028da61-b0ac-40e7-a7bd-ddfe68d6d974'::text, 'ec61b51b-8872-4ece-9206-978b66bc9882'::text),
   ('019e2a09-3085-4260-a4ce-a220e20dd303'::text, '7cdc02e2-b594-4383-b721-b0122ef63591'::text),
@@ -408,7 +418,8 @@ WITH m("loser_id", "winner_id") AS (VALUES
 )
 DELETE FROM "programs" p USING m WHERE p."university_id" = m."loser_id";
 
--- saved_universities: move unless the aspirant already saved the winner
+-- saved_universities: move one row per (aspirant, winner); same DISTINCT ON
+-- guard against two losers saved by the same aspirant
 WITH m("loser_id", "winner_id") AS (VALUES
   ('0028da61-b0ac-40e7-a7bd-ddfe68d6d974'::text, 'ec61b51b-8872-4ece-9206-978b66bc9882'::text),
   ('019e2a09-3085-4260-a4ce-a220e20dd303'::text, '7cdc02e2-b594-4383-b721-b0122ef63591'::text),
@@ -598,15 +609,21 @@ WITH m("loser_id", "winner_id") AS (VALUES
   ('fd76a97a-394b-45c2-9b5b-fa2923dc32f1'::text, '75ee342b-0c58-4621-92d2-4be5a172efdc'::text),
   ('fe7170bb-12b6-477e-a8ab-604b78bc5f31'::text, '46562838-a126-464b-898f-5167f7fabfbb'::text),
   ('ff8ad510-65ae-459e-bd60-5d54bc31bf9a'::text, 'a687fa67-ede8-42a9-8454-238f4866374c'::text)
-)
-UPDATE "saved_universities" sv
-SET "university_id" = m."winner_id"
-FROM m
-WHERE sv."university_id" = m."loser_id"
-  AND NOT EXISTS (
+),
+sv_move AS (
+  SELECT DISTINCT ON (sv."aspirant_id", m."winner_id") sv."id" AS saved_id, m."winner_id"
+  FROM "saved_universities" sv
+  JOIN m ON sv."university_id" = m."loser_id"
+  WHERE NOT EXISTS (
     SELECT 1 FROM "saved_universities" w
     WHERE w."aspirant_id" = sv."aspirant_id" AND w."university_id" = m."winner_id"
-  );
+  )
+  ORDER BY sv."aspirant_id", m."winner_id", sv."id"
+)
+UPDATE "saved_universities" sv
+SET "university_id" = svm."winner_id"
+FROM sv_move svm
+WHERE sv."id" = svm.saved_id;
 
 WITH m("loser_id", "winner_id") AS (VALUES
   ('0028da61-b0ac-40e7-a7bd-ddfe68d6d974'::text, 'ec61b51b-8872-4ece-9206-978b66bc9882'::text),
