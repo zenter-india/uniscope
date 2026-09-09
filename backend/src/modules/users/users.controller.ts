@@ -20,7 +20,10 @@ import { Roles } from '../../auth/decorators/roles.decorator.js';
 import { RolesGuard } from '../../auth/guards/roles.guard.js';
 import { AVATAR_OPTION_CATALOG } from '../avatar/avatar.constants.js';
 import { AvatarService } from '../avatar/avatar.service.js';
-import { StorePushTokenDto } from '../notifications/dto/list-notifications.dto.js';
+import {
+  RemovePushTokenDto,
+  StorePushTokenDto,
+} from '../notifications/dto/list-notifications.dto.js';
 import { NotificationsService } from '../notifications/notifications.service.js';
 import { AdminUpdateUserDto } from './dto/admin-update-user.dto.js';
 import { ListUsersDto } from './dto/list-users.dto.js';
@@ -137,6 +140,18 @@ export class UsersController {
     @Body() dto: StorePushTokenDto,
   ) {
     await this.notificationsService.registerPushToken(user.sub, dto.token, dto.platform);
+  }
+
+  /** Unbind a device token from the caller (logout). Scoped to the caller's
+   * own userId, so it can't remove another account's registration; a no-op
+   * if the token isn't the caller's (it was already reassigned). */
+  @Delete('me/push-token')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async removePushToken(
+    @CurrentUser() user: JwtPayload,
+    @Body() dto: RemovePushTokenDto,
+  ) {
+    await this.notificationsService.removePushToken(user.sub, dto.token);
   }
 
   @UseGuards(RolesGuard)

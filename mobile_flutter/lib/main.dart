@@ -36,12 +36,26 @@ class _UniscopeAppState extends ConsumerState<UniscopeApp> {
   @override
   void initState() {
     super.initState();
-    // Register (or refresh) the device's push token whenever the user
-    // becomes authenticated — covers both a fresh login and app relaunch
-    // with an already-hydrated session.
+    // Keep the device's push-token binding in lockstep with the signed-in
+    // account:
+    //  - becomes authenticated (fresh login, account switch, relaunch with
+    //    a hydrated session) → (re)upload the token so the server's single
+    //    PushToken row for this device points at the current user;
+    //  - authenticated → logged out → unbind it, using the *previous*
+    //    state's still-valid access token, so a logged-out phone stops
+    //    receiving that user's notifications.
+    // Without the re-upload on switch, notifications leaked to whoever was
+    // signed in when the app last launched.
     ref.listenManual(authControllerProvider, (previous, next) {
       if (next.isAuthenticated && next.isHydrated) {
         ref.read(pushServiceProvider).initializeAndRegister();
+      } else if (previous != null &&
+          previous.isAuthenticated &&
+          !next.isAuthenticated &&
+          (previous.accessToken ?? '').isNotEmpty) {
+        ref
+            .read(pushServiceProvider)
+            .unregister(accessToken: previous.accessToken!);
       }
     }, fireImmediately: true);
   }

@@ -221,6 +221,22 @@ class UsersApi {
     );
   }
 
+  /// Unbinds an FCM token from the caller's account (used on logout).
+  /// [accessToken] is set as an explicit Authorization header so the call
+  /// still authenticates when the auth state has already been cleared — the
+  /// Dio interceptor only *adds* the header when a token is present, it
+  /// never overwrites one that's already set.
+  Future<void> deletePushToken(
+    String token, {
+    required String accessToken,
+  }) async {
+    await _dio.delete<void>(
+      '/users/me/push-token',
+      data: {'token': token},
+      options: Options(headers: {'Authorization': 'Bearer $accessToken'}),
+    );
+  }
+
   /// The catalogue the customizer renders its pickers from — served rather
   /// than hardcoded so it can never drift from what the server will accept.
   Future<Map<String, dynamic>> getAvatarOptions() async {

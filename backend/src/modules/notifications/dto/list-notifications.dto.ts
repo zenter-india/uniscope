@@ -26,3 +26,10 @@ export class StorePushTokenDto {
   @IsIn(['ios', 'android'])
   platform!: 'ios' | 'android';
 }
+
+/** Body for `DELETE /users/me/push-token` — unbinds a device token from the
+ * caller on logout. Only the token; platform is irrelevant for a delete. */
+export class RemovePushTokenDto {
+  @IsString()
+  token!: string;
+}

@@ -7,7 +7,6 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../features/calls/call_overlay.dart';
 import '../../router/app_router.dart';
 import '../network/users_api.dart';
 
@@ -76,41 +75,76 @@ class PushService {
   final _localNotifications = FlutterLocalNotificationsPlugin();
   bool _initialized = false;
 
+  /// Called from `main.dart` on *every* transition into an authenticated
+  /// state — a fresh login, an account switch, or an app relaunch with a
+  /// hydrated session. The one-time listener/permission setup happens once
+  /// ([_setupOnce]); the **token upload runs every time**, so the server's
+  /// single `PushToken` row for this device is always re-bound to whoever
+  /// is currently signed in.
+  ///
+  /// Before this split the whole method was guarded by `_initialized`, so
+  /// switching accounts without killing the app left the device's push
+  /// token registered to the *previous* user — every notification for that
+  /// user then landed on this device (now showing someone else), and
+  /// notifications for the current user went nowhere.
   Future<void> initializeAndRegister() async {
-    if (kIsWeb || _initialized) return;
-    _initialized = true;
-
-    // Mirrors main.dart's own "must not block the app" handling of a
-    // missing Firebase config — this also covers running without
-    // Firebase.initializeApp() at all, e.g. in a widget test harness.
+    if (kIsWeb) return;
     try {
-      await _initLocalNotifications();
-
-      final messaging = FirebaseMessaging.instance;
-      await messaging.requestPermission(alert: true, badge: true, sound: true);
-
-      final token = await messaging.getToken();
+      await _setupOnce();
+      final token = await FirebaseMessaging.instance.getToken();
       if (token != null) await _upload(token);
-
-      messaging.onTokenRefresh.listen(_upload);
-
-      // Foreground push → draw a heads-up notification (Android won't do it
-      // for us here) AND run the deep-link handler, so e.g. "mentor
-      // accepted" still pulls the aspirant onto the call screen even if
-      // they had the app open on another tab.
-      FirebaseMessaging.onMessage.listen((message) {
-        _showLocalNotification(message);
-        _handleDeepLink(message);
-      });
-
-      // Deep-link on the paths a push reaches the user through while it's
-      // NOT foreground: tapped while backgrounded, or tapped from a cold
-      // start (terminated).
-      FirebaseMessaging.onMessageOpenedApp.listen(_handleDeepLink);
-      final initialMessage = await messaging.getInitialMessage();
-      if (initialMessage != null) _handleDeepLink(initialMessage);
     } catch (_) {
       // No Firebase app available on this run — push just won't work.
+    }
+  }
+
+  /// Permission, local-notification plugin, and the FCM listeners — all of
+  /// which must be wired exactly once per process.
+  Future<void> _setupOnce() async {
+    if (_initialized) return;
+    _initialized = true;
+
+    await _initLocalNotifications();
+
+    final messaging = FirebaseMessaging.instance;
+    await messaging.requestPermission(alert: true, badge: true, sound: true);
+
+    messaging.onTokenRefresh.listen(_upload);
+
+    // Foreground push → draw a heads-up notification (Android won't do it
+    // for us here) AND run the deep-link handler, so e.g. "mentor
+    // accepted" still pulls the aspirant onto the call screen even if
+    // they had the app open on another tab.
+    FirebaseMessaging.onMessage.listen((message) {
+      _showLocalNotification(message);
+      _handleDeepLink(message);
+    });
+
+    // Deep-link on the paths a push reaches the user through while it's
+    // NOT foreground: tapped while backgrounded, or tapped from a cold
+    // start (terminated).
+    FirebaseMessaging.onMessageOpenedApp.listen(_handleDeepLink);
+    final initialMessage = await messaging.getInitialMessage();
+    if (initialMessage != null) _handleDeepLink(initialMessage);
+  }
+
+  /// Best-effort unbind of this device's push token from the account that's
+  /// logging out, so a logged-out phone stops receiving that user's
+  /// notifications. The FCM token itself is kept — the next login just
+  /// re-uploads it under the new user. [accessToken] is passed explicitly
+  /// (captured before the auth state is cleared) so the DELETE still
+  /// authenticates.
+  Future<void> unregister({required String accessToken}) async {
+    if (kIsWeb) return;
+    try {
+      final token = await FirebaseMessaging.instance.getToken();
+      if (token == null) return;
+      await _ref
+          .read(usersApiProvider)
+          .deletePushToken(token, accessToken: accessToken);
+    } catch (_) {
+      // Failed unbind is harmless — the row is reassigned on the next
+      // login's re-upload anyway.
     }
   }
 
@@ -224,11 +258,11 @@ class PushService {
     final context = rootNavigatorKey.currentContext;
     if (context == null) return;
     final router = GoRouter.of(context);
-    // /call/:id is a full-screen overlay outside the tab shell — hand it to
-    // the overlay controller. /chats is a tab — switch to it rather than
-    // pushing a duplicate.
+    // /call/:id is a full-screen route on the root navigator (over the tab
+    // shell) — push it. /chats is a tab — switch to it rather than pushing
+    // a duplicate.
     if (target.startsWith('/call/')) {
-      CallOverlayController.instance.open(sessionId);
+      router.push(target);
     } else {
       router.go(target);
     }

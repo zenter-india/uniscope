@@ -83,6 +83,13 @@ export class NotificationsService {
     });
   }
 
+  /** Unbind a device token from a user (logout). Scoped to `userId` so a
+   * stale call can't wipe a registration that's since been reassigned to a
+   * different account on the same device. */
+  async removePushToken(userId: string, token: string): Promise<void> {
+    await this.prisma.pushToken.deleteMany({ where: { userId, token } });
+  }
+
   /** Creates the in-app record and fires a best-effort push. Never throws on
    * push failure — the in-app notification is the durable part. */
   async send(params: SendNotificationParams): Promise<NotificationResponse> {
