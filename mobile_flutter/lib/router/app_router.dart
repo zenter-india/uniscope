@@ -66,175 +66,197 @@ const _aspirantTabs = <TabItem>[
   TabItem('Discover', Icons.explore_outlined, Icons.explore_rounded),
   TabItem('Mentors', Icons.people_alt_outlined, Icons.people_alt_rounded),
   TabItem('Sessions', Icons.forum_outlined, Icons.forum_rounded),
-  TabItem('Wallet', Icons.account_balance_wallet_outlined,
-      Icons.account_balance_wallet_rounded),
+  TabItem(
+    'Wallet',
+    Icons.account_balance_wallet_outlined,
+    Icons.account_balance_wallet_rounded,
+  ),
   TabItem('Profile', Icons.person_outline_rounded, Icons.person_rounded),
 ];
 
 const _mentorTabs = <TabItem>[
   TabItem('Home', Icons.home_outlined, Icons.home_rounded),
   TabItem('Discover', Icons.explore_outlined, Icons.explore_rounded),
-  TabItem('Sessions', Icons.calendar_today_outlined, Icons.calendar_today_rounded),
-  TabItem('Wallet', Icons.account_balance_wallet_outlined,
-      Icons.account_balance_wallet_rounded),
+  TabItem(
+    'Sessions',
+    Icons.calendar_today_outlined,
+    Icons.calendar_today_rounded,
+  ),
+  TabItem(
+    'Wallet',
+    Icons.account_balance_wallet_outlined,
+    Icons.account_balance_wallet_rounded,
+  ),
   TabItem('Profile', Icons.person_outline_rounded, Icons.person_rounded),
 ];
 
 List<StatefulShellBranch> _buildAspirantBranches() => [
-      StatefulShellBranch(
-        routes: [GoRoute(path: '/home', builder: (_, __) => const HomeScreen())],
-      ),
-      StatefulShellBranch(
+  StatefulShellBranch(
+    routes: [GoRoute(path: '/home', builder: (_, __) => const HomeScreen())],
+  ),
+  StatefulShellBranch(
+    routes: [
+      GoRoute(
+        path: '/colleges',
+        builder: (_, __) => const UniversityListScreen(),
         routes: [
           GoRoute(
-            path: '/colleges',
-            builder: (_, __) => const UniversityListScreen(),
-            routes: [
-              GoRoute(
-                path: 'detail',
-                builder: (_, state) {
-                  final a = state.extra as Map<String, dynamic>? ?? const {};
-                  return UniversityDetailScreen(
-                    universitySlug: a['universitySlug'] as String? ?? '',
-                    universityName: a['universityName'] as String? ?? '',
-                  );
-                },
-              ),
-              GoRoute(path: 'saved', builder: (_, __) => const SavedCollegesScreen()),
-              GoRoute(
-                path: 'reviews',
-                builder: (_, state) {
-                  final a = state.extra as Map<String, dynamic>? ?? const {};
-                  return ReviewBreakdownScreen(
-                    universityId: a['universityId'] as String? ?? '',
-                    universityName: a['universityName'] as String? ?? '',
-                  );
-                },
-              ),
-            ],
+            path: 'detail',
+            builder: (_, state) {
+              final a = state.extra as Map<String, dynamic>? ?? const {};
+              return UniversityDetailScreen(
+                universitySlug: a['universitySlug'] as String? ?? '',
+                universityName: a['universityName'] as String? ?? '',
+              );
+            },
+          ),
+          GoRoute(
+            path: 'saved',
+            builder: (_, __) => const SavedCollegesScreen(),
+          ),
+          GoRoute(
+            path: 'reviews',
+            builder: (_, state) {
+              final a = state.extra as Map<String, dynamic>? ?? const {};
+              return ReviewBreakdownScreen(
+                universityId: a['universityId'] as String? ?? '',
+                universityName: a['universityName'] as String? ?? '',
+              );
+            },
           ),
         ],
       ),
-      StatefulShellBranch(
+    ],
+  ),
+  StatefulShellBranch(
+    routes: [
+      GoRoute(
+        path: '/mentors',
+        builder: (_, __) => const MentorListScreen(),
         routes: [
+          // Must precede ':id' — go_router matches in order, and the
+          // wildcard would otherwise capture "saved" as a mentor id.
           GoRoute(
-            path: '/mentors',
-            builder: (_, __) => const MentorListScreen(),
-            routes: [
-              // Must precede ':id' — go_router matches in order, and the
-              // wildcard would otherwise capture "saved" as a mentor id.
-              GoRoute(
-                path: 'saved',
-                builder: (_, __) => const SavedMentorsScreen(),
-              ),
-              GoRoute(
-                path: ':id',
-                builder: (_, state) =>
-                    MentorDetailScreen(mentorId: state.pathParameters['id']!),
-              ),
-            ],
+            path: 'saved',
+            builder: (_, __) => const SavedMentorsScreen(),
+          ),
+          GoRoute(
+            path: ':id',
+            builder: (_, state) =>
+                MentorDetailScreen(mentorId: state.pathParameters['id']!),
           ),
         ],
       ),
-      StatefulShellBranch(
+    ],
+  ),
+  StatefulShellBranch(
+    routes: [
+      GoRoute(
+        path: '/chats',
+        builder: (_, __) => const SessionListScreen(),
         routes: [
           GoRoute(
-            path: '/chats',
-            builder: (_, __) => const SessionListScreen(),
-            routes: [
-              GoRoute(
-                path: 'room',
-                builder: (_, state) {
-                  final a = state.extra as Map<String, dynamic>? ?? const {};
-                  return SessionChatScreen(
-                    sessionId: a['sessionId'] as String? ?? '',
-                    initialDraft: a['draft'] as String?,
-                  );
-                },
-              ),
-              GoRoute(path: 'support', builder: (_, __) => const SupportChatScreen()),
-            ],
+            path: 'room',
+            builder: (_, state) {
+              final a = state.extra as Map<String, dynamic>? ?? const {};
+              return SessionChatScreen(
+                sessionId: a['sessionId'] as String? ?? '',
+                initialDraft: a['draft'] as String?,
+              );
+            },
+          ),
+          GoRoute(
+            path: 'support',
+            builder: (_, __) => const SupportChatScreen(),
           ),
         ],
       ),
-      StatefulShellBranch(
-        routes: [
-          GoRoute(path: '/wallet', builder: (_, __) => const WalletScreen()),
-        ],
-      ),
-      StatefulShellBranch(routes: [_profileRoute]),
-    ];
+    ],
+  ),
+  StatefulShellBranch(
+    routes: [
+      GoRoute(path: '/wallet', builder: (_, __) => const WalletScreen()),
+    ],
+  ),
+  StatefulShellBranch(routes: [_profileRoute]),
+];
 
 List<StatefulShellBranch> _buildMentorBranches() => [
-      StatefulShellBranch(
-        routes: [
-          GoRoute(path: '/home', builder: (_, __) => const MentorLandingScreen()),
-        ],
-      ),
-      StatefulShellBranch(
+  StatefulShellBranch(
+    routes: [
+      GoRoute(path: '/home', builder: (_, __) => const MentorLandingScreen()),
+    ],
+  ),
+  StatefulShellBranch(
+    routes: [
+      GoRoute(
+        path: '/colleges',
+        builder: (_, __) => const UniversityListScreen(),
         routes: [
           GoRoute(
-            path: '/colleges',
-            builder: (_, __) => const UniversityListScreen(),
-            routes: [
-              GoRoute(
-                path: 'detail',
-                builder: (_, state) {
-                  final a = state.extra as Map<String, dynamic>? ?? const {};
-                  return UniversityDetailScreen(
-                    universitySlug: a['universitySlug'] as String? ?? '',
-                    universityName: a['universityName'] as String? ?? '',
-                  );
-                },
-              ),
-              GoRoute(path: 'saved', builder: (_, __) => const SavedCollegesScreen()),
-              GoRoute(
-                path: 'reviews',
-                builder: (_, state) {
-                  final a = state.extra as Map<String, dynamic>? ?? const {};
-                  return ReviewBreakdownScreen(
-                    universityId: a['universityId'] as String? ?? '',
-                    universityName: a['universityName'] as String? ?? '',
-                  );
-                },
-              ),
-            ],
+            path: 'detail',
+            builder: (_, state) {
+              final a = state.extra as Map<String, dynamic>? ?? const {};
+              return UniversityDetailScreen(
+                universitySlug: a['universitySlug'] as String? ?? '',
+                universityName: a['universityName'] as String? ?? '',
+              );
+            },
+          ),
+          GoRoute(
+            path: 'saved',
+            builder: (_, __) => const SavedCollegesScreen(),
+          ),
+          GoRoute(
+            path: 'reviews',
+            builder: (_, state) {
+              final a = state.extra as Map<String, dynamic>? ?? const {};
+              return ReviewBreakdownScreen(
+                universityId: a['universityId'] as String? ?? '',
+                universityName: a['universityName'] as String? ?? '',
+              );
+            },
           ),
         ],
       ),
-      StatefulShellBranch(
+    ],
+  ),
+  StatefulShellBranch(
+    routes: [
+      GoRoute(
+        path: '/chats',
+        builder: (_, __) => const SessionListScreen(),
         routes: [
           GoRoute(
-            path: '/chats',
-            builder: (_, __) => const SessionListScreen(),
-            routes: [
-              GoRoute(
-                path: 'room',
-                builder: (_, state) {
-                  final a = state.extra as Map<String, dynamic>? ?? const {};
-                  return SessionChatScreen(
-                    sessionId: a['sessionId'] as String? ?? '',
-                    initialDraft: a['draft'] as String?,
-                  );
-                },
-              ),
-              GoRoute(path: 'support', builder: (_, __) => const SupportChatScreen()),
-            ],
+            path: 'room',
+            builder: (_, state) {
+              final a = state.extra as Map<String, dynamic>? ?? const {};
+              return SessionChatScreen(
+                sessionId: a['sessionId'] as String? ?? '',
+                initialDraft: a['draft'] as String?,
+              );
+            },
+          ),
+          GoRoute(
+            path: 'support',
+            builder: (_, __) => const SupportChatScreen(),
           ),
         ],
       ),
-      StatefulShellBranch(
-        routes: [
-          // The mentor's 4th tab is the Wallet (balance, Withdraw, payout
-          // requests, ledger) — it replaced a separate "Dashboard" overview
-          // screen, whose stats already live on the mentor Home tab
-          // (MentorLandingScreen). Path kept as '/dashboard' so it can't
-          // collide with the aspirant-only top-level '/wallet' route.
-          GoRoute(path: '/dashboard', builder: (_, __) => const WalletScreen()),
-        ],
-      ),
-      StatefulShellBranch(routes: [_profileRoute]),
-    ];
+    ],
+  ),
+  StatefulShellBranch(
+    routes: [
+      // The mentor's 4th tab is the Wallet (balance, Withdraw, payout
+      // requests, ledger) — it replaced a separate "Dashboard" overview
+      // screen, whose stats already live on the mentor Home tab
+      // (MentorLandingScreen). Path kept as '/dashboard' so it can't
+      // collide with the aspirant-only top-level '/wallet' route.
+      GoRoute(path: '/dashboard', builder: (_, __) => const WalletScreen()),
+    ],
+  ),
+  StatefulShellBranch(routes: [_profileRoute]),
+];
 
 final _aspirantBranches = _buildAspirantBranches();
 final _mentorBranches = _buildMentorBranches();
@@ -243,11 +265,17 @@ final _profileRoute = GoRoute(
   path: '/profile',
   builder: (_, __) => const ProfileHomeScreen(),
   routes: [
-    GoRoute(path: 'verification', builder: (_, __) => const VerificationScreen()),
+    GoRoute(
+      path: 'verification',
+      builder: (_, __) => const VerificationScreen(),
+    ),
     GoRoute(path: 'edit', builder: (_, __) => const EditProfileScreen()),
     GoRoute(path: 'avatar', builder: (_, __) => const AvatarCustomizerScreen()),
     GoRoute(path: 'settings', builder: (_, __) => const SettingsScreen()),
-    GoRoute(path: 'blocked-users', builder: (_, __) => const BlockedUsersScreen()),
+    GoRoute(
+      path: 'blocked-users',
+      builder: (_, __) => const BlockedUsersScreen(),
+    ),
     // Mentor-only in practice — the entry points (Profile menu row, Home
     // Reviews "See all") are gated to MENTOR role; the screen itself always
     // resolves to the signed-in user's own reviews.
@@ -320,10 +348,7 @@ final routerProvider = Provider<GoRouter>((ref) {
 
       // ─── Auth flow ──────────────────────────────────────────────
       GoRoute(path: '/welcome', builder: (_, __) => const WelcomeScreen()),
-      GoRoute(
-        path: '/login',
-        builder: (_, __) => const LoginScreen(),
-      ),
+      GoRoute(path: '/login', builder: (_, __) => const LoginScreen()),
       GoRoute(
         path: '/otp',
         builder: (_, state) {
@@ -436,7 +461,8 @@ final routerProvider = Provider<GoRouter>((ref) {
           ),
           GoRoute(
             path: 'users',
-            builder: (_, __) => const PlaceholderScreen(title: 'User Management'),
+            builder: (_, __) =>
+                const PlaceholderScreen(title: 'User Management'),
           ),
           GoRoute(
             path: 'universities',
