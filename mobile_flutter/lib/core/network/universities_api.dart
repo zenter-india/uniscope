@@ -72,23 +72,26 @@ class University {
   /// the Medical stream because of this gap.
   final List<String> specializations;
 
-  /// `place, state` for a list row, where `place` is the district when
-  /// present (the disambiguator for identically-named hospitals), else the
-  /// city. The place is dropped when it equals the state or is already in
-  /// the name (so a name ending "…, Basti" doesn't render "…, Basti · Basti,
-  /// Uttar Pradesh").
+  /// `place, state` for a list row, where `place` is the district when it's
+  /// usable, else the city. A candidate is skipped when it's blank, equal to
+  /// the state (some program `description` rows just hold the state name), or
+  /// already in the name (so a name ending "…, Basti" doesn't render
+  /// "…, Basti · Basti, Uttar Pradesh").
   String get locationLabel {
-    final place = (district?.trim().isNotEmpty ?? false)
+    bool usable(String? v) {
+      final t = v?.trim().toLowerCase();
+      return t != null &&
+          t.isNotEmpty &&
+          t != state.trim().toLowerCase() &&
+          !name.toLowerCase().contains(t);
+    }
+
+    final place = usable(district)
         ? district!.trim()
-        : (city?.trim().isNotEmpty ?? false)
+        : usable(city)
             ? city!.trim()
             : null;
-    if (place == null ||
-        place.toLowerCase() == state.toLowerCase() ||
-        name.toLowerCase().contains(place.toLowerCase())) {
-      return state;
-    }
-    return '$place, $state';
+    return place == null ? state : '$place, $state';
   }
 
   factory University.fromJson(Map<String, dynamic> json) => University(

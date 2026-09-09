@@ -65,10 +65,13 @@ type UniversityWithPrograms = University & {
 
 /** `Program.description` carries the district for the hospital-type rows,
  * but the source data isn't uniformly clean — some rows have `"nan"` /
- * `"nan, PIN nan"` placeholders or a bare PIN. Returns a usable district
- * string or null. (The web enrollment form's own curated label doesn't
- * filter these yet — same underlying data, worth a follow-up there.) */
-function cleanDistrict(raw: string | null | undefined): string | null {
+ * `"nan, PIN nan"` placeholders, a bare PIN, or just the state name again.
+ * Returns a usable district string or null. (The web enrollment form's own
+ * curated label doesn't filter these yet — same data, worth a follow-up.) */
+function cleanDistrict(
+  raw: string | null | undefined,
+  state?: string | null,
+): string | null {
   const value = raw?.trim();
   if (!value) return null;
   const lower = value.toLowerCase();
@@ -77,6 +80,8 @@ function cleanDistrict(raw: string | null | undefined): string | null {
   }
   // Needs at least one letter — filters bare PIN codes / punctuation.
   if (!/[a-z]/i.test(value)) return null;
+  // A handful of rows just repeat the state name — not a district.
+  if (state && lower === state.trim().toLowerCase()) return null;
   return value;
 }
 
@@ -93,7 +98,7 @@ function withSpecializations(
   ].sort();
   const district =
     programs
-      .map((program) => cleanDistrict(program.description))
+      .map((program) => cleanDistrict(program.description, rest.state))
       .find((value) => value !== null) ?? null;
   return { ...rest, specializations, district };
 }
@@ -391,7 +396,7 @@ export class UniversitiesService {
     );
     const district =
       university.programs
-        .map((program) => cleanDistrict(program.description))
+        .map((program) => cleanDistrict(program.description, university.state))
         .find((value) => value !== null) ?? null;
     return {
       ...university,
