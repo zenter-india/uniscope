@@ -120,24 +120,16 @@ export class PayoutsService {
     });
     if (recentReminder) return false;
 
-    const lastCompleted = await this.prisma.payoutRequest.findFirst({
-      where: { mentorId, status: PayoutStatus.COMPLETED },
-      orderBy: { periodEnd: 'desc' },
-    });
-    const periodStart = lastCompleted?.periodEnd ?? new Date(0);
-
-    const earned = await this.prisma.ledgerEntry.aggregate({
-      where: {
-        walletId,
-        type: LedgerEntryType.SESSION_CREDIT,
-        createdAt: { gt: periodStart },
-      },
-      _sum: { amountMinor: true },
-    });
-
+    // A mentor's wallet balance IS their unpaid earnings (every
+    // SESSION_CREDIT adds, every COMPLETED payout subtracts — mentors never
+    // top up), so a positive balance means there's something to withdraw.
     // No minimum anymore — any unpaid earnings at all makes a reminder
     // worthwhile once the mentor is otherwise eligible to request.
-    return (earned._sum.amountMinor ?? 0) > 0;
+    const wallet = await this.prisma.wallet.findUnique({
+      where: { id: walletId },
+      select: { balanceMinor: true },
+    });
+    return (wallet?.balanceMinor ?? 0) > 0;
   }
 
   /**
@@ -178,22 +170,24 @@ export class PayoutsService {
 
     const wallet = await this.prisma.wallet.findUniqueOrThrow({ where: { userId: mentorId } });
 
+    // The withdrawable amount is simply the current wallet balance. A
+    // mentor's balance only ever moves two ways: +SESSION_CREDIT (earnings)
+    // and -PAYOUT (a COMPLETED payout), so the balance is exactly "earned
+    // but not yet paid out". The `existingOpen` guard above means no
+    // PENDING/PROCESSING payout has already claimed part of it.
+    //
+    // The previous calc summed SESSION_CREDIT since the last COMPLETED
+    // payout's `periodEnd` — which stranded earnings forever whenever a
+    // COMPLETED payout's amount was less than the credits in its period
+    // (e.g. a hand-entered admin payout). `periodStart`/`periodEnd` are now
+    // kept only as informational bookkeeping on the row.
+    const amountMinor = wallet.balanceMinor;
     const lastCompleted = await this.prisma.payoutRequest.findFirst({
       where: { mentorId, status: PayoutStatus.COMPLETED },
       orderBy: { periodEnd: 'desc' },
     });
     const periodStart = lastCompleted?.periodEnd ?? new Date(0);
     const periodEnd = new Date();
-
-    const earned = await this.prisma.ledgerEntry.aggregate({
-      where: {
-        walletId: wallet.id,
-        type: LedgerEntryType.SESSION_CREDIT,
-        createdAt: { gt: periodStart, lte: periodEnd },
-      },
-      _sum: { amountMinor: true },
-    });
-    const amountMinor = earned._sum.amountMinor ?? 0;
 
     if (amountMinor <= 0) {
       throw new BadRequestException('No unpaid earnings to withdraw yet.');
