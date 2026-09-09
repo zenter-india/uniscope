@@ -11,33 +11,44 @@ import '../../widgets/app_widgets.dart';
 import '../profile/profile_options.dart' show kReviewTags;
 import 'review_choices.dart';
 
-/// Opens the 13-question review screen for [universityId], pre-filled for an
-/// edit when the caller already has a review. Returns `true` when a review
-/// was posted/updated (the screen itself invalidates the four
-/// university-review providers; a caller with extra providers to refresh —
-/// e.g. `universityDetailProvider` — does so on a `true` result). Replaces
-/// the old `WriteReviewSheet` bottom sheet everywhere.
+/// Opens the 13-question review screen for [universityId]. A review is
+/// **write-once** — if the caller already has one, this shows a note and
+/// returns `null` without opening the form. Returns `true` when a new
+/// review was posted (the screen itself invalidates the university-review
+/// providers; a caller with extra providers to refresh — e.g.
+/// `universityDetailProvider` — does so on a `true` result). Replaces the
+/// old `WriteReviewSheet` bottom sheet everywhere.
 Future<bool?> openUniversityReview(
   BuildContext context,
   WidgetRef ref, {
   required String universityId,
   required String universityName,
 }) async {
-  UniversityReview? existing;
+  bool alreadyReviewed = false;
   try {
-    existing = await ref
+    alreadyReviewed = await ref
         .read(universityReviewsApiProvider)
-        .findMine(universityId);
+        .hasReviewed(universityId);
   } catch (_) {
-    existing = null;
+    alreadyReviewed = false;
   }
   if (!context.mounted) return null;
+  if (alreadyReviewed) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          "You've already reviewed $universityName. A review can't be "
+          'changed once submitted.',
+        ),
+      ),
+    );
+    return null;
+  }
   return context.push<bool>(
     '/college-review',
     extra: {
       'universityId': universityId,
       'universityName': universityName,
-      'existingReview': existing,
     },
   );
 }
@@ -49,19 +60,18 @@ Future<bool?> openUniversityReview(
 /// All 13 answers are required — Submit stays disabled
 /// until every one is set; the tag chips and the free-text summary are
 /// optional. Reached from "Rate Your College" (Profile), the college detail
-/// screen, and the review breakdown screen. Opens pre-filled and submits
-/// via `update` when the caller already has a review.
+/// screen, and the review breakdown screen. A review is write-once — the
+/// only entry point (`openUniversityReview`) refuses to open this screen
+/// once the caller has reviewed, so there is no edit mode.
 class UniversityReviewScreen extends ConsumerStatefulWidget {
   const UniversityReviewScreen({
     super.key,
     required this.universityId,
     required this.universityName,
-    this.existingReview,
   });
 
   final String universityId;
   final String universityName;
-  final UniversityReview? existingReview;
 
   @override
   ConsumerState<UniversityReviewScreen> createState() =>
@@ -81,32 +91,7 @@ class _UniversityReviewScreenState
   String? _error;
   bool _done = false;
 
-  bool get _isEditing => widget.existingReview != null;
   static const int _total = 13;
-
-  @override
-  void initState() {
-    super.initState();
-    final r = widget.existingReview;
-    if (r != null) {
-      final d = UniversityReviewDraft.fromReview(r);
-      _sliders['clinicalExposureRating'] = d.academicExposure;
-      _sliders['campusLifeRating'] = d.campusCulture;
-      _sliders['workloadRating'] = d.workload;
-      _sliders['placementsRating'] = d.futureValue;
-      _choices['restroomFacilities'] = d.restroomFacilities;
-      _choices['raggingCulture'] = d.raggingCulture;
-      _choices['facultyApproachability'] = d.facultyApproachability;
-      _choices['stipendStatus'] = d.stipendStatus;
-      _choices['hostelAvailability'] = d.hostelAvailability;
-      _choices['hostelSafety'] = d.hostelSafety;
-      _choices['wouldRecommend'] = d.wouldRecommend;
-      _choices['valueForMoney'] = d.valueForMoney;
-      _overall = d.overallRating;
-      _tags.addAll(d.tags);
-      _bodyController.text = d.body ?? '';
-    }
-  }
 
   @override
   void dispose() {
@@ -143,16 +128,12 @@ class _UniversityReviewScreenState
       body: _bodyController.text,
     );
     try {
-      final api = ref.read(universityReviewsApiProvider);
-      if (_isEditing) {
-        await api.update(widget.universityId, draft);
-      } else {
-        await api.create(widget.universityId, draft);
-      }
+      await ref
+          .read(universityReviewsApiProvider)
+          .create(widget.universityId, draft);
       // Refresh every surface that reads this university's reviews.
       ref.invalidate(universityReviewsListProvider(widget.universityId));
       ref.invalidate(hasReviewedUniversityProvider(widget.universityId));
-      ref.invalidate(myUniversityReviewProvider(widget.universityId));
       ref.invalidate(universityReviewSummaryProvider(widget.universityId));
       if (!mounted) return;
       setState(() {
@@ -194,7 +175,7 @@ class _UniversityReviewScreenState
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(_isEditing ? 'Edit your review' : 'Write a Review'),
+            const Text('Write a Review'),
             Text(
               widget.universityName,
               style: const TextStyle(
@@ -271,7 +252,6 @@ class _UniversityReviewScreenState
             remaining: _total - _answered,
             submitting: _submitting,
             onSubmit: _complete && !_submitting ? _submit : null,
-            editing: _isEditing,
           ),
         ],
       ),
@@ -713,12 +693,10 @@ class _SubmitBar extends StatelessWidget {
     required this.remaining,
     required this.submitting,
     required this.onSubmit,
-    required this.editing,
   });
   final int remaining;
   final bool submitting;
   final VoidCallback? onSubmit;
-  final bool editing;
 
   @override
   Widget build(BuildContext context) {
@@ -726,8 +704,6 @@ class _SubmitBar extends StatelessWidget {
         ? null
         : remaining > 0
         ? '$remaining question${remaining == 1 ? '' : 's'} remaining'
-        : editing
-        ? 'Save changes'
         : 'Submit review';
     return Container(
       color: AppColors.surface,

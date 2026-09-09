@@ -647,7 +647,9 @@ class _ReviewsTab extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          if (canReview)
+          // A review is write-once — offer the button only until it's
+          // posted, then a plain "you've reviewed this" line.
+          if (canReview && hasReviewedAsync.value != true)
             SizedBox(
               width: double.infinity,
               child: OutlinedButton.icon(
@@ -665,11 +667,19 @@ class _ReviewsTab extends ConsumerWidget {
                     ref.invalidate(universityDetailProvider(university.slug));
                   }
                 },
-                icon: const Icon(Icons.edit_rounded, size: 18),
-                label: Text(
-                  hasReviewedAsync.value == true
-                      ? 'Edit your review'
-                      : 'Write a review',
+                icon: const Icon(Icons.rate_review_rounded, size: 18),
+                label: const Text('Write a review'),
+              ),
+            )
+          else if (canReview && hasReviewedAsync.value == true)
+            const Padding(
+              padding: EdgeInsets.only(bottom: AppSpacing.xs),
+              child: Text(
+                "You've reviewed this college — reviews can't be changed "
+                'once submitted.',
+                style: TextStyle(
+                  fontSize: AppFont.xs,
+                  color: AppColors.textSecondary,
                 ),
               ),
             ),

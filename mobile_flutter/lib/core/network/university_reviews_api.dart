@@ -241,15 +241,6 @@ class UniversityReviewsApi {
     return res.data ?? false;
   }
 
-  /// Full content of the caller's own review, or null if none — backs the
-  /// edit form's prefill.
-  Future<UniversityReview?> findMine(String universityId) async {
-    final res = await _dio.get<Map<String, dynamic>?>(
-      '/universities/$universityId/reviews/mine/detail',
-    );
-    return res.data == null ? null : UniversityReview.fromJson(res.data!);
-  }
-
   Future<UniversityReviewSummary> summary(String universityId) async {
     final res = await _dio.get<Map<String, dynamic>>(
       '/universities/$universityId/reviews/summary',
@@ -257,23 +248,13 @@ class UniversityReviewsApi {
     return UniversityReviewSummary.fromJson(res.data!);
   }
 
+  /// Posts the caller's review. A review is write-once — the backend 409s a
+  /// second attempt and there is no edit path.
   Future<UniversityReview> create(
     String universityId,
     UniversityReviewDraft draft,
   ) async {
     final res = await _dio.post<Map<String, dynamic>>(
-      '/universities/$universityId/reviews',
-      data: draft.toJson(),
-    );
-    return UniversityReview.fromJson(res.data!);
-  }
-
-  /// Edits the caller's own existing review — 404s if there isn't one yet.
-  Future<UniversityReview> update(
-    String universityId,
-    UniversityReviewDraft draft,
-  ) async {
-    final res = await _dio.patch<Map<String, dynamic>>(
       '/universities/$universityId/reviews',
       data: draft.toJson(),
     );
@@ -296,12 +277,6 @@ final hasReviewedUniversityProvider = FutureProvider.autoDispose
     .family<bool, String>(
       (ref, universityId) =>
           ref.watch(universityReviewsApiProvider).hasReviewed(universityId),
-    );
-
-final myUniversityReviewProvider = FutureProvider.autoDispose
-    .family<UniversityReview?, String>(
-      (ref, universityId) =>
-          ref.watch(universityReviewsApiProvider).findMine(universityId),
     );
 
 final universityReviewSummaryProvider = FutureProvider.autoDispose

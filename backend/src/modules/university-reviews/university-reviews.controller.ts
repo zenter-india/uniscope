@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Patch, Post, Query, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Query, UseGuards } from '@nestjs/common';
 import { CurrentUser } from '../../auth/decorators/current-user.decorator.js';
 import type { JwtPayload } from '../../auth/decorators/current-user.decorator.js';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard.js';
@@ -41,22 +41,12 @@ export class UniversityReviewsController {
     return this.universityReviewsService.hasReviewed(user.sub, universityId);
   }
 
-  /** Full content of the caller's own review (or null) — backs the edit
-   * form's prefill. Separate from `hasReviewed` above so that endpoint's
-   * plain-boolean response shape stays untouched for its existing callers. */
+  /** Full content of the caller's own review, or null. Kept for the college
+   * detail screen's "your review" section — a review is write-once, there is
+   * no edit form to prefill. */
   @UseGuards(JwtAuthGuard)
   @Get('mine/detail')
   findMine(@CurrentUser() user: JwtPayload, @Param('universityId') universityId: string) {
     return this.universityReviewsService.findMine(user.sub, universityId);
-  }
-
-  @UseGuards(JwtAuthGuard)
-  @Patch()
-  update(
-    @CurrentUser() user: JwtPayload,
-    @Param('universityId') universityId: string,
-    @Body() dto: CreateUniversityReviewDto,
-  ) {
-    return this.universityReviewsService.update(user.sub, universityId, dto);
   }
 }

@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../core/network/university_reviews_api.dart' show UniversityReview;
 import '../features/admin/admin_dashboard_screen.dart';
 import '../features/auth/aspirant_onboarding_screen.dart';
 import '../features/auth/login_screen.dart';
@@ -415,7 +414,6 @@ final routerProvider = Provider<GoRouter>((ref) {
           return UniversityReviewScreen(
             universityId: a['universityId'] as String? ?? '',
             universityName: a['universityName'] as String? ?? 'Your college',
-            existingReview: a['existingReview'] as UniversityReview?,
           );
         },
       ),

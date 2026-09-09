@@ -267,16 +267,44 @@ class ProfileHomeScreen extends ConsumerWidget {
                                     myProfileAsync.asData?.value.universityId;
                                 final canReview = isVerified &&
                                     universityId != null;
+                                // A review is write-once — once posted the row
+                                // reads "Reviewed" and does nothing.
+                                final alreadyReviewed = canReview &&
+                                    (ref
+                                            .watch(
+                                              hasReviewedUniversityProvider(
+                                                universityId,
+                                              ),
+                                            )
+                                            .asData
+                                            ?.value ??
+                                        false);
                                 return _MenuRow(
                                   icon: Icons.rate_review_rounded,
-                                  label: 'Rate Your College',
-                                  locked: !canReview,
-                                  subtitle: canReview
+                                  label: alreadyReviewed
+                                      ? 'College Review'
+                                      : 'Rate Your College',
+                                  locked: !canReview || alreadyReviewed,
+                                  subtitle: alreadyReviewed
+                                      ? "You've reviewed your college"
+                                      : canReview
                                       ? null
                                       : !isVerified
                                       ? 'Verify your account first'
                                       : 'No college linked to your account yet',
-                                  onTap: canReview
+                                  onTap: alreadyReviewed
+                                      ? () => ScaffoldMessenger.of(
+                                          context,
+                                        ).showSnackBar(
+                                          const SnackBar(
+                                            content: Text(
+                                              "You've already reviewed your "
+                                              "college — a review can't be "
+                                              'changed once submitted.',
+                                            ),
+                                          ),
+                                        )
+                                      : canReview
                                       ? () => openUniversityReview(
                                           context,
                                           ref,
