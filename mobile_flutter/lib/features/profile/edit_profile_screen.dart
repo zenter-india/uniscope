@@ -1,21 +1,26 @@
-import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/network/users_api.dart';
 import '../../core/theme/app_theme.dart';
-import '../../state/auth_controller.dart' show UserRole, authControllerProvider;
+import '../../state/auth_controller.dart' show UserRole;
 import '../../widgets/app_widgets.dart';
+import '../auth/onboarding_widgets.dart';
+import 'profile_options.dart';
 
 /// Profile Details (route `/profile/edit`). Per explicit client decision
-/// (2026-09-08) the **display name is the only editable field** here, for
-/// both roles — everything else (ID, gender, field of study, college,
-/// qualification, bio, languages, state, city, …) is a read-only
-/// `_DetailRow`; those changes go through support. The avatar is the other
-/// exception, edited via the pencil badge → `/profile/avatar`. This
-/// supersedes the 2026-09-07 partial-revert that had let a MENTOR also edit
-/// year-of-study / bio / languages / time-slots from this screen.
+/// (2026-09-06), most profile fields are read-only after sign-up — changes
+/// go through support. **One deliberate exception (2026-09-07, per explicit
+/// follow-up request):** a MENTOR keeps a small editable set that
+/// legitimately changes over time — year of study / graduation year (+ its
+/// privacy toggle), bio, languages, and preferred call-time slots — because
+/// those are exactly the things a real mentor's situation moves on (a new
+/// academic year, a better bio, more languages, a schedule change), unlike
+/// name/DOB/college/degree which are fixed identity facts set once at
+/// verification. An ASPIRANT has no editable fields at all; their block
+/// below stays the plain read-only `_DetailRow` list. The avatar stays
+/// editable for both roles (the pencil badge → `/profile/avatar`).
 class EditProfileScreen extends ConsumerStatefulWidget {
   const EditProfileScreen({super.key});
 
@@ -24,59 +29,92 @@ class EditProfileScreen extends ConsumerStatefulWidget {
 }
 
 class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
-  final _nameController = TextEditingController();
-  String _initialName = '';
+  final _bioController = TextEditingController();
+  final _graduationYearController = TextEditingController();
+  String? _currentStatus;
+  String? _yearOfStudyLabel;
+  bool _yearInfoPrivate = false;
+  final Set<String> _languages = {};
+  // A saved language that isn't one of kLanguageOptions' fixed values is a
+  // previously-typed "Others" answer (see _save's mapping below — the
+  // literal "Others" is never itself stored, it's replaced by what was
+  // typed).
+  final _languagesOtherController = TextEditingController();
+  final Set<String> _timings = {};
   bool _loaded = false;
   bool _saving = false;
-  String _error = '';
 
   void _hydrate(UserProfile profile) {
     if (_loaded) return;
     _loaded = true;
-    _initialName = profile.displayName;
-    _nameController.text = profile.displayName;
+    _bioController.text = profile.bio ?? '';
+    if (profile.graduationYear != null) {
+      _currentStatus = 'Graduated';
+      _graduationYearController.text = '${profile.graduationYear}';
+    } else if (profile.yearOfStudy != null) {
+      _currentStatus = 'Currently Studying';
+      final index = profile.yearOfStudy! - 1;
+      if (index >= 0 && index < kYearsOfStudy.length) {
+        _yearOfStudyLabel = kYearsOfStudy[index];
+      }
+    }
+    _yearInfoPrivate = profile.yearInfoPrivate;
+    final customLanguages = profile.languages
+        .where((l) => !kLanguageOptions.contains(l))
+        .toList();
+    _languages.addAll(profile.languages.where(kLanguageOptions.contains));
+    if (customLanguages.isNotEmpty) {
+      _languages.add('Others');
+      _languagesOtherController.text = customLanguages.join(', ');
+    }
+    _timings.addAll(profile.availableDays);
   }
 
   @override
   void dispose() {
-    _nameController.dispose();
+    _bioController.dispose();
+    _graduationYearController.dispose();
+    _languagesOtherController.dispose();
     super.dispose();
   }
 
-  bool get _canSave {
-    final name = _nameController.text.trim();
-    return !_saving && name.length >= 2 && name != _initialName.trim();
+  int? _yearOfStudyValue() {
+    if (_yearOfStudyLabel == null) return null;
+    final index = kYearsOfStudy.indexOf(_yearOfStudyLabel!);
+    return index == -1 ? null : index + 1;
   }
 
   Future<void> _save() async {
-    final name = _nameController.text.trim();
-    setState(() {
-      _saving = true;
-      _error = '';
-    });
+    setState(() => _saving = true);
     try {
-      final updated = await ref
+      final resolvedLanguages = _languages
+          .map((l) => l == 'Others' ? _languagesOtherController.text.trim() : l)
+          .where((l) => l.isNotEmpty)
+          .toList();
+      await ref
           .read(usersApiProvider)
-          .updateProfile(displayName: name);
+          .updateProfile(
+            bio: _bioController.text.trim(),
+            languages: resolvedLanguages,
+            availableDays: _timings.toList(),
+            yearInfoPrivate: _yearInfoPrivate,
+            yearOfStudy: _currentStatus == 'Currently Studying'
+                ? _yearOfStudyValue()
+                : null,
+            graduationYear: _currentStatus == 'Graduated'
+                ? int.tryParse(_graduationYearController.text.trim())
+                : null,
+          );
       ref.invalidate(myProfileProvider);
-      // Keep the cached auth user (used for greetings / avatars app-wide) in
-      // step so the new name shows immediately elsewhere.
-      ref.read(authControllerProvider.notifier).setUser(updated.toAuthUser());
       if (!mounted) return;
-      setState(() => _initialName = name);
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text('Display name updated')));
-    } on DioException catch (e) {
-      final msg = e.response?.data is Map
-          ? (e.response!.data['message']?.toString() ??
-                'Could not save. Try again.')
-          : 'Could not save. Check your connection and try again.';
+      ).showSnackBar(const SnackBar(content: Text('Profile updated')));
+    } catch (e) {
       if (!mounted) return;
-      setState(() => _error = msg);
-    } catch (_) {
-      if (!mounted) return;
-      setState(() => _error = 'Could not save. Try again.');
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Could not save: $e')));
     } finally {
       if (mounted) setState(() => _saving = false);
     }
@@ -101,20 +139,16 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
           onAction: () => ref.invalidate(myProfileProvider),
         ),
         data: (profile) {
-          _hydrate(profile);
           final isMentor = profile.role == UserRole.mentor;
+          if (isMentor) _hydrate(profile);
 
           final rows = <(String, String)>[
+            ('Display name', profile.displayName),
             if (profile.uniqueId != null) ('ID', profile.uniqueId!),
             if ((profile.gender ?? '').isNotEmpty) ('Gender', profile.gender!),
-            if (isMentor) ...[
-              ('Field of study', _orDash(profile.stream)),
-              ('Bio', _orDash(profile.bio)),
-              (
-                'Languages',
-                profile.languages.isEmpty ? '—' : profile.languages.join(', '),
-              ),
-            ] else ...[
+            if (isMentor)
+              ('Field of study', _orDash(profile.stream))
+            else ...[
               ('Qualification', _orDash(profile.qualification)),
               ('Field of interest', _orDash(profile.stream)),
               // Only set once a qualification beyond "Higher Secondary
@@ -176,97 +210,6 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
-                        'Display name',
-                        style: TextStyle(
-                          fontSize: AppFont.sm,
-                          fontWeight: AppFont.semibold,
-                          color: AppColors.textSecondary,
-                        ),
-                      ),
-                      const SizedBox(height: AppSpacing.xs),
-                      TextField(
-                        controller: _nameController,
-                        enabled: !_saving,
-                        maxLength: 60,
-                        onChanged: (_) => setState(() {
-                          if (_error.isNotEmpty) _error = '';
-                        }),
-                        style: const TextStyle(
-                          fontSize: AppFont.md,
-                          color: AppColors.textPrimary,
-                        ),
-                        decoration: InputDecoration(
-                          counterText: '',
-                          filled: true,
-                          fillColor: AppColors.surface,
-                          hintText: 'e.g. MedStudent_Chennai',
-                          hintStyle: const TextStyle(
-                            color: AppColors.textMuted,
-                          ),
-                          contentPadding: const EdgeInsets.all(AppSpacing.md),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(AppRadius.md),
-                            borderSide: BorderSide(
-                              color: _error.isNotEmpty
-                                  ? AppColors.error
-                                  : AppColors.border,
-                              width: 1.5,
-                            ),
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(AppRadius.md),
-                            borderSide: const BorderSide(
-                              color: AppColors.primary,
-                              width: 1.5,
-                            ),
-                          ),
-                          disabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(AppRadius.md),
-                            borderSide: const BorderSide(
-                              color: AppColors.border,
-                              width: 1.5,
-                            ),
-                          ),
-                        ),
-                      ),
-                      if (_error.isNotEmpty) ...[
-                        const SizedBox(height: AppSpacing.xs),
-                        Text(
-                          _error,
-                          style: const TextStyle(
-                            fontSize: AppFont.xs,
-                            color: AppColors.error,
-                          ),
-                        ),
-                      ],
-                      const SizedBox(height: AppSpacing.xs),
-                      const Text(
-                        'This is the anonymous name shown to mentors and '
-                        'aspirants. Your real name is never shown.',
-                        style: TextStyle(
-                          fontSize: AppFont.xs,
-                          color: AppColors.textMuted,
-                        ),
-                      ),
-                      const SizedBox(height: AppSpacing.sm),
-                      SizedBox(
-                        width: double.infinity,
-                        child: FilledButton(
-                          onPressed: _canSave ? _save : null,
-                          child: _saving
-                              ? const SizedBox(
-                                  width: 18,
-                                  height: 18,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    color: Colors.white,
-                                  ),
-                                )
-                              : const Text('Save'),
-                        ),
-                      ),
-                      const SizedBox(height: AppSpacing.lg),
                       AppCard(
                         padding: EdgeInsets.zero,
                         child: Column(
@@ -275,21 +218,137 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                               _DetailRow(
                                 label: rows[i].$1,
                                 value: rows[i].$2,
-                                isLast: i == rows.length - 1,
+                                isLast: i == rows.length - 1 && !isMentor,
                               ),
                           ],
                         ),
                       ),
-                      const SizedBox(height: AppSpacing.md),
-                      const Text(
-                        'These details were set during sign-up and can\'t be '
-                        'changed here — contact support if something needs '
-                        'updating.',
-                        style: TextStyle(
-                          fontSize: AppFont.xs,
-                          color: AppColors.textMuted,
+                      if (isMentor) ...[
+                        const SizedBox(height: AppSpacing.md),
+                        const OnboardingFieldLabel('Current status'),
+                        OnboardingSingleChipGroup(
+                          options: kCurrentStatuses,
+                          selected: _currentStatus,
+                          onSelect: (v) => setState(() => _currentStatus = v),
                         ),
-                      ),
+                        if (_currentStatus == 'Currently Studying') ...[
+                          const SizedBox(height: AppSpacing.md),
+                          const OnboardingFieldLabel('Year of study'),
+                          OnboardingSingleChipGroup(
+                            options: kYearsOfStudy,
+                            selected: _yearOfStudyLabel,
+                            onSelect: (v) =>
+                                setState(() => _yearOfStudyLabel = v),
+                          ),
+                          const SizedBox(height: AppSpacing.sm),
+                          OnboardingToggle(
+                            value: _yearInfoPrivate,
+                            onChanged: (v) =>
+                                setState(() => _yearInfoPrivate = v),
+                            label: 'Keep my year of study private',
+                            hint:
+                                'When on, this stays anonymous and isn\'t shown publicly on your profile.',
+                          ),
+                        ],
+                        if (_currentStatus == 'Graduated') ...[
+                          const SizedBox(height: AppSpacing.md),
+                          const OnboardingFieldLabel('Year of graduation'),
+                          TextFormField(
+                            controller: _graduationYearController,
+                            keyboardType: TextInputType.number,
+                            onChanged: (_) => setState(() {}),
+                            decoration: const InputDecoration(
+                              hintText: 'e.g. 2023',
+                            ),
+                          ),
+                          const SizedBox(height: AppSpacing.sm),
+                          OnboardingToggle(
+                            value: _yearInfoPrivate,
+                            onChanged: (v) =>
+                                setState(() => _yearInfoPrivate = v),
+                            label: 'Keep my graduation year private',
+                            hint:
+                                'When on, this stays anonymous and isn\'t shown publicly on your profile.',
+                          ),
+                        ],
+                        const SizedBox(height: AppSpacing.md),
+                        const OnboardingFieldLabel('Bio'),
+                        TextField(
+                          controller: _bioController,
+                          maxLines: 3,
+                          decoration: const InputDecoration(
+                            hintText:
+                                'A short introduction for aspirants browsing mentors',
+                          ),
+                        ),
+                        const SizedBox(height: AppSpacing.md),
+                        const OnboardingFieldLabel('Languages'),
+                        OnboardingChipGroup(
+                          options: kLanguageOptions,
+                          selected: _languages,
+                          onToggle: (option, value) => setState(() {
+                            if (value) {
+                              _languages.add(option);
+                            } else {
+                              _languages.remove(option);
+                            }
+                          }),
+                        ),
+                        if (_languages.contains('Others')) ...[
+                          const SizedBox(height: AppSpacing.sm),
+                          TextField(
+                            controller: _languagesOtherController,
+                            onChanged: (_) => setState(() {}),
+                            decoration: const InputDecoration(
+                              hintText: 'Enter language',
+                            ),
+                          ),
+                        ],
+                        const SizedBox(height: AppSpacing.md),
+                        const OnboardingFieldLabel(
+                          'Available time slot (choose up to 2)',
+                        ),
+                        OnboardingChipGroup(
+                          options: kTimeSlots,
+                          selected: _timings,
+                          maxSelections: 2,
+                          onToggle: (option, value) => setState(() {
+                            if (value) {
+                              _timings.add(option);
+                            } else {
+                              _timings.remove(option);
+                            }
+                          }),
+                        ),
+                        const SizedBox(height: AppSpacing.xl),
+                        SizedBox(
+                          width: double.infinity,
+                          child: FilledButton(
+                            onPressed: _saving ? null : _save,
+                            child: _saving
+                                ? const SizedBox(
+                                    width: 18,
+                                    height: 18,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      color: Colors.white,
+                                    ),
+                                  )
+                                : const Text('Save changes'),
+                          ),
+                        ),
+                      ] else ...[
+                        const SizedBox(height: AppSpacing.md),
+                        const Text(
+                          'These details were set during sign-up and can\'t '
+                          'be changed here. Your profile photo is the '
+                          'exception — tap the pencil above to update it.',
+                          style: TextStyle(
+                            fontSize: AppFont.xs,
+                            color: AppColors.textMuted,
+                          ),
+                        ),
+                      ],
                       const SizedBox(height: AppSpacing.xl),
                     ],
                   ),

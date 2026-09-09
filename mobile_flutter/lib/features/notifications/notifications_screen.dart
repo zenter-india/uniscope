@@ -135,7 +135,19 @@ class _NotificationTile extends ConsumerWidget {
           ref.invalidate(unreadCountProvider);
         }
         if (notification.sessionId != null && context.mounted) {
-          context.push('/chats');
+          // `/chats` and `/chats/room` are StatefulShellBranch routes (the
+          // Sessions tab) — they must be reached with `go` (switch to the
+          // tab), never `push`, which stacks a shell location on the root
+          // navigator and renders a blank screen while wedging the tab bar.
+          // Mirrors push_service._handleDeepLinkData's `router.go`.
+          if (notification.type == 'MESSAGE') {
+            context.go(
+              '/chats/room',
+              extra: {'sessionId': notification.sessionId},
+            );
+          } else {
+            context.go('/chats');
+          }
         }
       },
       child: Row(

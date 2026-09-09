@@ -145,11 +145,19 @@ class HomeScreen extends ConsumerWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // ─── Canopy ─────────────────────────────────────────────
-              // Flat solid brand colour (no gradient, per request) — the
-              // curved pull-up of the sheet below is unchanged.
+              // Pale mint → page-background wash (the header colour from the
+              // approved screenshot). The sheet pull-up / curve below is
+              // deliberately unchanged. Header text/icons are dark so they
+              // read on the pale fill.
               Container(
                 width: double.infinity,
-                decoration: const BoxDecoration(color: AppColors.primary),
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [AppColors.primaryLight, AppColors.background],
+                  ),
+                ),
                 padding: EdgeInsets.only(
                   top: MediaQuery.of(context).padding.top,
                   // Trailing space the sheet is pulled up over, so the
@@ -172,24 +180,13 @@ class HomeScreen extends ConsumerWidget {
                           Flexible(
                             child: Row(
                               children: [
-                                // The logo mark is dark navy/teal, so on the
-                                // green canopy it all but disappears — sit it
-                                // on a white chip so it reads, same as the
-                                // avatar's white ring on the other side.
-                                Container(
-                                  padding: const EdgeInsets.all(5),
-                                  decoration: BoxDecoration(
-                                    color: Colors.white,
-                                    borderRadius: BorderRadius.circular(
-                                      AppRadius.sm,
-                                    ),
-                                  ),
-                                  child: Image.asset(
-                                    'assets/logo/uniscope_icon.png',
-                                    width: 30,
-                                    height: 30,
-                                    fit: BoxFit.contain,
-                                  ),
+                                // Dark navy logo mark reads directly on the
+                                // pale wash — no white chip needed anymore.
+                                Image.asset(
+                                  'assets/logo/uniscope_icon.png',
+                                  width: 34,
+                                  height: 34,
+                                  fit: BoxFit.contain,
                                 ),
                                 const SizedBox(width: AppSpacing.sm),
                                 Flexible(
@@ -218,9 +215,7 @@ class HomeScreen extends ConsumerWidget {
                                   decoration: BoxDecoration(
                                     shape: BoxShape.circle,
                                     border: Border.all(
-                                      color: Colors.white.withValues(
-                                        alpha: 0.85,
-                                      ),
+                                      color: AppColors.border,
                                       width: 2,
                                     ),
                                   ),
@@ -251,36 +246,41 @@ class HomeScreen extends ConsumerWidget {
                               children: [
                                 Text.rich(
                                   TextSpan(
-                                    // White on the solid brand-colour canopy
-                                    // (was AppColors.primary — same colour as
-                                    // the fill now, so it would be invisible).
+                                    // Split style, matching the screenshot:
+                                    // dark greeting prefix + teal first name,
+                                    // at the larger xxl size.
                                     children: firstName == null
                                         ? [TextSpan(text: _greeting)]
                                         : [
                                             TextSpan(text: '$_greeting, '),
-                                            TextSpan(text: firstName),
+                                            TextSpan(
+                                              text: firstName,
+                                              style: const TextStyle(
+                                                color: AppColors.primary,
+                                              ),
+                                            ),
                                           ],
                                   ),
                                   overflow: TextOverflow.ellipsis,
                                   maxLines: 1,
                                   style: const TextStyle(
-                                    fontSize: AppFont.md,
+                                    fontSize: AppFont.xxl,
                                     fontWeight: AppFont.extraBold,
-                                    color: Colors.white,
+                                    color: AppColors.textPrimary,
                                   ),
                                 ),
                                 const SizedBox(height: 2),
                                 Text(
                                   'What are you looking for today?',
-                                  style: TextStyle(
+                                  style: const TextStyle(
                                     fontSize: AppFont.xs,
-                                    color: Colors.white.withValues(alpha: 0.82),
+                                    color: AppColors.textSecondary,
                                   ),
                                 ),
                               ],
                             ),
                           ),
-                          const NotificationBell(color: Colors.white),
+                          const NotificationBell(color: AppColors.textPrimary),
                         ],
                       ),
                     ),
