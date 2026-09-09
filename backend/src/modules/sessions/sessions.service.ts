@@ -15,6 +15,7 @@ import {
   Session,
   SessionStatus,
   SessionType,
+  UserRole,
 } from '@prisma/client';
 import { adminOrderBy } from '../../common/helpers/admin-sort.helper.js';
 import {
@@ -324,6 +325,98 @@ export class SessionsService {
       type: isAudioCall ? NotificationType.SESSION_REQUEST : NotificationType.MESSAGE,
       title: isAudioCall ? callTitle : 'New chat',
       body: isAudioCall ? callBody : 'A student started a chat with you.',
+      metadata: { sessionId: session.id },
+    });
+
+    return this.toResponseById(session.id);
+  }
+
+  /**
+   * Mentor-initiated chat with a student. Aspirants normally open the first
+   * chat (see `create` — `POST /sessions` is aspirant-scoped), but a mentor
+   * with a student on their Sessions tab needs to be able to reach them
+   * without waiting for the student to message first.
+   *
+   * Scoped, on purpose:
+   *  - caller must be a MENTOR,
+   *  - they must ALREADY share at least one session with this student (any
+   *    type, any status) — this is "message someone you're working with",
+   *    not a cold-outreach / people-search capability,
+   *  - chat only — a mentor never initiates an AUDIO_CALL (calls are booked
+   *    and paid for by the aspirant; the mentor is never billed).
+   *
+   * Idempotent: returns the existing active CHAT thread if there is one, so a
+   * double-tap can't spawn a second channel.
+   */
+  async startChatWithStudent(
+    mentorId: string,
+    aspirantId: string,
+  ): Promise<SessionResponse> {
+    if (mentorId === aspirantId) {
+      throw new ConflictException('You cannot start a chat with yourself');
+    }
+
+    const caller = await this.prisma.user.findUnique({
+      where: { id: mentorId },
+      select: { role: true },
+    });
+    if (caller?.role !== UserRole.MENTOR) {
+      throw new ForbiddenException(
+        'Only mentors can start a chat with a student from here',
+      );
+    }
+
+    // "Only existing relationships" — the mentor must already be a party to
+    // at least one session with this student.
+    const shared = await this.prisma.session.findFirst({
+      where: { mentorId, aspirantId },
+      select: { id: true },
+    });
+    if (!shared) {
+      throw new ForbiddenException(
+        'You can only start a chat with a student you already have a session with',
+      );
+    }
+
+    // Same 404-not-403 block handling as create() — don't leak block state.
+    if (
+      await this.blocksService.isBlockedEitherDirection(mentorId, aspirantId)
+    ) {
+      throw new NotFoundException(`Student '${aspirantId}' not found`);
+    }
+
+    const existing = await this.prisma.session.findFirst({
+      where: {
+        mentorId,
+        aspirantId,
+        type: SessionType.CHAT,
+        status: { in: ACTIVE_STATUSES },
+      },
+    });
+    if (existing) return this.toResponseById(existing.id);
+
+    const session = await this.prisma.session.create({
+      data: {
+        aspirantId,
+        mentorId,
+        type: SessionType.CHAT,
+        ratePerMinuteMinor: 0, // chat is always free
+      },
+    });
+
+    // CHAT opens immediately — provision the channel and mark ACCEPTED,
+    // exactly as an aspirant-initiated chat does in create().
+    await this.chatService.ensureChannelForSession(session.id);
+    await this.prisma.session.update({
+      where: { id: session.id },
+      data: { status: SessionStatus.ACCEPTED, respondedAt: new Date() },
+    });
+
+    await this.notificationsService.send({
+      userId: aspirantId,
+      type: NotificationType.MESSAGE,
+      title: 'New chat',
+      body: 'A mentor started a chat with you.',
       metadata: { sessionId: session.id },
     });
 

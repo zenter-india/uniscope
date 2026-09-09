@@ -71,6 +71,17 @@ export class SessionsController {
     return this.sessionsService.create(user.sub, dto);
   }
 
+  /** Mentor-initiated chat with a student they already share a session with
+   * — find-or-create the CHAT thread. See SessionsService.startChatWithStudent. */
+  @Post('chat-with/:aspirantId')
+  @HttpCode(HttpStatus.OK)
+  startChatWithStudent(
+    @CurrentUser() user: JwtPayload,
+    @Param('aspirantId') aspirantId: string,
+  ) {
+    return this.sessionsService.startChatWithStudent(user.sub, aspirantId);
+  }
+
   @Get()
   list(@CurrentUser() user: JwtPayload, @Query() query: ListSessionsDto) {
     return this.sessionsService.findAll(user.sub, query);
