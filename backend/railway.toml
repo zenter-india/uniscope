@@ -10,13 +10,7 @@ builder = "NIXPACKS"
 buildCommand = "npm install --include=dev && npx prisma generate && npm run build && pip install --break-system-packages -r scripts/data/requirements.txt && python3 -m playwright install --with-deps chromium"
 
 [deploy]
-# TEMP (2026-09-09): 20260909210000's first deploy failed mid-migration (a
-# unique-constraint hit that the rewrite fixes) and Prisma parks a failed
-# migration, blocking every deploy. `resolve --rolled-back` clears it so the
-# fixed migration re-runs; `|| true` makes it a no-op once applied. Revert
-# this line to the plain `npx prisma migrate deploy && node dist/main.js` on
-# the next backend change.
-startCommand = "npx prisma migrate resolve --rolled-back 20260909210000_dedup_universities_same_or_null_city || true; npx prisma migrate deploy && node dist/main.js"
+startCommand = "npx prisma migrate deploy && node dist/main.js"
 healthcheckPath = "/health"
 healthcheckTimeout = 100
 restartPolicyType = "ON_FAILURE"
