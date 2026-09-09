@@ -231,7 +231,9 @@ class SessionListScreen extends ConsumerWidget {
       backgroundColor: AppColors.background,
       appBar: GradientAppBar(
         title: const Text('Sessions'),
-        actions: const [NotificationBell(color: Colors.white)],
+        // GradientAppBar is a neutral near-white bar now — a white bell was
+        // invisible on it (same as home_screen.dart's own bell).
+        actions: const [NotificationBell(color: AppColors.textPrimary)],
       ),
       body: SafeArea(
         bottom: false,
