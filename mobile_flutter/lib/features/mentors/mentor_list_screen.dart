@@ -311,7 +311,11 @@ class _MentorListScreenState extends ConsumerState<MentorListScreen> {
         actions: [
           IconButton(
             onPressed: () => context.push('/mentors/saved'),
-            icon: const Icon(Icons.favorite_rounded, color: Colors.white),
+            // Neutral app bar now — a white heart was invisible on it.
+            icon: const Icon(
+              Icons.favorite_rounded,
+              color: AppColors.primary,
+            ),
             tooltip: 'Saved mentors',
           ),
         ],

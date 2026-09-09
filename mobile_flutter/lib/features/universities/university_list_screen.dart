@@ -330,7 +330,13 @@ class _UniversityListScreenState extends ConsumerState<UniversityListScreen> {
         actions: [
           IconButton(
             onPressed: () => context.push('/colleges/saved'),
-            icon: const Icon(Icons.favorite_rounded, color: Colors.white),
+            // GradientAppBar is a neutral (near-white) bar now — a white
+            // heart was invisible on it. Brand green reads as a distinct
+            // "saved / favourites" affordance.
+            icon: const Icon(
+              Icons.favorite_rounded,
+              color: AppColors.primary,
+            ),
             tooltip: 'Saved colleges',
           ),
         ],

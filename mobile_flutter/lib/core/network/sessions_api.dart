@@ -278,11 +278,25 @@ class SessionsApi {
   }
 
   Future<List<Session>> list() async {
-    final res = await _dio.get<Map<String, dynamic>>('/sessions');
-    final data = res.data!['data'] as List<dynamic>;
-    return data
-        .map((e) => Session.fromJson(e as Map<String, dynamic>))
-        .toList();
+    // `GET /sessions` is cursor-paginated (backend DEFAULT_LIMIT 20 /
+    // MAX_LIMIT 50). Walk every page — the Sessions tab groups + de-dupes
+    // the whole set, so stopping at page one silently dropped entire
+    // mentor/student relationships. A user's session count is bounded; the
+    // 20-page cap is just a runaway guard (1000 rows).
+    final all = <Session>[];
+    String? cursor;
+    for (var page = 0; page < 20; page++) {
+      final res = await _dio.get<Map<String, dynamic>>(
+        '/sessions',
+        queryParameters: {'limit': 50, 'cursor': ?cursor},
+      );
+      final body = res.data!;
+      final data = body['data'] as List<dynamic>;
+      all.addAll(data.map((e) => Session.fromJson(e as Map<String, dynamic>)));
+      cursor = body['nextCursor'] as String?;
+      if (cursor == null || data.isEmpty) break;
+    }
+    return all;
   }
 
   Future<Session> findById(String sessionId) async {
