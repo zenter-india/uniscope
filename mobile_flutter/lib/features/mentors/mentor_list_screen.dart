@@ -72,9 +72,9 @@ const _kChatOnly = 'Chat only';
 const _kRatingOptions = ['4★ & up', '3★ & up', '2★ & up', '1★ & up'];
 
 /// Opens a free chat with [mentorId] and navigates into it. Shared by the
-/// mentor card and the mentor profile screen. If an active chat with this
-/// mentor already exists the backend 409s, and we reuse that session
-/// instead of surfacing an error.
+/// mentor card and the mentor profile screen. `POST /sessions` (CHAT) is
+/// find-or-create server-side now, so an already-open chat just comes back
+/// — the 409 branch below is a vestigial fallback for an older backend.
 Future<void> startChatWithMentor(
   BuildContext context,
   WidgetRef ref,

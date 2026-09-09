@@ -174,10 +174,17 @@ export class SessionsService {
       },
     });
     if (existingActive) {
+      // CHAT is find-or-create: re-opening a chat you already have with this
+      // mentor just returns it (mirrors startChatWithStudent's idempotency),
+      // so the client never has to catch a 409 and scan its own — paginated,
+      // so possibly incomplete — session list to recover the existing one.
+      // A second AUDIO_CALL while one is still outstanding IS a real
+      // duplicate the aspirant should be told about, so that stays a 409.
+      if (dto.type === SessionType.CHAT) {
+        return this.toResponseById(existingActive.id);
+      }
       throw new ConflictException(
-        dto.type === SessionType.AUDIO_CALL
-          ? 'You already have an active call request with this mentor'
-          : 'You already have an active chat with this mentor',
+        'You already have an active call request with this mentor',
       );
     }
 
