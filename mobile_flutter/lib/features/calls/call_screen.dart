@@ -274,9 +274,18 @@ class _CallScreenState extends ConsumerState<CallScreen> {
   }
 
   Future<void> _start() async {
-    final granted =
-        await _permissionsChannel.invokeMethod<bool>('requestMicrophone') ??
-        false;
+    // `uniscope/permissions` is a hand-rolled Android-only channel — on web
+    // or iOS invokeMethod throws MissingPluginException. That must NOT
+    // dead-end the connect: fall through and let Agora's own engine init
+    // raise the OS mic prompt. A genuine Android "denied" still stops here.
+    bool granted;
+    try {
+      granted =
+          await _permissionsChannel.invokeMethod<bool>('requestMicrophone') ??
+          true;
+    } catch (_) {
+      granted = true;
+    }
     if (!granted) {
       if (!mounted) return;
       setState(() => _phase = _Phase.permissionDenied);
