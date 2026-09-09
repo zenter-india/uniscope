@@ -23,8 +23,8 @@ Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   // `notification` block — no local work is needed here.
 }
 
-/// The one Android notification channel the app posts to. Created once at
-/// startup; `importance: high` is what lets a foreground notification show
+/// The default Android notification channel — session updates, messages,
+/// reminders. `importance: high` is what lets a foreground notification show
 /// as a heads-up banner rather than only landing silently in the shade.
 const _androidChannel = AndroidNotificationChannel(
   'uniscope_default',
@@ -32,6 +32,30 @@ const _androidChannel = AndroidNotificationChannel(
   description: 'Session updates, messages and reminders.',
   importance: Importance.high,
 );
+
+/// A separate, louder channel for call-related pushes (a call request, a
+/// mentor accepting, "your call is starting"). `Importance.max` +
+/// `AudioAttributesUsage.notificationRingtone` make it ring on the ringtone
+/// stream and pop a heads-up even when the phone is on vibrate for normal
+/// notifications. A distinct channel id is required: Android freezes a
+/// channel's sound/importance at creation, so the only way to add a ring to
+/// devices that already installed an older build is a new channel.
+const _androidCallChannel = AndroidNotificationChannel(
+  'uniscope_calls',
+  'Calls',
+  description: 'Incoming call requests and call reminders.',
+  importance: Importance.max,
+  playSound: true,
+  enableVibration: true,
+  audioAttributesUsage: AudioAttributesUsage.notificationRingtone,
+);
+
+/// Notification `type`s (from the FCM data payload) that are about a call and
+/// should ring rather than ding.
+bool _isCallType(Object? type) =>
+    type == 'SESSION_REQUEST' ||
+    type == 'SESSION_ACCEPTED' ||
+    type == 'SESSION_STARTING';
 
 /// Wires up FCM: requests permission, uploads the device token to
 /// `POST /users/me/push-token` once a user is authenticated, refreshes it
@@ -107,11 +131,12 @@ class PushService {
         }
       },
     );
-    await _localNotifications
+    final android = _localNotifications
         .resolvePlatformSpecificImplementation<
           AndroidFlutterLocalNotificationsPlugin
-        >()
-        ?.createNotificationChannel(_androidChannel);
+        >();
+    await android?.createNotificationChannel(_androidChannel);
+    await android?.createNotificationChannel(_androidCallChannel);
   }
 
   void _showLocalNotification(RemoteMessage message) {
@@ -121,20 +146,39 @@ class PushService {
     if (notification == null) return;
     if (notification.title == null && notification.body == null) return;
 
+    final isCall = _isCallType(message.data['type']);
+    final channel = isCall ? _androidCallChannel : _androidChannel;
+
     _localNotifications.show(
       notification.hashCode,
       notification.title,
       notification.body,
       NotificationDetails(
         android: AndroidNotificationDetails(
-          _androidChannel.id,
-          _androidChannel.name,
-          channelDescription: _androidChannel.description,
-          importance: Importance.high,
+          channel.id,
+          channel.name,
+          channelDescription: channel.description,
+          importance: isCall ? Importance.max : Importance.high,
           priority: Priority.high,
           icon: '@mipmap/ic_launcher',
+          playSound: true,
+          enableVibration: true,
+          // A call rings on the ringtone stream and is tagged as a call so
+          // Android ranks it above ordinary notifications and shows it on
+          // the lock screen.
+          audioAttributesUsage: isCall
+              ? AudioAttributesUsage.notificationRingtone
+              : AudioAttributesUsage.notification,
+          category:
+              isCall ? AndroidNotificationCategory.call : null,
         ),
-        iOS: const DarwinNotificationDetails(),
+        iOS: DarwinNotificationDetails(
+          presentSound: true,
+          sound: isCall ? 'default' : null,
+          interruptionLevel: isCall
+              ? InterruptionLevel.timeSensitive
+              : InterruptionLevel.active,
+        ),
       ),
       payload: message.data.isEmpty ? null : jsonEncode(message.data),
     );

@@ -9,6 +9,42 @@ import { NotificationResponse, toNotificationResponse } from './notification-res
 const DEFAULT_LIMIT = 20;
 const MAX_LIMIT = 50;
 
+/** Notification types that are about a call — these ring (ringtone stream,
+ * max priority, dedicated Android channel) instead of the normal ding. Must
+ * stay in sync with `_isCallType` in mobile's `push_service.dart`. */
+const CALL_NOTIFICATION_TYPES: ReadonlySet<NotificationType> = new Set([
+  NotificationType.SESSION_REQUEST,
+  NotificationType.SESSION_ACCEPTED,
+  NotificationType.SESSION_STARTING,
+]);
+
+/**
+ * Per-message Android/APNs delivery hints. Without these, `sendEachForMulticast`
+ * sends a bare `notification` block: no channel, no explicit sound, normal
+ * priority — so on many devices an incoming-call push arrives silently. This
+ * routes call pushes to the app's louder `uniscope_calls` channel with an
+ * explicit sound + high delivery priority, and everything else to the default
+ * channel with a sound.
+ */
+function deliveryConfig(type: NotificationType) {
+  const isCall = CALL_NOTIFICATION_TYPES.has(type);
+  return {
+    android: {
+      priority: 'high' as const,
+      notification: {
+        channelId: isCall ? 'uniscope_calls' : 'uniscope_default',
+        sound: 'default',
+        priority: isCall ? ('max' as const) : ('high' as const),
+        defaultVibrateTimings: true,
+      },
+    },
+    apns: {
+      headers: { 'apns-priority': '10' },
+      payload: { aps: { sound: 'default' } },
+    },
+  };
+}
+
 export interface SendNotificationParams {
   userId: string;
   type: NotificationType;
@@ -130,6 +166,7 @@ export class NotificationsService {
         tokens: batch.map((t) => t.token),
         notification: { title: params.title, body: params.body },
         data: dataPayload,
+        ...deliveryConfig(params.type),
       });
       success += response.successCount;
       failure += response.failureCount;
@@ -185,6 +222,7 @@ export class NotificationsService {
       tokens: tokens.map((t) => t.token),
       notification: { title: params.title, body: params.body },
       data: dataPayload,
+      ...deliveryConfig(params.type),
     });
     this.logger.log(
       `[notify] push result type=${params.type} userId=${params.userId} ` +
