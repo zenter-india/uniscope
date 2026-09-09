@@ -277,6 +277,33 @@ class SessionsApi {
     }
   }
 
+  /// Mentor-initiated chat with a student. Backend find-or-creates the CHAT
+  /// thread and returns it — allowed only for a MENTOR caller and only with a
+  /// student they already share a session with (see
+  /// SessionsService.startChatWithStudent). Aspirants use
+  /// [startChatWithMentor] instead.
+  Future<Session> startChatWithStudent(String aspirantId) async {
+    try {
+      final res = await _dio.post<Map<String, dynamic>>(
+        '/sessions/chat-with/$aspirantId',
+      );
+      return Session.fromJson(res.data!);
+    } on DioException catch (e) {
+      final message = e.response?.data is Map
+          ? (e.response?.data as Map)['message']
+          : null;
+      if (message is String) {
+        throw DioException(
+          requestOptions: e.requestOptions,
+          response: e.response,
+          type: e.type,
+          message: message,
+        );
+      }
+      rethrow;
+    }
+  }
+
   Future<List<Session>> list() async {
     // `GET /sessions` is cursor-paginated (backend DEFAULT_LIMIT 20 /
     // MAX_LIMIT 50). Walk every page — the Sessions tab groups + de-dupes

@@ -62,37 +62,34 @@ String chatTimeLabel(DateTime dt) {
   return '${_kMonthAbbr[local.month - 1]} ${local.day}';
 }
 
-/// The subtitle for a grouped Sessions-tab row. When the latest thing that
-/// happened is a chat message, it reads WhatsApp-style — the message text,
-/// prefixed "You: " when the viewer sent it, with a relative time — and no
-/// status dot. Otherwise it falls back to the plain status label + dot
-/// (calls, or a chat that has no messages yet). [viewerIsMentor] says which
-/// side of `latest` is "me".
+/// The subtitle for a grouped Sessions-tab row. It is **only ever** a chat
+/// message preview — WhatsApp-style, the message text prefixed "You: " when
+/// the viewer sent it, with a relative time and no dot. [viewerIsMentor]
+/// says which side of `latest` is "me".
+///
+/// When there's no message (a call, or a chat with nothing said yet) the
+/// subtitle is **empty** and the row renders name-only, for both roles
+/// (2026-09-09, per "remove [the status] everywhere — both roles name-only
+/// unless there's a message"). The old status-label + coloured-dot fallback
+/// added no value: a pending call already shows Accept/Reject on the row,
+/// and a bland "Ready" / "Chat" told nobody anything. `sessionStatusView` is
+/// still used for the in-card `_SessionActions` chip, just not here.
 ({String text, Color? dotColor, String? time}) _rowSubtitle(
   Session latest, {
   required bool viewerIsMentor,
 }) {
   final hasMsg =
       latest.type == 'CHAT' && (latest.lastMessageText ?? '').trim().isNotEmpty;
-  if (hasMsg) {
-    final myId = viewerIsMentor ? latest.mentorId : latest.aspirantId;
-    final mine = latest.lastMessageSenderId == myId;
-    return (
-      text: mine ? 'You: ${latest.lastMessageText}' : latest.lastMessageText!,
-      dotColor: null,
-      time: latest.lastMessageAt == null
-          ? null
-          : chatTimeLabel(latest.lastMessageAt!),
-    );
-  }
-  final sv = sessionStatusView(
-    latest,
-    isMentor: viewerIsMentor,
-    style: SessionStatusStyle.compact,
+  if (!hasMsg) return (text: '', dotColor: null, time: null);
+  final myId = viewerIsMentor ? latest.mentorId : latest.aspirantId;
+  final mine = latest.lastMessageSenderId == myId;
+  return (
+    text: mine ? 'You: ${latest.lastMessageText}' : latest.lastMessageText!,
+    dotColor: null,
+    time: latest.lastMessageAt == null
+        ? null
+        : chatTimeLabel(latest.lastMessageAt!),
   );
-  final showDot =
-      latest.type == 'AUDIO_CALL' || _isActiveStatus(latest.status);
-  return (text: sv.label, dotColor: showDot ? sv.color : null, time: null);
 }
 
 /// Renders a [_rowSubtitle] result — optional status dot, the preview /
@@ -104,6 +101,7 @@ class _SubtitleRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (sub.text.isEmpty && sub.time == null) return const SizedBox.shrink();
     return Row(
       children: [
         if (sub.dotColor != null) ...[
@@ -140,12 +138,14 @@ class _SubtitleRow extends StatelessWidget {
   }
 }
 
-/// The single session a grouped mentor row should show actions for, picked
-/// from that student's active sessions by urgency: a call awaiting the
-/// mentor's decision → a live call to join → an open chat → nothing. Returns
-/// null when there's nothing actionable (the row falls back to a history
-/// chevron). Everything not picked stays reachable via the row's history.
-Session? _pickPrimaryAction(List<Session> active) {
+/// The one CALL session a grouped mentor row should show an action for,
+/// picked from that student's active sessions by urgency: a call awaiting the
+/// mentor's decision → a live call to join → nothing. Chat is NOT considered
+/// here — every mentor row now carries a persistent chat icon of its own, so
+/// "open the chat" is always one tap regardless of what call is pending.
+/// Returns null when there's no actionable call; the row then shows just the
+/// chat icon, and tapping the row body opens the call history.
+Session? _pickPrimaryCall(List<Session> active) {
   bool isCall(Session s) => s.type == 'AUDIO_CALL';
   Session? lastWhere(bool Function(Session) test) {
     final hits = active.where(test);
@@ -159,8 +159,7 @@ Session? _pickPrimaryAction(List<Session> active) {
             (s.status == SessionStatus.accepted ||
                 s.status == SessionStatus.ringing ||
                 s.status == SessionStatus.inProgress),
-      ) ??
-      lastWhere((s) => s.type == 'CHAT');
+      );
 }
 
 /// Groups currently-actionable sessions (pending/accepted/ringing/in
@@ -411,18 +410,57 @@ class _MentorSessions extends StatelessWidget {
 }
 
 /// One student relationship on the mentor's Sessions tab — avatar, name, a
-/// status subtitle, and whatever action(s) the *currently active* session(s)
-/// with this student need (Accept/Reject/Join/Open Chat, reusing
-/// `_SessionActions` dense mode exactly as `_MergedSessionCard` did). With no
-/// active session, the row just opens the "History with {student}" sheet
-/// (`showMentorSessionHistory`, `isMentor: true`) — a repeat student's past
-/// chats/calls no longer pile up as separate cards on this tab.
-class _MentorStudentRow extends StatelessWidget {
+/// status subtitle, and a trailing action group: a persistent **chat icon**
+/// (always — open the thread with this student, or start one if they've only
+/// ever had a call, via the mentor-initiated `POST /sessions/chat-with/:id`)
+/// followed by the one CALL action that needs attention right now
+/// (Reject/Accept for a pending call, Join for a live one — `_pickPrimaryCall`
+/// + `_SessionActions` dense). With no pending/live call it's just the chat
+/// icon; tapping the row body opens "History with {student}"
+/// (`showMentorSessionHistory`, calls only). The mentor never *initiates* a
+/// call and is never billed — Accept/Join drive the student's existing
+/// booking exactly as before.
+class _MentorStudentRow extends ConsumerWidget {
   const _MentorStudentRow({required this.sessions});
   final List<Session> sessions;
 
+  /// Opens the chat with this student. Reuses the existing CHAT thread in the
+  /// relationship if there is one; otherwise asks the backend to
+  /// find-or-create it — allowed because this row only exists for a student
+  /// the mentor already shares a session with.
+  Future<void> _openChat(BuildContext context, WidgetRef ref) async {
+    final existing =
+        sessions
+            .where(
+              (s) =>
+                  s.type == 'CHAT' &&
+                  (s.status == SessionStatus.accepted ||
+                      s.status == SessionStatus.inProgress ||
+                      s.status == SessionStatus.completed),
+            )
+            .toList()
+          ..sort((a, b) => b.requestedAt.compareTo(a.requestedAt));
+    if (existing.isNotEmpty) {
+      context.push('/chats/room', extra: {'sessionId': existing.first.id});
+      return;
+    }
+    try {
+      final session = await ref
+          .read(sessionsApiProvider)
+          .startChatWithStudent(sessions.first.aspirantId);
+      ref.invalidate(sessionsListProvider);
+      if (!context.mounted) return;
+      context.push('/chats/room', extra: {'sessionId': session.id});
+    } catch (e) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Could not open chat: $e')));
+    }
+  }
+
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final first = sessions.first;
     final latest = sessions.reduce(
       (a, b) => a.requestedAt.compareTo(b.requestedAt) >= 0 ? a : b,
@@ -430,11 +468,7 @@ class _MentorStudentRow extends StatelessWidget {
     final activeSessions =
         sessions.where((s) => _isActiveStatus(s.status)).toList()
           ..sort((a, b) => a.requestedAt.compareTo(b.requestedAt));
-    // Surface actions for ONE session, not every active one — a student with
-    // several open chats/calls used to render a wall of buttons. A call that
-    // needs a decision (or a join) wins over a chat; the rest stay reachable
-    // by tapping the row (→ history).
-    final primaryAction = _pickPrimaryAction(activeSessions);
+    final primaryCall = _pickPrimaryCall(activeSessions);
     final aspirantName = first.aspirantName;
     final sub = _rowSubtitle(latest, viewerIsMentor: true);
 
@@ -475,25 +509,31 @@ class _MentorStudentRow extends StatelessWidget {
                       ),
                       overflow: TextOverflow.ellipsis,
                     ),
-                    const SizedBox(height: 2),
-                    _SubtitleRow(sub: sub),
+                    // Empty on the mentor side unless there's a chat-message
+                    // preview (status text was dropped here per request).
+                    if (sub.text.isNotEmpty) ...[
+                      const SizedBox(height: 2),
+                      _SubtitleRow(sub: sub),
+                    ],
                   ],
                 ),
               ),
               const SizedBox(width: AppSpacing.xs),
-              if (primaryAction == null)
-                _RowIconButton(
-                  icon: Icons.chevron_right_rounded,
-                  tooltip: 'View history',
-                  onTap: openHistory,
-                )
-              else
+              _RowIconButton(
+                icon: Icons.chat_bubble_rounded,
+                tooltip: 'Chat with $aspirantName',
+                filled: true,
+                onTap: () => _openChat(context, ref),
+              ),
+              if (primaryCall != null) ...[
+                const SizedBox(width: AppSpacing.xs),
                 _SessionActions(
-                  session: primaryAction,
+                  session: primaryCall,
                   isMentor: true,
                   dense: true,
                   showLabel: false,
                 ),
+              ],
             ],
           ),
         ),
@@ -682,8 +722,12 @@ class _AspirantMentorRow extends ConsumerWidget {
                       ),
                       overflow: TextOverflow.ellipsis,
                     ),
-                    const SizedBox(height: 2),
-                    _SubtitleRow(sub: sub),
+                    // Only a chat-message preview ever shows here now —
+                    // name-only otherwise (status line dropped per request).
+                    if (sub.text.isNotEmpty) ...[
+                      const SizedBox(height: 2),
+                      _SubtitleRow(sub: sub),
+                    ],
                   ],
                 ),
               ),
