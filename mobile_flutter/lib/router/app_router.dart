@@ -12,7 +12,7 @@ import '../features/auth/profile_setup_screen.dart';
 import '../features/auth/role_selection_screen.dart';
 import '../features/auth/splash_screen.dart';
 import '../features/auth/welcome_screen.dart';
-import '../features/calls/call_overlay.dart';
+import '../features/calls/call_screen.dart';
 import '../features/common/placeholder_screen.dart';
 import '../features/common/web_page_screen.dart';
 import '../features/home/home_screen.dart';
@@ -387,21 +387,16 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
 
       // ─── Audio call ─────────────────────────────────────────────
-      // The call is no longer a route — it's a minimize-able overlay
-      // (CallOverlayHost, mounted above the whole app). This path stays so
-      // deep links / FCM taps still reach a call: it hands off to the
-      // overlay and bounces back to Home (the overlay covers it anyway).
+      // A plain full-screen route on the root navigator (covers the tab
+      // shell). Reached from Join/Accept, the call-request watcher, and a
+      // tapped "call starting" push. (The minimize-to-bubble overlay was
+      // pulled from the connect path — it shipped without a 2-device test
+      // and both sides hit a blank screen; CallScreen still carries the
+      // `inOverlay` plumbing for a future revisit.)
       GoRoute(
         path: '/call/:sessionId',
-        redirect: (context, state) {
-          final id = state.pathParameters['sessionId'];
-          if (id != null && id.isNotEmpty) {
-            WidgetsBinding.instance.addPostFrameCallback(
-              (_) => CallOverlayController.instance.open(id),
-            );
-          }
-          return '/home';
-        },
+        builder: (_, state) =>
+            CallScreen(sessionId: state.pathParameters['sessionId'] ?? ''),
       ),
 
       // ─── Notifications (pushed from the bell icon anywhere) ──────

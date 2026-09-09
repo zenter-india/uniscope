@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../calls/call_overlay.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/network/reviews_api.dart';
@@ -1054,7 +1053,7 @@ class _SessionActionsState extends ConsumerState<_SessionActions> {
       if (updated.type == 'AUDIO_CALL' && confirmedFor == null) {
         // Instant — drop straight into the call. A scheduled call connects
         // at its slot, not now.
-        CallOverlayController.instance.open(updated.id);
+        context.push('/call/${updated.id}');
       } else if (confirmedFor != null) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -1246,7 +1245,7 @@ class _SessionActionsState extends ConsumerState<_SessionActions> {
                       icon: Icons.call_rounded,
                       tooltip: 'Join Call',
                       onPressed: () =>
-                          CallOverlayController.instance.open(session.id),
+                          context.push('/call/${session.id}'),
                     )
                   : Expanded(
                       child: FilledButton.icon(
@@ -1254,7 +1253,7 @@ class _SessionActionsState extends ConsumerState<_SessionActions> {
                           backgroundColor: AppColors.primary,
                         ),
                         onPressed: () =>
-                            CallOverlayController.instance.open(session.id),
+                            context.push('/call/${session.id}'),
                         icon: const Icon(Icons.call_rounded, size: 17),
                         label: const Text('Join Call'),
                       ),
