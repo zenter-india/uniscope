@@ -10,13 +10,7 @@ builder = "NIXPACKS"
 buildCommand = "npm install --include=dev && npx prisma generate && npm run build && pip install --break-system-packages -r scripts/data/requirements.txt && python3 -m playwright install --with-deps chromium"
 
 [deploy]
-# TEMP (2026-09-09): 20260909200000 failed on its first deploy (a TEMP TABLE
-# doesn't survive the pgBouncer pooler between statements) and Prisma parks a
-# failed migration, blocking every future deploy. `resolve --rolled-back`
-# clears that so the rewritten (temp-table-free) migration re-runs. The
-# `|| true` makes it a no-op once the migration is applied — safe to leave,
-# but revert this line to the plain command on the next backend change.
-startCommand = "npx prisma migrate resolve --rolled-back 20260909200000_dedup_universities_drop_nan_state || true; npx prisma migrate deploy && node dist/main.js"
+startCommand = "npx prisma migrate deploy && node dist/main.js"
 healthcheckPath = "/health"
 healthcheckTimeout = 100
 restartPolicyType = "ON_FAILURE"
