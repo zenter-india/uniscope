@@ -10,21 +10,20 @@ import 'package:flutter/material.dart';
 class AppColors {
   // Brand colour. History: teal #12A9A3 → #008562 → green #0B815A
   // (2026-09-04) → teal #4C9E97 (2026-09-08, client-picked swatch — a
-  // lighter, more blue-leaning teal; the app is moving off the saturated
-  // green). primaryDark/primaryLight/canopyTop below are the older green
-  // complements and are NOT yet retuned to this — a fuller palette pass is
-  // pending; this change is the primary token + the Home header fill.
+  // lighter, more blue-leaning teal; the app moved off the saturated
+  // green). 2026-09-10: primaryDark/primaryLight/canopyTop and every
+  // AppGradient below are now retuned to this teal family too (they were
+  // the leftover green complements — the "Need help?" / Wallet / review
+  // cards still read green because they paint with AppGradients.brand).
   static const Color primary = Color(0xFF4C9E97);
-  static const Color primaryLight = Color(0xFFE3F3EC);
-  static const Color primaryDark = Color(0xFF005E44);
+  static const Color primaryLight = Color(0xFFE6F3F1);
+  static const Color primaryDark = Color(0xFF1F5A54);
 
-  /// Deeper green for the very top of the Home canopy fade — plain [primary]
-  /// only measures 3.75:1 against [textPrimary] sitting on top of it (fails
-  /// AA), so this is a step lighter than [primary] specifically to keep the
-  /// "Uniscope" wordmark/bell readable while still landing as a real green,
-  /// not the washed-out pastel [primaryLight] reads as on its own. 4.97:1
-  /// against textPrimary, verified before committing.
-  static const Color canopyTop = Color(0xFF1C9B78);
+  /// A step darker than [primary] for the very top of a canopy fade so
+  /// dark text/icons on it stay readable. Currently unused (the Home
+  /// header is a pale [primaryLight] wash) — kept coherent for a future
+  /// use.
+  static const Color canopyTop = Color(0xFF3C8F88);
 
   /// The navy from the Uniscope logo mark, sampled from the icon's own
   /// pixels (#001A46). Used for the "Uniscope" wordmark on the Home canopy
@@ -44,11 +43,10 @@ class AppColors {
   static const Color textInverse = Color(0xFFFFFFFF);
 
   /// Semantic status colours. `success` marks wallet credits, completed
-  /// sessions, and confirmation ticks. Now that `primary` is itself green
-  /// (#008562, not the old teal), these two are closer in hue than before
-  /// — still distinguishable (brighter/yellower vs. the brand's deeper,
-  /// teal-leaning green), but worth revisiting if a credit ever reads as
-  /// "just another button" in practice.
+  /// sessions, and confirmation ticks. Deliberately left green — now that
+  /// the brand is teal (#4C9E97) the two read as distinctly different, and
+  /// green-means-good is the stronger convention for a money credit / a
+  /// verified tick than matching the brand.
   static const Color success = Color(0xFF12A150);
   static const Color error = Color(0xFFE5484D);
   static const Color warning = Color(0xFFF5A524);
@@ -100,41 +98,41 @@ class AppShadows {
   ];
 
   static const List<BoxShadow> raised = [
-    BoxShadow(color: Color(0x140B815A), blurRadius: 24, offset: Offset(0, 8)),
+    BoxShadow(color: Color(0x144C9E97), blurRadius: 24, offset: Offset(0, 8)),
   ];
 }
 
 class AppGradients {
-  /// Compact brand fill for buttons, FABs, and banner cards. Same two
-  /// endpoints as [canopy] — both the new brand green, light to dark.
+  /// Compact brand fill for buttons, FABs, and banner cards (the "Need
+  /// help?" card, the Wallet balance card, the review-summary card). Brand
+  /// teal, [primary] → a darker teal.
   static const LinearGradient brand = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    colors: [Color(0xFF0B815A), Color(0xFF005E44)],
+    colors: [Color(0xFF4C9E97), Color(0xFF35726B)],
   );
 
-  /// Barely-there green wash for full-screen backgrounds behind cards.
+  /// Barely-there teal wash for full-screen backgrounds behind cards.
   static const LinearGradient hero = LinearGradient(
     begin: Alignment.topCenter,
     end: Alignment.bottomCenter,
-    colors: [Color(0xFFE3F3EC), Color(0xFFF6F8F9)],
+    colors: [Color(0xFFE6F3F1), Color(0xFFF6F8F9)],
   );
 
-  /// Same light-to-dark travel as before, just in the new brand green
-  /// instead of the old teal — interpolated between primary/primaryDark at
-  /// the same stop positions, not a fresh guess.
+  /// Light-to-dark canopy travel in the brand teal (top a touch darker
+  /// than [primary] for text contrast, bottom fading to [primaryLight]).
+  /// Currently unused — the Home header is a pale wash — kept coherent.
   ///
-  /// Apply this to the canopy container itself, never to a full-screen
-  /// background: stretched over a whole screen the dark stop falls below
-  /// the fold and only flat green is visible.
+  /// Apply to a canopy container, never a full-screen background:
+  /// stretched over a whole screen the dark stop falls below the fold.
   static const LinearGradient canopy = LinearGradient(
     begin: Alignment.topCenter,
     end: Alignment.bottomCenter,
     colors: [
-      Color(0xFF1C9B78),
-      Color(0xFF0B815A),
-      Color(0xFF6FBFA3),
-      Color(0xFFE3F3EC),
+      Color(0xFF3C8F88),
+      Color(0xFF4C9E97),
+      Color(0xFF86C4BF),
+      Color(0xFFE6F3F1),
     ],
     stops: [0.0, 0.38, 0.78, 1.0],
   );

@@ -47,8 +47,10 @@ const kDefaultStreamVisual = StreamVisual(
 const kStreamVisuals = <String, StreamVisual>{
   'Medical': StreamVisual(
     Icons.medical_services_rounded,
-    Color(0xFF0B8F6A),
-    Color(0xFFE3F4EE),
+    // Brand teal — Medical is the flagship stream, so it carries the
+    // primary colour (was a near-duplicate old-brand green #0B8F6A).
+    AppColors.primary,
+    AppColors.primaryLight,
     assetPath: 'assets/icons/stethoscope.svg',
   ),
   'Dental': StreamVisual(

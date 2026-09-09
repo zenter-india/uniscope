@@ -856,13 +856,13 @@ class _CallScreenState extends ConsumerState<CallScreen> {
         backgroundColor: AppColors.primaryDark,
         body: DecoratedBox(
           // A soft glow high on the screen (behind the avatar) over a
-          // top-to-bottom dark-green fade — gives the call surface some
-          // depth instead of a flat fill.
+          // top-to-bottom dark brand-teal fade — gives the call surface
+          // some depth instead of a flat fill.
           decoration: const BoxDecoration(
             gradient: LinearGradient(
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
-              colors: [Color(0xFF0C5B46), Color(0xFF063C33)],
+              colors: [Color(0xFF0E524C), Color(0xFF0A3835)],
             ),
           ),
           child: DecoratedBox(
@@ -870,7 +870,7 @@ class _CallScreenState extends ConsumerState<CallScreen> {
               gradient: RadialGradient(
                 center: Alignment(0, -0.55),
                 radius: 0.9,
-                colors: [Color(0x66239E75), Color(0x00239E75)],
+                colors: [Color(0x663BA79E), Color(0x003BA79E)],
               ),
             ),
             child: SafeArea(child: _buildBody(context)),
