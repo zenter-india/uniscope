@@ -112,18 +112,19 @@ class PushService {
     messaging.onTokenRefresh.listen(_upload);
 
     // Foreground push → draw a heads-up notification (Android won't do it
-    // for us here) AND run the deep-link handler, so e.g. "mentor
-    // accepted" still pulls the aspirant onto the call screen even if
-    // they had the app open on another tab.
+    // for us here). `fromTap: false` — a *received* push only auto-routes
+    // for a live/imminent call (so "mentor accepted" still pulls the
+    // aspirant onto the call screen); everything else waits for the user
+    // to tap the heads-up.
     FirebaseMessaging.onMessage.listen((message) {
       _showLocalNotification(message);
-      _handleDeepLink(message);
+      _handleDeepLink(message, fromTap: false);
     });
 
-    // Deep-link on the paths a push reaches the user through while it's
-    // NOT foreground: tapped while backgrounded, or tapped from a cold
-    // start (terminated).
-    FirebaseMessaging.onMessageOpenedApp.listen(_handleDeepLink);
+    // A push tapped while the app is backgrounded, or from a cold start
+    // (terminated). `fromTap: true` (the default) — route to the related
+    // screen, falling back to the in-app Notifications list.
+    FirebaseMessaging.onMessageOpenedApp.listen((m) => _handleDeepLink(m));
     final initialMessage = await messaging.getInitialMessage();
     if (initialMessage != null) _handleDeepLink(initialMessage);
   }
@@ -218,53 +219,77 @@ class PushService {
     );
   }
 
-  void _handleDeepLink(RemoteMessage message) =>
-      _handleDeepLinkData(message.data);
+  void _handleDeepLink(RemoteMessage message, {bool fromTap = true}) =>
+      _handleDeepLinkData(message.data, fromTap: fromTap);
 
-  void _handleDeepLinkData(Map<String, dynamic> data) {
-    final sessionId = data['sessionId'] as String?;
-    if (sessionId == null) return;
-
+  /// Route a push to the screen it's about. [fromTap] is false when the
+  /// push was merely *received* in the foreground — in that case only a
+  /// live/imminent call auto-navigates; every other type waits for the
+  /// user to tap the heads-up notification (which comes back through here
+  /// with [fromTap] true).
+  void _handleDeepLinkData(Map<String, dynamic> data, {bool fromTap = true}) {
     final type = data['type'];
+    final sessionId = data['sessionId'] as String?;
+    final isCall = data['sessionType'] == 'AUDIO_CALL';
 
-    // Where a push should land:
-    //  - SESSION_STARTING (audio call) → straight into the call. This fires
-    //    only when the call is actually live/imminent (first party joined,
-    //    or the ~2-min-before sweep), so auto-routing on receipt is right.
-    //  - SESSION_ACCEPTED (audio call) → into the call ONLY for an Instant
-    //    accept. A scheduled accept carries `confirmedFor` (and no
-    //    `sessionType`) — routing that into a call would drag the student in
-    //    hours early. Belt-and-suspenders: even with `sessionType` set, bail
-    //    if `confirmedFor` is more than ~2 min away.
-    //  - SESSION_REQUEST (mentor) → the Sessions tab (Accept button + dock).
-    final String target;
-    if (type == 'SESSION_STARTING' && data['sessionType'] == 'AUDIO_CALL') {
-      target = '/call/$sessionId';
-    } else if (type == 'SESSION_ACCEPTED' && data['sessionType'] == 'AUDIO_CALL') {
-      final confirmedForRaw = data['confirmedFor'] as String?;
-      final confirmedFor = confirmedForRaw == null
-          ? null
-          : DateTime.tryParse(confirmedForRaw);
-      final imminent = confirmedFor == null ||
-          confirmedFor.difference(DateTime.now()) <
-              const Duration(minutes: 2);
-      target = imminent ? '/call/$sessionId' : '/chats';
-    } else if (type == 'SESSION_REQUEST') {
-      target = '/chats';
-    } else {
-      return;
+    // 1. Live / imminent call — pulls the party onto the call screen even
+    //    on a foreground receipt.
+    //    - SESSION_STARTING fires only when the call is actually live (a
+    //      party joined) or ~2 min out (the sweep), so routing on receipt
+    //      is right.
+    //    - SESSION_ACCEPTED: an Instant accept → into the call. A scheduled
+    //      accept carries `confirmedFor` — routing that into a call would
+    //      drag the student in hours early, so only a tap acts on it, and
+    //      only to open the chat thread.
+    if (sessionId != null && isCall) {
+      if (type == 'SESSION_STARTING') {
+        _navigate('/call/$sessionId');
+        return;
+      }
+      if (type == 'SESSION_ACCEPTED') {
+        final raw = data['confirmedFor'] as String?;
+        final confirmedFor = raw == null ? null : DateTime.tryParse(raw);
+        final imminent = confirmedFor == null ||
+            confirmedFor.difference(DateTime.now()) <
+                const Duration(minutes: 2);
+        if (imminent) {
+          _navigate('/call/$sessionId');
+        } else if (fromTap) {
+          _navigate('/chats/room', extra: {'sessionId': sessionId});
+        }
+        return;
+      }
     }
 
+    // 2. Everything below only navigates on an explicit tap — a foreground
+    //    receipt just leaves the heads-up notification on screen.
+    if (!fromTap) return;
+
+    if (type == 'MESSAGE' && sessionId != null) {
+      _navigate('/chats/room', extra: {'sessionId': sessionId});
+    } else if (type == 'SESSION_REQUEST') {
+      _navigate('/chats');
+    } else {
+      // SESSION_REJECTED / SESSION_ENDED / VERIFICATION / PAYMENT /
+      // LOW_BALANCE / SYSTEM / anything unknown → the in-app Notifications
+      // list, so a tapped notification always lands somewhere instead of
+      // just foregrounding the app wherever it happened to be.
+      _navigate('/notifications');
+    }
+  }
+
+  void _navigate(String target, {Object? extra}) {
     final context = rootNavigatorKey.currentContext;
     if (context == null) return;
     final router = GoRouter.of(context);
-    // /call/:id is a full-screen route on the root navigator (over the tab
-    // shell) — push it. /chats is a tab — switch to it rather than pushing
-    // a duplicate.
-    if (target.startsWith('/call/')) {
+    // /call/:id and /notifications are top-level routes on the root
+    // navigator (over the tab shell) — push them. Tab locations (/chats,
+    // /chats/room) are switched to with go() so they don't stack a
+    // duplicate.
+    if (target.startsWith('/call/') || target == '/notifications') {
       router.push(target);
     } else {
-      router.go(target);
+      router.go(target, extra: extra);
     }
   }
 
