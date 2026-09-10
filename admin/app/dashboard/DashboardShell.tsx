@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { LogoutButton } from '../../components/LogoutButton';
+import { GlobalSearch } from '../../components/GlobalSearch';
 import { Icon, type IconName } from '../../components/icons';
 
 const NAV_SECTIONS: {
@@ -102,8 +103,9 @@ export function DashboardShell({
         <header className="sticky top-0 z-10 flex h-14 items-center justify-between border-b border-zinc-200 bg-white/85 px-5 shadow-[0_1px_2px_rgb(0_0_0/0.03)] backdrop-blur">
           <h1 className="truncate text-[15px] font-semibold text-zinc-900">{title}</h1>
           <div className="flex items-center gap-3">
+            <GlobalSearch />
             {email ? (
-              <span className="hidden text-xs text-zinc-500 sm:inline">{email}</span>
+              <span className="hidden text-xs text-zinc-500 lg:inline">{email}</span>
             ) : null}
             <LogoutButton />
           </div>

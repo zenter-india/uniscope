@@ -54,6 +54,7 @@ import { EnrollmentsModule } from './modules/enrollments/enrollments.module.js';
 import { MetricsModule } from './modules/metrics/metrics.module.js';
 import { ReviewModerationModule } from './modules/review-moderation/review-moderation.module.js';
 import { BroadcastsModule } from './modules/broadcasts/broadcasts.module.js';
+import { AdminSearchModule } from './modules/admin-search/admin-search.module.js';
 import { TechnicalReportsModule } from './modules/technical-reports/technical-reports.module.js';
 
 @Module({
@@ -126,6 +127,7 @@ import { TechnicalReportsModule } from './modules/technical-reports/technical-re
     MetricsModule,
     ReviewModerationModule,
     BroadcastsModule,
+    AdminSearchModule,
     TechnicalReportsModule,
   ],
   controllers: [AppController],
