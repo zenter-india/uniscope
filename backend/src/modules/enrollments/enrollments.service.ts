@@ -16,6 +16,7 @@ import { SlackNotifierService } from '../../common/slack/slack-notifier.service.
 import { PrismaService } from '../../database/prisma/prisma.service.js';
 import { NotificationsService } from '../notifications/notifications.service.js';
 import { SUPABASE_BUCKETS, SUPABASE_CLIENT } from '../../supabase/index.js';
+import { UniversitiesService } from '../universities/universities.service.js';
 import { UsersService } from '../users/users.service.js';
 import {
   BaseLeadDto,
@@ -48,6 +49,7 @@ export class EnrollmentsService {
     private readonly slack: SlackNotifierService,
     private readonly usersService: UsersService,
     private readonly notifications: NotificationsService,
+    private readonly universitiesService: UniversitiesService,
   ) {}
 
   /** Same phoneHash derivation as AuthService.verifyOtp's production
@@ -461,7 +463,29 @@ export class EnrollmentsService {
   async createMentorLead(
     dto: CreateMentorLeadDto,
   ): Promise<EnrollmentLeadAcknowledgement> {
-    const universityId = await this.resolveUniversityId(dto.universityId);
+    let universityId = await this.resolveUniversityId(dto.universityId);
+
+    // The web form lets a mentor type a college that isn't in the dropdown.
+    // Without an id, `provisionAccountFromLead` can't create a
+    // VerificationRequest (its `universityId` is required) — so the college
+    // ID they just uploaded ends up stranded on the lead, never reaching
+    // the admin queue. Resolve the typed name to a real University row
+    // (created `isActive: false`, same as the in-app find-or-create path)
+    // whenever there's a document to attach, so verification always lands.
+    if (
+      !universityId &&
+      dto.documentBase64 &&
+      dto.collegeName?.trim() &&
+      dto.state?.trim()
+    ) {
+      const resolved = await this.universitiesService.findOrCreateByName({
+        name: dto.collegeName.trim(),
+        state: dto.state.trim(),
+        city: dto.city?.trim() || dto.state.trim(),
+        stream: dto.stream,
+      });
+      universityId = resolved.id;
+    }
 
     if (universityId && dto.degree && dto.stream && dto.specialization?.trim()) {
       await this.mapSpecializationToCollege(
