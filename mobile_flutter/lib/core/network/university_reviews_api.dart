@@ -250,15 +250,36 @@ class UniversityReviewsApi {
 
   /// Posts the caller's review. A review is write-once — the backend 409s a
   /// second attempt and there is no edit path.
+  ///
+  /// On failure, rethrows with the backend's own message (e.g. "You can
+  /// only review your own college", "Only verified students and alumni can
+  /// post a review", a validation list) — a bare `DioException.toString()`
+  /// hides the response body, which is why the screen used to show only a
+  /// generic "Could not submit your review".
   Future<UniversityReview> create(
     String universityId,
     UniversityReviewDraft draft,
   ) async {
-    final res = await _dio.post<Map<String, dynamic>>(
-      '/universities/$universityId/reviews',
-      data: draft.toJson(),
-    );
-    return UniversityReview.fromJson(res.data!);
+    try {
+      final res = await _dio.post<Map<String, dynamic>>(
+        '/universities/$universityId/reviews',
+        data: draft.toJson(),
+      );
+      return UniversityReview.fromJson(res.data!);
+    } on DioException catch (e) {
+      final data = e.response?.data;
+      String? msg;
+      if (data is Map) {
+        final m = data['message'];
+        if (m is String) {
+          msg = m;
+        } else if (m is List && m.isNotEmpty) {
+          msg = m.join('\n');
+        }
+      }
+      if (msg != null && msg.isNotEmpty) throw Exception(msg);
+      rethrow;
+    }
   }
 }
 

@@ -18,12 +18,37 @@ import 'review_choices.dart';
 /// providers; a caller with extra providers to refresh — e.g.
 /// `universityDetailProvider` — does so on a `true` result). Replaces the
 /// old `WriteReviewSheet` bottom sheet everywhere.
+///
+/// [asMentorOwnCollege] — set by the mentor college-review-gate entry
+/// points (the Home/Profile banner, the "Rate Your College" row, the
+/// availability card). It re-fetches the profile and reviews against the
+/// college **currently linked to the account**, not whatever id the caller
+/// happened to have cached. A client that's been open since before a
+/// university-catalogue merge (the 2026-09 dedup passes repointed many
+/// `profile.universityId`s) would otherwise POST a stale id and the backend
+/// rejects it with "You can only review your own college" — which surfaced
+/// to the user as a generic "Could not submit your review" and an
+/// un-clearable "review your college" prompt.
 Future<bool?> openUniversityReview(
   BuildContext context,
   WidgetRef ref, {
   required String universityId,
   required String universityName,
+  bool asMentorOwnCollege = false,
 }) async {
+  if (asMentorOwnCollege) {
+    try {
+      final fresh = await ref.refresh(myProfileProvider.future);
+      if ((fresh.universityId ?? '').isNotEmpty) {
+        universityId = fresh.universityId!;
+        universityName = fresh.universityName ?? universityName;
+      }
+    } catch (_) {
+      // Offline / fetch failed — fall through with the caller's id.
+    }
+    if (!context.mounted) return null;
+  }
+
   bool alreadyReviewed = false;
   try {
     alreadyReviewed = await ref
@@ -150,11 +175,18 @@ class _UniversityReviewScreenState
   }
 
   String _friendlyError(Object e) {
-    final s = e.toString();
-    // Surface the backend's own message when it sent one (e.g. the
-    // "review your own college only" / verification gate).
-    final match = RegExp(r'"message":"([^"]+)"').firstMatch(s);
-    return match?.group(1) ?? 'Could not submit your review. Please try again.';
+    var s = e.toString();
+    // `UniversityReviewsApi.create` rethrows the backend message as an
+    // `Exception("<message>")` — strip the wrapper.
+    if (s.startsWith('Exception: ')) s = s.substring('Exception: '.length);
+    // A raw DioException string can still slip through (e.g. a network
+    // failure) — pull the message out of an embedded JSON body if present,
+    // otherwise show a generic line rather than a stack-ish string.
+    if (s.startsWith('DioException') || s.contains('{"message"')) {
+      final match = RegExp(r'"message":"([^"]+)"').firstMatch(s);
+      return match?.group(1) ?? 'Could not submit your review. Please try again.';
+    }
+    return s.isEmpty ? 'Could not submit your review. Please try again.' : s;
   }
 
   @override
@@ -764,6 +796,7 @@ class CollegeReviewPromptBanner extends ConsumerWidget {
         ref,
         universityId: profile.universityId!,
         universityName: profile.universityName ?? 'Your college',
+        asMentorOwnCollege: true,
       ),
       padding: const EdgeInsets.symmetric(
         horizontal: AppSpacing.md,

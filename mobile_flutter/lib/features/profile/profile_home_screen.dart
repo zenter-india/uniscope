@@ -314,6 +314,7 @@ class ProfileHomeScreen extends ConsumerWidget {
                                                   ?.value
                                                   .universityName ??
                                               'Your college',
+                                          asMentorOwnCollege: true,
                                         )
                                       : !isVerified
                                       ? () =>
@@ -471,6 +472,7 @@ class _MentorAvailabilityCardState
       ref,
       universityId: profile!.universityId!,
       universityName: profile.universityName ?? 'Your college',
+      asMentorOwnCollege: true,
     ).then((_) => ref.invalidate(myProfileProvider));
 
     return AppCard(
