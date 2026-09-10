@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:razorpay_flutter/razorpay_flutter.dart';
 
 import '../../core/network/payouts_api.dart';
+import '../../core/network/users_api.dart';
 import '../../core/network/wallet_api.dart';
 import '../../core/theme/app_theme.dart';
 import '../../state/auth_controller.dart';
@@ -133,13 +134,43 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
   }
 
   Future<void> _requestWithdrawal() async {
+    // Payouts are transferred to the mentor's UPI ID by hand — without one
+    // on file the request can't be fulfilled (the backend rejects it too).
+    String? upiId;
+    try {
+      upiId = (await ref.read(myProfileProvider.future)).upiId;
+    } catch (_) {
+      // fall through — the backend stays the backstop
+    }
+    if (upiId == null || upiId.trim().isEmpty) {
+      if (!mounted) return;
+      await showDialog<void>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          title: const Text('Add a UPI ID first'),
+          content: const Text(
+            'Weekly payouts are sent to your UPI ID. Add one in '
+            'Profile → Profile Details, then come back to request a payout.',
+          ),
+          actions: [
+            FilledButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: const Text('Got it'),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
+
+    if (!mounted) return;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
         title: const Text('Request payout'),
-        content: const Text(
-          "We'll transfer your full unpaid session earnings to your bank "
-          'account. You can request a payout once a week. This can take up '
+        content: Text(
+          "We'll transfer your full unpaid session earnings to your UPI ID "
+          '$upiId. You can request a payout once a week. This can take up '
           'to 48 hours.',
         ),
         actions: [

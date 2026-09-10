@@ -1,3 +1,4 @@
+import { Transform } from 'class-transformer';
 import {
   IsArray,
   IsBoolean,
@@ -6,9 +7,11 @@ import {
   IsOptional,
   IsString,
   IsUUID,
+  Matches,
   Max,
   MaxLength,
   Min,
+  ValidateIf,
 } from 'class-validator';
 
 export class UpdateProfileDto {
@@ -116,6 +119,22 @@ export class UpdateProfileDto {
   @IsString()
   @MaxLength(120)
   realName?: string;
+
+  /** MENTOR-only — the UPI VPA (e.g. "name@okhdfcbank") an admin pays the
+   * mentor's weekly payout to. Stored AES-256-GCM encrypted; returned only
+   * to the mentor themselves and on the admin payout list. An empty string
+   * (or null) clears it. Rejected for a non-mentor at the service layer. */
+  @IsOptional()
+  @Transform(({ value }) =>
+    typeof value === 'string' ? value.trim().toLowerCase() : value,
+  )
+  @ValidateIf((o) => o.upiId !== '' && o.upiId != null)
+  @IsString()
+  @MaxLength(255)
+  @Matches(/^[\w.\-]{2,256}@[a-zA-Z][\w.\-]{1,63}$/, {
+    message: 'Enter a valid UPI ID, e.g. name@bank',
+  })
+  upiId?: string;
 
   @IsOptional()
   @IsInt()

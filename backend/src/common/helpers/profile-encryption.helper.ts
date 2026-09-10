@@ -1,10 +1,12 @@
 import { createCipheriv, createDecipheriv, randomBytes } from 'crypto';
 
 /**
- * AES-256-GCM encrypt/decrypt for `UserProfile.realNameEncrypted` — the one
- * field in this schema that's genuinely reversible-sensitive (unlike
- * phoneHash, which is one-way). Key comes from PROFILE_ENCRYPTION_KEY (a
- * 32-byte hex string) so it can be rotated independently of JWT secrets.
+ * AES-256-GCM encrypt/decrypt for the reversible-sensitive `UserProfile`
+ * columns — `realNameEncrypted` (a mentor's legal name, for admin identity
+ * review) and `upiIdEncrypted` (a mentor's payout UPI VPA). Everything else
+ * on the profile is either public or one-way hashed (phoneHash). Key comes
+ * from PROFILE_ENCRYPTION_KEY (a 32-byte hex string) so it can be rotated
+ * independently of the JWT secrets.
  *
  * Output format: `<ivHex>:<authTagHex>:<ciphertextHex>` — self-contained, no
  * external state needed to decrypt other than the key.
@@ -16,7 +18,7 @@ function loadKey(): Buffer {
   const hex = process.env.PROFILE_ENCRYPTION_KEY;
   if (!hex) {
     throw new Error(
-      'PROFILE_ENCRYPTION_KEY is not set — required to store/read a mentor\'s real name.',
+      'PROFILE_ENCRYPTION_KEY is not set — required to store/read encrypted profile fields.',
     );
   }
   const key = Buffer.from(hex, 'hex');
@@ -26,7 +28,7 @@ function loadKey(): Buffer {
   return key;
 }
 
-export function encryptRealName(plaintext: string): string {
+export function encryptField(plaintext: string): string {
   const key = loadKey();
   const iv = randomBytes(12);
   const cipher = createCipheriv(ALGORITHM, key, iv);
@@ -35,11 +37,11 @@ export function encryptRealName(plaintext: string): string {
   return `${iv.toString('hex')}:${authTag.toString('hex')}:${ciphertext.toString('hex')}`;
 }
 
-export function decryptRealName(payload: string): string {
+export function decryptField(payload: string): string {
   const key = loadKey();
   const [ivHex, authTagHex, ciphertextHex] = payload.split(':');
   if (!ivHex || !authTagHex || !ciphertextHex) {
-    throw new Error('Malformed encrypted real-name payload.');
+    throw new Error('Malformed encrypted profile-field payload.');
   }
   const decipher = createDecipheriv(ALGORITHM, key, Buffer.from(ivHex, 'hex'));
   decipher.setAuthTag(Buffer.from(authTagHex, 'hex'));
@@ -49,3 +51,20 @@ export function decryptRealName(payload: string): string {
   ]);
   return plaintext.toString('utf8');
 }
+
+/** Best-effort decrypt — returns null on a missing value or a decrypt
+ * failure (e.g. the key was rotated), instead of throwing into a response
+ * projection. */
+export function decryptFieldSafe(payload: string | null | undefined): string | null {
+  if (!payload) return null;
+  try {
+    return decryptField(payload);
+  } catch {
+    return null;
+  }
+}
+
+// Back-compat aliases — `realNameEncrypted` call sites predate the generic
+// names above.
+export const encryptRealName = encryptField;
+export const decryptRealName = decryptField;

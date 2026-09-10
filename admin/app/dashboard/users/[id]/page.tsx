@@ -42,6 +42,7 @@ interface AdminUserDetail {
     specialty: string | null;
     languages: string[];
     availableDays: string[];
+    upiId: string | null;
     isMentorAvailable: boolean;
     isMentorAvailableRaw: boolean;
     availabilitySetAt: string | null;
@@ -341,6 +342,7 @@ export default async function UserDetailPage({
           <Field label="Specialty" value={p?.specialty} />
           <Field label="Languages spoken" value={p?.languages.join(', ')} />
           <Field label="Available days" value={p?.availableDays.join(', ')} />
+          <Field label="Payout UPI ID" value={p?.upiId} />
           <div className="col-span-2 sm:col-span-3">
             <Field label="Bio" value={p?.bio} />
           </div>

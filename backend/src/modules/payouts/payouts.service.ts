@@ -168,6 +168,20 @@ export class PayoutsService {
       }
     }
 
+    // Payouts are transferred by an admin to the mentor's UPI ID by hand
+    // (no auto-disbursement — see class docs). Without one on file the
+    // request can't be fulfilled, so block it here rather than let a dead
+    // PENDING row pile up in the admin queue.
+    const profile = await this.prisma.userProfile.findUnique({
+      where: { userId: mentorId },
+      select: { upiIdEncrypted: true },
+    });
+    if (!profile?.upiIdEncrypted) {
+      throw new BadRequestException(
+        'Add a UPI ID in your profile before requesting a payout.',
+      );
+    }
+
     const wallet = await this.prisma.wallet.findUniqueOrThrow({ where: { userId: mentorId } });
 
     // The withdrawable amount is simply the current wallet balance. A
@@ -204,6 +218,15 @@ export class PayoutsService {
     const rows = await this.prisma.payoutRequest.findMany({
       where: { mentorId },
       orderBy: { createdAt: 'desc' },
+      include: {
+        mentor: {
+          select: {
+            displayName: true,
+            wallet: { select: { balanceMinor: true } },
+            profile: { select: { upiIdEncrypted: true } },
+          },
+        },
+      },
     });
     return rows.map(toPayoutRequestResponse);
   }
@@ -230,6 +253,7 @@ export class PayoutsService {
           select: {
             displayName: true,
             wallet: { select: { balanceMinor: true } },
+            profile: { select: { upiIdEncrypted: true } },
           },
         },
       },

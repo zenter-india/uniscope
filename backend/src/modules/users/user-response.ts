@@ -5,7 +5,10 @@ import {
   VerificationRequest,
   Wallet,
 } from '@prisma/client';
-import { decryptRealName } from '../../common/helpers/profile-encryption.helper.js';
+import {
+  decryptFieldSafe,
+  decryptRealName,
+} from '../../common/helpers/profile-encryption.helper.js';
 import { isCallAvailable } from '../mentors/availability.js';
 
 /**
@@ -41,6 +44,10 @@ export interface PublicUser {
    * blocked. Combine with GET /universities/:id/reviews/mine to know
    * whether the requirement is already met. */
   mustReviewCollege?: boolean;
+  /** MENTOR-only — the mentor's saved payout UPI ID, decrypted. Null when
+   * unset or if decryption fails. Only the caller's own `me` lookup carries
+   * this (and the ADMIN user list); never another user's public profile. */
+  upiId?: string | null;
   university?: { id: string; name: string; slug: string } | null;
   gender?: string | null;
   state?: string | null;
@@ -110,6 +117,8 @@ export interface AdminUserDetail {
     specialty: string | null;
     languages: string[];
     availableDays: string[];
+    /** MENTOR payout UPI ID, decrypted (null when unset). */
+    upiId: string | null;
     /** Expiry-aware value, same as everywhere else (see isCallAvailable). */
     isMentorAvailable: boolean;
     /** Raw column — lets an admin see a toggle that has since gone stale. */
@@ -210,6 +219,7 @@ export function toAdminUserDetail(
           specialty: p.specialty ?? null,
           languages: p.languages ?? [],
           availableDays: p.availableDays ?? [],
+          upiId: decryptFieldSafe(p.upiIdEncrypted),
           isMentorAvailable: isCallAvailable(p),
           isMentorAvailableRaw: p.isMentorAvailable,
           availabilitySetAt: p.availabilitySetAt,
@@ -263,6 +273,7 @@ export function toPublicUser(
       // they're bookable while the listing says otherwise.
       isMentorAvailable: isCallAvailable(user.profile),
       mustReviewCollege: user.profile?.mustReviewCollege ?? false,
+      upiId: decryptFieldSafe(user.profile?.upiIdEncrypted),
       university: user.profile?.university
         ? {
             id: user.profile.university.id,

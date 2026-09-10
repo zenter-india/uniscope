@@ -18,6 +18,8 @@ export interface PayoutRowData {
   createdAt: string;
   isOverdue: boolean;
   mentorWalletBalanceMinor?: number | null;
+  /** The UPI ID the admin transfers this payout to (decrypted server-side). */
+  mentorUpiId?: string | null;
 }
 
 function rupees(minor: number): string {
@@ -62,8 +64,13 @@ export function PayoutRow({ payout }: { payout: PayoutRowData }) {
       colSpan={5}
       defaultOpen={open}
       cells={[
-        <span key="m" className="font-medium text-zinc-900">
-          {payout.mentorName ?? payout.mentorId}
+        <span key="m" className="flex flex-col">
+          <span className="font-medium text-zinc-900">
+            {payout.mentorName ?? payout.mentorId}
+          </span>
+          {payout.mentorUpiId && (
+            <span className="font-mono text-xs text-zinc-500">{payout.mentorUpiId}</span>
+          )}
         </span>,
         <span key="a" className="font-semibold tabular-nums text-zinc-900">
           {rupees(payout.amountMinor)}
@@ -80,6 +87,14 @@ export function PayoutRow({ payout }: { payout: PayoutRowData }) {
       <p className="text-xs text-zinc-500">
         Requested {new Date(payout.createdAt).toLocaleString()} · mentor id{' '}
         <span className="font-mono">{payout.mentorId}</span>
+      </p>
+      <p className="mt-2 text-sm">
+        <span className="text-zinc-500">Pay to UPI: </span>
+        {payout.mentorUpiId ? (
+          <span className="font-mono font-semibold text-zinc-900">{payout.mentorUpiId}</span>
+        ) : (
+          <span className="text-red-600">none on file — mentor must add one</span>
+        )}
       </p>
       {payout.mentorWalletBalanceMinor != null && (
         <p className={`mt-1 text-xs ${shortBalance ? 'text-red-600' : 'text-zinc-400'}`}>
@@ -102,10 +117,16 @@ export function PayoutRow({ payout }: { payout: PayoutRowData }) {
           {confirmingPaid ? (
             <div className="flex flex-col gap-2">
               <p className="text-sm text-zinc-600">
-                Confirm the bank transfer of {rupees(payout.amountMinor)} to{' '}
+                Confirm the transfer of {rupees(payout.amountMinor)} to{' '}
                 <span className="font-medium text-zinc-900">
                   {payout.mentorName ?? 'this mentor'}
-                </span>{' '}
+                </span>
+                {payout.mentorUpiId && (
+                  <>
+                    {' '}
+                    at <span className="font-mono font-semibold text-zinc-900">{payout.mentorUpiId}</span>
+                  </>
+                )}{' '}
                 has gone through. This debits their wallet.
               </p>
               {shortBalance && (

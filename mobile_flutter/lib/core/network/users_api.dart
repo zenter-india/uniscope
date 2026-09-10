@@ -35,6 +35,7 @@ class UserProfile {
     this.yearOfStudy,
     this.graduationYear,
     this.yearInfoPrivate = false,
+    this.upiId,
     this.avatarUrl,
   });
 
@@ -78,6 +79,10 @@ class UserProfile {
   final int? graduationYear;
   final bool yearInfoPrivate;
 
+  /// Mentor-only — the UPI ID an admin sends the weekly payout to. Only
+  /// present on the caller's own `getMe`; null when unset.
+  final String? upiId;
+
   factory UserProfile.fromJson(Map<String, dynamic> json) => UserProfile(
         id: json['id'] as String,
         role: UserRole.fromWire(json['role'] as String),
@@ -116,6 +121,7 @@ class UserProfile {
         yearOfStudy: json['yearOfStudy'] as int?,
         graduationYear: json['graduationYear'] as int?,
         yearInfoPrivate: (json['yearInfoPrivate'] as bool?) ?? false,
+        upiId: json['upiId'] as String?,
         avatarUrl: json['avatarUrl'] as String?,
       );
 
@@ -165,6 +171,8 @@ class UsersApi {
     int? graduationYear,
     bool? yearInfoPrivate,
     String? universityId,
+    // Pass "" to clear it, a VPA to set it, null to leave unchanged.
+    String? upiId,
   }) async {
     final res = await _dio.patch<Map<String, dynamic>>(
       '/users/me',
@@ -192,6 +200,7 @@ class UsersApi {
         if (graduationYear != null) 'graduationYear': graduationYear,
         if (yearInfoPrivate != null) 'yearInfoPrivate': yearInfoPrivate,
         if (universityId != null) 'universityId': universityId,
+        if (upiId != null) 'upiId': upiId,
       },
     );
     return UserProfile.fromJson(res.data!);

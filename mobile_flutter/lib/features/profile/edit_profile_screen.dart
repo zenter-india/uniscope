@@ -31,6 +31,7 @@ class EditProfileScreen extends ConsumerStatefulWidget {
 class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   final _bioController = TextEditingController();
   final _graduationYearController = TextEditingController();
+  final _upiController = TextEditingController();
   String? _currentStatus;
   String? _yearOfStudyLabel;
   bool _yearInfoPrivate = false;
@@ -48,6 +49,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     if (_loaded) return;
     _loaded = true;
     _bioController.text = profile.bio ?? '';
+    _upiController.text = profile.upiId ?? '';
     if (profile.graduationYear != null) {
       _currentStatus = 'Graduated';
       _graduationYearController.text = '${profile.graduationYear}';
@@ -74,6 +76,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   void dispose() {
     _bioController.dispose();
     _graduationYearController.dispose();
+    _upiController.dispose();
     _languagesOtherController.dispose();
     super.dispose();
   }
@@ -84,7 +87,16 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     return index == -1 ? null : index + 1;
   }
 
+  static final _upiPattern = RegExp(r'^[\w.\-]{2,256}@[a-zA-Z][\w.\-]{1,63}$');
+
   Future<void> _save() async {
+    final upi = _upiController.text.trim();
+    if (upi.isNotEmpty && !_upiPattern.hasMatch(upi)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Enter a valid UPI ID, e.g. name@bank')),
+      );
+      return;
+    }
     setState(() => _saving = true);
     try {
       final resolvedLanguages = _languages
@@ -97,6 +109,8 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
             bio: _bioController.text.trim(),
             languages: resolvedLanguages,
             availableDays: _timings.toList(),
+            // "" clears any saved UPI ID; a VPA sets it.
+            upiId: upi,
             yearInfoPrivate: _yearInfoPrivate,
             yearOfStudy: _currentStatus == 'Currently Studying'
                 ? _yearOfStudyValue()
@@ -319,6 +333,25 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                               _timings.remove(option);
                             }
                           }),
+                        ),
+                        const SizedBox(height: AppSpacing.md),
+                        const OnboardingFieldLabel('Payout UPI ID'),
+                        TextField(
+                          controller: _upiController,
+                          keyboardType: TextInputType.emailAddress,
+                          autocorrect: false,
+                          decoration: const InputDecoration(
+                            hintText: 'yourname@bank',
+                          ),
+                        ),
+                        const SizedBox(height: AppSpacing.xs),
+                        Text(
+                          'Weekly payouts are sent to this UPI ID. Add one '
+                          'before requesting a withdrawal.',
+                          style: TextStyle(
+                            fontSize: AppFont.xs,
+                            color: AppColors.textSecondary,
+                          ),
                         ),
                         const SizedBox(height: AppSpacing.xl),
                         SizedBox(

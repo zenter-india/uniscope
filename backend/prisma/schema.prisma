@@ -235,6 +235,11 @@ model UserProfile {
   id                       String   @id @default(uuid())
   userId                   String   @unique @map("user_id")
   realNameEncrypted        String?  @map("real_name_encrypted") @db.Text
+  /// MENTOR-only. The UPI VPA an admin sends the mentor's weekly payout to.
+  /// AES-256-GCM encrypted (payment-routing PII) — see
+  /// profile-encryption.helper.ts. Returned only to the mentor themselves
+  /// (GET /users/me) and on the admin payout list / user detail.
+  upiIdEncrypted           String?  @map("upi_id_encrypted") @db.Text
   universityId             String?  @map("university_id")
   graduationYear           Int?     @map("graduation_year") @db.SmallInt
   yearOfStudy              Int?     @map("year_of_study") @db.SmallInt

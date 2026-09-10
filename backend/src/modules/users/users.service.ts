@@ -16,7 +16,7 @@ import {
 } from '@prisma/client';
 import { adminOrderBy } from '../../common/helpers/admin-sort.helper.js';
 import { generatePseudonym } from '../../common/helpers/pseudonym.helper.js';
-import { encryptRealName } from '../../common/helpers/profile-encryption.helper.js';
+import { encryptField, encryptRealName } from '../../common/helpers/profile-encryption.helper.js';
 import {
   bucketKeyFor,
   buildUniqueId,
@@ -424,6 +424,19 @@ export class UsersService {
       if (user.role !== UserRole.ASPIRANT) applyUniversityId = false;
     }
 
+    // The payout UPI ID is a mentor-only concept — reject it for an
+    // aspirant rather than silently storing a value they can never use.
+    let applyUpiId = dto.upiId !== undefined;
+    if (applyUpiId) {
+      const user = await this.prisma.user.findUniqueOrThrow({
+        where: { id: userId },
+        select: { role: true },
+      });
+      if (user.role !== UserRole.MENTOR) {
+        throw new BadRequestException('Only mentors can set a payout UPI ID');
+      }
+    }
+
     if (dto.isMentorAvailable !== undefined) {
       const user = await this.prisma.user.findUniqueOrThrow({
         where: { id: userId },
@@ -484,6 +497,11 @@ export class UsersService {
       }),
       ...(dto.realName !== undefined && {
         realNameEncrypted: encryptRealName(dto.realName),
+      }),
+      ...(applyUpiId && {
+        upiIdEncrypted: dto.upiId
+          ? encryptField(dto.upiId.trim().toLowerCase())
+          : null,
       }),
       ...(dto.yearOfStudy !== undefined && { yearOfStudy: dto.yearOfStudy }),
       ...(dto.graduationYear !== undefined && { graduationYear: dto.graduationYear }),
@@ -683,6 +701,9 @@ export class UsersService {
       }),
       ...(dto.realName !== undefined && {
         realNameEncrypted: dto.realName ? encryptRealName(dto.realName) : null,
+      }),
+      ...(dto.upiId !== undefined && {
+        upiIdEncrypted: dto.upiId ? encryptField(dto.upiId.trim().toLowerCase()) : null,
       }),
       ...(dto.yearOfStudy !== undefined && { yearOfStudy: dto.yearOfStudy }),
       ...(dto.graduationYear !== undefined && { graduationYear: dto.graduationYear }),
