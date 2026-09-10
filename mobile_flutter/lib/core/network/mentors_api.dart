@@ -240,18 +240,33 @@ class MentorsApi {
     String? specialization,
     String? language,
   }) async {
-    final res = await _dio.get<Map<String, dynamic>>(
-      '/mentors',
-      queryParameters: {
-        if (universityId != null) 'universityId': universityId,
-        if (stream != null) 'stream': stream,
-        if (qualification != null) 'qualification': qualification,
-        if (specialization != null) 'specialization': specialization,
-        if (language != null) 'language': language,
-      },
-    );
-    final data = res.data!['data'] as List<dynamic>;
-    return data.map((e) => Mentor.fromJson(e as Map<String, dynamic>)).toList();
+    // `GET /mentors` is cursor-paginated (backend DEFAULT_LIMIT 20 /
+    // MAX_LIMIT 50) ordered newest-first. Walk every page — stopping at
+    // page one hid every mentor who signed up before the newest ~20, so
+    // most of the roster was invisible in discovery. The mentor count is
+    // bounded; the 20-page cap is just a runaway guard (1000 rows).
+    final all = <Mentor>[];
+    String? cursor;
+    for (var page = 0; page < 20; page++) {
+      final res = await _dio.get<Map<String, dynamic>>(
+        '/mentors',
+        queryParameters: {
+          'limit': 50,
+          'cursor': ?cursor,
+          'universityId': ?universityId,
+          'stream': ?stream,
+          'qualification': ?qualification,
+          'specialization': ?specialization,
+          'language': ?language,
+        },
+      );
+      final body = res.data!;
+      final data = body['data'] as List<dynamic>;
+      all.addAll(data.map((e) => Mentor.fromJson(e as Map<String, dynamic>)));
+      cursor = body['nextCursor'] as String?;
+      if (cursor == null || data.isEmpty) break;
+    }
+    return all;
   }
 
   Future<Mentor> getById(String id) async {
