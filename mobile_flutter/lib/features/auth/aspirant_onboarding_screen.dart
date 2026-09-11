@@ -537,7 +537,12 @@ class _AspirantOnboardingScreenState
                           }),
                         ),
                       ],
-                      if (_needsSpecialization) ...[
+                      // Gated on a typed/picked college, same as the mentor
+                      // onboarding wizard's own Specialization field —
+                      // previously showed as soon as a degree was picked,
+                      // even with no college entered yet.
+                      if (_needsSpecialization &&
+                          _collegeNameController.text.trim().isNotEmpty) ...[
                         const SizedBox(height: AppSpacing.md),
                         const OnboardingFieldLabel('Specialization'),
                         OnboardingSearchableField(
