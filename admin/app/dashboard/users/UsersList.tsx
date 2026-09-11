@@ -32,6 +32,7 @@ export function UsersList({
       loadMore={(cursor) => loadMoreUsers(filters, cursor)}
       renderItem={(user) => <UserRow key={user.id} user={user} />}
       emptyText="No users match this filter."
+      emptyIcon="users"
     />
   );
 }

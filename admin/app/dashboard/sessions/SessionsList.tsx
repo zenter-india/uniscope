@@ -32,6 +32,7 @@ export function SessionsList({
       loadMore={(cursor) => loadMoreSessions(filters, cursor)}
       renderItem={(session) => <SessionRow key={session.id} session={session} />}
       emptyText="No sessions match this filter."
+      emptyIcon="clock"
     />
   );
 }

@@ -35,6 +35,7 @@ export function ReportsList({
         <ReportRow key={report.id} report={report} readOnly={readOnly} />
       )}
       emptyText="No reports in this status."
+      emptyIcon="flag"
     />
   );
 }

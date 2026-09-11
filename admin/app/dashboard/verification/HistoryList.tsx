@@ -37,6 +37,7 @@ export function HistoryList({
         <VerificationHistoryRow key={request.id} request={request} />
       )}
       emptyText="No resolved verification requests match this filter."
+      emptyIcon="shieldCheck"
     />
   );
 }

@@ -2,6 +2,7 @@
 
 import { useState, useTransition, type ReactNode } from 'react';
 import { Button, EmptyState, Table } from './ui';
+import type { IconName } from './icons';
 
 interface Page<T> {
   data: T[];
@@ -45,6 +46,7 @@ export function InfiniteList<T>({
   loadMore,
   renderItem,
   emptyText = 'Nothing here yet.',
+  emptyIcon,
   gapClass = 'gap-3',
   variant = 'stack',
   tableHead,
@@ -56,6 +58,7 @@ export function InfiniteList<T>({
   loadMore: (cursor: string) => Promise<Page<T>>;
   renderItem: (item: T, selection?: RowSelection) => ReactNode;
   emptyText?: string;
+  emptyIcon?: IconName;
   gapClass?: string;
   /** 'table' renders rows inside a framed <table> — `renderItem` must return
    * a <tr> and `tableHead` supplies the <tr> of column headers. */
@@ -85,7 +88,7 @@ export function InfiniteList<T>({
   };
 
   if (items.length === 0) {
-    return <EmptyState>{emptyText}</EmptyState>;
+    return <EmptyState icon={emptyIcon}>{emptyText}</EmptyState>;
   }
 
   const toggleSelect = (id: string) => {

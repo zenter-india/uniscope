@@ -38,6 +38,7 @@ export function ReviewsList({
         <ReviewRow key={`${review.id}|${review.status}`} review={review} selection={selection} />
       )}
       emptyText="No reviews match this filter."
+      emptyIcon="star"
     />
   );
 }

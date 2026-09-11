@@ -39,6 +39,7 @@ export function LeadsList({
         <LeadRow key={`${lead.id}|${lead.status}`} lead={lead} selection={selection} />
       )}
       emptyText="No leads match this filter."
+      emptyIcon="message"
     />
   );
 }

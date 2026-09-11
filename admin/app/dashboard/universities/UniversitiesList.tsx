@@ -32,6 +32,7 @@ export function UniversitiesList({
         <UniversityRow key={university.id} university={university} />
       )}
       emptyText="No universities match this filter."
+      emptyIcon="building"
     />
   );
 }
