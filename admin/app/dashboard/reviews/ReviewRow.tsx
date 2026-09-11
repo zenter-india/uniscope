@@ -29,6 +29,7 @@ export function ReviewRow({
       const res = await setReviewStatus(review.kind, review.id, next);
       if (!res.ok) {
         setError(res.error);
+        toast.error(res.error);
         return;
       }
       setStatus(next);

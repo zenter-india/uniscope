@@ -62,7 +62,9 @@ export function ReportRow({
         setResolved(true);
         toast.success(status === 'RESOLVED' ? 'Report resolved.' : 'Report dismissed.');
       } catch (e) {
-        setError(e instanceof Error ? e.message : 'Could not resolve report');
+        const msg = e instanceof Error ? e.message : 'Could not resolve report';
+        setError(msg);
+        toast.error(msg);
       }
     });
   };

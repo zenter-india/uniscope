@@ -24,7 +24,9 @@ export function BanToggle({
         await setUserBanned(userId, !isBanned);
         toast.success(isBanned ? 'User unbanned.' : 'User banned.');
       } catch (e) {
-        setError(e instanceof Error ? e.message : 'Could not update user');
+        const msg = e instanceof Error ? e.message : 'Could not update user';
+        setError(msg);
+        toast.error(msg);
       }
     });
   };

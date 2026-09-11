@@ -19,6 +19,7 @@ export function LeadsBulkBar({ ctx }: { ctx: BulkBarContext<LeadRowData> }) {
       const res = await bulkUpdateLeadStatus(ctx.selectedIds, status);
       if (!res.ok) {
         setError(res.error);
+        toast.error(res.error);
         return;
       }
       const acted = new Set(ctx.selectedIds);

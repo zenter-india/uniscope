@@ -40,7 +40,9 @@ export function AddUniversityForm() {
         setForm(EMPTY);
         setOpen(false);
       } catch (e) {
-        setError(e instanceof Error ? e.message : 'Could not create university');
+        const msg = e instanceof Error ? e.message : 'Could not create university';
+        setError(msg);
+        toast.error(msg);
       }
     });
   };

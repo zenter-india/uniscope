@@ -101,7 +101,9 @@ export function LeadRow({
         setSaved(true);
         toast.success(nextStatus ? `Marked ${nextStatus.toLowerCase()}.` : 'Note saved.');
       } catch (e) {
-        setError(e instanceof Error ? e.message : 'Could not save');
+        const msg = e instanceof Error ? e.message : 'Could not save';
+        setError(msg);
+        toast.error(msg);
       }
     });
   };

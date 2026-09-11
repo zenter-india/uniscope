@@ -47,6 +47,7 @@ export function DangerZone({
       const res = await eraseUser(userId);
       if (!res.ok) {
         setError(res.error);
+        toast.error(res.error);
         return;
       }
       toast.success(`${displayName} erased.`);

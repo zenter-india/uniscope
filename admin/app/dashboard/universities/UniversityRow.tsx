@@ -60,7 +60,9 @@ export function UniversityRow({ university }: { university: UniversityRowData })
         setEditing(false);
         toast.success(`Saved ${form.name}.`);
       } catch (e) {
-        setError(e instanceof Error ? e.message : 'Could not save');
+        const msg = e instanceof Error ? e.message : 'Could not save';
+        setError(msg);
+        toast.error(msg);
       }
     });
   };
@@ -74,7 +76,9 @@ export function UniversityRow({ university }: { university: UniversityRowData })
           university.isActive ? `${university.name} deactivated.` : `${university.name} activated.`,
         );
       } catch (e) {
-        setError(e instanceof Error ? e.message : 'Could not update');
+        const msg = e instanceof Error ? e.message : 'Could not update';
+        setError(msg);
+        toast.error(msg);
       }
     });
   };
@@ -90,7 +94,9 @@ export function UniversityRow({ university }: { university: UniversityRowData })
       await uploadUniversityPhoto(university.id, base64);
       toast.success('Cover photo updated.');
     } catch (err) {
-      setPhotoError(err instanceof Error ? err.message : 'Could not upload photo');
+      const msg = err instanceof Error ? err.message : 'Could not upload photo';
+      setPhotoError(msg);
+      toast.error(msg);
     } finally {
       setUploadingPhoto(false);
     }

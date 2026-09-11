@@ -51,6 +51,7 @@ export function PayoutRow({ payout }: { payout: PayoutRowData }) {
       const res = await processPayout(payout.id, next, ref);
       if (!res.ok) {
         setError(res.error);
+        toast.error(res.error);
         return;
       }
       setStatus(next);

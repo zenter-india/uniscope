@@ -20,6 +20,7 @@ export function ReviewsBulkBar({ ctx }: { ctx: BulkBarContext<ModeratedReview> }
       const res = await bulkSetReviewStatus(kind, ctx.selectedIds, status);
       if (!res.ok) {
         setError(res.error);
+        toast.error(res.error);
         return;
       }
       const acted = new Set(ctx.selectedIds);

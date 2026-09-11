@@ -39,6 +39,7 @@ export function SettingsForm({ initial }: { initial: Setting[] }) {
       const res = await updateSettings(updates);
       if (!res.ok) {
         setError(res.error);
+        toast.error(res.error);
         return;
       }
       setSettings(res.settings);

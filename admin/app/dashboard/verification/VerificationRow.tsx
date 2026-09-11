@@ -85,7 +85,9 @@ export function VerificationRow({ request }: { request: VerificationRequestRow }
         setResolved(true);
         toast.success(approve ? 'Approved.' : 'Rejected.');
       } catch (e) {
-        setError(e instanceof Error ? e.message : 'Could not submit review');
+        const msg = e instanceof Error ? e.message : 'Could not submit review';
+        setError(msg);
+        toast.error(msg);
       }
     });
   };

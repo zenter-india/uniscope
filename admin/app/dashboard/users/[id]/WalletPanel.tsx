@@ -86,6 +86,7 @@ export function WalletPanel({
       const res = await adjustBalance(userId, signed, reason.trim());
       if (!res.ok) {
         setAdjustErr(res.error);
+        toast.error(res.error);
         return;
       }
       setBalanceMinor(res.balanceMinor);

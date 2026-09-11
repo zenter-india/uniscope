@@ -62,6 +62,7 @@ export function BroadcastPanel({ initialHistory }: { initialHistory: Broadcast[]
       const res = await sendBroadcast({ title: trimmedTitle, body: body.trim(), audience });
       if (!res.ok) {
         setError(res.error);
+        toast.error(res.error);
         setConfirming(false);
         return;
       }

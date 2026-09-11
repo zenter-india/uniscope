@@ -30,7 +30,9 @@ export function UserRow({ user }: { user: UserRowData }) {
         setIsBanned((v) => !v);
         toast.success(isBanned ? 'User unbanned.' : 'User banned.');
       } catch (e) {
-        setError(e instanceof Error ? e.message : 'Could not update user');
+        const msg = e instanceof Error ? e.message : 'Could not update user';
+        setError(msg);
+        toast.error(msg);
       }
     });
   };

@@ -162,6 +162,7 @@ export function EditUserPanel({ user }: { user: EditableUser }) {
       const res = await updateUserProfile(user.id, patch);
       if (!res.ok) {
         setError(res.error);
+        toast.error(res.error);
         return;
       }
       setSaved(true);
