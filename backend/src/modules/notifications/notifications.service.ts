@@ -236,6 +236,24 @@ export class NotificationsService {
         `success=${response.successCount} failure=${response.failureCount}`,
     );
 
+    // Previously only the bare failure COUNT above was logged — a silent
+    // per-device push failure (FCM quota, sender mismatch, a transient
+    // internal error, anything other than the two "stale token" codes
+    // below) left zero trace of *why*, just an unexplained miss. Log every
+    // non-stale failure's actual FCM error code so a real delivery problem
+    // (as opposed to "no push token" or "app not installed") is
+    // diagnosable from logs alone next time, instead of only being
+    // reconstructable after the fact from the in-app Notification row
+    // (which is always created regardless of push outcome — see `send`).
+    for (const [i, r] of response.responses.entries()) {
+      if (!r.success) {
+        this.logger.warn(
+          `[notify] push failed type=${params.type} userId=${params.userId} ` +
+            `tokenId=${tokens[i].id} code=${r.error?.code} message=${r.error?.message}`,
+        );
+      }
+    }
+
     const staleTokenIds = response.responses
       .map((r, i) => ({ r, id: tokens[i].id }))
       .filter(
