@@ -258,7 +258,7 @@ class _MentorOnboardingScreenState extends ConsumerState<MentorOnboardingScreen>
       return;
     }
     if (_step == 3) {
-      _confirmAgeThenSave();
+      _saveProfile();
       return;
     }
     if (_step == 4) {
@@ -308,18 +308,6 @@ class _MentorOnboardingScreenState extends ConsumerState<MentorOnboardingScreen>
       }
     }
     _goTo(3);
-  }
-
-  /// Leaving the Current Status step (index 3) — the last data step: show
-  /// the age-confirmation gate once, then persist everything collected so
-  /// far in one updateProfile call.
-  Future<void> _confirmAgeThenSave() async {
-    if (!_ageConfirmed) {
-      if (!await showAgeConfirmationDialog(context)) return;
-      if (!mounted) return;
-      _ageConfirmed = true;
-    }
-    await _saveProfile();
   }
 
   /// Best-effort persist of whatever the user picked — non-fatal, since
@@ -434,8 +422,17 @@ class _MentorOnboardingScreenState extends ConsumerState<MentorOnboardingScreen>
     }
   }
 
+  // Age-confirmation gate before the wizard's final submission — matches
+  // the aspirant wizard's own _finish(), which asks at its last step
+  // rather than partway through (previously asked right after Current
+  // Status, one step too early since Avatar/Verify still followed it).
   Future<void> _submitVerification() async {
     if (_universityId == null || _imageBytes == null) return;
+    if (!_ageConfirmed) {
+      if (!await showAgeConfirmationDialog(context)) return;
+      if (!mounted) return;
+      _ageConfirmed = true;
+    }
     setState(() => _saving = true);
     try {
       final base64Image = base64Encode(_imageBytes!);
