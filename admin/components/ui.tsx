@@ -14,14 +14,14 @@ function cx(...parts: (string | false | null | undefined)[]) {
 
 // ---- Button -------------------------------------------------------------
 
-type ButtonVariant =
+export type ButtonVariant =
   | 'primary'
   | 'secondary'
   | 'danger'
   | 'dangerSolid'
   | 'successSolid'
   | 'ghost';
-type ButtonSize = 'sm' | 'md';
+export type ButtonSize = 'sm' | 'md';
 
 const BTN_BASE =
   'inline-flex items-center justify-center gap-1.5 rounded-md font-medium transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400/50';

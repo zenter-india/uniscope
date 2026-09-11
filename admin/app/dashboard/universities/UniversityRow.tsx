@@ -2,6 +2,7 @@
 
 import { useRef, useState, useTransition } from 'react';
 import { Badge, Button, Table, fieldClass } from '../../../components/ui';
+import { ConfirmButton } from '../../../components/ConfirmButton';
 import { toast } from '../../../lib/toast';
 import { updateUniversity, uploadUniversityPhoto } from './actions';
 
@@ -202,14 +203,19 @@ export function UniversityRow({ university }: { university: UniversityRowData })
           <Button size="sm" onClick={() => setEditing(true)}>
             Edit
           </Button>
-          <Button
-            size="sm"
-            variant={university.isActive ? 'dangerSolid' : 'secondary'}
-            onClick={toggleActive}
-            disabled={isPending}
-          >
-            {university.isActive ? 'Deactivate' : 'Activate'}
-          </Button>
+          {university.isActive ? (
+            <ConfirmButton
+              variant="dangerSolid"
+              onConfirm={toggleActive}
+              disabled={isPending}
+            >
+              Deactivate
+            </ConfirmButton>
+          ) : (
+            <Button size="sm" variant="secondary" onClick={toggleActive} disabled={isPending}>
+              Activate
+            </Button>
+          )}
         </div>
       </Table.Cell>
     </Table.Row>

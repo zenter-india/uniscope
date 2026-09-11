@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from 'react';
 import { Button } from '../../../../components/ui';
+import { ConfirmButton } from '../../../../components/ConfirmButton';
 import { toast } from '../../../../lib/toast';
 import { getVerificationDocumentUrl, setUserBanned } from './actions';
 
@@ -33,14 +34,15 @@ export function BanToggle({
 
   return (
     <div className="flex flex-col items-end gap-1">
-      <Button
-        onClick={toggle}
-        disabled={isPending || disabled}
-        size="sm"
-        variant={isBanned ? 'secondary' : 'dangerSolid'}
-      >
-        {isBanned ? 'Unban user' : 'Ban user'}
-      </Button>
+      {isBanned ? (
+        <Button onClick={toggle} disabled={isPending || disabled} size="sm" variant="secondary">
+          Unban user
+        </Button>
+      ) : (
+        <ConfirmButton variant="dangerSolid" onConfirm={toggle} disabled={isPending || disabled}>
+          Ban user
+        </ConfirmButton>
+      )}
       {error && <p className="text-xs text-red-600">{error}</p>}
     </div>
   );

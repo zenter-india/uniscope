@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from 'react';
 import { Badge, Button, ButtonLink, Table, toneFor } from '../../../components/ui';
+import { ConfirmButton } from '../../../components/ConfirmButton';
 import { toast } from '../../../lib/toast';
 import { setUserBanned } from './actions';
 
@@ -65,14 +66,15 @@ export function UserRow({ user }: { user: UserRowData }) {
           <ButtonLink href={`/dashboard/users/${user.id}`} size="sm">
             View details
           </ButtonLink>
-          <Button
-            onClick={toggleBan}
-            disabled={isPending}
-            size="sm"
-            variant={isBanned ? 'secondary' : 'danger'}
-          >
-            {isBanned ? 'Unban' : 'Ban'}
-          </Button>
+          {isBanned ? (
+            <Button onClick={toggleBan} disabled={isPending} size="sm" variant="secondary">
+              Unban
+            </Button>
+          ) : (
+            <ConfirmButton onConfirm={toggleBan} disabled={isPending}>
+              Ban
+            </ConfirmButton>
+          )}
         </div>
       </Table.Cell>
     </Table.Row>
