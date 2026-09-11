@@ -5,6 +5,7 @@ import { useState, useTransition } from 'react';
 import { Badge, Button, toneFor } from '../../../components/ui';
 import { ExpandableRow } from '../../../components/ExpandableRow';
 import type { RowSelection } from '../../../components/InfiniteList';
+import { toast } from '../../../lib/toast';
 import { getLeadDocumentUrl, updateLead } from './actions';
 
 const DOCUMENT_TYPE_LABELS: Record<string, string> = {
@@ -98,6 +99,7 @@ export function LeadRow({
         });
         if (nextStatus) setStatus(nextStatus);
         setSaved(true);
+        toast.success(nextStatus ? `Marked ${nextStatus.toLowerCase()}.` : 'Note saved.');
       } catch (e) {
         setError(e instanceof Error ? e.message : 'Could not save');
       }

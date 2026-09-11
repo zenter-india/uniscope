@@ -74,6 +74,10 @@ export default async function SessionsPage({
 
   return (
     <DashboardShell title="Sessions" email={email}>
+      <p className="mb-5 text-sm text-zinc-500">
+        Every chat and call between a student and mentor. Expand a row to see the full
+        detail, read the chat transcript, or force-end a stuck session.
+      </p>
       <div className="mb-5 flex flex-col gap-3">
         <form className="flex gap-2" action="/dashboard/sessions">
           {status !== 'ALL' && <input type="hidden" name="status" value={status} />}

@@ -3,6 +3,7 @@
 import { useState, useTransition } from 'react';
 import { Badge, Button } from '../../../components/ui';
 import { ExpandableRow } from '../../../components/ExpandableRow';
+import { toast } from '../../../lib/toast';
 import { getVerificationDocumentUrl, reviewVerificationRequest } from './actions';
 
 const DOCUMENT_TYPE_LABELS: Record<string, string> = {
@@ -82,6 +83,7 @@ export function VerificationRow({ request }: { request: VerificationRequestRow }
       try {
         await reviewVerificationRequest(request.id, approve, note || undefined);
         setResolved(true);
+        toast.success(approve ? 'Approved.' : 'Rejected.');
       } catch (e) {
         setError(e instanceof Error ? e.message : 'Could not submit review');
       }

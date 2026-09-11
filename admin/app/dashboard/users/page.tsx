@@ -88,6 +88,10 @@ export default async function UsersPage({
 
   return (
     <DashboardShell title="Users" email={email}>
+      <p className="mb-5 text-sm text-zinc-500">
+        Every student and mentor account — search, filter, and open a profile to edit,
+        ban, or adjust their wallet.
+      </p>
       <div className="mb-5 flex flex-col gap-3">
         <form className="flex gap-2" action="/dashboard/users">
           {role && role !== 'ALL' && <input type="hidden" name="role" value={role} />}

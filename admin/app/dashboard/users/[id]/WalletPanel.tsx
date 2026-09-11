@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from 'react';
 import { Button, Card, fieldClass } from '../../../../components/ui';
+import { toast } from '../../../../lib/toast';
 import { adjustBalance, loadMoreLedger, type LedgerEntryData } from './actions';
 
 const TYPE_LABELS: Record<string, string> = {
@@ -103,7 +104,9 @@ export function WalletPanel({
       setRupees('');
       setReason('');
       setFormOpen(false);
-      setDone(`Balance ${direction === 'debit' ? 'reduced' : 'increased'} by ${money(signed)}.`);
+      const msg = `Balance ${direction === 'debit' ? 'reduced' : 'increased'} by ${money(signed)}.`;
+      setDone(msg);
+      toast.success(msg);
     });
   };
 

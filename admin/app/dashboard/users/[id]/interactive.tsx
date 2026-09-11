@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from 'react';
 import { Button } from '../../../../components/ui';
+import { toast } from '../../../../lib/toast';
 import { getVerificationDocumentUrl, setUserBanned } from './actions';
 
 export function BanToggle({
@@ -21,6 +22,7 @@ export function BanToggle({
     startTransition(async () => {
       try {
         await setUserBanned(userId, !isBanned);
+        toast.success(isBanned ? 'User unbanned.' : 'User banned.');
       } catch (e) {
         setError(e instanceof Error ? e.message : 'Could not update user');
       }

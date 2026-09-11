@@ -3,6 +3,7 @@
 import { useState, useTransition } from 'react';
 import { Button, Card } from '../../../components/ui';
 import type { BulkBarContext } from '../../../components/InfiniteList';
+import { toast } from '../../../lib/toast';
 import { bulkUpdateLeadStatus } from './actions';
 import type { LeadRowData } from './LeadRow';
 
@@ -24,6 +25,7 @@ export function LeadsBulkBar({ ctx }: { ctx: BulkBarContext<LeadRowData> }) {
       ctx.updateItems((items) =>
         items.map((l) => (acted.has(l.id) ? { ...l, status } : l)),
       );
+      toast.success(`${res.updated} lead${res.updated === 1 ? '' : 's'} marked ${status.toLowerCase()}.`);
       ctx.clearSelection();
     });
   };

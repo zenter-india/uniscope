@@ -26,6 +26,10 @@ export default async function ModerationPage({
 
   return (
     <DashboardShell title="Moderation" email={email}>
+      <p className="mb-5 text-sm text-zinc-500">
+        User-submitted reports on other users, sessions, or reviews. Resolve with an
+        optional manual refund, or dismiss if there&apos;s nothing to act on.
+      </p>
       <div className="mb-4">
         <FilterTabs
           items={STATUS_TABS}

@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useTransition } from 'react';
 import { Badge, Button, Card, fieldClass } from '../../../components/ui';
+import { toast } from '../../../lib/toast';
 import {
   previewRecipients,
   sendBroadcast,
@@ -65,11 +66,11 @@ export function BroadcastPanel({ initialHistory }: { initialHistory: Broadcast[]
         return;
       }
       setHistory((prev) => [res.broadcast, ...prev]);
-      setSent(
-        `Sent to ${res.broadcast.recipientCount.toLocaleString()} ${
-          AUDIENCE_LABEL[res.broadcast.audience] ?? res.broadcast.audience
-        }.`,
-      );
+      const msg = `Sent to ${res.broadcast.recipientCount.toLocaleString()} ${
+        AUDIENCE_LABEL[res.broadcast.audience] ?? res.broadcast.audience
+      }.`;
+      setSent(msg);
+      toast.success(msg);
       setTitle('');
       setBody('');
       setConfirming(false);

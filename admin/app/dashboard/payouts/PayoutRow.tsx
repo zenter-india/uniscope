@@ -3,6 +3,7 @@
 import { useState, useTransition } from 'react';
 import { Badge, Button, toneFor } from '../../../components/ui';
 import { ExpandableRow } from '../../../components/ExpandableRow';
+import { toast } from '../../../lib/toast';
 import { processPayout } from './actions';
 
 export interface PayoutRowData {
@@ -56,6 +57,9 @@ export function PayoutRow({ payout }: { payout: PayoutRowData }) {
       setConfirmingPaid(false);
       if (next !== 'PROCESSING') setProcessedAt(new Date().toISOString());
       if (ref?.trim()) setSavedRef(ref.trim());
+      toast.success(
+        next === 'COMPLETED' ? 'Marked paid.' : next === 'FAILED' ? 'Marked failed.' : 'Marked processing.',
+      );
     });
   };
 

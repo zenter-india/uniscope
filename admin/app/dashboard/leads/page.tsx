@@ -64,6 +64,10 @@ export default async function LeadsPage({
 
   return (
     <DashboardShell title="Enrollment Leads" email={email}>
+      <p className="mb-5 text-sm text-zinc-500">
+        Sign-ups from the marketing website, before they become real accounts. Work
+        through New leads first — select several to mark Contacted at once.
+      </p>
       {stats && (
         <div className="mb-5 flex flex-wrap items-stretch gap-3">
           {[

@@ -3,6 +3,7 @@
 import { useState, useTransition } from 'react';
 import { Button, Card } from '../../../components/ui';
 import type { BulkBarContext } from '../../../components/InfiniteList';
+import { toast } from '../../../lib/toast';
 import { bulkSetReviewStatus, type ModeratedReview } from './actions';
 
 export function ReviewsBulkBar({ ctx }: { ctx: BulkBarContext<ModeratedReview> }) {
@@ -25,6 +26,8 @@ export function ReviewsBulkBar({ ctx }: { ctx: BulkBarContext<ModeratedReview> }
       ctx.updateItems((items) =>
         items.map((r) => (acted.has(r.id) ? { ...r, status } : r)),
       );
+      const verb = status === 'ACTIVE' ? 'restored' : status === 'HIDDEN' ? 'hidden' : 'removed';
+      toast.success(`${res.updated} review${res.updated === 1 ? '' : 's'} ${verb}.`);
       ctx.clearSelection();
     });
   };

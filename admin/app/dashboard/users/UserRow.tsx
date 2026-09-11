@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from 'react';
 import { Badge, Button, ButtonLink, Table, toneFor } from '../../../components/ui';
+import { toast } from '../../../lib/toast';
 import { setUserBanned } from './actions';
 
 export interface UserRowData {
@@ -27,6 +28,7 @@ export function UserRow({ user }: { user: UserRowData }) {
       try {
         await setUserBanned(user.id, !isBanned);
         setIsBanned((v) => !v);
+        toast.success(isBanned ? 'User unbanned.' : 'User banned.');
       } catch (e) {
         setError(e instanceof Error ? e.message : 'Could not update user');
       }

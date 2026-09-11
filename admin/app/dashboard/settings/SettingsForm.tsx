@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from 'react';
 import { Button, Card } from '../../../components/ui';
+import { toast } from '../../../lib/toast';
 import { updateSettings, type Setting } from './actions';
 
 export function SettingsForm({ initial }: { initial: Setting[] }) {
@@ -43,6 +44,7 @@ export function SettingsForm({ initial }: { initial: Setting[] }) {
       setSettings(res.settings);
       setDraft(Object.fromEntries(res.settings.map((s) => [s.key, String(s.value)])));
       setSaved(true);
+      toast.success('Settings saved.');
     });
   };
 

@@ -1,6 +1,8 @@
 'use client';
 
 import { useState, useTransition } from 'react';
+import { Button, Card, fieldClass } from '../../../components/ui';
+import { toast } from '../../../lib/toast';
 import { createUniversity } from './actions';
 
 const EMPTY = {
@@ -34,6 +36,7 @@ export function AddUniversityForm() {
           establishedYear: form.establishedYear ? Number(form.establishedYear) : undefined,
           website: form.website || undefined,
         });
+        toast.success(`${form.name} added.`);
         setForm(EMPTY);
         setOpen(false);
       } catch (e) {
@@ -44,77 +47,71 @@ export function AddUniversityForm() {
 
   if (!open) {
     return (
-      <button
-        onClick={() => setOpen(true)}
-        className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800"
-      >
+      <Button variant="primary" onClick={() => setOpen(true)}>
         + Add University
-      </button>
+      </Button>
     );
   }
 
   return (
-    <div className="w-full basis-full rounded-lg border border-zinc-200 bg-white p-4">
+    <Card className="w-full basis-full p-4">
       <p className="mb-3 text-sm font-semibold text-zinc-900">New university</p>
       <div className="grid grid-cols-2 gap-2">
         <input
           value={form.name}
           onChange={(e) => setForm({ ...form, name: e.target.value })}
           placeholder="Name"
-          className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm outline-none focus:border-zinc-500"
+          className={fieldClass}
         />
         <input
           value={form.stream}
           onChange={(e) => setForm({ ...form, stream: e.target.value })}
           placeholder="Stream (e.g. Medical, Engineering)"
-          className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm outline-none focus:border-zinc-500"
+          className={fieldClass}
         />
         <input
           value={form.state}
           onChange={(e) => setForm({ ...form, state: e.target.value })}
           placeholder="State"
-          className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm outline-none focus:border-zinc-500"
+          className={fieldClass}
         />
         <input
           value={form.city}
           onChange={(e) => setForm({ ...form, city: e.target.value })}
           placeholder="City"
-          className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm outline-none focus:border-zinc-500"
+          className={fieldClass}
         />
         <input
           value={form.establishedYear}
           onChange={(e) => setForm({ ...form, establishedYear: e.target.value })}
           placeholder="Established year"
           type="number"
-          className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm outline-none focus:border-zinc-500"
+          className={fieldClass}
         />
         <input
           value={form.website}
           onChange={(e) => setForm({ ...form, website: e.target.value })}
           placeholder="Website URL"
-          className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm outline-none focus:border-zinc-500"
+          className={fieldClass}
         />
       </div>
       {error && <p className="mt-2 text-xs text-red-600">{error}</p>}
       <div className="mt-3 flex gap-2">
-        <button
-          onClick={submit}
-          disabled={isPending}
-          className="rounded-lg bg-emerald-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-emerald-700 disabled:opacity-50"
-        >
-          Create
-        </button>
-        <button
+        <Button variant="successSolid" size="sm" onClick={submit} disabled={isPending}>
+          {isPending ? 'Creating…' : 'Create'}
+        </Button>
+        <Button
+          size="sm"
           onClick={() => {
             setOpen(false);
             setForm(EMPTY);
             setError(null);
           }}
-          className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm font-medium text-zinc-700 hover:bg-zinc-50"
+          disabled={isPending}
         >
           Cancel
-        </button>
+        </Button>
       </div>
-    </div>
+    </Card>
   );
 }

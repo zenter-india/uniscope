@@ -4,6 +4,7 @@ import { useState, useTransition } from 'react';
 import { Badge, Button } from '../../../components/ui';
 import { ExpandableRow } from '../../../components/ExpandableRow';
 import { SessionTranscript } from '../sessions/SessionTranscript';
+import { toast } from '../../../lib/toast';
 import { resolveReport } from './actions';
 
 const REASON_LABELS: Record<string, string> = {
@@ -59,6 +60,7 @@ export function ReportRow({
       try {
         await resolveReport(report.id, status, resolution || undefined, refundAmountMinor);
         setResolved(true);
+        toast.success(status === 'RESOLVED' ? 'Report resolved.' : 'Report dismissed.');
       } catch (e) {
         setError(e instanceof Error ? e.message : 'Could not resolve report');
       }

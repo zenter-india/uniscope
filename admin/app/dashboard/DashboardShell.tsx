@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { LogoutButton } from '../../components/LogoutButton';
 import { GlobalSearch } from '../../components/GlobalSearch';
+import { ToastHost } from '../../components/ToastHost';
 import { Icon, type IconName } from '../../components/icons';
 
 const NAV_SECTIONS: {
@@ -59,6 +60,7 @@ export function DashboardShell({
 
   return (
     <div className="flex min-h-screen">
+      <ToastHost />
       <aside className="hidden w-60 shrink-0 flex-col border-r border-zinc-200 bg-white md:flex">
         <div className="flex h-14 items-center gap-2 border-b border-zinc-200 px-5">
           <span className="flex h-6 w-6 items-center justify-center rounded-md bg-zinc-900 text-[11px] font-bold text-white">

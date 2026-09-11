@@ -1,6 +1,6 @@
 import { backendFetch } from '../../../lib/backend';
 import { getAdminEmail } from '../../../lib/adminAuth';
-import { FilterTabs, Table } from '../../../components/ui';
+import { EmptyState, FilterTabs, Table } from '../../../components/ui';
 import { DashboardShell } from '../DashboardShell';
 import { VerificationRow, type VerificationRequestRow } from './VerificationRow';
 import { HistoryList } from './HistoryList';
@@ -40,6 +40,10 @@ export default async function VerificationQueuePage({
 
   return (
     <DashboardShell title="Verification" email={email}>
+      <p className="mb-5 text-sm text-zinc-500">
+        Approve or reject a mentor&apos;s college ID before they can accept paid call
+        bookings. Switch to History to look up a past decision.
+      </p>
       <div className="mb-5 flex flex-wrap items-center gap-x-4 gap-y-2">
         <FilterTabs
           items={VIEW_TABS}
@@ -85,10 +89,10 @@ export default async function VerificationQueuePage({
 
       {view === 'queue' ? (
         queue.length === 0 ? (
-          <p className="text-sm text-zinc-500">
+          <EmptyState icon="shieldCheck">
             No pending verification requests. New submissions show up here in
             FIFO order.
-          </p>
+          </EmptyState>
         ) : (
           <Table
             head={

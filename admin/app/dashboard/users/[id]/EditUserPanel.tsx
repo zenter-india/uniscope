@@ -3,6 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { useState, useTransition } from 'react';
 import { Button, Card, fieldClass } from '../../../../components/ui';
+import { toast } from '../../../../lib/toast';
 import { updateUserProfile } from './actions';
 
 export interface EditableUser {
@@ -165,6 +166,7 @@ export function EditUserPanel({ user }: { user: EditableUser }) {
       }
       setSaved(true);
       setOpen(false);
+      toast.success('Profile updated.');
       router.refresh();
     });
   };

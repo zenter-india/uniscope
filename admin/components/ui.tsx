@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import type { ComponentProps, ReactNode } from 'react';
+import { Icon, type IconName } from './icons';
 
 /* ------------------------------------------------------------------ *
  * Shared UI primitives — a small, deliberately plain design system.
@@ -264,10 +265,65 @@ export function FilterTabs<T extends string | number>({
 
 // ---- Empty state -----------------------------------------------------
 
-export function EmptyState({ children }: { children: ReactNode }) {
+export function EmptyState({
+  icon,
+  action,
+  children,
+}: {
+  /** Optional icon shown above the message in a soft circle badge. */
+  icon?: IconName;
+  /** Optional secondary action, e.g. "Clear filters" — rendered below the
+   * message. */
+  action?: ReactNode;
+  children: ReactNode;
+}) {
+  const IconCmp = icon ? Icon[icon] : null;
   return (
-    <div className="rounded-lg border border-dashed border-zinc-200 bg-white px-6 py-10 text-center text-sm text-zinc-500">
-      {children}
+    <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed border-zinc-200 bg-white px-6 py-12 text-center">
+      {IconCmp && (
+        <span className="flex h-10 w-10 items-center justify-center rounded-full bg-zinc-100 text-zinc-400">
+          <IconCmp className="h-5 w-5" />
+        </span>
+      )}
+      <p className="max-w-sm text-sm text-zinc-500">{children}</p>
+      {action}
+    </div>
+  );
+}
+
+// ---- Loading skeletons ---------------------------------------------------
+
+/** A single pulsing placeholder bar. Compose with a fixed height/width via
+ * `className` (e.g. `h-3.5 w-24`). */
+export function Skeleton({ className }: { className?: string }) {
+  return <div className={cx('animate-pulse rounded-md bg-zinc-200/70', className)} />;
+}
+
+/** A skeleton shaped like a framed `Table` — for a route's `loading.tsx`
+ * while its real data is still being fetched. */
+export function TableSkeleton({
+  rows = 6,
+  cols = 5,
+}: {
+  rows?: number;
+  cols?: number;
+}) {
+  return (
+    <div className="overflow-hidden rounded-xl border border-zinc-200/80 bg-white shadow-[0_1px_2px_rgb(0_0_0/0.04)]">
+      <div className="flex gap-8 border-b border-zinc-200 bg-zinc-50/60 px-4 py-3">
+        {Array.from({ length: cols }).map((_, i) => (
+          <Skeleton key={i} className="h-3 w-16" />
+        ))}
+      </div>
+      <div className="divide-y divide-zinc-100">
+        {Array.from({ length: rows }).map((_, i) => (
+          <div key={i} className="flex items-center gap-8 px-4 py-3.5">
+            {Array.from({ length: cols }).map((_, j) => (
+              <Skeleton key={j} className={j === 0 ? 'h-3.5 w-32' : 'h-3.5 w-16'} />
+            ))}
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

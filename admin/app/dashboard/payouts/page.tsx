@@ -1,6 +1,6 @@
 import { backendFetch } from '../../../lib/backend';
 import { getAdminEmail } from '../../../lib/adminAuth';
-import { FilterTabs, Table } from '../../../components/ui';
+import { EmptyState, FilterTabs, Table } from '../../../components/ui';
 import { SortableHeader } from '../../../components/SortableHeader';
 import { DashboardShell } from '../DashboardShell';
 import { PayoutRow, type PayoutRowData } from './PayoutRow';
@@ -42,6 +42,11 @@ export default async function PayoutsPage({
 
   return (
     <DashboardShell title="Payouts" email={email}>
+      <p className="mb-5 text-sm text-zinc-500">
+        Mentor payout requests, FIFO by default. Mark a request &ldquo;Paid&rdquo; once
+        you&apos;ve confirmed the bank transfer — that&apos;s what actually debits their
+        wallet.
+      </p>
       <div className="mb-4 flex flex-wrap items-center gap-2">
         <FilterTabs
           items={STATUS_TABS}
@@ -62,11 +67,11 @@ export default async function PayoutsPage({
       </div>
 
       {rows.length === 0 ? (
-        <p className="text-sm text-zinc-500">
+        <EmptyState icon="wallet">
           {status === 'PENDING'
             ? 'No payout requests waiting. Mentors request these from their Earnings tab.'
             : 'No payout requests in this status.'}
-        </p>
+        </EmptyState>
       ) : (
         <Table
           head={

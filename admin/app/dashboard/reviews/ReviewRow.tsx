@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useState, useTransition } from 'react';
 import { Badge, Button, Table, toneFor } from '../../../components/ui';
 import type { RowSelection } from '../../../components/InfiniteList';
+import { toast } from '../../../lib/toast';
 import { setReviewStatus, type ModeratedReview } from './actions';
 
 function stars(n: number): string {
@@ -31,6 +32,9 @@ export function ReviewRow({
         return;
       }
       setStatus(next);
+      toast.success(
+        next === 'ACTIVE' ? 'Review restored.' : next === 'HIDDEN' ? 'Review hidden.' : 'Review removed.',
+      );
     });
   };
 

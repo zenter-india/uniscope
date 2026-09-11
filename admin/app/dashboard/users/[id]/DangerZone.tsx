@@ -3,6 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { useState, useTransition } from 'react';
 import { Button, Card } from '../../../../components/ui';
+import { toast } from '../../../../lib/toast';
 import { eraseUser } from './actions';
 
 /**
@@ -48,6 +49,7 @@ export function DangerZone({
         setError(res.error);
         return;
       }
+      toast.success(`${displayName} erased.`);
       router.push('/dashboard/users');
       router.refresh();
     });

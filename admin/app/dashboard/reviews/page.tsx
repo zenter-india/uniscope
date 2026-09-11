@@ -62,6 +62,10 @@ export default async function ReviewsPage({
 
   return (
     <DashboardShell title="Reviews" email={email}>
+      <p className="mb-5 text-sm text-zinc-500">
+        Mentor and college reviews. Hide or remove anything spammy, abusive, or fake —
+        select several rows to act on them at once.
+      </p>
       <div className="mb-5 flex flex-col gap-3">
         <form className="flex gap-2" action="/dashboard/reviews">
           <input type="hidden" name="type" value={type} />
