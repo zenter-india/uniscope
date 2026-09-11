@@ -116,7 +116,7 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
               ),
               const SizedBox(height: AppSpacing.xl),
               const Text(
-                'Display name *',
+                'Alias/Display name *',
                 style: TextStyle(
                   fontSize: AppFont.sm,
                   fontWeight: AppFont.semibold,
