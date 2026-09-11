@@ -1536,7 +1536,10 @@ class _ActiveCallView extends StatelessWidget {
       peerAvatarUrl: peerAvatarUrl,
       status: status,
       statusColor: belowIdColor,
-      statusFontSize: AppFont.xs,
+      // Smaller than any named AppFont step — this line (the slot
+      // countdown / "X is muted") is meant to read as a quiet aside under
+      // the context card, not compete with it.
+      statusFontSize: 10,
       topPill: pill,
       speaking: peerSpeaking,
       signal: signal,
