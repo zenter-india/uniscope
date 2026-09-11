@@ -1,10 +1,21 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
 import { createHash } from 'crypto';
 import { UsersService } from '../modules/users/users.service.js';
+import {
+  DEMO_ACCOUNT_OTP_CODE,
+  isDemoAccountPhone,
+  normalisePhone,
+} from './demo-accounts.js';
 import { MockOtpProvider } from './otp/mock-otp.provider.js';
 import { OTP_PROVIDER } from './otp/otp-provider.interface.js';
 import type { OtpProvider } from './otp/otp-provider.interface.js';
 import { TokenService } from './token.service.js';
+
+/** Returned as the `serviceId` for a demo-account OTP request — never
+ * looked up anywhere, since verifyOtp's demo branch checks the fixed code
+ * directly rather than validating a stored serviceId/code pair the way the
+ * real providers do. */
+const DEMO_SERVICE_ID = 'demo-account';
 
 @Injectable()
 export class AuthService {
@@ -15,6 +26,11 @@ export class AuthService {
   ) {}
 
   async requestOtp(phone: string): Promise<{ serviceId: string }> {
+    if (isDemoAccountPhone(phone)) {
+      // Skip the real provider entirely — it would try to actually SMS a
+      // number that doesn't exist and fail. See demo-accounts.ts.
+      return { serviceId: DEMO_SERVICE_ID };
+    }
     return this.otpProvider.sendOtp(phone);
   }
 
@@ -32,21 +48,28 @@ export class AuthService {
       isNewUser: boolean;
     };
   }> {
-    await this.otpProvider.verifyOtp(phone, code, serviceId);
+    const isDemo = isDemoAccountPhone(phone);
+
+    if (isDemo) {
+      if (code !== DEMO_ACCOUNT_OTP_CODE) {
+        throw new UnauthorizedException('Invalid or expired code');
+      }
+    } else {
+      await this.otpProvider.verifyOtp(phone, code, serviceId);
+    }
 
     // Derive phone hash to look up / create the user.
-    // MockOtpProvider stores the hash; for Twilio we compute it here from the
-    // verified phone number (Twilio handles the OTP truth — we just hash phone).
+    // MockOtpProvider stores the hash; for Twilio/MSG91 (and the demo-
+    // account bypass above, which never touches a real provider) we
+    // compute it here from the verified phone number the same way.
     let phoneHash: string;
 
-    if (this.otpProvider instanceof MockOtpProvider) {
+    if (!isDemo && this.otpProvider instanceof MockOtpProvider) {
       phoneHash = this.otpProvider.sha256Public(
         this.otpProvider.normalisePhonePublic(phone),
       );
     } else {
-      phoneHash = createHash('sha256')
-        .update(phone.replace(/\s+/g, '').trim())
-        .digest('hex');
+      phoneHash = createHash('sha256').update(normalisePhone(phone)).digest('hex');
     }
 
     const { user, isNewUser } =
