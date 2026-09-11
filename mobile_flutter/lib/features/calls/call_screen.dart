@@ -1068,17 +1068,16 @@ class _CallStage extends StatelessWidget {
     this.topPill,
     this.pulsing = false,
     this.speaking = false,
-    this.statusColor,
     this.statusFontSize,
     this.signal = _SignalLevel.unknown,
     this.contextLine,
+    this.bottomLabel,
     required this.onBack,
   });
 
-  /// Overrides for the status line under the @id (the active-call view puts
-  /// the countdown there, small and tinted). Null → the default "Ringing…"
-  /// / "Connecting…" style.
-  final Color? statusColor;
+  /// Size override for the status line under the @id (only ever the
+  /// "{name} is muted" note now — the countdown moved to [bottomLabel]).
+  /// Null → the default "Ringing…" / "Connecting…" style.
   final double? statusFontSize;
 
   final String peerName;
@@ -1090,6 +1089,14 @@ class _CallStage extends StatelessWidget {
   final bool speaking;
   final _SignalLevel signal;
   final String? contextLine;
+
+  /// Small aside shown just above the controls — the active call's slot
+  /// countdown. Deliberately NOT under the peer's name/avatar (2026-09-12,
+  /// client feedback: a countdown sitting right under the person you're
+  /// talking to read as anxiety-inducing) — down by the controls it's
+  /// still checkable but isn't the thing your eyes land on for the whole
+  /// call.
+  final Widget? bottomLabel;
 
   /// Always shown, top-left — this screen has no other way off it besides
   /// the OS back gesture, which has no visible affordance and doesn't
@@ -1155,13 +1162,16 @@ class _CallStage extends StatelessWidget {
           uniqueId: peerUniqueId,
           avatarUrl: peerAvatarUrl,
           status: status,
-          statusColor: statusColor,
           statusFontSize: statusFontSize,
           pulsing: pulsing,
           speaking: speaking,
           contextLine: contextLine,
         ),
         const Spacer(),
+        if (bottomLabel != null) ...[
+          bottomLabel!,
+          const SizedBox(height: AppSpacing.sm),
+        ],
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xl),
           child: Row(
@@ -1186,7 +1196,6 @@ class _CallPeerHeader extends StatefulWidget {
     required this.uniqueId,
     required this.avatarUrl,
     required this.status,
-    this.statusColor,
     this.statusFontSize,
     this.pulsing = false,
     this.speaking = false,
@@ -1197,7 +1206,6 @@ class _CallPeerHeader extends StatefulWidget {
   final String? uniqueId;
   final String? avatarUrl;
   final String status;
-  final Color? statusColor;
   final double? statusFontSize;
   final bool pulsing;
 
@@ -1342,18 +1350,20 @@ class _CallPeerHeaderState extends State<_CallPeerHeader>
           const SizedBox(height: 10),
           _ContextCard(text: widget.contextLine!),
         ],
-        const SizedBox(height: 6),
-        Text(
-          widget.status,
-          textAlign: TextAlign.center,
-          style: TextStyle(
-            color: widget.statusColor ?? Colors.white.withValues(alpha: 0.72),
-            fontSize: widget.statusFontSize ?? AppFont.sm,
-            fontWeight: AppFont.medium,
-            letterSpacing: 0.2,
-            fontFeatures: const [FontFeature.tabularFigures()],
+        if (widget.status.isNotEmpty) ...[
+          const SizedBox(height: 6),
+          Text(
+            widget.status,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: Colors.white.withValues(alpha: 0.72),
+              fontSize: widget.statusFontSize ?? AppFont.sm,
+              fontWeight: AppFont.medium,
+              letterSpacing: 0.2,
+              fontFeatures: const [FontFeature.tabularFigures()],
+            ),
           ),
-        ),
+        ],
       ],
     );
   }
@@ -1503,14 +1513,14 @@ class _ActiveCallView extends StatelessWidget {
   Widget build(BuildContext context) {
     final rem = _remainingLabel();
 
-    // The elapsed running time now sits in the top pill (same size/place
-    // the countdown used to). Time-left drops to the small line under the
-    // @id — kept its amber/coral urgency tint.
-    final belowIdText = rem?.$1 ?? 'In call';
-    final belowIdColor = rem?.$2 ?? Colors.white.withValues(alpha: 0.6);
-    final status = peerMuted && !reconnecting
-        ? '$belowIdText  ·  $peerName is muted'
-        : belowIdText;
+    // The elapsed running time sits in the top pill. The countdown used to
+    // sit right under the peer's name/avatar — moved down by the controls
+    // instead (see _CallStage.bottomLabel) per client feedback that a
+    // shrinking timer under the person you're talking to read as
+    // anxiety-inducing. The line under the @id is now only ever the
+    // "muted" note, so it can disappear entirely when there's nothing to
+    // say there.
+    final status = peerMuted && !reconnecting ? '$peerName is muted' : '';
 
     // A live connection problem still outranks the elapsed time in the pill.
     final Widget pill;
@@ -1535,16 +1545,27 @@ class _ActiveCallView extends StatelessWidget {
       peerUniqueId: peerUniqueId,
       peerAvatarUrl: peerAvatarUrl,
       status: status,
-      statusColor: belowIdColor,
-      // Smaller than any named AppFont step — this line (the slot
-      // countdown / "X is muted") is meant to read as a quiet aside under
-      // the context card, not compete with it.
+      // Smaller than any named AppFont step — a quiet aside, not
+      // competing with the context card above it.
       statusFontSize: 10,
       topPill: pill,
       speaking: peerSpeaking,
       signal: signal,
       contextLine: contextLine,
       onBack: onBack,
+      bottomLabel: rem == null
+          ? null
+          : Text(
+              rem.$1,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: rem.$2,
+                fontSize: 10,
+                fontWeight: AppFont.medium,
+                letterSpacing: 0.2,
+                fontFeatures: const [FontFeature.tabularFigures()],
+              ),
+            ),
       controls: [
         _CallControl(
           icon: muted ? Icons.mic_off_rounded : Icons.mic_rounded,
