@@ -145,8 +145,7 @@ class _AspirantOnboardingScreenState
 
   List<String> _specializationOptions() {
     if (_needsMedicalStreamWideSpecialization) {
-      final curatedDegrees =
-          kCuratedDegreeMapByStream['Medical']!.values.toSet().toList();
+      final curatedDegrees = kCuratedDegreesForStream['Medical']!;
       final fetched = ref.watch(
         streamWideSpecializationsProvider(
           (stream: 'Medical', curatedDegrees: curatedDegrees),
@@ -165,8 +164,7 @@ class _AspirantOnboardingScreenState
       if (fetched.isNotEmpty) return fetched;
     }
     if (needsStreamWideSpecialization(_stream, _qualification)) {
-      final curatedDegrees =
-          kCuratedDegreeMapByStream[_stream]!.values.toSet().toList();
+      final curatedDegrees = kCuratedDegreesForStream[_stream]!;
       return ref
               .watch(streamWideSpecializationsProvider(
                 (stream: _stream!, curatedDegrees: curatedDegrees),

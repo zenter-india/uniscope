@@ -313,10 +313,7 @@ class _UniversityListScreenState extends ConsumerState<UniversityListScreen> {
         ? ref.watch(
             streamWideSpecializationsProvider((
               stream: effectiveStream,
-              curatedDegrees: kCuratedDegreeMapByStream[effectiveStream]!
-                  .values
-                  .toSet()
-                  .toList(),
+              curatedDegrees: kCuratedDegreesForStream[effectiveStream]!,
             )),
           )
         : null;

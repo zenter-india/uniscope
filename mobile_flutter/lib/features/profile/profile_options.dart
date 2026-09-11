@@ -422,6 +422,25 @@ const kCuratedDegreeMapByStream = <String, Map<String, String>>{
 String? curatedDegreeKey(String? stream, String? degree) =>
     kCuratedDegreeMapByStream[stream]?[degree];
 
+/// The deduped curated-degree keys for a stream, precomputed ONCE per
+/// stream rather than rebuilt with `.toList()` on every widget build.
+/// This matters because callers pass this list straight into
+/// `streamWideSpecializationsProvider`'s family key
+/// (`({String stream, List<String> curatedDegrees})`) — a Dart record's
+/// `==` delegates to each field's own `==`, and `List<String>`'s `==` is
+/// plain identity equality (two lists with identical contents are still
+/// `!=` if they're different instances). A fresh `.toList()` every build
+/// therefore looks like a brand-new family argument every time, so
+/// Riverpod never reuses the in-flight/completed provider: each rebuild
+/// starts a new fetch that gets abandoned by the next rebuild before it
+/// can ever be observed resolved — the watched value is stuck at "loading"
+/// forever. Returning the SAME list instance for a given stream fixes the
+/// family cache key so the fetch actually completes and renders.
+final Map<String, List<String>> kCuratedDegreesForStream = {
+  for (final entry in kCuratedDegreeMapByStream.entries)
+    entry.key: List.unmodifiable(entry.value.values.toSet()),
+};
+
 /// Streams with their own real per-college dataset — ported from web's
 /// `STREAMS_WITH_COLLEGE_DATA` (MentorForm.tsx). For these streams, a
 /// Doctorate/Others degree still gets a Specialization field even though

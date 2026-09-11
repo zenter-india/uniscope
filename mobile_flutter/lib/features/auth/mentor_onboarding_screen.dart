@@ -194,8 +194,7 @@ class _MentorOnboardingScreenState extends ConsumerState<MentorOnboardingScreen>
   ///    only when that college has none recorded yet.
   List<String> _specializationOptions() {
     if (_needsMedicalStreamWideSpecialization) {
-      final curatedDegrees =
-          kCuratedDegreeMapByStream['Medical']!.values.toSet().toList();
+      final curatedDegrees = kCuratedDegreesForStream['Medical']!;
       final fetched = ref.watch(
         streamWideSpecializationsProvider(
           (stream: 'Medical', curatedDegrees: curatedDegrees),
@@ -221,8 +220,7 @@ class _MentorOnboardingScreenState extends ConsumerState<MentorOnboardingScreen>
       // No curated key for Doctorate/Others itself (e.g. Dental has one
       // only for MDS) — union across every curated degree the stream does
       // have, same mechanism as Medical's stream-wide list above.
-      final curatedDegrees =
-          kCuratedDegreeMapByStream[_stream]!.values.toSet().toList();
+      final curatedDegrees = kCuratedDegreesForStream[_stream]!;
       return ref
               .watch(streamWideSpecializationsProvider(
                 (stream: _stream!, curatedDegrees: curatedDegrees),
