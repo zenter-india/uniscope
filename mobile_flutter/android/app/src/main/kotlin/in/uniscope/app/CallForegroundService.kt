@@ -1,4 +1,4 @@
-package com.uniscope.uniscope_mobile
+package `in`.uniscope.app
 
 import android.app.Notification
 import android.app.NotificationChannel

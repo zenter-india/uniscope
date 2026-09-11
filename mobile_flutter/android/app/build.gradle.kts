@@ -19,7 +19,14 @@ if (hasReleaseSigning) {
 }
 
 android {
-    namespace = "com.uniscope.uniscope_mobile"
+    // Matches the package name Play Console already has this app locked to
+    // (a Console app's package is permanently fixed on its first upload;
+    // this repo's previous com.uniscope.uniscope_mobile — a Flutter
+    // default-looking name, never actually uploaded anywhere — was the
+    // mismatch). Also mirrors the live production domain, uniscope.in.
+    // Requires a matching google-services.json for this exact package —
+    // see the CLAUDE.md note on this change for the one manual step left.
+    namespace = "in.uniscope.app"
     // agora_rtc_engine's transitive androidx deps require compileSdk 36 —
     // flutter.compileSdkVersion (31) is too old for them.
     compileSdk = 36
@@ -34,8 +41,7 @@ android {
     }
 
     defaultConfig {
-        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId = "com.uniscope.uniscope_mobile"
+        applicationId = "in.uniscope.app"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion

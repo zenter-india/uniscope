@@ -310,20 +310,7 @@ class _CallScreenState extends ConsumerState<CallScreen> {
       });
 
       final creds = await api.getCallToken(widget.sessionId);
-      // Agora's native join has a documented-but-unconfirmed hang risk on
-      // some Android builds (see CLAUDE.md's Agora native-call note) — an
-      // uncaught native-layer stall here would otherwise leave this screen
-      // spinning on _Phase.connecting forever with no error, which looks
-      // identical to the "stuck ringing" symptom from the other party's
-      // side. A bounded timeout turns a silent hang into a visible error.
-      await _joinAgoraChannel(creds).timeout(
-        const Duration(seconds: 20),
-        onTimeout: () {
-          throw Exception(
-            'Could not connect to the call — check your connection and try again.',
-          );
-        },
-      );
+      await _joinAgoraChannelWithRetry(creds);
 
       final confirmed = await api.confirmJoined(widget.sessionId);
       if (!mounted) return;
@@ -340,8 +327,61 @@ class _CallScreenState extends ConsumerState<CallScreen> {
     }
   }
 
+  /// Agora's native join has a documented-but-unconfirmed hang risk on some
+  /// Android builds (see CLAUDE.md's Agora native-call note) — an uncaught
+  /// native-layer stall here would otherwise leave this screen spinning on
+  /// _Phase.connecting forever with no error, which looks identical to the
+  /// "stuck ringing" symptom from the other party's side. A bounded timeout
+  /// turns a silent hang into a visible error.
+  ///
+  /// On iOS specifically (2026-09-12 device report), the *first* join
+  /// attempt after accepting a call reliably timed out — "Connecting…" for
+  /// 10-15s, then "Could not connect" — while manually going back to the
+  /// session list and reopening the call connected instantly every time.
+  /// That's the signature of a cold-start cost (first-ever ICE/TURN
+  /// negotiation, ATS/cert warm-up, or the very first mic-permission
+  /// prompt) exceeding a 20s budget on the first try and being cheap on a
+  /// second. Rather than make the user manually retry, do exactly what
+  /// they were already doing by hand: retry once automatically before
+  /// surfacing an error. `Future.timeout()` does NOT cancel the underlying
+  /// operation — the abandoned join keeps running in the background unless
+  /// explicitly torn down — so a timed-out attempt's engine (set onto
+  /// `_engine` immediately by `_joinAgoraChannel`, not only on success) is
+  /// force-released before the retry gets a clean, fresh engine.
+  Future<void> _joinAgoraChannelWithRetry(CallCredentials creds) async {
+    const timeout = Duration(seconds: 20);
+    for (var attempt = 1; attempt <= 2; attempt++) {
+      try {
+        await _joinAgoraChannel(creds).timeout(timeout);
+        return;
+      } on TimeoutException {
+        final stale = _engine;
+        _engine = null;
+        try {
+          await stale?.leaveChannel();
+          await stale?.release();
+        } catch (_) {
+          // Best-effort teardown of the abandoned attempt — nothing to
+          // recover into if this itself fails.
+        }
+        if (attempt == 2) {
+          throw Exception(
+            'Could not connect to the call — check your connection and try again.',
+          );
+        }
+        debugPrint('[call] join attempt $attempt timed out, retrying once');
+      }
+    }
+  }
+
   Future<void> _joinAgoraChannel(CallCredentials creds) async {
     final engine = createAgoraRtcEngine();
+    // Assigned immediately (not at the end, after join succeeds) so a
+    // caller that gives up on this call via a timeout — see _connectToCall
+    // — can always find and force-release *this exact* engine instance to
+    // abandon a stalled attempt cleanly, rather than leaking a native
+    // engine that's still mid-connect in the background.
+    _engine = engine;
     await engine.initialize(RtcEngineContext(appId: creds.appId));
     await engine.enableAudio();
     await engine.setDefaultAudioRouteToSpeakerphone(true);
@@ -449,7 +489,6 @@ class _CallScreenState extends ConsumerState<CallScreen> {
         clientRoleType: ClientRoleType.clientRoleBroadcaster,
       ),
     );
-    _engine = engine;
   }
 
   Future<void> _poll() async {
