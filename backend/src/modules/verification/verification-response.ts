@@ -40,9 +40,14 @@ export interface VerificationRequestResponse {
    * fetched with the user/university relations included (see
    * VerificationService.findQueue). Undefined elsewhere. */
   userDisplayName?: string;
+  userRole?: string;
   universityName?: string;
-  /** Full applicant detail — only on the admin queue, so a reviewer can
-   * see what the person submitted without leaving the queue. */
+  /** Full applicant detail — only when the row was fetched with the full
+   * profile relation (the pending queue), so a reviewer can see what the
+   * person submitted without leaving the queue. The lighter admin history
+   * list (findHistory) includes user/university but not profile, so this
+   * stays undefined there — a resolved request doesn't need the full
+   * onboarding snapshot re-shown. */
   applicant?: VerificationApplicant;
 }
 
@@ -85,8 +90,9 @@ export function toVerificationRequestResponse(
     reviewedAt: req.reviewedAt,
     createdAt: req.createdAt,
     ...(req.user && { userDisplayName: req.user.displayName }),
+    ...(req.user?.role !== undefined && { userRole: req.user.role }),
     ...(req.university && { universityName: req.university.name }),
-    ...(req.user?.role !== undefined && {
+    ...(req.user?.profile !== undefined && {
       applicant: toApplicant(req.user as {
         displayName: string;
         role: string;

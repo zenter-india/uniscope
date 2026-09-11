@@ -1,10 +1,11 @@
-import { Body, Controller, Get, Param, Patch, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, Patch, Post, Query, UseGuards } from '@nestjs/common';
 import { UserRole } from '@prisma/client';
 import { CurrentUser } from '../../auth/decorators/current-user.decorator.js';
 import type { JwtPayload } from '../../auth/decorators/current-user.decorator.js';
 import { Roles } from '../../auth/decorators/roles.decorator.js';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard.js';
 import { RolesGuard } from '../../auth/guards/roles.guard.js';
+import { ListVerificationHistoryDto } from './dto/list-verification-history.dto.js';
 import { ReviewVerificationDto } from './dto/review-verification.dto.js';
 import { SubmitVerificationDto } from './dto/submit-verification.dto.js';
 import { VerificationService } from './verification.service.js';
@@ -33,6 +34,13 @@ export class VerificationController {
   @Get('queue')
   findQueue() {
     return this.verificationService.findQueue();
+  }
+
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @Get('history')
+  findHistory(@Query() query: ListVerificationHistoryDto) {
+    return this.verificationService.findHistory(query);
   }
 
   @UseGuards(RolesGuard)

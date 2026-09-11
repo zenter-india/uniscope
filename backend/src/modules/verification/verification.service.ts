@@ -6,11 +6,12 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { NotificationType, VerificationStatus } from '@prisma/client';
+import { NotificationType, Prisma, VerificationStatus } from '@prisma/client';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { PrismaService } from '../../database/prisma/prisma.service.js';
 import { NotificationsService } from '../notifications/notifications.service.js';
 import { SUPABASE_BUCKETS, SUPABASE_CLIENT } from '../../supabase/index.js';
+import { ListVerificationHistoryDto } from './dto/list-verification-history.dto.js';
 import { ReviewVerificationDto } from './dto/review-verification.dto.js';
 import { SubmitVerificationDto } from './dto/submit-verification.dto.js';
 import {
@@ -145,6 +146,43 @@ export class VerificationService {
       },
     });
     return rows.map(toVerificationRequestResponse);
+  }
+
+  /** ADMIN — resolved (VERIFIED/REJECTED) requests, newest-decision-first,
+   * cursor-paginated. Distinct from findQueue: this is "what did we decide
+   * and why", not "what's waiting" — so it carries the reviewer's note and
+   * decision timestamp but not the full applicant snapshot (that's only
+   * useful while a decision is still pending). */
+  async findHistory(
+    query: ListVerificationHistoryDto,
+  ): Promise<{ data: VerificationRequestResponse[]; nextCursor: string | null }> {
+    const take = Math.min(query.limit ?? 30, 50);
+    const resolvedStatuses = [VerificationStatus.VERIFIED, VerificationStatus.REJECTED];
+
+    const where: Prisma.VerificationRequestWhereInput = {
+      status: query.status ?? { in: resolvedStatuses },
+      ...(query.search && {
+        user: { displayName: { contains: query.search, mode: 'insensitive' } },
+      }),
+    };
+
+    const rows = await this.prisma.verificationRequest.findMany({
+      where,
+      orderBy: [{ reviewedAt: 'desc' }, { id: 'asc' }],
+      take: take + 1,
+      ...(query.cursor && { cursor: { id: query.cursor }, skip: 1 }),
+      include: {
+        user: { select: { displayName: true, role: true } },
+        university: { select: { name: true } },
+      },
+    });
+
+    const hasMore = rows.length > take;
+    const page = hasMore ? rows.slice(0, take) : rows;
+    return {
+      data: page.map(toVerificationRequestResponse),
+      nextCursor: hasMore ? page[page.length - 1].id : null,
+    };
   }
 
   /** A time-limited signed URL to view the document image — never expose the
