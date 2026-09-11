@@ -125,11 +125,12 @@ export class SessionsService {
    * snapshotted onto the session at creation time — later rate changes must
    * never retroactively affect this session.
    *
-   * AUDIO_CALL is a fixed pre-paid slot (5/10/20 min, see CreateSessionDto):
-   * covered by the aspirant's free-call-minutes tier if there's enough left,
-   * otherwise a WalletHold for the slot cost is placed here at BOOKING time
-   * (so the mentor never accepts a request the aspirant can't afford) — the
-   * hold is only converted into an actual debit once the call server-
+   * AUDIO_CALL is a fixed pre-paid slot (6/10/20 min, see CreateSessionDto):
+   * **there is no free-call tier** — every call, no exceptions, requires a
+   * WalletHold for the full slot cost placed here at BOOKING time (so the
+   * mentor never accepts a request the aspirant can't afford, and no call
+   * can ever connect without real Uniminutes backing it) — the hold is only
+   * converted into an actual debit once the call server-
    * confirms a connection (Agora webhook, not implemented here yet).
    */
   async create(
@@ -191,7 +192,6 @@ export class SessionsService {
 
     const isAudioCall = dto.type === SessionType.AUDIO_CALL;
     const slotMinutes = dto.slotMinutes ?? 0;
-    const slotSeconds = slotMinutes * 60;
     const slotCostMinor = slotMinutes * MENTOR_RATE_PER_MINUTE_MINOR;
 
     // "When?" step: Instant → requestedFor stays null (connect once the
@@ -234,14 +234,6 @@ export class SessionsService {
       }
     }
 
-    let isFreeSlot = false;
-    if (isAudioCall) {
-      const profile = await this.prisma.userProfile.findUniqueOrThrow({
-        where: { userId: aspirantId },
-      });
-      isFreeSlot = profile.freeCallSecondsRemaining >= slotSeconds;
-    }
-
     const session = await this.prisma.session.create({
       data: {
         aspirantId,
@@ -259,10 +251,15 @@ export class SessionsService {
 
     this.logger.log(
       `[call] session created id=${session.id} type=${session.type} ` +
-        `slotMinutes=${slotMinutes} freeSlot=${isFreeSlot} aspirant=${aspirantId} mentor=${dto.mentorId}`,
+        `slotMinutes=${slotMinutes} aspirant=${aspirantId} mentor=${dto.mentorId}`,
     );
 
-    if (isAudioCall && !isFreeSlot) {
+    // Strict policy: no free-call tier — every AUDIO_CALL, no exceptions,
+    // must place a real WalletHold for the full slot cost. placeHold throws
+    // (and the orphaned session row below is deleted) if the aspirant can't
+    // actually afford it, so a call request can never reach the mentor
+    // unless the aspirant already has the Uniminutes to pay for it.
+    if (isAudioCall) {
       const aspirantWallet = await this.prisma.wallet.findUniqueOrThrow({
         where: { userId: aspirantId },
       });
@@ -713,9 +710,10 @@ export class SessionsService {
    * aspirantJoinedAt/mentorJoinedAt schema comment for why this isn't a
    * real server-side signal yet). Records the CALLING party's own join;
    * once BOTH parties have confirmed, transitions the session to
-   * IN_PROGRESS and settles billing exactly once — consuming the booking
-   * hold if this was a paid slot, or decrementing the free-call-minutes
-   * tier if it wasn't.
+   * IN_PROGRESS and settles billing exactly once by consuming the booking
+   * hold placed at create() time. There is no free-call tier — every new
+   * AUDIO_CALL always has a hold; the no-hold branch below only exists to
+   * settle a pre-existing legacy free-tier session already in flight.
    */
   async confirmJoined(sessionId: string, userId: string): Promise<SessionResponse> {
     const session = await this.requireSessionForParty(sessionId, userId);
@@ -842,8 +840,14 @@ export class SessionsService {
         });
       }
     } else {
-      // Free-tier slot — decrement the aspirant's remaining free minutes,
-      // never below 0.
+      // No hold — there is no free-call tier anymore, so this should be
+      // unreachable for any session created after that policy landed. Keep
+      // the free-tier settle path only to close out a legacy session that
+      // was already mid-flight when the policy changed.
+      this.logger.warn(
+        `[call] confirmJoined settling with NO hold sessionId=${sessionId} — ` +
+          `legacy free-tier session (no free-call tier for new sessions)`,
+      );
       await this.prisma.userProfile.updateMany({
         where: { userId: session.aspirantId },
         data: { freeCallSecondsRemaining: { decrement: slotMinutes * 60 } },
@@ -852,7 +856,7 @@ export class SessionsService {
         where: { userId: session.aspirantId, freeCallSecondsRemaining: { lt: 0 } },
         data: { freeCallSecondsRemaining: 0 },
       });
-      this.logger.log(`[call] billing settled (free tier) sessionId=${sessionId} slotMinutes=${slotMinutes}`);
+      this.logger.log(`[call] billing settled (legacy free tier) sessionId=${sessionId} slotMinutes=${slotMinutes}`);
     }
 
     return this.toResponseById(sessionId);
@@ -1177,8 +1181,10 @@ export class SessionsService {
         data: { totalCostMinor: feeMinor },
       });
     } else if (endReason === 'ASPIRANT_NO_SHOW') {
-      // Free-tier booking (no hold) — nothing to bill the mentor's way
-      // through, since free-tier sessions never pay the mentor even on a
+      // No hold — there is no free-call tier for any session created after
+      // that policy change (every call now always places a hold at create()
+      // time), so this branch is legacy-only: nothing to bill the mentor's
+      // way through, since free-tier sessions never paid the mentor even on a
       // normal connect (see confirmJoined). The aspirant still "spends"
       // the grace-period minutes off their free tier, so it isn't
       // consequence-free for them, just not mentor-compensated.
