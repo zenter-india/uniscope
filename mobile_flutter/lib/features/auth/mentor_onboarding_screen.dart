@@ -394,10 +394,34 @@ class _MentorOnboardingScreenState extends ConsumerState<MentorOnboardingScreen>
     }
   }
 
+  // The card said "Take picture to upload" but only ever opened the
+  // gallery — ImageSource.camera was never wired up, so there was no way
+  // to actually take a picture ("camera is not opening", per report).
+  // Now offers both explicitly.
   Future<void> _pickImage() async {
+    final source = await showModalBottomSheet<ImageSource>(
+      context: context,
+      builder: (ctx) => SafeArea(
+        child: Wrap(
+          children: [
+            ListTile(
+              leading: const Icon(Icons.camera_alt_rounded),
+              title: const Text('Take a photo'),
+              onTap: () => Navigator.pop(ctx, ImageSource.camera),
+            ),
+            ListTile(
+              leading: const Icon(Icons.photo_library_rounded),
+              title: const Text('Choose from gallery'),
+              onTap: () => Navigator.pop(ctx, ImageSource.gallery),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (source == null) return;
     final picker = ImagePicker();
     final picked = await picker.pickImage(
-      source: ImageSource.gallery,
+      source: source,
       imageQuality: 70,
       maxWidth: 1600,
     );

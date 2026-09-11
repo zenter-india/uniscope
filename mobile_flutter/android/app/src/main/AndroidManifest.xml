@@ -1,5 +1,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <uses-permission android:name="android.permission.INTERNET"/>
+    <!-- Required for ImageSource.camera (image_picker) — the "Take a photo"
+         option on ID/document verification uploads. -->
+    <uses-permission android:name="android.permission.CAMERA"/>
     <uses-permission android:name="android.permission.RECORD_AUDIO"/>
     <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS"/>
     <uses-permission android:name="android.permission.BLUETOOTH"/>
@@ -14,6 +17,10 @@
     <!-- Lets the "Calls" notification channel vibrate alongside its ringtone
          (flutter_local_notifications enableVibration / defaultVibrateTimings). -->
     <uses-permission android:name="android.permission.VIBRATE"/>
+    <!-- Declaring the CAMERA permission makes Play Store assume a camera is
+         required unless told otherwise — a mentor without one can still
+         verify via the gallery option, so don't gate installability on it. -->
+    <uses-feature android:name="android.hardware.camera" android:required="false"/>
     <application
         android:label="Uniscope"
         android:name="${applicationName}"
