@@ -53,8 +53,8 @@ function Field({ label, value }: { label: string; value: React.ReactNode }) {
   if (value === null || value === undefined || value === '') return null;
   return (
     <div>
-      <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">{label}</p>
-      <p className="text-sm text-zinc-800">{value}</p>
+      <p className="text-xs font-medium uppercase tracking-wide text-zinc-500 dark:text-zinc-400">{label}</p>
+      <p className="text-sm text-zinc-800 dark:text-zinc-100">{value}</p>
     </div>
   );
 }
@@ -106,15 +106,15 @@ export function VerificationRow({ request }: { request: VerificationRequestRow }
     <ExpandableRow
       colSpan={5}
       cells={[
-        <span key="n" className="font-medium text-zinc-900">
+        <span key="n" className="font-medium text-zinc-900 dark:text-zinc-100">
           {request.userDisplayName ?? request.userId}
         </span>,
         a ? <Badge key="r">{a.role}</Badge> : <span key="r">—</span>,
-        <span key="c" className="text-xs text-zinc-500">
+        <span key="c" className="text-xs text-zinc-500 dark:text-zinc-400">
           {request.universityName ?? request.universityId} ·{' '}
           {DOCUMENT_TYPE_LABELS[request.documentType] ?? request.documentType}
         </span>,
-        <span key="d" className="whitespace-nowrap text-xs text-zinc-500">
+        <span key="d" className="whitespace-nowrap text-xs text-zinc-500 dark:text-zinc-400">
           {request.submittedAt ? new Date(request.submittedAt).toLocaleDateString() : '—'}
         </span>,
       ]}
@@ -159,7 +159,7 @@ export function VerificationRow({ request }: { request: VerificationRequestRow }
           href={docUrl}
           target="_blank"
           rel="noreferrer"
-          className="mt-3 block overflow-hidden rounded-lg border border-zinc-200"
+          className="mt-3 block overflow-hidden rounded-lg border border-zinc-200 dark:border-zinc-800"
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={docUrl} alt="Verification document" className="max-h-64 w-full object-contain" />
@@ -171,10 +171,10 @@ export function VerificationRow({ request }: { request: VerificationRequestRow }
         value={note}
         onChange={(e) => setNote(e.target.value)}
         placeholder="Optional note (shown to the user if rejected)"
-        className="mt-3 w-full rounded-md border border-zinc-300 bg-white px-3 py-1.5 text-sm text-zinc-900 shadow-sm outline-none transition-colors placeholder:text-zinc-400 focus:border-zinc-400 focus:ring-2 focus:ring-zinc-400/40"
+        className="mt-3 w-full rounded-md border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-1.5 text-sm text-zinc-900 dark:text-zinc-100 shadow-sm outline-none transition-colors placeholder:text-zinc-400 dark:placeholder:text-zinc-500 focus:border-zinc-400 dark:focus:border-zinc-600 focus:ring-2 focus:ring-zinc-400/40 dark:focus:ring-zinc-600/40"
       />
 
-      {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
+      {error && <p className="mt-2 text-sm text-red-600 dark:text-red-400">{error}</p>}
 
       <div className="mt-3 flex gap-2">
         <Button variant="successSolid" onClick={() => decide(true)} disabled={isPending}>

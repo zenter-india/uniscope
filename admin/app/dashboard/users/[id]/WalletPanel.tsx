@@ -115,8 +115,8 @@ export function WalletPanel({
     <Card className="p-5">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h2 className="text-sm font-semibold text-zinc-900">Wallet</h2>
-          <p className="mt-1 text-lg font-semibold text-zinc-900">{balance(balanceMinor)}</p>
+          <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">Wallet</h2>
+          <p className="mt-1 text-lg font-semibold text-zinc-900 dark:text-zinc-100">{balance(balanceMinor)}</p>
         </div>
         <Button
           size="sm"
@@ -130,12 +130,12 @@ export function WalletPanel({
         </Button>
       </div>
 
-      {done && <p className="mb-3 text-sm text-emerald-600">{done}</p>}
+      {done && <p className="mb-3 text-sm text-emerald-600 dark:text-emerald-400">{done}</p>}
 
       {formOpen && (
-        <div className="mb-4 flex flex-col gap-3 rounded-lg border border-zinc-100 bg-zinc-50 p-4">
+        <div className="mb-4 flex flex-col gap-3 rounded-lg border border-zinc-100 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800/60 p-4">
           <div className="flex flex-wrap items-center gap-3">
-            <div className="flex overflow-hidden rounded-lg border border-zinc-300">
+            <div className="flex overflow-hidden rounded-lg border border-zinc-300 dark:border-zinc-700">
               {(['credit', 'debit'] as const).map((d) => (
                 <button
                   key={d}
@@ -146,7 +146,7 @@ export function WalletPanel({
                       ? d === 'credit'
                         ? 'bg-emerald-600 text-white'
                         : 'bg-red-600 text-white'
-                      : 'bg-white text-zinc-600 hover:bg-zinc-50'
+                      : 'bg-white dark:bg-zinc-900 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800/60'
                   }`}
                 >
                   {d === 'credit' ? 'Credit (add)' : 'Debit (remove)'}
@@ -154,7 +154,7 @@ export function WalletPanel({
               ))}
             </div>
             <div className="flex items-center gap-1">
-              <span className="text-sm text-zinc-500">₹</span>
+              <span className="text-sm text-zinc-500 dark:text-zinc-400">₹</span>
               <input
                 type="number"
                 min="0"
@@ -166,7 +166,7 @@ export function WalletPanel({
               />
             </div>
             {Number(rupees) > 0 && (
-              <span className="text-xs text-zinc-400">
+              <span className="text-xs text-zinc-400 dark:text-zinc-500">
                 = {(Number(rupees) / 10).toFixed(2)} Uniminutes
               </span>
             )}
@@ -178,7 +178,7 @@ export function WalletPanel({
             placeholder="Reason (recorded on the ledger entry) — e.g. goodwill credit for dropped call #…"
             className={fieldClass}
           />
-          {adjustErr && <p className="text-sm text-red-600">{adjustErr}</p>}
+          {adjustErr && <p className="text-sm text-red-600 dark:text-red-400">{adjustErr}</p>}
           <div>
             <Button variant="primary" onClick={submit} disabled={isPending}>
               {isPending ? 'Applying…' : 'Apply adjustment'}
@@ -187,34 +187,34 @@ export function WalletPanel({
         </div>
       )}
 
-      <h3 className="mb-2 text-xs font-medium uppercase tracking-wide text-zinc-400">
+      <h3 className="mb-2 text-xs font-medium uppercase tracking-wide text-zinc-400 dark:text-zinc-500">
         Transactions
       </h3>
       {entries.length === 0 ? (
-        <p className="text-sm text-zinc-400">No wallet activity yet.</p>
+        <p className="text-sm text-zinc-400 dark:text-zinc-500">No wallet activity yet.</p>
       ) : (
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <tbody>
               {entries.map((e) => (
-                <tr key={e.id} className="border-t border-zinc-100">
-                  <td className="py-2 pr-3 align-top text-zinc-500 whitespace-nowrap">
+                <tr key={e.id} className="border-t border-zinc-100 dark:border-zinc-800">
+                  <td className="py-2 pr-3 align-top text-zinc-500 dark:text-zinc-400 whitespace-nowrap">
                     {new Date(e.createdAt).toLocaleString()}
                   </td>
                   <td className="py-2 pr-3 align-top">
-                    <span className="font-medium text-zinc-800">
+                    <span className="font-medium text-zinc-800 dark:text-zinc-100">
                       {TYPE_LABELS[e.type] ?? e.type}
                     </span>
-                    {e.note && <p className="text-xs text-zinc-400">{e.note}</p>}
+                    {e.note && <p className="text-xs text-zinc-400 dark:text-zinc-500">{e.note}</p>}
                   </td>
                   <td
                     className={`py-2 pr-3 text-right align-top font-medium tabular-nums whitespace-nowrap ${
-                      e.amountMinor < 0 ? 'text-red-600' : 'text-emerald-600'
+                      e.amountMinor < 0 ? 'text-red-600 dark:text-red-400' : 'text-emerald-600 dark:text-emerald-400'
                     }`}
                   >
                     {money(e.amountMinor)}
                   </td>
-                  <td className="py-2 text-right align-top text-zinc-500 tabular-nums whitespace-nowrap">
+                  <td className="py-2 text-right align-top text-zinc-500 dark:text-zinc-400 tabular-nums whitespace-nowrap">
                     {(e.balanceAfterMinor / 100).toLocaleString('en-IN', {
                       style: 'currency',
                       currency: 'INR',
@@ -227,7 +227,7 @@ export function WalletPanel({
         </div>
       )}
 
-      {loadErr && <p className="mt-2 text-sm text-red-600">{loadErr}</p>}
+      {loadErr && <p className="mt-2 text-sm text-red-600 dark:text-red-400">{loadErr}</p>}
       {cursor && (
         <Button size="sm" onClick={more} disabled={isPending} className="mt-3">
           {isPending ? 'Loading…' : 'Load more'}

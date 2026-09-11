@@ -50,17 +50,17 @@ export function SupportInbox({
   return (
     <div className="grid gap-4 lg:grid-cols-[320px_1fr]">
       <Card className="flex max-h-[calc(100vh-180px)] flex-col overflow-hidden p-0">
-        <div className="flex items-center justify-between border-b border-zinc-200 px-4 py-3">
-          <span className="text-sm font-semibold text-zinc-900">
+        <div className="flex items-center justify-between border-b border-zinc-200 dark:border-zinc-800 px-4 py-3">
+          <span className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
             Conversations
-            <span className="ml-1.5 text-xs font-normal text-zinc-400">
+            <span className="ml-1.5 text-xs font-normal text-zinc-400 dark:text-zinc-500">
               {channels.length}
             </span>
           </span>
           <button
             onClick={refreshChannels}
             disabled={refreshing}
-            className="text-zinc-400 transition hover:text-zinc-700 disabled:opacity-40"
+            className="text-zinc-400 dark:text-zinc-500 transition hover:text-zinc-700 dark:hover:text-zinc-200 disabled:opacity-40"
             title="Refresh"
           >
             <Icon.refresh width={15} height={15} />
@@ -68,18 +68,18 @@ export function SupportInbox({
         </div>
         <div className="flex-1 overflow-y-auto">
           {channels.length === 0 ? (
-            <p className="p-4 text-sm text-zinc-500">No support conversations yet.</p>
+            <p className="p-4 text-sm text-zinc-500 dark:text-zinc-400">No support conversations yet.</p>
           ) : (
             channels.map((c) => (
               <button
                 key={c.channelId}
                 onClick={() => setSelectedUserId(c.userId)}
-                className={`flex w-full flex-col gap-1 border-b border-zinc-100 px-4 py-3 text-left transition hover:bg-zinc-50 ${
-                  c.userId === selectedUserId ? 'bg-zinc-50' : ''
+                className={`flex w-full flex-col gap-1 border-b border-zinc-100 dark:border-zinc-800 px-4 py-3 text-left transition hover:bg-zinc-50 dark:hover:bg-zinc-800/60 ${
+                  c.userId === selectedUserId ? 'bg-zinc-50 dark:bg-zinc-800/60' : ''
                 }`}
               >
                 <div className="flex items-center gap-2">
-                  <span className="truncate text-sm font-medium text-zinc-900">
+                  <span className="truncate text-sm font-medium text-zinc-900 dark:text-zinc-100">
                     {c.displayName}
                   </span>
                   {c.role && (
@@ -88,14 +88,14 @@ export function SupportInbox({
                     </Badge>
                   )}
                   {c.awaitingReply && (
-                    <span className="ml-auto h-2 w-2 shrink-0 rounded-full bg-amber-500" title="Awaiting reply" />
+                    <span className="ml-auto h-2 w-2 shrink-0 rounded-full bg-amber-500 dark:bg-amber-400" title="Awaiting reply" />
                   )}
                 </div>
-                <span className="truncate text-xs text-zinc-500">
+                <span className="truncate text-xs text-zinc-500 dark:text-zinc-400">
                   {c.lastMessageFromStaff ? 'You: ' : ''}
                   {c.lastMessageText ?? '—'}
                 </span>
-                <span className="text-[11px] text-zinc-400">
+                <span className="text-[11px] text-zinc-400 dark:text-zinc-500">
                   {timeAgo(c.lastMessageAt)} · {c.messageCount} message
                   {c.messageCount === 1 ? '' : 's'}
                 </span>
@@ -112,7 +112,7 @@ export function SupportInbox({
           onReplied={refreshChannels}
         />
       ) : (
-        <Card className="flex items-center justify-center p-10 text-sm text-zinc-500">
+        <Card className="flex items-center justify-center p-10 text-sm text-zinc-500 dark:text-zinc-400">
           Select a conversation to view it.
         </Card>
       )}
@@ -195,9 +195,9 @@ function ThreadView({
 
   return (
     <Card className="flex max-h-[calc(100vh-180px)] flex-col overflow-hidden p-0">
-      <div className="border-b border-zinc-200 px-4 py-3">
+      <div className="border-b border-zinc-200 dark:border-zinc-800 px-4 py-3">
         <div className="flex items-center gap-2">
-          <span className="text-sm font-semibold text-zinc-900">
+          <span className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
             {channel.displayName}
           </span>
           {channel.role && (
@@ -207,17 +207,17 @@ function ThreadView({
           )}
         </div>
         {channel.uniqueId && (
-          <span className="text-xs text-zinc-400">{channel.uniqueId}</span>
+          <span className="text-xs text-zinc-400 dark:text-zinc-500">{channel.uniqueId}</span>
         )}
       </div>
 
-      <div ref={scrollRef} className="flex-1 space-y-3 overflow-y-auto bg-zinc-50 p-4">
+      <div ref={scrollRef} className="flex-1 space-y-3 overflow-y-auto bg-zinc-50 dark:bg-zinc-800/60 p-4">
         {loading ? (
-          <p className="text-sm text-zinc-500">Loading…</p>
+          <p className="text-sm text-zinc-500 dark:text-zinc-400">Loading…</p>
         ) : loadErr ? (
-          <p className="text-sm text-red-600">{loadErr}</p>
+          <p className="text-sm text-red-600 dark:text-red-400">{loadErr}</p>
         ) : messages.length === 0 ? (
-          <p className="text-sm text-zinc-500">No messages in this conversation.</p>
+          <p className="text-sm text-zinc-500 dark:text-zinc-400">No messages in this conversation.</p>
         ) : (
           <>
             {hasMore && (
@@ -244,13 +244,13 @@ function ThreadView({
                     className={`max-w-[78%] rounded-2xl px-3.5 py-2 text-sm ${
                       staff
                         ? 'rounded-br-sm bg-emerald-600 text-white'
-                        : 'rounded-bl-sm border border-zinc-200 bg-white text-zinc-800'
+                        : 'rounded-bl-sm border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-zinc-800 dark:text-zinc-100'
                     }`}
                   >
                     <p className="whitespace-pre-wrap break-words">{m.text}</p>
                     <p
                       className={`mt-1 text-[10px] ${
-                        staff ? 'text-emerald-100' : 'text-zinc-400'
+                        staff ? 'text-emerald-100 dark:text-emerald-200' : 'text-zinc-400 dark:text-zinc-500'
                       }`}
                     >
                       {staff ? 'Support' : channel.displayName} ·{' '}
@@ -264,8 +264,8 @@ function ThreadView({
         )}
       </div>
 
-      <div className="border-t border-zinc-200 p-3">
-        {sendErr && <p className="mb-2 text-sm text-red-600">{sendErr}</p>}
+      <div className="border-t border-zinc-200 dark:border-zinc-800 p-3">
+        {sendErr && <p className="mb-2 text-sm text-red-600 dark:text-red-400">{sendErr}</p>}
         <div className="flex items-end gap-2">
           <Textarea
             rows={2}

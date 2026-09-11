@@ -44,14 +44,14 @@ function DiffSection({
   if (items.length === 0) return null;
   return (
     <div className="mt-3">
-      <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-zinc-500">
+      <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
         {title} ({items.length})
       </p>
-      <div className="flex max-h-80 flex-col gap-1 overflow-y-auto rounded-lg border border-zinc-200 bg-white p-2">
+      <div className="flex max-h-80 flex-col gap-1 overflow-y-auto rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-2">
         {items.map((item) => (
           <label
             key={item.key}
-            className="flex items-start gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-zinc-50"
+            className="flex items-start gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-zinc-50 dark:hover:bg-zinc-800/60"
           >
             <input
               type="checkbox"
@@ -60,7 +60,7 @@ function DiffSection({
               onChange={() => onToggle(item.key)}
             />
             <span className="flex-1">
-              <span className="font-medium text-zinc-900">{item.name}</span>
+              <span className="font-medium text-zinc-900 dark:text-zinc-100">{item.name}</span>
               {item.confidence && (
                 <Badge
                   tone={item.confidence === 'high' ? 'success' : 'warning'}
@@ -70,7 +70,7 @@ function DiffSection({
                 </Badge>
               )}
               <br />
-              <span className="text-xs text-zinc-500">{item.detail}</span>
+              <span className="text-xs text-zinc-500 dark:text-zinc-400">{item.detail}</span>
             </span>
           </label>
         ))}
@@ -184,8 +184,8 @@ function JobCard({
     <Card className="p-4">
       <div className="flex items-center justify-between gap-3">
         <div>
-          <span className="font-medium text-zinc-900">{TYPE_LABEL[job.type]}</span>
-          <span className="ml-2 text-xs text-zinc-400">
+          <span className="font-medium text-zinc-900 dark:text-zinc-100">{TYPE_LABEL[job.type]}</span>
+          <span className="ml-2 text-xs text-zinc-400 dark:text-zinc-500">
             started {new Date(job.startedAt).toLocaleString()}
           </span>
         </div>
@@ -193,7 +193,7 @@ function JobCard({
       </div>
 
       {job.status === 'RUNNING' && (
-        <p className="mt-2 text-sm text-zinc-500">
+        <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">
           Capturing from {TYPE_SOURCE[job.type]}… {elapsed(job.startedAt)} elapsed (usually
           under a minute).
         </p>
@@ -201,7 +201,7 @@ function JobCard({
 
       {job.status === 'FAILED' && (
         <div className="mt-2">
-          <p className="rounded-lg bg-red-50 p-2 text-xs text-red-700">{job.error}</p>
+          <p className="rounded-lg bg-red-50 dark:bg-red-500/10 p-2 text-xs text-red-700 dark:text-red-400">{job.error}</p>
           <Button
             size="sm"
             className="mt-2"
@@ -214,7 +214,7 @@ function JobCard({
       )}
 
       {job.status === 'APPLIED' && (
-        <p className="mt-2 text-sm text-zinc-500">
+        <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">
           Applied {job.appliedJson?.addedKeys.length ?? 0} new and{' '}
           {job.appliedJson?.changedKeys.length ?? 0} changed rows on{' '}
           {job.appliedAt ? new Date(job.appliedAt).toLocaleString() : ''}.
@@ -223,7 +223,7 @@ function JobCard({
 
       {diff && job.status === 'COMPLETED' && (
         <>
-          <p className="mt-2 text-sm text-zinc-600">
+          <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-300">
             {diff.sourceCount} captured · {diff.unchanged} already match · {diff.added.length}{' '}
             new · {diff.changed.length} changed. Nothing is written until you review and
             click Apply.
@@ -250,7 +250,7 @@ function JobCard({
                     High-confidence only
                   </Button>
                 )}
-                <span className="text-xs text-zinc-500">
+                <span className="text-xs text-zinc-500 dark:text-zinc-400">
                   {selected.size} selected
                   {q ? ` · ${visible.length} shown` : ''}
                 </span>
@@ -270,8 +270,8 @@ function JobCard({
               />
 
               {confirming ? (
-                <div className="mt-3 flex flex-col gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3">
-                  <p className="text-sm text-amber-900">
+                <div className="mt-3 flex flex-col gap-2 rounded-lg border border-amber-200 dark:border-amber-500/30 bg-amber-50 dark:bg-amber-500/10 p-3">
+                  <p className="text-sm text-amber-900 dark:text-amber-300">
                     Write <span className="font-semibold">{selectedAdded} new</span> and{' '}
                     <span className="font-semibold">{selectedChanged} changed</span> rows to the
                     live college catalogue? Applied rows can only be reverted one at a time from
@@ -331,19 +331,19 @@ export function DataImportPanel({ initialJobs }: { initialJobs: DataImportJob[] 
   return (
     <div className="flex flex-col gap-4">
       <Card className="p-4">
-        <p className="text-sm font-semibold text-zinc-900">Refresh college data</p>
-        <p className="mt-1 text-sm text-zinc-600">
+        <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">Refresh college data</p>
+        <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-300">
           Re-runs the capture pipeline the ~10,500-college catalogue was originally built from
           and shows a diff to review. Run it when NMC or MCC publish new seat data — typically
           around the admission cycle. It is safe to run anytime: the capture step never writes
           to the database, and nothing changes until you review the diff and click Apply.
         </p>
-        <ul className="mt-2 space-y-0.5 text-xs text-zinc-500">
+        <ul className="mt-2 space-y-0.5 text-xs text-zinc-500 dark:text-zinc-400">
           <li>
-            <span className="font-medium text-zinc-600">UG (MBBS):</span> {TYPE_SOURCE.UG}
+            <span className="font-medium text-zinc-600 dark:text-zinc-300">UG (MBBS):</span> {TYPE_SOURCE.UG}
           </li>
           <li>
-            <span className="font-medium text-zinc-600">PG:</span> {TYPE_SOURCE.PG}
+            <span className="font-medium text-zinc-600 dark:text-zinc-300">PG:</span> {TYPE_SOURCE.PG}
           </li>
         </ul>
         <div className="mt-3 flex gap-2">
@@ -357,7 +357,7 @@ export function DataImportPanel({ initialJobs }: { initialJobs: DataImportJob[] 
       </Card>
 
       {jobs.length === 0 ? (
-        <p className="text-sm text-zinc-500">No import runs yet.</p>
+        <p className="text-sm text-zinc-500 dark:text-zinc-400">No import runs yet.</p>
       ) : (
         <div className="flex flex-col gap-3">
           {shown.map((job) => (

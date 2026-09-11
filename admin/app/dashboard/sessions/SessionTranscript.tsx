@@ -80,39 +80,39 @@ export function SessionTranscript({
   return (
     <div className="max-w-xl">
       <div className="mb-2 flex items-center gap-2">
-        <span className="text-xs font-medium uppercase tracking-wide text-zinc-500">
+        <span className="text-xs font-medium uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
           Transcript
         </span>
         {!autoOpen && (
           <button
             type="button"
             onClick={() => setOpen(false)}
-            className="text-xs text-zinc-400 underline hover:text-zinc-600"
+            className="text-xs text-zinc-400 dark:text-zinc-500 underline hover:text-zinc-600 dark:hover:text-zinc-300"
           >
             hide
           </button>
         )}
       </div>
 
-      {err && <p className="text-sm text-red-600">{err}</p>}
+      {err && <p className="text-sm text-red-600 dark:text-red-400">{err}</p>}
 
       {loaded && parties?.sessionType === 'AUDIO_CALL' && (
-        <p className="text-sm text-zinc-400">
+        <p className="text-sm text-zinc-400 dark:text-zinc-500">
           This was an audio call — there is no chat transcript.
         </p>
       )}
       {loaded && parties?.sessionType === 'CHAT' && messages.length === 0 && !err && (
-        <p className="text-sm text-zinc-400">No messages in this conversation.</p>
+        <p className="text-sm text-zinc-400 dark:text-zinc-500">No messages in this conversation.</p>
       )}
 
       {messages.length > 0 && parties && (
-        <div className="flex flex-col gap-1.5 rounded-lg border border-zinc-200 bg-zinc-50/60 p-3">
+        <div className="flex flex-col gap-1.5 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50/60 dark:bg-zinc-800/40 p-3">
           {hasMore && (
             <button
               type="button"
               onClick={() => load(messages[0].id)}
               disabled={isPending}
-              className="mb-1 self-center text-xs text-zinc-500 underline hover:text-zinc-700 disabled:opacity-50"
+              className="mb-1 self-center text-xs text-zinc-500 dark:text-zinc-400 underline hover:text-zinc-700 dark:hover:text-zinc-200 disabled:opacity-50"
             >
               {isPending ? 'Loading…' : 'Load older messages'}
             </button>
@@ -133,13 +133,13 @@ export function SessionTranscript({
                 <div
                   className={`max-w-[80%] rounded-lg px-2.5 py-1.5 text-sm ${
                     fromMentor
-                      ? 'bg-zinc-900 text-white'
-                      : 'border border-zinc-200 bg-white text-zinc-800'
+                      ? 'bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900'
+                      : 'border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-zinc-800 dark:text-zinc-100'
                   }`}
                 >
                   {msg.text}
                 </div>
-                <span className="mt-0.5 text-[11px] text-zinc-400">
+                <span className="mt-0.5 text-[11px] text-zinc-400 dark:text-zinc-500">
                   {who} · {new Date(msg.createdAt).toLocaleString()}
                 </span>
               </div>

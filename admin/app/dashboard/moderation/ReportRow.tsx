@@ -76,25 +76,25 @@ export function ReportRow({
       colSpan={5}
       defaultOpen={!readOnly}
       cells={[
-        <span key="reason" className="font-medium text-zinc-900">
+        <span key="reason" className="font-medium text-zinc-900 dark:text-zinc-100">
           {REASON_LABELS[report.reason] ?? report.reason}
         </span>,
-        <span key="by" className="text-xs text-zinc-500">
+        <span key="by" className="text-xs text-zinc-500 dark:text-zinc-400">
           {report.reporterDisplayName ?? report.reporterId}
         </span>,
         <Badge key="t">
           {report.targetType}
         </Badge>,
-        <span key="at" className="whitespace-nowrap text-xs text-zinc-500">
+        <span key="at" className="whitespace-nowrap text-xs text-zinc-500 dark:text-zinc-400">
           {new Date(report.createdAt).toLocaleDateString()}
         </span>,
       ]}
     >
-      <p className="text-xs text-zinc-500">
+      <p className="text-xs text-zinc-500 dark:text-zinc-400">
         Target {report.targetType} <span className="font-mono">{report.targetId}</span>
       </p>
       {report.description && (
-        <p className="mt-2 rounded-lg bg-zinc-50 p-2 text-sm text-zinc-700">
+        <p className="mt-2 rounded-lg bg-zinc-50 dark:bg-zinc-800/60 p-2 text-sm text-zinc-700 dark:text-zinc-300">
           &ldquo;{report.description}&rdquo;
         </p>
       )}
@@ -112,7 +112,7 @@ export function ReportRow({
             value={resolution}
             onChange={(e) => setResolution(e.target.value)}
             placeholder="Resolution note"
-            className="mt-3 w-full rounded-md border border-zinc-300 bg-white px-3 py-1.5 text-sm text-zinc-900 shadow-sm outline-none transition-colors placeholder:text-zinc-400 focus:border-zinc-400 focus:ring-2 focus:ring-zinc-400/40"
+            className="mt-3 w-full rounded-md border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-1.5 text-sm text-zinc-900 dark:text-zinc-100 shadow-sm outline-none transition-colors placeholder:text-zinc-400 dark:placeholder:text-zinc-500 focus:border-zinc-400 dark:focus:border-zinc-600 focus:ring-2 focus:ring-zinc-400/40 dark:focus:ring-zinc-600/40"
           />
 
           {canRefund && (
@@ -123,11 +123,11 @@ export function ReportRow({
               value={refund}
               onChange={(e) => setRefund(e.target.value)}
               placeholder="Refund amount in ₹ (optional — credited as Uniminutes)"
-              className="mt-2 w-full rounded-md border border-zinc-300 bg-white px-3 py-1.5 text-sm text-zinc-900 shadow-sm outline-none transition-colors placeholder:text-zinc-400 focus:border-zinc-400 focus:ring-2 focus:ring-zinc-400/40"
+              className="mt-2 w-full rounded-md border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-1.5 text-sm text-zinc-900 dark:text-zinc-100 shadow-sm outline-none transition-colors placeholder:text-zinc-400 dark:placeholder:text-zinc-500 focus:border-zinc-400 dark:focus:border-zinc-600 focus:ring-2 focus:ring-zinc-400/40 dark:focus:ring-zinc-600/40"
             />
           )}
 
-          {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
+          {error && <p className="mt-2 text-sm text-red-600 dark:text-red-400">{error}</p>}
 
           <div className="mt-3 flex gap-2">
             <Button variant="successSolid" onClick={() => act('RESOLVED')} disabled={isPending}>

@@ -74,7 +74,7 @@ export default async function SessionsPage({
 
   return (
     <DashboardShell title="Sessions" email={email}>
-      <p className="mb-5 text-sm text-zinc-500">
+      <p className="mb-5 text-sm text-zinc-500 dark:text-zinc-400">
         Every chat and call between a student and mentor. Expand a row to see the full
         detail, read the chat transcript, or force-end a stuck session.
       </p>
@@ -87,11 +87,11 @@ export default async function SessionsPage({
             name="search"
             defaultValue={search ?? ''}
             placeholder="Search by aspirant or mentor name…"
-            className="w-80 rounded-md border border-zinc-300 bg-white px-3 py-1.5 text-sm text-zinc-900 shadow-sm outline-none transition-colors placeholder:text-zinc-400 focus:border-zinc-400 focus:ring-2 focus:ring-zinc-400/40"
+            className="w-80 rounded-md border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-1.5 text-sm text-zinc-900 dark:text-zinc-100 shadow-sm outline-none transition-colors placeholder:text-zinc-400 dark:placeholder:text-zinc-500 focus:border-zinc-400 dark:focus:border-zinc-600 focus:ring-2 focus:ring-zinc-400/40 dark:focus:ring-zinc-600/40"
           />
           <button
             type="submit"
-            className="inline-flex h-9 items-center rounded-md border border-zinc-300 bg-white px-3.5 text-sm font-medium text-zinc-700 shadow-sm transition-colors hover:bg-zinc-50"
+            className="inline-flex h-9 items-center rounded-md border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3.5 text-sm font-medium text-zinc-700 dark:text-zinc-300 shadow-sm transition-colors hover:bg-zinc-50 dark:hover:bg-zinc-800/60"
           >
             Search
           </button>

@@ -60,12 +60,12 @@ export function SettingsForm({ initial }: { initial: Setting[] }) {
         <Card key={s.key} className="p-5">
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div className="min-w-0 flex-1">
-              <p className="text-sm font-semibold text-zinc-900">{s.label}</p>
-              <p className="mt-1 text-sm text-zinc-500">{s.description}</p>
-              <p className="mt-1 text-xs text-zinc-400">
+              <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">{s.label}</p>
+              <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">{s.description}</p>
+              <p className="mt-1 text-xs text-zinc-400 dark:text-zinc-500">
                 Default {s.default} {s.unit} · allowed range {s.min}–{s.max} {s.unit}
                 {s.isDefault && (
-                  <span className="ml-2 rounded-full bg-zinc-100 px-1.5 py-0.5 text-[10px] font-medium text-zinc-500">
+                  <span className="ml-2 rounded-full bg-zinc-100 dark:bg-zinc-800 px-1.5 py-0.5 text-[10px] font-medium text-zinc-500 dark:text-zinc-400">
                     using default
                   </span>
                 )}
@@ -81,9 +81,9 @@ export function SettingsForm({ initial }: { initial: Setting[] }) {
                   setDraft((d) => ({ ...d, [s.key]: e.target.value }));
                   setSaved(false);
                 }}
-                className="w-24 rounded-md border border-zinc-300 bg-white px-3 py-1.5 text-right text-sm text-zinc-900 shadow-sm outline-none transition-colors focus:border-zinc-400 focus:ring-2 focus:ring-zinc-400/40"
+                className="w-24 rounded-md border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-1.5 text-right text-sm text-zinc-900 dark:text-zinc-100 shadow-sm outline-none transition-colors focus:border-zinc-400 dark:focus:border-zinc-600 focus:ring-2 focus:ring-zinc-400/40 dark:focus:ring-zinc-600/40"
               />
-              <span className="text-sm text-zinc-500">{s.unit}</span>
+              <span className="text-sm text-zinc-500 dark:text-zinc-400">{s.unit}</span>
               {draft[s.key] !== String(s.default) && (
                 <Button size="sm" onClick={() => resetOne(s)} disabled={isPending}>
                   Reset
@@ -94,8 +94,8 @@ export function SettingsForm({ initial }: { initial: Setting[] }) {
         </Card>
       ))}
 
-      {error && <p className="text-sm text-red-600">{error}</p>}
-      {saved && !error && <p className="text-sm text-emerald-600">Saved.</p>}
+      {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
+      {saved && !error && <p className="text-sm text-emerald-600 dark:text-emerald-400">Saved.</p>}
 
       <div>
         <Button

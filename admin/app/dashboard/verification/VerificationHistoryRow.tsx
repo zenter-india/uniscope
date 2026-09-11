@@ -9,22 +9,22 @@ export function VerificationHistoryRow({ request }: { request: VerificationHisto
   return (
     <Table.Row>
       <Table.Cell>
-        <span className="font-medium text-zinc-900">
+        <span className="font-medium text-zinc-900 dark:text-zinc-100">
           {request.userDisplayName ?? request.userId}
         </span>
         {request.userRole && <Badge className="ml-2">{request.userRole}</Badge>}
       </Table.Cell>
-      <Table.Cell className="text-xs text-zinc-500">
+      <Table.Cell className="text-xs text-zinc-500 dark:text-zinc-400">
         {request.universityName ?? request.universityId}
       </Table.Cell>
       <Table.Cell>
         <Badge tone={toneFor(request.status)}>{request.status}</Badge>
       </Table.Cell>
-      <Table.Cell className="whitespace-nowrap text-xs text-zinc-500">
+      <Table.Cell className="whitespace-nowrap text-xs text-zinc-500 dark:text-zinc-400">
         {fmt(request.reviewedAt)}
       </Table.Cell>
-      <Table.Cell className="max-w-xs text-xs text-zinc-500">
-        {request.reviewNote || <span className="text-zinc-300">—</span>}
+      <Table.Cell className="max-w-xs text-xs text-zinc-500 dark:text-zinc-400">
+        {request.reviewNote || <span className="text-zinc-300 dark:text-zinc-600">—</span>}
       </Table.Cell>
     </Table.Row>
   );

@@ -5,9 +5,11 @@ import { dismissToast, subscribeToasts, type ToastMsg } from '../lib/toast';
 import { Icon } from './icons';
 
 const STYLES: Record<ToastMsg['kind'], string> = {
-  success: 'border-emerald-200 bg-emerald-50 text-emerald-800',
-  error: 'border-red-200 bg-red-50 text-red-800',
-  info: 'border-zinc-200 bg-white text-zinc-800',
+  success:
+    'border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-900/50 dark:bg-emerald-500/10 dark:text-emerald-300',
+  error:
+    'border-red-200 bg-red-50 text-red-800 dark:border-red-900/50 dark:bg-red-500/10 dark:text-red-300',
+  info: 'border-zinc-200 bg-white text-zinc-800 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200',
 };
 
 /** Mounted once in DashboardShell. Renders whatever `toast.success/error/info`

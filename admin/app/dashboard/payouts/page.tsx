@@ -42,7 +42,7 @@ export default async function PayoutsPage({
 
   return (
     <DashboardShell title="Payouts" email={email}>
-      <p className="mb-5 text-sm text-zinc-500">
+      <p className="mb-5 text-sm text-zinc-500 dark:text-zinc-400">
         Mentor payout requests, FIFO by default. Mark a request &ldquo;Paid&rdquo; once
         you&apos;ve confirmed the bank transfer — that&apos;s what actually debits their
         wallet.
@@ -60,7 +60,7 @@ export default async function PayoutsPage({
           labelFor={(tab) => (tab === 'ALL' ? 'All' : tab.charAt(0) + tab.slice(1).toLowerCase())}
         />
         {openTotal > 0 && (
-          <span className="ml-auto text-sm text-zinc-500">
+          <span className="ml-auto text-sm text-zinc-500 dark:text-zinc-400">
             {rupees(openTotal)} awaiting payout
           </span>
         )}

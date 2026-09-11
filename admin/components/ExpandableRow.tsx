@@ -38,14 +38,14 @@ export function ExpandableRow({
         {cells.map((c, i) => (
           <Table.Cell key={i}>{c}</Table.Cell>
         ))}
-        <Table.Cell className="w-8 text-right text-zinc-400">
+        <Table.Cell className="w-8 text-right text-zinc-400 dark:text-zinc-500">
           <Icon.chevronDown
             className={`ml-auto h-4 w-4 transition-transform ${open ? 'rotate-180' : ''}`}
           />
         </Table.Cell>
       </Table.Row>
       {open && (
-        <tr className="bg-zinc-50/50">
+        <tr className="bg-zinc-50/50 dark:bg-zinc-800/30">
           <td colSpan={colSpan} className="px-4 py-4">
             {children}
           </td>

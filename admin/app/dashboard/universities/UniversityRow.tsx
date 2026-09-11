@@ -140,7 +140,7 @@ export function UniversityRow({ university }: { university: UniversityRowData })
               className={fieldClass}
             />
           </div>
-          {error && <p className="mt-2 text-xs text-red-600">{error}</p>}
+          {error && <p className="mt-2 text-xs text-red-600 dark:text-red-400">{error}</p>}
           <div className="mt-3 flex gap-2">
             <Button variant="successSolid" size="sm" onClick={save} disabled={isPending}>
               {isPending ? 'Saving…' : 'Save'}
@@ -169,7 +169,7 @@ export function UniversityRow({ university }: { university: UniversityRowData })
             onClick={() => fileInputRef.current?.click()}
             disabled={uploadingPhoto}
             title="Upload cover photo"
-            className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-dashed border-zinc-300 bg-zinc-50 text-zinc-400 hover:border-zinc-400 disabled:opacity-50"
+            className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-dashed border-zinc-300 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/60 text-zinc-400 dark:text-zinc-500 hover:border-zinc-400 dark:hover:border-zinc-500 disabled:opacity-50"
           >
             {uploadingPhoto ? (
               <span className="text-xs">…</span>
@@ -182,15 +182,15 @@ export function UniversityRow({ university }: { university: UniversityRowData })
           </button>
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-1.5">
-              <span className="font-medium text-zinc-900">{university.name}</span>
+              <span className="font-medium text-zinc-900 dark:text-zinc-100">{university.name}</span>
               {university.stream && <Badge>{university.stream}</Badge>}
             </div>
-            {photoError && <p className="mt-0.5 text-xs text-red-600">{photoError}</p>}
-            {error && <p className="mt-0.5 text-xs text-red-600">{error}</p>}
+            {photoError && <p className="mt-0.5 text-xs text-red-600 dark:text-red-400">{photoError}</p>}
+            {error && <p className="mt-0.5 text-xs text-red-600 dark:text-red-400">{error}</p>}
           </div>
         </div>
       </Table.Cell>
-      <Table.Cell className="whitespace-nowrap text-xs text-zinc-500">
+      <Table.Cell className="whitespace-nowrap text-xs text-zinc-500 dark:text-zinc-400">
         {[university.city, university.state].filter(Boolean).join(', ')}
       </Table.Cell>
       <Table.Cell>

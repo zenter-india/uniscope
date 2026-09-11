@@ -48,16 +48,16 @@ function LoginForm() {
     <main className="flex min-h-screen items-center justify-center px-6">
       <div className="w-full max-w-sm">
         <div className="mb-6 text-center">
-          <h1 className="text-xl font-semibold tracking-tight text-zinc-900">
-            Uniscope <span className="font-normal text-zinc-400">Admin</span>
+          <h1 className="text-xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-100">
+            Uniscope <span className="font-normal text-zinc-400 dark:text-zinc-500">Admin</span>
           </h1>
-          <p className="mt-1 text-sm text-zinc-500">Sign in to continue</p>
+          <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">Sign in to continue</p>
         </div>
 
         <Card className="p-6">
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-1">
-              <label className="block text-sm font-medium text-zinc-700" htmlFor="email">
+              <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300" htmlFor="email">
                 Email
               </label>
               <Input
@@ -71,7 +71,7 @@ function LoginForm() {
             </div>
 
             <div className="space-y-1">
-              <label className="block text-sm font-medium text-zinc-700" htmlFor="password">
+              <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300" htmlFor="password">
                 Password
               </label>
               <Input
@@ -85,7 +85,7 @@ function LoginForm() {
             </div>
 
             {error ? (
-              <p className="text-sm text-red-600" role="alert">
+              <p className="text-sm text-red-600 dark:text-red-400" role="alert">
                 {error}
               </p>
             ) : null}

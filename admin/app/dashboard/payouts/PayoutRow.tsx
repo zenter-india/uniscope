@@ -70,72 +70,72 @@ export function PayoutRow({ payout }: { payout: PayoutRowData }) {
       defaultOpen={open}
       cells={[
         <span key="m" className="flex flex-col">
-          <span className="font-medium text-zinc-900">
+          <span className="font-medium text-zinc-900 dark:text-zinc-100">
             {payout.mentorName ?? payout.mentorId}
           </span>
           {payout.mentorUpiId && (
-            <span className="font-mono text-xs text-zinc-500">{payout.mentorUpiId}</span>
+            <span className="font-mono text-xs text-zinc-500 dark:text-zinc-400">{payout.mentorUpiId}</span>
           )}
         </span>,
-        <span key="a" className="font-semibold tabular-nums text-zinc-900">
+        <span key="a" className="font-semibold tabular-nums text-zinc-900 dark:text-zinc-100">
           {rupees(payout.amountMinor)}
         </span>,
         <span key="s" className="flex items-center gap-1.5">
           <Badge tone={toneFor(status)}>{status}</Badge>
           {payout.isOverdue && open && <Badge tone="danger">Overdue</Badge>}
         </span>,
-        <span key="p" className="whitespace-nowrap text-xs text-zinc-500">
+        <span key="p" className="whitespace-nowrap text-xs text-zinc-500 dark:text-zinc-400">
           {fmtDate(payout.periodStart)} – {fmtDate(payout.periodEnd)}
         </span>,
       ]}
     >
-      <p className="text-xs text-zinc-500">
+      <p className="text-xs text-zinc-500 dark:text-zinc-400">
         Requested {new Date(payout.createdAt).toLocaleString()} · mentor id{' '}
         <span className="font-mono">{payout.mentorId}</span>
       </p>
       <p className="mt-2 text-sm">
-        <span className="text-zinc-500">Pay to UPI: </span>
+        <span className="text-zinc-500 dark:text-zinc-400">Pay to UPI: </span>
         {payout.mentorUpiId ? (
-          <span className="font-mono font-semibold text-zinc-900">{payout.mentorUpiId}</span>
+          <span className="font-mono font-semibold text-zinc-900 dark:text-zinc-100">{payout.mentorUpiId}</span>
         ) : (
-          <span className="text-red-600">none on file — mentor must add one</span>
+          <span className="text-red-600 dark:text-red-400">none on file — mentor must add one</span>
         )}
       </p>
       {payout.mentorWalletBalanceMinor != null && (
-        <p className={`mt-1 text-xs ${shortBalance ? 'text-red-600' : 'text-zinc-400'}`}>
+        <p className={`mt-1 text-xs ${shortBalance ? 'text-red-600 dark:text-red-400' : 'text-zinc-400 dark:text-zinc-500'}`}>
           Mentor wallet balance {rupees(payout.mentorWalletBalanceMinor)}
           {shortBalance ? ' — below the payout amount' : ''}
         </p>
       )}
 
       {!open && (processedAt || savedRef) && (
-        <p className="mt-2 text-sm text-zinc-500">
+        <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">
           {processedAt ? `${status === 'COMPLETED' ? 'Paid' : 'Closed'} ${new Date(processedAt).toLocaleString()}` : ''}
           {savedRef ? ` · ref ${savedRef}` : ''}
         </p>
       )}
 
-      {error && <p className="mt-3 text-sm text-red-600">{error}</p>}
+      {error && <p className="mt-3 text-sm text-red-600 dark:text-red-400">{error}</p>}
 
       {open && (
-        <div className="mt-4 border-t border-zinc-100 pt-4">
+        <div className="mt-4 border-t border-zinc-100 dark:border-zinc-800 pt-4">
           {confirmingPaid ? (
             <div className="flex flex-col gap-2">
-              <p className="text-sm text-zinc-600">
+              <p className="text-sm text-zinc-600 dark:text-zinc-300">
                 Confirm the transfer of {rupees(payout.amountMinor)} to{' '}
-                <span className="font-medium text-zinc-900">
+                <span className="font-medium text-zinc-900 dark:text-zinc-100">
                   {payout.mentorName ?? 'this mentor'}
                 </span>
                 {payout.mentorUpiId && (
                   <>
                     {' '}
-                    at <span className="font-mono font-semibold text-zinc-900">{payout.mentorUpiId}</span>
+                    at <span className="font-mono font-semibold text-zinc-900 dark:text-zinc-100">{payout.mentorUpiId}</span>
                   </>
                 )}{' '}
                 has gone through. This debits their wallet.
               </p>
               {shortBalance && (
-                <p className="text-sm text-red-600">
+                <p className="text-sm text-red-600 dark:text-red-400">
                   Their wallet balance is below the payout amount — the backend will
                   reject this until it&apos;s investigated.
                 </p>
@@ -145,7 +145,7 @@ export function PayoutRow({ payout }: { payout: PayoutRowData }) {
                 value={refInput}
                 onChange={(e) => setRefInput(e.target.value)}
                 placeholder="Bank / UTR reference (optional)"
-                className="w-72 rounded-md border border-zinc-300 bg-white px-3 py-1.5 text-sm text-zinc-900 shadow-sm outline-none transition-colors placeholder:text-zinc-400 focus:border-zinc-400 focus:ring-2 focus:ring-zinc-400/40"
+                className="w-72 rounded-md border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-1.5 text-sm text-zinc-900 dark:text-zinc-100 shadow-sm outline-none transition-colors placeholder:text-zinc-400 dark:placeholder:text-zinc-500 focus:border-zinc-400 dark:focus:border-zinc-600 focus:ring-2 focus:ring-zinc-400/40 dark:focus:ring-zinc-600/40"
               />
               <div className="flex gap-2">
                 <Button

@@ -42,7 +42,7 @@ export function UserRow({ user }: { user: UserRowData }) {
     <Table.Row>
       <Table.Cell>
         <div className="flex flex-wrap items-center gap-1.5">
-          <span className="font-medium text-zinc-900">{user.displayName}</span>
+          <span className="font-medium text-zinc-900 dark:text-zinc-100">{user.displayName}</span>
           {isBanned && <Badge tone="danger">Banned</Badge>}
           {!user.isActive && !isBanned && (
             <span title="Self-deleted their account — reactivates automatically if they log in again">
@@ -50,7 +50,7 @@ export function UserRow({ user }: { user: UserRowData }) {
             </span>
           )}
         </div>
-        {error && <p className="mt-1 text-xs text-red-600">{error}</p>}
+        {error && <p className="mt-1 text-xs text-red-600 dark:text-red-400">{error}</p>}
       </Table.Cell>
       <Table.Cell>
         <Badge>{user.role}</Badge>
@@ -58,7 +58,7 @@ export function UserRow({ user }: { user: UserRowData }) {
       <Table.Cell>
         <Badge tone={toneFor(user.verificationStatus)}>{user.verificationStatus}</Badge>
       </Table.Cell>
-      <Table.Cell className="whitespace-nowrap text-zinc-500">
+      <Table.Cell className="whitespace-nowrap text-zinc-500 dark:text-zinc-400">
         {new Date(user.createdAt).toLocaleDateString()}
       </Table.Cell>
       <Table.Cell>

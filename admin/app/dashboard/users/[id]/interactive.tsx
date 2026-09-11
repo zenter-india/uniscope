@@ -43,7 +43,7 @@ export function BanToggle({
           Ban user
         </ConfirmButton>
       )}
-      {error && <p className="text-xs text-red-600">{error}</p>}
+      {error && <p className="text-xs text-red-600 dark:text-red-400">{error}</p>}
     </div>
   );
 }
@@ -69,13 +69,13 @@ export function VerificationDocButton({ requestId }: { requestId: string }) {
       <Button onClick={view} disabled={isPending} size="sm">
         View document
       </Button>
-      {error && <p className="mt-1 text-xs text-red-600">{error}</p>}
+      {error && <p className="mt-1 text-xs text-red-600 dark:text-red-400">{error}</p>}
       {url && (
         <a
           href={url}
           target="_blank"
           rel="noreferrer"
-          className="mt-2 block overflow-hidden rounded-lg border border-zinc-200"
+          className="mt-2 block overflow-hidden rounded-lg border border-zinc-200 dark:border-zinc-800"
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img

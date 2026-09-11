@@ -37,7 +37,7 @@ export function SortableHeader({
   return (
     <th
       className={
-        'px-4 py-2.5 text-xs font-medium uppercase tracking-wide text-zinc-500 ' +
+        'px-4 py-2.5 text-xs font-medium uppercase tracking-wide text-zinc-500 dark:text-zinc-400 ' +
         (align === 'right' ? 'text-right ' : '') +
         (className ?? '')
       }
@@ -46,7 +46,7 @@ export function SortableHeader({
         href={`${pathname}?${next.toString()}`}
         scroll={false}
         className={
-          'group inline-flex items-center gap-1 transition-colors hover:text-zinc-800 ' +
+          'group inline-flex items-center gap-1 transition-colors hover:text-zinc-800 dark:hover:text-zinc-100 ' +
           (align === 'right' ? 'flex-row-reverse' : '')
         }
       >
@@ -55,8 +55,8 @@ export function SortableHeader({
           className={
             'h-3.5 w-3.5 transition ' +
             (isActive
-              ? `text-zinc-700 ${activeDir === 'asc' ? 'rotate-180' : ''}`
-              : 'text-zinc-300 opacity-0 group-hover:opacity-100')
+              ? `text-zinc-700 dark:text-zinc-300 ${activeDir === 'asc' ? 'rotate-180' : ''}`
+              : 'text-zinc-300 opacity-0 group-hover:opacity-100 dark:text-zinc-600')
           }
         />
       </Link>

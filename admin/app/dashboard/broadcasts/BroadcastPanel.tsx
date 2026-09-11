@@ -81,8 +81,8 @@ export function BroadcastPanel({ initialHistory }: { initialHistory: Broadcast[]
   return (
     <div className="flex flex-col gap-6">
       <Card className="p-5">
-        <h2 className="text-sm font-semibold text-zinc-900">New announcement</h2>
-        <p className="mt-1 text-sm text-zinc-600">
+        <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">New announcement</h2>
+        <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-300">
           Sends an in-app notification (and a push, where the user has the app installed) to
           every active account in the audience. Banned and deleted accounts are skipped. This
           can&apos;t be recalled once sent.
@@ -90,7 +90,7 @@ export function BroadcastPanel({ initialHistory }: { initialHistory: Broadcast[]
 
         <div className="mt-4 flex flex-col gap-4">
           <label className="flex flex-col gap-1">
-            <span className="text-xs font-medium uppercase tracking-wide text-zinc-400">
+            <span className="text-xs font-medium uppercase tracking-wide text-zinc-400 dark:text-zinc-500">
               Title
             </span>
             <input
@@ -100,14 +100,14 @@ export function BroadcastPanel({ initialHistory }: { initialHistory: Broadcast[]
               onChange={(e) => setTitle(e.target.value)}
               placeholder="e.g. Scheduled maintenance tonight"
             />
-            <span className="self-end text-[11px] text-zinc-400">
+            <span className="self-end text-[11px] text-zinc-400 dark:text-zinc-500">
               {title.length}/{TITLE_MAX}
             </span>
           </label>
 
           <label className="flex flex-col gap-1">
-            <span className="text-xs font-medium uppercase tracking-wide text-zinc-400">
-              Message <span className="normal-case text-zinc-400">(optional)</span>
+            <span className="text-xs font-medium uppercase tracking-wide text-zinc-400 dark:text-zinc-500">
+              Message <span className="normal-case text-zinc-400 dark:text-zinc-500">(optional)</span>
             </span>
             <textarea
               className={fieldClass}
@@ -117,13 +117,13 @@ export function BroadcastPanel({ initialHistory }: { initialHistory: Broadcast[]
               onChange={(e) => setBody(e.target.value)}
               placeholder="Add detail here. Keep it short — it shows as a notification."
             />
-            <span className="self-end text-[11px] text-zinc-400">
+            <span className="self-end text-[11px] text-zinc-400 dark:text-zinc-500">
               {body.length}/{BODY_MAX}
             </span>
           </label>
 
           <label className="flex flex-col gap-1">
-            <span className="text-xs font-medium uppercase tracking-wide text-zinc-400">
+            <span className="text-xs font-medium uppercase tracking-wide text-zinc-400 dark:text-zinc-500">
               Audience
             </span>
             <select
@@ -140,7 +140,7 @@ export function BroadcastPanel({ initialHistory }: { initialHistory: Broadcast[]
                 </option>
               ))}
             </select>
-            <span className="text-xs text-zinc-500">
+            <span className="text-xs text-zinc-500 dark:text-zinc-400">
               {count === null
                 ? 'Counting recipients…'
                 : `Will notify ${count.toLocaleString()} ${
@@ -149,12 +149,12 @@ export function BroadcastPanel({ initialHistory }: { initialHistory: Broadcast[]
             </span>
           </label>
 
-          {error && <p className="text-sm text-red-600">{error}</p>}
-          {sent && !error && <p className="text-sm text-emerald-600">{sent}</p>}
+          {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
+          {sent && !error && <p className="text-sm text-emerald-600 dark:text-emerald-400">{sent}</p>}
 
           {confirming ? (
-            <div className="flex flex-col gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3">
-              <p className="text-sm text-amber-900">
+            <div className="flex flex-col gap-2 rounded-lg border border-amber-200 dark:border-amber-500/30 bg-amber-50 dark:bg-amber-500/10 p-3">
+              <p className="text-sm text-amber-900 dark:text-amber-300">
                 Send &ldquo;<span className="font-semibold">{trimmedTitle}</span>&rdquo; to{' '}
                 <span className="font-semibold">
                   {count?.toLocaleString() ?? 'all'} {AUDIENCE_LABEL[audience]}
@@ -194,22 +194,22 @@ export function BroadcastPanel({ initialHistory }: { initialHistory: Broadcast[]
       </Card>
 
       <div>
-        <h2 className="mb-2 text-sm font-semibold text-zinc-900">Recent announcements</h2>
+        <h2 className="mb-2 text-sm font-semibold text-zinc-900 dark:text-zinc-100">Recent announcements</h2>
         {history.length === 0 ? (
-          <p className="text-sm text-zinc-500">Nothing sent yet.</p>
+          <p className="text-sm text-zinc-500 dark:text-zinc-400">Nothing sent yet.</p>
         ) : (
           <div className="flex flex-col gap-2">
             {history.map((b) => (
               <Card key={b.id} className="p-4">
                 <div className="flex flex-wrap items-center gap-2">
-                  <span className="font-medium text-zinc-900">{b.title}</span>
+                  <span className="font-medium text-zinc-900 dark:text-zinc-100">{b.title}</span>
                   <Badge>{AUDIENCE_LABEL[b.audience] ?? b.audience}</Badge>
-                  <span className="text-xs text-zinc-400">
+                  <span className="text-xs text-zinc-400 dark:text-zinc-500">
                     {b.recipientCount.toLocaleString()} recipients
                   </span>
                 </div>
-                {b.body && <p className="mt-1 text-sm text-zinc-600">{b.body}</p>}
-                <p className="mt-1 text-xs text-zinc-400">
+                {b.body && <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-300">{b.body}</p>}
+                <p className="mt-1 text-xs text-zinc-400 dark:text-zinc-500">
                   {new Date(b.createdAt).toLocaleString()}
                 </p>
               </Card>

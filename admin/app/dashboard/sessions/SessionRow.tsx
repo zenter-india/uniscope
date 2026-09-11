@@ -20,10 +20,10 @@ function fmt(v: string | null): string {
 function Field({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div>
-      <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">{label}</p>
-      <p className="mt-0.5 text-sm text-zinc-800">
+      <p className="text-xs font-medium uppercase tracking-wide text-zinc-500 dark:text-zinc-400">{label}</p>
+      <p className="mt-0.5 text-sm text-zinc-800 dark:text-zinc-100">
         {value === null || value === undefined || value === '' ? (
-          <span className="text-zinc-300">—</span>
+          <span className="text-zinc-300 dark:text-zinc-600">—</span>
         ) : (
           value
         )}
@@ -59,9 +59,9 @@ export function SessionRow({ session }: { session: SessionRowData }) {
       colSpan={5}
       cells={[
         <span key="p" className="flex items-center gap-1.5">
-          <span className="font-medium text-zinc-900">{session.aspirantName}</span>
-          <span className="text-zinc-400">→</span>
-          <span className="font-medium text-zinc-900">{session.mentorName}</span>
+          <span className="font-medium text-zinc-900 dark:text-zinc-100">{session.aspirantName}</span>
+          <span className="text-zinc-400 dark:text-zinc-500">→</span>
+          <span className="font-medium text-zinc-900 dark:text-zinc-100">{session.mentorName}</span>
         </span>,
         <Badge key="t" tone={isCall ? 'info' : 'neutral'}>
           {isCall ? 'Call' : 'Chat'}
@@ -69,7 +69,7 @@ export function SessionRow({ session }: { session: SessionRowData }) {
         <Badge key="s" tone={toneFor(status)}>
           {status.replace('_', ' ')}
         </Badge>,
-        <span key="r" className="whitespace-nowrap text-xs text-zinc-500">
+        <span key="r" className="whitespace-nowrap text-xs text-zinc-500 dark:text-zinc-400">
           {fmt(session.requestedAt)}
           {session.totalCostMinor > 0 ? ` · ${rupees(session.totalCostMinor)}` : ''}
         </span>,
@@ -81,7 +81,7 @@ export function SessionRow({ session }: { session: SessionRowData }) {
             value={
               <Link
                 href={`/dashboard/users/${session.aspirantId}`}
-                className="text-zinc-900 underline decoration-zinc-300 underline-offset-2 hover:decoration-zinc-600"
+                className="text-zinc-900 dark:text-zinc-100 underline decoration-zinc-300 underline-offset-2 hover:decoration-zinc-600"
               >
                 {session.aspirantName}
               </Link>
@@ -92,7 +92,7 @@ export function SessionRow({ session }: { session: SessionRowData }) {
             value={
               <Link
                 href={`/dashboard/users/${session.mentorId}`}
-                className="text-zinc-900 underline decoration-zinc-300 underline-offset-2 hover:decoration-zinc-600"
+                className="text-zinc-900 dark:text-zinc-100 underline decoration-zinc-300 underline-offset-2 hover:decoration-zinc-600"
               >
                 {session.mentorName}
               </Link>
@@ -122,13 +122,13 @@ export function SessionRow({ session }: { session: SessionRowData }) {
           )}
 
           <div className="col-span-2 sm:col-span-3">
-            {error && <p className="mb-2 text-sm text-red-600">{error}</p>}
+            {error && <p className="mb-2 text-sm text-red-600 dark:text-red-400">{error}</p>}
             {canForceEnd ? (
               <Button size="sm" variant="danger" onClick={forceEnd} disabled={isPending}>
                 {isPending ? 'Ending…' : 'Force end session'}
               </Button>
             ) : (
-              <p className="text-xs text-zinc-400">Session is finished — nothing to force-end.</p>
+              <p className="text-xs text-zinc-400 dark:text-zinc-500">Session is finished — nothing to force-end.</p>
             )}
           </div>
       </div>

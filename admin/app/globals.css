@@ -1,5 +1,11 @@
 @import "tailwindcss";
 
+/* Class-based dark mode: `dark:` utilities apply whenever an ancestor
+ * (in practice, <html>) carries the `dark` class — toggled by
+ * ThemeToggle.tsx, persisted to localStorage, applied pre-paint by an
+ * inline script in layout.tsx so there's no flash of the wrong theme. */
+@custom-variant dark (&:where(.dark, .dark *));
+
 @theme inline {
   --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, -apple-system,
     "Segoe UI", Roboto, sans-serif;
@@ -10,6 +16,15 @@
   /* Clean neutral surface — content sits on a faint cool grey, cards are white. */
   --app-bg: #fafafa;
   --ink: #18181b;
+  color-scheme: light;
+}
+
+.dark {
+  /* Same neutral direction, inverted — content sits on near-black, cards
+   * are a slightly lighter zinc so they still read as "raised". */
+  --app-bg: #09090b;
+  --ink: #f4f4f5;
+  color-scheme: dark;
 }
 
 html,
@@ -29,4 +44,8 @@ body {
 :focus-visible {
   outline: 2px solid rgb(161 161 170 / 0.6);
   outline-offset: 1px;
+}
+
+.dark :focus-visible {
+  outline-color: rgb(113 113 122 / 0.7);
 }

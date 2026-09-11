@@ -117,7 +117,7 @@ function Row({
 }) {
   return (
     <label className="flex flex-col gap-1">
-      <span className="text-xs font-medium uppercase tracking-wide text-zinc-400">{label}</span>
+      <span className="text-xs font-medium uppercase tracking-wide text-zinc-400 dark:text-zinc-500">{label}</span>
       {children}
     </label>
   );
@@ -177,7 +177,7 @@ export function EditUserPanel({ user }: { user: EditableUser }) {
   return (
     <Card className="p-5">
       <div className="flex items-center justify-between">
-        <h2 className="text-sm font-semibold text-zinc-900">Edit profile</h2>
+        <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">Edit profile</h2>
         <Button
           size="sm"
           onClick={() => {
@@ -192,13 +192,13 @@ export function EditUserPanel({ user }: { user: EditableUser }) {
       </div>
 
       {saved && !open && (
-        <p className="mt-2 text-sm text-emerald-600">Saved.</p>
+        <p className="mt-2 text-sm text-emerald-600 dark:text-emerald-400">Saved.</p>
       )}
 
       {open && (
         <div className="mt-4 flex flex-col gap-5">
           <fieldset className="grid grid-cols-2 gap-4 sm:grid-cols-3">
-            <legend className="col-span-full mb-1 text-xs font-semibold text-zinc-500">
+            <legend className="col-span-full mb-1 text-xs font-semibold text-zinc-500 dark:text-zinc-400">
               Account
             </legend>
             <Row label="Display name / alias">{T('displayName')}</Row>
@@ -228,7 +228,7 @@ export function EditUserPanel({ user }: { user: EditableUser }) {
           </fieldset>
 
           <fieldset className="grid grid-cols-2 gap-4 sm:grid-cols-3">
-            <legend className="col-span-full mb-1 text-xs font-semibold text-zinc-500">
+            <legend className="col-span-full mb-1 text-xs font-semibold text-zinc-500 dark:text-zinc-400">
               Identity & location
             </legend>
             <Row label="Real name">{T('realName')}</Row>
@@ -239,7 +239,7 @@ export function EditUserPanel({ user }: { user: EditableUser }) {
           </fieldset>
 
           <fieldset className="grid grid-cols-2 gap-4 sm:grid-cols-3">
-            <legend className="col-span-full mb-1 text-xs font-semibold text-zinc-500">
+            <legend className="col-span-full mb-1 text-xs font-semibold text-zinc-500 dark:text-zinc-400">
               Academic
             </legend>
             <Row label="Qualification / degree">{T('qualification')}</Row>
@@ -250,7 +250,7 @@ export function EditUserPanel({ user }: { user: EditableUser }) {
             <Row label="Graduation year">
               {T('graduationYear', { type: 'number', min: 1950, max: 2100 })}
             </Row>
-            <label className="flex items-center gap-2 text-sm text-zinc-700">
+            <label className="flex items-center gap-2 text-sm text-zinc-700 dark:text-zinc-300">
               <input
                 type="checkbox"
                 checked={form.yearInfoPrivate as boolean}
@@ -262,7 +262,7 @@ export function EditUserPanel({ user }: { user: EditableUser }) {
           </fieldset>
 
           <fieldset className="grid grid-cols-2 gap-4 sm:grid-cols-3">
-            <legend className="col-span-full mb-1 text-xs font-semibold text-zinc-500">
+            <legend className="col-span-full mb-1 text-xs font-semibold text-zinc-500 dark:text-zinc-400">
               Preferences & mentor profile
             </legend>
             <Row label="Preferred language">{T('preferredLanguage')}</Row>
@@ -270,7 +270,7 @@ export function EditUserPanel({ user }: { user: EditableUser }) {
             <Row label="Specialty">{T('specialty')}</Row>
             <Row label="Languages (comma-separated)">{T('languages')}</Row>
             <Row label="Available days (comma-separated)">{T('availableDays')}</Row>
-            <label className="flex items-center gap-2 text-sm text-zinc-700">
+            <label className="flex items-center gap-2 text-sm text-zinc-700 dark:text-zinc-300">
               <input
                 type="checkbox"
                 checked={form.isMentorAvailable as boolean}
@@ -289,7 +289,7 @@ export function EditUserPanel({ user }: { user: EditableUser }) {
           </fieldset>
 
           <fieldset className="grid grid-cols-2 gap-4 sm:grid-cols-3">
-            <legend className="col-span-full mb-1 text-xs font-semibold text-zinc-500">
+            <legend className="col-span-full mb-1 text-xs font-semibold text-zinc-500 dark:text-zinc-400">
               Free tier
             </legend>
             <Row label="Free chats remaining">
@@ -300,7 +300,7 @@ export function EditUserPanel({ user }: { user: EditableUser }) {
             </Row>
           </fieldset>
 
-          {error && <p className="text-sm text-red-600">{error}</p>}
+          {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
 
           <div className="flex gap-2">
             <Button variant="primary" onClick={save} disabled={isPending}>

@@ -57,8 +57,8 @@ function Field({ label, value }: { label: string; value: React.ReactNode }) {
   if (value === null || value === undefined || value === '') return null;
   return (
     <div>
-      <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">{label}</p>
-      <p className="text-sm text-zinc-800">{value}</p>
+      <p className="text-xs font-medium uppercase tracking-wide text-zinc-500 dark:text-zinc-400">{label}</p>
+      <p className="text-sm text-zinc-800 dark:text-zinc-100">{value}</p>
     </div>
   );
 }
@@ -123,7 +123,7 @@ export function LeadRow({
               />,
             ]
           : []),
-        <span key="n" className="font-medium text-zinc-900">
+        <span key="n" className="font-medium text-zinc-900 dark:text-zinc-100">
           {lead.fullName}
         </span>,
         <Badge key="r" tone={lead.role === 'MENTOR' ? 'info' : 'neutral'}>
@@ -132,11 +132,11 @@ export function LeadRow({
         <Badge key="s" tone={toneFor(status)}>
           {status}
         </Badge>,
-        <span key="c" className="text-xs text-zinc-500">
+        <span key="c" className="text-xs text-zinc-500 dark:text-zinc-400">
           {lead.phone}
           {lead.email ? ` · ${lead.email}` : ''}
         </span>,
-        <span key="d" className="whitespace-nowrap text-xs text-zinc-500">
+        <span key="d" className="whitespace-nowrap text-xs text-zinc-500 dark:text-zinc-400">
           {new Date(lead.createdAt).toLocaleDateString()}
         </span>,
       ]}
@@ -148,7 +148,7 @@ export function LeadRow({
           </Button>
         )}
         {lead.alias ? (
-          <span className="text-xs text-zinc-500">alias: {lead.alias}</span>
+          <span className="text-xs text-zinc-500 dark:text-zinc-400">alias: {lead.alias}</span>
         ) : null}
       </div>
 
@@ -157,7 +157,7 @@ export function LeadRow({
           href={docUrl}
           target="_blank"
           rel="noreferrer"
-          className="mt-3 block overflow-hidden rounded-lg border border-zinc-200"
+          className="mt-3 block overflow-hidden rounded-lg border border-zinc-200 dark:border-zinc-800"
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={docUrl} alt="Uploaded document" className="max-h-64 w-full object-contain" />
@@ -212,7 +212,7 @@ export function LeadRow({
               lead.convertedUserId ? (
                 <Link
                   href={`/dashboard/users/${lead.convertedUserId}`}
-                  className="text-zinc-900 underline decoration-zinc-300 underline-offset-2 hover:decoration-zinc-600"
+                  className="text-zinc-900 dark:text-zinc-100 underline decoration-zinc-300 underline-offset-2 hover:decoration-zinc-600"
                 >
                   View user
                 </Link>
@@ -222,17 +222,17 @@ export function LeadRow({
           <Field label="Last updated" value={new Date(lead.updatedAt).toLocaleString()} />
       </div>
 
-      <div className="mt-4 border-t border-zinc-100 pt-4">
+      <div className="mt-4 border-t border-zinc-100 dark:border-zinc-800 pt-4">
         <textarea
           value={note}
           onChange={(e) => setNote(e.target.value)}
           placeholder="Admin note (internal only)"
           rows={2}
-          className="w-full rounded-md border border-zinc-300 bg-white px-3 py-1.5 text-sm text-zinc-900 shadow-sm outline-none transition-colors placeholder:text-zinc-400 focus:border-zinc-400 focus:ring-2 focus:ring-zinc-400/40"
+          className="w-full rounded-md border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-1.5 text-sm text-zinc-900 dark:text-zinc-100 shadow-sm outline-none transition-colors placeholder:text-zinc-400 dark:placeholder:text-zinc-500 focus:border-zinc-400 dark:focus:border-zinc-600 focus:ring-2 focus:ring-zinc-400/40 dark:focus:ring-zinc-600/40"
         />
 
-        {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
-        {saved && !error && <p className="mt-2 text-sm text-emerald-600">Saved.</p>}
+        {error && <p className="mt-2 text-sm text-red-600 dark:text-red-400">{error}</p>}
+        {saved && !error && <p className="mt-2 text-sm text-emerald-600 dark:text-emerald-400">Saved.</p>}
 
         <div className="mt-3 flex flex-wrap gap-2">
           {STATUS_OPTIONS.filter((s) => s !== status).map((s) => (

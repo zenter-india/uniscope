@@ -130,7 +130,7 @@ export function InfiniteList<T>({
         </div>
       )}
 
-      {error && <p className="text-sm text-red-600">{error}</p>}
+      {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
 
       <div className="flex items-center gap-3">
         {cursor ? (
@@ -138,7 +138,7 @@ export function InfiniteList<T>({
             {isPending ? 'Loading…' : 'Load more'}
           </Button>
         ) : null}
-        <span className="text-xs text-zinc-400">
+        <span className="text-xs text-zinc-400 dark:text-zinc-500">
           {items.length} shown{cursor ? '' : ' · end of list'}
         </span>
       </div>

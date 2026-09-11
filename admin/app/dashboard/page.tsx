@@ -57,16 +57,16 @@ function inr(minor: number): string {
 
 function Trend({ current, previous }: { current: number; previous: number }) {
   if (previous === 0) {
-    return <span className="text-xs text-zinc-400">{current > 0 ? 'new' : 'no prior data'}</span>;
+    return <span className="text-xs text-zinc-400 dark:text-zinc-500">{current > 0 ? 'new' : 'no prior data'}</span>;
   }
   const pct = Math.round(((current - previous) / previous) * 100);
-  if (pct === 0) return <span className="text-xs text-zinc-400">flat vs prev</span>;
+  if (pct === 0) return <span className="text-xs text-zinc-400 dark:text-zinc-500">flat vs prev</span>;
   const up = pct > 0;
   const TrendIcon = up ? Icon.trendUp : Icon.trendDown;
   return (
     <span
       className={`inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-xs font-medium ${
-        up ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'
+        up ? 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400' : 'bg-red-50 dark:bg-red-500/10 text-red-700 dark:text-red-400'
       }`}
     >
       <TrendIcon className="h-3 w-3" />
@@ -94,20 +94,20 @@ function StatCard({
   return (
     <Link
       href={href}
-      className="group rounded-xl border border-zinc-200/80 bg-white p-4 shadow-[0_1px_2px_rgb(0_0_0/0.04)] transition hover:border-zinc-300 hover:shadow-md"
+      className="group rounded-xl border border-zinc-200/80 dark:border-zinc-800/80 bg-white dark:bg-zinc-900 p-4 shadow-[0_1px_2px_rgb(0_0_0/0.04)] transition hover:border-zinc-300 dark:hover:border-zinc-600 hover:shadow-md"
     >
       <div className="flex items-center justify-between">
-        <p className="text-sm font-medium text-zinc-600">{label}</p>
+        <p className="text-sm font-medium text-zinc-600 dark:text-zinc-300">{label}</p>
         <span
           className={`flex h-7 w-7 items-center justify-center rounded-lg ${
-            alert ? 'bg-amber-50 text-amber-600' : 'bg-zinc-100 text-zinc-500'
+            alert ? 'bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400'
           }`}
         >
           <IconCmp className="h-4 w-4" />
         </span>
       </div>
-      <p className="mt-2 text-2xl font-semibold tracking-tight text-zinc-900">{value}</p>
-      {hint && <p className="mt-0.5 text-xs text-zinc-400">{hint}</p>}
+      <p className="mt-2 text-2xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-100">{value}</p>
+      {hint && <p className="mt-0.5 text-xs text-zinc-400 dark:text-zinc-500">{hint}</p>}
     </Link>
   );
 }
@@ -124,8 +124,8 @@ function Panel({
   const IconCmp = icon ? Icon[icon] : null;
   return (
     <Card className="p-5">
-      <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold text-zinc-900">
-        {IconCmp && <IconCmp className="h-4 w-4 text-zinc-400" />}
+      <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold text-zinc-900 dark:text-zinc-100">
+        {IconCmp && <IconCmp className="h-4 w-4 text-zinc-400 dark:text-zinc-500" />}
         {title}
       </h2>
       {children}
@@ -136,8 +136,8 @@ function Panel({
 function Stat({ label, value, sub }: { label: string; value: React.ReactNode; sub?: React.ReactNode }) {
   return (
     <div>
-      <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">{label}</p>
-      <p className="mt-1 text-lg font-semibold tracking-tight text-zinc-900">{value}</p>
+      <p className="text-xs font-medium uppercase tracking-wide text-zinc-500 dark:text-zinc-400">{label}</p>
+      <p className="mt-1 text-lg font-semibold tracking-tight text-zinc-900 dark:text-zinc-100">{value}</p>
       {sub}
     </div>
   );
@@ -161,7 +161,7 @@ export default async function DashboardPage({
   return (
     <DashboardShell title="Overview" email={email}>
       <div className="mb-5 flex flex-wrap items-center gap-2">
-        <span className="text-xs font-medium uppercase tracking-wide text-zinc-500">Range</span>
+        <span className="text-xs font-medium uppercase tracking-wide text-zinc-500 dark:text-zinc-400">Range</span>
         <FilterTabs
           items={RANGES}
           current={days as (typeof RANGES)[number]}
@@ -171,7 +171,7 @@ export default async function DashboardPage({
       </div>
 
       {!m ? (
-        <p className="text-sm text-zinc-500">
+        <p className="text-sm text-zinc-500 dark:text-zinc-400">
           Metrics are unavailable right now — the backend didn&apos;t respond.
         </p>
       ) : (
@@ -218,10 +218,10 @@ export default async function DashboardPage({
           <div className="grid gap-4 lg:grid-cols-2">
             <Panel title={`Signups · last ${days} days`} icon="users">
               <div className="flex items-baseline gap-3">
-                <p className="text-3xl font-semibold tracking-tight text-zinc-900">{m.signups.total}</p>
+                <p className="text-3xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-100">{m.signups.total}</p>
                 <Trend current={m.signups.total} previous={m.signups.prevTotal} />
               </div>
-              <p className="mt-1 text-xs text-zinc-500">
+              <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
                 {m.signups.aspirant} students · {m.signups.mentor} mentors
               </p>
               <div className="mt-3">
@@ -231,9 +231,9 @@ export default async function DashboardPage({
                   colors={['#d4d4d8', '#6366f1']}
                 />
               </div>
-              <div className="mt-2 flex gap-4 text-xs text-zinc-500">
+              <div className="mt-2 flex gap-4 text-xs text-zinc-500 dark:text-zinc-400">
                 <span className="flex items-center gap-1">
-                  <span className="h-2 w-2 rounded-sm bg-zinc-300" /> Students
+                  <span className="h-2 w-2 rounded-sm bg-zinc-300 dark:bg-zinc-700" /> Students
                 </span>
                 <span className="flex items-center gap-1">
                   <span className="h-2 w-2 rounded-sm bg-indigo-500" /> Mentors
@@ -243,10 +243,10 @@ export default async function DashboardPage({
 
             <Panel title={`Sessions · last ${days} days`} icon="message">
               <div className="flex items-baseline gap-3">
-                <p className="text-3xl font-semibold tracking-tight text-zinc-900">{m.sessions.total}</p>
+                <p className="text-3xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-100">{m.sessions.total}</p>
                 <Trend current={m.sessions.total} previous={m.sessions.prevTotal} />
               </div>
-              <p className="mt-1 text-xs text-zinc-500">
+              <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
                 {m.sessions.chat} chats · {m.sessions.call} calls
               </p>
               <div className="mt-3">
@@ -256,7 +256,7 @@ export default async function DashboardPage({
                   colors={['#5eead4', '#a78bfa']}
                 />
               </div>
-              <div className="mt-2 flex gap-4 text-xs text-zinc-500">
+              <div className="mt-2 flex gap-4 text-xs text-zinc-500 dark:text-zinc-400">
                 <span className="flex items-center gap-1">
                   <span className="h-2 w-2 rounded-sm bg-teal-300" /> Chat
                 </span>
@@ -290,7 +290,7 @@ export default async function DashboardPage({
                 value={
                   <>
                     {m.totals.verifiedMentors}
-                    <span className="text-sm font-normal text-zinc-400">
+                    <span className="text-sm font-normal text-zinc-400 dark:text-zinc-500">
                       {' '}
                       / {m.totals.mentors} verified
                     </span>

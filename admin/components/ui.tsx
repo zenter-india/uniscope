@@ -6,6 +6,10 @@ import { Icon, type IconName } from './icons';
  * Shared UI primitives — a small, deliberately plain design system.
  * Clean neutral palette: white surfaces on a faint grey app background,
  * hairline zinc borders, near-black primary, restrained semantic colour.
+ * Every primitive here also carries a `dark:` companion for each colour
+ * utility — see the `dark` custom variant + toggle in globals.css /
+ * ThemeToggle.tsx. Page-specific components compose almost entirely from
+ * these, so theming this file covers the large majority of the panel.
  * ------------------------------------------------------------------ */
 
 function cx(...parts: (string | false | null | undefined)[]) {
@@ -24,7 +28,7 @@ export type ButtonVariant =
 export type ButtonSize = 'sm' | 'md';
 
 const BTN_BASE =
-  'inline-flex items-center justify-center gap-1.5 rounded-md font-medium transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400/50';
+  'inline-flex items-center justify-center gap-1.5 rounded-md font-medium transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400/50 dark:focus-visible:ring-zinc-600/50';
 
 const BTN_SIZE: Record<ButtonSize, string> = {
   sm: 'h-8 px-3 text-xs',
@@ -32,12 +36,15 @@ const BTN_SIZE: Record<ButtonSize, string> = {
 };
 
 const BTN_VARIANT: Record<ButtonVariant, string> = {
-  primary: 'bg-zinc-900 text-white hover:bg-zinc-800',
-  secondary: 'border border-zinc-300 bg-white text-zinc-700 hover:bg-zinc-50',
-  danger: 'border border-red-200 bg-white text-red-700 hover:bg-red-50',
-  dangerSolid: 'bg-red-600 text-white hover:bg-red-700',
-  successSolid: 'bg-emerald-600 text-white hover:bg-emerald-700',
-  ghost: 'text-zinc-600 hover:bg-zinc-100',
+  primary:
+    'bg-zinc-900 text-white hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-white',
+  secondary:
+    'border border-zinc-300 bg-white text-zinc-700 hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800',
+  danger:
+    'border border-red-200 bg-white text-red-700 hover:bg-red-50 dark:border-red-900/50 dark:bg-zinc-900 dark:text-red-400 dark:hover:bg-red-950/40',
+  dangerSolid: 'bg-red-600 text-white hover:bg-red-700 dark:hover:bg-red-500',
+  successSolid: 'bg-emerald-600 text-white hover:bg-emerald-700 dark:hover:bg-emerald-500',
+  ghost: 'text-zinc-600 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-800',
 };
 
 function buttonClass(variant: ButtonVariant, size: ButtonSize, className?: string) {
@@ -67,11 +74,14 @@ export function ButtonLink({
 type Tone = 'neutral' | 'success' | 'warning' | 'danger' | 'info';
 
 const BADGE_TONE: Record<Tone, string> = {
-  neutral: 'bg-zinc-100 text-zinc-600',
-  success: 'bg-emerald-50 text-emerald-700 ring-1 ring-inset ring-emerald-600/20',
-  warning: 'bg-amber-50 text-amber-700 ring-1 ring-inset ring-amber-600/20',
-  danger: 'bg-red-50 text-red-700 ring-1 ring-inset ring-red-600/20',
-  info: 'bg-blue-50 text-blue-700 ring-1 ring-inset ring-blue-600/20',
+  neutral: 'bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300',
+  success:
+    'bg-emerald-50 text-emerald-700 ring-1 ring-inset ring-emerald-600/20 dark:bg-emerald-500/10 dark:text-emerald-400 dark:ring-emerald-400/20',
+  warning:
+    'bg-amber-50 text-amber-700 ring-1 ring-inset ring-amber-600/20 dark:bg-amber-500/10 dark:text-amber-400 dark:ring-amber-400/20',
+  danger:
+    'bg-red-50 text-red-700 ring-1 ring-inset ring-red-600/20 dark:bg-red-500/10 dark:text-red-400 dark:ring-red-400/20',
+  info: 'bg-blue-50 text-blue-700 ring-1 ring-inset ring-blue-600/20 dark:bg-blue-500/10 dark:text-blue-400 dark:ring-blue-400/20',
 };
 
 export function Badge({
@@ -113,7 +123,7 @@ export function Card({ className, ...props }: ComponentProps<'div'>) {
   return (
     <div
       className={cx(
-        'rounded-xl border border-zinc-200/80 bg-white shadow-[0_1px_2px_rgb(0_0_0/0.04),0_1px_1px_rgb(0_0_0/0.03)]',
+        'rounded-xl border border-zinc-200/80 bg-white shadow-[0_1px_2px_rgb(0_0_0/0.04),0_1px_1px_rgb(0_0_0/0.03)] dark:border-zinc-800 dark:bg-zinc-900 dark:shadow-none',
         className,
       )}
       {...props}
@@ -154,17 +164,17 @@ export function Table({
   return (
     <div
       className={cx(
-        'max-h-[70vh] overflow-auto rounded-xl border border-zinc-200/80 bg-white shadow-[0_1px_2px_rgb(0_0_0/0.04),0_1px_1px_rgb(0_0_0/0.03)]',
+        'max-h-[70vh] overflow-auto rounded-xl border border-zinc-200/80 bg-white shadow-[0_1px_2px_rgb(0_0_0/0.04),0_1px_1px_rgb(0_0_0/0.03)] dark:border-zinc-800 dark:bg-zinc-900 dark:shadow-none',
         className,
       )}
     >
       <table className="w-full border-collapse text-sm">
         {head && (
-          <thead className="sticky top-0 z-[5] border-b border-zinc-200 bg-zinc-50/95 text-left backdrop-blur-sm">
+          <thead className="sticky top-0 z-[5] border-b border-zinc-200 bg-zinc-50/95 text-left backdrop-blur-sm dark:border-zinc-800 dark:bg-zinc-900/95">
             {head}
           </thead>
         )}
-        <tbody className="divide-y divide-zinc-100">{children}</tbody>
+        <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">{children}</tbody>
       </table>
     </div>
   );
@@ -174,7 +184,7 @@ Table.HeadCell = function HeadCell({ className, ...props }: ComponentProps<'th'>
   return (
     <th
       className={cx(
-        'px-4 py-2.5 text-xs font-medium uppercase tracking-wide text-zinc-500',
+        'px-4 py-2.5 text-xs font-medium uppercase tracking-wide text-zinc-500 dark:text-zinc-400',
         className,
       )}
       {...props}
@@ -183,18 +193,25 @@ Table.HeadCell = function HeadCell({ className, ...props }: ComponentProps<'th'>
 };
 
 Table.Row = function Row({ className, ...props }: ComponentProps<'tr'>) {
-  return <tr className={cx('transition-colors hover:bg-zinc-50/70', className)} {...props} />;
+  return (
+    <tr
+      className={cx('transition-colors hover:bg-zinc-50/70 dark:hover:bg-zinc-800/50', className)}
+      {...props}
+    />
+  );
 };
 
 Table.Cell = function Cell({ className, ...props }: ComponentProps<'td'>) {
-  return <td className={cx('px-4 py-3 align-middle text-zinc-700', className)} {...props} />;
+  return (
+    <td className={cx('px-4 py-3 align-middle text-zinc-700 dark:text-zinc-300', className)} {...props} />
+  );
 };
 
 // ---- Form fields ----------------------------------------------------------
 
 /** Shared field styling for <input>/<select>/<textarea>. */
 export const fieldClass =
-  'w-full rounded-md border border-zinc-300 bg-white px-3 py-1.5 text-sm text-zinc-900 shadow-sm outline-none transition-colors placeholder:text-zinc-400 focus:border-zinc-400 focus:ring-2 focus:ring-zinc-400/40';
+  'w-full rounded-md border border-zinc-300 bg-white px-3 py-1.5 text-sm text-zinc-900 shadow-sm outline-none transition-colors placeholder:text-zinc-400 focus:border-zinc-400 focus:ring-2 focus:ring-zinc-400/40 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:placeholder:text-zinc-500 dark:focus:border-zinc-600 dark:focus:ring-zinc-600/40';
 
 export function Input({ className, ...props }: ComponentProps<'input'>) {
   return <input className={cx(fieldClass, className)} {...props} />;
@@ -212,7 +229,7 @@ export function Label({ className, ...props }: ComponentProps<'span'>) {
   return (
     <span
       className={cx(
-        'text-xs font-medium uppercase tracking-wide text-zinc-400',
+        'text-xs font-medium uppercase tracking-wide text-zinc-400 dark:text-zinc-500',
         className,
       )}
       {...props}
@@ -234,8 +251,10 @@ export function PageHeader({
   return (
     <div className="mb-6 flex flex-wrap items-start justify-between gap-3">
       <div>
-        <h1 className="text-xl font-semibold tracking-tight text-zinc-900">{title}</h1>
-        {description && <p className="mt-0.5 text-sm text-zinc-500">{description}</p>}
+        <h1 className="text-xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-100">{title}</h1>
+        {description && (
+          <p className="mt-0.5 text-sm text-zinc-500 dark:text-zinc-400">{description}</p>
+        )}
       </div>
       {actions && <div className="flex flex-wrap items-center gap-2">{actions}</div>}
     </div>
@@ -270,8 +289,8 @@ export function FilterTabs<T extends string | number>({
               'rounded-md font-medium transition-colors',
               pad,
               active
-                ? 'bg-zinc-900 text-white'
-                : 'border border-zinc-200 text-zinc-600 hover:bg-zinc-100',
+                ? 'bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900'
+                : 'border border-zinc-200 text-zinc-600 hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-400 dark:hover:bg-zinc-800',
             )}
           >
             {labelFor ? labelFor(item) : item}
@@ -298,13 +317,13 @@ export function EmptyState({
 }) {
   const IconCmp = icon ? Icon[icon] : null;
   return (
-    <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed border-zinc-200 bg-white px-6 py-12 text-center">
+    <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed border-zinc-200 bg-white px-6 py-12 text-center dark:border-zinc-700 dark:bg-zinc-900">
       {IconCmp && (
-        <span className="flex h-10 w-10 items-center justify-center rounded-full bg-zinc-100 text-zinc-400">
+        <span className="flex h-10 w-10 items-center justify-center rounded-full bg-zinc-100 text-zinc-400 dark:bg-zinc-800 dark:text-zinc-500">
           <IconCmp className="h-5 w-5" />
         </span>
       )}
-      <p className="max-w-sm text-sm text-zinc-500">{children}</p>
+      <p className="max-w-sm text-sm text-zinc-500 dark:text-zinc-400">{children}</p>
       {action}
     </div>
   );
@@ -315,7 +334,7 @@ export function EmptyState({
 /** A single pulsing placeholder bar. Compose with a fixed height/width via
  * `className` (e.g. `h-3.5 w-24`). */
 export function Skeleton({ className }: { className?: string }) {
-  return <div className={cx('animate-pulse rounded-md bg-zinc-200/70', className)} />;
+  return <div className={cx('animate-pulse rounded-md bg-zinc-200/70 dark:bg-zinc-700/50', className)} />;
 }
 
 /** A skeleton shaped like a framed `Table` — for a route's `loading.tsx`
@@ -328,13 +347,13 @@ export function TableSkeleton({
   cols?: number;
 }) {
   return (
-    <div className="overflow-hidden rounded-xl border border-zinc-200/80 bg-white shadow-[0_1px_2px_rgb(0_0_0/0.04)]">
-      <div className="flex gap-8 border-b border-zinc-200 bg-zinc-50/60 px-4 py-3">
+    <div className="overflow-hidden rounded-xl border border-zinc-200/80 bg-white shadow-[0_1px_2px_rgb(0_0_0/0.04)] dark:border-zinc-800 dark:bg-zinc-900 dark:shadow-none">
+      <div className="flex gap-8 border-b border-zinc-200 bg-zinc-50/60 px-4 py-3 dark:border-zinc-800 dark:bg-zinc-800/40">
         {Array.from({ length: cols }).map((_, i) => (
           <Skeleton key={i} className="h-3 w-16" />
         ))}
       </div>
-      <div className="divide-y divide-zinc-100">
+      <div className="divide-y divide-zinc-100 dark:divide-zinc-800">
         {Array.from({ length: rows }).map((_, i) => (
           <div key={i} className="flex items-center gap-8 px-4 py-3.5">
             {Array.from({ length: cols }).map((_, j) => (

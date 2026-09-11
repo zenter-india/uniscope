@@ -46,8 +46,8 @@ export function TechnicalReportsList({
             disabled={busy}
             className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
               filter === f
-                ? 'bg-zinc-900 text-white'
-                : 'border border-zinc-200 text-zinc-600 hover:bg-zinc-100'
+                ? 'bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900'
+                : 'border border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800'
             }`}
           >
             {f === 'ALL' ? 'All' : f === 'OPEN' ? 'Open' : 'Resolved'}
@@ -56,16 +56,16 @@ export function TechnicalReportsList({
         <button
           onClick={() => reload(filter)}
           disabled={busy}
-          className="ml-auto text-xs text-zinc-400 hover:text-zinc-700 disabled:opacity-40"
+          className="ml-auto text-xs text-zinc-400 dark:text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-200 disabled:opacity-40"
         >
           Refresh
         </button>
       </div>
 
-      {err && <p className="text-sm text-red-600">{err}</p>}
+      {err && <p className="text-sm text-red-600 dark:text-red-400">{err}</p>}
 
       {shown.length === 0 ? (
-        <Card className="p-6 text-sm text-zinc-500">
+        <Card className="p-6 text-sm text-zinc-500 dark:text-zinc-400">
           No technical reports{filter !== 'ALL' ? ` (${filter.toLowerCase()})` : ''} yet.
         </Card>
       ) : (
@@ -116,39 +116,39 @@ function ReportCard({
         </Badge>
         {report.reporter && (
           <>
-            <span className="text-sm font-medium text-zinc-900">
+            <span className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
               {report.reporter.displayName}
             </span>
             <Badge tone={report.reporter.role === 'MENTOR' ? 'success' : 'neutral'}>
               {report.reporter.role === 'MENTOR' ? 'Mentor' : 'Student'}
             </Badge>
             {report.reporter.uniqueId && (
-              <span className="text-xs text-zinc-400">
+              <span className="text-xs text-zinc-400 dark:text-zinc-500">
                 {report.reporter.uniqueId}
               </span>
             )}
           </>
         )}
-        <span className="ml-auto text-xs text-zinc-400">
+        <span className="ml-auto text-xs text-zinc-400 dark:text-zinc-500">
           {report.platform ? `${report.platform} · ` : ''}
           {report.appVersion ? `v${report.appVersion} · ` : ''}
           {new Date(report.createdAt).toLocaleString()}
         </span>
       </div>
 
-      <p className="mt-2 whitespace-pre-wrap break-words text-sm text-zinc-800">
+      <p className="mt-2 whitespace-pre-wrap break-words text-sm text-zinc-800 dark:text-zinc-100">
         {report.message}
       </p>
 
-      <div className="mt-3 flex flex-col gap-2 border-t border-zinc-100 pt-3">
+      <div className="mt-3 flex flex-col gap-2 border-t border-zinc-100 dark:border-zinc-800 pt-3">
         <textarea
           value={note}
           onChange={(e) => setNote(e.target.value)}
           rows={2}
           placeholder="Internal note (optional)"
-          className="w-full rounded-md border border-zinc-200 px-3 py-2 text-sm outline-none focus:border-zinc-400"
+          className="w-full rounded-md border border-zinc-200 dark:border-zinc-800 px-3 py-2 text-sm outline-none focus:border-zinc-400 dark:focus:border-zinc-600"
         />
-        {err && <p className="text-sm text-red-600">{err}</p>}
+        {err && <p className="text-sm text-red-600 dark:text-red-400">{err}</p>}
         <div className="flex gap-2">
           {report.status === 'OPEN' ? (
             <Button
@@ -171,7 +171,7 @@ function ReportCard({
           )}
         </div>
         {report.resolvedAt && (
-          <span className="text-xs text-zinc-400">
+          <span className="text-xs text-zinc-400 dark:text-zinc-500">
             Resolved {new Date(report.resolvedAt).toLocaleString()}
           </span>
         )}

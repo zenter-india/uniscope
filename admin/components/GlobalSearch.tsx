@@ -108,7 +108,7 @@ export function GlobalSearch() {
 
   return (
     <div ref={boxRef} className="relative hidden sm:block">
-      <Icon.search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
+      <Icon.search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400 dark:text-zinc-500" />
       <input
         ref={inputRef}
         value={q}
@@ -130,25 +130,25 @@ export function GlobalSearch() {
         aria-activedescendant={
           highlight >= 0 && flatItems[highlight] ? flatItems[highlight].key : undefined
         }
-        className="h-8 w-56 rounded-md border border-zinc-300 bg-white pl-8 pr-3 text-sm text-zinc-900 shadow-sm outline-none transition-colors placeholder:text-zinc-400 focus:w-72 focus:border-zinc-400 focus:ring-2 focus:ring-zinc-400/40"
+        className="h-8 w-56 rounded-md border border-zinc-300 bg-white pl-8 pr-3 text-sm text-zinc-900 shadow-sm outline-none transition-colors placeholder:text-zinc-400 focus:w-72 focus:border-zinc-400 focus:ring-2 focus:ring-zinc-400/40 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:placeholder:text-zinc-500 dark:focus:border-zinc-600 dark:focus:ring-zinc-600/40"
       />
 
       {showPanel && (
         <div
           id="global-search-listbox"
           role="listbox"
-          className="absolute right-0 top-full z-20 mt-1.5 max-h-[70vh] w-80 overflow-y-auto rounded-lg border border-zinc-200 bg-white py-1 shadow-lg"
+          className="absolute right-0 top-full z-20 mt-1.5 max-h-[70vh] w-80 overflow-y-auto rounded-lg border border-zinc-200 bg-white py-1 shadow-lg dark:border-zinc-700 dark:bg-zinc-900"
         >
           {isPending && !hasResults && (
-            <p className="px-3 py-2 text-xs text-zinc-400">Searching…</p>
+            <p className="px-3 py-2 text-xs text-zinc-400 dark:text-zinc-500">Searching…</p>
           )}
           {!isPending && !hasResults && (
-            <p className="px-3 py-2 text-xs text-zinc-400">No matches.</p>
+            <p className="px-3 py-2 text-xs text-zinc-400 dark:text-zinc-500">No matches.</p>
           )}
 
           {res.users.length > 0 && (
             <div>
-              <p className="px-3 pb-1 pt-1.5 text-[11px] font-semibold uppercase tracking-wide text-zinc-400">
+              <p className="px-3 pb-1 pt-1.5 text-[11px] font-semibold uppercase tracking-wide text-zinc-400 dark:text-zinc-500">
                 Users
               </p>
               {res.users.map((u, i) => (
@@ -161,13 +161,19 @@ export function GlobalSearch() {
                   onClick={() => go(`/dashboard/users/${u.id}`)}
                   className={
                     'flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm ' +
-                    (highlight === i ? 'bg-zinc-100' : 'hover:bg-zinc-50')
+                    (highlight === i
+                      ? 'bg-zinc-100 dark:bg-zinc-800'
+                      : 'hover:bg-zinc-50 dark:hover:bg-zinc-800/60')
                   }
                 >
-                  <span className="truncate font-medium text-zinc-900">{u.displayName}</span>
-                  <span className="ml-auto shrink-0 text-xs text-zinc-400">{u.role}</span>
+                  <span className="truncate font-medium text-zinc-900 dark:text-zinc-100">
+                    {u.displayName}
+                  </span>
+                  <span className="ml-auto shrink-0 text-xs text-zinc-400 dark:text-zinc-500">
+                    {u.role}
+                  </span>
                   {u.isBanned && (
-                    <span className="shrink-0 rounded bg-red-50 px-1.5 py-0.5 text-[10px] font-medium text-red-700">
+                    <span className="shrink-0 rounded bg-red-50 px-1.5 py-0.5 text-[10px] font-medium text-red-700 dark:bg-red-500/10 dark:text-red-400">
                       banned
                     </span>
                   )}
@@ -178,7 +184,7 @@ export function GlobalSearch() {
 
           {res.universities.length > 0 && (
             <div>
-              <p className="px-3 pb-1 pt-1.5 text-[11px] font-semibold uppercase tracking-wide text-zinc-400">
+              <p className="px-3 pb-1 pt-1.5 text-[11px] font-semibold uppercase tracking-wide text-zinc-400 dark:text-zinc-500">
                 Colleges
               </p>
               {res.universities.map((u, i) => {
@@ -195,17 +201,21 @@ export function GlobalSearch() {
                     }
                     className={
                       'flex w-full items-start gap-2 px-3 py-1.5 text-left text-sm ' +
-                      (highlight === flatIndex ? 'bg-zinc-100' : 'hover:bg-zinc-50')
+                      (highlight === flatIndex
+                        ? 'bg-zinc-100 dark:bg-zinc-800'
+                        : 'hover:bg-zinc-50 dark:hover:bg-zinc-800/60')
                     }
                   >
                     <span className="min-w-0 flex-1">
-                      <span className="block truncate font-medium text-zinc-900">{u.name}</span>
-                      <span className="block truncate text-xs text-zinc-400">
+                      <span className="block truncate font-medium text-zinc-900 dark:text-zinc-100">
+                        {u.name}
+                      </span>
+                      <span className="block truncate text-xs text-zinc-400 dark:text-zinc-500">
                         {[u.city, u.state].filter(Boolean).join(', ')}
                       </span>
                     </span>
                     {!u.isActive && (
-                      <span className="shrink-0 rounded bg-zinc-100 px-1.5 py-0.5 text-[10px] font-medium text-zinc-500">
+                      <span className="shrink-0 rounded bg-zinc-100 px-1.5 py-0.5 text-[10px] font-medium text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400">
                         inactive
                       </span>
                     )}

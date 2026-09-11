@@ -57,7 +57,7 @@ export function AddUniversityForm() {
 
   return (
     <Card className="w-full basis-full p-4">
-      <p className="mb-3 text-sm font-semibold text-zinc-900">New university</p>
+      <p className="mb-3 text-sm font-semibold text-zinc-900 dark:text-zinc-100">New university</p>
       <div className="grid grid-cols-2 gap-2">
         <input
           value={form.name}
@@ -97,7 +97,7 @@ export function AddUniversityForm() {
           className={fieldClass}
         />
       </div>
-      {error && <p className="mt-2 text-xs text-red-600">{error}</p>}
+      {error && <p className="mt-2 text-xs text-red-600 dark:text-red-400">{error}</p>}
       <div className="mt-3 flex gap-2">
         <Button variant="successSolid" size="sm" onClick={submit} disabled={isPending}>
           {isPending ? 'Creating…' : 'Create'}

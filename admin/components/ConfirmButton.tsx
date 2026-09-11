@@ -31,7 +31,7 @@ export function ConfirmButton({
   if (confirming) {
     return (
       <span className="inline-flex items-center gap-1.5">
-        <span className="text-xs text-zinc-500">{confirmLabel}</span>
+        <span className="text-xs text-zinc-500 dark:text-zinc-400">{confirmLabel}</span>
         <Button
           type="button"
           size={size}

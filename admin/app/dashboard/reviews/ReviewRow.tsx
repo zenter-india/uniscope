@@ -57,7 +57,7 @@ export function ReviewRow({
         </Table.Cell>
       )}
       <Table.Cell className="whitespace-nowrap align-top">
-        <span className="text-amber-500" title={`${review.rating} / 5`}>
+        <span className="text-amber-500 dark:text-amber-400" title={`${review.rating} / 5`}>
           {stars(review.rating)}
         </span>
         <div className="mt-1">
@@ -65,10 +65,10 @@ export function ReviewRow({
         </div>
       </Table.Cell>
       <Table.Cell className="align-top">
-        <p className="max-w-md text-zinc-800">{review.text || <span className="text-zinc-400">— no text —</span>}</p>
-        {error && <p className="mt-1 text-xs text-red-600">{error}</p>}
+        <p className="max-w-md text-zinc-800 dark:text-zinc-100">{review.text || <span className="text-zinc-400 dark:text-zinc-500">— no text —</span>}</p>
+        {error && <p className="mt-1 text-xs text-red-600 dark:text-red-400">{error}</p>}
       </Table.Cell>
-      <Table.Cell className="align-top text-xs text-zinc-500">
+      <Table.Cell className="align-top text-xs text-zinc-500 dark:text-zinc-400">
         <p>
           by{' '}
           <Link
@@ -87,7 +87,7 @@ export function ReviewRow({
             {review.subjectName}
           </Link>
         </p>
-        <p className="mt-0.5 text-zinc-400">{new Date(review.createdAt).toLocaleDateString()}</p>
+        <p className="mt-0.5 text-zinc-400 dark:text-zinc-500">{new Date(review.createdAt).toLocaleDateString()}</p>
       </Table.Cell>
       <Table.Cell className="align-top">
         <Badge tone={toneFor(status)}>{status}</Badge>
@@ -104,7 +104,7 @@ export function ReviewRow({
               size="sm"
               onClick={() => move('HIDDEN')}
               disabled={isPending}
-              className="border-amber-200 text-amber-700 hover:bg-amber-50"
+              className="border-amber-200 dark:border-amber-500/30 text-amber-700 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-500/15"
             >
               Hide
             </Button>
