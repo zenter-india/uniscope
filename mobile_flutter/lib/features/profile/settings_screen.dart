@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/build_info.dart';
 import '../../core/network/users_api.dart';
 import '../../core/theme/app_theme.dart';
 import '../../state/auth_controller.dart';
@@ -143,8 +144,49 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 isLast: true,
               ),
             ),
+            const SizedBox(height: AppSpacing.xl),
+            const _BuildInfoFooter(),
           ],
         ),
+      ),
+    );
+  }
+}
+
+/// Muted, unobtrusive build-identity line — the compile-time git commit
+/// short-SHA (`--dart-define=GIT_SHA=$(git rev-parse --short HEAD)`) plus
+/// the build timestamp. Exists so "is this phone actually running today's
+/// build?" never has to be answered by guesswork again — see the CLAUDE.md
+/// notes on this session's review-gate staleness investigation for why this
+/// mattered. Falls back to 'dev' when a build didn't pass the define (any
+/// ordinary `flutter run`).
+class _BuildInfoFooter extends StatelessWidget {
+  const _BuildInfoFooter();
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Column(
+        children: [
+          Text(
+            'Build $kGitSha',
+            style: const TextStyle(
+              fontSize: AppFont.xs,
+              color: AppColors.textMuted,
+              fontFeatures: [FontFeature.tabularFigures()],
+            ),
+          ),
+          if (kBuildTime != 'unknown') ...[
+            const SizedBox(height: 2),
+            Text(
+              kBuildTime,
+              style: const TextStyle(
+                fontSize: AppFont.xs,
+                color: AppColors.textMuted,
+              ),
+            ),
+          ],
+        ],
       ),
     );
   }
