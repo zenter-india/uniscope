@@ -84,6 +84,7 @@ flutter:
     - assets/logo/
     - assets/onboarding/
     - assets/illustrations/
+    - assets/legal/
 
   fonts:
     - family: Manrope

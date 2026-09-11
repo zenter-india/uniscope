@@ -12,8 +12,8 @@ import '../features/auth/role_selection_screen.dart';
 import '../features/auth/splash_screen.dart';
 import '../features/auth/welcome_screen.dart';
 import '../features/calls/call_screen.dart';
+import '../features/common/legal_page_screen.dart';
 import '../features/common/placeholder_screen.dart';
-import '../features/common/web_page_screen.dart';
 import '../features/home/home_screen.dart';
 import '../features/home/mentor_landing_screen.dart';
 import '../features/mentors/mentor_detail_screen.dart';
@@ -319,6 +319,11 @@ final routerProvider = Provider<GoRouter>((ref) {
         if (auth.needsOnboarding) {
           return _onboardingRoutes.contains(loc) ? null : '/role-selection';
         }
+        // /legal is the one _preAuthRoutes entry that's ALSO a real
+        // authenticated destination (Settings/Help/Wallet all push it) —
+        // every other member of that set only makes sense signed out, so
+        // it's exempted here rather than split into two sets.
+        if (loc == '/legal') return null;
         if (loc == '/' ||
             loc.startsWith('/admin') ||
             _preAuthRoutes.contains(loc) ||
@@ -362,9 +367,10 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/legal',
         builder: (_, state) {
           final args = state.extra as Map<String, dynamic>? ?? const {};
-          return WebPageScreen(
+          return LegalPageScreen(
             title: args['title'] as String? ?? 'Uniscope',
-            url: args['url'] as String? ?? 'https://uniscope.in/privacy',
+            assetPath:
+                args['assetPath'] as String? ?? 'assets/legal/privacy.json',
           );
         },
       ),

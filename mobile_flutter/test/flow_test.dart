@@ -72,6 +72,7 @@ class _FakeUsersApi extends UsersApi {
     int? graduationYear,
     bool? yearInfoPrivate,
     String? universityId,
+    String? upiId,
   }) async =>
       _profile(displayName ?? 'Test User');
 }
