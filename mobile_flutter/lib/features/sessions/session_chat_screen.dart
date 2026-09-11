@@ -331,11 +331,14 @@ class _SessionChatScreenState extends ConsumerState<SessionChatScreen> {
       ),
       body: Column(
         children: [
-          // Aspirant-only scoped dock — see ActiveSessionDock's doc comment
-          // for why this replaced the old global-everywhere version for
-          // students specifically (mentors still get the global one in
-          // MainShell).
-          if (isAspirant) ActiveSessionDock(mentorId: _session!.mentorId),
+          // Scoped to this one relationship, both roles (2026-09-11 — the
+          // mentor's global cross-app dock in MainShell is gone; a mentor
+          // now sees a pending/live call the same way a student always did,
+          // inline inside this specific chat, not floating over every tab).
+          ActiveSessionDock(
+            mentorId: isAspirant ? _session!.mentorId : null,
+            aspirantId: isAspirant ? null : _session!.aspirantId,
+          ),
           Expanded(
             child: ChatThreadView(
               connection: _connection!,

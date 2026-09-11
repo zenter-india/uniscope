@@ -1,10 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/theme/app_theme.dart';
-import '../../state/auth_controller.dart';
-import '../sessions/active_session_dock.dart';
 import '../sessions/call_request_watcher.dart';
 
 /// Bottom navigation shell — tab set is role-dependent (see app_router.dart),
@@ -30,15 +27,15 @@ class MainShell extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       body: navigationShell,
-      // Pinned above the tab bar on every tab so a mentor never loses track
-      // of an incoming request — previously the only way to reach
-      // /call/:id was remembering to open Messages and tap Join Call,
-      // which is why real calls were never actually connecting. Mentor
-      // accounts only: an aspirant's own pending-call status now shows
-      // inline inside that specific mentor's chat screen instead (see
-      // ActiveSessionDock's doc comment) — a mentor manages many
-      // different students at once and still needs this global view, but
-      // a student's one relationship per mentor doesn't.
+      // A pending/live call's status no longer floats globally over every
+      // tab for either role (2026-09-11 product decision — previously
+      // mentors got a global ActiveSessionDock here while aspirants already
+      // saw it scoped inline inside the relevant chat; now both roles work
+      // the same way: SessionChatScreen renders its own scoped
+      // ActiveSessionDock for whichever counterpart that chat is with). A
+      // mentor still sees every pending request at a glance on the Sessions
+      // tab itself (_MentorStudentRow's inline Accept/Reject) — this just
+      // removes the redundant cross-app banner.
       bottomNavigationBar: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -46,16 +43,6 @@ class MainShell extends StatelessWidget {
           // /call/:id when the mentor accepts — the stand-in for a real
           // incoming-call push. Renders nothing.
           const CallRequestWatcher(),
-          Consumer(
-            builder: (context, ref, _) {
-              final isMentor =
-                  ref.watch(authControllerProvider).user?.role ==
-                  UserRole.mentor;
-              return isMentor
-                  ? const ActiveSessionDock()
-                  : const SizedBox.shrink();
-            },
-          ),
           Container(
             decoration: const BoxDecoration(
               color: AppColors.surface,

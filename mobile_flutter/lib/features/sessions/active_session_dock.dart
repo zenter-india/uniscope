@@ -22,17 +22,19 @@ import 'session_status.dart';
 /// Chat sessions never appear here — chat opens instantly with no waiting
 /// period, so there's nothing to keep surfaced.
 ///
-/// [mentorId]: when set, only that mentor's own sessions are shown — this
-/// is the aspirant-side usage, scoped inline into that specific mentor's
-/// SessionChatScreen instead of floating globally over every tab (per
-/// product decision: a student's pending-call status now lives inside the
-/// individual mentor's own chat, not as a cross-app banner). When null
-/// (the mentor-account usage in MainShell), every counterpart's active
-/// session shows, pinned above the bottom nav on every tab — mentors serve
-/// many different students at once and still need that global visibility.
+/// Scoped to exactly one relationship — pass [mentorId] on the aspirant
+/// side (that student's own chat with this mentor) or [aspirantId] on the
+/// mentor side (that mentor's own chat with this student). It renders
+/// inline inside `SessionChatScreen`, never as a cross-app floating banner
+/// (per product decision, 2026-09-11: both roles now see their pending/live
+/// call the same way — inside the relevant chat, not on a global dock).
+/// Passing neither param — no longer used anywhere, kept only so an empty
+/// state degrades gracefully instead of throwing — would show every active
+/// session across every counterpart.
 class ActiveSessionDock extends ConsumerWidget {
-  const ActiveSessionDock({super.key, this.mentorId});
+  const ActiveSessionDock({super.key, this.mentorId, this.aspirantId});
   final String? mentorId;
+  final String? aspirantId;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -45,6 +47,7 @@ class ActiveSessionDock extends ConsumerWidget {
           (s) =>
               s.type == 'AUDIO_CALL' &&
               (mentorId == null || s.mentorId == mentorId) &&
+              (aspirantId == null || s.aspirantId == aspirantId) &&
               (s.status == SessionStatus.pending ||
                   s.status == SessionStatus.accepted ||
                   s.status == SessionStatus.ringing ||
