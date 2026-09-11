@@ -30,13 +30,13 @@ const _roles = <_RoleOption>[
     UserRole.aspirant,
     '🎓',
     'Aspirant',
-    'Find the right college and get guidance from real mentors.',
+    'Get guidance from verified mentors, learn from their real experiences. Make confident choices.',
   ),
   _RoleOption(
     UserRole.mentor,
     '🧑‍⚕️',
     'Mentor',
-    "Share your story. Shape someone's future.",
+    'Currently studying or graduated - guide aspirants and turn your experience into income.',
   ),
 ];
 
@@ -111,7 +111,7 @@ class _RoleSelectionScreenState extends ConsumerState<RoleSelectionScreen> {
               ),
               const SizedBox(height: AppSpacing.sm),
               const Text(
-                'This helps us show you the right content. You can update this later.',
+                'This helps us show you the right content.',
                 style: TextStyle(
                   fontSize: AppFont.md,
                   color: AppColors.textSecondary,
