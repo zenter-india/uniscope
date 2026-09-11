@@ -123,8 +123,25 @@ export function Card({ className, ...props }: ComponentProps<'div'>) {
 
 // ---- Table --------------------------------------------------------------
 
-/** A framed, horizontally-scrollable data table. Pass `<Table.Head>` rows in
- * `head` and `<Table.Row>`/`<Table.Cell>` in children. */
+/** A framed, scrollable data table. Pass `<Table.Head>` rows in `head` and
+ * `<Table.Row>`/`<Table.Cell>` in children.
+ *
+ * The header row is sticky (`top-0` within this component's own scroll
+ * box) so column labels stay visible while scrolling a long list. This
+ * needs its own bounded-height scroll container, not a page-level sticky
+ * header — `overflow-x-auto` alone (for wide tables on narrow viewports)
+ * forces the *y* axis to compute to `auto` too per the CSS overflow spec
+ * (you can't pair `overflow-x: auto` with a real `overflow-y: visible`),
+ * which silently makes this div `thead`'s sticky containing block; since
+ * the div's height was unbounded it never actually scrolled, so the
+ * `thead` just sat at its normal flow position and scrolled away with the
+ * page instead of sticking. Capping the height and scrolling both axes on
+ * the same box (`max-h-[70vh] overflow-auto`) makes that containing block
+ * a real, own-scrolling box, so `sticky top-0` on `thead` works as
+ * intended — same trade as most spreadsheet-style "frozen header" grids: a
+ * short list looks identical to before (no internal scrollbar appears
+ * until content exceeds the cap), a long one scrolls inside its own frame
+ * instead of stretching the whole page. */
 export function Table({
   head,
   children,
@@ -137,13 +154,15 @@ export function Table({
   return (
     <div
       className={cx(
-        'overflow-x-auto rounded-xl border border-zinc-200/80 bg-white shadow-[0_1px_2px_rgb(0_0_0/0.04),0_1px_1px_rgb(0_0_0/0.03)]',
+        'max-h-[70vh] overflow-auto rounded-xl border border-zinc-200/80 bg-white shadow-[0_1px_2px_rgb(0_0_0/0.04),0_1px_1px_rgb(0_0_0/0.03)]',
         className,
       )}
     >
       <table className="w-full border-collapse text-sm">
         {head && (
-          <thead className="border-b border-zinc-200 bg-zinc-50/60 text-left">{head}</thead>
+          <thead className="sticky top-0 z-[5] border-b border-zinc-200 bg-zinc-50/95 text-left backdrop-blur-sm">
+            {head}
+          </thead>
         )}
         <tbody className="divide-y divide-zinc-100">{children}</tbody>
       </table>
