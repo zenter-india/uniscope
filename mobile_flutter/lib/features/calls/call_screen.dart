@@ -872,6 +872,7 @@ class _CallScreenState extends ConsumerState<CallScreen> {
           peerUniqueId: _peerUniqueId,
           peerAvatarUrl: _peerAvatarUrl,
           status: 'Starting call…',
+          onBack: _handleBack,
         );
       case _Phase.connecting:
         return _ConnectingView(
@@ -879,6 +880,7 @@ class _CallScreenState extends ConsumerState<CallScreen> {
           peerUniqueId: _peerUniqueId,
           peerAvatarUrl: _peerAvatarUrl,
           status: 'Connecting…',
+          onBack: _handleBack,
         );
       case _Phase.permissionDenied:
         return _MessageScreen(
@@ -920,6 +922,7 @@ class _CallScreenState extends ConsumerState<CallScreen> {
           slotMinutes: _session?.callSlotMinutes,
           remoteJoined: _remoteJoinedChannel,
           onEnd: () => _endCall(),
+          onBack: _handleBack,
         );
       case _Phase.active:
         return _ActiveCallView(
@@ -934,9 +937,7 @@ class _CallScreenState extends ConsumerState<CallScreen> {
           weakSignal: _weakSignal,
           signal: _signal,
           contextLine: _peerContext,
-          onMinimize: widget.inOverlay
-              ? () => CallOverlayController.instance.minimize()
-              : null,
+          onBack: _handleBack,
           peerMuted: _peerMuted,
           peerSpeaking: _peerSpeaking && !_peerMuted && !_reconnecting,
           routeIcon: _routeGlyph().$1,
@@ -1071,7 +1072,7 @@ class _CallStage extends StatelessWidget {
     this.statusFontSize,
     this.signal = _SignalLevel.unknown,
     this.contextLine,
-    this.onMinimize,
+    required this.onBack,
   });
 
   /// Overrides for the status line under the @id (the active-call view puts
@@ -1089,7 +1090,14 @@ class _CallStage extends StatelessWidget {
   final bool speaking;
   final _SignalLevel signal;
   final String? contextLine;
-  final VoidCallback? onMinimize;
+
+  /// Always shown, top-left — this screen has no other way off it besides
+  /// the OS back gesture, which has no visible affordance and doesn't
+  /// exist at all on some platforms (Flutter web). Routes through the same
+  /// `_handleBack()` every phase already used for the hardware back button
+  /// (quiet-cancel before the call is live, a confirm dialog once it's
+  /// active, straight through once it's already ended).
+  final VoidCallback onBack;
   final List<Widget> controls;
 
   @override
@@ -1107,32 +1115,31 @@ class _CallStage extends StatelessWidget {
                 left: AppSpacing.xs,
                 child: Row(
                   children: [
-                    if (onMinimize != null)
-                      GestureDetector(
-                        onTap: onMinimize,
-                        behavior: HitTestBehavior.opaque,
+                    GestureDetector(
+                      onTap: onBack,
+                      behavior: HitTestBehavior.opaque,
+                      child: Container(
+                        // Visible circle stays ~32px; the transparent
+                        // padding widens the real tap target to ~44px so
+                        // the back control is easy to hit.
+                        padding: const EdgeInsets.all(6),
                         child: Container(
-                          // Visible circle stays ~32px; the transparent
-                          // padding widens the real tap target to ~44px so
-                          // the minimize control is easy to hit.
-                          padding: const EdgeInsets.all(6),
-                          child: Container(
-                            width: 32,
-                            height: 32,
-                            alignment: Alignment.center,
-                            decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha: 0.16),
-                              shape: BoxShape.circle,
-                            ),
-                            child: const Icon(
-                              Icons.keyboard_arrow_down_rounded,
-                              size: 22,
-                              color: Colors.white,
-                            ),
+                          width: 32,
+                          height: 32,
+                          alignment: Alignment.center,
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.16),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(
+                            Icons.arrow_back_rounded,
+                            size: 20,
+                            color: Colors.white,
                           ),
                         ),
                       ),
-                    if (onMinimize != null && signal != _SignalLevel.unknown)
+                    ),
+                    if (signal != _SignalLevel.unknown)
                       const SizedBox(width: 8),
                     if (signal != _SignalLevel.unknown)
                       _SignalChip(level: signal),
@@ -1360,11 +1367,13 @@ class _ConnectingView extends StatelessWidget {
     required this.peerUniqueId,
     required this.peerAvatarUrl,
     required this.status,
+    required this.onBack,
   });
   final String? peerName;
   final String? peerUniqueId;
   final String? peerAvatarUrl;
   final String status;
+  final VoidCallback onBack;
 
   @override
   Widget build(BuildContext context) {
@@ -1375,6 +1384,7 @@ class _ConnectingView extends StatelessWidget {
       status: status,
       pulsing: true,
       topPill: const _StatusPill(text: 'Please wait'),
+      onBack: onBack,
       controls: const [],
     );
   }
@@ -1388,6 +1398,7 @@ class _WaitingView extends StatelessWidget {
     required this.slotMinutes,
     required this.remoteJoined,
     required this.onEnd,
+    required this.onBack,
   });
   final String peerName;
   final String? peerUniqueId;
@@ -1395,6 +1406,7 @@ class _WaitingView extends StatelessWidget {
   final int? slotMinutes;
   final bool remoteJoined;
   final VoidCallback onEnd;
+  final VoidCallback onBack;
 
   @override
   Widget build(BuildContext context) {
@@ -1410,6 +1422,7 @@ class _WaitingView extends StatelessWidget {
               icon: Icons.call_rounded,
               text: 'Audio call · $slotMinutes min',
             ),
+      onBack: onBack,
       controls: [
         _CallControl(
           icon: Icons.call_end_rounded,
@@ -1436,7 +1449,7 @@ class _ActiveCallView extends StatelessWidget {
     required this.weakSignal,
     required this.signal,
     required this.contextLine,
-    required this.onMinimize,
+    required this.onBack,
     required this.peerMuted,
     required this.peerSpeaking,
     required this.routeIcon,
@@ -1457,7 +1470,7 @@ class _ActiveCallView extends StatelessWidget {
   final bool weakSignal;
   final _SignalLevel signal;
   final String? contextLine;
-  final VoidCallback? onMinimize;
+  final VoidCallback onBack;
   final bool peerMuted;
   final bool peerSpeaking;
   final IconData routeIcon;
@@ -1528,7 +1541,7 @@ class _ActiveCallView extends StatelessWidget {
       speaking: peerSpeaking,
       signal: signal,
       contextLine: contextLine,
-      onMinimize: onMinimize,
+      onBack: onBack,
       controls: [
         _CallControl(
           icon: muted ? Icons.mic_off_rounded : Icons.mic_rounded,
