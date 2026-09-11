@@ -34,6 +34,8 @@
 	<string>Uniscope needs photo access to upload your verification document.</string>
 	<key>NSCameraUsageDescription</key>
 	<string>Uniscope needs camera access to take a photo of your ID for mentor verification.</string>
+	<key>NSBluetoothAlwaysUsageDescription</key>
+	<string>Uniscope uses Bluetooth to route call audio to a connected headset or car speaker.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>Uniscope does not use your location. This permission is only requested by the photo picker used for uploading verification documents.</string>
 	<!-- DEV ONLY: the app talks to the backend over plain http:// at a LAN
@@ -91,6 +93,16 @@
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>remote-notification</string>
+		<!-- Lets iOS keep the Agora audio session (and its AVAudioSession
+		     activation) alive if the app is backgrounded mid-call — the iOS
+		     counterpart to Android's CallForegroundService.kt. Without this,
+		     iOS is free to suspend the app's audio the moment it leaves the
+		     foreground, silencing an in-progress call. Deliberately NOT
+		     adding `voip` here — that mode requires PushKit + CallKit
+		     integration (neither exists in this app) and Apple review
+		     rejects a `voip` declaration with no real VoIP-push usage
+		     behind it. -->
+		<string>audio</string>
 	</array>
 </dict>
 </plist>

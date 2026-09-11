@@ -78,6 +78,7 @@ class _CallScreenState extends ConsumerState<CallScreen> {
   String? _errorMessage;
   Session? _session;
   RtcEngine? _engine;
+  ErrorCodeType? _lastSurfacedAgoraError;
   Timer? _pollTimer;
   Timer? _tickTimer;
   Duration _elapsed = Duration.zero;
@@ -419,6 +420,23 @@ class _CallScreenState extends ConsumerState<CallScreen> {
         },
         onError: (err, msg) {
           debugPrint('[call] Agora error $err: $msg');
+          // debugPrint is invisible outside an attached debugger — a real
+          // device on TestFlight/production shows nothing at all here, so
+          // an Agora-level failure (bad token, a native SDK issue, a
+          // codec/transport problem) can produce a call that looks fully
+          // connected — timer running, peer name shown — but is silently
+          // broken, with zero signal to whoever's testing it. Surface each
+          // distinct error code once via a SnackBar so it's actually
+          // visible on the device having the problem.
+          if (mounted && err != _lastSurfacedAgoraError) {
+            _lastSurfacedAgoraError = err;
+            ScaffoldMessenger.maybeOf(context)?.showSnackBar(
+              SnackBar(
+                backgroundColor: AppColors.error,
+                content: Text('Call audio error: ${err.name}'),
+              ),
+            );
+          }
         },
       ),
     );

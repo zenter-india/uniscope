@@ -91,6 +91,26 @@ class PushService {
     if (kIsWeb) return;
     try {
       await _setupOnce();
+      // On iOS, FirebaseMessaging.getToken() needs an APNs token to already
+      // be attached — iOS delivers that token to the app asynchronously
+      // (via didRegisterForRemoteNotificationsWithDeviceToken) some short
+      // time after requestPermission()/registerForRemoteNotifications(),
+      // not synchronously. Calling getToken() before that arrives throws,
+      // and the outer catch here swallowed it silently — so on iOS this
+      // method could run to completion having uploaded nothing, with no
+      // visible error, and the device would just never get a push token
+      // registered at all. Android has no such handshake and was never
+      // affected. Poll briefly for the APNs token first; if it genuinely
+      // never arrives (push permission denied, or a real APNs/entitlement
+      // misconfiguration), skip getToken() rather than let it throw.
+      if (Platform.isIOS) {
+        var apnsToken = await FirebaseMessaging.instance.getAPNSToken();
+        for (var i = 0; apnsToken == null && i < 10; i++) {
+          await Future<void>.delayed(const Duration(milliseconds: 500));
+          apnsToken = await FirebaseMessaging.instance.getAPNSToken();
+        }
+        if (apnsToken == null) return; // no push this run — nothing to upload
+      }
       final token = await FirebaseMessaging.instance.getToken();
       if (token != null) await _upload(token);
     } catch (_) {
