@@ -140,4 +140,25 @@ export class ReviewModerationService {
     if (!found) throw new NotFoundException(`University review '${id}' not found`);
     await this.prisma.review.update({ where: { id }, data: { status } });
   }
+
+  /** ADMIN bulk moderation — e.g. hide several spam reviews at once.
+   * `updateMany` silently no-ops on ids that don't match, so `updated` in
+   * the response is however many rows actually changed. */
+  async bulkSetStatus(
+    kind: 'mentor' | 'university',
+    ids: string[],
+    status: ReviewStatus,
+  ): Promise<{ updated: number }> {
+    const result =
+      kind === 'mentor'
+        ? await this.prisma.mentorReview.updateMany({
+            where: { id: { in: ids } },
+            data: { status },
+          })
+        : await this.prisma.review.updateMany({
+            where: { id: { in: ids } },
+            data: { status },
+          });
+    return { updated: result.count };
+  }
 }

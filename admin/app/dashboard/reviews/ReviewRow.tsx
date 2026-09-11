@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useState, useTransition } from 'react';
 import { Badge, Button, Table, toneFor } from '../../../components/ui';
+import type { RowSelection } from '../../../components/InfiniteList';
 import { setReviewStatus, type ModeratedReview } from './actions';
 
 function stars(n: number): string {
@@ -10,7 +11,13 @@ function stars(n: number): string {
   return '★'.repeat(r) + '☆'.repeat(5 - r);
 }
 
-export function ReviewRow({ review }: { review: ModeratedReview }) {
+export function ReviewRow({
+  review,
+  selection,
+}: {
+  review: ModeratedReview;
+  selection?: RowSelection;
+}) {
   const [status, setStatus] = useState(review.status);
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -34,6 +41,16 @@ export function ReviewRow({ review }: { review: ModeratedReview }) {
 
   return (
     <Table.Row>
+      {selection && (
+        <Table.Cell className="align-top">
+          <input
+            type="checkbox"
+            checked={selection.checked}
+            onChange={selection.onToggle}
+            aria-label={`Select review by ${review.authorName}`}
+          />
+        </Table.Cell>
+      )}
       <Table.Cell className="whitespace-nowrap align-top">
         <span className="text-amber-500" title={`${review.rating} / 5`}>
           {stars(review.rating)}

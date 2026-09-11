@@ -61,3 +61,28 @@ export async function setReviewStatus(
     };
   }
 }
+
+type BulkResult = { ok: true; updated: number } | { ok: false; error: string };
+
+/** Bulk moderation — e.g. hide a batch of spam reviews at once. All ids in
+ * one call must be the same `kind` (the list only ever shows one at a time,
+ * via the type filter tab). */
+export async function bulkSetReviewStatus(
+  kind: 'mentor' | 'university',
+  ids: string[],
+  status: 'ACTIVE' | 'HIDDEN' | 'REMOVED',
+): Promise<BulkResult> {
+  try {
+    const res = await backendFetch<{ updated: number }>('/admin/reviews/bulk', {
+      method: 'PATCH',
+      body: JSON.stringify({ kind, ids, status }),
+    });
+    revalidatePath('/dashboard/reviews');
+    return { ok: true, updated: res.updated };
+  } catch (e) {
+    return {
+      ok: false,
+      error: e instanceof Error ? e.message : 'Could not update the selected reviews',
+    };
+  }
+}

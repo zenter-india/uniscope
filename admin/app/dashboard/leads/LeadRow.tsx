@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useState, useTransition } from 'react';
 import { Badge, Button, toneFor } from '../../../components/ui';
 import { ExpandableRow } from '../../../components/ExpandableRow';
+import type { RowSelection } from '../../../components/InfiniteList';
 import { getLeadDocumentUrl, updateLead } from './actions';
 
 const DOCUMENT_TYPE_LABELS: Record<string, string> = {
@@ -61,7 +62,13 @@ function Field({ label, value }: { label: string; value: React.ReactNode }) {
   );
 }
 
-export function LeadRow({ lead }: { lead: LeadRowData }) {
+export function LeadRow({
+  lead,
+  selection,
+}: {
+  lead: LeadRowData;
+  selection?: RowSelection;
+}) {
   const [note, setNote] = useState(lead.adminNote ?? '');
   const [status, setStatus] = useState(lead.status);
   const [docUrl, setDocUrl] = useState<string | null>(null);
@@ -99,8 +106,19 @@ export function LeadRow({ lead }: { lead: LeadRowData }) {
 
   return (
     <ExpandableRow
-      colSpan={6}
+      colSpan={selection ? 7 : 6}
       cells={[
+        ...(selection
+          ? [
+              <input
+                key="sel"
+                type="checkbox"
+                checked={selection.checked}
+                onChange={selection.onToggle}
+                aria-label={`Select ${lead.fullName}`}
+              />,
+            ]
+          : []),
         <span key="n" className="font-medium text-zinc-900">
           {lead.fullName}
         </span>,

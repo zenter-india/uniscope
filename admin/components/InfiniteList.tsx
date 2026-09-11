@@ -8,6 +8,21 @@ interface Page<T> {
   nextCursor: string | null;
 }
 
+export interface RowSelection {
+  checked: boolean;
+  onToggle: () => void;
+}
+
+export interface BulkBarContext<T> {
+  selectedIds: string[];
+  items: T[];
+  clearSelection: () => void;
+  selectAllShown: () => void;
+  /** Patch the locally-held items after a bulk action succeeds — e.g. map
+   * the acted-on rows to their new status — without a full re-fetch. */
+  updateItems: (updater: (items: T[]) => T[]) => void;
+}
+
 /**
  * Client-side "Load more" wrapper for the dashboard's cursor-paginated list
  * endpoints. The server component renders the first page and hands us its
@@ -17,6 +32,12 @@ interface Page<T> {
  * The server component MUST give this a `key` derived from the active filters
  * so a filter change remounts it with a fresh first page — otherwise the
  * accumulated `items` state would survive the navigation and show stale rows.
+ *
+ * Optional bulk-selection support: pass `selectable` (how to get a stable id
+ * from an item) and `renderBulkBar` (the action bar shown once ≥1 row is
+ * selected — typically a handful of "Mark N as …" buttons). `renderItem`
+ * then receives a second `selection` argument whenever `selectable` is set,
+ * for the row to render its own checkbox cell (see LeadRow/ReviewRow).
  */
 export function InfiniteList<T>({
   initialItems,
@@ -27,21 +48,26 @@ export function InfiniteList<T>({
   gapClass = 'gap-3',
   variant = 'stack',
   tableHead,
+  selectable,
+  renderBulkBar,
 }: {
   initialItems: T[];
   initialCursor: string | null;
   loadMore: (cursor: string) => Promise<Page<T>>;
-  renderItem: (item: T) => ReactNode;
+  renderItem: (item: T, selection?: RowSelection) => ReactNode;
   emptyText?: string;
   gapClass?: string;
   /** 'table' renders rows inside a framed <table> — `renderItem` must return
    * a <tr> and `tableHead` supplies the <tr> of column headers. */
   variant?: 'stack' | 'table';
   tableHead?: ReactNode;
+  selectable?: { getId: (item: T) => string };
+  renderBulkBar?: (ctx: BulkBarContext<T>) => ReactNode;
 }) {
   const [items, setItems] = useState(initialItems);
   const [cursor, setCursor] = useState(initialCursor);
   const [error, setError] = useState<string | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [isPending, startTransition] = useTransition();
 
   const more = () => {
@@ -62,12 +88,43 @@ export function InfiniteList<T>({
     return <EmptyState>{emptyText}</EmptyState>;
   }
 
+  const toggleSelect = (id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const selectionFor = (item: T): RowSelection | undefined => {
+    if (!selectable) return undefined;
+    const id = selectable.getId(item);
+    return { checked: selectedIds.has(id), onToggle: () => toggleSelect(id) };
+  };
+
+  const bulkBarCtx: BulkBarContext<T> | null = selectable
+    ? {
+        selectedIds: [...selectedIds],
+        items,
+        clearSelection: () => setSelectedIds(new Set()),
+        selectAllShown: () => setSelectedIds(new Set(items.map(selectable.getId))),
+        updateItems: (updater) => setItems(updater),
+      }
+    : null;
+
   return (
     <div className="flex flex-col gap-4">
+      {bulkBarCtx && selectedIds.size > 0 && renderBulkBar && (
+        <div>{renderBulkBar(bulkBarCtx)}</div>
+      )}
+
       {variant === 'table' ? (
-        <Table head={tableHead}>{items.map(renderItem)}</Table>
+        <Table head={tableHead}>{items.map((item) => renderItem(item, selectionFor(item)))}</Table>
       ) : (
-        <div className={`flex flex-col ${gapClass}`}>{items.map(renderItem)}</div>
+        <div className={`flex flex-col ${gapClass}`}>
+          {items.map((item) => renderItem(item, selectionFor(item)))}
+        </div>
       )}
 
       {error && <p className="text-sm text-red-600">{error}</p>}

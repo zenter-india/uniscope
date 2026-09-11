@@ -46,3 +46,26 @@ export async function updateLead(
   revalidatePath('/dashboard/leads');
   revalidatePath('/dashboard');
 }
+
+type BulkResult = { ok: true; updated: number } | { ok: false; error: string };
+
+/** Bulk status change — e.g. mark a batch "Contacted" after a call session. */
+export async function bulkUpdateLeadStatus(
+  ids: string[],
+  status: string,
+): Promise<BulkResult> {
+  try {
+    const res = await backendFetch<{ updated: number }>(`/enrollments/bulk`, {
+      method: 'PATCH',
+      body: JSON.stringify({ ids, status }),
+    });
+    revalidatePath('/dashboard/leads');
+    revalidatePath('/dashboard');
+    return { ok: true, updated: res.updated };
+  } catch (e) {
+    return {
+      ok: false,
+      error: e instanceof Error ? e.message : 'Could not update the selected leads',
+    };
+  }
+}

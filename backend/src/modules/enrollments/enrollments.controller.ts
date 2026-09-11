@@ -14,6 +14,7 @@ import { EnrollmentLeadRole, EnrollmentLeadStatus, UserRole } from '@prisma/clie
 import { Roles } from '../../auth/decorators/roles.decorator.js';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard.js';
 import { RolesGuard } from '../../auth/guards/roles.guard.js';
+import { BulkUpdateLeadsDto } from './dto/bulk-update-leads.dto.js';
 import {
   CreateAspirantLeadDto,
   CreateMentorLeadDto,
@@ -100,6 +101,15 @@ export class EnrollmentsController {
   @Get(':id/document-url')
   async documentUrl(@Param('id') id: string) {
     return { url: await this.enrollmentsService.getDocumentUrl(id) };
+  }
+
+  // Declared before the single-lead `:id` route so `/enrollments/bulk`
+  // doesn't get swallowed as `:id === 'bulk'`.
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @Patch('bulk')
+  bulkUpdate(@Body() dto: BulkUpdateLeadsDto) {
+    return this.enrollmentsService.bulkUpdateStatus(dto.ids, dto.status);
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)

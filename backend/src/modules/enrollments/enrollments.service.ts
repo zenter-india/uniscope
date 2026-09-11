@@ -705,6 +705,22 @@ export class EnrollmentsService {
     return toEnrollmentLeadResponse(updated);
   }
 
+  /** ADMIN bulk status change — e.g. mark a batch "Contacted" after a call
+   * session. `updateMany` silently no-ops on ids that don't exist rather
+   * than throwing, same as every other bulk-by-id-list operation in the
+   * app; `updated` in the response is however many rows actually matched,
+   * so a stale/typo'd id in the batch is visible without failing the rest. */
+  async bulkUpdateStatus(
+    ids: string[],
+    status: EnrollmentLeadStatus,
+  ): Promise<{ updated: number }> {
+    const result = await this.prisma.enrollmentLead.updateMany({
+      where: { id: { in: ids } },
+      data: { status },
+    });
+    return { updated: result.count };
+  }
+
   /** ADMIN — CSV of every lead matching the filters, for offline follow-up.
    * Unpaginated by design: the point is to hand sales the whole list. */
   async exportCsv(query: ListLeadsDto): Promise<string> {
