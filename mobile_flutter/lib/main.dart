@@ -4,6 +4,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'core/network/university_reviews_api.dart' show hasReviewedUniversityProvider;
+import 'core/network/users_api.dart' show myProfileProvider;
 import 'core/push/push_service.dart';
 import 'core/theme/app_theme.dart';
 import 'router/app_router.dart';
@@ -31,10 +33,12 @@ class UniscopeApp extends ConsumerStatefulWidget {
   ConsumerState<UniscopeApp> createState() => _UniscopeAppState();
 }
 
-class _UniscopeAppState extends ConsumerState<UniscopeApp> {
+class _UniscopeAppState extends ConsumerState<UniscopeApp>
+    with WidgetsBindingObserver {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     // Keep the device's push-token binding in lockstep with the signed-in
     // account:
     //  - becomes authenticated (fresh login, account switch, relaunch with
@@ -57,6 +61,35 @@ class _UniscopeAppState extends ConsumerState<UniscopeApp> {
             .unregister(accessToken: previous.accessToken!);
       }
     }, fireImmediately: true);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  /// A screen that gates on server-side profile state (the mentor
+  /// college-review requirement, `isMentorAvailable`'s 24h auto-expiry) only
+  /// ever shows what `myProfileProvider` had cached the last time it was
+  /// watched. If a mentor writes their review — or the availability window
+  /// simply expires — while the app sits backgrounded rather than force-
+  /// quit, nothing rebuilds that cache: `FutureProvider.autoDispose` only
+  /// refetches when its last watcher unmounts and re-mounts, which doesn't
+  /// happen for a screen the bottom-nav shell keeps alive. Reported live: a
+  /// mentor who'd genuinely already reviewed their college (confirmed
+  /// server-side) kept seeing "review your college" and a locked
+  /// call-booking toggle for two days. Force a refetch on every app resume
+  /// (the same pattern `ChatThreadView` already uses for its own message
+  /// staleness) so this — and the availability-expiry case — self-heals the
+  /// moment the user comes back to the app, not only on a cold relaunch.
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed &&
+        ref.read(authControllerProvider).isAuthenticated) {
+      ref.invalidate(myProfileProvider);
+      ref.invalidate(hasReviewedUniversityProvider);
+    }
   }
 
   @override

@@ -473,7 +473,16 @@ class _MentorAvailabilityCardState
       universityId: profile!.universityId!,
       universityName: profile.universityName ?? 'Your college',
       asMentorOwnCollege: true,
-    ).then((_) => ref.invalidate(myProfileProvider));
+    ).then((_) {
+      // myProfileProvider alone isn't enough — hasReviewedUniversityProvider
+      // is a separate autoDispose.family cache keyed by universityId, and
+      // rebuilding this widget from a fresh profile doesn't itself refetch
+      // an already-resolved family entry. Without this, "review submitted"
+      // could still read back as "not reviewed" and leave the gate stuck
+      // open in the very same session that just cleared it.
+      ref.invalidate(myProfileProvider);
+      ref.invalidate(hasReviewedUniversityProvider);
+    });
 
     return AppCard(
       child: Column(

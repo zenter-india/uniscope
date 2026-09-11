@@ -797,7 +797,16 @@ class CollegeReviewPromptBanner extends ConsumerWidget {
         universityId: profile.universityId!,
         universityName: profile.universityName ?? 'Your college',
         asMentorOwnCollege: true,
-      ),
+      ).then((_) {
+        // Same staleness fix as MentorAvailabilityCard.openReview() — this
+        // banner's own "reviewed" check (hasReviewedUniversityProvider,
+        // above) is a separate cache from myProfileProvider and won't
+        // refetch on its own just because the profile did, so a review
+        // submitted from here specifically could leave the banner showing
+        // even after a successful submit.
+        ref.invalidate(myProfileProvider);
+        ref.invalidate(hasReviewedUniversityProvider);
+      }),
       padding: const EdgeInsets.symmetric(
         horizontal: AppSpacing.md,
         vertical: 14,
