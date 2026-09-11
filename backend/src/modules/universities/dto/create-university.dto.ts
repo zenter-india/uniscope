@@ -1,4 +1,12 @@
-import { IsInt, IsOptional, IsString, IsUrl, Max, MaxLength, Min } from 'class-validator';
+import {
+  IsInt,
+  IsOptional,
+  IsString,
+  IsUrl,
+  Max,
+  MaxLength,
+  Min,
+} from 'class-validator';
 
 export class CreateUniversityDto {
   @IsString()

@@ -1,5 +1,6 @@
 import { backendFetch } from '../../../lib/backend';
 import { getAdminEmail } from '../../../lib/adminAuth';
+import { ButtonLink } from '../../../components/ui';
 import { DashboardShell } from '../DashboardShell';
 import { AddUniversityForm } from './AddUniversityForm';
 import type { UniversityRowData } from './UniversityRow';
@@ -44,7 +45,10 @@ export default async function UniversitiesPage({
             Search
           </button>
         </form>
-        <AddUniversityForm />
+        <div className="flex items-center gap-2">
+          <ButtonLink href="/dashboard/universities/duplicates">Find duplicates</ButtonLink>
+          <AddUniversityForm />
+        </div>
       </div>
 
       <UniversitiesList

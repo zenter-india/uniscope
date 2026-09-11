@@ -58,3 +58,59 @@ export async function uploadUniversityPhoto(id: string, imageBase64: string): Pr
   });
   revalidatePath('/dashboard/universities');
 }
+
+export interface DuplicateUniversity {
+  id: string;
+  name: string;
+  slug: string;
+  state: string;
+  city: string | null;
+  stream: string | null;
+  establishedYear: number | null;
+  isActive: boolean;
+  createdAt: string;
+  programCount: number;
+  reviewCount: number;
+}
+
+export interface DuplicateGroup {
+  key: string;
+  state: string;
+  universities: DuplicateUniversity[];
+}
+
+export async function loadDuplicateGroups(): Promise<DuplicateGroup[]> {
+  return backendFetch<DuplicateGroup[]>('/universities/admin/duplicates');
+}
+
+export interface MergeResult {
+  winnerId: string;
+  deactivated: number;
+  programsMoved: number;
+  reviewsMoved: number;
+  savedMoved: number;
+  profilesMoved: number;
+  verificationRequestsMoved: number;
+  enrollmentLeadsMoved: number;
+}
+
+export type MergeUniversitiesResult =
+  | { ok: true; result: MergeResult }
+  | { ok: false; error: string };
+
+export async function mergeUniversities(
+  winnerId: string,
+  loserIds: string[],
+): Promise<MergeUniversitiesResult> {
+  try {
+    const result = await backendFetch<MergeResult>('/universities/admin/merge', {
+      method: 'POST',
+      body: JSON.stringify({ winnerId, loserIds }),
+    });
+    revalidatePath('/dashboard/universities');
+    revalidatePath('/dashboard/universities/duplicates');
+    return { ok: true, result };
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : 'Could not merge universities' };
+  }
+}

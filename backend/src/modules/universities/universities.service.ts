@@ -144,9 +144,7 @@ export class UniversitiesService {
    * that mode is still ranked but capped, e.g. mobile's small-page
    * typeahead.
    */
-  async findAll(
-    query: ListUniversitiesDto,
-  ): Promise<{
+  async findAll(query: ListUniversitiesDto): Promise<{
     data: Array<
       University & { specializations: string[]; district: string | null }
     >;
@@ -332,9 +330,17 @@ export class UniversitiesService {
         ...(browse &&
           query.search && {
             OR: [
-              { university: { name: { contains: query.search, mode: 'insensitive' } } },
+              {
+                university: {
+                  name: { contains: query.search, mode: 'insensitive' },
+                },
+              },
               { description: { contains: query.search, mode: 'insensitive' } },
-              { university: { state: { contains: query.search, mode: 'insensitive' } } },
+              {
+                university: {
+                  state: { contains: query.search, mode: 'insensitive' },
+                },
+              },
             ],
           }),
       },
@@ -557,6 +563,248 @@ export class UniversitiesService {
     return this.prisma.university.update({
       where: { id },
       data: { imageUrl: data.publicUrl },
+    });
+  }
+
+  /**
+   * Groups of active universities that look like the same real college —
+   * same name (case-insensitive) and state. This is the exact heuristic
+   * the hand-written dedup migrations (see CLAUDE.md, "2026-09-09 — dedup +
+   * nan-state migration") used to find true duplicates in prod; exposing it
+   * here turns what used to be a one-off SQL migration per incident into a
+   * repeatable admin action. Capped at `limit` groups (largest first) so a
+   * pathological number of near-duplicates can't blow up the response —
+   * "lightweight" tool, not a full data-quality dashboard.
+   */
+  async findDuplicateGroups(limit = 100): Promise<
+    {
+      key: string;
+      state: string;
+      universities: (University & {
+        programCount: number;
+        reviewCount: number;
+      })[];
+    }[]
+  > {
+    const grouped = await this.prisma.$queryRaw<
+      { name_key: string; state: string; ids: string[]; count: bigint }[]
+    >`
+      SELECT lower(name) AS name_key, state, array_agg(id) AS ids, count(*) AS count
+      FROM universities
+      WHERE is_active = true
+      GROUP BY lower(name), state
+      HAVING count(*) > 1
+      ORDER BY count(*) DESC
+      LIMIT ${limit}
+    `;
+
+    if (grouped.length === 0) return [];
+
+    const allIds = grouped.flatMap((g) => g.ids);
+    const [universities, programCounts, reviewCounts] = await Promise.all([
+      this.prisma.university.findMany({ where: { id: { in: allIds } } }),
+      this.prisma.program.groupBy({
+        by: ['universityId'],
+        where: { universityId: { in: allIds } },
+        _count: { _all: true },
+      }),
+      this.prisma.review.groupBy({
+        by: ['universityId'],
+        where: { universityId: { in: allIds } },
+        _count: { _all: true },
+      }),
+    ]);
+
+    const byId = new Map(universities.map((u) => [u.id, u]));
+    const programCountById = new Map(
+      programCounts.map((p) => [p.universityId, p._count._all]),
+    );
+    const reviewCountById = new Map(
+      reviewCounts.map((r) => [r.universityId, r._count._all]),
+    );
+
+    return grouped.map((g) => ({
+      key: g.name_key,
+      state: g.state,
+      universities: g.ids
+        .map((id) => byId.get(id))
+        .filter((u): u is University => u != null)
+        .map((u) => ({
+          ...u,
+          programCount: programCountById.get(u.id) ?? 0,
+          reviewCount: reviewCountById.get(u.id) ?? 0,
+        }))
+        // Oldest first — the longest-standing row is the natural default
+        // "winner" pick in the admin UI.
+        .sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime()),
+    }));
+  }
+
+  /**
+   * Merges `loserIds` into `winnerId`: repoints every FK that can point at
+   * a University (programs, reviews, saved-college rows, mentor
+   * verification requests, aspirant/mentor profiles, web enrollment leads)
+   * from each loser onto the winner, then deactivates the losers. Never a
+   * row delete — same "deactivate, don't destroy" rule the rest of this
+   * module follows (see the class doc comment on why there's no delete
+   * endpoint for universities at all).
+   *
+   * Three of those FKs carry a uniqueness constraint that a naive move
+   * could violate (`Program` on `[universityId, name]`, `Review` on
+   * `[authorId, universityId]`, `SavedUniversity` on
+   * `[aspirantId, universityId]`) — e.g. if the same aspirant already saved
+   * *both* the winner and a loser as separate rows (very plausible for a
+   * true duplicate pair), blindly repointing the loser's row would collide
+   * with the winner's existing one. For those three, only rows that don't
+   * already exist on the winner are moved; a colliding row is left in
+   * place on the now-deactivated loser — harmless (unreachable once the
+   * loser is inactive) and exactly the same "duplicate left as a harmless
+   * leftover" outcome the hand-written dedup migrations settled on.
+   *
+   * Everything happens in one transaction — a partial merge would be worse
+   * than no merge at all.
+   */
+  async mergeUniversities(
+    winnerId: string,
+    loserIds: string[],
+  ): Promise<{
+    winnerId: string;
+    deactivated: number;
+    programsMoved: number;
+    reviewsMoved: number;
+    savedMoved: number;
+    profilesMoved: number;
+    verificationRequestsMoved: number;
+    enrollmentLeadsMoved: number;
+  }> {
+    if (loserIds.includes(winnerId)) {
+      throw new BadRequestException('winnerId cannot also appear in loserIds');
+    }
+
+    const winner = await this.prisma.university.findUnique({
+      where: { id: winnerId },
+    });
+    if (!winner || !winner.isActive) {
+      throw new NotFoundException(`Active university '${winnerId}' not found`);
+    }
+    const losers = await this.prisma.university.findMany({
+      where: { id: { in: loserIds }, isActive: true },
+    });
+    if (losers.length !== loserIds.length) {
+      throw new NotFoundException(
+        'One or more loserIds are not active universities',
+      );
+    }
+
+    return this.prisma.$transaction(async (tx) => {
+      let programsMoved = 0;
+      let reviewsMoved = 0;
+      let savedMoved = 0;
+
+      const [winnerPrograms, winnerReviews, winnerSaved] = await Promise.all([
+        tx.program.findMany({
+          where: { universityId: winnerId },
+          select: { name: true },
+        }),
+        tx.review.findMany({
+          where: { universityId: winnerId },
+          select: { authorId: true },
+        }),
+        tx.savedUniversity.findMany({
+          where: { universityId: winnerId },
+          select: { aspirantId: true },
+        }),
+      ]);
+      const winnerProgramNames = new Set(
+        winnerPrograms.map((p) => p.name.toLowerCase()),
+      );
+      const winnerReviewAuthors = new Set(winnerReviews.map((r) => r.authorId));
+      const winnerSavedAspirants = new Set(
+        winnerSaved.map((s) => s.aspirantId),
+      );
+
+      for (const loserId of loserIds) {
+        const [loserPrograms, loserReviews, loserSaved] = await Promise.all([
+          tx.program.findMany({ where: { universityId: loserId } }),
+          tx.review.findMany({ where: { universityId: loserId } }),
+          tx.savedUniversity.findMany({ where: { universityId: loserId } }),
+        ]);
+
+        for (const program of loserPrograms) {
+          if (winnerProgramNames.has(program.name.toLowerCase())) continue;
+          await tx.program.update({
+            where: { id: program.id },
+            data: { universityId: winnerId },
+          });
+          winnerProgramNames.add(program.name.toLowerCase());
+          programsMoved += 1;
+        }
+
+        for (const review of loserReviews) {
+          if (winnerReviewAuthors.has(review.authorId)) continue;
+          await tx.review.update({
+            where: { id: review.id },
+            data: { universityId: winnerId },
+          });
+          winnerReviewAuthors.add(review.authorId);
+          reviewsMoved += 1;
+        }
+
+        for (const saved of loserSaved) {
+          if (winnerSavedAspirants.has(saved.aspirantId)) continue;
+          await tx.savedUniversity.update({
+            where: { id: saved.id },
+            data: { universityId: winnerId },
+          });
+          winnerSavedAspirants.add(saved.aspirantId);
+          savedMoved += 1;
+        }
+      }
+
+      // No uniqueness constraint on these three — a plain bulk repoint.
+      const [profilesResult, verificationResult, enrollmentResult] =
+        await Promise.all([
+          tx.userProfile.updateMany({
+            where: { universityId: { in: loserIds } },
+            data: { universityId: winnerId },
+          }),
+          tx.verificationRequest.updateMany({
+            where: { universityId: { in: loserIds } },
+            data: { universityId: winnerId },
+          }),
+          tx.enrollmentLead.updateMany({
+            where: { universityId: { in: loserIds } },
+            data: { universityId: winnerId },
+          }),
+        ]);
+
+      // Backfill the winner's city from a loser's, if the winner never had
+      // one — a blank city means it never shows a district on any card.
+      if (!winner.city) {
+        const loserWithCity = losers.find((l) => l.city);
+        if (loserWithCity) {
+          await tx.university.update({
+            where: { id: winnerId },
+            data: { city: loserWithCity.city },
+          });
+        }
+      }
+
+      const deactivateResult = await tx.university.updateMany({
+        where: { id: { in: loserIds } },
+        data: { isActive: false },
+      });
+
+      return {
+        winnerId,
+        deactivated: deactivateResult.count,
+        programsMoved,
+        reviewsMoved,
+        savedMoved,
+        profilesMoved: profilesResult.count,
+        verificationRequestsMoved: verificationResult.count,
+        enrollmentLeadsMoved: enrollmentResult.count,
+      };
     });
   }
 }

@@ -18,6 +18,7 @@ import { CreateUniversityDto } from './dto/create-university.dto.js';
 import { FindOrCreateUniversityDto } from './dto/find-or-create-university.dto.js';
 import { ListCuratedUniversitiesDto } from './dto/list-curated-universities.dto.js';
 import { ListUniversitiesDto } from './dto/list-universities.dto.js';
+import { MergeUniversitiesDto } from './dto/merge-universities.dto.js';
 import { UpdateUniversityDto } from './dto/update-university.dto.js';
 import { UploadUniversityPhotoDto } from './dto/upload-university-photo.dto.js';
 import { UniversitiesService } from './universities.service.js';
@@ -40,6 +41,28 @@ export class UniversitiesController {
   @Get('admin/list')
   listAdmin(@Query() query: ListUniversitiesDto) {
     return this.universitiesService.findAllAdmin(query);
+  }
+
+  /** Likely-duplicate groups (same name + state, both active) — see
+   * UniversitiesService.findDuplicateGroups. Declared before `:slug` so the
+   * literal path isn't swallowed by the slug param. */
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @Get('admin/duplicates')
+  duplicates() {
+    return this.universitiesService.findDuplicateGroups();
+  }
+
+  /** Merges the given duplicates into one surviving row — see
+   * UniversitiesService.mergeUniversities. */
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @Post('admin/merge')
+  merge(@Body() dto: MergeUniversitiesDto) {
+    return this.universitiesService.mergeUniversities(
+      dto.winnerId,
+      dto.loserIds,
+    );
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
