@@ -209,12 +209,7 @@ class _MentorOnboardingScreenState extends ConsumerState<MentorOnboardingScreen>
       }
       // Picked college has no mapped programs for this degree — show the
       // degree-wide union so the mentor still has something to pick.
-      return ref
-              .watch(specializationsForDegreeProvider(
-                (stream: _stream!, degree: _curatedDegree!),
-              ))
-              .value ??
-          const [];
+      return _curatedDegreeWideOptions();
     }
     if (needsStreamWideSpecialization(_stream, _degree)) {
       // No curated key for Doctorate/Others itself (e.g. Dental has one
@@ -229,6 +224,25 @@ class _MentorOnboardingScreenState extends ConsumerState<MentorOnboardingScreen>
           const [];
     }
     return const [];
+  }
+
+  /// Every specialization known anywhere for the picked stream+curated
+  /// degree — always watched (not just when the picked college has no
+  /// specializations of its own) so it's ready to widen the Specialization
+  /// field's search once the mentor starts typing. Mirrors web
+  /// MentorForm.tsx's `allSpecializationsForDegree`: the field defaults to
+  /// showing only the picked college's own programs, but a search should
+  /// still surface a real specialization their college's curated data just
+  /// isn't mapped to yet — otherwise it silently rejects a specialization
+  /// that's valid but only recorded against some other college.
+  List<String> _curatedDegreeWideOptions() {
+    if (_curatedDegree == null) return const [];
+    return ref
+            .watch(specializationsForDegreeProvider(
+              (stream: _stream!, degree: _curatedDegree!),
+            ))
+            .value ??
+        const [];
   }
 
   String get _resolvedCity => _city == 'Other' ? _cityOtherController.text.trim() : (_city ?? '');
@@ -650,6 +664,13 @@ class _MentorOnboardingScreenState extends ConsumerState<MentorOnboardingScreen>
                           value: _specialization,
                           hint: 'Select specialization',
                           options: _specializationOptions(),
+                          // Only meaningful for the "picked college's own
+                          // list" case above — search widens beyond it.
+                          // The stream-wide branches already show the full
+                          // union by default, so there's nothing to widen.
+                          widenedOptions: _curatedDegree != null
+                              ? _curatedDegreeWideOptions()
+                              : null,
                           onChanged: (v) => setState(() => _specialization = v),
                         ),
                       ],

@@ -381,6 +381,7 @@ class OnboardingSearchableField extends StatelessWidget {
     required this.options,
     required this.onChanged,
     this.sheetTitle,
+    this.widenedOptions,
   });
 
   final String? value;
@@ -388,6 +389,14 @@ class OnboardingSearchableField extends StatelessWidget {
   final List<String> options;
   final ValueChanged<String?> onChanged;
   final String? sheetTitle;
+  /// A broader option pool the sheet's search falls back to once the user
+  /// types something — [options] alone stays the list shown with nothing
+  /// typed. Lets a field default to a narrow, scoped list (e.g. a picked
+  /// college's own specializations) while still surfacing a real option
+  /// that just isn't in that narrow list once the user searches for it —
+  /// mirrors web's SearchableCombobox "browse = scoped / search =
+  /// everything" split. Leave null when [options] is already the full set.
+  final List<String>? widenedOptions;
 
   Future<void> _open(BuildContext context) async {
     final picked = await showModalBottomSheet<String>(
@@ -400,6 +409,7 @@ class OnboardingSearchableField extends StatelessWidget {
       builder: (_) => _SearchableOptionSheet(
         title: sheetTitle ?? hint,
         options: options,
+        widenedOptions: widenedOptions,
         selected: value,
       ),
     );
@@ -442,10 +452,12 @@ class _SearchableOptionSheet extends StatefulWidget {
     required this.title,
     required this.options,
     required this.selected,
+    this.widenedOptions,
   });
   final String title;
   final List<String> options;
   final String? selected;
+  final List<String>? widenedOptions;
 
   @override
   State<_SearchableOptionSheet> createState() => _SearchableOptionSheetState();
@@ -457,11 +469,13 @@ class _SearchableOptionSheetState extends State<_SearchableOptionSheet> {
   @override
   Widget build(BuildContext context) {
     final q = _query.trim().toLowerCase();
+    // With nothing typed, show the narrow (e.g. college-scoped) list as-is.
+    // Once searching, widen the pool first so a real option outside the
+    // narrow list is still findable, then filter that wider pool.
+    final pool = q.isEmpty ? widget.options : (widget.widenedOptions ?? widget.options);
     final filtered = q.isEmpty
-        ? widget.options
-        : widget.options
-            .where((o) => o.toLowerCase().contains(q))
-            .toList(growable: false);
+        ? pool
+        : pool.where((o) => o.toLowerCase().contains(q)).toList(growable: false);
     return Padding(
       padding: EdgeInsets.only(
         left: AppSpacing.lg,
