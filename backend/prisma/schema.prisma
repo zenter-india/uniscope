@@ -909,6 +909,20 @@ model Broadcast {
   @@map("broadcasts")
 }
 
+/// Admin-tunable runtime config — a small, deliberately narrow set of
+/// operational knobs (see SettingsService.SETTINGS_REGISTRY for the
+/// current list and each one's default/min/max). One row per setting;
+/// a missing row means "use the hardcoded default", so this table can be
+/// completely empty and nothing breaks — it only ever overrides a default,
+/// never introduces a required one.
+model AppSetting {
+  key       String   @id @db.VarChar(64)
+  value     String   @db.VarChar(500)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@map("app_settings")
+}
+
 /// One run of the "refresh college data" admin tool (see universities/data-import
 /// module). Re-runs the same capture pipeline used to originally seed the
 /// dataset — NMC's MBBS seat-matrix PDF for UG, MCC's PG institute list for

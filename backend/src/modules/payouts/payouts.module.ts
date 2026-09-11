@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { PrismaModule } from '../../database/prisma/prisma.module.js';
 import { NotificationsModule } from '../notifications/notifications.module.js';
+import { SettingsModule } from '../settings/settings.module.js';
 import { WalletModule } from '../wallet/wallet.module.js';
 import { PayoutsController } from './payouts.controller.js';
 import { PayoutsService } from './payouts.service.js';
@@ -13,7 +14,7 @@ import { PayoutsService } from './payouts.service.js';
  * deliberate architecture decision — see PayoutsService.
  */
 @Module({
-  imports: [PrismaModule, WalletModule, NotificationsModule],
+  imports: [PrismaModule, WalletModule, NotificationsModule, SettingsModule],
   controllers: [PayoutsController],
   providers: [PayoutsService],
   exports: [PayoutsService],

@@ -32,6 +32,10 @@ const NAV_SECTIONS: {
       { label: 'Data Import', href: '/dashboard/data-import', icon: 'upload' },
     ],
   },
+  {
+    heading: 'Admin',
+    items: [{ label: 'Settings', href: '/dashboard/settings', icon: 'settings' }],
+  },
 ];
 
 const ALL_ITEMS = NAV_SECTIONS.flatMap((s) => s.items);

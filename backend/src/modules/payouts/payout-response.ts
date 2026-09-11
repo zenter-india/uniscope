@@ -1,7 +1,11 @@
 import { PayoutRequest } from '@prisma/client';
 import { decryptFieldSafe } from '../../common/helpers/profile-encryption.helper.js';
 
-const OVERDUE_AFTER_MS = 48 * 60 * 60 * 1000; // 48h processing-window SLA (see CLAUDE.md)
+/** Fallback when the caller doesn't have a live setting to hand — matches
+ * the `payoutOverdueHours` registry default (see settings.registry.ts). The
+ * admin-configurable value is fetched once per request by PayoutsService and
+ * passed in as `overdueAfterMs`, not read from here directly. */
+const DEFAULT_OVERDUE_AFTER_MS = 48 * 60 * 60 * 1000;
 
 export interface PayoutRequestResponse {
   id: string;
@@ -38,10 +42,12 @@ type PayoutRow = PayoutRequest & {
   } | null;
 };
 
-export function toPayoutRequestResponse(payout: PayoutRow): PayoutRequestResponse {
+export function toPayoutRequestResponse(
+  payout: PayoutRow,
+  overdueAfterMs: number = DEFAULT_OVERDUE_AFTER_MS,
+): PayoutRequestResponse {
   const isOpen = payout.status === 'PENDING' || payout.status === 'PROCESSING';
-  const isOverdue =
-    isOpen && Date.now() - payout.createdAt.getTime() > OVERDUE_AFTER_MS;
+  const isOverdue = isOpen && Date.now() - payout.createdAt.getTime() > overdueAfterMs;
 
   return {
     id: payout.id,

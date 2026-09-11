@@ -17,6 +17,7 @@ import { adminOrderBy } from '../../common/helpers/admin-sort.helper.js';
 import { rupeesLabel } from '../../common/helpers/notification-format.helper.js';
 import { PrismaService } from '../../database/prisma/prisma.service.js';
 import { NotificationsService } from '../notifications/notifications.service.js';
+import { SettingsService } from '../settings/settings.service.js';
 import { WalletService } from '../wallet/wallet.service.js';
 import { ProcessPayoutDto } from './dto/process-payout.dto.js';
 import { PayoutRequestResponse, toPayoutRequestResponse } from './payout-response.js';
@@ -38,7 +39,9 @@ const OPEN_STATUSES: PayoutStatus[] = [PayoutStatus.PENDING, PayoutStatus.PROCES
  * that week's request), so this needed no schema change either. Also reused
  * as the daily reminder's own cooldown — no point nudging someone who isn't
  * eligible to request again yet. */
-const PAYOUT_REQUEST_COOLDOWN_DAYS = 7;
+/** Fallback only — the live value is `payoutCooldownDays` in SettingsService
+ * (admin-tunable, see settings.registry.ts). Matches its registry default. */
+const DEFAULT_PAYOUT_REQUEST_COOLDOWN_DAYS = 7;
 
 @Injectable()
 export class PayoutsService {
@@ -48,7 +51,18 @@ export class PayoutsService {
     private readonly prisma: PrismaService,
     private readonly walletService: WalletService,
     private readonly notifications: NotificationsService,
+    private readonly settings: SettingsService,
   ) {}
+
+  private async cooldownDays(): Promise<number> {
+    const n = await this.settings.getNumber('payoutCooldownDays');
+    return n > 0 ? n : DEFAULT_PAYOUT_REQUEST_COOLDOWN_DAYS;
+  }
+
+  private async overdueAfterMs(): Promise<number> {
+    const hours = await this.settings.getNumber('payoutOverdueHours');
+    return (hours > 0 ? hours : 48) * 60 * 60 * 1000;
+  }
 
   /**
    * Nudges mentors who've crossed the payout-eligible threshold but haven't
@@ -56,7 +70,7 @@ export class PayoutsService {
    * unnoticed. Payouts stay mentor-initiated (see class docs); this only
    * makes the "you can request one" fact visible, it never requests on
    * their behalf. Runs daily but re-notifying the same mentor is capped at
-   * once every REMINDER_COOLDOWN_DAYS via their own notification history,
+   * once every `payoutCooldownDays` (the same admin-tunable setting the request cooldown itself uses) via their own notification history,
    * so this can't turn into a daily nag once someone's above the threshold.
    */
   @Cron(CronExpression.EVERY_DAY_AT_9AM)
@@ -96,6 +110,8 @@ export class PayoutsService {
     });
     if (existingOpen) return false;
 
+    const cooldownDays = await this.cooldownDays();
+
     // Not eligible to request again yet — no point reminding.
     const lastRequest = await this.prisma.payoutRequest.findFirst({
       where: { mentorId },
@@ -103,7 +119,7 @@ export class PayoutsService {
     });
     if (lastRequest) {
       const cooldownEndsAt = new Date(
-        lastRequest.createdAt.getTime() + PAYOUT_REQUEST_COOLDOWN_DAYS * 24 * 60 * 60 * 1000,
+        lastRequest.createdAt.getTime() + cooldownDays * 24 * 60 * 60 * 1000,
       );
       if (cooldownEndsAt > new Date()) return false;
     }
@@ -114,7 +130,7 @@ export class PayoutsService {
         type: 'SYSTEM',
         title: "You've got Uniminutes ready to withdraw",
         createdAt: {
-          gt: new Date(Date.now() - PAYOUT_REQUEST_COOLDOWN_DAYS * 24 * 60 * 60 * 1000),
+          gt: new Date(Date.now() - cooldownDays * 24 * 60 * 60 * 1000),
         },
       },
     });
@@ -140,7 +156,7 @@ export class PayoutsService {
    * outstanding at a time to prevent the same earnings window being claimed
    * twice while the first request is still in flight. **No minimum amount**
    * (2026-09-07, replaces the old ₹200 floor) — instead capped to once every
-   * PAYOUT_REQUEST_COOLDOWN_DAYS, checked against the mentor's own most
+   * the admin-tunable `payoutCooldownDays` setting, checked against the mentor's own most
    * recent request regardless of its outcome.
    */
   async requestPayout(mentorId: string): Promise<PayoutRequestResponse> {
@@ -153,17 +169,18 @@ export class PayoutsService {
       );
     }
 
+    const cooldownDays = await this.cooldownDays();
     const lastRequest = await this.prisma.payoutRequest.findFirst({
       where: { mentorId },
       orderBy: { createdAt: 'desc' },
     });
     if (lastRequest) {
       const cooldownEndsAt = new Date(
-        lastRequest.createdAt.getTime() + PAYOUT_REQUEST_COOLDOWN_DAYS * 24 * 60 * 60 * 1000,
+        lastRequest.createdAt.getTime() + cooldownDays * 24 * 60 * 60 * 1000,
       );
       if (cooldownEndsAt > new Date()) {
         throw new BadRequestException(
-          `You can request a payout once every ${PAYOUT_REQUEST_COOLDOWN_DAYS} days — next eligible ${cooldownEndsAt.toISOString()}.`,
+          `You can request a payout once every ${cooldownDays} days — next eligible ${cooldownEndsAt.toISOString()}.`,
         );
       }
     }
@@ -211,24 +228,30 @@ export class PayoutsService {
       data: { mentorId, amountMinor, periodStart, periodEnd },
     });
 
-    return toPayoutRequestResponse(payout);
+    return toPayoutRequestResponse(payout, await this.overdueAfterMs());
   }
 
   async findMine(mentorId: string): Promise<PayoutRequestResponse[]> {
-    const rows = await this.prisma.payoutRequest.findMany({
-      where: { mentorId },
-      orderBy: { createdAt: 'desc' },
-      include: {
-        mentor: {
-          select: {
-            displayName: true,
-            wallet: { select: { balanceMinor: true } },
-            profile: { select: { upiIdEncrypted: true } },
+    const [rows, overdueMs] = await Promise.all([
+      this.prisma.payoutRequest.findMany({
+        where: { mentorId },
+        orderBy: { createdAt: 'desc' },
+        include: {
+          mentor: {
+            select: {
+              displayName: true,
+              wallet: { select: { balanceMinor: true } },
+              profile: { select: { upiIdEncrypted: true } },
+            },
           },
         },
-      },
-    });
-    return rows.map(toPayoutRequestResponse);
+      }),
+      this.overdueAfterMs(),
+    ]);
+    // NB: must wrap in an arrow fn, not pass toPayoutRequestResponse
+    // directly — Array.map calls its callback with (item, index, array),
+    // and that index would otherwise land in the overdueAfterMs param.
+    return rows.map((r) => toPayoutRequestResponse(r, overdueMs));
   }
 
   /** Admin list — FIFO by request time, with the mentor's name and current
@@ -238,27 +261,30 @@ export class PayoutsService {
     sortBy?: string,
     sortDir?: 'asc' | 'desc',
   ): Promise<PayoutRequestResponse[]> {
-    const rows = await this.prisma.payoutRequest.findMany({
-      where: status ? { status } : undefined,
-      // Default is oldest-first (FIFO — the queue an admin works top-down);
-      // an explicit sort overrides that.
-      orderBy: adminOrderBy(
-        sortBy,
-        sortDir,
-        { requested: 'createdAt', amount: 'amountMinor', status: 'status', period: 'periodEnd' },
-        { createdAt: 'asc' },
-      ) as Prisma.PayoutRequestOrderByWithRelationInput[],
-      include: {
-        mentor: {
-          select: {
-            displayName: true,
-            wallet: { select: { balanceMinor: true } },
-            profile: { select: { upiIdEncrypted: true } },
+    const [rows, overdueMs] = await Promise.all([
+      this.prisma.payoutRequest.findMany({
+        where: status ? { status } : undefined,
+        // Default is oldest-first (FIFO — the queue an admin works
+        // top-down); an explicit sort overrides that.
+        orderBy: adminOrderBy(
+          sortBy,
+          sortDir,
+          { requested: 'createdAt', amount: 'amountMinor', status: 'status', period: 'periodEnd' },
+          { createdAt: 'asc' },
+        ) as Prisma.PayoutRequestOrderByWithRelationInput[],
+        include: {
+          mentor: {
+            select: {
+              displayName: true,
+              wallet: { select: { balanceMinor: true } },
+              profile: { select: { upiIdEncrypted: true } },
+            },
           },
         },
-      },
-    });
-    return rows.map(toPayoutRequestResponse);
+      }),
+      this.overdueAfterMs(),
+    ]);
+    return rows.map((r) => toPayoutRequestResponse(r, overdueMs));
   }
 
   /**
@@ -333,6 +359,6 @@ export class PayoutsService {
         .catch((err) => this.logger.warn(`Payout-failed notification failed for ${payout.id}: ${err}`));
     }
 
-    return toPayoutRequestResponse(updated);
+    return toPayoutRequestResponse(updated, await this.overdueAfterMs());
   }
 }

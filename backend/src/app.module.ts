@@ -56,6 +56,7 @@ import { ReviewModerationModule } from './modules/review-moderation/review-moder
 import { BroadcastsModule } from './modules/broadcasts/broadcasts.module.js';
 import { AdminSearchModule } from './modules/admin-search/admin-search.module.js';
 import { TechnicalReportsModule } from './modules/technical-reports/technical-reports.module.js';
+import { SettingsModule } from './modules/settings/settings.module.js';
 
 @Module({
   imports: [
@@ -129,6 +130,7 @@ import { TechnicalReportsModule } from './modules/technical-reports/technical-re
     BroadcastsModule,
     AdminSearchModule,
     TechnicalReportsModule,
+    SettingsModule,
   ],
   controllers: [AppController],
   providers: [
