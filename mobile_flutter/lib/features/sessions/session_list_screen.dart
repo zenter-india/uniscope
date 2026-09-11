@@ -1240,24 +1240,58 @@ class _SessionActionsState extends ConsumerState<_SessionActions> {
             ],
             if (canJoinCall) ...[
               const SizedBox(width: AppSpacing.sm),
-              widget.dense
-                  ? _CompactIconAction(
-                      icon: Icons.call_rounded,
-                      tooltip: 'Join Call',
-                      onPressed: () =>
-                          context.push('/call/${session.id}'),
-                    )
-                  : Expanded(
-                      child: FilledButton.icon(
-                        style: FilledButton.styleFrom(
-                          backgroundColor: AppColors.primary,
+              Builder(
+                builder: (context) {
+                  final joinableNow = isScheduledCallJoinableNow(
+                    session.confirmedFor,
+                    alreadyLive: session.status == SessionStatus.inProgress,
+                  );
+                  void onJoin() {
+                    if (!joinableNow) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            'This call is scheduled for '
+                            '${friendlyCallTime(session.confirmedFor!)}. '
+                            'You can join $kCallEarlyJoinWindowMinutes minutes before.',
+                          ),
                         ),
-                        onPressed: () =>
-                            context.push('/call/${session.id}'),
-                        icon: const Icon(Icons.call_rounded, size: 17),
-                        label: const Text('Join Call'),
-                      ),
-                    ),
+                      );
+                      return;
+                    }
+                    context.push('/call/${session.id}');
+                  }
+
+                  final label = joinableNow
+                      ? 'Join Call'
+                      : friendlyCallTime(session.confirmedFor!);
+                  return widget.dense
+                      ? _CompactIconAction(
+                          icon: joinableNow
+                              ? Icons.call_rounded
+                              : Icons.schedule_rounded,
+                          tooltip: joinableNow ? 'Join Call' : label,
+                          onPressed: onJoin,
+                        )
+                      : Expanded(
+                          child: FilledButton.icon(
+                            style: FilledButton.styleFrom(
+                              backgroundColor: joinableNow
+                                  ? AppColors.primary
+                                  : AppColors.textMuted,
+                            ),
+                            onPressed: onJoin,
+                            icon: Icon(
+                              joinableNow
+                                  ? Icons.call_rounded
+                                  : Icons.schedule_rounded,
+                              size: 17,
+                            ),
+                            label: Text(label),
+                          ),
+                        );
+                },
+              ),
             ],
           ],
         ),

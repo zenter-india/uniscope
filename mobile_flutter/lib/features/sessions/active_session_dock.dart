@@ -248,9 +248,33 @@ class _DockRowState extends ConsumerState<_DockRow> {
             onPressed: _busy ? null : _acceptAndJoin,
           ),
         ] else if (canJoin) ...[
-          _DockButton(
-            label: 'Join',
-            onPressed: () => context.push('/call/${session.id}'),
+          Builder(
+            builder: (context) {
+              final joinableNow = isScheduledCallJoinableNow(
+                session.confirmedFor,
+                alreadyLive: session.status == SessionStatus.inProgress,
+              );
+              return _DockButton(
+                label: joinableNow
+                    ? 'Join'
+                    : friendlyCallTime(session.confirmedFor!),
+                onPressed: () {
+                  if (!joinableNow) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          'This call is scheduled for '
+                          '${friendlyCallTime(session.confirmedFor!)}. '
+                          'You can join $kCallEarlyJoinWindowMinutes minutes before.',
+                        ),
+                      ),
+                    );
+                    return;
+                  }
+                  context.push('/call/${session.id}');
+                },
+              );
+            },
           ),
         ] else if (!widget.isMentor &&
             session.status == SessionStatus.pending) ...[

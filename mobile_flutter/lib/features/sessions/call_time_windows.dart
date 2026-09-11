@@ -155,6 +155,22 @@ const _months = [
   'Dec',
 ];
 
+/// Mirrors the backend's `CALL_EARLY_JOIN_WINDOW_MINUTES` — a call scheduled
+/// (`confirmedFor` set) can't be joined more than this many minutes before
+/// its slot. Keep in sync with `sessions.service.ts`.
+const kCallEarlyJoinWindowMinutes = 5;
+
+/// Whether a call with the given `confirmedFor` (null = instant, connects
+/// immediately once accepted) can be joined right now. `alreadyLive` should
+/// be true once the session is IN_PROGRESS — a call already connected is
+/// always joinable regardless of its scheduled time.
+bool isScheduledCallJoinableNow(DateTime? confirmedFor, {bool alreadyLive = false}) {
+  if (confirmedFor == null || alreadyLive) return true;
+  return DateTime.now().isAfter(
+    confirmedFor.subtract(const Duration(minutes: kCallEarlyJoinWindowMinutes)),
+  );
+}
+
 /// "9:00 AM"
 String clockLabel(DateTime dt) {
   final local = dt.toLocal();

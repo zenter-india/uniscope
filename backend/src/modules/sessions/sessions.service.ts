@@ -59,6 +59,14 @@ const JOINABLE_STATUSES: SessionStatus[] = [SessionStatus.ACCEPTED, SessionStatu
  * billed, this is a distinct no-show fee). */
 const CALL_GRACE_FRACTION = 0.5;
 
+/** A scheduled call (`confirmedFor` set) can't be joined more than this many
+ * minutes before its confirmed slot — otherwise "Accept" on a scheduled
+ * request connected the call immediately instead of waiting for the agreed
+ * time, since ACCEPTED is joinable status-wise regardless of `confirmedFor`.
+ * An instant request (`confirmedFor` null) is unaffected — this only gates
+ * calls the mentor scheduled for later. */
+const CALL_EARLY_JOIN_WINDOW_MINUTES = 5;
+
 /** How often the no-show sweep runs — frequent enough that even the
  * shortest grace period (2.5 min on a 5-min slot) is caught within ~30s of
  * expiring, not minutes late. */
@@ -683,6 +691,16 @@ export class SessionsService {
         `[call] token request FAILED sessionId=${sessionId} userId=${userId} — status=${session.status}`,
       );
       throw new ConflictException(`Cannot join a call in status ${session.status}`);
+    }
+    if (
+      session.confirmedFor &&
+      session.status !== SessionStatus.IN_PROGRESS &&
+      Date.now() < session.confirmedFor.getTime() - CALL_EARLY_JOIN_WINDOW_MINUTES * 60_000
+    ) {
+      throw new ConflictException(
+        `This call is scheduled for ${fmtIst(session.confirmedFor)}. ` +
+          `You can join starting ${CALL_EARLY_JOIN_WINDOW_MINUTES} minutes before.`,
+      );
     }
 
     let channelName = session.agoraChannelName;
