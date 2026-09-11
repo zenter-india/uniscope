@@ -422,6 +422,23 @@ const kCuratedDegreeMapByStream = <String, Map<String, String>>{
 String? curatedDegreeKey(String? stream, String? degree) =>
     kCuratedDegreeMapByStream[stream]?[degree];
 
+/// Streams with their own real per-college dataset — ported from web's
+/// `STREAMS_WITH_COLLEGE_DATA` (MentorForm.tsx). For these streams, a
+/// Doctorate/Others degree still gets a Specialization field even though
+/// [kCuratedDegreeMapByStream] has no entry for it: the field is populated
+/// by unioning specializations across every curated degree the stream *does*
+/// have (its "stream-wide" list), the same mechanism Medical's Doctorate/
+/// Others already uses. Without this, e.g. Dental + Doctorate has a curated
+/// key of null and previously showed no Specialization field at all.
+const kStreamsWithCollegeData = {'Dental', 'Engineering', 'Law'};
+
+/// Whether stream+degree should show a stream-wide-union Specialization
+/// field despite having no curated key of its own. See
+/// [kStreamsWithCollegeData].
+bool needsStreamWideSpecialization(String? stream, String? degree) =>
+    kStreamsWithCollegeData.contains(stream) &&
+    (degree == 'Doctorate' || degree == 'Others');
+
 /// Shown for Medical-stream mentors on any degree except UG (which has no
 /// specialization yet) — ported 1:1 from web/lib/options.ts
 /// MEDICAL_SPECIALIZATIONS, kept in sync manually.

@@ -138,7 +138,9 @@ class _AspirantOnboardingScreenState
         _qualification == 'UG') {
       return false;
     }
-    return _curatedDegree != null || _needsMedicalStreamWideSpecialization;
+    return _curatedDegree != null ||
+        _needsMedicalStreamWideSpecialization ||
+        needsStreamWideSpecialization(_stream, _qualification);
   }
 
   List<String> _specializationOptions() {
@@ -161,6 +163,16 @@ class _AspirantOnboardingScreenState
           .value ??
           const [];
       if (fetched.isNotEmpty) return fetched;
+    }
+    if (needsStreamWideSpecialization(_stream, _qualification)) {
+      final curatedDegrees =
+          kCuratedDegreeMapByStream[_stream]!.values.toSet().toList();
+      return ref
+              .watch(streamWideSpecializationsProvider(
+                (stream: _stream!, curatedDegrees: curatedDegrees),
+              ))
+              .value ??
+          const [];
     }
     return _stream == 'Medical' ? kMedicalSpecializations : const [];
   }

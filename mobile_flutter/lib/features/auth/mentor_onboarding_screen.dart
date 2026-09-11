@@ -169,7 +169,9 @@ class _MentorOnboardingScreenState extends ConsumerState<MentorOnboardingScreen>
         _degree == 'UG') {
       return false;
     }
-    return _curatedDegree != null || _needsMedicalStreamWideSpecialization;
+    return _curatedDegree != null ||
+        _needsMedicalStreamWideSpecialization ||
+        needsStreamWideSpecialization(_stream, _degree);
   }
 
   /// Real bug fix (ported from web/components/MentorForm.tsx's own
@@ -211,6 +213,19 @@ class _MentorOnboardingScreenState extends ConsumerState<MentorOnboardingScreen>
       return ref
               .watch(specializationsForDegreeProvider(
                 (stream: _stream!, degree: _curatedDegree!),
+              ))
+              .value ??
+          const [];
+    }
+    if (needsStreamWideSpecialization(_stream, _degree)) {
+      // No curated key for Doctorate/Others itself (e.g. Dental has one
+      // only for MDS) — union across every curated degree the stream does
+      // have, same mechanism as Medical's stream-wide list above.
+      final curatedDegrees =
+          kCuratedDegreeMapByStream[_stream]!.values.toSet().toList();
+      return ref
+              .watch(streamWideSpecializationsProvider(
+                (stream: _stream!, curatedDegrees: curatedDegrees),
               ))
               .value ??
           const [];

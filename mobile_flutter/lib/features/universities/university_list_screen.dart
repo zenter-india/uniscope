@@ -302,6 +302,25 @@ class _UniversityListScreenState extends ConsumerState<UniversityListScreen> {
     // real MD/MS dataset; this is a specialization-list-only carve-out.
     final isDoctorateOrOthers =
         degreeFilter == 'Doctorate' || degreeFilter == 'Others';
+    // Dental/Engineering/Law's Doctorate/Others has no curated key of its
+    // own (see kStreamsWithCollegeData) but should still offer a
+    // Specialization filter — the stream-wide union across every curated
+    // degree the stream does have, mirroring the mentor/aspirant onboarding
+    // wizards' needsStreamWideSpecialization.
+    final needsGenericStreamWide =
+        needsStreamWideSpecialization(effectiveStream, degreeFilter);
+    final streamWideAsync = needsGenericStreamWide
+        ? ref.watch(
+            streamWideSpecializationsProvider((
+              stream: effectiveStream,
+              curatedDegrees: kCuratedDegreeMapByStream[effectiveStream]!
+                  .values
+                  .toSet()
+                  .toList(),
+            )),
+          )
+        : null;
+
     final List<String> specializationOptions;
     if (curatedKey != null &&
         !(effectiveStream == 'Medical' && isDoctorateOrOthers)) {
@@ -310,6 +329,11 @@ class _UniversityListScreenState extends ConsumerState<UniversityListScreen> {
         degreeFilter != 'All' &&
         degreeFilter != 'MBBS') {
       specializationOptions = ['All', ...kMedicalSpecializations];
+    } else if (needsGenericStreamWide) {
+      specializationOptions = [
+        'All',
+        ...(streamWideAsync?.asData?.value ?? const []),
+      ];
     } else {
       specializationOptions = const ['All'];
     }
@@ -321,7 +345,8 @@ class _UniversityListScreenState extends ConsumerState<UniversityListScreen> {
         streamPicked &&
         degreeFilter != 'All' &&
         specializationOptions.length > 1;
-    final curatedLoading = curatedAsync?.isLoading ?? false;
+    final curatedLoading =
+        (curatedAsync?.isLoading ?? false) || (streamWideAsync?.isLoading ?? false);
 
     return Scaffold(
       backgroundColor: AppColors.background,
