@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useState, useTransition } from 'react';
 import { Badge, Button, toneFor } from '../../../components/ui';
 import { ExpandableRow } from '../../../components/ExpandableRow';
+import type { RowSelection } from '../../../components/InfiniteList';
 import { SessionTranscript } from './SessionTranscript';
 import { forceEndSession, type SessionRowData } from './actions';
 
@@ -32,7 +33,13 @@ function Field({ label, value }: { label: string; value: React.ReactNode }) {
   );
 }
 
-export function SessionRow({ session }: { session: SessionRowData }) {
+export function SessionRow({
+  session,
+  selection,
+}: {
+  session: SessionRowData;
+  selection?: RowSelection;
+}) {
   const [status, setStatus] = useState(session.status);
   const [endReason, setEndReason] = useState(session.endReason);
   const [error, setError] = useState<string | null>(null);
@@ -56,8 +63,19 @@ export function SessionRow({ session }: { session: SessionRowData }) {
 
   return (
     <ExpandableRow
-      colSpan={5}
+      colSpan={selection ? 6 : 5}
       cells={[
+        ...(selection
+          ? [
+              <input
+                key="sel"
+                type="checkbox"
+                checked={selection.checked}
+                onChange={selection.onToggle}
+                aria-label={`Select session ${session.id}`}
+              />,
+            ]
+          : []),
         <span key="p" className="flex items-center gap-1.5">
           <span className="font-medium text-zinc-900 dark:text-zinc-100">{session.aspirantName}</span>
           <span className="text-zinc-400 dark:text-zinc-500">→</span>

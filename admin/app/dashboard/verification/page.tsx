@@ -1,8 +1,9 @@
 import { backendFetch } from '../../../lib/backend';
 import { getAdminEmail } from '../../../lib/adminAuth';
-import { EmptyState, FilterTabs, Table } from '../../../components/ui';
+import { FilterTabs } from '../../../components/ui';
 import { DashboardShell } from '../DashboardShell';
-import { VerificationRow, type VerificationRequestRow } from './VerificationRow';
+import type { VerificationRequestRow } from './VerificationRow';
+import { VerificationQueueList } from './VerificationQueueList';
 import { HistoryList } from './HistoryList';
 import type { VerificationHistoryRowData } from './actions';
 
@@ -88,28 +89,7 @@ export default async function VerificationQueuePage({
       )}
 
       {view === 'queue' ? (
-        queue.length === 0 ? (
-          <EmptyState icon="shieldCheck">
-            No pending verification requests. New submissions show up here in
-            FIFO order.
-          </EmptyState>
-        ) : (
-          <Table
-            head={
-              <tr>
-                <Table.HeadCell>Applicant</Table.HeadCell>
-                <Table.HeadCell>Role</Table.HeadCell>
-                <Table.HeadCell>College · document</Table.HeadCell>
-                <Table.HeadCell>Submitted</Table.HeadCell>
-                <Table.HeadCell className="w-8" />
-              </tr>
-            }
-          >
-            {queue.map((request) => (
-              <VerificationRow key={request.id} request={request} />
-            ))}
-          </Table>
-        )
+        <VerificationQueueList initialQueue={queue} />
       ) : (
         <HistoryList
           key={`${status}|${search ?? ''}`}

@@ -274,4 +274,38 @@ export class VerificationService {
 
     return toVerificationRequestResponse(updated);
   }
+
+  /**
+   * ADMIN bulk approve/reject — e.g. clearing a batch of straightforward
+   * requests from the same college at once. Unlike the simple status-only
+   * bulk updates elsewhere in the admin panel (leads, reviews), a single
+   * review here has real side effects per request — a `$transaction`
+   * touching `UserProfile` on approval, plus a notification send — so this
+   * is deliberately a loop over the existing single-request `review()`
+   * rather than a raw `updateMany`, which would silently skip all of that.
+   * Each id is independent: one already-reviewed or missing request in the
+   * batch doesn't fail the rest, and the caller gets back exactly which
+   * ids succeeded vs. why one didn't, rather than a single opaque count.
+   */
+  async bulkReview(
+    ids: string[],
+    adminId: string,
+    dto: ReviewVerificationDto,
+  ): Promise<{ reviewed: number; failed: { id: string; reason: string }[] }> {
+    let reviewed = 0;
+    const failed: { id: string; reason: string }[] = [];
+    for (const id of ids) {
+      try {
+        await this.review(id, adminId, dto);
+        reviewed += 1;
+      } catch (e) {
+        failed.push({
+          id,
+          reason:
+            e instanceof Error ? e.message : 'Could not review this request',
+        });
+      }
+    }
+    return { reviewed, failed };
+  }
 }

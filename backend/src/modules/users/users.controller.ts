@@ -26,6 +26,7 @@ import {
 } from '../notifications/dto/list-notifications.dto.js';
 import { NotificationsService } from '../notifications/notifications.service.js';
 import { AdminUpdateUserDto } from './dto/admin-update-user.dto.js';
+import { BulkSetBannedDto } from './dto/bulk-set-banned.dto.js';
 import { ListUsersDto } from './dto/list-users.dto.js';
 import { SetBannedDto } from './dto/set-banned.dto.js';
 import { UpdateProfileDto } from './dto/update-profile.dto.js';
@@ -160,6 +161,17 @@ export class UsersController {
   async findAll(@Query() query: ListUsersDto) {
     const { data, nextCursor } = await this.usersService.findAllAdmin(query);
     return { data: data.map((u) => toPublicUser(u)), nextCursor };
+  }
+
+  /** ADMIN bulk ban/unban — see UsersService.bulkSetBanned. Declared before
+   * the `:id` routes so `/users/bulk-ban` isn't swallowed as `:id ===
+   * 'bulk-ban'`. */
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @Patch('bulk-ban')
+  @HttpCode(HttpStatus.OK)
+  bulkSetBanned(@Body() dto: BulkSetBannedDto) {
+    return this.usersService.bulkSetBanned(dto.ids, dto.banned);
   }
 
   @UseGuards(RolesGuard)

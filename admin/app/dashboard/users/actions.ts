@@ -12,6 +12,26 @@ export async function setUserBanned(userId: string, banned: boolean): Promise<vo
   revalidatePath('/dashboard/users');
 }
 
+type BulkResult = { ok: true; updated: number } | { ok: false; error: string };
+
+/** Bulk ban/unban — see UsersService.bulkSetBanned. ADMIN accounts are
+ * silently excluded server-side, same as the single-user route refuses one. */
+export async function bulkSetUsersBanned(ids: string[], banned: boolean): Promise<BulkResult> {
+  try {
+    const res = await backendFetch<{ updated: number }>('/users/bulk-ban', {
+      method: 'PATCH',
+      body: JSON.stringify({ ids, banned }),
+    });
+    revalidatePath('/dashboard/users');
+    return { ok: true, updated: res.updated };
+  } catch (e) {
+    return {
+      ok: false,
+      error: e instanceof Error ? e.message : 'Could not update the selected users',
+    };
+  }
+}
+
 export interface UserListFilters {
   role?: string;
   search?: string;

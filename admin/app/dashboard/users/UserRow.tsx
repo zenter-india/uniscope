@@ -3,6 +3,7 @@
 import { useState, useTransition } from 'react';
 import { Badge, Button, ButtonLink, Table, toneFor } from '../../../components/ui';
 import { ConfirmButton } from '../../../components/ConfirmButton';
+import type { RowSelection } from '../../../components/InfiniteList';
 import { toast } from '../../../lib/toast';
 import { setUserBanned } from './actions';
 
@@ -16,7 +17,13 @@ export interface UserRowData {
   createdAt: string;
 }
 
-export function UserRow({ user }: { user: UserRowData }) {
+export function UserRow({
+  user,
+  selection,
+}: {
+  user: UserRowData;
+  selection?: RowSelection;
+}) {
   const [error, setError] = useState<string | null>(null);
   // Tracked locally: the list keeps rows in client state, so a server
   // revalidate after a ban toggle doesn't re-flow fresh props into this row.
@@ -40,6 +47,16 @@ export function UserRow({ user }: { user: UserRowData }) {
 
   return (
     <Table.Row>
+      {selection && (
+        <Table.Cell>
+          <input
+            type="checkbox"
+            checked={selection.checked}
+            onChange={selection.onToggle}
+            aria-label={`Select ${user.displayName}`}
+          />
+        </Table.Cell>
+      )}
       <Table.Cell>
         <div className="flex flex-wrap items-center gap-1.5">
           <span className="font-medium text-zinc-900 dark:text-zinc-100">{user.displayName}</span>

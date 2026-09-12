@@ -56,3 +56,34 @@ export async function reviewVerificationRequest(
   revalidatePath('/dashboard/verification');
   revalidatePath('/dashboard');
 }
+
+type BulkReviewResult =
+  | { ok: true; reviewed: number; failed: { id: string; reason: string }[] }
+  | { ok: false; error: string };
+
+/** Bulk approve/reject — see VerificationService.bulkReview. Loops the
+ * single-request review internally (it's a $transaction + notification),
+ * so a partial failure is reported per-id rather than silently dropped. */
+export async function bulkReviewVerificationRequests(
+  ids: string[],
+  approve: boolean,
+  note?: string,
+): Promise<BulkReviewResult> {
+  try {
+    const res = await backendFetch<{
+      reviewed: number;
+      failed: { id: string; reason: string }[];
+    }>('/verification/bulk-review', {
+      method: 'PATCH',
+      body: JSON.stringify({ ids, approve, ...(note && { note }) }),
+    });
+    revalidatePath('/dashboard/verification');
+    revalidatePath('/dashboard');
+    return { ok: true, reviewed: res.reviewed, failed: res.failed };
+  } catch (e) {
+    return {
+      ok: false,
+      error: e instanceof Error ? e.message : 'Could not review the selected requests',
+    };
+  }
+}

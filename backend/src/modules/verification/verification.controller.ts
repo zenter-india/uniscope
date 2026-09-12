@@ -5,6 +5,7 @@ import type { JwtPayload } from '../../auth/decorators/current-user.decorator.js
 import { Roles } from '../../auth/decorators/roles.decorator.js';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard.js';
 import { RolesGuard } from '../../auth/guards/roles.guard.js';
+import { BulkReviewVerificationDto } from './dto/bulk-review-verification.dto.js';
 import { ListVerificationHistoryDto } from './dto/list-verification-history.dto.js';
 import { ReviewVerificationDto } from './dto/review-verification.dto.js';
 import { SubmitVerificationDto } from './dto/submit-verification.dto.js';
@@ -41,6 +42,17 @@ export class VerificationController {
   @Get('history')
   findHistory(@Query() query: ListVerificationHistoryDto) {
     return this.verificationService.findHistory(query);
+  }
+
+  /** ADMIN bulk approve/reject — see VerificationService.bulkReview. */
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @Patch('bulk-review')
+  bulkReview(
+    @CurrentUser() user: JwtPayload,
+    @Body() dto: BulkReviewVerificationDto,
+  ) {
+    return this.verificationService.bulkReview(dto.ids, user.sub, dto);
   }
 
   @UseGuards(RolesGuard)

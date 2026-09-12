@@ -858,4 +858,23 @@ export class UsersService {
       data: { isBanned: dto.banned },
     });
   }
+
+  /** ADMIN bulk ban/unban — e.g. a spam wave flagged the same batch of
+   * accounts. `updateMany` silently excludes/no-ops ids that don't match
+   * rather than throwing, same as every other bulk-by-id-list operation in
+   * the app; ADMIN accounts are excluded from the `where` (not just
+   * skipped after the fact) so this can never touch one, matching the
+   * single-user `setBanned` guard above. `updated` in the response is
+   * however many rows actually changed, so a stale id or an admin id
+   * silently included in the batch is visible without failing the rest. */
+  async bulkSetBanned(
+    ids: string[],
+    banned: boolean,
+  ): Promise<{ updated: number }> {
+    const result = await this.prisma.user.updateMany({
+      where: { id: { in: ids }, role: { not: UserRole.ADMIN } },
+      data: { isBanned: banned },
+    });
+    return { updated: result.count };
+  }
 }

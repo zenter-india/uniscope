@@ -1545,6 +1545,35 @@ export class SessionsService {
     return this.toResponseById(sessionId);
   }
 
+  /** ADMIN bulk force-end — e.g. several sessions stuck from the same
+   * incident (a push outage, a bad deploy). Deliberately a loop over the
+   * single-session `forceEndAdmin` above rather than a raw bulk update:
+   * each session needs its own terminal-status guard, its own next-status
+   * derivation (COMPLETED vs. CANCELLED depends on that session's current
+   * status), and its own wallet-hold release — a plain `updateMany` would
+   * skip all of that. One already-finished or missing session in the batch
+   * doesn't fail the rest; the caller gets back exactly which ids
+   * succeeded vs. why one didn't. */
+  async bulkForceEndAdmin(
+    sessionIds: string[],
+  ): Promise<{ ended: number; failed: { id: string; reason: string }[] }> {
+    let ended = 0;
+    const failed: { id: string; reason: string }[] = [];
+    for (const id of sessionIds) {
+      try {
+        await this.forceEndAdmin(id);
+        ended += 1;
+      } catch (e) {
+        failed.push({
+          id,
+          reason:
+            e instanceof Error ? e.message : 'Could not force-end this session',
+        });
+      }
+    }
+    return { ended, failed };
+  }
+
   /** Re-fetches a session with the aspirant/mentor names included — used
    * after every mutation instead of threading `include` through each
    * individual update() call. */

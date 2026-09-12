@@ -112,3 +112,27 @@ export async function forceEndSession(id: string): Promise<Result> {
     };
   }
 }
+
+type BulkForceEndResult =
+  | { ok: true; ended: number; failed: { id: string; reason: string }[] }
+  | { ok: false; error: string };
+
+/** Bulk force-end — see SessionsService.bulkForceEndAdmin. Loops the single
+ * force-end internally, so a partial failure (e.g. an already-terminal
+ * session) is reported per-id rather than silently dropped. */
+export async function bulkForceEndSessions(ids: string[]): Promise<BulkForceEndResult> {
+  try {
+    const res = await backendFetch<{ ended: number; failed: { id: string; reason: string }[] }>(
+      '/sessions/admin/bulk-force-end',
+      { method: 'POST', body: JSON.stringify({ ids }) },
+    );
+    revalidatePath('/dashboard/sessions');
+    revalidatePath('/dashboard');
+    return { ok: true, ended: res.ended, failed: res.failed };
+  } catch (e) {
+    return {
+      ok: false,
+      error: e instanceof Error ? e.message : 'Could not force-end the selected sessions',
+    };
+  }
+}

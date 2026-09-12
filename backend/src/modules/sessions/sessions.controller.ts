@@ -16,6 +16,7 @@ import { Roles } from '../../auth/decorators/roles.decorator.js';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard.js';
 import { RolesGuard } from '../../auth/guards/roles.guard.js';
 import { AcceptSessionDto } from './dto/accept-session.dto.js';
+import { BulkForceEndSessionsDto } from './dto/bulk-force-end-sessions.dto.js';
 import { CreateSessionDto } from './dto/create-session.dto.js';
 import { ListSessionsAdminDto } from './dto/list-sessions-admin.dto.js';
 import { ListSessionsDto } from './dto/list-sessions.dto.js';
@@ -62,6 +63,17 @@ export class SessionsController {
   @HttpCode(HttpStatus.OK)
   forceEndAdmin(@Param('id') id: string) {
     return this.sessionsService.forceEndAdmin(id);
+  }
+
+  /** ADMIN bulk force-end — see SessionsService.bulkForceEndAdmin. POST, not
+   * PATCH, matching the single-session route above; no collision with
+   * `admin/:id` (also 2 segments) since the HTTP methods differ. */
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @Post('admin/bulk-force-end')
+  @HttpCode(HttpStatus.OK)
+  bulkForceEndAdmin(@Body() dto: BulkForceEndSessionsDto) {
+    return this.sessionsService.bulkForceEndAdmin(dto.ids);
   }
 
   // ── party-facing endpoints ─────────────────────────────────────────────

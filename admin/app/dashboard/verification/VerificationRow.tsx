@@ -3,6 +3,7 @@
 import { useState, useTransition } from 'react';
 import { Badge, Button } from '../../../components/ui';
 import { ExpandableRow } from '../../../components/ExpandableRow';
+import type { RowSelection } from '../../../components/InfiniteList';
 import { toast } from '../../../lib/toast';
 import { getVerificationDocumentUrl, reviewVerificationRequest } from './actions';
 
@@ -59,7 +60,13 @@ function Field({ label, value }: { label: string; value: React.ReactNode }) {
   );
 }
 
-export function VerificationRow({ request }: { request: VerificationRequestRow }) {
+export function VerificationRow({
+  request,
+  selection,
+}: {
+  request: VerificationRequestRow;
+  selection?: RowSelection;
+}) {
   const [note, setNote] = useState('');
   const [docUrl, setDocUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -104,8 +111,19 @@ export function VerificationRow({ request }: { request: VerificationRequestRow }
 
   return (
     <ExpandableRow
-      colSpan={5}
+      colSpan={selection ? 6 : 5}
       cells={[
+        ...(selection
+          ? [
+              <input
+                key="sel"
+                type="checkbox"
+                checked={selection.checked}
+                onChange={selection.onToggle}
+                aria-label={`Select ${request.userDisplayName ?? request.userId}`}
+              />,
+            ]
+          : []),
         <span key="n" className="font-medium text-zinc-900 dark:text-zinc-100">
           {request.userDisplayName ?? request.userId}
         </span>,
