@@ -318,6 +318,17 @@ Two accounts exist specifically for Apple/Google reviewers to log in and exercis
 
 **Known limitation:** `isMentorAvailable`'s 24h auto-expiry (see the mentor-availability business rule above) is untouched for this account — "Accepting calls" was turned on 2026-09-12 and will read as off again ~24h later unless re-flipped or the app's own gate (already cleared) is re-tapped. If the review window runs longer than that, re-run the toggle or ask for a permanent exemption to be added (not done here, since it would mean carving an exception into a locked business rule without being asked).
 
+## App Store screenshot resizing (2026-09-12)
+
+Real device screenshots taken on an iPhone 15/16 Pro Max come out at **1290×2796** (that device's native resolution) — not one of the exact pixel sizes App Store Connect's screenshot uploader accepts. Apple's accepted sizes (as used for this app): **1242×2688** / **2688×1242** (6.5" class — iPhone 11 Pro Max / XS Max) and **1284×2778** / **2778×1284** (6.7" class — iPhone 12–14 Pro Max). A raw 1290×2796 screenshot uploads nowhere until it's converted to one of these exactly.
+
+**Method used (macOS `sips`, no third-party tool needed) — scale-to-fill then center-crop, never a plain stretch:** a straight non-uniform resize to an exact target would visibly distort the UI, since the source's aspect ratio (1290:2796 ≈ 0.4614) is close to but not identical to the targets' (~0.4620–0.4622). Two-step process per file:
+```bash
+sips --resampleWidth <target_width> input.png --out /tmp/step.png   # proportional resize, matches the target width, height comes out slightly over
+sips -c <target_height> <target_width> /tmp/step.png --out output.png  # center-crop down to the exact target
+```
+This trims only a few pixels (single digits to ~15px) evenly off the top/bottom — imperceptible, no stretching. Verify the result with `sips -g pixelWidth -g pixelHeight output.png`. Batched this way for 8 screenshots total this session (all converted to 1242×2688), each confirmed byte-exact against the target dimensions before being sent to the user via `SendUserFile` (output files can't be handed over directly from a pasted chat image — the source has to actually exist on disk first, e.g. saved to `~/Downloads`, before any resizing can happen).
+
 ## Local dev gotchas specific to this session
 
 - **Flutter web caching**: `flutter build web` doesn't content-hash `main.dart.js`, so Chrome's HTTP disk cache can silently serve a stale copy after a rebuild even in a fresh tab with no service worker (confirmed via `transferSize: 0` in `performance.getEntriesByType('resource')`). Fixed two ways: (1) `mobile_flutter/scripts/no_cache_server.py` replaces plain `python -m http.server` in `.claude/launch.json`, sending `Cache-Control: no-store` and falling back unmatched paths to `index.html` (needed for go_router's path-based routing to survive a direct/deep-link load); (2) `mobile_flutter/scripts/build_web.sh` wraps `flutter build web` and appends a content-hash query string (`?v=<hash>`) to `mainJsPath` in the generated `flutter_bootstrap.js`, so every rebuild gets a guaranteed-fresh cache key. Use `build_web.sh` instead of calling `flutter build web` directly when testing web changes.
