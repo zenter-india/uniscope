@@ -41,6 +41,7 @@ export class ReviewModerationService {
     if (query.type === 'university') {
       const where: Prisma.ReviewWhereInput = {
         ...(query.status && { status: query.status }),
+        ...(query.authorId && { authorId: query.authorId }),
         ...(query.search && {
           OR: [
             { body: { contains: query.search, mode: 'insensitive' } },
@@ -77,6 +78,8 @@ export class ReviewModerationService {
 
     const where: Prisma.MentorReviewWhereInput = {
       ...(query.status && { status: query.status }),
+      ...(query.authorId && { aspirantId: query.authorId }),
+      ...(query.subjectId && { mentorId: query.subjectId }),
       ...(query.search && {
         comment: { contains: query.search, mode: 'insensitive' },
       }),

@@ -22,6 +22,11 @@ export interface ReviewFilters {
   search?: string;
   sort?: string;
   dir?: string;
+  /** Reviews written by this user — "Reviews filed" link on user detail. */
+  authorId?: string;
+  /** Reviews *about* this user (mentor reviews only) — "Mentor reviews
+   * received" link on user detail. */
+  subjectId?: string;
 }
 
 export async function loadMoreReviews(
@@ -31,6 +36,8 @@ export async function loadMoreReviews(
   const params = new URLSearchParams({ type: filters.type, limit: '20', cursor });
   if (filters.status && filters.status !== 'ALL') params.set('status', filters.status);
   if (filters.search) params.set('search', filters.search);
+  if (filters.authorId) params.set('authorId', filters.authorId);
+  if (filters.subjectId) params.set('subjectId', filters.subjectId);
   if (filters.sort) params.set('sortBy', filters.sort);
   if (filters.dir) params.set('sortDir', filters.dir);
 

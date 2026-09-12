@@ -1,7 +1,13 @@
-import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
 import {
   LedgerEntryType,
   NotificationType,
+  Prisma,
   ReportStatus,
   ReportTargetType,
 } from '@prisma/client';
@@ -50,13 +56,24 @@ export class ReportsService {
 
   async findAll(query: {
     status?: ReportStatus;
+    reporterId?: string;
+    targetUserId?: string;
     cursor?: string;
     limit?: number;
   }): Promise<{ data: ReportResponse[]; nextCursor: string | null }> {
     const take = Math.min(query.limit ?? DEFAULT_LIMIT, MAX_LIMIT);
 
+    const where: Prisma.ReportWhereInput = {
+      ...(query.status && { status: query.status }),
+      ...(query.reporterId && { reporterId: query.reporterId }),
+      ...(query.targetUserId && {
+        targetType: ReportTargetType.USER,
+        targetId: query.targetUserId,
+      }),
+    };
+
     const rows = await this.prisma.report.findMany({
-      where: query.status ? { status: query.status } : undefined,
+      where,
       orderBy: [{ createdAt: 'desc' }, { id: 'asc' }],
       take: take + 1,
       include: { reporter: { select: { displayName: true } } },

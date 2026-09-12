@@ -112,6 +112,25 @@ function ageFrom(dob: string | null): string {
   return age > 0 && age < 120 ? ` (age ${age})` : '';
 }
 
+/** Renders an activity count as a link to the actual filtered list —
+ * "34" on its own told an admin nothing they could act on; this shows the
+ * real rows instead. A zero count still links (an empty filtered list is a
+ * legitimate answer), just muted so it doesn't read as actionable. */
+function ActivityLink({ count, href }: { count: number; href: string }) {
+  return (
+    <Link
+      href={href}
+      className={
+        count > 0
+          ? 'font-medium text-zinc-900 dark:text-zinc-100 underline decoration-zinc-300 underline-offset-2 hover:decoration-zinc-600'
+          : 'text-zinc-400 dark:text-zinc-500 underline decoration-zinc-200 dark:decoration-zinc-700 underline-offset-2 hover:decoration-zinc-400'
+      }
+    >
+      {count}
+    </Link>
+  );
+}
+
 function Field({ label, value }: { label: string; value: React.ReactNode }) {
   const empty =
     value === null ||
@@ -367,17 +386,59 @@ export default async function UserDetailPage({
         </Section>
 
         <Section title="Activity">
-          <Field label="Sessions as aspirant" value={String(user.activity.sessionsAsAspirant)} />
-          <Field label="Sessions as mentor" value={String(user.activity.sessionsAsMentor)} />
-          <Field label="Reports filed by user" value={String(user.activity.reportsFiled)} />
-          <Field label="Reports against user" value={String(user.activity.reportsAgainst)} />
+          <Field
+            label="Sessions as aspirant"
+            value={
+              <ActivityLink
+                count={user.activity.sessionsAsAspirant}
+                href={`/dashboard/sessions?userId=${user.id}&userName=${encodeURIComponent(user.displayName)}`}
+              />
+            }
+          />
+          <Field
+            label="Sessions as mentor"
+            value={
+              <ActivityLink
+                count={user.activity.sessionsAsMentor}
+                href={`/dashboard/sessions?userId=${user.id}&userName=${encodeURIComponent(user.displayName)}`}
+              />
+            }
+          />
+          <Field
+            label="Reports filed by user"
+            value={
+              <ActivityLink
+                count={user.activity.reportsFiled}
+                href={`/dashboard/moderation?reporterId=${user.id}&userName=${encodeURIComponent(user.displayName)}`}
+              />
+            }
+          />
+          <Field
+            label="Reports against user"
+            value={
+              <ActivityLink
+                count={user.activity.reportsAgainst}
+                href={`/dashboard/moderation?targetUserId=${user.id}&userName=${encodeURIComponent(user.displayName)}`}
+              />
+            }
+          />
           <Field
             label="Mentor reviews received"
-            value={String(user.activity.mentorReviewsReceived)}
+            value={
+              <ActivityLink
+                count={user.activity.mentorReviewsReceived}
+                href={`/dashboard/reviews?type=mentor&subjectId=${user.id}&userName=${encodeURIComponent(user.displayName)}`}
+              />
+            }
           />
           <Field
             label="College reviews written"
-            value={String(user.activity.universityReviewsWritten)}
+            value={
+              <ActivityLink
+                count={user.activity.universityReviewsWritten}
+                href={`/dashboard/reviews?type=university&authorId=${user.id}&userName=${encodeURIComponent(user.displayName)}`}
+              />
+            }
           />
         </Section>
 

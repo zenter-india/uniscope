@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { backendFetch } from '../../../lib/backend';
 import { getAdminEmail } from '../../../lib/adminAuth';
 import { FilterTabs } from '../../../components/ui';
@@ -16,12 +17,18 @@ function buildHref(p: {
   search?: string;
   sort?: string;
   dir?: string;
+  authorId?: string;
+  subjectId?: string;
+  userName?: string;
 }) {
   const qs = new URLSearchParams({ type: p.type });
   if (p.status && p.status !== 'ALL') qs.set('status', p.status);
   if (p.search) qs.set('search', p.search);
   if (p.sort) qs.set('sort', p.sort);
   if (p.dir) qs.set('dir', p.dir);
+  if (p.authorId) qs.set('authorId', p.authorId);
+  if (p.subjectId) qs.set('subjectId', p.subjectId);
+  if (p.userName) qs.set('userName', p.userName);
   return `/dashboard/reviews?${qs.toString()}`;
 }
 
@@ -34,10 +41,21 @@ export default async function ReviewsPage({
     search?: string;
     sort?: string;
     dir?: string;
+    authorId?: string;
+    subjectId?: string;
+    userName?: string;
   }>;
 }) {
-  const { type: rawType, status: rawStatus, search, sort: rawSort, dir: rawDir } =
-    await searchParams;
+  const {
+    type: rawType,
+    status: rawStatus,
+    search,
+    sort: rawSort,
+    dir: rawDir,
+    authorId,
+    subjectId,
+    userName,
+  } = await searchParams;
   const type = TYPE_TABS.includes(rawType as (typeof TYPE_TABS)[number])
     ? (rawType as 'mentor' | 'university')
     : 'mentor';
@@ -50,6 +68,8 @@ export default async function ReviewsPage({
   const params = new URLSearchParams({ type, limit: '20' });
   if (status !== 'ALL') params.set('status', status);
   if (search) params.set('search', search);
+  if (authorId) params.set('authorId', authorId);
+  if (subjectId) params.set('subjectId', subjectId);
   if (sort) params.set('sortBy', sort);
   if (dir) params.set('sortDir', dir);
 
@@ -66,10 +86,32 @@ export default async function ReviewsPage({
         Mentor and college reviews. Hide or remove anything spammy, abusive, or fake —
         select several rows to act on them at once.
       </p>
+      {(authorId || subjectId) && (
+        <div className="mb-4 flex flex-wrap items-center gap-2 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800/40 px-3 py-2 text-sm">
+          <span className="text-zinc-600 dark:text-zinc-300">
+            Filtered to reviews {authorId ? 'written by' : 'about'}{' '}
+            <Link
+              href={`/dashboard/users/${authorId ?? subjectId}`}
+              className="font-medium text-zinc-900 dark:text-zinc-100 underline decoration-zinc-300 underline-offset-2 hover:decoration-zinc-600"
+            >
+              {userName ?? authorId ?? subjectId}
+            </Link>
+          </span>
+          <Link
+            href={buildHref({ type, status, search, sort, dir })}
+            className="text-xs text-zinc-500 dark:text-zinc-400 underline hover:text-zinc-800 dark:hover:text-zinc-100"
+          >
+            Clear
+          </Link>
+        </div>
+      )}
       <div className="mb-5 flex flex-col gap-3">
         <form className="flex gap-2" action="/dashboard/reviews">
           <input type="hidden" name="type" value={type} />
           {status !== 'ALL' && <input type="hidden" name="status" value={status} />}
+          {authorId && <input type="hidden" name="authorId" value={authorId} />}
+          {subjectId && <input type="hidden" name="subjectId" value={subjectId} />}
+          {userName && <input type="hidden" name="userName" value={userName} />}
           <input
             type="text"
             name="search"
@@ -89,24 +131,24 @@ export default async function ReviewsPage({
           <FilterTabs
             items={TYPE_TABS}
             current={type}
-            hrefFor={(t) => buildHref({ type: t, status, search, sort, dir })}
+            hrefFor={(t) => buildHref({ type: t, status, search, sort, dir, authorId, subjectId, userName })}
             labelFor={(t) => (t === 'mentor' ? 'Mentor reviews' : 'College reviews')}
           />
           <FilterTabs
             size="sm"
             items={STATUS_TABS}
             current={status as (typeof STATUS_TABS)[number]}
-            hrefFor={(s) => buildHref({ type, status: s, search, sort, dir })}
+            hrefFor={(s) => buildHref({ type, status: s, search, sort, dir, authorId, subjectId, userName })}
             labelFor={(s) => (s === 'ALL' ? 'Any status' : s)}
           />
         </div>
       </div>
 
       <ReviewsList
-        key={`${type}|${status}|${search ?? ''}|${sort ?? ''}|${dir ?? ''}`}
+        key={`${type}|${status}|${search ?? ''}|${sort ?? ''}|${dir ?? ''}|${authorId ?? ''}|${subjectId ?? ''}`}
         initialItems={page.data}
         initialCursor={page.nextCursor}
-        filters={{ type, status, search, sort, dir }}
+        filters={{ type, status, search, sort, dir, authorId, subjectId }}
       />
     </DashboardShell>
   );

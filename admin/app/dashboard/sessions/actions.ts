@@ -40,6 +40,9 @@ export interface SessionListFilters {
   search?: string;
   sort?: string;
   dir?: string;
+  /** Sessions where this user was either party — set when arriving from a
+   * user-detail page's "Sessions as aspirant/mentor" count. */
+  userId?: string;
 }
 
 export async function loadMoreSessions(
@@ -50,6 +53,7 @@ export async function loadMoreSessions(
   if (filters.status && filters.status !== 'ALL') params.set('status', filters.status);
   if (filters.type && filters.type !== 'ALL') params.set('type', filters.type);
   if (filters.search) params.set('search', filters.search);
+  if (filters.userId) params.set('userId', filters.userId);
   if (filters.sort) params.set('sortBy', filters.sort);
   if (filters.dir) params.set('sortDir', filters.dir);
 

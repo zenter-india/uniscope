@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { backendFetch } from '../../../lib/backend';
 import { getAdminEmail } from '../../../lib/adminAuth';
 import { FilterTabs } from '../../../components/ui';
@@ -27,6 +28,8 @@ function buildHref(params: {
   search?: string;
   sort?: string;
   dir?: string;
+  userId?: string;
+  userName?: string;
 }) {
   const qs = new URLSearchParams();
   if (params.status && params.status !== 'ALL') qs.set('status', params.status);
@@ -34,6 +37,8 @@ function buildHref(params: {
   if (params.search) qs.set('search', params.search);
   if (params.sort) qs.set('sort', params.sort);
   if (params.dir) qs.set('dir', params.dir);
+  if (params.userId) qs.set('userId', params.userId);
+  if (params.userName) qs.set('userName', params.userName);
   const s = qs.toString();
   return `/dashboard/sessions${s ? `?${s}` : ''}`;
 }
@@ -47,10 +52,19 @@ export default async function SessionsPage({
     search?: string;
     sort?: string;
     dir?: string;
+    userId?: string;
+    userName?: string;
   }>;
 }) {
-  const { status: rawStatus, type: rawType, search, sort: rawSort, dir: rawDir } =
-    await searchParams;
+  const {
+    status: rawStatus,
+    type: rawType,
+    search,
+    sort: rawSort,
+    dir: rawDir,
+    userId,
+    userName,
+  } = await searchParams;
   const status = STATUS_TABS.includes(rawStatus as (typeof STATUS_TABS)[number])
     ? rawStatus!
     : 'ALL';
@@ -62,6 +76,7 @@ export default async function SessionsPage({
   if (status !== 'ALL') params.set('status', status);
   if (type !== 'ALL') params.set('type', type);
   if (search) params.set('search', search);
+  if (userId) params.set('userId', userId);
   if (sort) params.set('sortBy', sort);
   if (dir) params.set('sortDir', dir);
 
@@ -78,10 +93,31 @@ export default async function SessionsPage({
         Every chat and call between a student and mentor. Expand a row to see the full
         detail, read the chat transcript, or force-end a stuck session.
       </p>
+      {userId && (
+        <div className="mb-4 flex flex-wrap items-center gap-2 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800/40 px-3 py-2 text-sm">
+          <span className="text-zinc-600 dark:text-zinc-300">
+            Filtered to sessions involving{' '}
+            <Link
+              href={`/dashboard/users/${userId}`}
+              className="font-medium text-zinc-900 dark:text-zinc-100 underline decoration-zinc-300 underline-offset-2 hover:decoration-zinc-600"
+            >
+              {userName ?? userId}
+            </Link>
+          </span>
+          <Link
+            href={buildHref({ status, type, search, sort, dir })}
+            className="text-xs text-zinc-500 dark:text-zinc-400 underline hover:text-zinc-800 dark:hover:text-zinc-100"
+          >
+            Clear
+          </Link>
+        </div>
+      )}
       <div className="mb-5 flex flex-col gap-3">
         <form className="flex gap-2" action="/dashboard/sessions">
           {status !== 'ALL' && <input type="hidden" name="status" value={status} />}
           {type !== 'ALL' && <input type="hidden" name="type" value={type} />}
+          {userId && <input type="hidden" name="userId" value={userId} />}
+          {userName && <input type="hidden" name="userName" value={userName} />}
           <input
             type="text"
             name="search"
@@ -101,24 +137,24 @@ export default async function SessionsPage({
           <FilterTabs
             items={TYPE_TABS}
             current={type as (typeof TYPE_TABS)[number]}
-            hrefFor={(tab) => buildHref({ status, type: tab, search, sort, dir })}
+            hrefFor={(tab) => buildHref({ status, type: tab, search, sort, dir, userId, userName })}
             labelFor={(tab) => (tab === 'ALL' ? 'All types' : tab === 'CHAT' ? 'Chat' : 'Call')}
           />
           <FilterTabs
             size="sm"
             items={STATUS_TABS}
             current={status as (typeof STATUS_TABS)[number]}
-            hrefFor={(tab) => buildHref({ status: tab, type, search, sort, dir })}
+            hrefFor={(tab) => buildHref({ status: tab, type, search, sort, dir, userId, userName })}
             labelFor={(tab) => (tab === 'ALL' ? 'Any status' : tab.replace('_', ' '))}
           />
         </div>
       </div>
 
       <SessionsList
-        key={`${status}|${type}|${search ?? ''}|${sort ?? ''}|${dir ?? ''}`}
+        key={`${status}|${type}|${search ?? ''}|${sort ?? ''}|${dir ?? ''}|${userId ?? ''}`}
         initialItems={page.data}
         initialCursor={page.nextCursor}
-        filters={{ status, type, search, sort, dir }}
+        filters={{ status, type, search, sort, dir, userId }}
       />
     </DashboardShell>
   );

@@ -1380,12 +1380,35 @@ export class SessionsService {
     const where: Prisma.SessionWhereInput = {
       ...(query.status && { status: query.status }),
       ...(query.type && { type: query.type }),
-      ...(query.search && {
-        OR: [
-          { aspirant: { displayName: { contains: query.search, mode: 'insensitive' } } },
-          { mentor: { displayName: { contains: query.search, mode: 'insensitive' } } },
-        ],
-      }),
+      AND: [
+        ...(query.userId
+          ? [{ OR: [{ aspirantId: query.userId }, { mentorId: query.userId }] }]
+          : []),
+        ...(query.search
+          ? [
+              {
+                OR: [
+                  {
+                    aspirant: {
+                      displayName: {
+                        contains: query.search,
+                        mode: 'insensitive' as const,
+                      },
+                    },
+                  },
+                  {
+                    mentor: {
+                      displayName: {
+                        contains: query.search,
+                        mode: 'insensitive' as const,
+                      },
+                    },
+                  },
+                ],
+              },
+            ]
+          : []),
+      ],
     };
 
     const rows = await this.prisma.session.findMany({

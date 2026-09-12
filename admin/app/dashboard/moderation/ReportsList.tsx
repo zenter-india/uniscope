@@ -3,18 +3,18 @@
 import { InfiniteList } from '../../../components/InfiniteList';
 import { Table } from '../../../components/ui';
 import { ReportRow, type ReportRowData } from './ReportRow';
-import { loadMoreReports } from './actions';
+import { loadMoreReports, type ReportListFilters } from './actions';
+
+const READONLY_STATUSES = new Set(['RESOLVED', 'DISMISSED']);
 
 export function ReportsList({
   initialItems,
   initialCursor,
-  status,
-  readOnly,
+  filters,
 }: {
   initialItems: ReportRowData[];
   initialCursor: string | null;
-  status: string;
-  readOnly: boolean;
+  filters: ReportListFilters;
 }) {
   return (
     <InfiniteList
@@ -30,9 +30,13 @@ export function ReportsList({
       }
       initialItems={initialItems}
       initialCursor={initialCursor}
-      loadMore={(cursor) => loadMoreReports(status, cursor)}
+      loadMore={(cursor) => loadMoreReports(filters, cursor)}
       renderItem={(report) => (
-        <ReportRow key={report.id} report={report} readOnly={readOnly} />
+        <ReportRow
+          key={report.id}
+          report={report}
+          readOnly={READONLY_STATUSES.has(report.status)}
+        />
       )}
       emptyText="No reports in this status."
       emptyIcon="flag"
