@@ -27,3 +27,8 @@
 # underlying OkHttp/networking stack uses reflection for a few pieces.
 -dontwarn okhttp3.**
 -dontwarn okio.**
+
+# flutter_callkit_incoming — its own documented required rule (the native
+# incoming-call UI/ConnectionService integration uses reflection R8 would
+# otherwise strip).
+-keep class com.hiennv.flutter_callkit_incoming.** { *; }

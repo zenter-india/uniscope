@@ -45,6 +45,7 @@ dependencies:
   firebase_core: ^4.12.1
   firebase_messaging: ^16.4.3
   flutter_local_notifications: ^19.4.2
+  flutter_callkit_incoming: ^3.1.5
   flutter_svg: ^2.2.1
   webview_flutter: ^4.13.0
   uuid: ^4.5.3

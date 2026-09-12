@@ -330,7 +330,13 @@ export class SessionsService {
       type: isAudioCall ? NotificationType.SESSION_REQUEST : NotificationType.MESSAGE,
       title: isAudioCall ? callTitle : 'New chat',
       body: isAudioCall ? callBody : 'A student started a chat with you.',
-      metadata: { sessionId: session.id },
+      // `instant` (only meaningful for SESSION_REQUEST) tells the client
+      // whether to ring like a real incoming call (flutter_callkit_incoming)
+      // or just show a normal notification — a *scheduled* request ("call
+      // me at 2pm") isn't happening right now, so it must never ring.
+      metadata: isAudioCall
+        ? { sessionId: session.id, instant: String(!requestedFor) }
+        : { sessionId: session.id },
     });
 
     return this.toResponseById(session.id);

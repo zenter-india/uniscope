@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_callkit_incoming/flutter_callkit_incoming.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:go_router/go_router.dart';
@@ -1051,6 +1052,9 @@ class _SessionActionsState extends ConsumerState<_SessionActions> {
       ref.invalidate(sessionsListProvider);
       if (!mounted) return;
       if (updated.type == 'AUDIO_CALL' && confirmedFor == null) {
+        // Stop the native ring — accepted from in-app, not the CallKit
+        // screen's own Accept button (see push_service.dart).
+        FlutterCallkitIncoming.endCall(session.id);
         // Instant — drop straight into the call. A scheduled call connects
         // at its slot, not now.
         context.push('/call/${updated.id}');
@@ -1181,7 +1185,16 @@ class _SessionActionsState extends ConsumerState<_SessionActions> {
                 label: 'Reject',
                 outlined: true,
                 dense: widget.dense,
-                onPressed: _busy ? null : () => _act(api.reject),
+                onPressed: _busy
+                    ? null
+                    : () {
+                        // Stop the native ring (see push_service.dart's
+                        // _ringForInstantCall) — the mentor rejected from
+                        // in-app, not the CallKit screen's own Decline
+                        // button, so it would otherwise keep ringing.
+                        FlutterCallkitIncoming.endCall(session.id);
+                        _act(api.reject);
+                      },
               ),
               const SizedBox(width: AppSpacing.sm),
               _ActionButton(
