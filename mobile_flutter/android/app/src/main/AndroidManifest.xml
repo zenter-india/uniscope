@@ -1,5 +1,12 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
     <uses-permission android:name="android.permission.INTERNET"/>
+    <!-- Agora's "full" SDK variant transitively bundles a screen-sharing
+         module that declares FOREGROUND_SERVICE_MEDIA_PROJECTION — the app
+         never does screen sharing (audio calls only), so this strips it
+         from the merged manifest rather than declaring a false "why" for it
+         in the Play Console foreground-service-permissions questionnaire. -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION" tools:node="remove"/>
     <!-- Required for ImageSource.camera (image_picker) — the "Take a photo"
          option on ID/document verification uploads. -->
     <uses-permission android:name="android.permission.CAMERA"/>
