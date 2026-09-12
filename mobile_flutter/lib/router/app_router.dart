@@ -424,6 +424,20 @@ final routerProvider = Provider<GoRouter>((ref) {
         },
       ),
 
+      // Read-only display of an already-submitted review — what
+      // openUniversityReview opens instead of the form once hasReviewed is
+      // true, since a review is write-once.
+      GoRoute(
+        path: '/college-review/mine',
+        builder: (_, state) {
+          final a = state.extra as Map<String, dynamic>? ?? const {};
+          return MyUniversityReviewScreen(
+            universityId: a['universityId'] as String? ?? '',
+            universityName: a['universityName'] as String? ?? 'Your college',
+          );
+        },
+      ),
+
       // Wallet needs no top-level standalone route for either role: both
       // reach it via a bottom-nav "Wallet" tab (aspirant branch 5 at
       // '/wallet', mentor branch 4 at '/dashboard' — see the branch lists).

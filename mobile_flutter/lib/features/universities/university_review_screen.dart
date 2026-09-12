@@ -12,12 +12,13 @@ import '../profile/profile_options.dart' show kReviewTags;
 import 'review_choices.dart';
 
 /// Opens the 13-question review screen for [universityId]. A review is
-/// **write-once** — if the caller already has one, this shows a note and
-/// returns `null` without opening the form. Returns `true` when a new
-/// review was posted (the screen itself invalidates the university-review
-/// providers; a caller with extra providers to refresh — e.g.
-/// `universityDetailProvider` — does so on a `true` result). Replaces the
-/// old `WriteReviewSheet` bottom sheet everywhere.
+/// **write-once** — if the caller already has one, this opens a read-only
+/// display of what they submitted instead of the form, and returns `null`
+/// (no new review was posted). Returns `true` when a new review was
+/// posted (the screen itself invalidates the university-review providers;
+/// a caller with extra providers to refresh — e.g. `universityDetailProvider`
+/// — does so on a `true` result). Replaces the old `WriteReviewSheet`
+/// bottom sheet everywhere.
 ///
 /// [asMentorOwnCollege] — set by the mentor college-review-gate entry
 /// points (the Home/Profile banner, the "Rate Your College" row, the
@@ -59,13 +60,12 @@ Future<bool?> openUniversityReview(
   }
   if (!context.mounted) return null;
   if (alreadyReviewed) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          "You've already reviewed $universityName. A review can't be "
-          'changed once submitted.',
-        ),
-      ),
+    await context.push<void>(
+      '/college-review/mine',
+      extra: {
+        'universityId': universityId,
+        'universityName': universityName,
+      },
     );
     return null;
   }
@@ -920,6 +920,263 @@ class _SuccessView extends StatelessWidget {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// Read-only display of the caller's own already-submitted review — what
+/// `openUniversityReview` opens instead of the form once `hasReviewed` is
+/// true. A review is write-once, so this replaces "you can't do this again"
+/// with an actual answer to "okay, so what did I say?" (per explicit
+/// request — previously this case only showed a snackbar/locked row with no
+/// way to see the review's own content).
+class MyUniversityReviewScreen extends ConsumerWidget {
+  const MyUniversityReviewScreen({
+    super.key,
+    required this.universityId,
+    required this.universityName,
+  });
+
+  final String universityId;
+  final String universityName;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final async = ref.watch(myUniversityReviewProvider(universityId));
+
+    return Scaffold(
+      backgroundColor: AppColors.background,
+      appBar: AppBar(title: const Text('Your Review')),
+      body: SafeArea(
+        child: async.when(
+          loading: () => const Center(child: CircularProgressIndicator()),
+          error: (_, _) => Center(
+            child: Padding(
+              padding: const EdgeInsets.all(AppSpacing.xl),
+              child: Text(
+                "Couldn't load your review. Please try again.",
+                textAlign: TextAlign.center,
+                style: const TextStyle(color: AppColors.textSecondary),
+              ),
+            ),
+          ),
+          data: (review) {
+            if (review == null) {
+              // hasReviewed said true but the review is gone (deleted by
+              // moderation) — nothing to show.
+              return Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(AppSpacing.xl),
+                  child: Text(
+                    "We couldn't find your review for $universityName.",
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(color: AppColors.textSecondary),
+                  ),
+                ),
+              );
+            }
+            return ListView(
+              padding: const EdgeInsets.all(AppSpacing.md),
+              children: [
+                Text(
+                  universityName,
+                  style: const TextStyle(
+                    fontSize: AppFont.lg,
+                    fontWeight: AppFont.extraBold,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                const Text(
+                  "You've already submitted this review — a review can't "
+                  'be changed once submitted.',
+                  style: TextStyle(
+                    fontSize: AppFont.xs,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.md),
+                _MyReviewOverallCard(rating: review.overallRating),
+                const SizedBox(height: AppSpacing.sm),
+                for (final spec in kReviewSliders)
+                  _MyReviewRow(
+                    title: spec.title,
+                    value: spec.captionFor(_sliderValue(review, spec.field)),
+                  ),
+                for (final spec in kReviewChoices)
+                  _MyReviewRow(
+                    title: spec.title,
+                    value: spec.labelForCode(_choiceValue(review, spec.field)) ??
+                        '—',
+                  ),
+                if (review.tags.isNotEmpty) ...[
+                  const SizedBox(height: AppSpacing.sm),
+                  AppCard(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'TAGS',
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: AppFont.extraBold,
+                            letterSpacing: 1,
+                            color: AppColors.primary,
+                          ),
+                        ),
+                        const SizedBox(height: AppSpacing.xs),
+                        Wrap(
+                          spacing: AppSpacing.xs,
+                          runSpacing: AppSpacing.xs,
+                          children: [
+                            for (final tag in review.tags) Chip(label: Text(tag)),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+                if ((review.body ?? '').trim().isNotEmpty) ...[
+                  const SizedBox(height: AppSpacing.sm),
+                  AppCard(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'IN YOUR OWN WORDS',
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: AppFont.extraBold,
+                            letterSpacing: 1,
+                            color: AppColors.primary,
+                          ),
+                        ),
+                        const SizedBox(height: AppSpacing.xs),
+                        Text(
+                          review.body!.trim(),
+                          style: const TextStyle(
+                            fontSize: AppFont.sm,
+                            color: AppColors.textPrimary,
+                            height: 1.4,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ],
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  int _sliderValue(UniversityReview r, String field) {
+    switch (field) {
+      case 'clinicalExposureRating':
+        return r.academicExposure ?? 3;
+      case 'campusLifeRating':
+        return r.campusCulture ?? 3;
+      case 'workloadRating':
+        return r.workload ?? 3;
+      case 'placementsRating':
+        return r.futureValue ?? 3;
+      default:
+        return 3;
+    }
+  }
+
+  String? _choiceValue(UniversityReview r, String field) {
+    switch (field) {
+      case 'restroomFacilities':
+        return r.restroomFacilities;
+      case 'raggingCulture':
+        return r.raggingCulture;
+      case 'facultyApproachability':
+        return r.facultyApproachability;
+      case 'stipendStatus':
+        return r.stipendStatus;
+      case 'hostelAvailability':
+        return r.hostelAvailability;
+      case 'hostelSafety':
+        return r.hostelSafety;
+      case 'wouldRecommend':
+        return r.wouldRecommend;
+      case 'valueForMoney':
+        return r.valueForMoney;
+      default:
+        return null;
+    }
+  }
+}
+
+class _MyReviewOverallCard extends StatelessWidget {
+  const _MyReviewOverallCard({required this.rating});
+  final int rating;
+
+  @override
+  Widget build(BuildContext context) {
+    return AppCard(
+      child: Row(
+        children: [
+          Row(
+            children: List.generate(
+              5,
+              (i) => Icon(
+                i < rating ? Icons.star_rounded : Icons.star_border_rounded,
+                color: AppColors.warning,
+                size: 22,
+              ),
+            ),
+          ),
+          const SizedBox(width: AppSpacing.sm),
+          Text(
+            kOverallStarLabels[rating.clamp(1, 5) - 1],
+            style: const TextStyle(
+              fontSize: AppFont.sm,
+              fontWeight: AppFont.bold,
+              color: AppColors.textPrimary,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MyReviewRow extends StatelessWidget {
+  const _MyReviewRow({required this.title, required this.value});
+  final String title;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    return AppCard(
+      margin: const EdgeInsets.only(bottom: AppSpacing.sm),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              title,
+              style: const TextStyle(
+                fontSize: AppFont.sm,
+                color: AppColors.textSecondary,
+              ),
+            ),
+          ),
+          const SizedBox(width: AppSpacing.sm),
+          Text(
+            value,
+            textAlign: TextAlign.right,
+            style: const TextStyle(
+              fontSize: AppFont.sm,
+              fontWeight: AppFont.bold,
+              color: AppColors.textPrimary,
+            ),
+          ),
+        ],
       ),
     );
   }

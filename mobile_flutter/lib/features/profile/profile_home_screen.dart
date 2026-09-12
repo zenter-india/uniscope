@@ -282,29 +282,17 @@ class ProfileHomeScreen extends ConsumerWidget {
                                 return _MenuRow(
                                   icon: Icons.rate_review_rounded,
                                   label: alreadyReviewed
-                                      ? 'College Review'
+                                      ? 'Your College Review'
                                       : 'Rate Your College',
-                                  locked: !canReview || alreadyReviewed,
+                                  locked: !canReview,
                                   subtitle: alreadyReviewed
-                                      ? "You've reviewed your college"
+                                      ? 'Tap to view what you submitted'
                                       : canReview
                                       ? null
                                       : !isVerified
                                       ? 'Verify your account first'
                                       : 'No college linked to your account yet',
-                                  onTap: alreadyReviewed
-                                      ? () => ScaffoldMessenger.of(
-                                          context,
-                                        ).showSnackBar(
-                                          const SnackBar(
-                                            content: Text(
-                                              "You've already reviewed your "
-                                              "college — a review can't be "
-                                              'changed once submitted.',
-                                            ),
-                                          ),
-                                        )
-                                      : canReview
+                                  onTap: canReview
                                       ? () => openUniversityReview(
                                           context,
                                           ref,

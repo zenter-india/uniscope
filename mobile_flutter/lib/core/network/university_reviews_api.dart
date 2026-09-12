@@ -241,6 +241,17 @@ class UniversityReviewsApi {
     return res.data ?? false;
   }
 
+  /// Full content of the caller's own review for this university, or null
+  /// if they haven't posted one. Backs the read-only "your review" display
+  /// a write-once review shows instead of re-opening the form.
+  Future<UniversityReview?> findMine(String universityId) async {
+    final res = await _dio.get<Map<String, dynamic>?>(
+      '/universities/$universityId/reviews/mine/detail',
+    );
+    final data = res.data;
+    return data == null ? null : UniversityReview.fromJson(data);
+  }
+
   Future<UniversityReviewSummary> summary(String universityId) async {
     final res = await _dio.get<Map<String, dynamic>>(
       '/universities/$universityId/reviews/summary',
@@ -298,6 +309,12 @@ final hasReviewedUniversityProvider = FutureProvider.autoDispose
     .family<bool, String>(
       (ref, universityId) =>
           ref.watch(universityReviewsApiProvider).hasReviewed(universityId),
+    );
+
+final myUniversityReviewProvider = FutureProvider.autoDispose
+    .family<UniversityReview?, String>(
+      (ref, universityId) =>
+          ref.watch(universityReviewsApiProvider).findMine(universityId),
     );
 
 final universityReviewSummaryProvider = FutureProvider.autoDispose
