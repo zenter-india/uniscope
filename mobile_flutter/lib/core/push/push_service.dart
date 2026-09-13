@@ -9,6 +9,7 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../features/calls/call_overlay.dart' show CallPresence;
 import '../../router/app_router.dart';
 import '../network/sessions_api.dart';
 import '../network/users_api.dart';
@@ -109,6 +110,21 @@ bool _isCallType(Object? type) =>
     type == 'SESSION_REQUEST' ||
     type == 'SESSION_ACCEPTED' ||
     type == 'SESSION_STARTING';
+
+/// iOS has no foreground-service concept, so unlike Android's
+/// `CallForegroundService` (an ongoing, non-dismissible notification with a
+/// live chronometer and an "End call" action, shown in the notification
+/// shade for the whole call) there was nothing at all showing on iOS while
+/// a call was active — no reminder it's running, no way to end it except
+/// reopening the app. A plain local notification can't replicate the live
+/// chronometer (that needs a Live Activity / ActivityKit widget extension,
+/// a much bigger native addition), but a static "on call with X, tap to
+/// return" notification with a real "End Call" action button covers the
+/// actual reported gap. Stable id so re-showing it (shouldn't happen —
+/// shown once per call) updates in place rather than stacking duplicates.
+const _callOngoingNotificationId = 424242;
+const _callOngoingCategoryId = 'uniscope_call_ongoing';
+const _endCallActionId = 'END_CALL';
 
 /// Wires up FCM: requests permission, uploads the device token to
 /// `POST /users/me/push-token` once a user is authenticated, refreshes it
@@ -267,11 +283,36 @@ class PushService {
 
   Future<void> _initLocalNotifications() async {
     await _localNotifications.initialize(
-      const InitializationSettings(
-        android: AndroidInitializationSettings('@mipmap/ic_launcher'),
-        iOS: DarwinInitializationSettings(),
+      InitializationSettings(
+        android: const AndroidInitializationSettings('@mipmap/ic_launcher'),
+        iOS: DarwinInitializationSettings(
+          notificationCategories: [
+            DarwinNotificationCategory(
+              _callOngoingCategoryId,
+              actions: [
+                DarwinNotificationAction.plain(
+                  _endCallActionId,
+                  'End Call',
+                  options: {
+                    DarwinNotificationActionOption.destructive,
+                    DarwinNotificationActionOption.foreground,
+                  },
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
       onDidReceiveNotificationResponse: (response) {
+        // The ongoing-call notification's "End Call" action (iOS) — routes
+        // through the same CallPresence hook the minimized mini-bar's own
+        // End button already uses, so it works identically whether the app
+        // was foregrounded, backgrounded, or just got foregrounded by this
+        // very action tap (the `foreground` option above guarantees that).
+        if (response.actionId == _endCallActionId) {
+          CallPresence.instance.onEnd?.call();
+          return;
+        }
         final payload = response.payload;
         if (payload == null || payload.isEmpty) return;
         try {
@@ -288,6 +329,34 @@ class PushService {
         >();
     await android?.createNotificationChannel(_androidChannel);
     await android?.createNotificationChannel(_androidCallChannel);
+  }
+
+  /// iOS-only "on call with X" notification — see the const doc comment
+  /// above for why this exists. Android already has the real thing
+  /// (`CallForegroundService`); calling this there would just be a second,
+  /// redundant notification, so it's a no-op on every other platform.
+  Future<void> showCallOngoingNotification({required String peerName}) async {
+    if (!Platform.isIOS) return;
+    await _localNotifications.show(
+      _callOngoingNotificationId,
+      'On call with $peerName',
+      'Tap to return to the call',
+      const NotificationDetails(
+        iOS: DarwinNotificationDetails(
+          categoryIdentifier: _callOngoingCategoryId,
+          presentAlert: true,
+          presentBanner: true,
+          presentSound: false,
+          presentBadge: false,
+          interruptionLevel: InterruptionLevel.active,
+        ),
+      ),
+    );
+  }
+
+  Future<void> cancelCallOngoingNotification() async {
+    if (!Platform.isIOS) return;
+    await _localNotifications.cancel(_callOngoingNotificationId);
   }
 
   void _showLocalNotification(RemoteMessage message) {

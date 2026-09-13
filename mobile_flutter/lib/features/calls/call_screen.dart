@@ -10,6 +10,7 @@ import 'package:go_router/go_router.dart';
 import '../../core/network/reports_api.dart';
 import '../../core/network/sessions_api.dart';
 import '../../core/network/wallet_api.dart';
+import '../../core/push/push_service.dart';
 import '../../core/theme/app_theme.dart';
 import '../../state/auth_controller.dart';
 import '../../widgets/app_widgets.dart';
@@ -257,6 +258,16 @@ class _CallScreenState extends ConsumerState<CallScreen> {
       // Native side missing (web, or an old build) — the call still works,
       // it just won't survive backgrounding.
     }
+    // Android's CallForegroundService already shows a real ongoing-call
+    // notification (started above) — this is the iOS-only equivalent
+    // (no-ops on every other platform, see PushService's own doc comment).
+    // Best-effort: an ongoing reminder is a nice-to-have, never worth
+    // failing the call over.
+    try {
+      await ref
+          .read(pushServiceProvider)
+          .showCallOngoingNotification(peerName: _peerName);
+    } catch (_) {}
   }
 
   Future<void> _stopCallService() async {
@@ -266,6 +277,9 @@ class _CallScreenState extends ConsumerState<CallScreen> {
       await _callChannel.invokeMethod('keepScreenOn', false);
       await _callChannel.invokeMethod('setProximityScreenOff', false);
       await _callChannel.invokeMethod('stopCallService');
+    } catch (_) {}
+    try {
+      await ref.read(pushServiceProvider).cancelCallOngoingNotification();
     } catch (_) {}
   }
 
