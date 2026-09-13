@@ -862,7 +862,7 @@ class _CollegeSaveButton extends ConsumerWidget {
           ref.read(savedCollegeIdsProvider.notifier).toggle(universityId),
       icon: Icon(
         isSaved ? Icons.favorite_rounded : Icons.favorite_border_rounded,
-        color: AppColors.error,
+        color: isSaved ? AppColors.error : AppColors.textMuted,
       ),
       visualDensity: VisualDensity.compact,
     );

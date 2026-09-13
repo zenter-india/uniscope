@@ -228,7 +228,7 @@ class _Hero extends StatelessWidget {
                         icon: saved
                             ? Icons.favorite_rounded
                             : Icons.favorite_border_rounded,
-                        iconColor: AppColors.error,
+                        iconColor: saved ? AppColors.error : Colors.white,
                         onTap: () => ref
                             .read(savedCollegeIdsProvider.notifier)
                             .toggle(university.id),

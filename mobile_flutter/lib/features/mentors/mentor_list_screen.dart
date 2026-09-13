@@ -311,10 +311,11 @@ class _MentorListScreenState extends ConsumerState<MentorListScreen> {
         actions: [
           IconButton(
             onPressed: () => context.push('/mentors/saved'),
-            // Neutral app bar now — a white heart was invisible on it.
+            // Red matches the per-card save heart (AppColors.error) and the
+            // Discover tab's equivalent "saved" nav icon.
             icon: const Icon(
               Icons.favorite_rounded,
-              color: AppColors.primary,
+              color: AppColors.error,
             ),
             tooltip: 'Saved mentors',
           ),
