@@ -5,6 +5,7 @@ import {
   HttpCode,
   HttpStatus,
   Param,
+  Patch,
   Post,
   Query,
   UseGuards,
@@ -20,6 +21,7 @@ import { BulkForceEndSessionsDto } from './dto/bulk-force-end-sessions.dto.js';
 import { CreateSessionDto } from './dto/create-session.dto.js';
 import { ListSessionsAdminDto } from './dto/list-sessions-admin.dto.js';
 import { ListSessionsDto } from './dto/list-sessions.dto.js';
+import { RescheduleSessionDto } from './dto/reschedule-session.dto.js';
 import { SessionsService } from './sessions.service.js';
 
 /**
@@ -124,6 +126,18 @@ export class SessionsController {
   @HttpCode(HttpStatus.OK)
   cancel(@CurrentUser() user: JwtPayload, @Param('id') id: string) {
     return this.sessionsService.cancel(id, user.sub);
+  }
+
+  /** Either party may move an already-confirmed call to a new 30-min slot.
+   * See SessionsService.reschedule's own doc comment for the full design. */
+  @Patch(':id/reschedule')
+  @HttpCode(HttpStatus.OK)
+  reschedule(
+    @CurrentUser() user: JwtPayload,
+    @Param('id') id: string,
+    @Body() dto: RescheduleSessionDto,
+  ) {
+    return this.sessionsService.reschedule(id, user.sub, dto);
   }
 
   /** Agora RTC token for an AUDIO_CALL session — either party, once

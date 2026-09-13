@@ -358,6 +358,21 @@ class SessionsApi {
     return Session.fromJson(res.data!);
   }
 
+  /// Either party may move an already-confirmed call to a new 30-minute
+  /// slot (2026-09-13). Only valid for an ACCEPTED AUDIO_CALL that has a
+  /// real `confirmedFor` — an Instant call has no confirmed time to move,
+  /// and this isn't a propose-and-reconfirm round trip: whichever side
+  /// calls this just moves the time directly and the other party gets a
+  /// "call rescheduled" notification, same "one action, other party
+  /// informed" shape as `cancel` above. Sent as a UTC ISO-8601 string.
+  Future<Session> reschedule(String sessionId, DateTime confirmedFor) async {
+    final res = await _dio.patch<Map<String, dynamic>>(
+      '/sessions/$sessionId/reschedule',
+      data: {'confirmedFor': confirmedFor.toUtc().toIso8601String()},
+    );
+    return Session.fromJson(res.data!);
+  }
+
   Future<CallCredentials> getCallToken(String sessionId) async {
     final res = await _dio.get<Map<String, dynamic>>(
       '/sessions/$sessionId/call/token',

@@ -17,6 +17,7 @@ import 'call_request_sheet.dart';
 import 'call_time_windows.dart';
 import 'cancel_deflection_sheet.dart';
 import 'confirm_call_time_sheet.dart';
+import 'custom_call_time_screen.dart';
 import 'rate_mentor_sheet.dart';
 import 'session_status.dart';
 
@@ -1046,6 +1047,22 @@ class _SessionActionsState extends ConsumerState<_SessionActions> {
     await _act(api.cancel);
   }
 
+  /// Either party moving an already-confirmed call to a new time
+  /// (2026-09-13). Reuses the exact same day-and-slot picker the aspirant
+  /// used to request the call and the mentor uses for "Suggest another
+  /// time" at Accept (`CustomCallTimeScreen`), so a reschedule picks a time
+  /// the same way as everywhere else in the booking flow. Deliberately no
+  /// confirm dialog before the picker (picking a time IS the commitment,
+  /// same as the original booking) — the backend's 409 on a real
+  /// double-booking clash surfaces via `_act`'s own error snackbar.
+  Future<void> _rescheduleBooking(SessionsApi api) async {
+    final picked = await Navigator.of(
+      context,
+    ).push<DateTime>(MaterialPageRoute(builder: (_) => const CustomCallTimeScreen()));
+    if (picked == null || !mounted) return;
+    await _act((id) => api.reschedule(id, picked));
+  }
+
   /// A mentor accepting an audio call is already in the app right now — no
   /// need to wait on a push round-trip to get THEM onto the call screen
   /// (the aspirant still needs the push deep-link in push_service.dart,
@@ -1257,6 +1274,28 @@ class _SessionActionsState extends ConsumerState<_SessionActions> {
                           ? null
                           : () => _cancelWithDeflection(api),
                     ),
+              // Reschedule: only for a confirmed (ACCEPTED) call with a real
+              // agreed time — an Instant request has nothing to move, and a
+              // still-PENDING one is withdrawn (Cancel), not rescheduled.
+              if (session.status == SessionStatus.accepted &&
+                  session.confirmedFor != null) ...[
+                const SizedBox(width: AppSpacing.sm),
+                widget.dense
+                    ? _CompactIconAction(
+                        icon: Icons.event_repeat_rounded,
+                        tooltip: 'Reschedule',
+                        onPressed: () {
+                          if (!_busy) _rescheduleBooking(api);
+                        },
+                      )
+                    : _ActionButton(
+                        label: 'Reschedule',
+                        outlined: true,
+                        onPressed: _busy
+                            ? null
+                            : () => _rescheduleBooking(api),
+                      ),
+              ],
             ] else if (widget.isMentor &&
                 // A mentor's response to a still-PENDING request is
                 // accept/reject (handled above), not cancel — this only
@@ -1275,6 +1314,27 @@ class _SessionActionsState extends ConsumerState<_SessionActions> {
                       outlined: true,
                       onPressed: _busy ? null : () => _cancelBooking(api),
                     ),
+              // See the aspirant-side Reschedule note above — same
+              // condition, same "move it directly, other party notified"
+              // action, either party can initiate.
+              if (session.confirmedFor != null) ...[
+                const SizedBox(width: AppSpacing.sm),
+                widget.dense
+                    ? _CompactIconAction(
+                        icon: Icons.event_repeat_rounded,
+                        tooltip: 'Reschedule',
+                        onPressed: () {
+                          if (!_busy) _rescheduleBooking(api);
+                        },
+                      )
+                    : _ActionButton(
+                        label: 'Reschedule',
+                        outlined: true,
+                        onPressed: _busy
+                            ? null
+                            : () => _rescheduleBooking(api),
+                      ),
+              ],
             ],
             if (canOpenChat) ...[
               const SizedBox(width: AppSpacing.sm),
