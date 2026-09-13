@@ -73,6 +73,17 @@ bool _isCallType(Object? type) =>
 const _acceptActionId = 'accept';
 const _declineActionId = 'decline';
 
+/// A single "Join" action on a `SESSION_STARTING` notification — this fires
+/// for an already-accepted/confirmed call whose time has arrived (or that
+/// just went live), so there's nothing left to accept, just join. Kept
+/// deliberately separate from `_acceptActionId`/`_declineActionId`: an
+/// instant SESSION_REQUEST is the one case that genuinely accepts-and-joins
+/// in a single step; a scheduled request never does that in one tap (it
+/// still needs a confirmed slot first, see `_handleAcceptAction` below) — a
+/// "Join" affordance belongs on the later "starting now" notification, not
+/// folded into the original request's Accept button.
+const _joinActionId = 'join';
+
 /// iOS has no foreground-service concept, so unlike Android's
 /// `CallForegroundService` (an ongoing, non-dismissible notification with a
 /// live chronometer and an "End call" action, shown in the notification
@@ -241,6 +252,9 @@ class PushService {
             _handleAcceptAction(data);
           } else if (response.actionId == _declineActionId) {
             _handleDeclineAction(data);
+          } else if (response.actionId == _joinActionId) {
+            final sessionId = data['sessionId'] as String?;
+            if (sessionId != null) _navigate('/call/$sessionId');
           } else {
             _handleDeepLinkData(data);
           }
@@ -295,9 +309,15 @@ class PushService {
     final type = message.data['type'];
     final isCall = _isCallType(type);
     final channel = isCall ? _androidCallChannel : _androidChannel;
-    // Only a pending request is actionable — SESSION_ACCEPTED/STARTING are
-    // read-only alerts to the aspirant, there's nothing to accept/decline.
+    // A pending request is Accept/Decline-actionable. SESSION_STARTING is
+    // a different case — the call is already accepted/confirmed and its
+    // time has arrived (or it just went live), so there's nothing left to
+    // accept, just a single "Join". SESSION_ACCEPTED stays a plain,
+    // action-free alert either way (a scheduled accept only tells the
+    // aspirant when to expect SESSION_STARTING later; an instant accept is
+    // already handled by the existing auto-navigate-on-receipt below).
     final isActionableRequest = type == 'SESSION_REQUEST';
+    final isJoinableNow = type == 'SESSION_STARTING';
 
     _localNotifications.show(
       notification.hashCode,
@@ -330,6 +350,14 @@ class PushService {
                   AndroidNotificationAction(
                     _declineActionId,
                     'Decline',
+                    showsUserInterface: true,
+                  ),
+                ]
+              : isJoinableNow
+              ? const [
+                  AndroidNotificationAction(
+                    _joinActionId,
+                    'Join',
                     showsUserInterface: true,
                   ),
                 ]
