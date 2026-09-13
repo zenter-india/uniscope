@@ -3,84 +3,13 @@ import 'dart:io';
 
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter/services.dart' show MethodChannel;
-import 'package:flutter_callkit_incoming/entities/entities.dart';
-import 'package:flutter_callkit_incoming/flutter_callkit_incoming.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../features/calls/call_overlay.dart' show CallPresence;
 import '../../router/app_router.dart';
-import '../network/sessions_api.dart';
 import '../network/users_api.dart';
-
-/// Native counterpart is `AppDelegate.swift`'s `PKPushRegistry` wiring —
-/// exposes the PushKit VoIP device token (`getVoipToken`) once iOS has one.
-/// Android has no equivalent; every call on this channel is iOS-only.
-const _voipChannel = MethodChannel('uniscope/voip');
-
-/// Whether [data] (an FCM message's data payload) is a call request the
-/// callee should be rung for *right now* — a genuine instant request, not a
-/// scheduled "call me at 2pm" booking (see `instant` in
-/// `SessionsService.create`'s SESSION_REQUEST notification). On Android this
-/// gates the plain-push `_ringForInstantCall` path below. On iOS the ring is
-/// triggered natively by a real PushKit VoIP push instead — Apple only
-/// allows CallKit's `reportNewIncomingCall` to be invoked from a genuine
-/// VoIP push, never from a regular FCM/data push — so this same condition
-/// is mirrored server-side (`NotificationsService.pushVoipRing`) rather than
-/// checked here for iOS.
-bool _isInstantCallRequest(Map<String, dynamic> data) =>
-    data['type'] == 'SESSION_REQUEST' && data['instant'] == 'true';
-
-/// Shows the native Android incoming-call screen (ringing, full-screen,
-/// Accept/Decline) via `flutter_callkit_incoming` — this is what makes a
-/// call request "ring like a normal call" instead of just posting a louder
-/// notification. Keyed by `sessionId` so `endCall`/accept/decline can all
-/// address the same call without a separate id map. No caller name is in
-/// the push payload (metadata is just `{sessionId, instant}`), so this uses
-/// generic copy rather than guessing at student identity.
-Future<void> _ringForInstantCall(String sessionId, {String? body}) async {
-  // Both call sites invoke this fire-and-forget (the foreground listener
-  // doesn't await it, and even the awaited background-isolate call has no
-  // caller-side catch) — a native-side failure (a missing permission, an
-  // invalid param, anything `showCallkitIncoming`'s Android implementation
-  // can throw as a PlatformException) would otherwise be a silently
-  // swallowed async error: no ring, no crash, no visible reason why. This
-  // mirrors the same "make a silent push-path failure loud" fix already
-  // applied server-side for FCM delivery failures (see
-  // NotificationsService.pushToDevices) — the exact class of bug a 2026-09-13
-  // real-device report ("nothing rings, backend confirms FCM delivered
-  // successfully") pointed at once the backend side was ruled out.
-  try {
-    await FlutterCallkitIncoming.showCallkitIncoming(
-      CallKitParams(
-        id: sessionId,
-        nameCaller: 'Incoming call request',
-        appName: 'Uniscope',
-        handle: body ?? 'A student wants to connect now',
-        type: 0, // audio
-        duration: 45000, // matches the ~45s a pending request stays live for
-        android: const AndroidParams(
-          isShowLogo: false,
-          isFullScreen: true,
-          ringtonePath: 'system_ringtone_default',
-          backgroundColor: '#0d7d6f',
-          actionColor: '#0e6f63',
-          incomingCallNotificationChannelName: 'Incoming Calls',
-          missedCallNotificationChannelName: 'Missed Calls',
-          textAccept: 'Accept',
-          textDecline: 'Decline',
-        ),
-      ),
-    );
-  } catch (e, st) {
-    debugPrint(
-      '[callkit] showCallkitIncoming failed for session $sessionId: $e',
-    );
-    debugPrint('[callkit] $st');
-  }
-}
 
 /// Must be a top-level (or static) function — the Firebase plugin invokes
 /// this in a separate isolate when a push arrives while the app is
@@ -88,21 +17,10 @@ Future<void> _ringForInstantCall(String sessionId, {String? body}) async {
 /// Riverpod container available here.
 @pragma('vm:entry-point')
 Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-  // An instant call request must ring even when the app is fully killed —
-  // flutter_callkit_incoming's native call screen works independently of
-  // any Flutter isolate being alive, which is exactly why this is handled
-  // here rather than only in the foreground onMessage listener.
-  if (Platform.isAndroid && _isInstantCallRequest(message.data)) {
-    final sessionId = message.data['sessionId'] as String?;
-    if (sessionId != null) {
-      await _ringForInstantCall(sessionId, body: message.notification?.body);
-    }
-    return;
-  }
-  // Everything else: in-app notifications are already durable server-side
-  // (see the `notifications` module), and when the app is backgrounded/
-  // terminated Android draws the system-tray notification itself from the
-  // payload's `notification` block — no local work is needed here.
+  // In-app notifications are already durable server-side (see the
+  // `notifications` module), and when the app is backgrounded/terminated
+  // Android draws the system-tray notification itself from the payload's
+  // `notification` block — no local work is needed here.
 }
 
 /// The default Android notification channel — session updates, messages,
@@ -214,28 +132,6 @@ class PushService {
     } catch (_) {
       // No Firebase app available on this run — push just won't work.
     }
-
-    if (Platform.isIOS) await _registerVoipToken();
-  }
-
-  /// The PushKit device token that makes real call ringing (CallKit) work on
-  /// iOS — a completely separate credential from the FCM token above,
-  /// uploaded under platform `'ios-voip'` so the backend never tries to send
-  /// it through FCM (see `ApnsVoipService`). Best-effort: a build without the
-  /// native PushKit wiring (or a device that hasn't gotten one yet) just
-  /// throws `MissingPluginException`/returns null here, and this device
-  /// simply won't get real ringing until it does — every other push keeps
-  /// working regardless.
-  Future<void> _registerVoipToken() async {
-    try {
-      final token = await _voipChannel.invokeMethod<String>('getVoipToken');
-      if (token != null && token.isNotEmpty) {
-        await _ref.read(usersApiProvider).storePushToken(token, 'ios-voip');
-      }
-    } catch (_) {
-      // No native PushKit token yet (or this build doesn't have the
-      // channel) — nothing to upload this run.
-    }
   }
 
   /// Permission, local-notification plugin, and the FCM listeners — all of
@@ -252,21 +148,12 @@ class PushService {
     messaging.onTokenRefresh.listen(_upload);
 
     // Foreground push → draw a heads-up notification (Android won't do it
-    // for us here), unless it's an instant call request, which rings via
-    // flutter_callkit_incoming instead of a plain notification (see
-    // `_ringForInstantCall`) — showing both would double up. `fromTap:
-    // false` — a *received* push only auto-routes for a live/imminent call
-    // (so "mentor accepted" still pulls the aspirant onto the call
-    // screen); everything else waits for the user to tap the heads-up.
+    // for us here). `fromTap: false` — a *received* push only auto-routes
+    // for a live/imminent call (so "mentor accepted" still pulls the
+    // aspirant onto the call screen); everything else waits for the user to
+    // tap the heads-up.
     FirebaseMessaging.onMessage.listen((message) {
-      if (Platform.isAndroid && _isInstantCallRequest(message.data)) {
-        final sessionId = message.data['sessionId'] as String?;
-        if (sessionId != null) {
-          _ringForInstantCall(sessionId, body: message.notification?.body);
-        }
-      } else {
-        _showLocalNotification(message);
-      }
+      _showLocalNotification(message);
       _handleDeepLink(message, fromTap: false);
     });
 
@@ -276,44 +163,6 @@ class PushService {
     FirebaseMessaging.onMessageOpenedApp.listen((m) => _handleDeepLink(m));
     final initialMessage = await messaging.getInitialMessage();
     if (initialMessage != null) _handleDeepLink(initialMessage);
-
-    // Both platforms now show a real native incoming-call screen for an
-    // instant request — Android via a plain push (`_ringForInstantCall`),
-    // iOS via a genuine PushKit VoIP push handled natively in
-    // AppDelegate.swift. Either path ends up firing the same
-    // flutter_callkit_incoming `onEvent` stream, so one listener covers both.
-    _listenForCallKitEvents();
-  }
-
-  /// Wires the native incoming-call screen's own Accept/Decline/timeout
-  /// actions to the real backend calls — without this, tapping Accept on
-  /// the ringing screen would just dismiss it and do nothing, since
-  /// flutter_callkit_incoming only owns the UI, not session state.
-  void _listenForCallKitEvents() {
-    FlutterCallkitIncoming.onEvent.listen((event) async {
-      switch (event) {
-        case CallEventActionCallAccept(:final callKitParams):
-          final sessionId = callKitParams.id;
-          try {
-            await _ref.read(sessionsApiProvider).accept(sessionId);
-          } catch (_) {
-            // Best-effort — if this fails (already accepted/expired
-            // elsewhere), the call screen's own state will surface it.
-          }
-          _navigate('/call/$sessionId');
-        case CallEventActionCallDecline(:final callKitParams):
-          try {
-            await _ref.read(sessionsApiProvider).reject(callKitParams.id);
-          } catch (_) {
-            // Best-effort, same reasoning as accept above.
-          }
-        default:
-          // Timeout / start / ended / etc. — nothing extra to do; a
-          // timeout already means the backend's own pending-request
-          // expiry will apply on its next check.
-          break;
-      }
-    });
   }
 
   /// Best-effort unbind of this device's push token from the account that's

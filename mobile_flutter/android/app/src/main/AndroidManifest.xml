@@ -7,25 +7,6 @@
          from the merged manifest rather than declaring a false "why" for it
          in the Play Console foreground-service-permissions questionnaire. -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION" tools:node="remove"/>
-    <!-- flutter_callkit_incoming (the native incoming-call ring screen for
-         instant call requests, see the 2026-09-12 CLAUDE.md note) declares
-         the full video-calling superset unconditionally, including this —
-         Uniscope's calls are audio-only and never request camera access
-         during a call, so this is stripped the same way the media-projection
-         permission above is. -->
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CAMERA" tools:node="remove"/>
-    <!-- FOREGROUND_SERVICE_PHONE_CALL IS real and earned by the same plugin's
-         actual ringing feature — Play Console's foreground-service
-         questionnaire flagged it and wants a demo video, which isn't ready
-         yet. Stripped here TEMPORARILY (2026-09-13) to unblock this upload;
-         this disables the native full-screen incoming-call ring screen for
-         instant call requests on Android (the plugin needs this permission
-         to start its phoneCall-typed foreground service on Android 14+) —
-         a real functional regression, not a no-op, until the video is
-         recorded and this permission is declared honestly instead of
-         stripped. Re-add (drop this tools:node="remove" line) once that's
-         done. -->
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_PHONE_CALL" tools:node="remove"/>
     <!-- Required for ImageSource.camera (image_picker) — the "Take a photo"
          option on ID/document verification uploads. -->
     <uses-permission android:name="android.permission.CAMERA"/>
@@ -58,17 +39,10 @@
         <meta-data
             android:name="io.flutter.embedding.android.EnableImpeller"
             android:value="false" />
-        <!-- launchMode changed singleTop -> singleInstance for
-             flutter_callkit_incoming (real ringing incoming-call UI for
-             call requests, see push_service.dart) — its own documentation
-             requires this so its native call screen and MainActivity never
-             end up as separate instances on the task stack. Not verified
-             on a real device yet; if a notification tap or deep link ever
-             misbehaves after this, this is the first place to look. -->
         <activity
             android:name=".MainActivity"
             android:exported="true"
-            android:launchMode="singleInstance"
+            android:launchMode="singleTop"
             android:taskAffinity=""
             android:theme="@style/LaunchTheme"
             android:configChanges="orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|locale|layoutDirection|fontScale|screenLayout|density|uiMode"

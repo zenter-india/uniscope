@@ -99,12 +99,13 @@
 		     iOS is free to suspend the app's audio the moment it leaves the
 		     foreground, silencing an in-progress call. -->
 		<string>audio</string>
-		<!-- Real PushKit VoIP push registration (AppDelegate.swift) now
-		     exists behind this — a call-ringing feature (item 1 of the call
-		     checklist), see CLAUDE.md. Do not add this back if that work is
-		     ever reverted: Apple review rejects a `voip` declaration with no
-		     real VoIP-push usage behind it. -->
-		<string>voip</string>
+		<!-- Deliberately NOT adding `voip` here — real PushKit/CallKit ringing
+		     was built and then reverted (2026-09-13, client decision: no
+		     ringtone needed, plain notifications are enough) specifically
+		     because it required declaring FOREGROUND_SERVICE_PHONE_CALL on
+		     Android, which triggers extra Play Console review burden the
+		     client didn't want. Apple review also rejects a `voip`
+		     declaration with no real VoIP-push usage behind it. -->
 	</array>
 </dict>
 </plist>
