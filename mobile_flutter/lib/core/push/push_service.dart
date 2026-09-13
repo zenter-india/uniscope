@@ -7,7 +7,8 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../features/calls/call_overlay.dart' show CallPresence;
+import '../../features/calls/call_overlay.dart'
+    show CallOverlayController, CallPresence;
 import '../../router/app_router.dart';
 import '../network/sessions_api.dart' show sessionsApiProvider;
 import '../network/users_api.dart';
@@ -479,14 +480,20 @@ class PushService {
   }
 
   void _navigate(String target, {Object? extra}) {
+    // The call is a minimize-able overlay, not a route — open it directly
+    // rather than going through the router's '/call/:id' redirect fallback
+    // (same as every other real launch site).
+    if (target.startsWith('/call/')) {
+      CallOverlayController.instance.open(target.substring('/call/'.length));
+      return;
+    }
     final context = rootNavigatorKey.currentContext;
     if (context == null) return;
     final router = GoRouter.of(context);
-    // /call/:id and /notifications are top-level routes on the root
-    // navigator (over the tab shell) — push them. Tab locations (/chats,
-    // /chats/room) are switched to with go() so they don't stack a
-    // duplicate.
-    if (target.startsWith('/call/') || target == '/notifications') {
+    // /notifications is a top-level route on the root navigator (over the
+    // tab shell) — push it. Tab locations (/chats, /chats/room) are
+    // switched to with go() so they don't stack a duplicate.
+    if (target == '/notifications') {
       router.push(target);
     } else {
       router.go(target, extra: extra);

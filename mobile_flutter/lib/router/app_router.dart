@@ -11,7 +11,7 @@ import '../features/auth/profile_setup_screen.dart';
 import '../features/auth/role_selection_screen.dart';
 import '../features/auth/splash_screen.dart';
 import '../features/auth/welcome_screen.dart';
-import '../features/calls/call_screen.dart';
+import '../features/calls/call_overlay.dart';
 import '../features/common/legal_page_screen.dart';
 import '../features/common/placeholder_screen.dart';
 import '../features/home/home_screen.dart';
@@ -392,16 +392,27 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
 
       // ─── Audio call ─────────────────────────────────────────────
-      // A plain full-screen route on the root navigator (covers the tab
-      // shell). Reached from Join/Accept, the call-request watcher, and a
-      // tapped "call starting" push. (The minimize-to-bubble overlay was
-      // pulled from the connect path — it shipped without a 2-device test
-      // and both sides hit a blank screen; CallScreen still carries the
-      // `inOverlay` plumbing for a future revisit.)
+      // The call is a minimize-able overlay (CallOverlayHost, mounted above
+      // the whole app in main.dart), not a route — every real launch site
+      // calls CallOverlayController.instance.open(id) directly. This path
+      // stays registered only as a fallback for a raw '/call/:id' location
+      // (a deep link, or any future navigation this session's own launch
+      // sites don't cover) — it hands off to the overlay and bounces back
+      // to Home, since the overlay covers whatever's underneath anyway.
+      // (Restored 2026-09-14 after a 2026-09-08 revert — see CLAUDE.md for
+      // the blank-screen history and the diagnostic ErrorWidget added
+      // alongside this restore.)
       GoRoute(
         path: '/call/:sessionId',
-        builder: (_, state) =>
-            CallScreen(sessionId: state.pathParameters['sessionId'] ?? ''),
+        redirect: (context, state) {
+          final id = state.pathParameters['sessionId'];
+          if (id != null && id.isNotEmpty) {
+            WidgetsBinding.instance.addPostFrameCallback(
+              (_) => CallOverlayController.instance.open(id),
+            );
+          }
+          return '/home';
+        },
       ),
 
       // ─── Notifications (pushed from the bell icon anywhere) ──────

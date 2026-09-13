@@ -8,11 +8,37 @@ import 'core/network/university_reviews_api.dart' show hasReviewedUniversityProv
 import 'core/network/users_api.dart' show myProfileProvider;
 import 'core/push/push_service.dart';
 import 'core/theme/app_theme.dart';
+import 'features/calls/call_overlay.dart';
 import 'router/app_router.dart';
 import 'state/auth_controller.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  // Flutter's stock release-mode ErrorWidget renders a plain, unlabelled
+  // grey box whenever any widget's build() throws — by design, to avoid
+  // leaking a stack trace to a real user. That's exactly what made the
+  // 2026-09-08 call-overlay "both parties hit a blank screen on connect"
+  // bug silent and undiagnosable at the time (debug mode's red error
+  // screen would have shown the real exception immediately, but the
+  // report only ever came from a real release build). Overriding it here
+  // means a future build-time crash anywhere in the app — not just calls —
+  // shows what actually broke instead of nothing.
+  if (kReleaseMode) {
+    ErrorWidget.builder = (FlutterErrorDetails details) => Material(
+      color: const Color(0xFFB00020),
+      child: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Center(
+            child: Text(
+              'Something went wrong:\n${details.exceptionAsString()}',
+              style: const TextStyle(color: Colors.white, fontSize: 12),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
   if (!kIsWeb) {
     try {
       await Firebase.initializeApp();
@@ -108,7 +134,12 @@ class _UniscopeAppState extends ConsumerState<UniscopeApp>
       builder: (context, child) => MediaQuery.withClampedTextScaling(
         minScaleFactor: 0.9,
         maxScaleFactor: 1.2,
-        child: child!,
+        // Hosts the audio call above every screen so it can be minimized to
+        // a floating bar while the user browses other tabs (see
+        // CallOverlayHost / CallOverlayController) — restored 2026-09-14
+        // after the 2026-09-08 revert; see call_overlay.dart's doc comment
+        // and CLAUDE.md for the blank-screen history and what changed.
+        child: CallOverlayHost(child: child!),
       ),
     );
   }

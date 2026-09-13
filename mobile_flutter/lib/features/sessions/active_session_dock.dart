@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 
 import '../../core/network/sessions_api.dart';
 import '../../core/theme/app_theme.dart';
 import '../../state/auth_controller.dart';
 import '../../widgets/app_widgets.dart';
+import '../calls/call_overlay.dart' show CallOverlayController;
 import 'call_time_windows.dart';
 import 'cancel_deflection_sheet.dart';
 import 'confirm_call_time_sheet.dart';
@@ -159,7 +159,7 @@ class _DockRowState extends ConsumerState<_DockRow> {
       ref.invalidate(sessionsListProvider);
       if (!mounted) return;
       if (confirmedFor == null) {
-        context.push('/call/${updated.id}');
+        CallOverlayController.instance.open(updated.id);
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -271,7 +271,7 @@ class _DockRowState extends ConsumerState<_DockRow> {
                     );
                     return;
                   }
-                  context.push('/call/${session.id}');
+                  CallOverlayController.instance.open(session.id);
                 },
               );
             },

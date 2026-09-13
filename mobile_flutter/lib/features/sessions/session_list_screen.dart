@@ -9,6 +9,7 @@ import '../../core/network/wallet_api.dart';
 import '../../core/theme/app_theme.dart';
 import '../../state/auth_controller.dart';
 import '../../widgets/app_widgets.dart';
+import '../calls/call_overlay.dart' show CallOverlayController;
 import '../mentors/mentor_list_screen.dart' show startChatWithMentor;
 import '../wallet/low_balance_sheet.dart';
 import '../wallet/wallet_screen.dart' show walletBalanceProvider;
@@ -1142,7 +1143,7 @@ class _SessionActionsState extends ConsumerState<_SessionActions> {
       if (updated.type == 'AUDIO_CALL' && confirmedFor == null) {
         // Instant — drop straight into the call. A scheduled call connects
         // at its slot, not now.
-        context.push('/call/${updated.id}');
+        CallOverlayController.instance.open(updated.id);
       } else if (confirmedFor != null) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -1409,7 +1410,7 @@ class _SessionActionsState extends ConsumerState<_SessionActions> {
                       );
                       return;
                     }
-                    context.push('/call/${session.id}');
+                    CallOverlayController.instance.open(session.id);
                   }
 
                   final label = joinableNow
