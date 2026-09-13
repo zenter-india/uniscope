@@ -41,27 +41,45 @@ bool _isInstantCallRequest(Map<String, dynamic> data) =>
 /// the push payload (metadata is just `{sessionId, instant}`), so this uses
 /// generic copy rather than guessing at student identity.
 Future<void> _ringForInstantCall(String sessionId, {String? body}) async {
-  await FlutterCallkitIncoming.showCallkitIncoming(
-    CallKitParams(
-      id: sessionId,
-      nameCaller: 'Incoming call request',
-      appName: 'Uniscope',
-      handle: body ?? 'A student wants to connect now',
-      type: 0, // audio
-      duration: 45000, // matches the ~45s a pending request stays live for
-      android: const AndroidParams(
-        isShowLogo: false,
-        isFullScreen: true,
-        ringtonePath: 'system_ringtone_default',
-        backgroundColor: '#0d7d6f',
-        actionColor: '#0e6f63',
-        incomingCallNotificationChannelName: 'Incoming Calls',
-        missedCallNotificationChannelName: 'Missed Calls',
-        textAccept: 'Accept',
-        textDecline: 'Decline',
+  // Both call sites invoke this fire-and-forget (the foreground listener
+  // doesn't await it, and even the awaited background-isolate call has no
+  // caller-side catch) — a native-side failure (a missing permission, an
+  // invalid param, anything `showCallkitIncoming`'s Android implementation
+  // can throw as a PlatformException) would otherwise be a silently
+  // swallowed async error: no ring, no crash, no visible reason why. This
+  // mirrors the same "make a silent push-path failure loud" fix already
+  // applied server-side for FCM delivery failures (see
+  // NotificationsService.pushToDevices) — the exact class of bug a 2026-09-13
+  // real-device report ("nothing rings, backend confirms FCM delivered
+  // successfully") pointed at once the backend side was ruled out.
+  try {
+    await FlutterCallkitIncoming.showCallkitIncoming(
+      CallKitParams(
+        id: sessionId,
+        nameCaller: 'Incoming call request',
+        appName: 'Uniscope',
+        handle: body ?? 'A student wants to connect now',
+        type: 0, // audio
+        duration: 45000, // matches the ~45s a pending request stays live for
+        android: const AndroidParams(
+          isShowLogo: false,
+          isFullScreen: true,
+          ringtonePath: 'system_ringtone_default',
+          backgroundColor: '#0d7d6f',
+          actionColor: '#0e6f63',
+          incomingCallNotificationChannelName: 'Incoming Calls',
+          missedCallNotificationChannelName: 'Missed Calls',
+          textAccept: 'Accept',
+          textDecline: 'Decline',
+        ),
       ),
-    ),
-  );
+    );
+  } catch (e, st) {
+    debugPrint(
+      '[callkit] showCallkitIncoming failed for session $sessionId: $e',
+    );
+    debugPrint('[callkit] $st');
+  }
 }
 
 /// Must be a top-level (or static) function — the Firebase plugin invokes
@@ -426,8 +444,7 @@ class PushService {
           audioAttributesUsage: isCall
               ? AudioAttributesUsage.notificationRingtone
               : AudioAttributesUsage.notification,
-          category:
-              isCall ? AndroidNotificationCategory.call : null,
+          category: isCall ? AndroidNotificationCategory.call : null,
         ),
         iOS: DarwinNotificationDetails(
           presentSound: true,
@@ -471,7 +488,8 @@ class PushService {
       if (type == 'SESSION_ACCEPTED') {
         final raw = data['confirmedFor'] as String?;
         final confirmedFor = raw == null ? null : DateTime.tryParse(raw);
-        final imminent = confirmedFor == null ||
+        final imminent =
+            confirmedFor == null ||
             confirmedFor.difference(DateTime.now()) <
                 const Duration(minutes: 2);
         if (imminent) {
