@@ -118,10 +118,28 @@ Future<void> startChatWithMentor(
     );
   } catch (e) {
     if (!context.mounted) return;
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text('Could not start chat: $e')));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Could not start chat: ${_describeError(e)}')),
+    );
   }
+}
+
+/// Pulls the backend's own message out of a failed request instead of
+/// dumping a raw `DioException.toString()` ("DioException [bad response]:
+/// Mentor 'id' not found") on screen — mirrors the pattern already used by
+/// `UniversityReviewsApi.create`. Falls back to a plain generic line for
+/// anything without a readable body (a network failure, a timeout).
+String _describeError(Object e) {
+  if (e is DioException) {
+    final data = e.response?.data;
+    if (data is Map) {
+      final m = data['message'];
+      if (m is String && m.isNotEmpty) return m;
+      if (m is List && m.isNotEmpty) return m.join('\n');
+    }
+    return 'Something went wrong. Please try again.';
+  }
+  return e.toString();
 }
 
 /// Mentor discovery backed by `GET /mentors`. Tapping a mentor goes straight

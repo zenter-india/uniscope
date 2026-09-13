@@ -653,6 +653,34 @@ class _AspirantMentorRow extends ConsumerWidget {
   const _AspirantMentorRow({required this.sessions});
   final List<Session> sessions;
 
+  /// Opens the chat with this mentor. Reuses the existing CHAT thread in the
+  /// relationship if there is one (mirrors `_MentorStudentRow._openChat`) —
+  /// this row is only ever shown because a real session already exists, so
+  /// there's no reason to ask the backend to create-or-find one first. That
+  /// matters specifically when the mentor's account has since been deleted:
+  /// `startChatWithMentor`'s `POST /sessions` does a live mentor lookup and
+  /// 404s, surfacing a raw "Mentor 'id' not found" DioException — going
+  /// straight to the already-known session id sidesteps that lookup
+  /// entirely, since chat history stays readable for an erased account.
+  Future<void> _openChat(BuildContext context, WidgetRef ref) async {
+    final existing =
+        sessions
+            .where(
+              (s) =>
+                  s.type == 'CHAT' &&
+                  (s.status == SessionStatus.accepted ||
+                      s.status == SessionStatus.inProgress ||
+                      s.status == SessionStatus.completed),
+            )
+            .toList()
+          ..sort((a, b) => b.requestedAt.compareTo(a.requestedAt));
+    if (existing.isNotEmpty) {
+      context.push('/chats/room', extra: {'sessionId': existing.first.id});
+      return;
+    }
+    await startChatWithMentor(context, ref, sessions.first.mentorId);
+  }
+
   Future<void> _requestCall(
     BuildContext context,
     WidgetRef ref,
@@ -693,7 +721,7 @@ class _AspirantMentorRow extends ConsumerWidget {
     return Material(
       color: AppColors.surface,
       child: InkWell(
-        onTap: () => startChatWithMentor(context, ref, mentorId),
+        onTap: () => _openChat(context, ref),
         child: Padding(
           padding: const EdgeInsets.symmetric(
             horizontal: AppSpacing.md,
@@ -763,7 +791,7 @@ class _AspirantMentorRow extends ConsumerWidget {
                 icon: Icons.chat_bubble_rounded,
                 tooltip: 'Open chat',
                 filled: true,
-                onTap: () => startChatWithMentor(context, ref, mentorId),
+                onTap: () => _openChat(context, ref),
               ),
             ],
           ),
