@@ -352,12 +352,11 @@ class _UniversityListScreenState extends ConsumerState<UniversityListScreen> {
         actions: [
           IconButton(
             onPressed: () => context.push('/colleges/saved'),
-            // GradientAppBar is a neutral (near-white) bar now — a white
-            // heart was invisible on it. Brand green reads as a distinct
-            // "saved / favourites" affordance.
+            // Red matches the per-card save heart (AppColors.error) so the
+            // "saved" affordance reads the same colour everywhere it appears.
             icon: const Icon(
               Icons.favorite_rounded,
-              color: AppColors.primary,
+              color: AppColors.error,
             ),
             tooltip: 'Saved colleges',
           ),
@@ -863,7 +862,7 @@ class _CollegeSaveButton extends ConsumerWidget {
           ref.read(savedCollegeIdsProvider.notifier).toggle(universityId),
       icon: Icon(
         isSaved ? Icons.favorite_rounded : Icons.favorite_border_rounded,
-        color: isSaved ? AppColors.error : AppColors.textMuted,
+        color: AppColors.error,
       ),
       visualDensity: VisualDensity.compact,
     );
