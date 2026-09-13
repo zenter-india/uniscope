@@ -297,13 +297,27 @@ export class ChatService {
       // notifications_api.dart) to deep-link into the right chat; a
       // SUPPORT channel has no session, so its notifications just surface
       // without a deep link, same as any other non-session notification.
+      //
+      // Title is the sender's own name rather than a flat "New message" —
+      // the recipient otherwise has to open the app to find out who even
+      // messaged them. SUPPORT_ACCOUNT_ID is a sentinel, not a real User
+      // row, so it can't be looked up the same way.
+      const senderName =
+        senderId === SUPPORT_ACCOUNT_ID
+          ? 'UniScope Support'
+          : ((
+              await this.prisma.user.findUnique({
+                where: { id: senderId },
+                select: { displayName: true },
+              })
+            )?.displayName ?? 'New message');
       const preview = text.length > 80 ? `${text.slice(0, 80)}…` : text;
       await Promise.all(
         recipientIds.map((userId) =>
           this.notifications.send({
             userId,
             type: NotificationType.MESSAGE,
-            title: 'New message',
+            title: senderName,
             body: preview,
             metadata: channel.session
               ? { sessionId: channel.session.id }
