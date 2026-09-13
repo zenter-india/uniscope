@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { Injectable, Logger, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { UserRole } from '@prisma/client';
@@ -19,6 +19,7 @@ interface RefreshPayload {
 
 @Injectable()
 export class TokenService {
+  private readonly logger = new Logger(TokenService.name);
   private readonly cfg: JwtConfig;
 
   constructor(
@@ -54,6 +55,14 @@ export class TokenService {
     return { accessToken, refreshToken };
   }
 
+  /** This endpoint previously had zero logging at all — a real "logged out
+   * after 10-20 minutes, single device, single account" report (2026-09-13)
+   * turned out to be undiagnosable after the fact because nothing here ever
+   * left a trace, success or failure. Every branch now logs enough to
+   * reconstruct what happened on the next occurrence: which user, and the
+   * exact reason (expired/malformed JWT vs. no stored hash at all vs. a
+   * genuine hash mismatch — three very different root causes that all
+   * surfaced identically as "logged out" to the app before this). */
   async rotateRefreshToken(
     refreshToken: string,
   ): Promise<TokenPair & { userId: string; role: UserRole }> {
@@ -63,11 +72,15 @@ export class TokenService {
       payload = this.jwtService.verify<RefreshPayload>(refreshToken, {
         secret: this.cfg.refreshSecret,
       });
-    } catch {
+    } catch (err) {
+      this.logger.warn(
+        `[refresh] rejected: JWT verify failed (${(err as Error).name}: ${(err as Error).message})`,
+      );
       throw new UnauthorizedException('Invalid refresh token');
     }
 
     if (payload.type !== 'refresh') {
+      this.logger.warn(`[refresh] rejected: wrong token type for userId=${payload.sub}`);
       throw new UnauthorizedException('Invalid token type');
     }
 
@@ -77,15 +90,20 @@ export class TokenService {
     });
 
     if (!user || !user.refreshTokenHash) {
+      this.logger.warn(
+        `[refresh] rejected: no user or no stored hash for userId=${payload.sub}`,
+      );
       throw new UnauthorizedException('Session expired');
     }
 
     const incomingHash = this.sha256(refreshToken);
     if (incomingHash !== user.refreshTokenHash) {
+      this.logger.warn(`[refresh] rejected: token reuse detected for userId=${user.id}`);
       throw new UnauthorizedException('Token reuse detected');
     }
 
     const tokens = await this.issueTokenPair(user.id, user.role);
+    this.logger.log(`[refresh] rotated ok for userId=${user.id}`);
     return { ...tokens, userId: user.id, role: user.role };
   }
 
