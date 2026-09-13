@@ -12,11 +12,20 @@
          the full video-calling superset unconditionally, including this —
          Uniscope's calls are audio-only and never request camera access
          during a call, so this is stripped the same way the media-projection
-         permission above is. FOREGROUND_SERVICE_PHONE_CALL (also from this
-         plugin) is left alone: that one IS real and earned by the actual
-         ringing feature this app ships — declare it honestly in Play
-         Console's foreground-service questionnaire, don't strip it. -->
+         permission above is. -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CAMERA" tools:node="remove"/>
+    <!-- FOREGROUND_SERVICE_PHONE_CALL IS real and earned by the same plugin's
+         actual ringing feature — Play Console's foreground-service
+         questionnaire flagged it and wants a demo video, which isn't ready
+         yet. Stripped here TEMPORARILY (2026-09-13) to unblock this upload;
+         this disables the native full-screen incoming-call ring screen for
+         instant call requests on Android (the plugin needs this permission
+         to start its phoneCall-typed foreground service on Android 14+) —
+         a real functional regression, not a no-op, until the video is
+         recorded and this permission is declared honestly instead of
+         stripped. Re-add (drop this tools:node="remove" line) once that's
+         done. -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_PHONE_CALL" tools:node="remove"/>
     <!-- Required for ImageSource.camera (image_picker) — the "Take a photo"
          option on ID/document verification uploads. -->
     <uses-permission android:name="android.permission.CAMERA"/>
