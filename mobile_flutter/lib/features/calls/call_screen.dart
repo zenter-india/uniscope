@@ -419,6 +419,17 @@ class _CallScreenState extends ConsumerState<CallScreen> {
     // abandon a stalled attempt cleanly, rather than leaking a native
     // engine that's still mid-connect in the background.
     _engine = engine;
+    // joinChannelWithUserAccount's own Future resolving is NOT proof the
+    // channel was actually joined — per Agora's own docs, "when the method
+    // call succeeds, there is no return value" (i.e. it just means the call
+    // was dispatched to the native SDK). The real confirmation is the
+    // onJoinChannelSuccess event below, which this now genuinely waits on
+    // before returning — previously it didn't, so a call whose local dispatch
+    // "succeeded" but whose actual RTC join silently failed/stalled (a real
+    // device report: call screen looks fully connected, dual-confirmed with
+    // the backend, but totally silent both directions) would sail straight
+    // into confirmJoined() and a normal-looking "connected" UI regardless.
+    final joined = Completer<void>();
     await engine.initialize(RtcEngineContext(appId: creds.appId));
     await engine.enableAudio();
     await engine.setDefaultAudioRouteToSpeakerphone(true);
@@ -431,6 +442,9 @@ class _CallScreenState extends ConsumerState<CallScreen> {
     );
     engine.registerEventHandler(
       RtcEngineEventHandler(
+        onJoinChannelSuccess: (connection, elapsed) {
+          if (!joined.isCompleted) joined.complete();
+        },
         onUserJoined: (connection, remoteUid, elapsed) {
           if (mounted) setState(() => _remoteJoinedChannel = true);
         },
@@ -514,6 +528,13 @@ class _CallScreenState extends ConsumerState<CallScreen> {
               ),
             );
           }
+          // Fail the join fast on a genuine engine error instead of quietly
+          // riding out the full join timeout — but only while still waiting
+          // to join; an error well into an already-connected call (e.g. a
+          // transient network blip) must not retroactively un-join it.
+          if (!joined.isCompleted) {
+            joined.completeError(Exception('Agora error: ${err.name} ($msg)'));
+          }
         },
       ),
     );
@@ -526,6 +547,7 @@ class _CallScreenState extends ConsumerState<CallScreen> {
         clientRoleType: ClientRoleType.clientRoleBroadcaster,
       ),
     );
+    await joined.future;
   }
 
   Future<void> _poll() async {
