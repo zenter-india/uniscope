@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:io' show Platform;
 
 import 'package:agora_rtc_engine/agora_rtc_engine.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
@@ -7,7 +6,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:permission_handler/permission_handler.dart' as ph;
 
 import '../../core/network/reports_api.dart';
 import '../../core/network/sessions_api.dart';
@@ -21,10 +19,13 @@ import '../sessions/session_status.dart';
 import '../wallet/wallet_screen.dart' show walletBalanceProvider;
 import 'call_overlay.dart';
 
-/// Hand-rolled native channels — see MainActivity.kt for why these bypass
-/// the permission_handler plugin. `uniscope/call` drives the Android
-/// foreground service that keeps the call alive when backgrounded (see
-/// CallForegroundService.kt) and the keep-screen-awake flag.
+/// Hand-rolled native channels, real on both platforms — `uniscope/permissions`
+/// has a genuine handler in both MainActivity.kt (Android, bypasses
+/// permission_handler entirely — see that file's doc comment for why) and
+/// AppDelegate.swift (iOS, added 2026-08-03). `uniscope/call` is Android-only
+/// — it drives the foreground service that keeps the call alive when
+/// backgrounded (see CallForegroundService.kt) and the keep-screen-awake flag;
+/// iOS relies on its own `audio` UIBackgroundMode instead.
 const _permissionsChannel = MethodChannel('uniscope/permissions');
 const _callChannel = MethodChannel('uniscope/call');
 
@@ -261,35 +262,29 @@ class _CallScreenState extends ConsumerState<CallScreen> {
   }
 
   Future<void> _start() async {
+    // `uniscope/permissions` has a real native handler on BOTH Android
+    // (MainActivity.kt) and iOS (AppDelegate.swift's
+    // didInitializeImplicitFlutterEngine, added 2026-08-03) — it is NOT
+    // Android-only, despite what this method believed from 2026-09-09 to
+    // 2026-09-13. That earlier fix hit iOS calls hanging on "Starting
+    // call…" forever, assumed — without checking the Swift side — that no
+    // iOS handler existed, and made ANY failure here (including a
+    // genuinely denied permission) silently resolve to `granted = true`.
+    // Since the iOS handler actually does exist and works via the same
+    // request+status pattern Android uses, that fallback meant a real
+    // iOS mic denial was never detected at all: the call just joined
+    // muted with no dialog and no explanation, matching the exact device
+    // report ("no permission dialog, no audio either direction"). Only
+    // web has no native counterpart, so only a genuine MissingPluginException
+    // still falls through to `true` here — a real Android/iOS "denied"
+    // now correctly stops at the permission screen on both platforms.
     bool granted;
-    if (Platform.isIOS) {
-      // Real bug (device report: no mic-permission dialog ever appears on
-      // iOS, calls connect with no audio either direction): the old code
-      // path below is Android-only (`uniscope/permissions` has no iOS
-      // native handler — invokeMethod always throws MissingPluginException
-      // here) and silently assumed `granted = true`, meaning a genuinely
-      // denied/not-yet-decided iOS mic permission was never detected at
-      // all — the call just joined with a muted mic and no explanation,
-      // every time. permission_handler gives iOS the same real
-      // request+status check Android already had, instead of blindly
-      // trusting Agora's engine init to "raise" the OS prompt on its own.
-      final status = await ph.Permission.microphone.request();
-      granted = status.isGranted;
-    } else {
-      // `uniscope/permissions` is a hand-rolled Android-only channel — on
-      // web invokeMethod throws MissingPluginException. That must NOT
-      // dead-end the connect: fall through and let Agora's own engine init
-      // raise the OS mic prompt. A genuine Android "denied" still stops
-      // here.
-      try {
-        granted =
-            await _permissionsChannel.invokeMethod<bool>(
-              'requestMicrophone',
-            ) ??
-            true;
-      } catch (_) {
-        granted = true;
-      }
+    try {
+      granted =
+          await _permissionsChannel.invokeMethod<bool>('requestMicrophone') ??
+          true;
+    } on MissingPluginException {
+      granted = true;
     }
     if (!granted) {
       if (!mounted) return;
@@ -967,13 +962,12 @@ class _CallScreenState extends ConsumerState<CallScreen> {
           actions: [
             FilledButton(
               onPressed: () async {
-                // `uniscope/permissions`'s openAppSettings is Android-only
-                // (see _start) — iOS uses permission_handler's own
-                // cross-platform implementation instead.
-                if (Platform.isIOS) {
-                  await ph.openAppSettings();
-                } else {
+                // `uniscope/permissions`'s openAppSettings has a real
+                // handler on both platforms (see _start's doc comment).
+                try {
                   await _permissionsChannel.invokeMethod('openAppSettings');
+                } catch (_) {
+                  // Web has no counterpart — nothing more to do there.
                 }
               },
               child: const Text('Open Settings'),
