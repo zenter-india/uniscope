@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io' show Platform;
 
 import 'package:agora_rtc_engine/agora_rtc_engine.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
@@ -6,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:permission_handler/permission_handler.dart' as ph;
 
 import '../../core/network/reports_api.dart';
 import '../../core/network/sessions_api.dart';
@@ -259,17 +261,35 @@ class _CallScreenState extends ConsumerState<CallScreen> {
   }
 
   Future<void> _start() async {
-    // `uniscope/permissions` is a hand-rolled Android-only channel — on web
-    // or iOS invokeMethod throws MissingPluginException. That must NOT
-    // dead-end the connect: fall through and let Agora's own engine init
-    // raise the OS mic prompt. A genuine Android "denied" still stops here.
     bool granted;
-    try {
-      granted =
-          await _permissionsChannel.invokeMethod<bool>('requestMicrophone') ??
-          true;
-    } catch (_) {
-      granted = true;
+    if (Platform.isIOS) {
+      // Real bug (device report: no mic-permission dialog ever appears on
+      // iOS, calls connect with no audio either direction): the old code
+      // path below is Android-only (`uniscope/permissions` has no iOS
+      // native handler — invokeMethod always throws MissingPluginException
+      // here) and silently assumed `granted = true`, meaning a genuinely
+      // denied/not-yet-decided iOS mic permission was never detected at
+      // all — the call just joined with a muted mic and no explanation,
+      // every time. permission_handler gives iOS the same real
+      // request+status check Android already had, instead of blindly
+      // trusting Agora's engine init to "raise" the OS prompt on its own.
+      final status = await ph.Permission.microphone.request();
+      granted = status.isGranted;
+    } else {
+      // `uniscope/permissions` is a hand-rolled Android-only channel — on
+      // web invokeMethod throws MissingPluginException. That must NOT
+      // dead-end the connect: fall through and let Agora's own engine init
+      // raise the OS mic prompt. A genuine Android "denied" still stops
+      // here.
+      try {
+        granted =
+            await _permissionsChannel.invokeMethod<bool>(
+              'requestMicrophone',
+            ) ??
+            true;
+      } catch (_) {
+        granted = true;
+      }
     }
     if (!granted) {
       if (!mounted) return;
@@ -947,7 +967,14 @@ class _CallScreenState extends ConsumerState<CallScreen> {
           actions: [
             FilledButton(
               onPressed: () async {
-                await _permissionsChannel.invokeMethod('openAppSettings');
+                // `uniscope/permissions`'s openAppSettings is Android-only
+                // (see _start) — iOS uses permission_handler's own
+                // cross-platform implementation instead.
+                if (Platform.isIOS) {
+                  await ph.openAppSettings();
+                } else {
+                  await _permissionsChannel.invokeMethod('openAppSettings');
+                }
               },
               child: const Text('Open Settings'),
             ),
