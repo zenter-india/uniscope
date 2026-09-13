@@ -62,34 +62,49 @@ String chatTimeLabel(DateTime dt) {
   return '${_kMonthAbbr[local.month - 1]} ${local.day}';
 }
 
-/// The subtitle for a grouped Sessions-tab row. It is **only ever** a chat
-/// message preview — WhatsApp-style, the message text prefixed "You: " when
-/// the viewer sent it, with a relative time and no dot. [viewerIsMentor]
-/// says which side of `latest` is "me".
+/// The subtitle for a grouped Sessions-tab row — WhatsApp-style, no dot.
+/// [viewerIsMentor] says which side of `latest` is "me".
 ///
-/// When there's no message (a call, or a chat with nothing said yet) the
-/// subtitle is **empty** and the row renders name-only, for both roles
-/// (2026-09-09, per "remove [the status] everywhere — both roles name-only
-/// unless there's a message"). The old status-label + coloured-dot fallback
-/// added no value: a pending call already shows Accept/Reject on the row,
-/// and a bland "Ready" / "Chat" told nobody anything. `sessionStatusView` is
-/// still used for the in-card `_SessionActions` chip, just not here.
+/// A chat message preview wins whenever there is one: the message text,
+/// prefixed "You: " when the viewer sent it, with a relative time. Otherwise
+/// (2026-09-09 removed a status fallback here entirely — "both roles
+/// name-only unless there's a message" — **partially restored 2026-09-13,
+/// scoped to calls only, per explicit request to bring back a minimal call
+/// status line**): a call with no message on top of it shows a short,
+/// per-role `sessionStatusView` label ("Instant call", "Missed", "Call
+/// ended", …) instead of a blank row — still no colour/dot, just the same
+/// plain muted text a message preview would use. A brand-new, still-empty
+/// chat thread stays blank — nothing has happened there to summarize.
 ({String text, Color? dotColor, String? time}) _rowSubtitle(
   Session latest, {
   required bool viewerIsMentor,
 }) {
   final hasMsg =
       latest.type == 'CHAT' && (latest.lastMessageText ?? '').trim().isNotEmpty;
-  if (!hasMsg) return (text: '', dotColor: null, time: null);
-  final myId = viewerIsMentor ? latest.mentorId : latest.aspirantId;
-  final mine = latest.lastMessageSenderId == myId;
-  return (
-    text: mine ? 'You: ${latest.lastMessageText}' : latest.lastMessageText!,
-    dotColor: null,
-    time: latest.lastMessageAt == null
-        ? null
-        : chatTimeLabel(latest.lastMessageAt!),
-  );
+  if (hasMsg) {
+    final myId = viewerIsMentor ? latest.mentorId : latest.aspirantId;
+    final mine = latest.lastMessageSenderId == myId;
+    return (
+      text: mine ? 'You: ${latest.lastMessageText}' : latest.lastMessageText!,
+      dotColor: null,
+      time: latest.lastMessageAt == null
+          ? null
+          : chatTimeLabel(latest.lastMessageAt!),
+    );
+  }
+  if (latest.type == 'AUDIO_CALL') {
+    final status = sessionStatusView(
+      latest,
+      isMentor: viewerIsMentor,
+      style: SessionStatusStyle.compact,
+    );
+    return (
+      text: status.label,
+      dotColor: null,
+      time: chatTimeLabel(DateTime.parse(latest.requestedAt)),
+    );
+  }
+  return (text: '', dotColor: null, time: null);
 }
 
 /// Renders a [_rowSubtitle] result — optional status dot, the preview /
