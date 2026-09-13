@@ -516,7 +516,7 @@ class _MentorListScreenState extends ConsumerState<MentorListScreen> {
                     // are the only filtering still done here, over whatever
                     // page the server returned — see the field doc comment
                     // above for why those stay client-side.
-                    final filtered = mentors.where((m) {
+                    final matched = mentors.where((m) {
                       if (query.isNotEmpty &&
                           !m.displayName.toLowerCase().contains(query)) {
                         return false;
@@ -533,6 +533,17 @@ class _MentorListScreenState extends ConsumerState<MentorListScreen> {
                       }
                       return true;
                     }).toList();
+                    // Call-available mentors always float to the top,
+                    // regardless of the Available-now filter (which only
+                    // hides the rest entirely) — a manual stable partition
+                    // rather than `.sort()`, so the relative order within
+                    // each group (whatever the server/rating-toggle already
+                    // produced) is preserved exactly, not just "some order
+                    // with availables first."
+                    final filtered = [
+                      ...matched.where((m) => m.isAvailable),
+                      ...matched.where((m) => !m.isAvailable),
+                    ];
                     if (filtered.isEmpty) {
                       return ListView(
                         children: [
