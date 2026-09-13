@@ -9,6 +9,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../features/calls/call_overlay.dart' show CallPresence;
 import '../../router/app_router.dart';
+import '../network/sessions_api.dart' show sessionsApiProvider;
 import '../network/users_api.dart';
 
 /// Must be a top-level (or static) function — the Firebase plugin invokes
@@ -56,6 +57,21 @@ bool _isCallType(Object? type) =>
     type == 'SESSION_REQUEST' ||
     type == 'SESSION_ACCEPTED' ||
     type == 'SESSION_STARTING';
+
+/// Accept/Decline action ids on a `SESSION_REQUEST` notification — the
+/// mentor's side only (an aspirant never gets a `SESSION_REQUEST`). Both use
+/// `showsUserInterface: true`: a real "decline without ever opening the app"
+/// would need the plugin's background isolate to reach the backend, but that
+/// isolate's `FlutterEngine` (see `ActionBroadcastReceiver.java` in the
+/// installed `flutter_local_notifications` package) is created with no
+/// plugin registration at all, so `flutter_secure_storage` — the only place
+/// the access token lives — would silently fail to read it there. Both
+/// actions foreground the app instead (same proven mechanism the iOS "End
+/// Call" ongoing-call action below already uses) and do their real work
+/// immediately in `onDidReceiveNotificationResponse`, rather than just
+/// landing on a screen for the mentor to act on manually.
+const _acceptActionId = 'accept';
+const _declineActionId = 'decline';
 
 /// iOS has no foreground-service concept, so unlike Android's
 /// `CallForegroundService` (an ongoing, non-dismissible notification with a
@@ -221,7 +237,13 @@ class PushService {
         if (payload == null || payload.isEmpty) return;
         try {
           final data = (jsonDecode(payload) as Map).cast<String, dynamic>();
-          _handleDeepLinkData(data);
+          if (response.actionId == _acceptActionId) {
+            _handleAcceptAction(data);
+          } else if (response.actionId == _declineActionId) {
+            _handleDeclineAction(data);
+          } else {
+            _handleDeepLinkData(data);
+          }
         } catch (_) {
           // Malformed payload — nothing to route to.
         }
@@ -270,8 +292,12 @@ class PushService {
     if (notification == null) return;
     if (notification.title == null && notification.body == null) return;
 
-    final isCall = _isCallType(message.data['type']);
+    final type = message.data['type'];
+    final isCall = _isCallType(type);
     final channel = isCall ? _androidCallChannel : _androidChannel;
+    // Only a pending request is actionable — SESSION_ACCEPTED/STARTING are
+    // read-only alerts to the aspirant, there's nothing to accept/decline.
+    final isActionableRequest = type == 'SESSION_REQUEST';
 
     _localNotifications.show(
       notification.hashCode,
@@ -294,6 +320,20 @@ class PushService {
               ? AudioAttributesUsage.notificationRingtone
               : AudioAttributesUsage.notification,
           category: isCall ? AndroidNotificationCategory.call : null,
+          actions: isActionableRequest
+              ? const [
+                  AndroidNotificationAction(
+                    _acceptActionId,
+                    'Accept',
+                    showsUserInterface: true,
+                  ),
+                  AndroidNotificationAction(
+                    _declineActionId,
+                    'Decline',
+                    showsUserInterface: true,
+                  ),
+                ]
+              : null,
         ),
         iOS: DarwinNotificationDetails(
           presentSound: true,
@@ -305,6 +345,49 @@ class PushService {
       ),
       payload: message.data.isEmpty ? null : jsonEncode(message.data),
     );
+  }
+
+  /// The "Accept" action on a `SESSION_REQUEST` notification — brings the
+  /// app forward (`showsUserInterface: true` guarantees this) and finishes
+  /// the accept right here rather than just landing on the Sessions tab, so
+  /// answering a call from the lock screen doesn't need a second tap once
+  /// the app is up. Only an **instant** request goes straight into the call
+  /// — a scheduled one still needs the mentor to pick a concrete 30-min slot
+  /// (`showConfirmCallTimeSheet`), which can't be done from a bare
+  /// notification action, so that case falls back to the same "/chats"
+  /// landing a plain tap already gives.
+  Future<void> _handleAcceptAction(Map<String, dynamic> data) async {
+    final sessionId = data['sessionId'] as String?;
+    if (sessionId == null) return;
+    if (data['instant'] != 'true') {
+      _navigate('/chats');
+      return;
+    }
+    try {
+      await _ref.read(sessionsApiProvider).accept(sessionId);
+      _navigate('/call/$sessionId');
+    } catch (_) {
+      // Already accepted/rejected elsewhere (a concurrent tap from inside
+      // the app), or a network hiccup — land on Sessions so the mentor sees
+      // the request's real current state instead of a silently-failed tap.
+      _navigate('/chats');
+    }
+  }
+
+  /// The "Decline" action — rejects the request immediately, then lands on
+  /// Sessions so the mentor sees it's gone from their pending list. Errors
+  /// (already resolved elsewhere, a network hiccup) are swallowed rather
+  /// than surfaced — there's no guaranteed Scaffold/context to show them in
+  /// at the moment the app has just been foregrounded by this exact action.
+  Future<void> _handleDeclineAction(Map<String, dynamic> data) async {
+    final sessionId = data['sessionId'] as String?;
+    if (sessionId == null) return;
+    try {
+      await _ref.read(sessionsApiProvider).reject(sessionId);
+    } catch (_) {
+      // Ignored — see doc comment above.
+    }
+    _navigate('/chats');
   }
 
   void _handleDeepLink(RemoteMessage message, {bool fromTap = true}) =>
