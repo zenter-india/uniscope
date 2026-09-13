@@ -118,9 +118,16 @@ Future<void> startChatWithMentor(
     );
   } catch (e) {
     if (!context.mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Could not start chat: ${_describeError(e)}')),
-    );
+    // A deleted/erased mentor account 404s here (findById filters to active,
+    // non-erased users) — the backend's own message is technically correct
+    // but leaks a raw internal UUID ("Mentor '3e6de238-…' not found"), which
+    // reads as a bug rather than "this person is gone." Every other failure
+    // (blocked, network hiccup, …) keeps the backend's own message, which is
+    // already written to be user-facing.
+    final message = e is DioException && e.response?.statusCode == 404
+        ? "This mentor's account is no longer available."
+        : 'Could not start chat: ${_describeError(e)}';
+    showAppSnackBar(context, message);
   }
 }
 

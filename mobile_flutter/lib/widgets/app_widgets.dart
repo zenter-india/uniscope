@@ -6,6 +6,51 @@ import 'package:go_router/go_router.dart';
 import '../core/theme/app_theme.dart';
 import '../features/notifications/notifications_screen.dart';
 
+/// Shows a message via the app's own dark, rounded, floating snackbar style
+/// — explicit here rather than relying on `ThemeData.snackBarTheme` picking
+/// it up (`app_theme.dart`'s `snackBarTheme` already declares the same
+/// `floating`/rounded look, so in principle a bare
+/// `ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(...)))`
+/// should already render this way).
+///
+/// **Known gap, not resolved in this pass**: live-tested in the Flutter-web
+/// preview (2026-09-14) against a real 404 ("mentor not found") — the
+/// message content came through correctly, but the bar rendered as a flat,
+/// square-cornered, full-width bar regardless of `behavior`, `shape`, or an
+/// explicit `margin` all being set here — every combination tried produced
+/// the identical visual, which rules out a simple "the theme isn't being
+/// read" explanation (these are the exact same properties, passed directly,
+/// bypassing the theme entirely). Most likely this is a Flutter-web/
+/// CanvasKit-specific rendering quirk for `SnackBarBehavior.floating`, or a
+/// limitation of this project's browser-preview tooling specifically (this
+/// codebase has several other documented instances of the preview not
+/// faithfully rendering/driving the Flutter canvas) — not proven to affect
+/// a real Android/iOS build, which is this app's actual shipping target.
+/// Worth a real-device check next time this is touched; if it reproduces
+/// there too, the next thing to try is `SnackBarBehavior.fixed` with a
+/// custom `Container`-wrapped `content` carrying its own rounded decoration,
+/// which sidesteps the framework's floating-positioning logic entirely.
+void showAppSnackBar(BuildContext context, String message) {
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(
+      content: Text(
+        message,
+        style: const TextStyle(
+          color: AppColors.textInverse,
+          fontSize: AppFont.sm,
+          fontWeight: AppFont.medium,
+        ),
+      ),
+      backgroundColor: AppColors.textPrimary,
+      behavior: SnackBarBehavior.floating,
+      margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppRadius.md),
+      ),
+    ),
+  );
+}
+
 /// Soft-shadow card — the standard container for list items and panels.
 /// No border by default; elevation comes from AppShadows.card.
 class AppCard extends StatelessWidget {
