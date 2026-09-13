@@ -35,6 +35,7 @@ import { AcceptSessionDto } from './dto/accept-session.dto.js';
 import { CALL_SLOT_MINUTES, CreateSessionDto } from './dto/create-session.dto.js';
 import { ListSessionsAdminDto } from './dto/list-sessions-admin.dto.js';
 import { ListSessionsDto } from './dto/list-sessions.dto.js';
+import { RescheduleSessionDto } from './dto/reschedule-session.dto.js';
 import {
   AvatarUrlResolver,
   SESSION_WITH_NAMES_INCLUDE,
@@ -456,40 +457,16 @@ export class SessionsService {
 
     // Double-booking guard: a confirmed slot is a real commitment (the
     // no-show clock runs from it), so the mentor can't hand the same window
-    // to two students. Reject if this slot's [start, start+thisSlot)
-    // interval overlaps another of the mentor's still-live confirmed calls.
-    // The mobile confirm sheet greys these out, but a stale sheet or a
-    // second device could still send one — this is the authority.
+    // to two students. The mobile confirm sheet greys these out, but a
+    // stale sheet or a second device could still send one — this is the
+    // authority. See assertNoMentorCallOverlap (shared with reschedule()).
     if (confirmedFor) {
-      const thisSlotMin = session.callSlotMinutes ?? 20;
-      const thisStart = confirmedFor.getTime();
-      const thisEnd = thisStart + thisSlotMin * 60_000;
-      // Widest a slot can be is 20 min, so anything starting > 20 min either
-      // side cannot overlap — bound the scan, then check intervals exactly.
-      const nearby = await this.prisma.session.findMany({
-        where: {
-          id: { not: sessionId },
-          mentorId: mentorUserId,
-          type: SessionType.AUDIO_CALL,
-          status: { in: ACTIVE_STATUSES },
-          confirmedFor: {
-            gt: new Date(thisStart - 20 * 60_000),
-            lt: new Date(thisEnd + 20 * 60_000),
-          },
-        },
-        select: { confirmedFor: true, callSlotMinutes: true },
-      });
-      const clash = nearby.find((o) => {
-        const oStart = o.confirmedFor!.getTime();
-        const oEnd = oStart + (o.callSlotMinutes ?? 20) * 60_000;
-        return thisStart < oEnd && oStart < thisEnd;
-      });
-      if (clash) {
-        throw new ConflictException(
-          `You already have a call confirmed around ${fmtIst(clash.confirmedFor!)}. ` +
-            `Pick a slot that doesn't overlap it.`,
-        );
-      }
+      await this.assertNoMentorCallOverlap(
+        mentorUserId,
+        sessionId,
+        confirmedFor,
+        session.callSlotMinutes ?? 20,
+      );
     }
 
     // For CHAT sessions the chat channel is the messaging surface itself,
@@ -710,6 +687,140 @@ export class SessionsService {
         metadata: { sessionId: session.id },
       });
     }
+
+    return this.toResponseById(sessionId);
+  }
+
+  /** Rejects a `confirmedFor` slot that overlaps another of the mentor's
+   * still-live confirmed calls. Shared by accept() (initial confirm) and
+   * reschedule() (moving an already-confirmed call) — extracted 2026-09-13
+   * when reschedule needed the identical check. Widest a slot can be is
+   * 20 min, so anything starting > 20 min either side cannot overlap —
+   * bound the scan, then check intervals exactly. */
+  private async assertNoMentorCallOverlap(
+    mentorId: string,
+    excludeSessionId: string,
+    start: Date,
+    slotMinutes: number,
+  ): Promise<void> {
+    const thisStart = start.getTime();
+    const thisEnd = thisStart + slotMinutes * 60_000;
+    const nearby = await this.prisma.session.findMany({
+      where: {
+        id: { not: excludeSessionId },
+        mentorId,
+        type: SessionType.AUDIO_CALL,
+        status: { in: ACTIVE_STATUSES },
+        confirmedFor: {
+          gt: new Date(thisStart - 20 * 60_000),
+          lt: new Date(thisEnd + 20 * 60_000),
+        },
+      },
+      select: { confirmedFor: true, callSlotMinutes: true },
+    });
+    const clash = nearby.find((o) => {
+      const oStart = o.confirmedFor!.getTime();
+      const oEnd = oStart + (o.callSlotMinutes ?? 20) * 60_000;
+      return thisStart < oEnd && oStart < thisEnd;
+    });
+    if (clash) {
+      throw new ConflictException(
+        `You already have a call confirmed around ${fmtIst(clash.confirmedFor!)}. ` +
+          `Pick a slot that doesn't overlap it.`,
+      );
+    }
+  }
+
+  /** Validates a freely-chosen reschedule time: 30-min boundary, future,
+   * ≤ 5 days out. Unlike resolveConfirmedSlot (the initial mentor-accept
+   * confirm), this is deliberately NOT anchored near the aspirant's
+   * original requestedFor/requestedForAlt — the whole point of rescheduling
+   * is moving away from that original time. */
+  private resolveRescheduleSlot(value: string): Date {
+    const slot = new Date(value);
+    const t = slot.getTime();
+    if (Number.isNaN(t)) {
+      throw new BadRequestException('confirmedFor is not a valid time');
+    }
+    if (
+      slot.getUTCSeconds() !== 0 ||
+      slot.getUTCMilliseconds() !== 0 ||
+      (slot.getUTCMinutes() !== 0 && slot.getUTCMinutes() !== 30)
+    ) {
+      throw new BadRequestException('confirmedFor must be a 30-minute slot');
+    }
+    const now = Date.now();
+    if (t < now - 60_000) {
+      throw new BadRequestException('confirmedFor is in the past');
+    }
+    if (t > now + 5 * 24 * 60 * 60 * 1000) {
+      throw new BadRequestException('confirmedFor is more than 5 days ahead');
+    }
+    return slot;
+  }
+
+  /**
+   * Either party on an already-ACCEPTED call may move its confirmed time to
+   * a new 30-minute slot (2026-09-13, per explicit request — "there should
+   * be a reschedule feature for aspirant and mentor", following the
+   * mentor-cancel feature added the same day, which deliberately left
+   * rescheduling out of scope until asked for). Deliberately **direct**,
+   * not a propose-and-reconfirm round trip: the mentor is already the
+   * scheduling authority for a confirmed slot (see resolveConfirmedSlot's
+   * own doc comment), so whichever party calls this just moves the time and
+   * the other party is notified — no separate approval step, matching the
+   * same "one action, other party informed" shape as cancel() right above.
+   * Only valid for an AUDIO_CALL that's ACCEPTED with a real confirmedFor
+   * (an Instant call has no confirmed time to move, and a call that's
+   * already PENDING/IN_PROGRESS/ended isn't reschedulable — cancel is the
+   * only lever for those). Resets startingNotifiedAt so the ~2-min-before
+   * reminder sweep fires again for the new time instead of staying silent
+   * because it already fired once for the old one.
+   */
+  async reschedule(
+    sessionId: string,
+    userId: string,
+    dto: RescheduleSessionDto,
+  ): Promise<SessionResponse> {
+    const session = await this.requireSessionForParty(sessionId, userId);
+    const isMentor = session.mentorId === userId;
+
+    if (session.type !== SessionType.AUDIO_CALL) {
+      throw new BadRequestException('Only a call can be rescheduled');
+    }
+    if (session.status !== SessionStatus.ACCEPTED) {
+      throw new ConflictException(
+        `Cannot reschedule a session in status ${session.status}`,
+      );
+    }
+    if (!session.confirmedFor) {
+      throw new BadRequestException(
+        'This is an instant call — there is no confirmed time to reschedule',
+      );
+    }
+
+    const newTime = this.resolveRescheduleSlot(dto.confirmedFor);
+    await this.assertNoMentorCallOverlap(
+      session.mentorId,
+      sessionId,
+      newTime,
+      session.callSlotMinutes ?? 20,
+    );
+
+    await this.prisma.session.update({
+      where: { id: sessionId },
+      data: { confirmedFor: newTime, startingNotifiedAt: null },
+    });
+
+    const notifyUserId = isMentor ? session.aspirantId : session.mentorId;
+    const rescheduledByLabel = isMentor ? 'mentor' : 'student';
+    await this.notificationsService.send({
+      userId: notifyUserId,
+      type: NotificationType.SESSION_RESCHEDULED,
+      title: 'Call rescheduled',
+      body: `Your ${rescheduledByLabel} moved your call to ${fmtIst(newTime)}. Join within that 30-minute window.`,
+      metadata: { sessionId: session.id, confirmedFor: newTime.toISOString() },
+    });
 
     return this.toResponseById(sessionId);
   }
