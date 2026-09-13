@@ -1017,6 +1017,35 @@ class _SessionActionsState extends ConsumerState<_SessionActions> {
     }
   }
 
+  /// Mentor backing out of a call they've already accepted — unlike the
+  /// aspirant's withdraw-a-request cancel, this drops a booking the student
+  /// is expecting, so it gets a confirm step (no deflection sheet — that's
+  /// aspirant-only retention UX for finding another mentor).
+  Future<void> _cancelBooking(SessionsApi api) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Cancel this call?'),
+        content: const Text(
+          'The student will be notified and any held Uniminutes will be '
+          'released back to them.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Keep booking'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Cancel call'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    await _act(api.cancel);
+  }
+
   /// A mentor accepting an audio call is already in the app right now — no
   /// need to wait on a push round-trip to get THEM onto the call screen
   /// (the aspirant still needs the push deep-link in push_service.dart,
@@ -1227,6 +1256,24 @@ class _SessionActionsState extends ConsumerState<_SessionActions> {
                       onPressed: _busy
                           ? null
                           : () => _cancelWithDeflection(api),
+                    ),
+            ] else if (widget.isMentor &&
+                // A mentor's response to a still-PENDING request is
+                // accept/reject (handled above), not cancel — this only
+                // covers backing out of a booking they've already accepted
+                // and now can't make.
+                isCall &&
+                session.status == SessionStatus.accepted) ...[
+              widget.dense
+                  ? _TappableStatusChip(
+                      label: statusView.label,
+                      color: statusView.color,
+                      onTap: _busy ? null : () => _cancelBooking(api),
+                    )
+                  : _ActionButton(
+                      label: 'Cancel',
+                      outlined: true,
+                      onPressed: _busy ? null : () => _cancelBooking(api),
                     ),
             ],
             if (canOpenChat) ...[

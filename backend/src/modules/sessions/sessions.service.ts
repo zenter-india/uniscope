@@ -648,20 +648,42 @@ export class SessionsService {
     return this.toResponseById(sessionId);
   }
 
-  /** Only the requesting aspirant may cancel, and only before the session
-   * has actually started (PENDING or ACCEPTED — not RINGING/IN_PROGRESS). */
-  async cancel(sessionId: string, aspirantUserId: string): Promise<SessionResponse> {
-    const session = await this.requireSession(sessionId);
-    this.requireParty(session, aspirantUserId, 'aspirant');
+  /** Either party may cancel before the call has actually started
+   * (RINGING/IN_PROGRESS and beyond are out of reach — `endCall` covers a
+   * live call). The aspirant could always cancel at either PENDING or
+   * ACCEPTED (unchanged); a mentor's response to a still-PENDING request
+   * is accept/reject, not cancel, so a mentor may only cancel a booking
+   * they've already ACCEPTED and now can't make.
+   *
+   * 2026-09-13 (device report — the mentor had no way to back out of a
+   * confirmed booking at all): previously aspirant-only, and nobody was
+   * ever notified of a cancellation either way. Now notifies whichever
+   * party didn't do the cancelling — but only once a booking was actually
+   * CONFIRMED (ACCEPTED); a still-PENDING request the mentor hasn't
+   * responded to yet never reached that point, so that case stays silent,
+   * unchanged from before this fix. */
+  async cancel(sessionId: string, userId: string): Promise<SessionResponse> {
+    const session = await this.requireSessionForParty(sessionId, userId);
+    const isMentor = session.mentorId === userId;
 
-    if (
-      session.status !== SessionStatus.PENDING &&
-      session.status !== SessionStatus.ACCEPTED
-    ) {
+    const allowedStatuses: SessionStatus[] = isMentor
+      ? [SessionStatus.ACCEPTED]
+      : [SessionStatus.PENDING, SessionStatus.ACCEPTED];
+    if (!allowedStatuses.includes(session.status)) {
       throw new ConflictException(
         `Cannot cancel a session in status ${session.status}`,
       );
     }
+
+    const wasConfirmed = session.status === SessionStatus.ACCEPTED;
+    const heldMinor = wasConfirmed
+      ? (
+          await this.prisma.walletHold.aggregate({
+            where: { sessionId, status: HoldStatus.ACTIVE },
+            _sum: { amountMinor: true },
+          })
+        )._sum.amountMinor ?? 0
+      : 0;
 
     await this.prisma.session.update({
       where: { id: sessionId },
@@ -673,6 +695,21 @@ export class SessionsService {
     });
 
     await this.releaseHoldsForSession(sessionId);
+
+    if (wasConfirmed) {
+      const notifyUserId = isMentor ? session.aspirantId : session.mentorId;
+      const cancelledByLabel = isMentor ? 'mentor' : 'student';
+      await this.notificationsService.send({
+        userId: notifyUserId,
+        type: NotificationType.SESSION_CANCELLED,
+        title: 'Call cancelled',
+        body:
+          heldMinor > 0
+            ? `Your ${cancelledByLabel} cancelled this booked call. Your ${uniminutesLabel(heldMinor)} hold has been released.`
+            : `Your ${cancelledByLabel} cancelled this booked call.`,
+        metadata: { sessionId: session.id },
+      });
+    }
 
     return this.toResponseById(sessionId);
   }
