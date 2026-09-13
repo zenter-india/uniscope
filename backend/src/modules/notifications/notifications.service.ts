@@ -4,6 +4,7 @@ import type { App } from 'firebase-admin/app';
 import { getMessaging } from 'firebase-admin/messaging';
 import { PrismaService } from '../../database/prisma/prisma.service.js';
 import { FIREBASE_APP } from '../../firebase/firebase.constants.js';
+import { ApnsVoipService } from './apns-voip.service.js';
 import { NotificationResponse, toNotificationResponse } from './notification-response.js';
 
 const DEFAULT_LIMIT = 20;
@@ -69,12 +70,13 @@ export class NotificationsService {
   constructor(
     private readonly prisma: PrismaService,
     @Optional() @Inject(FIREBASE_APP) private readonly firebaseApp: App | null,
+    private readonly apnsVoip: ApnsVoipService,
   ) {}
 
   async registerPushToken(
     userId: string,
     token: string,
-    platform: 'ios' | 'android',
+    platform: 'ios' | 'android' | 'ios-voip',
   ): Promise<void> {
     await this.prisma.pushToken.upsert({
       where: { token },
@@ -151,8 +153,12 @@ export class NotificationsService {
       this.logger.log(`[notify] bulk push SKIPPED (Firebase not configured) type=${params.type}`);
       return;
     }
+    // 'ios-voip' tokens are PushKit device tokens, not FCM registrations —
+    // FCM would reject them as invalid (and the stale-token cleanup below
+    // would then delete a perfectly good VoIP token). Broadcasts never ring
+    // a call, so VoIP tokens are simply excluded here, not sent elsewhere.
     const tokens = await this.prisma.pushToken.findMany({
-      where: { userId: { in: userIds } },
+      where: { userId: { in: userIds }, NOT: { platform: 'ios-voip' } },
       select: { id: true, token: true },
     });
     if (tokens.length === 0) {
@@ -197,7 +203,37 @@ export class NotificationsService {
     }
   }
 
+  /** Rings any of this user's iOS devices registered for real PushKit/
+   * CallKit calling. Only ever called for an instant SESSION_REQUEST — see
+   * `pushToDevices`. Silently does nothing if the user has no 'ios-voip'
+   * token (never onboarded a real VoIP-capable build) or ApnsVoipService
+   * isn't configured (no Apple auth key set yet). */
+  private async pushVoipRing(params: SendNotificationParams): Promise<void> {
+    const sessionId = params.metadata?.sessionId;
+    if (!sessionId) return;
+
+    const voipTokens = await this.prisma.pushToken.findMany({
+      where: { userId: params.userId, platform: 'ios-voip' },
+      select: { token: true },
+    });
+    for (const { token } of voipTokens) {
+      await this.apnsVoip.sendIncomingCall(token, { sessionId });
+    }
+  }
+
   private async pushToDevices(params: SendNotificationParams): Promise<void> {
+    // A genuine incoming instant call also rings iOS via a real PushKit/
+    // CallKit push (separate from — and in addition to — the FCM push
+    // below), the same trigger condition mobile's Android-side
+    // `_isInstantCallRequest` already uses. This has to fire even if
+    // Firebase itself isn't configured (local dev), so it's not nested
+    // inside the `!this.firebaseApp` guard below.
+    if (params.type === NotificationType.SESSION_REQUEST && params.metadata?.instant === 'true') {
+      await this.pushVoipRing(params).catch((err) => {
+        this.logger.warn(`[voip] ring dispatch failed for user ${params.userId}: ${err}`);
+      });
+    }
+
     if (!this.firebaseApp) {
       this.logger.log(
         `[notify] push SKIPPED (Firebase not configured) type=${params.type} userId=${params.userId}`,
@@ -205,8 +241,12 @@ export class NotificationsService {
       return;
     }
 
+    // 'ios-voip' tokens are PushKit device tokens sent above via direct
+    // APNs, never through FCM — see the bulk-push variant above for why
+    // mixing them into this query would be actively harmful (FCM rejects
+    // them, and the stale-token cleanup below would delete them).
     const tokens = await this.prisma.pushToken.findMany({
-      where: { userId: params.userId },
+      where: { userId: params.userId, NOT: { platform: 'ios-voip' } },
       select: { id: true, token: true },
     });
     if (tokens.length === 0) {

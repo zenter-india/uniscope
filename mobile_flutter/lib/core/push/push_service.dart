@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart' show MethodChannel;
 import 'package:flutter_callkit_incoming/entities/entities.dart';
 import 'package:flutter_callkit_incoming/flutter_callkit_incoming.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
@@ -14,12 +15,21 @@ import '../../router/app_router.dart';
 import '../network/sessions_api.dart';
 import '../network/users_api.dart';
 
+/// Native counterpart is `AppDelegate.swift`'s `PKPushRegistry` wiring —
+/// exposes the PushKit VoIP device token (`getVoipToken`) once iOS has one.
+/// Android has no equivalent; every call on this channel is iOS-only.
+const _voipChannel = MethodChannel('uniscope/voip');
+
 /// Whether [data] (an FCM message's data payload) is a call request the
-/// mentor should be rung for *right now* — a genuine instant request, not a
+/// callee should be rung for *right now* — a genuine instant request, not a
 /// scheduled "call me at 2pm" booking (see `instant` in
-/// `SessionsService.create`'s SESSION_REQUEST notification). Android only
-/// today (see `_ringForInstantCall`) — iOS ringing needs real CallKit/
-/// PushKit wiring this app doesn't have yet.
+/// `SessionsService.create`'s SESSION_REQUEST notification). On Android this
+/// gates the plain-push `_ringForInstantCall` path below. On iOS the ring is
+/// triggered natively by a real PushKit VoIP push instead — Apple only
+/// allows CallKit's `reportNewIncomingCall` to be invoked from a genuine
+/// VoIP push, never from a regular FCM/data push — so this same condition
+/// is mirrored server-side (`NotificationsService.pushVoipRing`) rather than
+/// checked here for iOS.
 bool _isInstantCallRequest(Map<String, dynamic> data) =>
     data['type'] == 'SESSION_REQUEST' && data['instant'] == 'true';
 
@@ -186,6 +196,28 @@ class PushService {
     } catch (_) {
       // No Firebase app available on this run — push just won't work.
     }
+
+    if (Platform.isIOS) await _registerVoipToken();
+  }
+
+  /// The PushKit device token that makes real call ringing (CallKit) work on
+  /// iOS — a completely separate credential from the FCM token above,
+  /// uploaded under platform `'ios-voip'` so the backend never tries to send
+  /// it through FCM (see `ApnsVoipService`). Best-effort: a build without the
+  /// native PushKit wiring (or a device that hasn't gotten one yet) just
+  /// throws `MissingPluginException`/returns null here, and this device
+  /// simply won't get real ringing until it does — every other push keeps
+  /// working regardless.
+  Future<void> _registerVoipToken() async {
+    try {
+      final token = await _voipChannel.invokeMethod<String>('getVoipToken');
+      if (token != null && token.isNotEmpty) {
+        await _ref.read(usersApiProvider).storePushToken(token, 'ios-voip');
+      }
+    } catch (_) {
+      // No native PushKit token yet (or this build doesn't have the
+      // channel) — nothing to upload this run.
+    }
   }
 
   /// Permission, local-notification plugin, and the FCM listeners — all of
@@ -227,7 +259,12 @@ class PushService {
     final initialMessage = await messaging.getInitialMessage();
     if (initialMessage != null) _handleDeepLink(initialMessage);
 
-    if (Platform.isAndroid) _listenForCallKitEvents();
+    // Both platforms now show a real native incoming-call screen for an
+    // instant request — Android via a plain push (`_ringForInstantCall`),
+    // iOS via a genuine PushKit VoIP push handled natively in
+    // AppDelegate.swift. Either path ends up firing the same
+    // flutter_callkit_incoming `onEvent` stream, so one listener covers both.
+    _listenForCallKitEvents();
   }
 
   /// Wires the native incoming-call screen's own Accept/Decline/timeout
