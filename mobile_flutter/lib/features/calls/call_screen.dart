@@ -22,10 +22,18 @@ import 'call_overlay.dart';
 /// Hand-rolled native channels, real on both platforms — `uniscope/permissions`
 /// has a genuine handler in both MainActivity.kt (Android, bypasses
 /// permission_handler entirely — see that file's doc comment for why) and
-/// AppDelegate.swift (iOS, added 2026-08-03). `uniscope/call` is Android-only
-/// — it drives the foreground service that keeps the call alive when
-/// backgrounded (see CallForegroundService.kt) and the keep-screen-awake flag;
-/// iOS relies on its own `audio` UIBackgroundMode instead.
+/// AppDelegate.swift (iOS, added 2026-08-03). `uniscope/call` also has a
+/// handler on both (iOS added 2026-09-13): Android's drives a real
+/// foreground service so Agora's audio survives backgrounding (see
+/// CallForegroundService.kt) plus the keep-screen-awake/proximity flags;
+/// iOS's `startCallService`/`stopCallService` are no-ops (background audio
+/// continuity there comes from Info.plist's `audio` UIBackgroundMode
+/// instead of a foreground service), but `keepScreenOn` and
+/// `setProximityScreenOff` are real on iOS too — same OS-level "turn the
+/// display off while held to the ear" behavior as Android's proximity
+/// wake lock, just backed by `UIDevice.isProximityMonitoringEnabled`
+/// instead. `beep` (the 1-minute-left warning tone) has no iOS
+/// implementation — its own call site already tolerates that.
 const _permissionsChannel = MethodChannel('uniscope/permissions');
 const _callChannel = MethodChannel('uniscope/call');
 
