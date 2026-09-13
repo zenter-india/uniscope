@@ -7,6 +7,16 @@
          from the merged manifest rather than declaring a false "why" for it
          in the Play Console foreground-service-permissions questionnaire. -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION" tools:node="remove"/>
+    <!-- flutter_callkit_incoming (the native incoming-call ring screen for
+         instant call requests, see the 2026-09-12 CLAUDE.md note) declares
+         the full video-calling superset unconditionally, including this —
+         Uniscope's calls are audio-only and never request camera access
+         during a call, so this is stripped the same way the media-projection
+         permission above is. FOREGROUND_SERVICE_PHONE_CALL (also from this
+         plugin) is left alone: that one IS real and earned by the actual
+         ringing feature this app ships — declare it honestly in Play
+         Console's foreground-service questionnaire, don't strip it. -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CAMERA" tools:node="remove"/>
     <!-- Required for ImageSource.camera (image_picker) — the "Take a photo"
          option on ID/document verification uploads. -->
     <uses-permission android:name="android.permission.CAMERA"/>
