@@ -43,7 +43,7 @@ class UniversityDetailScreen extends ConsumerStatefulWidget {
 
 class _UniversityDetailScreenState
     extends ConsumerState<UniversityDetailScreen> {
-  static const _allTabs = <(String, String)>[
+  static const _tabs = <(String, String)>[
     ('overview', 'Overview'),
     ('reviews', 'Reviews'),
     ('mentors', 'Mentors'),
@@ -56,14 +56,6 @@ class _UniversityDetailScreenState
     final detailAsync = ref.watch(
       universityDetailProvider(widget.universitySlug),
     );
-    // Mentor-to-mentor discovery isn't a feature anywhere in the app — no
-    // mentor-facing messaging/collaboration exists — so a mentor browsing a
-    // college page has no real use for a list of peer mentors there.
-    final isMentor =
-        ref.watch(myProfileProvider).asData?.value.role == UserRole.mentor;
-    final tabs = isMentor
-        ? _allTabs.where((t) => t.$1 != 'mentors').toList()
-        : _allTabs;
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -90,7 +82,7 @@ class _UniversityDetailScreenState
                 vertical: AppSpacing.sm,
               ),
               child: _TabBar(
-                tabs: tabs,
+                tabs: _tabs,
                 active: _active,
                 onSelect: (id) => setState(() => _active = id),
               ),
@@ -99,9 +91,8 @@ class _UniversityDetailScreenState
               child: SafeArea(
                 top: false,
                 // Keep the bottom inset on the scroll area when the CTA
-                // below isn't there to provide it (Mentors tab, or a mentor
-                // viewer who never sees the CTA at all).
-                bottom: _active == 'mentors' || isMentor,
+                // below isn't there to provide it (Mentors tab).
+                bottom: _active == 'mentors',
                 child: SingleChildScrollView(
                   child: _buildContent(context, uni),
                 ),
@@ -109,8 +100,7 @@ class _UniversityDetailScreenState
             ),
             // The CTA only jumps to the Mentors tab, so it's dead weight
             // once you're already on it — show it on Overview / Reviews only.
-            // Hidden entirely for a mentor viewer, same as the tab itself.
-            if (_active != 'mentors' && !isMentor)
+            if (_active != 'mentors')
               SafeArea(
                 top: false,
                 child: Padding(
