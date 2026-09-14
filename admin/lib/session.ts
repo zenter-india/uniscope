@@ -36,17 +36,30 @@ async function sign(value: string, secret: string): Promise<string> {
   return toBase64Url(new Uint8Array(sig));
 }
 
-/** Build a tamper-resistant session token for the given admin email. */
+/** Must match the cookie's own maxAge in the login route — the token's
+ * embedded expiry is the one that's actually enforced server-side; the
+ * cookie's maxAge is only a browser-side hint that a leaked raw token string
+ * can't be bound by. */
+export const SESSION_TTL_SECONDS = 60 * 60 * 8; // 8 hours
+
+/** Build a tamper-resistant, time-limited session token for the given admin
+ * email. Encodes `{email, exp}` so a copied/leaked token stops verifying on
+ * its own once `exp` passes, instead of being valid forever until the
+ * shared secret is rotated. */
 export async function createSessionToken(
   email: string,
   secret: string,
 ): Promise<string> {
-  const payload = utf8Base64Url(email);
+  const exp = Math.floor(Date.now() / 1000) + SESSION_TTL_SECONDS;
+  const payload = utf8Base64Url(JSON.stringify({ email, exp }));
   const sig = await sign(payload, secret);
   return `${payload}.${sig}`;
 }
 
-/** Return the email if the token is valid for the secret, else null. */
+/** Return the email if the token's signature is valid for the secret AND it
+ * hasn't expired, else null. A pre-expiry-claim token (signed before this
+ * change) fails JSON.parse and is treated as invalid — forcing a fresh
+ * login, which is the desired behavior since those tokens never expired. */
 export async function verifySessionToken(
   token: string | undefined,
   secret: string,
@@ -57,7 +70,13 @@ export async function verifySessionToken(
   const expected = await sign(payload, secret);
   if (expected !== sig) return null;
   try {
-    return fromBase64Url(payload);
+    const decoded = JSON.parse(fromBase64Url(payload)) as {
+      email?: string;
+      exp?: number;
+    };
+    if (!decoded.email || typeof decoded.exp !== 'number') return null;
+    if (Date.now() / 1000 >= decoded.exp) return null;
+    return decoded.email;
   } catch {
     return null;
   }

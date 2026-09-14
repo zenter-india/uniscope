@@ -57,6 +57,7 @@ import { BroadcastsModule } from './modules/broadcasts/broadcasts.module.js';
 import { AdminSearchModule } from './modules/admin-search/admin-search.module.js';
 import { TechnicalReportsModule } from './modules/technical-reports/technical-reports.module.js';
 import { SettingsModule } from './modules/settings/settings.module.js';
+import { AdminAccountsModule } from './modules/admin-accounts/admin-accounts.module.js';
 
 @Module({
   imports: [
@@ -131,6 +132,7 @@ import { SettingsModule } from './modules/settings/settings.module.js';
     AdminSearchModule,
     TechnicalReportsModule,
     SettingsModule,
+    AdminAccountsModule,
   ],
   controllers: [AppController],
   providers: [

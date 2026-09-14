@@ -925,6 +925,33 @@ model AppSetting {
   @@map("app_settings")
 }
 
+/// Login credentials for the admin panel itself — separate from the app's
+/// phone-OTP `User` model entirely (the admin panel has never had any
+/// connection to that table; see admin/lib/backend.ts's own doc comment).
+/// Sits alongside, not instead of, the single root ADMIN_EMAIL/ADMIN_PASSWORD
+/// env-var pair: the root pair is the un-removable bootstrap credential (the
+/// admin panel's own login route always checks it first, entirely locally,
+/// so getting locked out of every DB-backed account here can never lock
+/// anyone out of the panel), and rows in this table are additional accounts
+/// the root admin creates for teammates from inside the panel itself.
+model AdminAccount {
+  id           String   @id @default(uuid())
+  /// Stored lower-cased; compared case-insensitively against the root env
+  /// pair too, so an admin can't accidentally register a shadow account for
+  /// the same address the root credential already uses.
+  email        String   @unique @db.VarChar(255)
+  passwordHash String   @map("password_hash") @db.VarChar(255)
+  displayName  String?  @map("display_name") @db.VarChar(100)
+  /// Deactivate, never delete -- matches this project's convention
+  /// everywhere else (University.isActive, User.isActive, ...).
+  isActive     Boolean  @default(true) @map("is_active")
+  lastLoginAt  DateTime? @map("last_login_at") @db.Timestamptz
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt    DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@map("admin_accounts")
+}
+
 /// One run of the "refresh college data" admin tool (see universities/data-import
 /// module). Re-runs the same capture pipeline used to originally seed the
 /// dataset — NMC's MBBS seat-matrix PDF for UG, MCC's PG institute list for
