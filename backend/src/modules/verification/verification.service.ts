@@ -106,12 +106,13 @@ export class VerificationService {
     return rows.map(toVerificationRequestResponse);
   }
 
-  /** Admin queue — SUBMITTED and UNDER_REVIEW requests, oldest first (fair
-   * FIFO review order). */
+  /** Admin queue — SUBMITTED and UNDER_REVIEW requests, newest first (2026-
+   * 09-14, per explicit request — was oldest-first FIFO). A newly-submitted
+   * request now surfaces at the top of the queue instead of the bottom. */
   async findQueue(): Promise<VerificationRequestResponse[]> {
     const rows = await this.prisma.verificationRequest.findMany({
       where: { status: { in: [VerificationStatus.SUBMITTED, VerificationStatus.UNDER_REVIEW] } },
-      orderBy: { submittedAt: 'asc' },
+      orderBy: { submittedAt: 'desc' },
       include: {
         user: {
           select: {
