@@ -56,9 +56,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     } catch (_) {
       if (!mounted) return;
       setState(() => _deleting = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Could not delete your account. Try again.')),
-      );
+      showAppSnackBar(context, 'Could not delete your account. Try again.');
     }
   }
 

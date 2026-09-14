@@ -469,9 +469,7 @@ class _MentorStudentRow extends ConsumerWidget {
       context.push('/chats/room', extra: {'sessionId': session.id});
     } catch (e) {
       if (!context.mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Could not open chat: $e')));
+      showAppSnackBar(context, 'Could not open chat: $e');
     }
   }
 
@@ -1032,9 +1030,7 @@ class _SessionActionsState extends ConsumerState<_SessionActions> {
       ref.invalidate(sessionsListProvider);
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Failed: $e')));
+      showAppSnackBar(context, 'Failed: $e');
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -1053,9 +1049,7 @@ class _SessionActionsState extends ConsumerState<_SessionActions> {
       );
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Failed: $e')));
+      showAppSnackBar(context, 'Failed: $e');
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -1145,17 +1139,14 @@ class _SessionActionsState extends ConsumerState<_SessionActions> {
         // at its slot, not now.
         CallOverlayController.instance.open(updated.id);
       } else if (confirmedFor != null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Confirmed for ${friendlyCallTime(confirmedFor)}'),
-          ),
+        showAppSnackBar(
+          context,
+          'Confirmed for ${friendlyCallTime(confirmedFor)}',
         );
       }
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Failed: $e')));
+      showAppSnackBar(context, 'Failed: $e');
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -1399,14 +1390,11 @@ class _SessionActionsState extends ConsumerState<_SessionActions> {
                   );
                   void onJoin() {
                     if (!joinableNow) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(
-                            'This call is scheduled for '
-                            '${friendlyCallTime(session.confirmedFor!)}. '
-                            'You can join $kCallEarlyJoinWindowMinutes minutes before.',
-                          ),
-                        ),
+                      showAppSnackBar(
+                        context,
+                        'This call is scheduled for '
+                        '${friendlyCallTime(session.confirmedFor!)}. '
+                        'You can join $kCallEarlyJoinWindowMinutes minutes before.',
                       );
                       return;
                     }

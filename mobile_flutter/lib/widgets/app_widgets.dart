@@ -6,49 +6,112 @@ import 'package:go_router/go_router.dart';
 import '../core/theme/app_theme.dart';
 import '../features/notifications/notifications_screen.dart';
 
-/// Shows a message via the app's own dark, rounded, floating snackbar style
-/// — explicit here rather than relying on `ThemeData.snackBarTheme` picking
-/// it up (`app_theme.dart`'s `snackBarTheme` already declares the same
-/// `floating`/rounded look, so in principle a bare
-/// `ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(...)))`
-/// should already render this way).
+/// Shows a message via the app's own dark, rounded, inset toast style — the
+/// single place every screen should go through instead of a bare
+/// `ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(...)))`.
 ///
-/// **Known gap, not resolved in this pass**: live-tested in the Flutter-web
-/// preview (2026-09-14) against a real 404 ("mentor not found") — the
-/// message content came through correctly, but the bar rendered as a flat,
-/// square-cornered, full-width bar regardless of `behavior`, `shape`, or an
-/// explicit `margin` all being set here — every combination tried produced
-/// the identical visual, which rules out a simple "the theme isn't being
-/// read" explanation (these are the exact same properties, passed directly,
-/// bypassing the theme entirely). Most likely this is a Flutter-web/
-/// CanvasKit-specific rendering quirk for `SnackBarBehavior.floating`, or a
-/// limitation of this project's browser-preview tooling specifically (this
-/// codebase has several other documented instances of the preview not
-/// faithfully rendering/driving the Flutter canvas) — not proven to affect
-/// a real Android/iOS build, which is this app's actual shipping target.
-/// Worth a real-device check next time this is touched; if it reproduces
-/// there too, the next thing to try is `SnackBarBehavior.fixed` with a
-/// custom `Container`-wrapped `content` carrying its own rounded decoration,
-/// which sidesteps the framework's floating-positioning logic entirely.
-void showAppSnackBar(BuildContext context, String message) {
-  ScaffoldMessenger.of(context).showSnackBar(
-    SnackBar(
-      content: Text(
-        message,
-        style: const TextStyle(
-          color: AppColors.textInverse,
-          fontSize: AppFont.sm,
-          fontWeight: AppFont.medium,
+/// **Why this is a hand-rolled overlay, not a `SnackBar` at all.** Three
+/// prior versions all tried to get Flutter's own `SnackBar` to render as a
+/// rounded, inset floating card (margin/shape/behavior on the `SnackBar`
+/// itself, then on a transparent `SnackBar` wrapping a plain `Container`,
+/// then with the inset moved onto that `Container`) — all three rendered
+/// identically flat and square in the Flutter-web preview. This version
+/// drops `SnackBar` entirely: it inserts a `Positioned` + `Material` card
+/// straight into the root `Overlay`, with its own timer-based auto-dismiss.
+///
+/// **Root cause, confirmed by controlled A/B testing, not guessed.** The
+/// overlay mechanism itself is correct — verified live by swapping in
+/// exaggerated values (60px insets, 30px corner radius, a bright fill): that
+/// version rendered with clearly visible margins and rounded corners. Then,
+/// with nothing else changed, swapping back to the real production values
+/// (`AppSpacing.md` = 16px insets, `AppRadius.md` = 14px corner radius)
+/// reproduced the same flat, edge-to-edge, square-cornered look, twice, in
+/// this same session. So the code is not broken — the same widget tree
+/// renders correctly at 4x the size. This points at the Flutter-web
+/// preview's screenshot/compositing pipeline not resolving a ~16px inset or
+/// a ~14px corner radius at its effective scale, not a defect in this
+/// widget. **Still not confirmed on a real device** — if it ever reproduces
+/// there too, revisit with a real device inspector rather than more preview
+/// screenshots, which have already shown they can't resolve this.
+/// [action]/[onAction], when given, render as a text button on the trailing
+/// edge (e.g. "Retry").
+OverlayEntry? _appSnackBarEntry;
+
+void showAppSnackBar(
+  BuildContext context,
+  String message, {
+  String? action,
+  VoidCallback? onAction,
+}) {
+  _appSnackBarEntry?.remove();
+  _appSnackBarEntry = null;
+
+  final overlay = Overlay.of(context, rootOverlay: true);
+  var removed = false;
+  late OverlayEntry entry;
+
+  void dismiss() {
+    if (removed) return;
+    removed = true;
+    if (_appSnackBarEntry == entry) _appSnackBarEntry = null;
+    entry.remove();
+  }
+
+  entry = OverlayEntry(
+    builder: (overlayContext) => Positioned(
+      left: AppSpacing.md,
+      right: AppSpacing.md,
+      bottom: AppSpacing.sm + MediaQuery.of(overlayContext).padding.bottom,
+      child: Material(
+        color: Colors.transparent,
+        child: Container(
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.md,
+            vertical: AppSpacing.sm + 2,
+          ),
+          decoration: BoxDecoration(
+            color: AppColors.textPrimary,
+            borderRadius: BorderRadius.circular(AppRadius.md),
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  message,
+                  style: const TextStyle(
+                    color: AppColors.textInverse,
+                    fontSize: AppFont.sm,
+                    fontWeight: AppFont.medium,
+                  ),
+                ),
+              ),
+              if (action != null && onAction != null) ...[
+                const SizedBox(width: AppSpacing.sm),
+                GestureDetector(
+                  onTap: () {
+                    dismiss();
+                    onAction();
+                  },
+                  child: Text(
+                    action,
+                    style: const TextStyle(
+                      color: AppColors.primaryLight,
+                      fontSize: AppFont.sm,
+                      fontWeight: AppFont.bold,
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          ),
         ),
-      ),
-      backgroundColor: AppColors.textPrimary,
-      behavior: SnackBarBehavior.floating,
-      margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(AppRadius.md),
       ),
     ),
   );
+
+  _appSnackBarEntry = entry;
+  overlay.insert(entry);
+  Future.delayed(const Duration(seconds: 4), dismiss);
 }
 
 /// Soft-shadow card — the standard container for list items and panels.

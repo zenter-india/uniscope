@@ -307,14 +307,9 @@ class ProfileHomeScreen extends ConsumerWidget {
                                       : !isVerified
                                       ? () =>
                                           context.go('/profile/verification')
-                                      : () => ScaffoldMessenger.of(
+                                      : () => showAppSnackBar(
                                           context,
-                                        ).showSnackBar(
-                                          const SnackBar(
-                                            content: Text(
-                                              'No college is linked to your account — message support to get this fixed.',
-                                            ),
-                                          ),
+                                          'No college is linked to your account — message support to get this fixed.',
                                         ),
                                 );
                               },
@@ -418,9 +413,7 @@ class _MentorAvailabilityCardState
                 e.message ??
                 '$e')
           : '$e';
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(message)));
+      showAppSnackBar(context, message);
     } finally {
       if (mounted) setState(() => _saving = false);
     }

@@ -102,9 +102,7 @@ class _DockRowState extends ConsumerState<_DockRow> {
       ref.invalidate(sessionsListProvider);
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Failed: $e')));
+      showAppSnackBar(context, 'Failed: $e');
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -123,9 +121,7 @@ class _DockRowState extends ConsumerState<_DockRow> {
       );
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Failed: $e')));
+      showAppSnackBar(context, 'Failed: $e');
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -161,17 +157,14 @@ class _DockRowState extends ConsumerState<_DockRow> {
       if (confirmedFor == null) {
         CallOverlayController.instance.open(updated.id);
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Confirmed for ${friendlyCallTime(confirmedFor)}'),
-          ),
+        showAppSnackBar(
+          context,
+          'Confirmed for ${friendlyCallTime(confirmedFor)}',
         );
       }
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Failed: $e')));
+      showAppSnackBar(context, 'Failed: $e');
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -260,14 +253,11 @@ class _DockRowState extends ConsumerState<_DockRow> {
                     : friendlyCallTime(session.confirmedFor!),
                 onPressed: () {
                   if (!joinableNow) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(
-                          'This call is scheduled for '
-                          '${friendlyCallTime(session.confirmedFor!)}. '
-                          'You can join $kCallEarlyJoinWindowMinutes minutes before.',
-                        ),
-                      ),
+                    showAppSnackBar(
+                      context,
+                      'This call is scheduled for '
+                      '${friendlyCallTime(session.confirmedFor!)}. '
+                      'You can join $kCallEarlyJoinWindowMinutes minutes before.',
                     );
                     return;
                   }

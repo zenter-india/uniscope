@@ -91,9 +91,7 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
     } catch (e) {
       if (!mounted) return;
       setState(() => _toppingUp = false);
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Could not start top-up: $e')));
+      showAppSnackBar(context, 'Could not start top-up: $e');
     }
   }
 
@@ -109,14 +107,10 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
       ref.invalidate(walletBalanceProvider);
       ref.invalidate(walletLedgerProvider);
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Wallet topped up successfully')),
-      );
+      showAppSnackBar(context, 'Wallet topped up successfully');
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Payment succeeded but crediting failed: $e')),
-      );
+      showAppSnackBar(context, 'Payment succeeded but crediting failed: $e');
     } finally {
       if (mounted) setState(() => _toppingUp = false);
     }
@@ -124,9 +118,7 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
 
   void _onPaymentError(PaymentFailureResponse response) {
     setState(() => _toppingUp = false);
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Payment failed: ${response.message}')),
-    );
+    showAppSnackBar(context, 'Payment failed: ${response.message}');
   }
 
   void _onExternalWallet(ExternalWalletResponse response) {
@@ -194,9 +186,7 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
       ref.invalidate(walletLedgerProvider);
       ref.invalidate(mentorPayoutsProvider);
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Payout requested')));
+      showAppSnackBar(context, 'Payout requested');
     } catch (e) {
       if (!mounted) return;
       final message = e is DioException
@@ -205,9 +195,7 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
                 e.message ??
                 '$e')
           : '$e';
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(message)));
+      showAppSnackBar(context, message);
     } finally {
       if (mounted) setState(() => _withdrawing = false);
     }

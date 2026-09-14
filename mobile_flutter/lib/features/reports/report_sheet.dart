@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/network/reports_api.dart';
 import '../../core/theme/app_theme.dart';
+import '../../widgets/app_widgets.dart';
 
 /// Generic report sheet — reason picker + optional details — used to file a
 /// report against a user (mentor detail screen) or a chat (session chat
@@ -68,15 +69,11 @@ class _ReportSheetContentState extends ConsumerState<_ReportSheetContent> {
           );
       if (!mounted) return;
       Navigator.of(context).pop();
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Report submitted — our team will review it.')),
-      );
+      showAppSnackBar(context, 'Report submitted — our team will review it.');
     } catch (_) {
       if (!mounted) return;
       setState(() => _submitting = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Could not submit the report. Try again.')),
-      );
+      showAppSnackBar(context, 'Could not submit the report. Try again.');
     }
   }
 

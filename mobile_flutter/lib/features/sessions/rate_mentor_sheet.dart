@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/network/reviews_api.dart';
 import '../../core/theme/app_theme.dart';
+import '../../widgets/app_widgets.dart';
 
 /// Star rating + optional comment for a completed session, posted to
 /// `POST /reviews`. Returns `true` if a review was submitted. Used from the
@@ -55,9 +56,7 @@ class _RateMentorSheetState extends ConsumerState<RateMentorSheet> {
       Navigator.of(context).pop(true);
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Could not submit review: $e')));
+      showAppSnackBar(context, 'Could not submit review: $e');
       setState(() => _submitting = false);
     }
   }

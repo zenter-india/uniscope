@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/network/blocks_api.dart';
 import '../../core/network/reports_api.dart';
 import '../../core/theme/app_theme.dart';
+import '../../widgets/app_widgets.dart';
 import 'report_sheet.dart';
 
 /// "Report" / "Block" action sheet for a user — opened from the mentor
@@ -68,8 +69,9 @@ class _SafetyMenuContent extends ConsumerWidget {
 
     if (!context.mounted) return;
     Navigator.of(context).pop();
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(isBlocked ? 'Unblocked $userLabel' : 'Blocked $userLabel')),
+    showAppSnackBar(
+      context,
+      isBlocked ? 'Unblocked $userLabel' : 'Blocked $userLabel',
     );
   }
 

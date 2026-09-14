@@ -752,9 +752,7 @@ class _CallScreenState extends ConsumerState<CallScreen> {
         setState(() => _session = updated);
       } catch (e) {
         if (!mounted) return;
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Could not extend call: $e')));
+        showAppSnackBar(context, 'Could not extend call: $e');
         _endCall(reason: 'SLOT_EXPIRED');
       }
     } else {

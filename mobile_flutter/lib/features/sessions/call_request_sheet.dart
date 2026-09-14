@@ -9,6 +9,7 @@ import 'call_time_windows.dart';
 import 'custom_call_time_screen.dart';
 import 'session_list_screen.dart' show sessionsListProvider;
 import '../wallet/wallet_screen.dart' show walletBalanceProvider;
+import '../../widgets/app_widgets.dart';
 
 /// What the sheet hands back: the slot length plus the aspirant's preferred
 /// time(s). [times] is empty for Instant, or holds 1–2 options for the
@@ -77,13 +78,11 @@ Future<void> showCallRequestSheet(
           'Call requested — you offered 2 times, the mentor picks one. '
           'Check the Sessions tab.';
     }
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+    showAppSnackBar(context, msg);
   } catch (e) {
     if (!context.mounted) return;
     final message = e is DioException ? (e.message ?? '$e') : '$e';
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(message)));
+    showAppSnackBar(context, message);
   }
 }
 

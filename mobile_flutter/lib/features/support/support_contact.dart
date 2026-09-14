@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../widgets/app_widgets.dart';
+
 /// Uniscope support phone number, E.164. Shown as "Call us" in the Help
 /// Centre and on the technical-report screen.
 const String kSupportPhoneNumber = '+917010441518';
@@ -17,19 +19,14 @@ const String kSupportEmail = 'support@uniscope.in';
 /// tablet, or web without a tel handler).
 Future<void> callSupport(BuildContext context) async {
   final uri = Uri(scheme: 'tel', path: kSupportPhoneNumber);
-  final messenger = ScaffoldMessenger.of(context);
   try {
     final ok = await launchUrl(uri);
     if (!ok && context.mounted) {
-      messenger.showSnackBar(
-        SnackBar(content: Text('Call us at $kSupportPhoneDisplay')),
-      );
+      showAppSnackBar(context, 'Call us at $kSupportPhoneDisplay');
     }
   } catch (_) {
     if (context.mounted) {
-      messenger.showSnackBar(
-        SnackBar(content: Text('Call us at $kSupportPhoneDisplay')),
-      );
+      showAppSnackBar(context, 'Call us at $kSupportPhoneDisplay');
     }
   }
 }
@@ -38,19 +35,14 @@ Future<void> callSupport(BuildContext context) async {
 /// a SnackBar with the address if no mail client is available.
 Future<void> mailSupport(BuildContext context) async {
   final uri = Uri(scheme: 'mailto', path: kSupportEmail);
-  final messenger = ScaffoldMessenger.of(context);
   try {
     final ok = await launchUrl(uri);
     if (!ok && context.mounted) {
-      messenger.showSnackBar(
-        SnackBar(content: Text('Email us at $kSupportEmail')),
-      );
+      showAppSnackBar(context, 'Email us at $kSupportEmail');
     }
   } catch (_) {
     if (context.mounted) {
-      messenger.showSnackBar(
-        SnackBar(content: Text('Email us at $kSupportEmail')),
-      );
+      showAppSnackBar(context, 'Email us at $kSupportEmail');
     }
   }
 }

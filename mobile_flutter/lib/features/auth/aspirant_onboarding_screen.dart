@@ -6,6 +6,7 @@ import '../../core/network/universities_api.dart';
 import '../../core/network/users_api.dart';
 import '../../core/theme/app_theme.dart';
 import '../../state/auth_controller.dart';
+import '../../widgets/app_widgets.dart';
 import '../../widgets/primary_button.dart';
 import '../profile/avatar_picker_panel.dart';
 import '../profile/profile_options.dart';
@@ -277,8 +278,7 @@ class _AspirantOnboardingScreenState
     } catch (e) {
       if (!mounted) return;
       setState(() => _resolvingCollege = false);
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text('Could not save your college: $e')));
+      showAppSnackBar(context, 'Could not save your college: $e');
     }
   }
 
@@ -348,8 +348,7 @@ class _AspirantOnboardingScreenState
     } catch (e) {
       if (!mounted) return;
       setState(() => _saving = false);
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text('Could not save: $e')));
+      showAppSnackBar(context, 'Could not save: $e');
     }
   }
 

@@ -92,9 +92,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   Future<void> _save() async {
     final upi = _upiController.text.trim();
     if (upi.isNotEmpty && !_upiPattern.hasMatch(upi)) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Enter a valid UPI ID, e.g. name@bank')),
-      );
+      showAppSnackBar(context, 'Enter a valid UPI ID, e.g. name@bank');
       return;
     }
     setState(() => _saving = true);
@@ -121,14 +119,10 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
           );
       ref.invalidate(myProfileProvider);
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Profile updated')));
+      showAppSnackBar(context, 'Profile updated');
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Could not save: $e')));
+      showAppSnackBar(context, 'Could not save: $e');
     } finally {
       if (mounted) setState(() => _saving = false);
     }

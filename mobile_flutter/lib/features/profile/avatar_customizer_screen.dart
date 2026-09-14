@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/network/users_api.dart';
 import '../../core/theme/app_theme.dart';
+import '../../widgets/app_widgets.dart';
 import 'avatar_picker_panel.dart';
 
 /// Standalone avatar editor reached from Profile's pencil badge. Wraps the
@@ -31,16 +32,12 @@ class _AvatarCustomizerScreenState
       await ref.read(usersApiProvider).updateAvatarConfig(config);
       ref.invalidate(myProfileProvider);
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Avatar updated')));
+      showAppSnackBar(context, 'Avatar updated');
       context.pop();
     } catch (e) {
       if (!mounted) return;
       setState(() => _saving = false);
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Could not save avatar: $e')));
+      showAppSnackBar(context, 'Could not save avatar: $e');
     }
   }
 

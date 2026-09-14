@@ -223,13 +223,10 @@ class _SubmissionFormState extends ConsumerState<_SubmissionForm> {
           );
       ref.invalidate(myVerificationProvider);
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Submitted — we\'ll review it within 48 hours')),
-      );
+      showAppSnackBar(context, 'Submitted — we\'ll review it within 48 hours');
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text('Could not submit: $e')));
+      showAppSnackBar(context, 'Could not submit: $e');
     } finally {
       if (mounted) setState(() => _submitting = false);
     }
