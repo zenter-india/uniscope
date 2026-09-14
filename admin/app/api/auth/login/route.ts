@@ -1,6 +1,16 @@
 import { createHash, timingSafeEqual } from 'node:crypto';
 import { NextResponse } from 'next/server';
+import { checkLoginRateLimit } from '../../../../lib/rateLimit';
 import { createSessionToken, SESSION_COOKIE, SESSION_TTL_SECONDS } from '../../../../lib/session';
+
+/** Vercel always sets this on incoming requests; `x-real-ip` is a fallback
+ * for other hosts. Falls back to a shared bucket only if neither header is
+ * present at all (e.g. a local dev request with no proxy in front). */
+function clientIp(request: Request): string {
+  const forwarded = request.headers.get('x-forwarded-for');
+  if (forwarded) return forwarded.split(',')[0].trim();
+  return request.headers.get('x-real-ip') ?? 'unknown';
+}
 
 /** Constant-time string compare, safe even when the two inputs differ in
  * length (crypto.timingSafeEqual throws on that instead of just returning
@@ -14,6 +24,14 @@ function safeEqual(a: string, b: string): boolean {
 }
 
 export async function POST(request: Request) {
+  const rateLimit = checkLoginRateLimit(clientIp(request));
+  if (rateLimit.limited) {
+    return NextResponse.json(
+      { message: 'Too many attempts. Try again in a few minutes.' },
+      { status: 429, headers: { 'Retry-After': String(rateLimit.retryAfterSeconds) } },
+    );
+  }
+
   const { email, password } = (await request
     .json()
     .catch(() => ({}))) as {
