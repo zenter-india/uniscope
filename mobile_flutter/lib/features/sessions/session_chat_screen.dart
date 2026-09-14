@@ -45,10 +45,15 @@ const kMentorChatStarters = [
 /// "Request a call" sheet, since only calls are billed.
 ///
 /// Polls the session status before connecting and shows a waiting state
-/// for anything short of ACCEPTED — defensive: CHAT sessions open
-/// immediately today (see SessionsService.create()), so this branch isn't
-/// normally reached, but is kept in case that ever changes back to a real
-/// accept step.
+/// for anything not yet chattable. "Chattable" mirrors the backend's own
+/// `CHATTABLE_STATUSES` (chat.controller.ts) — ACCEPTED, IN_PROGRESS, or
+/// COMPLETED — not just ACCEPTED: a CHAT session normally never leaves
+/// ACCEPTED, but this screen is also reached for an AUDIO_CALL session's id
+/// in a couple of legacy/edge paths, and a call can very much be
+/// IN_PROGRESS or COMPLETED. Checking status-equals-ACCEPTED only meant any
+/// such session fell into the "waiting for your mentor to accept…" branch
+/// forever, even once it had real history to show — a real bug, fixed
+/// 2026-09-14.
 class SessionChatScreen extends ConsumerStatefulWidget {
   const SessionChatScreen({
     super.key,
@@ -86,7 +91,7 @@ class _SessionChatScreenState extends ConsumerState<SessionChatScreen> {
       if (!mounted) return;
       setState(() => _session = session);
 
-      if (session.status == SessionStatus.accepted) {
+      if (_isChattable(session.status)) {
         await _connect();
       } else if (_isTerminal(session.status)) {
         setState(() => _error = 'This chat is no longer available.');
@@ -101,6 +106,13 @@ class _SessionChatScreenState extends ConsumerState<SessionChatScreen> {
       setState(() => _error = e);
     }
   }
+
+  /// Mirrors the backend's `CHATTABLE_STATUSES` — see the class doc comment.
+  bool _isChattable(SessionStatus status) => const {
+    SessionStatus.accepted,
+    SessionStatus.inProgress,
+    SessionStatus.completed,
+  }.contains(status);
 
   bool _isTerminal(SessionStatus status) => const {
     SessionStatus.rejected,
@@ -148,7 +160,7 @@ class _SessionChatScreenState extends ConsumerState<SessionChatScreen> {
       );
     }
 
-    if (_session != null && _session!.status != SessionStatus.accepted) {
+    if (_session != null && !_isChattable(_session!.status)) {
       return Scaffold(
         backgroundColor: AppColors.background,
         appBar: AppBar(title: const Text('Chat')),
