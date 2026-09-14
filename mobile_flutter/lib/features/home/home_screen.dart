@@ -27,19 +27,23 @@ const _homeActiveStatuses = {
   SessionStatus.inProgress,
 };
 
-/// Ranks a mentor list for the "Top mentors for you" rail — highest rating
-/// first. An unrated mentor sorts last, not to a 0.0 average (which would
-/// wrongly outrank a mentor with a genuinely low real rating), then review
-/// count breaks ties between mentors of the same rating.
+/// Ranks a mentor list for the "Top mentors for you" rail — call-available
+/// mentors first (same rule as the Mentors tab, 2026-09-14), then by rating
+/// within each group. An unrated mentor sorts last, not to a 0.0 average
+/// (which would wrongly outrank a mentor with a genuinely low real rating),
+/// then review count breaks ties between mentors of the same rating.
 List<Mentor> _topMentors(List<Mentor> mentors, {int take = 8}) {
-  final sorted = [...mentors]
-    ..sort((a, b) {
-      final ratingA = a.rating ?? -1;
-      final ratingB = b.rating ?? -1;
-      if (ratingA != ratingB) return ratingB.compareTo(ratingA);
-      return b.reviewCount.compareTo(a.reviewCount);
-    });
-  return sorted.take(take).toList();
+  int byRating(Mentor a, Mentor b) {
+    final ratingA = a.rating ?? -1;
+    final ratingB = b.rating ?? -1;
+    if (ratingA != ratingB) return ratingB.compareTo(ratingA);
+    return b.reviewCount.compareTo(a.reviewCount);
+  }
+
+  final available = mentors.where((m) => m.isAvailable).toList()
+    ..sort(byRating);
+  final rest = mentors.where((m) => !m.isAvailable).toList()..sort(byRating);
+  return [...available, ...rest].take(take).toList();
 }
 
 /// Fallback for the "Top colleges for you" rail when the real ranked list
