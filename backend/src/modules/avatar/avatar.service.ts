@@ -83,15 +83,29 @@ export class AvatarService {
   ) {}
 
   /** A random but always-valid config, used to give every new user an
-   * avatar without asking them anything during signup. */
-  randomConfig(): AvatarConfig {
+   * avatar without asking them anything during signup.
+   *
+   * `gender` is optional and best-effort — the plain in-app OTP signup
+   * path doesn't know it yet at this point (collected later, during
+   * onboarding), so it stays fully random there exactly as before. When
+   * it IS known (e.g. a web enrollment lead, which does collect gender
+   * up front) and resolves to female, facial hair is forced off —
+   * mirroring the mobile avatar customizer's own `facialHairByGender`
+   * (avatar_options.dart), which has never offered a female user a
+   * bearded option. Before this, a female web-lead's auto-generated
+   * avatar could get a random beard/moustache the same as anyone else's,
+   * since this method itself had never been gender-aware — only the
+   * customizer UI was, and a web-provisioned account often never opens
+   * it (per `provisionAccountFromLead`, it can skip onboarding entirely). */
+  randomConfig(gender?: string | null): AvatarConfig {
+    const isFemale = gender?.toLowerCase() === 'female';
     return {
       top: pick(AVATAR_TOPS),
       hairColor: pick(AVATAR_HAIR_COLORS),
       eyes: pick(AVATAR_EYES),
       eyebrows: pick(AVATAR_EYEBROWS),
       mouth: pick(AVATAR_MOUTHS),
-      facialHair: pick(AVATAR_FACIAL_HAIR),
+      facialHair: isFemale ? null : pick(AVATAR_FACIAL_HAIR),
       accessories: pick(AVATAR_ACCESSORIES),
       clothing: pick(AVATAR_CLOTHING),
       clothesColor: pick(AVATAR_CLOTHES_COLORS),

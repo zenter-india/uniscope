@@ -104,9 +104,12 @@ export class UsersService {
    * someone from signing in — they just get no avatar until they open the
    * customiser. Shared by every account-creation path (OTP signup, and
    * provisionAccountFromLead below). */
-  private async generateAvatarBestEffort(userId: string): Promise<void> {
+  private async generateAvatarBestEffort(
+    userId: string,
+    gender?: string | null,
+  ): Promise<void> {
     try {
-      const config = this.avatarService.randomConfig();
+      const config = this.avatarService.randomConfig(gender);
       await this.avatarService.renderAndStore(userId, config);
       await this.prisma.userProfile.update({
         where: { userId },
@@ -203,7 +206,7 @@ export class UsersService {
       },
     });
 
-    await this.generateAvatarBestEffort(user.id);
+    await this.generateAvatarBestEffort(user.id, params.profile.gender);
 
     return { user, isNewUser: true };
   }
