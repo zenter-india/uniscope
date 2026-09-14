@@ -136,6 +136,7 @@ class Mentor {
 class MentorDashboardRecentSession {
   const MentorDashboardRecentSession({
     required this.id,
+    required this.aspirantId,
     required this.aspirantDisplayName,
     required this.type,
     required this.status,
@@ -145,6 +146,7 @@ class MentorDashboardRecentSession {
   });
 
   final String id;
+  final String aspirantId;
   final String aspirantDisplayName;
 
   /// "CHAT" | "AUDIO_CALL".
@@ -163,6 +165,7 @@ class MentorDashboardRecentSession {
   factory MentorDashboardRecentSession.fromJson(Map<String, dynamic> json) =>
       MentorDashboardRecentSession(
         id: json['id'] as String,
+        aspirantId: json['aspirantId'] as String,
         aspirantDisplayName: json['aspirantDisplayName'] as String,
         type: json['type'] as String? ?? 'CHAT',
         status: json['status'] as String? ?? 'COMPLETED',

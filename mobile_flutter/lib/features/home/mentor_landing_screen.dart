@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/network/mentors_api.dart' show MentorDashboardRecentSession;
 import '../../core/network/reviews_api.dart';
+import '../../core/network/sessions_api.dart' show sessionsApiProvider;
 import '../../core/network/universities_api.dart'
     show University, topCollegesForMentorProvider;
 import '../../core/network/users_api.dart' show myProfileProvider;
@@ -11,6 +12,7 @@ import '../../core/theme/app_theme.dart';
 import '../../state/auth_controller.dart';
 import '../../widgets/app_widgets.dart';
 import '../mentors/mentor_reviews_screen.dart' show myMentorReviewsProvider;
+import '../sessions/session_list_screen.dart' show sessionsListProvider;
 import '../universities/university_review_screen.dart'
     show CollegeReviewPromptBanner;
 import '../sessions/session_status.dart';
@@ -434,10 +436,34 @@ class _StatTile extends StatelessWidget {
   }
 }
 
-class _RecentSessionCard extends StatelessWidget {
+class _RecentSessionCard extends ConsumerWidget {
   const _RecentSessionCard({required this.session});
 
   final MentorDashboardRecentSession session;
+
+  /// A completed **call**'s own session id is not a chat thread — pushing
+  /// it into `/chats/room` directly (the old behaviour) made that screen
+  /// treat the ended call as an unaccepted chat, stuck forever on "Waiting
+  /// for your mentor to accept…". Find-or-create the real chat with this
+  /// student instead, same as `_MentorStudentRow._openChat`'s pattern; a
+  /// row that's already a CHAT session can just use its own id.
+  Future<void> _openChat(BuildContext context, WidgetRef ref) async {
+    if (!session.isCall) {
+      context.push('/chats/room', extra: {'sessionId': session.id});
+      return;
+    }
+    try {
+      final chat = await ref
+          .read(sessionsApiProvider)
+          .startChatWithStudent(session.aspirantId);
+      ref.invalidate(sessionsListProvider);
+      if (!context.mounted) return;
+      context.push('/chats/room', extra: {'sessionId': chat.id});
+    } catch (e) {
+      if (!context.mounted) return;
+      showAppSnackBar(context, 'Could not open chat: $e');
+    }
+  }
 
   String get _typeLabel => session.isCall ? 'Call' : 'Chat';
 
@@ -468,7 +494,7 @@ class _RecentSessionCard extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final when = _whenLabel;
     final statusView = sessionStatusViewOf(
       statusWire: session.status,
@@ -477,8 +503,7 @@ class _RecentSessionCard extends StatelessWidget {
     );
     return AppCard(
       margin: const EdgeInsets.only(bottom: AppSpacing.sm),
-      onTap: () =>
-          context.push('/chats/room', extra: {'sessionId': session.id}),
+      onTap: () => _openChat(context, ref),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

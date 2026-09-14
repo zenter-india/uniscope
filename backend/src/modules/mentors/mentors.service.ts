@@ -259,6 +259,7 @@ export class MentorsService {
       rating,
       recentSessions: recentSessionRows.map((row) => ({
         id: row.id,
+        aspirantId: row.aspirantId,
         aspirantDisplayName: row.aspirant.displayName,
         type: row.type,
         status: row.status,

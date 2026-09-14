@@ -1,5 +1,6 @@
 export interface MentorDashboardRecentSession {
   id: string;
+  aspirantId: string;
   aspirantDisplayName: string;
   /** CHAT | AUDIO_CALL — the requirements brief asks for session type on
    * the Recent Sessions row. */
