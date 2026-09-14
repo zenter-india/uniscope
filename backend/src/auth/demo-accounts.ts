@@ -1,21 +1,33 @@
 /**
- * App Store / Play Store reviewer demo accounts (2026-09-12).
+ * App Store / Play Store reviewer demo accounts (2026-09-12, extended
+ * 2026-09-14).
  *
  * Apple/Google review needs to be able to log in as a real mentor and a
- * real aspirant without receiving a real SMS — these two phone numbers
- * aren't real, deliverable numbers, so the live `msg91` OTP provider can
- * never text them. Rather than flipping the whole backend into `mock`
- * mode (which would let *any* phone number log in with a fixed code —
- * a real security loosening for every live user, not just these two),
- * login is bypassed only for this exact allowlist: everyone else still
- * goes through the real provider unchanged.
+ * real aspirant without receiving a real SMS — these phone numbers aren't
+ * real, deliverable numbers, so the live `msg91` OTP provider can never
+ * text them. Rather than flipping the whole backend into `mock` mode
+ * (which would let *any* phone number log in with a fixed code — a real
+ * security loosening for every live user, not just these), login is
+ * bypassed only for this exact allowlist: everyone else still goes
+ * through the real provider unchanged.
  *
- * The two accounts themselves (roles, verification, wallet balance) are
+ * IMPORTANT before ever adding a number here: confirm it doesn't already
+ * belong to a real registered user (check `User.phoneHash` for
+ * sha256(the exact E.164 string) — see normalisePhone below). Adding an
+ * already-claimed number to this list would let anyone who knows
+ * DEMO_ACCOUNT_OTP_CODE log into that real person's real account with no
+ * proof of phone ownership at all. Caught exactly this live on 2026-09-14
+ * — +917777777777 turned out to already be a real user's real number —
+ * before it was ever added; +918888888889 was used instead once confirmed
+ * genuinely unclaimed.
+ *
+ * The accounts themselves (roles, verification, wallet balance) are
  * documented in CLAUDE.md under "App Store review demo accounts."
  */
 export const DEMO_ACCOUNT_PHONES = new Set<string>([
   '+919999999999', // mentor — verified, review-gate cleared, "Accepting calls" on
   '+918888888888', // aspirant — 500 Uniminutes
+  '+918888888889', // aspirant/student — provisioned fresh on first login
 ]);
 
 export const DEMO_ACCOUNT_OTP_CODE = '424242';
