@@ -32,7 +32,7 @@ export const validationSchema = Joi.object({
   JWT_ACCESS_SECRET: Joi.string().min(16).required(),
   JWT_REFRESH_SECRET: Joi.string().min(16).required(),
   JWT_ACCESS_TTL: Joi.number().integer().positive().default(900),
-  JWT_REFRESH_TTL: Joi.number().integer().positive().default(604800),
+  JWT_REFRESH_TTL: Joi.number().integer().positive().default(315360000), // ~10 years — see jwt.config.ts
 
   // Redis — either REDIS_URL (Upstash/TLS) or REDIS_HOST/PORT (local)
   REDIS_URL: Joi.string().uri().optional(),
