@@ -5,6 +5,7 @@ import { UserRole } from '@prisma/client';
 import { createHash } from 'crypto';
 import type { JwtConfig } from '../config/index.js';
 import { PrismaService } from '../database/prisma/prisma.service.js';
+import { isDemoAccountUserId } from './demo-accounts.js';
 
 export interface TokenPair {
   accessToken: string;
@@ -45,12 +46,20 @@ export class TokenService {
       { secret: this.cfg.refreshSecret, expiresIn: this.cfg.refreshTtl },
     );
 
-    const refreshTokenHash = this.sha256(refreshToken);
-
-    await this.prisma.user.update({
-      where: { id: userId },
-      data: { refreshTokenHash },
-    });
+    // Demo accounts (see demo-accounts.ts) skip the single-session model
+    // entirely — their refresh tokens are never cross-checked against a
+    // stored hash, so logging in here must not overwrite it either
+    // (that would still silently invalidate whatever hash a real refresh
+    // is about to compare against, for a real account this ever collided
+    // with — it never should, but this keeps the two paths fully
+    // independent rather than relying on that).
+    if (!isDemoAccountUserId(userId)) {
+      const refreshTokenHash = this.sha256(refreshToken);
+      await this.prisma.user.update({
+        where: { id: userId },
+        data: { refreshTokenHash },
+      });
+    }
 
     return { accessToken, refreshToken };
   }
@@ -89,10 +98,25 @@ export class TokenService {
       select: { id: true, role: true, refreshTokenHash: true },
     });
 
-    if (!user || !user.refreshTokenHash) {
-      this.logger.warn(
-        `[refresh] rejected: no user or no stored hash for userId=${payload.sub}`,
-      );
+    if (!user) {
+      this.logger.warn(`[refresh] rejected: no user for userId=${payload.sub}`);
+      throw new UnauthorizedException('Session expired');
+    }
+
+    // Demo accounts: many real testers share these two accounts across
+    // several devices at once (see demo-accounts.ts) — the normal
+    // single-active-refresh-token check would log one device out every
+    // time another one logs in or refreshes. Their tokens are valid on
+    // JWT signature + expiry alone (already verified above); every other
+    // account keeps the real single-session reuse check unchanged.
+    if (isDemoAccountUserId(user.id)) {
+      const tokens = await this.issueTokenPair(user.id, user.role);
+      this.logger.log(`[refresh] rotated ok (demo account, multi-device) for userId=${user.id}`);
+      return { ...tokens, userId: user.id, role: user.role };
+    }
+
+    if (!user.refreshTokenHash) {
+      this.logger.warn(`[refresh] rejected: no stored hash for userId=${payload.sub}`);
       throw new UnauthorizedException('Session expired');
     }
 
