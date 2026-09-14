@@ -12,6 +12,7 @@ import '../../state/auth_controller.dart';
 import '../../widgets/app_widgets.dart';
 import '../profile/profile_options.dart';
 import '../sessions/session_list_screen.dart' show sessionsListProvider;
+import 'mentor_detail_screen.dart' show MentorDetailScreen;
 
 /// Server-side discovery filters for the Mentors tab. Keyed as a record so
 /// changing any one filter (Stream / Degree / Specialization / Language)
@@ -599,7 +600,26 @@ class MentorCard extends ConsumerWidget {
       // the same tap looked like it did different things depending on where
       // on the card you landed. Starting a chat is still one tap away, from
       // the profile screen's action bar.
-      onTap: () => context.push('/mentors/${mentor.id}'),
+      //
+      // A mentor viewer takes a different path here: `/mentors/:id` is
+      // nested under the aspirant-only "Mentors" StatefulShellBranch (see
+      // app_router.dart) — that branch doesn't exist at all in a mentor's
+      // own bottom-nav shell, so `context.push` on this absolute path threw
+      // `GoException: no routes for location` the moment a mentor reached
+      // this same MentorCard from a college's Mentors tab (MentorCard is
+      // shared between MentorListScreen and UniversityDetailScreen's
+      // _MentorsTab). A plain Navigator push sidesteps go_router's location
+      // matching entirely, so it works from inside either shell — this is
+      // the same fix pattern already used for ReviewBreakdownScreen's own
+      // shell-nesting gotcha (see that screen's own history). Aspirant
+      // behavior is untouched: only a mentor viewer takes this branch.
+      onTap: () => isMentor
+          ? Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) => MentorDetailScreen(mentorId: mentor.id),
+              ),
+            )
+          : context.push('/mentors/${mentor.id}'),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
