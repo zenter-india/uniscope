@@ -394,12 +394,26 @@ class _CallScreenState extends ConsumerState<CallScreen> {
       } on TimeoutException {
         final stale = _engine;
         _engine = null;
+        // Real device report (2026-09-15, both Android and iOS, stuck on
+        // "Connecting…" for 60+ seconds — well past the 20s×2 this loop
+        // should ever take): the engine that just failed to join is, by
+        // definition, the one most likely to also be stuck at the native
+        // layer — leaveChannel()/release() are themselves platform-channel
+        // calls with no timeout of their own, so a hung teardown silently
+        // deadlocked this whole retry loop before it ever reached attempt 2
+        // or the final throw, leaving _phase on .connecting indefinitely on
+        // both platforms (this is pure Dart logic, not native-per-platform
+        // code, which is why it hit both the same way). Bounded so a stuck
+        // teardown can never block the retry/failure path again.
         try {
-          await stale?.leaveChannel();
-          await stale?.release();
+          await (() async {
+            await stale?.leaveChannel();
+            await stale?.release();
+          })().timeout(const Duration(seconds: 5));
         } catch (_) {
           // Best-effort teardown of the abandoned attempt — nothing to
-          // recover into if this itself fails.
+          // recover into if this itself fails or times out; proceed to the
+          // next attempt (or the final throw) regardless.
         }
         if (attempt == 2) {
           throw Exception(
