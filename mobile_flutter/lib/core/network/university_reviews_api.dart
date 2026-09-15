@@ -247,11 +247,18 @@ class UniversityReviewsApi {
         .toList();
   }
 
+  /// The backend used to return a bare `true`/`false` body here — Express
+  /// sends that with `Content-Type: text/html` (only objects/arrays get an
+  /// automatic `application/json`), which made this silently mis-parse and
+  /// throw, always landing in `openUniversityReview`'s catch-all and
+  /// reporting "not reviewed" even when a review genuinely existed — the
+  /// real cause of a mentor's already-submitted review re-showing the write
+  /// form. Now reads the wrapped `{ hasReviewed: bool }` shape instead.
   Future<bool> hasReviewed(String universityId) async {
-    final res = await _dio.get<bool>(
+    final res = await _dio.get<Map<String, dynamic>>(
       '/universities/$universityId/reviews/mine',
     );
-    return res.data ?? false;
+    return res.data?['hasReviewed'] as bool? ?? false;
   }
 
   /// Full content of the caller's own review for this university, or null

@@ -35,10 +35,27 @@ export class UniversityReviewsController {
     return this.universityReviewsService.create(user.sub, universityId, dto);
   }
 
+  /** A bare boolean response body (no wrapping object) trips a real
+   * Express/NestJS quirk: `res.send(true)` sends `Content-Type: text/html`,
+   * not `application/json`, since Express only auto-detects JSON for
+   * objects/arrays, not raw booleans. A client that trusts the content-type
+   * to decide how to parse the body (Dio does) can then silently fail to
+   * read the real value — which a blanket catch on the mobile side turned
+   * into "treat any failure here as not-yet-reviewed", incorrectly
+   * reopening the write form for a mentor who'd already submitted. Every
+   * other boolean-returning endpoint in this codebase already wraps its
+   * response in an object for exactly this reason (see ReviewsController's
+   * `{ reviewed: ... }`, UsersController's `{ available: ... }`) — this one
+   * had just been missed. */
   @UseGuards(JwtAuthGuard)
   @Get('mine')
-  hasReviewed(@CurrentUser() user: JwtPayload, @Param('universityId') universityId: string) {
-    return this.universityReviewsService.hasReviewed(user.sub, universityId);
+  async hasReviewed(
+    @CurrentUser() user: JwtPayload,
+    @Param('universityId') universityId: string,
+  ) {
+    return {
+      hasReviewed: await this.universityReviewsService.hasReviewed(user.sub, universityId),
+    };
   }
 
   /** Full content of the caller's own review, or null. Kept for the college
