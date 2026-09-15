@@ -7,8 +7,17 @@ import 'package:uuid/uuid.dart';
 import '../../core/network/chat_api.dart';
 import '../../core/theme/app_theme.dart';
 import '../../widgets/app_widgets.dart';
+import '../calls/call_overlay.dart';
 
 const _uuid = Uuid();
+
+// Clears the floating "On a call" mini bar (call_overlay.dart), which is a
+// screen-wide overlay pinned near the bottom edge — on a normal tab screen
+// it sits safely above the bottom nav bar, but a chat thread's composer
+// lives in that exact same strip (directly above the bottom nav, with no
+// nav bar of its own to separate them), so without this the bar renders on
+// top of the composer and silently swallows every tap meant for it.
+const _kMiniCallBarReserve = 78.0;
 
 /// Shared message list + composer for both SessionChatScreen and
 /// SupportChatScreen — replaces Stream Chat's StreamMessageListView /
@@ -289,8 +298,20 @@ class _ChatThreadViewState extends State<ChatThreadView>
                   },
                 ),
         ),
-        SafeArea(
-          top: false,
+        AnimatedBuilder(
+          animation: CallOverlayController.instance,
+          builder: (context, child) {
+            final callBarShowing =
+                CallOverlayController.instance.isActive &&
+                !CallOverlayController.instance.expanded;
+            return SafeArea(
+              top: false,
+              minimum: EdgeInsets.only(
+                bottom: callBarShowing ? _kMiniCallBarReserve : 0,
+              ),
+              child: child!,
+            );
+          },
           child: Padding(
             padding: const EdgeInsets.symmetric(
               horizontal: AppSpacing.md,
