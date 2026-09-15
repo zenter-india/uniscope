@@ -24,20 +24,39 @@ void main() async {
   // means a future build-time crash anywhere in the app — not just calls —
   // shows what actually broke instead of nothing.
   if (kReleaseMode) {
-    ErrorWidget.builder = (FlutterErrorDetails details) => Material(
-      color: const Color(0xFFB00020),
-      child: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Center(
-            child: Text(
-              'Something went wrong:\n${details.exceptionAsString()}',
-              style: const TextStyle(color: Colors.white, fontSize: 12),
+    // The message alone ("Null check operator used on a null value") isn't
+    // enough to find the throw site — the same message fires from dozens of
+    // call sites across the app. Appending the first ~15 stack frames (the
+    // ones inside this app's own lib/, not the Flutter framework's internal
+    // build machinery) turns "something null-checked somewhere" into an
+    // exact file:line the next time this fires on a real device.
+    ErrorWidget.builder = (FlutterErrorDetails details) {
+      final frames = details.stack
+          .toString()
+          .split('\n')
+          .where((l) => l.contains('package:uniscope_mobile/'))
+          .take(15)
+          .join('\n');
+      return Material(
+        color: const Color(0xFFB00020),
+        child: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: SingleChildScrollView(
+              child: SelectableText(
+                'Something went wrong:\n${details.exceptionAsString()}'
+                '${frames.isEmpty ? '' : '\n\n$frames'}',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 11,
+                  fontFamily: 'monospace',
+                ),
+              ),
             ),
           ),
         ),
-      ),
-    );
+      );
+    };
   }
   if (!kIsWeb) {
     try {

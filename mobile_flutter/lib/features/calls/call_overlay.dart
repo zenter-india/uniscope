@@ -164,7 +164,21 @@ class _CallOverlayHostState extends State<CallOverlayHost> {
       // like "back does nothing"). While the call is expanded, catch back
       // here and hand it to the call screen's handler (minimize a live
       // call, close a terminal one); fall back to a plain minimize.
+      //
+      // BackButtonListener needs a Router ancestor (it registers with
+      // Router.of(context).backButtonDispatcher) — live-reproduced 2026-09-15:
+      // the very first time a call is accepted and this widget mounts fresh
+      // (going from no-overlay to expanded), that lookup can fail with
+      // "Router operation requested with a context that does not include a
+      // Router" — a debug-mode assertion that, with asserts stripped in a
+      // release build, is exactly the shape of bug that surfaces instead as
+      // an unhandled null-check crash ("Null check operator used on a null
+      // value") on the very same call-connect path a real user hit. Guard
+      // with Router.maybeOf so a missing Router just skips the interception
+      // (back falls through to the app router, the pre-this-feature
+      // behavior) instead of crashing the whole overlay.
       if (!expanded) return child;
+      if (Router.maybeOf(context) == null) return child;
       return BackButtonListener(
         onBackButtonPressed: () async {
           final handler = CallPresence.instance.onBack;
