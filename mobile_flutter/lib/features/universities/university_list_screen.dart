@@ -625,6 +625,27 @@ class _UniversityListScreenState extends ConsumerState<UniversityListScreen> {
                           matchesSpecialization;
                     }).toList();
 
+                    // Top-rated colleges float to the top (same stable
+                    // partition pattern as the Mentors tab's "call-available
+                    // first" sort) — rated colleges first, best rating (then
+                    // most reviews) descending, unrated ones after in their
+                    // existing alphabetical order. Deliberately not
+                    // `.sort()` (List.sort's stability isn't part of its
+                    // documented contract).
+                    final rated = filtered.where((u) => u.rating != null).toList()
+                      ..sort((a, b) {
+                        final byRating = b.rating!.compareTo(a.rating!);
+                        if (byRating != 0) return byRating;
+                        return b.reviewCount.compareTo(a.reviewCount);
+                      });
+                    final unrated = filtered
+                        .where((u) => u.rating == null)
+                        .toList();
+                    filtered
+                      ..clear()
+                      ..addAll(rated)
+                      ..addAll(unrated);
+
                     if (filtered.isEmpty) {
                       return ListView(
                         children: [

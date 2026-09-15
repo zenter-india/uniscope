@@ -177,8 +177,8 @@ export class UniversitiesService {
         }
         return a.name.localeCompare(b.name);
       });
-      const data = (browse ? sorted : sorted.slice(0, take)).map(
-        withSpecializations,
+      const data = await this.attachRatings(
+        (browse ? sorted : sorted.slice(0, take)).map(withSpecializations),
       );
       return { data, nextCursor: null };
     }
@@ -196,7 +196,32 @@ export class UniversitiesService {
     const sliced = hasMore ? rows.slice(0, take) : rows;
     const nextCursor = hasMore ? sliced[sliced.length - 1].id : null;
 
-    return { data: sliced.map(withSpecializations), nextCursor };
+    return {
+      data: await this.attachRatings(sliced.map(withSpecializations)),
+      nextCursor,
+    };
+  }
+
+  /** Attaches {rating, reviewCount} onto a batch of list rows in one
+   * grouped query (UniversityReviewsService.ratingSummaries) — used so the
+   * Discover/Colleges tab can show + sort by rating without a per-row
+   * query. Cheap even for a `browse=true` full-catalogue fetch: the
+   * aggregate is bounded by how many reviews actually exist (a handful per
+   * college, gated to VERIFIED mentors), not by the size of the `in` list. */
+  private async attachRatings<
+    T extends { id: string },
+  >(rows: T[]): Promise<Array<T & { rating: number | null; reviewCount: number }>> {
+    const ratings = await this.universityReviewsService.ratingSummaries(
+      rows.map((r) => r.id),
+    );
+    return rows.map((r) => {
+      const summary = ratings.get(r.id);
+      return {
+        ...r,
+        rating: summary?.average ?? null,
+        reviewCount: summary?.count ?? 0,
+      };
+    });
   }
 
   /**
