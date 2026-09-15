@@ -156,15 +156,18 @@ class _UniversityReviewScreenState
       await ref
           .read(universityReviewsApiProvider)
           .create(widget.universityId, draft);
-      // Refresh every surface that reads this university's reviews.
-      ref.invalidate(universityReviewsListProvider(widget.universityId));
-      ref.invalidate(hasReviewedUniversityProvider(widget.universityId));
-      ref.invalidate(universityReviewSummaryProvider(widget.universityId));
-      if (!mounted) return;
-      setState(() {
-        _submitting = false;
-        _done = true;
-      });
+      _onSubmitSucceeded();
+    } on AlreadyReviewedException {
+      // The backend's write-once check says a review from this author for
+      // this university already exists — most likely a duplicate submit
+      // (a fast double-tap, or a retry after a slow/lost response whose
+      // first attempt actually landed) rather than a genuinely new failure.
+      // Either way, the caller's actual review IS posted, so this is really
+      // a success: showing a generic error here and leaving the form open
+      // for another doomed retry is exactly the "submission keeps failing,
+      // but the form won't go away" bug a real device report described —
+      // the review had in fact already been created the whole time.
+      _onSubmitSucceeded();
     } catch (e) {
       if (!mounted) return;
       setState(() {
@@ -172,6 +175,19 @@ class _UniversityReviewScreenState
         _error = _friendlyError(e);
       });
     }
+  }
+
+  void _onSubmitSucceeded() {
+    // Refresh every surface that reads this university's reviews.
+    ref.invalidate(universityReviewsListProvider(widget.universityId));
+    ref.invalidate(hasReviewedUniversityProvider(widget.universityId));
+    ref.invalidate(universityReviewSummaryProvider(widget.universityId));
+    ref.invalidate(myProfileProvider);
+    if (!mounted) return;
+    setState(() {
+      _submitting = false;
+      _done = true;
+    });
   }
 
   String _friendlyError(Object e) {

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -399,6 +401,34 @@ class MentorAvailabilityCard extends ConsumerStatefulWidget {
 class _MentorAvailabilityCardState
     extends ConsumerState<MentorAvailabilityCard> {
   bool _saving = false;
+
+  // main.dart's app-resume hook (and the explicit invalidate() calls after
+  // a review submit) only refresh myProfileProvider/hasReviewedUniversityProvider
+  // on specific events — neither fires for a device that just sits on this
+  // tab with the app continuously foregrounded (no real background→resume
+  // cycle), which is exactly what a real report described: a mentor whose
+  // review/availability had genuinely already gone through server-side kept
+  // seeing this card as locked/stale regardless. A cheap periodic refresh
+  // while this card is actually on screen bounds that staleness to ~20s
+  // instead of "indefinitely, until something else happens to trigger it".
+  Timer? _refreshTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    _refreshTimer = Timer.periodic(const Duration(seconds: 20), (_) {
+      if (!_saving) {
+        ref.invalidate(myProfileProvider);
+        ref.invalidate(hasReviewedUniversityProvider);
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _refreshTimer?.cancel();
+    super.dispose();
+  }
 
   Future<void> _toggle(bool value) async {
     setState(() => _saving = true);

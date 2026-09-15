@@ -3,6 +3,19 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'dio_client.dart';
 
+/// Thrown by [UniversityReviewsApi.create] specifically when the backend's
+/// write-once check rejects a second submission (409) — a genuinely
+/// different situation from every other failure: the review the caller
+/// wanted to post already exists, so the right response is to treat this as
+/// success and show it, not surface a generic error and leave an editable
+/// form sitting open for another doomed retry (see the review screen's
+/// `_submit` for the real bug this was masking — a device report where the
+/// review had actually already been created, most likely from a duplicate
+/// submit, but the form kept showing an error and staying open indefinitely).
+class AlreadyReviewedException implements Exception {
+  const AlreadyReviewedException();
+}
+
 /// One submitted university review — the client-confirmed 13-question shape.
 /// Q1–Q4 are 1–5 slider ratings, Q5–Q12 are choice codes (see
 /// `review_choices.dart` for code → label; restroomFacilities/Q5 was added
@@ -278,6 +291,9 @@ class UniversityReviewsApi {
       );
       return UniversityReview.fromJson(res.data!);
     } on DioException catch (e) {
+      if (e.response?.statusCode == 409) {
+        throw const AlreadyReviewedException();
+      }
       final data = e.response?.data;
       String? msg;
       if (data is Map) {
