@@ -2,17 +2,6 @@
 
 import { backendFetch } from '../../../lib/backend';
 
-interface AggregatedUsage {
-  measurement: string;
-  value: number;
-}
-
-interface EstimatedUsage {
-  measurement: string;
-  estimatedValue: number;
-  projectId: string;
-}
-
 interface RailwayService {
   id: string;
   name: string;
@@ -36,8 +25,6 @@ export interface RailwayUsageSummary {
   workspaceName?: string;
   projectName?: string;
   services?: RailwayService[];
-  usageTotals?: AggregatedUsage[];
-  estimatedUsage?: EstimatedUsage[];
   billing?: RailwayBilling;
   fetchedAt?: string;
   error?: string;

@@ -1,8 +1,8 @@
 import { Injectable, Logger } from '@nestjs/common';
 
 /**
- * Reads current-billing-period usage and per-service deployment status
- * straight from Railway's own public GraphQL API
+ * Reads current-billing-period cost/credit and per-service deployment
+ * status straight from Railway's own public GraphQL API
  * (https://backboard.railway.com/graphql/v2) — there is no separate
  * "usage API," this is the exact same API that powers Railway's own
  * dashboard and CLI (`railway usage`).
@@ -15,12 +15,6 @@ import { Injectable, Logger } from '@nestjs/common';
  * missing this service is silently inert (returns `configured: false`)
  * rather than throwing, so a deploy without them set doesn't break the app.
  *
- * `MetricMeasurement` values queried: CPU_USAGE (vCPU-hours), MEMORY_USAGE_GB
- * (GB-hours), NETWORK_TX_GB / NETWORK_RX_GB, DISK_USAGE_GB. These are
- * *cumulative for the current billing period*, not instantaneous —
- * `workspaceUsageTotals` is what's been consumed so far, `estimatedUsage`
- * is Railway's own projection of where it'll land by period end.
- *
  * Cached in-memory for CACHE_TTL_MS — Railway's public API rate limits are
  * modest (100-1000 requests/hour depending on plan tier), and this is an
  * admin-only, low-traffic page, so there's no reason to hit Railway on
@@ -29,25 +23,6 @@ import { Injectable, Logger } from '@nestjs/common';
 
 const RAILWAY_API_URL = 'https://backboard.railway.com/graphql/v2';
 const CACHE_TTL_MS = 5 * 60 * 1000;
-
-const USAGE_MEASUREMENTS = [
-  'CPU_USAGE',
-  'MEMORY_USAGE_GB',
-  'NETWORK_TX_GB',
-  'NETWORK_RX_GB',
-  'DISK_USAGE_GB',
-] as const;
-
-interface AggregatedUsage {
-  measurement: string;
-  value: number;
-}
-
-interface EstimatedUsage {
-  measurement: string;
-  estimatedValue: number;
-  projectId: string;
-}
 
 interface ServiceSummary {
   id: string;
@@ -79,15 +54,13 @@ export interface RailwayUsageSummary {
   workspaceName?: string;
   projectName?: string;
   services?: ServiceSummary[];
-  usageTotals?: AggregatedUsage[];
-  estimatedUsage?: EstimatedUsage[];
   billing?: CustomerBilling;
   fetchedAt?: string;
   error?: string;
 }
 
 const USAGE_QUERY = `
-  query($workspaceId: String!, $projectId: String!, $measurements: [MetricMeasurement!]!) {
+  query($workspaceId: String!, $projectId: String!) {
     workspace(workspaceId: $workspaceId) {
       name
       customer {
@@ -115,15 +88,6 @@ const USAGE_QUERY = `
           }
         }
       }
-    }
-    workspaceUsageTotals(workspaceId: $workspaceId, measurements: $measurements) {
-      measurement
-      value
-    }
-    estimatedUsage(workspaceId: $workspaceId, measurements: $measurements) {
-      measurement
-      estimatedValue
-      projectId
     }
   }
 `;
@@ -158,7 +122,6 @@ export class RailwayUsageService {
           variables: {
             workspaceId: this.workspaceId,
             projectId: this.projectId,
-            measurements: USAGE_MEASUREMENTS,
           },
         }),
       });
@@ -178,8 +141,6 @@ export class RailwayUsageService {
               }[];
             };
           } | null;
-          workspaceUsageTotals: AggregatedUsage[];
-          estimatedUsage: EstimatedUsage[];
         };
         errors?: { message: string }[];
       };
@@ -199,8 +160,6 @@ export class RailwayUsageService {
           name: e.node.name,
           latestDeploymentStatus: e.node.deployments.edges[0]?.node.status ?? null,
         })),
-        usageTotals: body.data.workspaceUsageTotals,
-        estimatedUsage: body.data.estimatedUsage,
         billing: body.data.workspace?.customer ?? undefined,
         fetchedAt: new Date().toISOString(),
       };
