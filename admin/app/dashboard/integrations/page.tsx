@@ -3,7 +3,7 @@ import { Badge, Card, EmptyState, Table } from '../../../components/ui';
 
 type Tone = 'neutral' | 'success' | 'warning' | 'danger' | 'info';
 import { DashboardShell } from '../DashboardShell';
-import { getAgoraUsage, getRailwayUsage, getSupabaseUsage } from './actions';
+import { getRailwayUsage, getSupabaseUsage } from './actions';
 
 function deploymentTone(status: string | null): Tone {
   if (!status) return 'neutral';
@@ -21,10 +21,9 @@ function formatBytes(bytes: number): string {
 }
 
 export default async function IntegrationsPage() {
-  const [email, railway, agora, supabase] = await Promise.all([
+  const [email, railway, supabase] = await Promise.all([
     getAdminEmail(),
     getRailwayUsage(),
-    getAgoraUsage(),
     getSupabaseUsage(),
   ]);
 
@@ -32,8 +31,7 @@ export default async function IntegrationsPage() {
     <DashboardShell title="Integrations & Usage" email={email}>
       <p className="mb-5 text-sm text-zinc-500 dark:text-zinc-400">
         Live usage and limits pulled directly from each third-party service's own API — not
-        cached numbers typed in by hand. Currently wired: Railway, Agora, Supabase. MSG91 is
-        next, blocked on confirming its reporting API access.
+        cached numbers typed in by hand. Currently wired: Railway, Supabase. MSG91 is next.
       </p>
 
       <Card className="mb-5 p-5">
@@ -94,62 +92,6 @@ export default async function IntegrationsPage() {
               </p>
             </div>
           </div>
-        )}
-      </Card>
-
-      <Card className="mb-5 p-5">
-        <div className="mb-4 flex items-center justify-between">
-          <div>
-            <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">Agora</h2>
-            <p className="text-xs text-zinc-500 dark:text-zinc-400">
-              Live RTC calls right now — not monthly minutes used/remaining (that's Console-only
-              for now; see CLAUDE.md).
-            </p>
-          </div>
-          {agora.fetchedAt && (
-            <span className="text-xs text-zinc-400 dark:text-zinc-500">
-              Refreshed {new Date(agora.fetchedAt).toLocaleTimeString()}
-            </span>
-          )}
-        </div>
-
-        {!agora.configured ? (
-          <EmptyState icon="settings">
-            {agora.error ??
-              'Not configured — set AGORA_APP_ID, AGORA_CUSTOMER_ID, and AGORA_CUSTOMER_SECRET in backend/.env.'}
-          </EmptyState>
-        ) : agora.error ? (
-          <EmptyState icon="alert">Could not load usage — {agora.error}</EmptyState>
-        ) : (
-          <>
-            <div className="mb-4 rounded-lg border border-zinc-200/80 bg-zinc-50/60 p-3 dark:border-zinc-800 dark:bg-zinc-800/40">
-              <p className="text-[11px] font-medium uppercase tracking-wide text-zinc-400 dark:text-zinc-500">
-                Active calls right now
-              </p>
-              <p className="mt-1 text-sm font-semibold text-zinc-900 dark:text-zinc-100">
-                {agora.activeChannelCount ?? 0}
-              </p>
-            </div>
-            {agora.channels && agora.channels.length > 0 && (
-              <Table
-                head={
-                  <tr>
-                    <Table.HeadCell>Channel</Table.HeadCell>
-                    <Table.HeadCell>Users</Table.HeadCell>
-                  </tr>
-                }
-              >
-                {agora.channels.map((c) => (
-                  <Table.Row key={c.channelName}>
-                    <Table.Cell className="font-medium text-zinc-900 dark:text-zinc-100">
-                      {c.channelName}
-                    </Table.Cell>
-                    <Table.Cell>{c.userCount}</Table.Cell>
-                  </Table.Row>
-                ))}
-              </Table>
-            )}
-          </>
         )}
       </Card>
 

@@ -3,16 +3,14 @@ import { UserRole } from '@prisma/client';
 import { Roles } from '../../auth/decorators/roles.decorator.js';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard.js';
 import { RolesGuard } from '../../auth/guards/roles.guard.js';
-import { AgoraUsageService } from './agora-usage.service.js';
 import { RailwayUsageService } from './railway-usage.service.js';
 import { SupabaseUsageService } from './supabase-usage.service.js';
 
 /**
  * Third-party infrastructure usage/limits, surfaced for the admin panel's
- * Integrations page. One route per provider (Railway + Agora + Supabase
- * so far — see CLAUDE.md's "Integrations & Usage" note for why MSG91 and
- * Firebase aren't wired yet: each needs its own separate credential, not
- * the ones the app already uses operationally).
+ * Integrations page. One route per provider (Railway + Supabase so far —
+ * see CLAUDE.md's "Integrations & Usage" note for why MSG91/Firebase
+ * aren't wired yet, and why Agora was tried then removed).
  */
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles(UserRole.ADMIN)
@@ -20,18 +18,12 @@ import { SupabaseUsageService } from './supabase-usage.service.js';
 export class IntegrationsController {
   constructor(
     private readonly railwayUsageService: RailwayUsageService,
-    private readonly agoraUsageService: AgoraUsageService,
     private readonly supabaseUsageService: SupabaseUsageService,
   ) {}
 
   @Get('railway')
   getRailwayUsage() {
     return this.railwayUsageService.getUsageSummary();
-  }
-
-  @Get('agora')
-  getAgoraUsage() {
-    return this.agoraUsageService.getUsageSummary();
   }
 
   @Get('supabase')
