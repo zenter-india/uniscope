@@ -36,6 +36,15 @@ export interface LedgerEntryResponse {
   sessionId: string | null;
   note: string | null;
   createdAt: Date;
+  /** The OTHER party on the session this entry is for (mentor's name for an
+   * aspirant's entry, aspirant's name for a mentor's) — null for anything
+   * not tied to a session (top-up, payout, admin adjustment) or when the
+   * session lookup didn't find a match. Populated by WalletService.getLedger
+   * via a small batched join, not by this plain mapper. */
+  counterpartName?: string | null;
+  /** AUDIO_CALL only: the booked slot length, for "6 min" style detail next
+   * to a call entry. Same batched-join caveat as counterpartName. */
+  callSlotMinutes?: number | null;
 }
 
 export function toLedgerEntryResponse(entry: LedgerEntry): LedgerEntryResponse {

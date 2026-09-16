@@ -4,12 +4,43 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:razorpay_flutter/razorpay_flutter.dart';
 
 import '../../core/network/payouts_api.dart';
+import '../../core/network/sessions_api.dart' show kCallSlotMinutes;
 import '../../core/network/users_api.dart';
 import '../../core/network/wallet_api.dart';
 import '../../core/theme/app_theme.dart';
 import '../../state/auth_controller.dart';
 import '../../widgets/app_widgets.dart';
 import '../common/legal_links.dart';
+import '../sessions/call_time_windows.dart' show clockLabel;
+
+const _kGroupMonths = [
+  'Jan',
+  'Feb',
+  'Mar',
+  'Apr',
+  'May',
+  'Jun',
+  'Jul',
+  'Aug',
+  'Sep',
+  'Oct',
+  'Nov',
+  'Dec',
+];
+
+/// "Today" / "Yesterday" / "12 Sep" — groups the activity list by day. Past-
+/// oriented, so it's its own small helper rather than reusing
+/// call_time_windows.dart's dayTabLabel/friendlyCallTime (those are built
+/// for picking a future slot, not labelling history).
+String _dayGroupLabel(DateTime dt) {
+  final now = DateTime.now();
+  final today = DateTime(now.year, now.month, now.day);
+  final that = DateTime(dt.year, dt.month, dt.day);
+  final delta = today.difference(that).inDays;
+  if (delta == 0) return 'Today';
+  if (delta == 1) return 'Yesterday';
+  return '${dt.day} ${_kGroupMonths[dt.month - 1]}';
+}
 
 /// The four fixed recharge packages — `(rupees, uniminutes)`. Must match the
 /// backend's `RECHARGE_PACKAGES` exactly (`create-topup.dto.ts`): the server
@@ -404,6 +435,30 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
                               ],
                             ),
                           ],
+                          if (!isMentor &&
+                              wallet.availableUniminutes >=
+                                  kCallSlotMinutes.first) ...[
+                            const SizedBox(height: AppSpacing.sm),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: AppSpacing.sm,
+                                vertical: 4,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withValues(alpha: 0.14),
+                                borderRadius: BorderRadius.circular(999),
+                              ),
+                              child: Text(
+                                '≈ ${wallet.availableUniminutes ~/ kCallSlotMinutes.first} '
+                                'calls left at ${kCallSlotMinutes.first} min each',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: AppFont.xs,
+                                  fontWeight: AppFont.semibold,
+                                ),
+                              ),
+                            ),
+                          ],
                         ],
                       ),
                     ),
@@ -478,6 +533,25 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
                         ),
                 ),
               ],
+              // "This month" is scoped to whatever page of the ledger is
+              // currently loaded (the default first page, ~20 entries) —
+              // not a true all-time aggregate. Cheap and accurate for the
+              // vast majority of aspirants (call volume is naturally low);
+              // a heavy account with >1 page of activity this month would
+              // undercount. A real fix would be a dedicated backend summary
+              // endpoint — not built here, this reuses data already fetched.
+              if (!isMentor)
+                ledgerAsync.maybeWhen(
+                  data: (entries) => entries.isEmpty
+                      ? const SizedBox.shrink()
+                      : Padding(
+                          padding: const EdgeInsets.only(
+                            top: AppSpacing.lg,
+                          ),
+                          child: _MonthlyStatsRow(entries: entries),
+                        ),
+                  orElse: () => const SizedBox.shrink(),
+                ),
               const SizedBox(height: AppSpacing.lg),
               const SectionHeader(title: 'Recent activity'),
               const SizedBox(height: AppSpacing.sm),
@@ -502,17 +576,118 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
                               'Top-ups and session payments will show up here.',
                         ),
                       )
-                    : Column(
-                        children: entries
-                            .map(
-                              (e) => _LedgerRow(entry: e, asRupees: isMentor),
-                            )
-                            .toList(),
-                      ),
+                    : Column(children: _groupedLedgerRows(entries, isMentor)),
               ),
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// Builds the "Recent activity" list as day-grouped headers + rows —
+/// entries already arrive newest-first from the backend, so a single pass
+/// inserting a header whenever the calendar day changes is enough.
+List<Widget> _groupedLedgerRows(List<LedgerEntry> entries, bool isMentor) {
+  final widgets = <Widget>[];
+  DateTime? lastDay;
+  for (final entry in entries) {
+    final local = entry.createdAtLocal;
+    final dayOnly = DateTime(local.year, local.month, local.day);
+    if (lastDay == null || dayOnly != lastDay) {
+      widgets.add(_DayHeader(label: _dayGroupLabel(local)));
+      lastDay = dayOnly;
+    }
+    widgets.add(_LedgerRow(entry: entry, asRupees: isMentor));
+  }
+  return widgets;
+}
+
+class _DayHeader extends StatelessWidget {
+  const _DayHeader({required this.label});
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(2, AppSpacing.md, 2, AppSpacing.xs),
+      child: Text(
+        label.toUpperCase(),
+        style: const TextStyle(
+          fontSize: 11,
+          fontWeight: AppFont.bold,
+          letterSpacing: 0.3,
+          color: AppColors.textMuted,
+        ),
+      ),
+    );
+  }
+}
+
+/// "N Uniminutes spent this month / N calls this month" — a quick-glance
+/// summary computed client-side from whatever ledger page is already
+/// loaded (see the caller's own note on why this isn't a true all-time
+/// aggregate).
+class _MonthlyStatsRow extends StatelessWidget {
+  const _MonthlyStatsRow({required this.entries});
+  final List<LedgerEntry> entries;
+
+  @override
+  Widget build(BuildContext context) {
+    final now = DateTime.now();
+    var spentUniminutes = 0;
+    var calls = 0;
+    for (final entry in entries) {
+      final local = entry.createdAtLocal;
+      if (local.year != now.year || local.month != now.month) continue;
+      if (entry.type == 'SESSION_DEBIT') {
+        spentUniminutes += minorToUniminutes(entry.amountMinor.abs());
+        calls += 1;
+      }
+    }
+    return Row(
+      children: [
+        Expanded(
+          child: _StatCard(
+            value: '$spentUniminutes',
+            label: 'Uniminutes spent this month',
+          ),
+        ),
+        const SizedBox(width: AppSpacing.sm),
+        Expanded(child: _StatCard(value: '$calls', label: 'Calls this month')),
+      ],
+    );
+  }
+}
+
+class _StatCard extends StatelessWidget {
+  const _StatCard({required this.value, required this.label});
+  final String value;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return AppCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            value,
+            style: const TextStyle(
+              fontSize: AppFont.lg,
+              fontWeight: AppFont.extraBold,
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            label,
+            style: const TextStyle(
+              fontSize: 11,
+              color: AppColors.textSecondary,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -526,21 +701,72 @@ class _LedgerRow extends StatelessWidget {
   final bool asRupees;
   final LedgerEntry entry;
 
-  String get _label {
+  bool get _isNoShow => entry.note?.contains('No-show') ?? false;
+
+  /// Null when there's no counterpart, or the counterpart's account has
+  /// since been GDPR-erased (UsersService.eraseUser sets displayName to the
+  /// anonymized `deleted_user_<id8>` stub — real, not a bug, but not
+  /// something to surface verbatim to a student).
+  String? get _friendlyCounterpart {
+    final name = entry.counterpartName;
+    if (name == null || name.startsWith('deleted_user_')) return null;
+    return name;
+  }
+
+  String get _title {
     switch (entry.type) {
       case 'TOPUP':
-        return 'Wallet top-up';
+        return 'Wallet recharge';
       case 'SESSION_DEBIT':
+        if (_isNoShow) return 'Missed call fee';
+        if (_friendlyCounterpart != null) return 'Call with $_friendlyCounterpart';
         return 'Session payment';
       case 'SESSION_CREDIT':
+        if (_isNoShow) return 'Missed-call compensation';
+        if (_friendlyCounterpart != null) {
+          return asRupees ? 'Call with $_friendlyCounterpart' : 'Session earnings';
+        }
         return 'Session earnings';
       case 'REFUND':
         return 'Refund';
       case 'PAYOUT':
         return 'Withdrawal';
+      case 'ADJUSTMENT':
+        return 'Balance adjustment';
       default:
         return entry.type;
     }
+  }
+
+  /// The recharge packages are a closed set (see _kRechargePackages) — a
+  /// TOPUP entry's credited Uniminutes always maps back to exactly one
+  /// package, so the rupee amount actually paid can be shown without the
+  /// backend needing to store it separately on the ledger row.
+  (int, int)? get _matchingPackage {
+    if (entry.type != 'TOPUP') return null;
+    final credited = minorToUniminutes(entry.amountMinor);
+    for (final pack in _kRechargePackages) {
+      if (pack.$2 == credited) return pack;
+    }
+    return null;
+  }
+
+  String get _subtitle {
+    final time = clockLabel(entry.createdAtLocal);
+    if (entry.type == 'TOPUP' && !asRupees) {
+      final pack = _matchingPackage;
+      if (pack != null) return '₹${pack.$1} → ${uniminutesLabel(pack.$2)} · $time';
+    }
+    if (_isNoShow) {
+      final detail = entry.note!.contains('waited')
+          ? "Mentor waited, you didn't join"
+          : "Aspirant didn't join";
+      return '$detail · $time';
+    }
+    if (entry.callSlotMinutes != null) {
+      return '${entry.callSlotMinutes} min · $time';
+    }
+    return time;
   }
 
   @override
@@ -575,10 +801,20 @@ class _LedgerRow extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  _label,
+                  _title,
+                  overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
                     fontWeight: AppFont.bold,
                     fontSize: AppFont.sm,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  _subtitle,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: AppFont.xs,
+                    color: AppColors.textSecondary,
                   ),
                 ),
               ],

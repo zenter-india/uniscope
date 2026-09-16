@@ -134,10 +134,53 @@ export class WalletService {
 
     const hasMore = rows.length > take;
     const rowsPage = hasMore ? rows.slice(0, take) : rows;
-    const data = rowsPage.map(toLedgerEntryResponse);
+    const data = await this.attachCounterparts(rowsPage, userId);
     const nextCursor = hasMore ? rowsPage[rowsPage.length - 1].id : null;
 
     return { data, nextCursor };
+  }
+
+  /** Enriches a page of ledger rows with who the OTHER party was on the
+   * session an entry is tied to (a mentor's name for the aspirant's own
+   * SESSION_DEBIT, and vice versa) plus the booked slot length — one
+   * batched Session lookup for the whole page, not a query per row. Rows
+   * with no sessionId (top-up, payout, admin adjustment) pass through
+   * untouched. Built for the student wallet screen's "Call with {mentor}"
+   * detail; harmless/unused for a mentor's own ledger today. */
+  private async attachCounterparts(
+    rows: Array<Parameters<typeof toLedgerEntryResponse>[0]>,
+    walletOwnerId: string,
+  ): Promise<LedgerEntryResponse[]> {
+    const sessionIds = [
+      ...new Set(rows.map((r) => r.sessionId).filter((id): id is string => id != null)),
+    ];
+    if (sessionIds.length === 0) return rows.map(toLedgerEntryResponse);
+
+    const sessions = await this.prisma.session.findMany({
+      where: { id: { in: sessionIds } },
+      select: {
+        id: true,
+        aspirantId: true,
+        mentorId: true,
+        callSlotMinutes: true,
+        aspirant: { select: { displayName: true } },
+        mentor: { select: { displayName: true } },
+      },
+    });
+    const byId = new Map(sessions.map((s) => [s.id, s]));
+
+    return rows.map((row) => {
+      const base = toLedgerEntryResponse(row);
+      const session = row.sessionId ? byId.get(row.sessionId) : undefined;
+      if (!session) return base;
+      const counterpartName =
+        session.aspirantId === walletOwnerId
+          ? session.mentor.displayName
+          : session.mentorId === walletOwnerId
+            ? session.aspirant.displayName
+            : null;
+      return { ...base, counterpartName, callSlotMinutes: session.callSlotMinutes };
+    });
   }
 
   // ── ADMIN ──────────────────────────────────────────────────────────────

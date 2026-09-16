@@ -66,6 +66,9 @@ class LedgerEntry {
     required this.balanceAfterMinor,
     required this.note,
     required this.createdAt,
+    this.sessionId,
+    this.counterpartName,
+    this.callSlotMinutes,
   });
 
   final String id;
@@ -74,8 +77,20 @@ class LedgerEntry {
   final int balanceAfterMinor;
   final String? note;
   final String createdAt;
+  final String? sessionId;
+
+  /// The other party on the session this entry is for — a mentor's name for
+  /// one of the aspirant's own call entries, null for anything not tied to
+  /// a session (top-up, payout, adjustment). Batched in server-side by
+  /// WalletService.getLedger, not present on every entry.
+  final String? counterpartName;
+
+  /// AUDIO_CALL only: the booked slot length, for a "6 min" style detail.
+  final int? callSlotMinutes;
 
   double get amountRupees => amountMinor / 100;
+
+  DateTime get createdAtLocal => DateTime.parse(createdAt).toLocal();
 
   factory LedgerEntry.fromJson(Map<String, dynamic> json) => LedgerEntry(
     id: json['id'] as String,
@@ -84,6 +99,9 @@ class LedgerEntry {
     balanceAfterMinor: (json['balanceAfterMinor'] as num).toInt(),
     note: json['note'] as String?,
     createdAt: json['createdAt'] as String,
+    sessionId: json['sessionId'] as String?,
+    counterpartName: json['counterpartName'] as String?,
+    callSlotMinutes: (json['callSlotMinutes'] as num?)?.toInt(),
   );
 }
 
