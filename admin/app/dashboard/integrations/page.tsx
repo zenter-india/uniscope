@@ -3,7 +3,7 @@ import { Badge, Card, EmptyState, Table } from '../../../components/ui';
 
 type Tone = 'neutral' | 'success' | 'warning' | 'danger' | 'info';
 import { DashboardShell } from '../DashboardShell';
-import { getAgoraUsage, getRailwayUsage } from './actions';
+import { getAgoraUsage, getRailwayUsage, getSupabaseUsage } from './actions';
 
 function deploymentTone(status: string | null): Tone {
   if (!status) return 'neutral';
@@ -14,20 +14,88 @@ function deploymentTone(status: string | null): Tone {
   return 'neutral';
 }
 
+function formatBytes(bytes: number): string {
+  const mb = bytes / (1024 * 1024);
+  if (mb < 1024) return `${mb.toFixed(1)} MB`;
+  return `${(mb / 1024).toFixed(2)} GB`;
+}
+
 export default async function IntegrationsPage() {
-  const [email, railway, agora] = await Promise.all([
+  const [email, railway, agora, supabase] = await Promise.all([
     getAdminEmail(),
     getRailwayUsage(),
     getAgoraUsage(),
+    getSupabaseUsage(),
   ]);
 
   return (
     <DashboardShell title="Integrations & Usage" email={email}>
       <p className="mb-5 text-sm text-zinc-500 dark:text-zinc-400">
         Live usage and limits pulled directly from each third-party service's own API — not
-        cached numbers typed in by hand. Currently wired: Railway, Agora. Supabase and MSG91
-        are next, each blocked on its own separate credential.
+        cached numbers typed in by hand. Currently wired: Railway, Agora, Supabase. MSG91 is
+        next, blocked on confirming its reporting API access.
       </p>
+
+      <Card className="mb-5 p-5">
+        <div className="mb-4 flex items-center justify-between">
+          <div>
+            <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">Supabase</h2>
+            <p className="text-xs text-zinc-500 dark:text-zinc-400">
+              Database size vs. the Free Plan's 500 MB read-only threshold.
+            </p>
+          </div>
+          {supabase.fetchedAt && (
+            <span className="text-xs text-zinc-400 dark:text-zinc-500">
+              Refreshed {new Date(supabase.fetchedAt).toLocaleTimeString()}
+            </span>
+          )}
+        </div>
+
+        {!supabase.configured ? (
+          <EmptyState icon="settings">
+            {supabase.error ?? 'Not configured — DATABASE_URL is missing in backend/.env.'}
+          </EmptyState>
+        ) : (
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <div className="rounded-lg border border-zinc-200/80 bg-zinc-50/60 p-3 dark:border-zinc-800 dark:bg-zinc-800/40">
+              <p className="text-[11px] font-medium uppercase tracking-wide text-zinc-400 dark:text-zinc-500">
+                Database size
+              </p>
+              <p className="mt-1 text-sm font-semibold text-zinc-900 dark:text-zinc-100">
+                {supabase.databaseSizeBytes != null ? formatBytes(supabase.databaseSizeBytes) : '—'}
+              </p>
+            </div>
+            <div className="rounded-lg border border-zinc-200/80 bg-zinc-50/60 p-3 dark:border-zinc-800 dark:bg-zinc-800/40">
+              <p className="text-[11px] font-medium uppercase tracking-wide text-zinc-400 dark:text-zinc-500">
+                Free plan limit
+              </p>
+              <p className="mt-1 text-sm font-semibold text-zinc-900 dark:text-zinc-100">
+                {supabase.databaseSizeLimitBytes != null ? formatBytes(supabase.databaseSizeLimitBytes) : '—'}
+              </p>
+            </div>
+            <div className="rounded-lg border border-zinc-200/80 bg-zinc-50/60 p-3 dark:border-zinc-800 dark:bg-zinc-800/40">
+              <p className="text-[11px] font-medium uppercase tracking-wide text-zinc-400 dark:text-zinc-500">
+                Remaining
+              </p>
+              <p className="mt-1 text-sm font-semibold text-zinc-900 dark:text-zinc-100">
+                {supabase.databaseSizeBytes != null && supabase.databaseSizeLimitBytes != null
+                  ? formatBytes(supabase.databaseSizeLimitBytes - supabase.databaseSizeBytes)
+                  : '—'}
+              </p>
+            </div>
+            <div className="rounded-lg border border-zinc-200/80 bg-zinc-50/60 p-3 dark:border-zinc-800 dark:bg-zinc-800/40">
+              <p className="text-[11px] font-medium uppercase tracking-wide text-zinc-400 dark:text-zinc-500">
+                API requests (24h)
+              </p>
+              <p className="mt-1 text-sm font-semibold text-zinc-900 dark:text-zinc-100">
+                {supabase.apiRequestCountConfigured
+                  ? (supabase.apiRequestCount24h?.toLocaleString() ?? '—')
+                  : 'No access token'}
+              </p>
+            </div>
+          </div>
+        )}
+      </Card>
 
       <Card className="mb-5 p-5">
         <div className="mb-4 flex items-center justify-between">

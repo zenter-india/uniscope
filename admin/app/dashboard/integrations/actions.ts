@@ -64,3 +64,25 @@ export async function getAgoraUsage(): Promise<AgoraUsageSummary> {
     };
   }
 }
+
+export interface SupabaseUsageSummary {
+  configured: boolean;
+  databaseSizeBytes?: number;
+  databaseSizeLimitBytes?: number;
+  apiRequestCount24h?: number;
+  apiRequestCountConfigured: boolean;
+  fetchedAt?: string;
+  error?: string;
+}
+
+export async function getSupabaseUsage(): Promise<SupabaseUsageSummary> {
+  try {
+    return await backendFetch<SupabaseUsageSummary>('/admin/integrations/supabase');
+  } catch (e) {
+    return {
+      configured: false,
+      apiRequestCountConfigured: false,
+      error: e instanceof Error ? e.message : 'Could not reach the backend',
+    };
+  }
+}
