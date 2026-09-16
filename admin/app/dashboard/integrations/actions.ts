@@ -40,3 +40,27 @@ export async function getRailwayUsage(): Promise<RailwayUsageSummary> {
     };
   }
 }
+
+interface AgoraChannel {
+  channelName: string;
+  userCount: number;
+}
+
+export interface AgoraUsageSummary {
+  configured: boolean;
+  activeChannelCount?: number;
+  channels?: AgoraChannel[];
+  fetchedAt?: string;
+  error?: string;
+}
+
+export async function getAgoraUsage(): Promise<AgoraUsageSummary> {
+  try {
+    return await backendFetch<AgoraUsageSummary>('/admin/integrations/agora');
+  } catch (e) {
+    return {
+      configured: false,
+      error: e instanceof Error ? e.message : 'Could not reach the backend',
+    };
+  }
+}
