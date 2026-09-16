@@ -8,8 +8,6 @@ import '../../core/network/users_api.dart';
 import '../../core/theme/app_theme.dart';
 import '../../widgets/app_widgets.dart';
 import '../profile/profile_options.dart';
-import 'review_breakdown_screen.dart';
-import 'review_summary_card.dart';
 import 'stream_visuals.dart';
 
 // 'All' plus the same academic-field picklist mentors/aspirants use, so
@@ -820,6 +818,37 @@ class UniversityCard extends ConsumerWidget {
                         ),
                       ],
                     ),
+                    // Compact rating chip — replaces the old full review
+                    // block (ring + category bars + tags + footer button)
+                    // that used to render inline here, per approved mockup
+                    // (2026-09-17): a scannable list card only needs an
+                    // at-a-glance rating, not the whole breakdown. Tapping
+                    // the card (unchanged) still opens the college detail
+                    // screen, whose Overview tab shows the full summary.
+                    // Same star/size/color convention as the Home "top
+                    // mentors"/"top colleges" rails (home_screen.dart).
+                    if (university.rating != null) ...[
+                      const SizedBox(height: 6),
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(
+                            Icons.star_rounded,
+                            size: 13,
+                            color: AppColors.warning,
+                          ),
+                          const SizedBox(width: 2),
+                          Text(
+                            '${university.rating!.toStringAsFixed(1)} (${university.reviewCount})',
+                            style: const TextStyle(
+                              fontSize: 11,
+                              fontWeight: AppFont.semibold,
+                              color: AppColors.textPrimary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
                   ],
                 ),
               ),
@@ -827,42 +856,6 @@ class UniversityCard extends ConsumerWidget {
               _CollegeSaveButton(universityId: university.id),
             ],
           ),
-          // The review summary (average rating + breakdown) only appears
-          // once real reviews exist — mentor-authored today. No "no reviews
-          // yet" placeholder, and no divider eating space when there's
-          // nothing to show.
-          if (university.reviewCount > 0) ...[
-            const SizedBox(height: AppSpacing.md),
-            const Divider(height: 1, color: AppColors.border),
-            const SizedBox(height: AppSpacing.sm),
-            // Its own tap target, nested inside the card's own
-            // (detail-screen) tap target — tapping the review summary goes
-            // straight to the full breakdown instead of the college's
-            // Overview tab.
-            Material(
-              color: Colors.transparent,
-              child: InkWell(
-                borderRadius: BorderRadius.circular(AppRadius.md),
-                // Direct push, not the nested go_router location — see the
-                // matching note in university_detail_screen.dart's Overview
-                // tab; the deep `/colleges/detail/reviews` match was not
-                // surfacing the screen.
-                onTap: () => Navigator.of(context).push(
-                  MaterialPageRoute<void>(
-                    builder: (_) => ReviewBreakdownScreen(
-                      universityId: university.id,
-                      universityName: university.name,
-                    ),
-                  ),
-                ),
-                child: ReviewSummaryBody(
-                  universityId: university.id,
-                  fallbackRating: university.rating,
-                  fallbackReviewCount: university.reviewCount,
-                ),
-              ),
-            ),
-          ],
         ],
       ),
     );
