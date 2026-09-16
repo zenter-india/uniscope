@@ -66,6 +66,47 @@ export default async function IntegrationsPage() {
           )}
         </div>
 
+        {railway.configured && railway.billing && (
+          <div className="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <div className="rounded-lg border border-zinc-200/80 bg-zinc-50/60 p-3 dark:border-zinc-800 dark:bg-zinc-800/40">
+              <p className="text-[11px] font-medium uppercase tracking-wide text-zinc-400 dark:text-zinc-500">
+                Spent this period
+              </p>
+              <p className="mt-1 text-sm font-semibold text-zinc-900 dark:text-zinc-100">
+                ${railway.billing.currentUsage.toFixed(2)}
+              </p>
+            </div>
+            <div className="rounded-lg border border-zinc-200/80 bg-zinc-50/60 p-3 dark:border-zinc-800 dark:bg-zinc-800/40">
+              <p className="text-[11px] font-medium uppercase tracking-wide text-zinc-400 dark:text-zinc-500">
+                Credit remaining
+              </p>
+              <p className="mt-1 text-sm font-semibold text-zinc-900 dark:text-zinc-100">
+                ${railway.billing.remainingUsageCreditBalance.toFixed(2)}
+              </p>
+            </div>
+            <div className="rounded-lg border border-zinc-200/80 bg-zinc-50/60 p-3 dark:border-zinc-800 dark:bg-zinc-800/40">
+              <p className="text-[11px] font-medium uppercase tracking-wide text-zinc-400 dark:text-zinc-500">
+                Hard spend limit
+              </p>
+              <p className="mt-1 text-sm font-semibold text-zinc-900 dark:text-zinc-100">
+                {railway.billing.usageLimit?.hardLimit != null
+                  ? `$${railway.billing.usageLimit.hardLimit.toFixed(2)}`
+                  : 'None set'}
+              </p>
+            </div>
+            <div className="rounded-lg border border-zinc-200/80 bg-zinc-50/60 p-3 dark:border-zinc-800 dark:bg-zinc-800/40">
+              <p className="text-[11px] font-medium uppercase tracking-wide text-zinc-400 dark:text-zinc-500">
+                Plan state
+              </p>
+              <p className="mt-1 text-sm font-semibold text-zinc-900 dark:text-zinc-100">
+                {railway.billing.isTrialing
+                  ? `Trial · ${railway.billing.trialDaysRemaining}d left`
+                  : railway.billing.state}
+              </p>
+            </div>
+          </div>
+        )}
+
         {!railway.configured ? (
           <EmptyState icon="settings">
             {railway.error ??

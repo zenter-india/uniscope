@@ -55,6 +55,25 @@ interface ServiceSummary {
   latestDeploymentStatus: string | null;
 }
 
+/** `Customer.creditBalance`/`currentUsage` etc. are in whole USD dollars
+ * (verified live — a $3.47 currentUsage on a real account came back as
+ * `3.4653...`, not cents), unlike `UsageLimit`'s own `softLimit`/
+ * `hardLimit`, which — per Railway's own CLI docs for `usage limit set`
+ * (dollar-amount flags) — are also dollars despite the "Cents"-suffixed
+ * sibling fields (`agentSoftLimitCents`) on the same type suggesting
+ * otherwise; only the agent-specific fields are cents. */
+interface CustomerBilling {
+  creditBalance: number;
+  remainingUsageCreditBalance: number;
+  currentUsage: number;
+  hasExhaustedFreePlan: boolean;
+  isTrialing: boolean;
+  trialDaysRemaining: number;
+  isPrepaying: boolean;
+  state: string;
+  usageLimit: { softLimit: number | null; hardLimit: number | null; isOverLimit: boolean } | null;
+}
+
 export interface RailwayUsageSummary {
   configured: boolean;
   workspaceName?: string;
@@ -62,13 +81,27 @@ export interface RailwayUsageSummary {
   services?: ServiceSummary[];
   usageTotals?: AggregatedUsage[];
   estimatedUsage?: EstimatedUsage[];
+  billing?: CustomerBilling;
   fetchedAt?: string;
   error?: string;
 }
 
 const USAGE_QUERY = `
   query($workspaceId: String!, $projectId: String!, $measurements: [MetricMeasurement!]!) {
-    workspace(workspaceId: $workspaceId) { name }
+    workspace(workspaceId: $workspaceId) {
+      name
+      customer {
+        creditBalance
+        remainingUsageCreditBalance
+        currentUsage
+        hasExhaustedFreePlan
+        isTrialing
+        trialDaysRemaining
+        isPrepaying
+        state
+        usageLimit { softLimit hardLimit isOverLimit }
+      }
+    }
     project(id: $projectId) {
       name
       services {
@@ -132,7 +165,7 @@ export class RailwayUsageService {
 
       const body = (await res.json()) as {
         data?: {
-          workspace: { name: string } | null;
+          workspace: { name: string; customer: CustomerBilling | null } | null;
           project: {
             name: string;
             services: {
@@ -168,6 +201,7 @@ export class RailwayUsageService {
         })),
         usageTotals: body.data.workspaceUsageTotals,
         estimatedUsage: body.data.estimatedUsage,
+        billing: body.data.workspace?.customer ?? undefined,
         fetchedAt: new Date().toISOString(),
       };
 

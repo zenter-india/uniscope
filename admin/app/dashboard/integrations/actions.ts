@@ -19,6 +19,18 @@ interface RailwayService {
   latestDeploymentStatus: string | null;
 }
 
+interface RailwayBilling {
+  creditBalance: number;
+  remainingUsageCreditBalance: number;
+  currentUsage: number;
+  hasExhaustedFreePlan: boolean;
+  isTrialing: boolean;
+  trialDaysRemaining: number;
+  isPrepaying: boolean;
+  state: string;
+  usageLimit: { softLimit: number | null; hardLimit: number | null; isOverLimit: boolean } | null;
+}
+
 export interface RailwayUsageSummary {
   configured: boolean;
   workspaceName?: string;
@@ -26,6 +38,7 @@ export interface RailwayUsageSummary {
   services?: RailwayService[];
   usageTotals?: AggregatedUsage[];
   estimatedUsage?: EstimatedUsage[];
+  billing?: RailwayBilling;
   fetchedAt?: string;
   error?: string;
 }
