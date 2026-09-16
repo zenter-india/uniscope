@@ -430,7 +430,17 @@ class PushService {
   void _handleDeepLinkData(Map<String, dynamic> data, {bool fromTap = true}) {
     final type = data['type'];
     final sessionId = data['sessionId'] as String?;
-    final isCall = data['sessionType'] == 'AUDIO_CALL';
+    // A scheduled AUDIO_CALL accept carries `confirmedFor` but deliberately
+    // NOT `sessionType` (see SessionsService.accept's own comment — sending
+    // sessionType there would auto-navigate the student straight into the
+    // call screen hours early). Checking for `confirmedFor` too is what
+    // actually catches that case; sessionType alone only ever matches an
+    // instant accept, so a scheduled "Request accepted" tap used to fall
+    // through to the generic /notifications catch-all below instead of
+    // opening the chat thread as intended. confirmedFor is never present on
+    // a CHAT-session accept, so this can't misfire there.
+    final isCall =
+        data['sessionType'] == 'AUDIO_CALL' || data['confirmedFor'] != null;
 
     // 1. Live / imminent call — pulls the party onto the call screen even
     //    on a foreground receipt.
