@@ -93,15 +93,19 @@
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>remote-notification</string>
-		<!-- Lets iOS keep the Agora audio session (and its AVAudioSession
-		     activation) alive if the app is backgrounded mid-call — the iOS
-		     counterpart to Android's CallForegroundService.kt. Without this,
-		     iOS is free to suspend the app's audio the moment it leaves the
-		     foreground, silencing an in-progress call. -->
-		<string>audio</string>
-		<!-- Deliberately NOT adding `voip` here — real PushKit/CallKit ringing
-		     was built and then reverted (2026-09-13, client decision: no
-		     ringtone needed, plain notifications are enough) specifically
+		<!-- `audio` was removed 2026-09-16 per Apple App Store rejection
+		     (Guideline 2.5.4): review found no feature that actually needs
+		     persistent background audio, and iOS call audio was never
+		     confirmed working end-to-end anyway (see the "iOS call audio
+		     investigated" note elsewhere in this file — real audio issues
+		     were still unresolved when this was added). If background-audio
+		     continuity during a backgrounded call is ever built and verified
+		     working on a real device, re-add `audio` here and reply to
+		     Apple's review message with a screen recording proving it, per
+		     their own instructions.
+		     Deliberately NOT adding `voip` either — real PushKit/CallKit
+		     ringing was built and then reverted (2026-09-13, client decision:
+		     no ringtone needed, plain notifications are enough) specifically
 		     because it required declaring FOREGROUND_SERVICE_PHONE_CALL on
 		     Android, which triggers extra Play Console review burden the
 		     client didn't want. Apple review also rejects a `voip`
