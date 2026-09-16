@@ -58,6 +58,7 @@ import { AdminSearchModule } from './modules/admin-search/admin-search.module.js
 import { TechnicalReportsModule } from './modules/technical-reports/technical-reports.module.js';
 import { SettingsModule } from './modules/settings/settings.module.js';
 import { AdminAccountsModule } from './modules/admin-accounts/admin-accounts.module.js';
+import { IntegrationsModule } from './modules/integrations/integrations.module.js';
 
 @Module({
   imports: [
@@ -133,6 +134,7 @@ import { AdminAccountsModule } from './modules/admin-accounts/admin-accounts.mod
     TechnicalReportsModule,
     SettingsModule,
     AdminAccountsModule,
+    IntegrationsModule,
   ],
   controllers: [AppController],
   providers: [

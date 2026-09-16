@@ -38,6 +38,7 @@ const NAV_SECTIONS: {
     heading: 'Admin',
     items: [
       { label: 'Admins', href: '/dashboard/admins', icon: 'lock' },
+      { label: 'Integrations', href: '/dashboard/integrations', icon: 'activity' },
       { label: 'Settings', href: '/dashboard/settings', icon: 'settings' },
     ],
   },
