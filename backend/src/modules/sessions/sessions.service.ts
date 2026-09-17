@@ -530,9 +530,20 @@ export class SessionsService {
    * request. Returns the parsed Date, or null when no slot was supplied
    * (legacy accept — behaves exactly as before). Throws BadRequestException
    * on anything out of bounds. Rules: the request must be scheduled (an
-   * Instant request has no anchor to confirm against); the slot must be on
-   * a :00/:30 boundary, in the future, ≤ 5 days out, and within ~4 hours of
-   * `requestedFor` or `requestedForAlt`.
+   * Instant request has no time to confirm at all); the slot must be on a
+   * :00/:30 boundary, in the future, and ≤ 5 days out.
+   *
+   * No longer requires the slot be near `requestedFor`/`requestedForAlt`
+   * (removed 2026-09-17) — the mobile "Suggest another time" picker was
+   * redesigned 2026-09-11 to let the mentor pick any day/time via the same
+   * unconstrained CustomCallTimeScreen used for reschedule (today + the
+   * next 2 days, custom_call_time_screen.dart's _dayAnchors), with no way
+   * to stay near the aspirant's original anchor. This backend check was
+   * never updated to match, so a perfectly normal "the time you asked for
+   * doesn't work, how about tomorrow instead" pick 400'd. requestedFor/
+   * requestedForAlt remain informational — still stored, still shown to
+   * the mentor as the aspirant's original ask — just no longer enforced as
+   * a proximity bound on the confirmed slot.
    */
   private resolveConfirmedSlot(
     session: { type: SessionType; requestedFor: Date | null; requestedForAlt: Date | null },
@@ -562,16 +573,6 @@ export class SessionsService {
     }
     if (t > now + 5 * 24 * 60 * 60 * 1000) {
       throw new BadRequestException('confirmedFor is more than 5 days ahead');
-    }
-    const WINDOW_MS = 4 * 60 * 60 * 1000 + 60_000; // one 4-hour block + slack
-    const anchors = [session.requestedFor, session.requestedForAlt].filter(
-      (d): d is Date => d != null,
-    );
-    const nearAnchor = anchors.some((a) => Math.abs(t - a.getTime()) <= WINDOW_MS);
-    if (!nearAnchor) {
-      throw new BadRequestException(
-        'confirmedFor must be close to one of the times the student offered',
-      );
     }
     return slot;
   }

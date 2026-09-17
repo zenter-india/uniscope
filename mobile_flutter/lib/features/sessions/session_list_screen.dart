@@ -997,6 +997,17 @@ class _SessionHeader extends StatelessWidget {
 
 /// Type label, status chip, action buttons, and review prompt for one
 /// session — reused standalone (_SessionCard) and stacked (_MergedSessionCard).
+/// `SessionsApi.accept`/`.reschedule` rethrow the backend's own message as
+/// `Exception("...")` (see sessions_api.dart's _dioMessage) — strip the
+/// wrapper so the snackbar shows e.g. "confirmedFor must be a 30-minute
+/// slot" instead of "Exception: confirmedFor must be a 30-minute slot".
+/// Anything else (a raw DioException from `cancel`/`reject`, which don't do
+/// this rethrow) passes through unchanged, same as before this existed.
+String _friendlyActionError(Object e) {
+  final s = e.toString();
+  return s.startsWith('Exception: ') ? s.substring('Exception: '.length) : s;
+}
+
 class _SessionActions extends ConsumerStatefulWidget {
   const _SessionActions({
     required this.session,
@@ -1030,7 +1041,7 @@ class _SessionActionsState extends ConsumerState<_SessionActions> {
       ref.invalidate(sessionsListProvider);
     } catch (e) {
       if (!mounted) return;
-      showAppSnackBar(context, 'Failed: $e');
+      showAppSnackBar(context, 'Failed: ${_friendlyActionError(e)}');
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -1146,7 +1157,7 @@ class _SessionActionsState extends ConsumerState<_SessionActions> {
       }
     } catch (e) {
       if (!mounted) return;
-      showAppSnackBar(context, 'Failed: $e');
+      showAppSnackBar(context, 'Failed: ${_friendlyActionError(e)}');
     } finally {
       if (mounted) setState(() => _busy = false);
     }

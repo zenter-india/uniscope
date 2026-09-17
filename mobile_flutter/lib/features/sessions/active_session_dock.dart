@@ -83,6 +83,16 @@ class ActiveSessionDock extends ConsumerWidget {
   }
 }
 
+/// `SessionsApi.accept` rethrows the backend's own message as
+/// `Exception("...")` (see sessions_api.dart's _dioMessage) — strip the
+/// wrapper so the snackbar shows the real reason instead of the raw
+/// "Exception: ..." string. A raw DioException (from `cancel`, which
+/// doesn't do this rethrow) passes through unchanged.
+String _friendlyActionError(Object e) {
+  final s = e.toString();
+  return s.startsWith('Exception: ') ? s.substring('Exception: '.length) : s;
+}
+
 class _DockRow extends ConsumerStatefulWidget {
   const _DockRow({required this.session, required this.isMentor});
   final Session session;
@@ -164,7 +174,7 @@ class _DockRowState extends ConsumerState<_DockRow> {
       }
     } catch (e) {
       if (!mounted) return;
-      showAppSnackBar(context, 'Failed: $e');
+      showAppSnackBar(context, 'Failed: ${_friendlyActionError(e)}');
     } finally {
       if (mounted) setState(() => _busy = false);
     }

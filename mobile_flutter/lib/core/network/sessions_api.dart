@@ -231,6 +231,19 @@ class CallCredentials {
       );
 }
 
+/// Extracts the backend's own `message` (string or validation-error list)
+/// from a failed response, so a caller's error UI can show e.g. "confirmedFor
+/// must be a 30-minute slot" instead of Dio's generic "response has a status
+/// code of 400…" text. Null when the response carries nothing usable.
+String? _dioMessage(DioException e) {
+  final data = e.response?.data;
+  if (data is! Map) return null;
+  final m = data['message'];
+  if (m is String && m.isNotEmpty) return m;
+  if (m is List && m.isNotEmpty) return m.join('\n');
+  return null;
+}
+
 class SessionsApi {
   SessionsApi(this._dio);
 
@@ -335,13 +348,17 @@ class SessionsApi {
   /// picked in the confirm sheet. Omit it for an Instant request or to
   /// accept without committing a slot. Sent as a UTC ISO-8601 string.
   Future<Session> accept(String sessionId, {DateTime? confirmedFor}) async {
-    final res = await _dio.post<Map<String, dynamic>>(
-      '/sessions/$sessionId/accept',
-      data: confirmedFor == null
-          ? null
-          : {'confirmedFor': confirmedFor.toUtc().toIso8601String()},
-    );
-    return Session.fromJson(res.data!);
+    try {
+      final res = await _dio.post<Map<String, dynamic>>(
+        '/sessions/$sessionId/accept',
+        data: confirmedFor == null
+            ? null
+            : {'confirmedFor': confirmedFor.toUtc().toIso8601String()},
+      );
+      return Session.fromJson(res.data!);
+    } on DioException catch (e) {
+      throw Exception(_dioMessage(e) ?? e.message ?? '$e');
+    }
   }
 
   Future<Session> reject(String sessionId) async {
@@ -366,11 +383,15 @@ class SessionsApi {
   /// "call rescheduled" notification, same "one action, other party
   /// informed" shape as `cancel` above. Sent as a UTC ISO-8601 string.
   Future<Session> reschedule(String sessionId, DateTime confirmedFor) async {
-    final res = await _dio.patch<Map<String, dynamic>>(
-      '/sessions/$sessionId/reschedule',
-      data: {'confirmedFor': confirmedFor.toUtc().toIso8601String()},
-    );
-    return Session.fromJson(res.data!);
+    try {
+      final res = await _dio.patch<Map<String, dynamic>>(
+        '/sessions/$sessionId/reschedule',
+        data: {'confirmedFor': confirmedFor.toUtc().toIso8601String()},
+      );
+      return Session.fromJson(res.data!);
+    } on DioException catch (e) {
+      throw Exception(_dioMessage(e) ?? e.message ?? '$e');
+    }
   }
 
   Future<CallCredentials> getCallToken(String sessionId) async {
