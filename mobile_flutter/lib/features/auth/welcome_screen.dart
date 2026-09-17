@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/theme/app_theme.dart';
+import '../../state/auth_controller.dart';
+import '../../widgets/app_widgets.dart';
 
 const _brandTeal = AppColors.primary;
 
@@ -52,16 +55,37 @@ class _Slide {
 /// trends / financial-aid-probability stats) was deliberately dropped —
 /// that's not a real Uniscope feature, and CLAUDE.md's own convention is to
 /// never assert data we don't have.
-class WelcomeScreen extends StatefulWidget {
+class WelcomeScreen extends ConsumerStatefulWidget {
   const WelcomeScreen({super.key});
 
   @override
-  State<WelcomeScreen> createState() => _WelcomeScreenState();
+  ConsumerState<WelcomeScreen> createState() => _WelcomeScreenState();
 }
 
-class _WelcomeScreenState extends State<WelcomeScreen> {
+class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
   final _controller = PageController();
   int _index = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    // By the time this screen can even be reached, hydration has already
+    // finished (the router holds every route at `/` until `isHydrated`) —
+    // so a failed session restore is already reflected in the very first
+    // state this widget sees, not something that changes later. A
+    // post-frame callback is the safe way to show an Overlay-based message
+    // in response to that, rather than reacting mid-build.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      if (ref.read(authControllerProvider).sessionRestoreFailed) {
+        showAppSnackBar(
+          context,
+          "We couldn't restore your previous session — please log in again.",
+        );
+        ref.read(authControllerProvider.notifier).acknowledgeSessionRestoreFailure();
+      }
+    });
+  }
 
   static const _slides = <_Slide>[
     _Slide(

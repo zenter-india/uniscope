@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
@@ -62,6 +63,7 @@ class AuthState {
     this.isAuthenticated = false,
     this.isHydrated = false,
     this.needsOnboarding = false,
+    this.sessionRestoreFailed = false,
   });
 
   final String? accessToken;
@@ -69,6 +71,19 @@ class AuthState {
   final AuthUser? user;
   final bool isAuthenticated;
   final bool isHydrated;
+
+  /// One-shot flag: true for exactly one hydration cycle when
+  /// `_hydrate()`'s secure-storage READ itself threw (not a plain "no
+  /// saved session" or "the saved JSON was garbage" case — a real
+  /// platform-level failure from flutter_secure_storage, e.g. an Android
+  /// Keystore key that no longer decrypts because the app data was
+  /// restored onto a different physical device). Without this, that
+  /// failure was silently swallowed and looked to the user exactly like
+  /// an unexplained logout, with zero trace anywhere — not even a backend
+  /// log, since no request is ever made. The pre-auth landing screen
+  /// (Welcome) shows a one-time explanation and clears this flag —
+  /// see `openedFromFailedSessionRestore`.
+  final bool sessionRestoreFailed;
 
   /// True from the moment a brand-new user verifies OTP until they complete
   /// (or explicitly skip) the role-selection → profile-setup → onboarding
@@ -87,6 +102,7 @@ class AuthState {
     bool? isAuthenticated,
     bool? isHydrated,
     bool? needsOnboarding,
+    bool? sessionRestoreFailed,
   }) {
     return AuthState(
       accessToken: accessToken ?? this.accessToken,
@@ -95,6 +111,7 @@ class AuthState {
       isAuthenticated: isAuthenticated ?? this.isAuthenticated,
       isHydrated: isHydrated ?? this.isHydrated,
       needsOnboarding: needsOnboarding ?? this.needsOnboarding,
+      sessionRestoreFailed: sessionRestoreFailed ?? this.sessionRestoreFailed,
     );
   }
 
@@ -115,8 +132,25 @@ class AuthController extends Notifier<AuthState> {
   }
 
   Future<void> _hydrate() async {
+    // Split deliberately into two stages with two different failure
+    // meanings — see `sessionRestoreFailed`'s doc comment for why this
+    // distinction matters:
+    //  1. The READ itself (platform-level: Android Keystore/iOS Keychain)
+    //     — a real, previously-invisible cause of "randomly logged out"
+    //     reports, since it never touches the backend or any log.
+    //  2. Parsing the payload it returned — a genuinely corrupt/unexpected
+    //     local blob, which is rarer and not actionable to explain to the
+    //     user, so it keeps the original silent "start clean" behaviour.
+    String? raw;
     try {
-      final raw = await _storage.read(key: _key);
+      raw = await _storage.read(key: _key);
+    } catch (err, st) {
+      debugPrint('[auth] secure storage read failed, session lost: $err\n$st');
+      state = state.copyWith(isHydrated: true, sessionRestoreFailed: true);
+      return;
+    }
+
+    try {
       if (raw != null) {
         final data = jsonDecode(raw) as Map<String, dynamic>;
         final userJson = data['user'] as Map<String, dynamic>?;
@@ -128,11 +162,18 @@ class AuthController extends Notifier<AuthState> {
           needsOnboarding: (data['needsOnboarding'] as bool?) ?? false,
         );
       }
-    } catch (_) {
-      // Corrupt payload — start clean.
+    } catch (err, st) {
+      debugPrint('[auth] stored session payload was unreadable, starting clean: $err\n$st');
     } finally {
       state = state.copyWith(isHydrated: true);
     }
+  }
+
+  /// Called once by the pre-auth landing screen after it's shown the
+  /// explanation for a failed session restore, so the message can never
+  /// reappear on a later rebuild/navigation within the same app run.
+  void acknowledgeSessionRestoreFailure() {
+    state = state.copyWith(sessionRestoreFailed: false);
   }
 
   Future<void> _persist() async {
