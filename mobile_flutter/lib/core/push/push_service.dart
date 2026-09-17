@@ -451,12 +451,16 @@ class PushService {
     //      accept carries `confirmedFor` — routing that into a call would
     //      drag the student in hours early, so only a tap acts on it, and
     //      only to open the chat thread.
+    //    - SESSION_RESCHEDULED carries the exact same {sessionId,
+    //      confirmedFor} shape as a scheduled SESSION_ACCEPTED (reschedule
+    //      only ever applies to a call that already has a confirmedFor, so
+    //      it's never null here) — same imminent/not-imminent handling.
     if (sessionId != null && isCall) {
       if (type == 'SESSION_STARTING') {
         _navigate('/call/$sessionId');
         return;
       }
-      if (type == 'SESSION_ACCEPTED') {
+      if (type == 'SESSION_ACCEPTED' || type == 'SESSION_RESCHEDULED') {
         final raw = data['confirmedFor'] as String?;
         final confirmedFor = raw == null ? null : DateTime.tryParse(raw);
         final imminent =
