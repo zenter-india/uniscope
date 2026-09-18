@@ -1076,7 +1076,8 @@ class _SessionActionsState extends ConsumerState<_SessionActions> {
       builder: (context) => AlertDialog(
         title: const Text('Cancel this call?'),
         content: const Text(
-          'The student will be notified and can rebook anytime later.\n\n'
+          "The student will be notified and can rebook whenever they're "
+          'ready.\n\n'
           'Note: Repeated cancellations after confirming a time slot may '
           'lead to account review.',
         ),
