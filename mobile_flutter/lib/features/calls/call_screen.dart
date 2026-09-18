@@ -1001,6 +1001,7 @@ class _CallScreenState extends ConsumerState<CallScreen> {
           peerAvatarUrl: _peerAvatarUrl,
           status: 'Starting call…',
           onBack: _handleBack,
+          onEnd: () => _endCall(),
         );
       case _Phase.connecting:
         return _ConnectingView(
@@ -1009,6 +1010,7 @@ class _CallScreenState extends ConsumerState<CallScreen> {
           peerAvatarUrl: _peerAvatarUrl,
           status: 'Connecting…',
           onBack: _handleBack,
+          onEnd: () => _endCall(),
         );
       case _Phase.permissionDenied:
         return _MessageScreen(
@@ -1512,12 +1514,14 @@ class _ConnectingView extends StatelessWidget {
     required this.peerAvatarUrl,
     required this.status,
     required this.onBack,
+    required this.onEnd,
   });
   final String? peerName;
   final String? peerUniqueId;
   final String? peerAvatarUrl;
   final String status;
   final VoidCallback onBack;
+  final VoidCallback onEnd;
 
   @override
   Widget build(BuildContext context) {
@@ -1529,7 +1533,15 @@ class _ConnectingView extends StatelessWidget {
       pulsing: true,
       topPill: const _StatusPill(text: 'Please wait'),
       onBack: onBack,
-      controls: const [],
+      controls: [
+        _CallControl(
+          icon: Icons.call_end_rounded,
+          label: 'Cancel',
+          onPressed: onEnd,
+          danger: true,
+          big: true,
+        ),
+      ],
     );
   }
 }
