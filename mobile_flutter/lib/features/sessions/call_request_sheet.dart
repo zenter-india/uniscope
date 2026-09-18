@@ -246,6 +246,15 @@ class _CallRequestSheetState extends ConsumerState<_CallRequestSheet> {
               const SizedBox(height: 2),
               _PickedTimesBar(times: _times, onRemove: _toggleTime),
             ],
+            const SizedBox(height: AppSpacing.xs),
+            const Text(
+              "Times offered are requests — the mentor's confirmed timing "
+              'will be final.',
+              style: TextStyle(
+                fontSize: AppFont.xs,
+                color: AppColors.textSecondary,
+              ),
+            ),
 
             const SizedBox(height: AppSpacing.lg),
             Row(
