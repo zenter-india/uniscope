@@ -98,6 +98,19 @@ const _joinActionId = 'join';
 /// shown once per call) updates in place rather than stacking duplicates.
 const _callOngoingNotificationId = 424242;
 const _callOngoingCategoryId = 'uniscope_call_ongoing';
+
+/// iOS notification categories carrying the Accept/Decline/Join actions —
+/// Android gets these via AndroidNotificationDetails.actions per-call, but
+/// iOS requires every action set to be pre-registered as a named category
+/// up front (see _initLocalNotifications) and then referenced by id per
+/// notification via DarwinNotificationDetails.categoryIdentifier. Without
+/// this, a SESSION_REQUEST/SESSION_STARTING push on iOS showed with sound
+/// but no actions at all — a real, confirmed platform gap (Android had
+/// one-tap Accept/Decline/Join, iOS was tap-to-open-app only). Both use
+/// `foreground: true` for the same reason the Android actions use
+/// `showsUserInterface: true` — see _acceptActionId's doc comment above.
+const _actionableRequestCategoryId = 'uniscope_actionable_request';
+const _joinableNowCategoryId = 'uniscope_joinable_now';
 const _endCallActionId = 'END_CALL';
 
 /// Wires up FCM: requests permission, uploads the device token to
@@ -229,6 +242,34 @@ class PushService {
                     DarwinNotificationActionOption.destructive,
                     DarwinNotificationActionOption.foreground,
                   },
+                ),
+              ],
+            ),
+            DarwinNotificationCategory(
+              _actionableRequestCategoryId,
+              actions: [
+                DarwinNotificationAction.plain(
+                  _acceptActionId,
+                  'Accept',
+                  options: {DarwinNotificationActionOption.foreground},
+                ),
+                DarwinNotificationAction.plain(
+                  _declineActionId,
+                  'Decline',
+                  options: {
+                    DarwinNotificationActionOption.destructive,
+                    DarwinNotificationActionOption.foreground,
+                  },
+                ),
+              ],
+            ),
+            DarwinNotificationCategory(
+              _joinableNowCategoryId,
+              actions: [
+                DarwinNotificationAction.plain(
+                  _joinActionId,
+                  'Join',
+                  options: {DarwinNotificationActionOption.foreground},
                 ),
               ],
             ),
@@ -370,6 +411,11 @@ class PushService {
           interruptionLevel: isCall
               ? InterruptionLevel.timeSensitive
               : InterruptionLevel.active,
+          categoryIdentifier: isActionableRequest
+              ? _actionableRequestCategoryId
+              : isJoinableNow
+              ? _joinableNowCategoryId
+              : null,
         ),
       ),
       payload: message.data.isEmpty ? null : jsonEncode(message.data),

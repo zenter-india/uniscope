@@ -38,25 +38,15 @@
 	<string>Uniscope uses Bluetooth to route call audio to a connected headset or car speaker.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>Uniscope does not use your location. This permission is only requested by the photo picker used for uploading verification documents.</string>
-	<!-- DEV ONLY — this file (Runner/Info.plist) is used for the Debug
-	     build config ONLY; Release and Profile use Info-Release.plist
-	     instead (see project.pbxproj's INFOPLIST_FILE per config), which
-	     has no ATS exception at all. The app talks to the backend over
-	     plain http:// at a LAN IP
-	     (e.g. --dart-define=API_URL=http://192.168.x.x:3001/api/v1) while
-	     testing on a physical device in Debug. iOS blocks cleartext HTTP by
-	     default (App Transport Security), which silently breaks every
-	     network call including OTP request/verify — no error shown,
-	     requests just never complete. Previously this was unconditionally
-	     true in every build config including Release/Profile (a real App
-	     Store review risk + a real security weakening, since production
-	     only ever needs https://) — split out 2026-09-18 so a real
-	     release/TestFlight/App Store build can never carry it. -->
-	<key>NSAppTransportSecurity</key>
-	<dict>
-		<key>NSAllowsArbitraryLoads</key>
-		<true/>
-	</dict>
+	<!-- Release/Profile builds use this plist (see project.pbxproj's
+	     INFOPLIST_FILE per config) instead of the shared Info.plist
+	     specifically to NOT carry NSAllowsArbitraryLoads — that ATS
+	     exception is a real App Store review risk and a genuine security
+	     weakening, and production only ever talks to the https:// Railway
+	     URL, which needs no exception. It exists in the plain Info.plist
+	     (Debug only) purely so a developer can point a physical device at
+	     a LAN http:// backend (--dart-define=API_URL=http://192.168.x.x:...)
+	     while iterating locally. -->
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>
@@ -107,9 +97,9 @@
 		     investigated" note elsewhere in this file — real audio issues
 		     were still unresolved when this was added). If background-audio
 		     continuity during a backgrounded call is ever built and verified
-		     working on a real device, re-add `audio` here and reply to
-		     Apple's review message with a screen recording proving it, per
-		     their own instructions.
+		     working on a real device, re-add `audio` here (and to the
+		     Debug-only Info.plist) and reply to Apple's review message with
+		     a screen recording proving it, per their own instructions.
 		     Deliberately NOT adding `voip` either — real PushKit/CallKit
 		     ringing was built and then reverted (2026-09-13, client decision:
 		     no ringtone needed, plain notifications are enough) specifically
