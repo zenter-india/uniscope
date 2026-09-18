@@ -840,9 +840,13 @@ class _CallScreenState extends ConsumerState<CallScreen> {
   Future<void> _endCall({String reason = 'NORMAL'}) async {
     HapticFeedback.heavyImpact();
     try {
-      await ref
+      final updated = await ref
           .read(sessionsApiProvider)
           .endCall(widget.sessionId, endReason: reason);
+      // Without this, _EndedView's _reasonLabel reads the pre-end session
+      // (e.g. still ACCEPTED if the call was cancelled mid-connect) and
+      // shows a stale status label like "Ready" instead of "Call ended".
+      if (mounted) _session = updated;
     } catch (_) {
       // Other party may have already ended it — fall through to local end.
     }
