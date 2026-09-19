@@ -126,3 +126,15 @@ flutter:
   #
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/to/font-from-package
+
+dependency_overrides:
+  # sentry_flutter 8.14.2 (the version normal resolution picked) ships a
+  # Swift plugin (SentryFlutterPlugin.swift) that calls a
+  # SentryBinaryImageCache.image(...) API which no longer exists in the
+  # Sentry-Cocoa SDK version Swift Package Manager actually resolves for
+  # it today (8.58.4 as of 2026-09-19) -- a real upstream version-drift
+  # bug between sentry_flutter and its own native dependency, not
+  # anything about this app. 9.x fixes it; forced here since normal `pub
+  # get` wont pick it on its own against this projects other constraints.
+  sentry_flutter: ^9.0.0
+  sentry: ^9.0.0
