@@ -53,7 +53,7 @@ class ChatThreadView extends StatefulWidget {
 
   final ChatConnection connection;
   final String currentUserId;
-  final Future<void> Function(String text, String clientMessageId) onSend;
+  final Future<ChatMessage> Function(String text, String clientMessageId) onSend;
   final Future<ChatConnection> Function() onRefetch;
   final Future<ChatConnection> Function(String beforeMessageId) onLoadOlder;
 
@@ -219,15 +219,33 @@ class _ChatThreadViewState extends State<ChatThreadView>
   /// same [clientMessageId] as the original attempt, not mint a new one,
   /// or the backend's idempotency dedup can't tell it apart from a genuine
   /// second message (see ChatService.sendMessage).
+  ///
+  /// Used to also `await widget.onRefetch()` after every send — a second,
+  /// completely redundant full history fetch just to learn what the send
+  /// itself had already returned, roughly doubling the time before a sent
+  /// message appeared on screen. `onSend` now returns the created
+  /// `ChatMessage` directly (the backend's `POST .../chat/messages` always
+  /// returned it — nothing was ever discarded server-side, only in this
+  /// callback's old `Future<void>` signature), so it's appended locally
+  /// instead. Safe against duplication: a later realtime-ping-triggered
+  /// refetch (see `_subscribe`) *replaces* `_messages` wholesale from the
+  /// server's own list rather than appending, so it just confirms what's
+  /// already showing.
   Future<void> _sendWithRetryId(String text, String clientMessageId) async {
     setState(() => _sending = true);
     try {
-      await widget.onSend(text, clientMessageId);
-      final refreshed = await widget.onRefetch();
+      final sent = await widget.onSend(text, clientMessageId);
       if (!mounted) return;
+      // The sender's own client is also subscribed to this channel's
+      // realtime broadcast topic, so the ping this same send triggers can
+      // race this callback: if the ping-triggered refetch (see
+      // _onNewMessagePing, which *replaces* _messages wholesale from the
+      // server) lands first, `sent` is already in `_messages` by the time
+      // we get here — appending unconditionally would duplicate it.
       setState(() {
-        _messages = refreshed.messages;
-        _hasMore = refreshed.hasMore;
+        if (!_messages.any((m) => m.id == sent.id)) {
+          _messages = [..._messages, sent];
+        }
       });
       WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
     } catch (e) {
