@@ -8,17 +8,44 @@ class MentorUniversity {
     required this.id,
     required this.name,
     required this.slug,
+    this.city,
+    this.state,
   });
 
   final String id;
   final String name;
   final String slug;
 
+  /// District/city + state — added 2026-09-19 so a mentor's own profile can
+  /// disambiguate same-named colleges (see the mentor detail screen's
+  /// `_affiliation` getter) even when a student reaches that profile
+  /// directly rather than by drilling in from the college's own page.
+  final String? city;
+  final String? state;
+
+  /// `"<city>, <state>"`, dropping the city when it's blank, equal to the
+  /// state, or already embedded in [name] — same dedup rule the University
+  /// model's own `locationLabel` uses. Falls back to just [state] (never
+  /// null on a real row) rather than ever rendering nothing.
+  String get locationLabel {
+    final s = state?.trim();
+    if (s == null || s.isEmpty) return '';
+    final c = city?.trim();
+    final usable =
+        c != null &&
+        c.isNotEmpty &&
+        c.toLowerCase() != s.toLowerCase() &&
+        !name.toLowerCase().contains(c.toLowerCase());
+    return usable ? '$c, $s' : s;
+  }
+
   factory MentorUniversity.fromJson(Map<String, dynamic> json) =>
       MentorUniversity(
         id: json['id'] as String,
         name: json['name'] as String,
         slug: json['slug'] as String,
+        city: json['city'] as String?,
+        state: json['state'] as String?,
       );
 }
 

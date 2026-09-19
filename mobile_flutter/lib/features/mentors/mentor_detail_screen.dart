@@ -179,9 +179,21 @@ class _IdentityCard extends StatelessWidget {
   const _IdentityCard({required this.mentor});
   final Mentor mentor;
 
+  /// College name with its district/state appended (2026-09-19, per client
+  /// request) — many colleges share a name across different districts
+  /// (generic-named DNB/Diploma hospital-training sites especially), and
+  /// this profile is often reached directly rather than by drilling in
+  /// from that specific college's own page, so the name alone can't tell
+  /// a student which same-named college the mentor is actually from.
   String? get _affiliation {
+    final uni = mentor.university;
+    final collegeLine = uni == null
+        ? null
+        : uni.locationLabel.isEmpty
+        ? uni.name
+        : '${uni.name}, ${uni.locationLabel}';
     final parts = <String>[
-      if (mentor.university != null) mentor.university!.name,
+      if (collegeLine != null) collegeLine,
       if (mentor.yearOfStudy != null) 'Year ${mentor.yearOfStudy}',
     ];
     return parts.isEmpty ? null : parts.join(' · ');

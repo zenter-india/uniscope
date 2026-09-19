@@ -58,7 +58,23 @@ export interface MentorResponse {
   yearOfStudy: number | null;
   graduationYear: number | null;
   pricePerMinuteMinor: number;
-  university: { id: string; name: string; slug: string } | null;
+  /** `city`/`state` added 2026-09-19, per client request — many colleges
+   * (especially generic-named DNB/Diploma hospital-training sites, see
+   * CLAUDE.md's "District Male Hospital" note) share a name across
+   * different districts, and a mentor's profile is often reached directly
+   * (search, a shared link, a chat) rather than by drilling in from that
+   * specific college's own page — with no location shown, a student had
+   * no way to tell which same-named college a mentor was actually from.
+   * `city` holds the district value for ~100% of active colleges after
+   * the 2026-09 backfill migrations; null only for the rare row that
+   * still has none. */
+  university: {
+    id: string;
+    name: string;
+    slug: string;
+    city: string | null;
+    state: string;
+  } | null;
   /** null until the mentor has at least one review. */
   rating: number | null;
   reviewCount: number;
@@ -118,6 +134,8 @@ export function toMentorResponse(
           id: profile.university.id,
           name: profile.university.name,
           slug: profile.university.slug,
+          city: profile.university.city,
+          state: profile.university.state,
         }
       : null,
     rating: rating?.average ?? null,
