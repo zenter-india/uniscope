@@ -137,6 +137,39 @@ class _DockRowState extends ConsumerState<_DockRow> {
     }
   }
 
+  /// The aspirant backing out of a call the mentor has already confirmed a
+  /// concrete time for — unlike withdrawing a still-pending request (no
+  /// confirmation needed, straight into the deflection sheet above), this
+  /// drops a booking the mentor is expecting, so it gets a confirm step
+  /// first, mirroring the mentor's own _cancelBooking in
+  /// session_list_screen.dart.
+  Future<void> _cancelConfirmedBooking() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Cancel this call?'),
+        content: const Text(
+          "The mentor will be notified and you can rebook a call whenever "
+          "you're ready.\n\n"
+          'Note: Repeated cancellations after confirming a time slot may '
+          'lead to account restriction.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Keep booking'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Cancel call'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    await _act(ref.read(sessionsApiProvider).cancel);
+  }
+
   // Mirrors _acceptAndMaybeJoin in session_list_screen.dart. Instant → the
   // mentor drops straight into the call. Scheduled → they pick a concrete
   // 30-min slot first, and the call connects at that slot, not now.
@@ -251,6 +284,21 @@ class _DockRowState extends ConsumerState<_DockRow> {
             onPressed: _busy ? null : _acceptAndJoin,
           ),
         ] else if (canJoin) ...[
+          // A confirmed-but-not-yet-live booking is still cancellable — the
+          // aspirant hasn't paid anything yet (the hold only settles on
+          // dual-confirm join), same reasoning the mentor's own Cancel
+          // already had. Scoped to ACCEPTED (not ringing/inProgress — once
+          // a call is actually connecting/live there's nothing left to
+          // "cancel", only end).
+          if (!widget.isMentor &&
+              session.status == SessionStatus.accepted) ...[
+            _DockButton(
+              label: 'Cancel',
+              outlined: true,
+              onPressed: _busy ? null : _cancelConfirmedBooking,
+            ),
+            const SizedBox(width: 6),
+          ],
           Builder(
             builder: (context) {
               final joinableNow = isScheduledCallJoinableNow(

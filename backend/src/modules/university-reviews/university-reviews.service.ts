@@ -10,7 +10,6 @@ import { CreateUniversityReviewDto } from './dto/create-university-review.dto.js
 import {
   REVIEW_CHOICE_FIELDS,
   ReviewChoiceField,
-  WOULD_RECOMMEND_POSITIVE,
 } from './dto/review-choices.js';
 import { ListUniversityReviewsDto } from './dto/list-university-reviews.dto.js';
 import {
@@ -184,7 +183,7 @@ export class UniversityReviewsService {
       REVIEW_CHOICE_FIELDS,
     ) as ReviewChoiceField[];
 
-    const [aggregate, recommendYes, recommendAnswered, rows] = await Promise.all([
+    const [aggregate, rows] = await Promise.all([
       this.prisma.review.aggregate({
         where,
         _avg: {
@@ -195,12 +194,6 @@ export class UniversityReviewsService {
           placementsRating: true,
         },
         _count: { overallRating: true },
-      }),
-      this.prisma.review.count({
-        where: { ...where, wouldRecommend: { in: [...WOULD_RECOMMEND_POSITIVE] } },
-      }),
-      this.prisma.review.count({
-        where: { ...where, wouldRecommend: { not: null } },
       }),
       // Review volume per university is small, so pulling the choice/tag
       // columns and folding them in JS is cheaper than 9 more round trips.
@@ -241,9 +234,15 @@ export class UniversityReviewsService {
     return {
       overallAverage: aggregate._avg.overallRating,
       reviewCount: aggregate._count.overallRating,
+      // Derived straight from the star average (5★=100%, 4★=80%, …,
+      // 1★=20%) rather than the separate "Would you recommend?" question —
+      // the latter answers a genuinely different question and produced
+      // confusing results (a college with decent stars could still show
+      // 0% here), so this is now a deterministic function of the same
+      // number already shown right next to it.
       recommendPercent:
-        recommendAnswered > 0
-          ? Math.round((recommendYes / recommendAnswered) * 100)
+        aggregate._avg.overallRating != null
+          ? Math.round(aggregate._avg.overallRating * 20)
           : null,
       categoryAverages: {
         academics: aggregate._avg.clinicalExposureRating,

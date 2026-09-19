@@ -1006,7 +1006,8 @@ class MyUniversityReviewScreen extends ConsumerWidget {
                 const SizedBox(height: 4),
                 const Text(
                   "You've already submitted this review — a review can't "
-                  'be changed once submitted.',
+                  'be changed once submitted. Contact support for any '
+                  'further updates or changes.',
                   style: TextStyle(
                     fontSize: AppFont.xs,
                     color: AppColors.textSecondary,
