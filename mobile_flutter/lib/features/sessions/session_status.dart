@@ -186,6 +186,16 @@ SessionStatusView _view({
           AppColors.textMuted,
         );
       }
+      // Someone left before the call actually connected (still
+      // "Connecting…"/"Ringing…", nothing billed) — distinct from a real
+      // call that happened and ended normally, so it shouldn't read the
+      // same as "Completed". See _kEndReasonBeforeConnect in call_screen.dart.
+      if (isCall && endReason == 'ENDED_BEFORE_CONNECT') {
+        return SessionStatusView(
+          compact ? 'Not connected' : 'Ended before connecting',
+          AppColors.textMuted,
+        );
+      }
       return SessionStatusView(
         isCall
             ? (compact ? 'Call ended' : 'Completed')

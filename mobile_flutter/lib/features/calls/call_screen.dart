@@ -85,6 +85,20 @@ class CallScreen extends ConsumerStatefulWidget {
   ConsumerState<CallScreen> createState() => _CallScreenState();
 }
 
+/// Distinguishes "left before anyone actually connected" (no minutes ever
+/// billed) from a genuine `NORMAL` end of a call that was really live.
+/// Without this, `endCall`'s default `reason: 'NORMAL'` was used for BOTH —
+/// a user backing out of "Connecting…"/"Ringing…" (correctly free, but
+/// wrongly indistinguishable in the data from an actual successful call)
+/// got recorded identically to one where two people really talked. Found
+/// via a live database audit (2026-09-18): ~38 "COMPLETED / NORMAL"
+/// sessions with zero billed minutes and neither party's joinedAt set —
+/// all explained by this, not a hidden connectivity failure, but a real
+/// gap in being able to tell the two apart from the data alone.
+/// `Session.endReason` is a plain `VarChar(30)`, not a backend enum — no
+/// migration or backend change needed for a new value.
+const _kEndReasonBeforeConnect = 'ENDED_BEFORE_CONNECT';
+
 class _CallScreenState extends ConsumerState<CallScreen> {
   _Phase _phase = _Phase.requestingPermission;
   String? _errorMessage;
@@ -952,7 +966,14 @@ class _CallScreenState extends ConsumerState<CallScreen> {
       );
       if (confirm != true) return;
     }
-    await _endCall();
+    // Only a genuinely active call is a real NORMAL end — every other
+    // phase reaching here (connecting/waiting/permission) means nobody
+    // ever actually connected, so it shouldn't share that label.
+    await _endCall(
+      reason: _phase == _Phase.active
+          ? 'NORMAL'
+          : _kEndReasonBeforeConnect,
+    );
     if (mounted) context.pop();
   }
 
@@ -1055,7 +1076,10 @@ class _CallScreenState extends ConsumerState<CallScreen> {
           peerAvatarUrl: _peerAvatarUrl,
           slotMinutes: _session?.callSlotMinutes,
           remoteJoined: _remoteJoinedChannel,
-          onEnd: () => _endCall(),
+          // Waiting = your own join succeeded, the peer hasn't confirmed
+          // yet — nothing is billed until dual-confirm settles, so giving
+          // up here is the same "never actually connected" case as above.
+          onEnd: () => _endCall(reason: _kEndReasonBeforeConnect),
           onBack: _handleBack,
         );
       case _Phase.active:
