@@ -335,6 +335,39 @@ class StatusChip extends StatelessWidget {
   }
 }
 
+/// Small red numeral badge — a Sessions-tab row's chat icon (unread count
+/// for that one relationship) and the bottom-nav Sessions tab (the total
+/// across every relationship, see MainShell) both use it. Caps the printed
+/// number at "99+" the same way WhatsApp/most chat apps do, so a heavy
+/// account's badge never grows wider than the icon it sits on.
+class UnreadBadge extends StatelessWidget {
+  const UnreadBadge({super.key, required this.count});
+  final int count;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
+      padding: const EdgeInsets.symmetric(horizontal: 3),
+      decoration: BoxDecoration(
+        color: const Color(0xFFE24C4C),
+        borderRadius: BorderRadius.circular(9),
+        border: Border.all(color: AppColors.surface, width: 1.5),
+      ),
+      alignment: Alignment.center,
+      child: Text(
+        count > 99 ? '99+' : '$count',
+        style: const TextStyle(
+          fontSize: 9,
+          fontWeight: AppFont.bold,
+          color: Colors.white,
+          height: 1,
+        ),
+      ),
+    );
+  }
+}
+
 /// Pulsing placeholder block shown while content loads. Compose several
 /// into a list to sketch the layout that's coming.
 class Skeleton extends StatefulWidget {

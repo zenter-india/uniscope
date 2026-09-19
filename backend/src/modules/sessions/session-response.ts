@@ -184,6 +184,13 @@ export interface SessionResponse {
   /** User id of whoever sent `lastMessageText` — lets the client show a
    * "You: " prefix without another lookup. */
   lastMessageSenderId: string | null;
+  /** Messages on this CHAT session's channel sent by the other party since
+   * the viewer's own ChatChannelRead.lastReadAt (or all of them, if the
+   * viewer has never read this channel). Always 0 for AUDIO_CALL and for
+   * every path but the list one (findAll) — same scoping as
+   * lastMessageText/lastMessageAt/lastMessageSenderId above, see
+   * SessionsService.findAll's own comment for why it's list-only. */
+  unreadCount: number;
 }
 
 export function toSessionResponse(
@@ -191,6 +198,7 @@ export function toSessionResponse(
   resolveAvatarUrl: AvatarUrlResolver,
   mentorRating?: MentorRatingLite,
   lastMessage?: LastChatMessageLite | null,
+  unreadCount = 0,
 ): SessionResponse {
   const mp = session.mentor.profile;
   const ap = session.aspirant.profile;
@@ -248,5 +256,6 @@ export function toSessionResponse(
     lastMessageText: lastMessage?.text ?? null,
     lastMessageAt: lastMessage?.createdAt ?? null,
     lastMessageSenderId: lastMessage?.senderId ?? null,
+    unreadCount,
   };
 }

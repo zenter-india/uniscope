@@ -222,6 +222,7 @@ model User {
   blockedUsers          BlockedUser[]         @relation("BlockerRelation")
   blockedByUsers        BlockedUser[]         @relation("BlockedRelation")
   savedUniversities     SavedUniversity[]
+  chatChannelReads      ChatChannelRead[]
 
   @@index([role])
   @@index([verificationStatus])
@@ -234,68 +235,68 @@ model User {
 /// Mentor-facing fields (pricePerMinuteMinor, languages) are null/empty for
 /// aspirants; set once a user opts into mentoring as role MENTOR.
 model UserProfile {
-  id                       String   @id @default(uuid())
-  userId                   String   @unique @map("user_id")
-  realNameEncrypted        String?  @map("real_name_encrypted") @db.Text
+  id                        String    @id @default(uuid())
+  userId                    String    @unique @map("user_id")
+  realNameEncrypted         String?   @map("real_name_encrypted") @db.Text
   /// MENTOR-only. The UPI VPA an admin sends the mentor's weekly payout to.
   /// AES-256-GCM encrypted (payment-routing PII) — see
   /// profile-encryption.helper.ts. Returned only to the mentor themselves
   /// (GET /users/me) and on the admin payout list / user detail.
-  upiIdEncrypted           String?  @map("upi_id_encrypted") @db.Text
-  universityId             String?  @map("university_id")
-  graduationYear           Int?     @map("graduation_year") @db.SmallInt
-  yearOfStudy              Int?     @map("year_of_study") @db.SmallInt
-  specialty                String?  @db.VarChar(100)
-  bio                      String?  @db.VarChar(500)
-  avatarKey                String?  @map("avatar_key") @db.VarChar(500)
+  upiIdEncrypted            String?   @map("upi_id_encrypted") @db.Text
+  universityId              String?   @map("university_id")
+  graduationYear            Int?      @map("graduation_year") @db.SmallInt
+  yearOfStudy               Int?      @map("year_of_study") @db.SmallInt
+  specialty                 String?   @db.VarChar(100)
+  bio                       String?   @db.VarChar(500)
+  avatarKey                 String?   @map("avatar_key") @db.VarChar(500)
   /// Aspirant-only onboarding fields — null/unused for mentors. Free text
   /// (not enums) since the exact option set is still being finalized with
   /// the product design; the mobile client renders them as dropdowns for
   /// UX but the backend doesn't constrain the value set yet.
-  gender                   String?  @db.VarChar(30)
-  state                    String?  @db.VarChar(100)
-  city                     String?  @db.VarChar(100)
-  qualification            String?  @db.VarChar(50)
+  gender                    String?   @db.VarChar(30)
+  state                     String?   @db.VarChar(100)
+  city                      String?   @db.VarChar(100)
+  qualification             String?   @db.VarChar(50)
   /// Free text, not FK'd to any picklist — only meaningful for a
   /// Medical-stream user (aspirant or mentor) whose qualification/degree
   /// isn't 12th/UG, e.g. "Paediatrics". Same pattern as the web enrollment
   /// form's EnrollmentLead.specialization.
-  specialization           String?  @db.VarChar(100)
+  specialization            String?   @db.VarChar(100)
   /// Dual-purpose by role, same pattern as `specialty`: for an ASPIRANT this
   /// is their school-level stream (PCB/PCM/PCMB/Other); for a MENTOR it's
   /// their college field of study (Medical/Engineering/Law/etc — see
   /// kMentorStreams mobile-side). Widened from VARCHAR(20) since mentor
   /// values like "Commerce & Business" don't fit the aspirant-only length.
-  stream                   String?  @db.VarChar(50)
-  dateOfBirth              DateTime? @map("date_of_birth") @db.Date
+  stream                    String?   @db.VarChar(50)
+  dateOfBirth               DateTime? @map("date_of_birth") @db.Date
   /// Course the aspirant is pursuing/aiming for, e.g. "MBBS", "BDS" — distinct
   /// from `stream` (PCB/PCM at the school level).
-  courseInterested         String?  @db.VarChar(50) @map("course_interested")
+  courseInterested          String?   @map("course_interested") @db.VarChar(50)
   /// Aspirant's preferred language for mentor communication — distinct from
   /// a mentor's own `languages` list (which is multi-select). Widened from
   /// VARCHAR(30) to fit multiple comma-joined picks, same fix as the web
   /// enrollment form's EnrollmentLead.preferredLanguage.
-  preferredLanguage        String?  @db.VarChar(150) @map("preferred_language")
+  preferredLanguage         String?   @map("preferred_language") @db.VarChar(150)
   /// Widened from VARCHAR(50) to fit multiple comma-joined picks — same fix
   /// as preferredLanguage above.
-  preferredMentorshipTiming String? @db.VarChar(150) @map("preferred_mentorship_timing")
+  preferredMentorshipTiming String?   @map("preferred_mentorship_timing") @db.VarChar(150)
   /// Mentor's own choice to keep yearOfStudy/graduationYear off their public
   /// profile — only one of the two is ever set at a time (driven by
   /// currentStatus), so a single flag covers both. Same pattern as the web
   /// enrollment form's EnrollmentLead.yearInfoPrivate.
-  yearInfoPrivate          Boolean  @default(false) @map("year_info_private")
+  yearInfoPrivate           Boolean   @default(false) @map("year_info_private")
   /// Target exams/colleges, e.g. ["NEET", "AIIMS Delhi"] — free-form tags,
   /// not FK'd to the University table (an aspirant's goal college may not
   /// exist in that table yet, or may be a general aspiration like "Any
   /// government college").
-  goals                    String[] @default([])
-  isMentorAvailable        Boolean  @default(false) @map("is_mentor_available")
+  goals                     String[]  @default([])
+  isMentorAvailable         Boolean   @default(false) @map("is_mentor_available")
   /// When isMentorAvailable was last set to true. Availability auto-expires
   /// after AVAILABILITY_TTL_HOURS so a mentor who toggles on and forgets
   /// doesn't advertise call availability indefinitely — the stored boolean
   /// stays true, but every read path treats it as false once stale (see
   /// isCallAvailable in availability.ts). Null means never toggled on.
-  availabilitySetAt        DateTime? @map("availability_set_at") @db.Timestamptz
+  availabilitySetAt         DateTime? @map("availability_set_at") @db.Timestamptz
   /// Mentor-only — set true when this mentor's verification is APPROVED
   /// (going forward only; existing verified mentors stay false). While true
   /// and the mentor has no `Review` of their own `universityId`, they
@@ -304,25 +305,25 @@ model UserProfile {
   /// banner. Reviewing their college doesn't clear the flag — it's a
   /// permanent "this mentor was onboarded under the review requirement"
   /// marker; the gate just also checks whether a review now exists.
-  mustReviewCollege        Boolean  @default(false) @map("must_review_college")
+  mustReviewCollege         Boolean   @default(false) @map("must_review_college")
   /// Rate charged per minute of session time, in minor units (paise). Null until
   /// the mentor sets a rate; enforced non-null at the service layer before a
   /// mentor can accept bookings.
-  pricePerMinuteMinor      Int?     @map("price_per_minute_minor")
-  languages                String[] @default([])
+  pricePerMinuteMinor       Int?      @map("price_per_minute_minor")
+  languages                 String[]  @default([])
   /// Mentor-only — days of the week the mentor is generally available for
   /// sessions, e.g. ["Monday", "Wednesday"]. Advisory only — not enforced
   /// at booking time (a booking can still be requested any day).
-  availableDays            String[] @default([]) @map("available_days")
+  availableDays             String[]  @default([]) @map("available_days")
   /// Aspirant-only free tier: 2 free CHAT sessions before Uniminutes are
   /// required. Decremented on session accept, never goes below 0.
-  freeChatsRemaining       Int      @default(2) @map("free_chats_remaining")
+  freeChatsRemaining        Int       @default(2) @map("free_chats_remaining")
   /// Aspirant-only free tier: 10 free minutes of AUDIO_CALL time (stored in
   /// seconds for precise decrementing). Consumed before paid slot billing
   /// starts on a call.
-  freeCallSecondsRemaining Int      @default(600) @map("free_call_seconds_remaining")
-  createdAt                DateTime @default(now()) @map("created_at") @db.Timestamptz
-  updatedAt                DateTime @updatedAt @map("updated_at") @db.Timestamptz
+  freeCallSecondsRemaining  Int       @default(600) @map("free_call_seconds_remaining")
+  createdAt                 DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt                 DateTime  @updatedAt @map("updated_at") @db.Timestamptz
 
   user       User        @relation(fields: [userId], references: [id])
   university University? @relation(fields: [universityId], references: [id])
@@ -379,12 +380,12 @@ model University {
 
 /// Degree programs offered at a university (e.g. MBBS, MD, MS, DNB).
 model Program {
-  id            String   @id @default(uuid())
-  universityId  String   @map("university_id")
-  name          String   @db.VarChar(100)
-  description   String?  @db.Text
-  durationYears Int?     @map("duration_years") @db.SmallInt
-  totalSeats    Int?     @map("total_seats") @db.SmallInt
+  id              String   @id @default(uuid())
+  universityId    String   @map("university_id")
+  name            String   @db.VarChar(100)
+  description     String?  @db.Text
+  durationYears   Int?     @map("duration_years") @db.SmallInt
+  totalSeats      Int?     @map("total_seats") @db.SmallInt
   /// Specializations accredited under this program at this university, e.g.
   /// ["Cardiology", "General Surgery"] for a DNB program. Sourced from the
   /// NBEMS accreditation dataset (see backend/scripts/data/dnb-colleges.json)
@@ -394,9 +395,9 @@ model Program {
   /// offers what that college's program actually accredits, rather than the
   /// EnrollmentLead.specialization free-text/global-list gap noted there.
   specializations String[] @default([])
-  isActive      Boolean  @default(true) @map("is_active")
-  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz
-  updatedAt     DateTime @updatedAt @map("updated_at") @db.Timestamptz
+  isActive        Boolean  @default(true) @map("is_active")
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt       DateTime @updatedAt @map("updated_at") @db.Timestamptz
 
   university University @relation(fields: [universityId], references: [id])
 
@@ -499,18 +500,18 @@ model Review {
 /// which also doubles as "have I already reviewed this session" for the
 /// mobile client's prompt-once-per-session UI.
 model MentorReview {
-  id         String   @id @default(uuid())
-  sessionId  String   @unique @map("session_id")
-  mentorId   String   @map("mentor_id")
-  aspirantId String   @map("aspirant_id")
-  rating     Int      @db.SmallInt
-  comment    String?  @db.VarChar(500)
+  id         String       @id @default(uuid())
+  sessionId  String       @unique @map("session_id")
+  mentorId   String       @map("mentor_id")
+  aspirantId String       @map("aspirant_id")
+  rating     Int          @db.SmallInt
+  comment    String?      @db.VarChar(500)
   /// Admin moderation state — same enum the university `Review` model uses.
   /// Only ACTIVE reviews are shown on the mentor's profile or counted toward
   /// their rating (see ReviewsService.findForMentor / ratingSummaries).
   status     ReviewStatus @default(ACTIVE)
-  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz
-  updatedAt  DateTime @updatedAt @map("updated_at") @db.Timestamptz
+  createdAt  DateTime     @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt  DateTime     @updatedAt @map("updated_at") @db.Timestamptz
 
   session  Session @relation(fields: [sessionId], references: [id])
   mentor   User    @relation("MentorReviewsReceived", fields: [mentorId], references: [id])
@@ -692,8 +693,9 @@ model ChatChannel {
   supportUserId String?         @unique @map("support_user_id")
   createdAt     DateTime        @default(now()) @map("created_at") @db.Timestamptz
 
-  session  Session?      @relation(fields: [sessionId], references: [id])
+  session  Session?          @relation(fields: [sessionId], references: [id])
   messages ChatMessage[]
+  reads    ChatChannelRead[]
 
   @@map("chat_channels")
 }
@@ -704,24 +706,44 @@ model ChatChannel {
 /// since the support identity isn't a real User row, same as it wasn't
 /// under Stream Chat.
 model ChatMessage {
-  id        String      @id @default(uuid())
-  channelId String      @map("channel_id")
-  senderId  String      @map("sender_id")
-  text      String
+  id              String   @id @default(uuid())
+  channelId       String   @map("channel_id")
+  senderId        String   @map("sender_id")
+  text            String
   /// Client-generated id (a UUID minted on-device at compose time), sent
   /// once per logical send attempt — lets ChatService.sendMessage dedupe a
   /// retried/double-tapped POST into the original row instead of creating a
   /// second message. Null for any row inserted without one (defensive —
   /// nothing currently omits it), so the unique constraint below is scoped
   /// per-channel and Postgres treats NULLs as distinct from each other.
-  clientMessageId String? @map("client_message_id")
-  createdAt DateTime    @default(now()) @map("created_at") @db.Timestamptz
+  clientMessageId String?  @map("client_message_id")
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz
 
   channel ChatChannel @relation(fields: [channelId], references: [id])
 
   @@unique([channelId, clientMessageId])
   @@index([channelId, createdAt])
   @@map("chat_messages")
+}
+
+/// Per-user last-read marker for a chat channel — powers unread-message
+/// counts on the Sessions tab, both roles (deliberately deferred as "Phase
+/// 2" at the original chat-list-preview feature, see CLAUDE.md). One row
+/// per (channel, user); upserted by ChatService.markRead whenever that
+/// user fetches the channel's newest message page (never on a
+/// load-older-history page, which shouldn't count as "read the latest").
+model ChatChannelRead {
+  id         String   @id @default(uuid())
+  channelId  String   @map("channel_id")
+  userId     String   @map("user_id")
+  lastReadAt DateTime @default(now()) @map("last_read_at") @db.Timestamptz
+
+  channel ChatChannel @relation(fields: [channelId], references: [id])
+  user    User        @relation(fields: [userId], references: [id])
+
+  @@unique([channelId, userId])
+  @@index([userId])
+  @@map("chat_channel_reads")
 }
 
 /// One wallet per user. balanceMinor is a CACHE derived from LedgerEntry rows —
@@ -935,19 +957,19 @@ model AppSetting {
 /// anyone out of the panel), and rows in this table are additional accounts
 /// the root admin creates for teammates from inside the panel itself.
 model AdminAccount {
-  id           String   @id @default(uuid())
+  id           String    @id @default(uuid())
   /// Stored lower-cased; compared case-insensitively against the root env
   /// pair too, so an admin can't accidentally register a shadow account for
   /// the same address the root credential already uses.
-  email        String   @unique @db.VarChar(255)
-  passwordHash String   @map("password_hash") @db.VarChar(255)
-  displayName  String?  @map("display_name") @db.VarChar(100)
+  email        String    @unique @db.VarChar(255)
+  passwordHash String    @map("password_hash") @db.VarChar(255)
+  displayName  String?   @map("display_name") @db.VarChar(100)
   /// Deactivate, never delete -- matches this project's convention
   /// everywhere else (University.isActive, User.isActive, ...).
-  isActive     Boolean  @default(true) @map("is_active")
+  isActive     Boolean   @default(true) @map("is_active")
   lastLoginAt  DateTime? @map("last_login_at") @db.Timestamptz
-  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz
-  updatedAt    DateTime @updatedAt @map("updated_at") @db.Timestamptz
+  createdAt    DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt    DateTime  @updatedAt @map("updated_at") @db.Timestamptz
 
   @@map("admin_accounts")
 }
@@ -960,20 +982,20 @@ model AdminAccount {
 /// endpoint actually reach University, so a source-site change or a stale
 /// admin edit never gets silently overwritten.
 model DataImportJob {
-  id          String            @id @default(uuid())
+  id          String           @id @default(uuid())
   type        DataImportType
-  status      DataImportStatus  @default(RUNNING)
+  status      DataImportStatus @default(RUNNING)
   /// { added: [...], changed: [...], unchanged: number, sourceCount: number }
   /// — populated once capture completes; null while RUNNING.
   diffJson    Json?
   /// Populated only after /apply — which of diffJson's rows the admin
   /// actually approved, so a second apply call can't silently redo it.
   appliedJson Json?
-  error       String?           @db.Text
-  startedAt   DateTime          @default(now()) @map("started_at") @db.Timestamptz
-  completedAt DateTime?         @map("completed_at") @db.Timestamptz
-  appliedAt   DateTime?         @map("applied_at") @db.Timestamptz
-  appliedBy   String?           @map("applied_by")
+  error       String?          @db.Text
+  startedAt   DateTime         @default(now()) @map("started_at") @db.Timestamptz
+  completedAt DateTime?        @map("completed_at") @db.Timestamptz
+  appliedAt   DateTime?        @map("applied_at") @db.Timestamptz
+  appliedBy   String?          @map("applied_by")
 
   @@index([type, startedAt(sort: Desc)])
   @@map("data_import_jobs")
@@ -1035,45 +1057,45 @@ model EnrollmentLead {
   stream      String?   @db.VarChar(50)
 
   /// Aspirant-only.
-  qualification             String?  @db.VarChar(50)
-  courseInterested          String?  @map("course_interested") @db.VarChar(50)
+  qualification             String? @db.VarChar(50)
+  courseInterested          String? @map("course_interested") @db.VarChar(50)
   /// Widened from VARCHAR(30)/(50) to fit multiple comma-joined picks — the
   /// web form allows multi-select on both, same "join into one string"
   /// pattern as the mobile-facing UserProfile columns of the same name.
-  preferredLanguage         String?  @map("preferred_language") @db.VarChar(150)
-  preferredMentorshipTiming String?  @map("preferred_mentorship_timing") @db.VarChar(150)
+  preferredLanguage         String? @map("preferred_language") @db.VarChar(150)
+  preferredMentorshipTiming String? @map("preferred_mentorship_timing") @db.VarChar(150)
 
   /// Shared by both roles -- originally mentor-only, extended to aspirants
   /// per explicit request so both can set a public-facing pseudonym.
-  alias          String?  @db.VarChar(60)
+  alias           String?  @db.VarChar(60)
   /// `universityId` is set when the person picked an existing college from
   /// the dropdown; `collegeName` always holds the raw text so a college
   /// missing from the University table doesn't lose the answer. Shared by
   /// both roles -- originally mentor-only, extended to aspirants once they
   /// got their own curated College field (shown whenever `qualification`
   /// isn't "Higher Secondary (12th)", same mechanism as the mentor form's).
-  universityId   String?  @map("university_id")
-  collegeName    String?  @map("college_name") @db.VarChar(200)
+  universityId    String?  @map("university_id")
+  collegeName     String?  @map("college_name") @db.VarChar(200)
   /// Mentor-only. Widened from VARCHAR(20): a picklist value fits easily,
   /// but "Others" reveals a free-text field on the form (same pattern as
   /// `stream`), and a typed degree name can run well past 20 characters.
-  degree         String?  @db.VarChar(50)
+  degree          String?  @db.VarChar(50)
   /// Shared by both roles. Free text, not FK'd to any picklist -- for a
   /// mentor, only meaningful when degree isn't UG (e.g. "Paediatrics" for
   /// an MD/MS); for an aspirant, shown whenever qualification isn't
   /// "Higher Secondary (12th)". Building a real specialization-per-degree
   /// taxonomy was deliberately deferred (see the automation-roadmap
   /// discussion); this captures the answer either way.
-  specialization String?  @db.VarChar(100)
-  currentStatus  String?  @map("current_status") @db.VarChar(30)
-  yearOfStudy    Int?     @map("year_of_study") @db.SmallInt
-  graduationYear Int?     @map("graduation_year") @db.SmallInt
+  specialization  String?  @db.VarChar(100)
+  currentStatus   String?  @map("current_status") @db.VarChar(30)
+  yearOfStudy     Int?     @map("year_of_study") @db.SmallInt
+  graduationYear  Int?     @map("graduation_year") @db.SmallInt
   /// Mentor's own choice to keep yearOfStudy/graduationYear off their public
   /// profile once converted — only one of the two is ever set at a time
   /// (driven by currentStatus), so a single flag covers both.
-  yearInfoPrivate Boolean @default(false) @map("year_info_private")
-  languages      String[] @default([])
-  availableDays  String[] @default([]) @map("available_days")
+  yearInfoPrivate Boolean  @default(false) @map("year_info_private")
+  languages       String[] @default([])
+  availableDays   String[] @default([]) @map("available_days")
 
   /// Mentor college-ID upload — same Supabase bucket and signed-URL read path
   /// as VerificationRequest, but stored here so it survives independently of

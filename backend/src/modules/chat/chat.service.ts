@@ -209,6 +209,27 @@ export class ChatService {
   }
 
   /**
+   * Records that `userId` has read up to "now" on this channel — the
+   * unread-count math (SessionsService.findAll) treats every message
+   * created after this timestamp as unread. Called only from
+   * ChatController.listMessages when the caller fetches the channel's
+   * NEWEST page (no `before` cursor) — a "load older history" page
+   * shouldn't count as reading the latest. Best-effort, mirrors
+   * publishNewMessage: never blocks the message fetch it's attached to.
+   */
+  async markRead(channelId: string, userId: string): Promise<void> {
+    try {
+      await this.prisma.chatChannelRead.upsert({
+        where: { channelId_userId: { channelId, userId } },
+        create: { channelId, userId },
+        update: { lastReadAt: new Date() },
+      });
+    } catch {
+      // best-effort — see doc comment above.
+    }
+  }
+
+  /**
    * Persists the message, then either notifies the other participant(s)
    * (push + in-app) and pings Realtime, or — if `clientMessageId` matches
    * an already-persisted message on this channel — returns that existing

@@ -73,6 +73,7 @@ class Session {
     this.lastMessageText,
     this.lastMessageAt,
     this.lastMessageSenderId,
+    this.unreadCount = 0,
   });
 
   final String id;
@@ -157,6 +158,11 @@ class Session {
   /// "You: " prefix without another lookup.
   final String? lastMessageSenderId;
 
+  /// Messages the OTHER party sent on this CHAT session's channel since the
+  /// viewer last opened it — 0 for an AUDIO_CALL, or a chat the viewer just
+  /// read. Only the list response (GET /sessions) carries a real value.
+  final int unreadCount;
+
   factory Session.fromJson(Map<String, dynamic> json) => Session(
     id: json['id'] as String,
     aspirantId: json['aspirantId'] as String,
@@ -206,6 +212,7 @@ class Session {
         ? DateTime.tryParse(json['lastMessageAt'] as String)
         : null,
     lastMessageSenderId: json['lastMessageSenderId'] as String?,
+    unreadCount: (json['unreadCount'] as num?)?.toInt() ?? 0,
   );
 }
 

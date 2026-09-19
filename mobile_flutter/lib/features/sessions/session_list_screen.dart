@@ -110,10 +110,13 @@ String chatTimeLabel(DateTime dt) {
 
 /// Renders a [_rowSubtitle] result — optional status dot, the preview /
 /// status text (ellipsised), and an optional relative time pinned to the
-/// right. Shared by the aspirant and mentor grouped rows.
+/// right. Shared by the aspirant and mentor grouped rows. [unread] bolds
+/// both the preview text and the time — the second, at-a-glance signal
+/// alongside the row's own unread-count badge.
 class _SubtitleRow extends StatelessWidget {
-  const _SubtitleRow({required this.sub});
+  const _SubtitleRow({required this.sub, this.unread = false});
   final ({String text, Color? dotColor, String? time}) sub;
+  final bool unread;
 
   @override
   Widget build(BuildContext context) {
@@ -134,9 +137,10 @@ class _SubtitleRow extends StatelessWidget {
         Flexible(
           child: Text(
             sub.text,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: AppFont.xs,
-              color: AppColors.textSecondary,
+              color: unread ? AppColors.textPrimary : AppColors.textSecondary,
+              fontWeight: unread ? AppFont.semibold : AppFont.regular,
             ),
             overflow: TextOverflow.ellipsis,
             maxLines: 1,
@@ -146,13 +150,25 @@ class _SubtitleRow extends StatelessWidget {
           const SizedBox(width: 6),
           Text(
             sub.time!,
-            style: const TextStyle(fontSize: 10, color: AppColors.textMuted),
+            style: TextStyle(
+              fontSize: 10,
+              color: unread ? AppColors.primary : AppColors.textMuted,
+              fontWeight: unread ? AppFont.bold : AppFont.regular,
+            ),
           ),
         ],
       ],
     );
   }
 }
+
+/// Total unread messages across every CHAT session in a grouped row — the
+/// number a row's own chat-icon badge shows. AUDIO_CALL sessions never
+/// carry unreadCount (it's chat-only), so filtering isn't strictly
+/// necessary, but keeps the intent explicit.
+int _groupUnreadCount(List<Session> sessions) => sessions
+    .where((s) => s.type == 'CHAT')
+    .fold(0, (sum, s) => sum + s.unreadCount);
 
 /// The one CALL session a grouped mentor row should show an action for,
 /// picked from that student's active sessions by urgency: a call awaiting the
@@ -485,6 +501,7 @@ class _MentorStudentRow extends ConsumerWidget {
     final primaryCall = _pickPrimaryCall(activeSessions);
     final aspirantName = first.aspirantName;
     final sub = _rowSubtitle(latest, viewerIsMentor: true);
+    final unreadCount = _groupUnreadCount(sessions);
 
     void openHistory() => showMentorSessionHistory(
       context,
@@ -527,7 +544,7 @@ class _MentorStudentRow extends ConsumerWidget {
                     // preview (status text was dropped here per request).
                     if (sub.text.isNotEmpty) ...[
                       const SizedBox(height: 2),
-                      _SubtitleRow(sub: sub),
+                      _SubtitleRow(sub: sub, unread: unreadCount > 0),
                     ],
                   ],
                 ),
@@ -537,6 +554,7 @@ class _MentorStudentRow extends ConsumerWidget {
                 icon: Icons.chat_bubble_rounded,
                 tooltip: 'Chat with $aspirantName',
                 filled: true,
+                badgeCount: unreadCount,
                 onTap: () => _openChat(context, ref),
               ),
               if (primaryCall != null) ...[
@@ -731,6 +749,7 @@ class _AspirantMentorRow extends ConsumerWidget {
     final mentorId = first.mentorId;
     final mentorName = first.mentorName;
     final sub = _rowSubtitle(latest, viewerIsMentor: false);
+    final unreadCount = _groupUnreadCount(sessions);
 
     return Material(
       color: AppColors.surface,
@@ -768,7 +787,7 @@ class _AspirantMentorRow extends ConsumerWidget {
                     // name-only otherwise (status line dropped per request).
                     if (sub.text.isNotEmpty) ...[
                       const SizedBox(height: 2),
-                      _SubtitleRow(sub: sub),
+                      _SubtitleRow(sub: sub, unread: unreadCount > 0),
                     ],
                   ],
                 ),
@@ -805,6 +824,7 @@ class _AspirantMentorRow extends ConsumerWidget {
                 icon: Icons.chat_bubble_rounded,
                 tooltip: 'Open chat',
                 filled: true,
+                badgeCount: unreadCount,
                 onTap: () => _openChat(context, ref),
               ),
             ],
@@ -826,6 +846,7 @@ class _RowIconButton extends StatelessWidget {
     this.tooltip,
     this.color = AppColors.primary,
     this.filled = false,
+    this.badgeCount = 0,
   });
 
   final IconData icon;
@@ -835,6 +856,10 @@ class _RowIconButton extends StatelessWidget {
   final String? tooltip;
   final Color color;
   final bool filled;
+
+  /// Unread-message count shown as a small red badge on the button's
+  /// corner. 0 → no badge.
+  final int badgeCount;
 
   @override
   Widget build(BuildContext context) {
@@ -851,11 +876,24 @@ class _RowIconButton extends StatelessWidget {
           ),
         ),
       );
+      final withBadge = badgeCount <= 0
+          ? button
+          : Stack(
+              clipBehavior: Clip.none,
+              children: [
+                button,
+                Positioned(
+                  top: -3,
+                  right: -3,
+                  child: UnreadBadge(count: badgeCount),
+                ),
+              ],
+            );
       return Padding(
         padding: const EdgeInsets.symmetric(horizontal: 2),
         child: tooltip != null
-            ? Tooltip(message: tooltip!, child: button)
-            : button,
+            ? Tooltip(message: tooltip!, child: withBadge)
+            : withBadge,
       );
     }
     return IconButton(

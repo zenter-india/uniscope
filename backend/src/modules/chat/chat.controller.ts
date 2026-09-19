@@ -73,6 +73,12 @@ export class ChatController {
   ) {
     const { channel } = await this.requireChannel(sessionId, user.sub);
     const page = await this.chatService.listMessages(channel.id, query.before);
+    // Only the newest page (no `before` cursor) counts as "read the
+    // latest" — a load-older-history page shouldn't clear an unread badge
+    // for messages the caller hasn't actually scrolled back to.
+    if (!query.before) {
+      void this.chatService.markRead(channel.id, user.sub);
+    }
     return {
       ...this.chatService.connectionInfo(channel.id),
       channelId: channel.id,

@@ -1459,6 +1459,15 @@ export class SessionsService {
       string,
       { text: string; senderId: string; createdAt: Date }
     >();
+    // Unread counts (both roles) — messages the OTHER party sent on a
+    // channel since the viewer's own ChatChannelRead.lastReadAt (or every
+    // one of them, if the viewer has never read this channel). One count
+    // query per channel on this page rather than a single query, since
+    // Prisma has no way to express a per-row "createdAt > <that channel's
+    // own threshold>" filter in one call — bounded by page size (<=50) and
+    // each backed by the (channel_id, created_at) index, so this stays
+    // cheap in practice without the complexity of hand-rolled raw SQL.
+    const unreadBySessionId = new Map<string, number>();
     if (chatSessionIds.length > 0) {
       const channels = await this.prisma.chatChannel.findMany({
         where: { sessionId: { in: chatSessionIds } },
@@ -1489,6 +1498,31 @@ export class SessionsService {
             });
           }
         }
+
+        const readRows = await this.prisma.chatChannelRead.findMany({
+          where: { userId, channelId: { in: channels.map((c) => c.id) } },
+          select: { channelId: true, lastReadAt: true },
+        });
+        const lastReadByChannelId = new Map(
+          readRows.map((r) => [r.channelId, r.lastReadAt]),
+        );
+        const counts = await Promise.all(
+          channels.map((c) =>
+            this.prisma.chatMessage.count({
+              where: {
+                channelId: c.id,
+                senderId: { not: userId },
+                ...(lastReadByChannelId.has(c.id) && {
+                  createdAt: { gt: lastReadByChannelId.get(c.id) },
+                }),
+              },
+            }),
+          ),
+        );
+        channels.forEach((c, i) => {
+          const sid = sessionIdByChannelId.get(c.id);
+          if (sid) unreadBySessionId.set(sid, counts[i]);
+        });
       }
     }
 
@@ -1498,6 +1532,7 @@ export class SessionsService {
         this.resolveAvatarUrl,
         undefined,
         lastMsgBySessionId.get(row.id) ?? null,
+        unreadBySessionId.get(row.id) ?? 0,
       ),
     );
     const nextCursor = hasMore ? rowsPage[rowsPage.length - 1].id : null;
