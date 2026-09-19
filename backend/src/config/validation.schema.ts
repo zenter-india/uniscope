@@ -12,6 +12,11 @@ export const validationSchema = Joi.object({
   APP_NAME: Joi.string().default('Uniscope API'),
   API_PREFIX: Joi.string().default('api/v1'),
 
+  // Error tracking (see instrument.ts) — optional; the SDK is a no-op
+  // entirely when unset, so local dev/CI/a fresh environment need nothing
+  // here to boot cleanly.
+  SENTRY_DSN: Joi.string().uri().optional(),
+
   // Database
   DATABASE_URL: Joi.string().uri().required(),
 

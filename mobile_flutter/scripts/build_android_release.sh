@@ -15,6 +15,10 @@ cd "$(dirname "$0")/.."
 API_URL="${API_URL:-https://uniscope-production.up.railway.app/api/v1}"
 GIT_SHA="$(git rev-parse --short HEAD)"
 BUILD_TIME="$(date -u +'%Y-%m-%d %H:%M')"
+# Empty by default — SentryFlutter.init is a complete no-op with no DSN
+# (see main.dart/build_info.dart). Export SENTRY_DSN in your shell once a
+# Sentry project exists to start baking it into release builds.
+SENTRY_DSN="${SENTRY_DSN:-}"
 
 if [ ! -f android/key.properties ]; then
   echo "WARNING: android/key.properties not found — this build will be debug-signed and rejected by Play Console." >&2
@@ -28,7 +32,8 @@ echo "  BUILD_TIME = $BUILD_TIME"
 flutter build appbundle --release \
   --dart-define=API_URL="$API_URL" \
   --dart-define=GIT_SHA="$GIT_SHA" \
-  --dart-define=BUILD_TIME="$BUILD_TIME"
+  --dart-define=BUILD_TIME="$BUILD_TIME" \
+  --dart-define=SENTRY_DSN="$SENTRY_DSN"
 
 AAB=$(find build/app/outputs/bundle/release -maxdepth 1 -name '*.aab' | head -1)
 echo

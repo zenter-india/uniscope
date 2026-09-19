@@ -17,3 +17,11 @@ const String kGitSha = String.fromEnvironment('GIT_SHA', defaultValue: 'dev');
 /// distinct timestamp.
 const String kBuildTime =
     String.fromEnvironment('BUILD_TIME', defaultValue: 'unknown');
+
+/// Sentry DSN, passed via `--dart-define=SENTRY_DSN=...` (2026-09-19).
+/// Empty by default — `main.dart` only calls `SentryFlutter.init` when this
+/// is non-empty, so a plain `flutter run` and any build that doesn't pass
+/// it behave exactly as before this was added. Mirrors the backend's own
+/// `SENTRY_DSN` env var (see backend/src/instrument.ts) — same Sentry
+/// project can hold both, filtered by platform.
+const String kSentryDsn = String.fromEnvironment('SENTRY_DSN');

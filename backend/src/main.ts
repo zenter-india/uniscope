@@ -1,8 +1,14 @@
+// Must be the very first import — see instrument.ts's own doc comment for
+// why (Sentry instruments other modules as they're required, so it has to
+// run before anything else pulls them in).
+import './instrument.js';
+
 import { Logger, ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { AppModule } from './app.module.js';
+import { SentryExceptionFilter } from './common/filters/sentry-exception.filter.js';
 
 async function bootstrap() {
   // rawBody:true exposes request.rawBody — needed to verify the Razorpay
@@ -36,6 +42,12 @@ async function bootstrap() {
       transformOptions: { enableImplicitConversion: true },
     }),
   );
+
+  // Reports every real error (5xx / unhandled) to Sentry before falling
+  // through to Nest's normal response formatting — a no-op wrapper when
+  // SENTRY_DSN isn't set (see instrument.ts). A global filter needs its
+  // httpAdapter passed manually rather than through DI.
+  app.useGlobalFilters(new SentryExceptionFilter(app.getHttpAdapter()));
 
   await app.listen(port);
 

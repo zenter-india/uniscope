@@ -17,6 +17,10 @@ cd "$(dirname "$0")/.."
 API_URL="${API_URL:-https://uniscope-production.up.railway.app/api/v1}"
 GIT_SHA="$(git rev-parse --short HEAD)"
 BUILD_TIME="$(date -u +'%Y-%m-%d %H:%M')"
+# Empty by default — SentryFlutter.init is a complete no-op with no DSN
+# (see main.dart/build_info.dart). Export SENTRY_DSN in your shell once a
+# Sentry project exists to start baking it into release builds.
+SENTRY_DSN="${SENTRY_DSN:-}"
 
 echo "Building iOS release IPA:"
 echo "  API_URL    = $API_URL"
@@ -26,7 +30,8 @@ echo "  BUILD_TIME = $BUILD_TIME"
 flutter build ipa --release \
   --dart-define=API_URL="$API_URL" \
   --dart-define=GIT_SHA="$GIT_SHA" \
-  --dart-define=BUILD_TIME="$BUILD_TIME"
+  --dart-define=BUILD_TIME="$BUILD_TIME" \
+  --dart-define=SENTRY_DSN="$SENTRY_DSN"
 
 IPA=$(find build/ios/ipa -maxdepth 1 -name '*.ipa' | head -1)
 echo

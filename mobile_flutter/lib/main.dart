@@ -3,7 +3,9 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:sentry_flutter/sentry_flutter.dart';
 
+import 'core/build_info.dart' show kGitSha, kSentryDsn;
 import 'core/network/university_reviews_api.dart' show hasReviewedUniversityProvider;
 import 'core/network/users_api.dart' show myProfileProvider;
 import 'core/push/push_service.dart';
@@ -13,6 +15,28 @@ import 'router/app_router.dart';
 import 'state/auth_controller.dart';
 
 void main() async {
+  // Error tracking (2026-09-19) — `SentryFlutter.init` internally does its
+  // own `WidgetsFlutterBinding.ensureInitialized()` + zone setup, so it
+  // wraps everything else rather than being called after. Completely
+  // inert when kSentryDsn is empty (the default for any build that
+  // doesn't pass --dart-define=SENTRY_DSN=... — see build_info.dart) —
+  // falls straight through to the plain `_main()` call every build used
+  // before this was added.
+  if (kSentryDsn.isEmpty) {
+    await _main();
+    return;
+  }
+  await SentryFlutter.init((options) {
+    options.dsn = kSentryDsn;
+    // Error capture only, no performance tracing — matches the backend's
+    // own instrument.ts choice (tracesSampleRate: 0) to keep this a small,
+    // low-risk addition rather than turning on APM this app doesn't need.
+    options.tracesSampleRate = 0;
+    options.release = 'uniscope-mobile@$kGitSha';
+  }, appRunner: _main);
+}
+
+Future<void> _main() async {
   WidgetsFlutterBinding.ensureInitialized();
   // Flutter's stock release-mode ErrorWidget renders a plain, unlabelled
   // grey box whenever any widget's build() throws — by design, to avoid
