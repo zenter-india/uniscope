@@ -105,11 +105,14 @@ class AppShadows {
 class AppGradients {
   /// Compact brand fill for buttons, FABs, and banner cards (the "Need
   /// help?" card, the Wallet balance card, the review-summary card). Brand
-  /// teal, [primary] → a darker teal.
+  /// teal, [primary] → a cooler, blue-leaning dark stop (2026-09-19,
+  /// client-picked "Option A" — the prior #35726B dark stop read as green
+  /// in these gradient cards; #2E6B78 keeps the same start but pulls the
+  /// dark corner toward blue instead).
   static const LinearGradient brand = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    colors: [Color(0xFF4C9E97), Color(0xFF35726B)],
+    colors: [Color(0xFF4C9E97), Color(0xFF2E6B78)],
   );
 
   /// Barely-there teal wash for full-screen backgrounds behind cards.

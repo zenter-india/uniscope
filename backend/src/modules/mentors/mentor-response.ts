@@ -50,6 +50,10 @@ export interface MentorResponse {
    * Mentors-tab Specialization filter. */
   specialization: string | null;
   bio: string | null;
+  /** Set once at onboarding, never user-editable afterward (see the
+   * "Gender is set once at onboarding" rule) — exposed here per explicit
+   * product request; null until the mentor's own onboarding sets it. */
+  gender: string | null;
   languages: string[];
   yearOfStudy: number | null;
   graduationYear: number | null;
@@ -104,6 +108,7 @@ export function toMentorResponse(
     qualification: profile?.qualification ?? null,
     specialization: profile?.specialization ?? null,
     bio: profile?.bio ?? null,
+    gender: profile?.gender ?? null,
     languages: profile?.languages ?? [],
     yearOfStudy: profile?.yearOfStudy ?? null,
     graduationYear: profile?.graduationYear ?? null,

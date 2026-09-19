@@ -198,6 +198,8 @@ class _IdentityCard extends StatelessWidget {
               ? mentor.specialty!.trim()
               : null);
     return [
+      if (mentor.gender?.trim().isNotEmpty == true)
+        (Icons.wc_rounded, mentor.gender!.trim()),
       if (field != null) (Icons.school_rounded, field),
       if (mentor.qualification?.trim().isNotEmpty == true)
         (Icons.school_rounded, mentor.qualification!.trim()),

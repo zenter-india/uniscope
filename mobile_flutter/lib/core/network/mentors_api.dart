@@ -33,6 +33,7 @@ class Mentor {
     this.qualification,
     this.specialization,
     required this.bio,
+    this.gender,
     required this.languages,
     required this.pricePerMinuteMinor,
     required this.university,
@@ -72,6 +73,10 @@ class Mentor {
   /// for MBBS and every non-Medical stream.
   final String? specialization;
   final String? bio;
+
+  /// Set once at onboarding, never user-editable afterward — see the
+  /// "Gender is set once at onboarding" rule in CLAUDE.md.
+  final String? gender;
   final List<String> languages;
   final int pricePerMinuteMinor;
   final MentorUniversity? university;
@@ -112,6 +117,7 @@ class Mentor {
     qualification: json['qualification'] as String?,
     specialization: json['specialization'] as String?,
     bio: json['bio'] as String?,
+    gender: json['gender'] as String?,
     languages: (json['languages'] as List<dynamic>? ?? [])
         .map((e) => e as String)
         .toList(),
