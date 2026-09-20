@@ -248,29 +248,41 @@ class HomeScreen extends ConsumerWidget {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text.rich(
-                                  TextSpan(
-                                    // Split style, matching the screenshot:
-                                    // dark greeting prefix + teal first name,
-                                    // at the larger xxl size.
-                                    children: firstName == null
-                                        ? [TextSpan(text: _greeting)]
-                                        : [
-                                            TextSpan(text: '$_greeting, '),
-                                            TextSpan(
-                                              text: firstName,
-                                              style: const TextStyle(
-                                                color: AppColors.primary,
+                                // Shrink-to-fit instead of ellipsizing — at
+                                // AppFont.xxl/extraBold, "Good morning, "
+                                // alone eats most of the width on a narrow
+                                // device, so a real device report showed a
+                                // long name truncated down to 2 letters
+                                // ("Good morning, He…"). Scaling the whole
+                                // line down keeps the full name legible on
+                                // one line instead of hiding almost all of
+                                // it behind an ellipsis.
+                                FittedBox(
+                                  fit: BoxFit.scaleDown,
+                                  alignment: Alignment.centerLeft,
+                                  child: Text.rich(
+                                    TextSpan(
+                                      // Split style, matching the
+                                      // screenshot: dark greeting prefix +
+                                      // teal first name, at the larger xxl
+                                      // size.
+                                      children: firstName == null
+                                          ? [TextSpan(text: _greeting)]
+                                          : [
+                                              TextSpan(text: '$_greeting, '),
+                                              TextSpan(
+                                                text: firstName,
+                                                style: const TextStyle(
+                                                  color: AppColors.primary,
+                                                ),
                                               ),
-                                            ),
-                                          ],
-                                  ),
-                                  overflow: TextOverflow.ellipsis,
-                                  maxLines: 1,
-                                  style: const TextStyle(
-                                    fontSize: AppFont.xxl,
-                                    fontWeight: AppFont.extraBold,
-                                    color: AppColors.textPrimary,
+                                            ],
+                                    ),
+                                    style: const TextStyle(
+                                      fontSize: AppFont.xxl,
+                                      fontWeight: AppFont.extraBold,
+                                      color: AppColors.textPrimary,
+                                    ),
                                   ),
                                 ),
                                 const SizedBox(height: 2),
@@ -432,7 +444,7 @@ class HomeScreen extends ConsumerWidget {
                     const SizedBox(height: AppSpacing.md),
                     universitiesAsync.when(
                       loading: () => const SizedBox(
-                        height: 150,
+                        height: 172,
                         child: Row(
                           children: [
                             Expanded(child: SkeletonCard()),
@@ -445,7 +457,7 @@ class HomeScreen extends ConsumerWidget {
                       data: (_) => collegesForYou.isEmpty
                           ? const SizedBox.shrink()
                           : SizedBox(
-                              height: 150,
+                              height: 172,
                               child: ListView.separated(
                                 scrollDirection: Axis.horizontal,
                                 itemCount: collegesForYou.length,
@@ -1047,10 +1059,24 @@ class _CollegeSpotlightCard extends StatelessWidget {
     final visual = streamVisualFor(university.stream);
 
     // Fills the rail's fixed height so every card is the same size — the
-    // name always reserves two lines so shorter names don't shrink the
-    // card. A star rating row shows when the college has reviews (the
-    // ranked "top-for-mentor" feed carries it; the browse fallback
-    // leaves it null and the row is simply omitted).
+    // name always reserves up to two lines so shorter names don't shrink
+    // the card. A star rating row shows when the college has reviews (the
+    // ranked "top-for-mentor" feed carries it; the browse fallback leaves
+    // it null and the row is simply omitted).
+    //
+    // The rail height (172, see the two call sites above) intentionally
+    // carries real headroom over this card's worst-case content height —
+    // a real device report showed the rating row clipped/bleeding past
+    // the card's rounded bottom edge for a two-line college name. Root
+    // cause: the name used to sit in a hardcoded `SizedBox(height: 32)`,
+    // which clips at exactly 32 *logical* pixels regardless of the
+    // device's text-scale setting — this app clamps text scale to
+    // 0.9–1.2x (see main.dart), and at the high end two 13px lines need
+    // closer to 37px, silently starving the rating row of the space the
+    // fixed rail height assumed it had. Letting the name size naturally
+    // (still capped at maxLines: 2 + ellipsis) means the column's real
+    // height reflects the actual scaled text instead of an under-budgeted
+    // constant, and the wider rail gives real margin either way.
     return SizedBox(
       width: 176,
       child: Container(
@@ -1084,18 +1110,15 @@ class _CollegeSpotlightCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    SizedBox(
-                      height: 32,
-                      child: Text(
-                        university.name,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          fontSize: 13,
-                          fontWeight: AppFont.bold,
-                          color: AppColors.textPrimary,
-                          height: 1.2,
-                        ),
+                    Text(
+                      university.name,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: AppFont.bold,
+                        color: AppColors.textPrimary,
+                        height: 1.2,
                       ),
                     ),
                     const SizedBox(height: 4),
