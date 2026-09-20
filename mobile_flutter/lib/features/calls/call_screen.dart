@@ -862,7 +862,21 @@ class _CallScreenState extends ConsumerState<CallScreen> {
       // shows a stale status label like "Ready" instead of "Call ended".
       if (mounted) _session = updated;
     } catch (_) {
-      // Other party may have already ended it — fall through to local end.
+      // endCall failing almost always means the other party already ended
+      // it first (their own endCall already moved the session to a
+      // terminal status, so this call's is a no-op/409 on the backend).
+      // Refetching here is what actually fixes it — without this, `_session`
+      // is left at whatever the last poll tick saw (often still ACCEPTED,
+      // since the 2s poll may not have caught up yet), and the ended screen
+      // renders that stale status's label ("Ready") instead of the real
+      // terminal one. A second failure here (e.g. a genuine network drop)
+      // just falls through with `_session` unrefreshed, same as before.
+      try {
+        final fresh = await ref
+            .read(sessionsApiProvider)
+            .findById(widget.sessionId);
+        if (mounted) _session = fresh;
+      } catch (_) {}
     }
     _endLocally();
   }
