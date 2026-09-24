@@ -33,6 +33,13 @@ class _FakeAuthApi extends AuthApi {
   Future<void> logout() async {}
 }
 
+// state/city/qualification/stream are set here (not left null) because
+// OtpScreen._verify now treats a returning login (isNewUser: false) whose
+// profile has all four still null as "never finished onboarding" and
+// routes it back into the wizard instead of Home — this fixture represents
+// an already-onboarded existing user, so it needs to look genuinely
+// complete or the "full journey" test below lands on role-selection
+// instead of Home.
 UserProfile _profile([String name = 'Test User']) => UserProfile(
       id: 'u1',
       role: UserRole.aspirant,
@@ -40,6 +47,10 @@ UserProfile _profile([String name = 'Test User']) => UserProfile(
       verificationStatus: 'UNVERIFIED',
       isActive: true,
       createdAt: '',
+      state: 'Karnataka',
+      city: 'Bengaluru',
+      qualification: 'Higher Secondary (12th)',
+      stream: 'Medical',
     );
 
 class _FakeUsersApi extends UsersApi {
