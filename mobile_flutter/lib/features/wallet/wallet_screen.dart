@@ -1,3 +1,5 @@
+import 'dart:io' show Platform;
+
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -49,7 +51,8 @@ String _dayGroupLabel(DateTime dt) {
 typedef RechargePackage =
     ({int rupees, int uniminutes, String name, String tagline});
 
-const _kRechargePackages = <RechargePackage>[
+/// Android/default prices.
+const _kRechargePackagesAndroid = <RechargePackage>[
   (
     rupees: 250,
     uniminutes: 10,
@@ -79,6 +82,48 @@ const _kRechargePackages = <RechargePackage>[
         'future.',
   ),
 ];
+
+/// iOS prices — the same four packages at a flat 30% markup (2026-09-24,
+/// per client decision to absorb Apple's App Store commission by charging
+/// iOS users more up front, since checkout still goes through Razorpay on
+/// both platforms, not Apple IAP). Every amount here must also exist in the
+/// backend's RECHARGE_PACKAGES, mapped to the same Uniminute credit as its
+/// Android counterpart above — see create-topup.dto.ts.
+const _kRechargePackagesIOS = <RechargePackage>[
+  (
+    rupees: 325,
+    uniminutes: 10,
+    name: 'Sneak Peek',
+    tagline: 'A focused conversation with a mentor who has lived on campus.',
+  ),
+  (
+    rupees: 520,
+    uniminutes: 20,
+    name: 'Campus Tour',
+    tagline:
+        'Curated time to weigh your shortlist with informed, firsthand '
+        'insight.',
+  ),
+  (
+    rupees: 975,
+    uniminutes: 40,
+    name: 'Deep Dive',
+    tagline: 'In-depth guidance on placements, academics, and campus culture.',
+  ),
+  (
+    rupees: 1300,
+    uniminutes: 60,
+    name: 'Insider Pass',
+    tagline:
+        'Our most considered pack, for the decision that shapes your '
+        'future.',
+  ),
+];
+
+/// The list to actually offer in the top-up sheet, for the platform this
+/// build is running on.
+List<RechargePackage> get _rechargePackagesForPlatform =>
+    Platform.isIOS ? _kRechargePackagesIOS : _kRechargePackagesAndroid;
 
 final walletBalanceProvider = FutureProvider.autoDispose<Wallet>(
   (ref) => ref.watch(walletApiProvider).getBalance(),
@@ -291,7 +336,8 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
             const SizedBox(height: AppSpacing.md),
             // Fixed recharge packages — must match the backend's
             // RECHARGE_PACKAGES exactly (any other amount is rejected).
-            ..._kRechargePackages.map((pack) {
+            // iOS shows the marked-up price list; Android the base one.
+            ..._rechargePackagesForPlatform.map((pack) {
               return Padding(
                 padding: const EdgeInsets.only(bottom: AppSpacing.sm),
                 child: OutlinedButton(
@@ -345,6 +391,39 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
                 ),
               );
             }),
+            if (Platform.isIOS) ...[
+              const SizedBox(height: AppSpacing.xs),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(AppSpacing.sm),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFBE9C9),
+                  borderRadius: BorderRadius.circular(AppRadius.md),
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Icon(
+                      Icons.info_outline_rounded,
+                      size: 18,
+                      color: AppColors.textSecondary,
+                    ),
+                    const SizedBox(width: AppSpacing.xs),
+                    const Expanded(
+                      child: Text(
+                        "Prices include Apple's 30% service fee. To avoid "
+                        'this fee, top up your wallet from the Uniscope '
+                        'Android app instead.',
+                        style: TextStyle(
+                          fontSize: AppFont.xs,
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
             const SizedBox(height: AppSpacing.xs),
             Align(
               alignment: Alignment.center,
@@ -795,26 +874,28 @@ class _LedgerRow extends StatelessWidget {
     }
   }
 
-  /// The recharge packages are a closed set (see _kRechargePackages) — a
-  /// TOPUP entry's credited Uniminutes always maps back to exactly one
-  /// package, so the rupee amount actually paid can be shown without the
-  /// backend needing to store it separately on the ledger row.
-  RechargePackage? get _matchingPackage {
-    if (entry.type != 'TOPUP') return null;
-    final credited = minorToUniminutes(entry.amountMinor);
-    for (final pack in _kRechargePackages) {
-      if (pack.uniminutes == credited) return pack;
-    }
-    return null;
+  /// The rupees actually paid, parsed straight out of the backend's own
+  /// ledger-entry note (something like "Razorpay order X — paid 32500
+  /// minor, credited 10 Uniminutes" — see WalletService.applyLedgerEntry's
+  /// TOPUP calls). Used to be reverse-inferred from the credited Uniminutes via
+  /// the package list, which broke once the same Uniminute credit could
+  /// come from two different prices (the 2026-09-24 iOS 30% markup) — a
+  /// past top-up's real paid amount is unambiguous, so read it from the
+  /// one place that actually recorded it instead of guessing.
+  int? get _paidRupees {
+    final match = RegExp(r'paid (\d+) minor').firstMatch(entry.note ?? '');
+    if (match == null) return null;
+    return int.parse(match.group(1)!) ~/ 100;
   }
 
   String get _subtitle {
     final time = clockLabel(entry.createdAtLocal);
     if (entry.type == 'TOPUP' && !asRupees) {
-      final pack = _matchingPackage;
-      if (pack != null) {
-        return '₹${pack.rupees} → ${uniminutesLabel(pack.uniminutes)} · $time';
-      }
+      final paid = _paidRupees;
+      final credited = uniminutesLabel(minorToUniminutes(entry.amountMinor));
+      return paid != null
+          ? '₹$paid → $credited · $time'
+          : '$credited · $time';
     }
     if (_isNoShow) {
       final detail = entry.note!.contains('waited')
