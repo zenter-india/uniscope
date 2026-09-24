@@ -97,7 +97,12 @@ import { IntegrationsModule } from './modules/integrations/integrations.module.j
 
     // Enables @Cron()/@Interval() decorators anywhere in the app — see
     // PayoutsService.remindEligibleMentors for the first user of it.
-    ScheduleModule.forRoot(),
+    // DISABLE_SCHEDULED_JOBS=true skips it, so a second backend sharing the
+    // production database (e.g. the apple-iap-test Railway environment)
+    // doesn't re-run sweeps or send users duplicate daily notifications.
+    ...(process.env['DISABLE_SCHEDULED_JOBS'] === 'true'
+      ? []
+      : [ScheduleModule.forRoot()]),
 
     // Core infrastructure
     PrismaModule,
