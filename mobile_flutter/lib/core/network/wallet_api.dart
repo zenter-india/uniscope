@@ -167,6 +167,18 @@ class WalletApi {
     );
     return Wallet.fromJson(res.data!);
   }
+
+  /// iOS/StoreKit equivalent of [verifyTopup] — no order is pre-created on
+  /// the backend (unlike Razorpay, StoreKit purchases are initiated
+  /// client-side against Apple directly); this just hands over the signed
+  /// transaction StoreKit returned after a successful purchase.
+  Future<Wallet> verifyAppleTopup(String signedTransactionInfo) async {
+    final res = await _dio.post<Map<String, dynamic>>(
+      '/wallet/topup/apple/verify',
+      data: {'signedTransactionInfo': signedTransactionInfo},
+    );
+    return Wallet.fromJson(res.data!);
+  }
 }
 
 final walletApiProvider = Provider<WalletApi>(
