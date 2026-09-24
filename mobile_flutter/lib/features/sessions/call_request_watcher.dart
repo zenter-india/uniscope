@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/network/sessions_api.dart';
 import '../../state/auth_controller.dart';
 import '../calls/call_overlay.dart' show CallOverlayController;
+import 'call_time_windows.dart' show isScheduledCallJoinableNow;
 import 'session_list_screen.dart' show sessionsListProvider;
 
 /// Invisible widget mounted in the shell. Two jobs, both standing in for a
@@ -114,10 +115,17 @@ class _CallRequestWatcherState extends ConsumerState<CallRequestWatcher>
 
     if (isAspirant) {
       for (final s in active) {
-        // Mentor accepted, the slot is due, and this client hasn't already
-        // been sent in.
+        // Mentor accepted, the call is actually joinable right now (real
+        // device report: this used to check `active`/`dueSoon`'s 15-minute
+        // window instead — a call confirmed 6-14 minutes out would still
+        // auto-navigate in here, immediately hit the backend's real 5-minute
+        // CALL_EARLY_JOIN_WINDOW_MINUTES gate on getCallToken, and show as
+        // "Connecting…" then a bare error/cut, since nothing before this
+        // point ever checked the actual joinable window), and this client
+        // hasn't already been sent in.
         if (s.status == SessionStatus.accepted &&
             s.aspirantJoinedAt == null &&
+            isScheduledCallJoinableNow(s.confirmedFor) &&
             _navigatedFor.add(s.id)) {
           final id = s.id;
           WidgetsBinding.instance.addPostFrameCallback((_) {
