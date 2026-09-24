@@ -5,9 +5,13 @@ import 'dio_client.dart';
 
 enum DocumentType {
   studentId('STUDENT_ID', 'College ID card'),
-  studentPortalScreenshot('STUDENT_PORTAL_SCREENSHOT', 'Student portal screenshot'),
+  // Wire values (STUDENT_PORTAL_SCREENSHOT / NMC_REGISTRATION) are the
+  // backend's Prisma DocumentType enum members, validated server-side via
+  // @IsEnum — unchanged. Only the user-facing labels were renamed, per
+  // screenshot, to match what these documents actually are in practice.
+  studentPortalScreenshot('STUDENT_PORTAL_SCREENSHOT', 'Admission order'),
   degreeCertificate('DEGREE_CERTIFICATE', 'Degree certificate'),
-  nmcRegistration('NMC_REGISTRATION', 'NMC / MCI registration');
+  nmcRegistration('NMC_REGISTRATION', 'Registration certificate');
 
   const DocumentType(this.wire, this.label);
   final String wire;
