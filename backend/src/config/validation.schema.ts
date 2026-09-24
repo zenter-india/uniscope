@@ -83,10 +83,23 @@ export const validationSchema = Joi.object({
     otherwise: Joi.optional(),
   }),
 
-  // Razorpay — wallet topups
+  // Razorpay — wallet topups (Android)
   RAZORPAY_KEY_ID: Joi.string().default(''),
   RAZORPAY_KEY_SECRET: Joi.string().default(''),
   RAZORPAY_WEBHOOK_SECRET: Joi.string().default(''),
+
+  // Apple In-App Purchase — wallet topups (iOS only, Guideline 3.1.1
+  // compliance). Soft-defaulted like Razorpay above so a deploy with these
+  // unset (e.g. Android-only rollout) still boots — WalletService's
+  // SignedDataVerifier construction is itself guarded on these being present.
+  APPLE_BUNDLE_ID: Joi.string().default(''),
+  APPLE_ISSUER_ID: Joi.string().default(''),
+  APPLE_KEY_ID: Joi.string().default(''),
+  APPLE_PRIVATE_KEY: Joi.string().default(''),
+  APPLE_ENVIRONMENT: Joi.string()
+    .valid('xcode', 'sandbox', 'production')
+    .default('production'),
+  APPLE_APP_APPLE_ID: Joi.string().default(''),
 
   // Agora — audio calls
   AGORA_APP_ID: Joi.string().default(''),

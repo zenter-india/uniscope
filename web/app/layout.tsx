@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { Manrope } from "next/font/google";
+import { Analytics } from "@vercel/analytics/next";
+import { EngagementPing } from "../components/EngagementPing";
 import "./globals.css";
 
 // Fetched and self-hosted by Next.js at build time (no runtime request to
@@ -50,7 +52,14 @@ export default function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en" className={`h-full ${manrope.variable}`}>
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col">
+        {children}
+        {/* Cookieless — no persistent client-side identifier is stored,
+            so this needs no consent banner. See app/privacy/page.tsx for
+            the matching disclosure. */}
+        <Analytics />
+        <EngagementPing />
+      </body>
     </html>
   );
 }

@@ -7,20 +7,29 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { HoldStatus, LedgerEntryType, NotificationType, Prisma } from '@prisma/client';
+import { AppleTransactionStatus, HoldStatus, LedgerEntryType, NotificationType, Prisma } from '@prisma/client';
 import { createHmac, randomUUID, timingSafeEqual } from 'crypto';
 import Razorpay from 'razorpay';
-import type { RazorpayConfig } from '../../config/index.js';
+import {
+  Environment,
+  SignedDataVerifier,
+  type JWSTransactionDecodedPayload,
+  type ResponseBodyV2DecodedPayload,
+} from '@apple/app-store-server-library';
+import type { AppleConfig, RazorpayConfig } from '../../config/index.js';
 import { uniminutesLabel } from '../../common/helpers/notification-format.helper.js';
 import { PrismaService } from '../../database/prisma/prisma.service.js';
 import { NotificationsService } from '../notifications/notifications.service.js';
+import { APPLE_ROOT_CERTIFICATES } from './apple-root-certs.js';
 import { AdjustWalletDto } from './dto/adjust-wallet.dto.js';
+import { APPLE_PRODUCT_PACKAGES } from './dto/apple-iap-products.js';
 import {
   CreateTopupDto,
   RECHARGE_AMOUNTS_MINOR,
   RECHARGE_PACKAGES,
 } from './dto/create-topup.dto.js';
 import { ListLedgerDto } from './dto/list-ledger.dto.js';
+import { VerifyAppleTopupDto } from './dto/verify-apple-topup.dto.js';
 import { VerifyTopupDto } from './dto/verify-topup.dto.js';
 import {
   LedgerEntryResponse,
@@ -75,6 +84,35 @@ function computeTopupCredit(paidAmountMinor: number): {
 }
 
 /**
+ * The Apple IAP equivalent of computeTopupCredit — a closed-set lookup by
+ * Apple product id rather than by paid amount (Apple's price tiers, not
+ * this backend, determine what the user actually pays; the backend only
+ * needs to know how many Uniminutes that product id is worth). Throws on
+ * any product id not created in App Store Connect / not yet added to
+ * APPLE_PRODUCT_PACKAGES.
+ */
+function computeAppleTopupCredit(productId: string): { creditedAmountMinor: number } {
+  const uniminutes = APPLE_PRODUCT_PACKAGES[productId];
+  if (uniminutes === undefined) {
+    throw new BadRequestException(`Unrecognised Apple product id: ${productId}`);
+  }
+  return { creditedAmountMinor: uniminutes * UNIMINUTE_VALUE_MINOR };
+}
+
+/** Maps the plain 'xcode' | 'sandbox' | 'production' config string to the
+ * app-store-server-library's own enum. */
+function toAppleEnvironment(value: string): Environment {
+  switch (value) {
+    case 'xcode':
+      return Environment.XCODE;
+    case 'sandbox':
+      return Environment.SANDBOX;
+    default:
+      return Environment.PRODUCTION;
+  }
+}
+
+/**
  * WalletService is the ONLY place that writes to the ledger. Every write
  * goes through applyLedgerEntry, which enforces the invariants from the
  * architecture review in one atomic DB transaction:
@@ -96,6 +134,10 @@ export class WalletService {
   private readonly logger = new Logger(WalletService.name);
   private readonly razorpay: Razorpay;
   private readonly cfg: RazorpayConfig;
+  /** null when Apple IAP env vars are unset (e.g. an Android-only rollout
+   * window) — every Apple-path method below guards on this before use, so
+   * an unconfigured Apple config never breaks app boot or Android traffic. */
+  private readonly appleVerifier: SignedDataVerifier | null = null;
 
   constructor(
     private readonly prisma: PrismaService,
@@ -107,6 +149,35 @@ export class WalletService {
       key_id: this.cfg.keyId,
       key_secret: this.cfg.keySecret,
     });
+
+    // Only bundleId (+ environment) is actually required to construct
+    // SignedDataVerifier — keyId/issuerId/privateKey would only matter if
+    // this service ever called the App Store Server API directly, which it
+    // doesn't (JWS verification alone covers both the client-confirm and
+    // notification paths). Gating on bundleId alone also means local
+    // StoreKit Testing (Environment.XCODE) needs no real Apple Developer
+    // credentials at all — just the bundle id and APPLE_ENVIRONMENT=xcode.
+    const appleCfg = this.config.get<AppleConfig>('apple')!;
+    if (appleCfg.bundleId) {
+      const environment = toAppleEnvironment(appleCfg.environment);
+      const appAppleId = appleCfg.appAppleId ? Number(appleCfg.appAppleId) : undefined;
+      this.appleVerifier = new SignedDataVerifier(
+        APPLE_ROOT_CERTIFICATES,
+        environment === Environment.PRODUCTION,
+        environment,
+        appleCfg.bundleId,
+        appAppleId,
+      );
+    } else {
+      this.logger.log('Apple IAP not configured — iOS top-ups are unavailable');
+    }
+  }
+
+  private requireAppleVerifier(): SignedDataVerifier {
+    if (!this.appleVerifier) {
+      throw new BadRequestException('Apple In-App Purchase is not configured on this server');
+    }
+    return this.appleVerifier;
   }
 
   async getBalance(userId: string): Promise<WalletResponse> {
@@ -388,6 +459,198 @@ export class WalletService {
         metadata: { kind: 'topup' },
       })
       .catch((err) => this.logger.warn(`Top-up notification failed for ${userId}: ${err}`));
+  }
+
+  // ── Apple In-App Purchase (iOS-only top-up path) ────────────────────────
+  // Android keeps Razorpay above, unchanged. Both credit through the exact
+  // same applyLedgerEntry primitive — see CLAUDE.md's Apple IAP plan for why
+  // this coexists rather than replacing Razorpay.
+
+  /**
+   * Client-confirm path: the mobile app POSTs the signed transaction JWS
+   * StoreKit handed it right after a purchase. Mirrors
+   * verifyAndCreditTopup's shape exactly, just with Apple's own signature
+   * verification standing in for Razorpay's HMAC check.
+   */
+  async verifyAndCreditAppleTopup(
+    userId: string,
+    dto: VerifyAppleTopupDto,
+  ): Promise<WalletResponse> {
+    const transaction = await this.requireAppleVerifier().verifyAndDecodeTransaction(
+      dto.signedTransactionInfo,
+    );
+    await this.creditAppleTransaction(userId, transaction);
+    return toWalletResponse(await this.requireWallet(userId));
+  }
+
+  /**
+   * Verifies an App Store Server Notification V2 signedPayload. Mirrors
+   * verifyWebhookSignature's never-throws contract, but returns the decoded
+   * payload (or null) since the caller needs to branch on notification type
+   * rather than just knowing "valid or not".
+   */
+  async verifyAppleServerNotification(
+    signedPayload: string,
+  ): Promise<ResponseBodyV2DecodedPayload | null> {
+    try {
+      return await this.requireAppleVerifier().verifyAndDecodeNotification(signedPayload);
+    } catch (err) {
+      this.logger.warn(`Apple server notification failed verification: ${err}`);
+      return null;
+    }
+  }
+
+  /**
+   * Server-to-server path (App Store Server Notifications V2) — Apple's
+   * equivalent of the Razorpay webhook. A purchase notification runs the
+   * SAME credit tail as verifyAndCreditAppleTopup with the SAME idempotency
+   * key, so whichever of (client-confirm, this notification) lands first
+   * wins and the other is a safe no-op via the ledger's unique constraint —
+   * identical to Razorpay's dual-path pattern in handleTopupCaptured.
+   */
+  async handleAppleServerNotification(payload: ResponseBodyV2DecodedPayload): Promise<void> {
+    const signedTransactionInfo = payload.data?.signedTransactionInfo;
+
+    if (payload.notificationType === 'ONE_TIME_CHARGE' && signedTransactionInfo) {
+      const transaction =
+        await this.requireAppleVerifier().verifyAndDecodeTransaction(signedTransactionInfo);
+      const userId = await this.resolveUserIdForAppleTransaction(transaction);
+      if (userId) {
+        await this.creditAppleTransaction(userId, transaction);
+      } else {
+        this.logger.error(
+          `Apple ONE_TIME_CHARGE notification for transaction ${transaction.transactionId} — no prior AppleTransaction row to resolve the user from`,
+        );
+      }
+      return;
+    }
+
+    if (
+      (payload.notificationType === 'REFUND' || payload.notificationType === 'REVOKE') &&
+      signedTransactionInfo
+    ) {
+      const transaction =
+        await this.requireAppleVerifier().verifyAndDecodeTransaction(signedTransactionInfo);
+      await this.handleAppleRefund(transaction);
+      return;
+    }
+
+    // Every other notification type (renewal-family events) is irrelevant
+    // for consumables — no-op, matches handleTopupCaptured's own
+    // "not payment.captured, ignore" behaviour.
+  }
+
+  /** Shared credit tail for both the client-confirm and server-notification
+   * Apple paths — one place that calls applyLedgerEntry/notifyTopupCredited
+   * so the two paths can never diverge. */
+  private async creditAppleTransaction(
+    userId: string,
+    transaction: JWSTransactionDecodedPayload,
+  ): Promise<void> {
+    const transactionId = transaction.transactionId;
+    const productId = transaction.productId;
+    if (!transactionId || !productId) {
+      throw new BadRequestException('Apple transaction is missing transactionId/productId');
+    }
+
+    const wallet = await this.requireWallet(userId);
+    const { creditedAmountMinor } = computeAppleTopupCredit(productId);
+    const idempotencyKey = `apple-iap:${transactionId}`;
+
+    const applied = await this.applyLedgerEntry({
+      walletId: wallet.id,
+      type: LedgerEntryType.TOPUP,
+      amountMinor: creditedAmountMinor,
+      idempotencyKey,
+      note: `Apple IAP ${productId} — transaction ${transactionId}`,
+    });
+
+    await this.prisma.appleTransaction.upsert({
+      where: { transactionId },
+      create: {
+        transactionId,
+        originalTransactionId: transaction.originalTransactionId ?? transactionId,
+        userId,
+        productId,
+        creditedAmountMinor,
+        status: AppleTransactionStatus.CREDITED,
+        idempotencyKey,
+        rawPayload: transaction as unknown as Prisma.InputJsonValue,
+      },
+      update: {},
+    });
+
+    if (applied) {
+      await this.notifyTopupCredited(userId, creditedAmountMinor);
+    }
+  }
+
+  /** A server notification (unlike the client-confirm path) carries no
+   * userId/JWT — the only place that's recorded is the AppleTransaction row
+   * this same transactionId already wrote on the client-confirm path. If
+   * that row doesn't exist yet (the notification raced ahead of the
+   * client), there's nothing to credit against; the client-confirm retry
+   * (or a later notification redelivery) will complete it once the row
+   * exists. */
+  private async resolveUserIdForAppleTransaction(
+    transaction: JWSTransactionDecodedPayload,
+  ): Promise<string | null> {
+    if (!transaction.transactionId) return null;
+    const existing = await this.prisma.appleTransaction.findUnique({
+      where: { transactionId: transaction.transactionId },
+      select: { userId: true },
+    });
+    return existing?.userId ?? null;
+  }
+
+  /**
+   * Refund-clawback policy (confirmed product decision): if the wallet's
+   * currently available balance still covers what this transaction
+   * credited, debit it straight back via the same applyLedgerEntry
+   * primitive. If it doesn't (already spent), do NOT push the balance
+   * negative — flag the row for manual admin reconciliation via the
+   * existing POST /wallet/admin/:userId/adjust endpoint, the same
+   * manual-review pattern already used for mentor-side call-drop refunds
+   * (see ReportsService.resolve).
+   */
+  private async handleAppleRefund(transaction: JWSTransactionDecodedPayload): Promise<void> {
+    const transactionId = transaction.transactionId;
+    if (!transactionId) return;
+
+    const record = await this.prisma.appleTransaction.findUnique({
+      where: { transactionId },
+    });
+    if (!record || record.status !== AppleTransactionStatus.CREDITED) {
+      // Never credited (verification failed before crediting), or already
+      // processed — safe no-op either way.
+      return;
+    }
+
+    const wallet = await this.requireWallet(record.userId);
+    const available = await this.getAvailableBalanceMinor(wallet.id);
+
+    if (available >= record.creditedAmountMinor) {
+      await this.applyLedgerEntry({
+        walletId: wallet.id,
+        type: LedgerEntryType.REFUND,
+        amountMinor: -record.creditedAmountMinor,
+        idempotencyKey: `apple-iap-refund:${transactionId}`,
+        note: `Apple IAP refund/revoke — transaction ${transactionId}`,
+      });
+      await this.prisma.appleTransaction.update({
+        where: { transactionId },
+        data: { status: AppleTransactionStatus.REFUNDED },
+      });
+    } else {
+      await this.prisma.appleTransaction.update({
+        where: { transactionId },
+        data: { status: AppleTransactionStatus.REFUND_PENDING_MANUAL },
+      });
+      this.logger.warn(
+        `Apple refund for transaction ${transactionId} (user ${record.userId}) exceeds available balance ` +
+          `(needs ${record.creditedAmountMinor} minor) — flagged REFUND_PENDING_MANUAL, reconcile via POST /wallet/admin/${record.userId}/adjust`,
+      );
+    }
   }
 
   /**

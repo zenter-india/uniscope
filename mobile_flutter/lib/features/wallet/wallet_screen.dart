@@ -1,8 +1,12 @@
+import 'dart:io' show Platform;
+
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:in_app_purchase/in_app_purchase.dart';
 import 'package:razorpay_flutter/razorpay_flutter.dart';
 
+import '../../core/network/apple_iap_service.dart';
 import '../../core/network/payouts_api.dart';
 import '../../core/network/sessions_api.dart' show kCallSlotMinutes;
 import '../../core/network/users_api.dart';
@@ -81,7 +85,11 @@ class WalletScreen extends ConsumerStatefulWidget {
 }
 
 class _WalletScreenState extends ConsumerState<WalletScreen> {
-  late final Razorpay _razorpay;
+  // Android keeps Razorpay unchanged; iOS uses real Apple In-App Purchase
+  // (Guideline 3.1.1 compliance — see CLAUDE.md's Apple IAP plan). Only one
+  // of the two is ever constructed, matching the platform this device runs.
+  Razorpay? _razorpay;
+  AppleIapService? _appleIap;
   String? _pendingOrderId;
   bool _toppingUp = false;
   bool _withdrawing = false;
@@ -89,19 +97,29 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
   @override
   void initState() {
     super.initState();
-    _razorpay = Razorpay();
-    _razorpay.on(Razorpay.EVENT_PAYMENT_SUCCESS, _onPaymentSuccess);
-    _razorpay.on(Razorpay.EVENT_PAYMENT_ERROR, _onPaymentError);
-    _razorpay.on(Razorpay.EVENT_EXTERNAL_WALLET, _onExternalWallet);
+    if (Platform.isIOS) {
+      _appleIap = AppleIapService()
+        ..listen(
+          onVerified: _onApplePurchaseVerified,
+          onError: _onAppleError,
+          onCancelled: _onAppleCancelled,
+        );
+    } else {
+      _razorpay = Razorpay();
+      _razorpay!.on(Razorpay.EVENT_PAYMENT_SUCCESS, _onPaymentSuccess);
+      _razorpay!.on(Razorpay.EVENT_PAYMENT_ERROR, _onPaymentError);
+      _razorpay!.on(Razorpay.EVENT_EXTERNAL_WALLET, _onExternalWallet);
+    }
   }
 
   @override
   void dispose() {
-    _razorpay.clear();
+    _razorpay?.clear();
+    _appleIap?.dispose();
     super.dispose();
   }
 
-  Future<void> _startTopup(int amountMinor) async {
+  Future<void> _startRazorpayTopup(int amountMinor) async {
     setState(() => _toppingUp = true);
     try {
       final order = await ref
@@ -109,7 +127,7 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
           .createTopupOrder(amountMinor);
       _pendingOrderId = order.orderId;
 
-      _razorpay.open({
+      _razorpay!.open({
         'key': order.keyId,
         'order_id': order.orderId,
         'amount': order.amountMinor,
@@ -124,6 +142,56 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
       setState(() => _toppingUp = false);
       showAppSnackBar(context, 'Could not start top-up: $e');
     }
+  }
+
+  Future<void> _startAppleTopup(ProductDetails product) async {
+    setState(() => _toppingUp = true);
+    try {
+      final started = await _appleIap!.buy(product);
+      if (!started) {
+        throw Exception('Could not start the purchase');
+      }
+      // _toppingUp is cleared by _onApplePurchaseVerified/_onAppleError/
+      // _onAppleCancelled once the purchase stream reports an outcome.
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _toppingUp = false);
+      showAppSnackBar(context, 'Could not start top-up: $e');
+    }
+  }
+
+  /// Only completes the purchase (marking it finished with Apple) once the
+  /// backend confirms the credit. If verification fails, the transaction is
+  /// left unfinished so StoreKit re-delivers it on next launch/
+  /// restorePurchases — a real retry path, instead of silently losing the
+  /// credit by completing before confirming it landed.
+  Future<void> _onApplePurchaseVerified(PurchaseDetails purchase) async {
+    try {
+      await ref
+          .read(walletApiProvider)
+          .verifyAppleTopup(purchase.verificationData.serverVerificationData);
+      await InAppPurchase.instance.completePurchase(purchase);
+      ref.invalidate(walletBalanceProvider);
+      ref.invalidate(walletLedgerProvider);
+      if (!mounted) return;
+      showAppSnackBar(context, 'Wallet topped up successfully');
+    } catch (e) {
+      if (!mounted) return;
+      showAppSnackBar(context, 'Payment succeeded but crediting failed: $e');
+    } finally {
+      if (mounted) setState(() => _toppingUp = false);
+    }
+  }
+
+  void _onAppleError(String message) {
+    if (!mounted) return;
+    setState(() => _toppingUp = false);
+    showAppSnackBar(context, 'Payment failed: $message');
+  }
+
+  void _onAppleCancelled() {
+    if (!mounted) return;
+    setState(() => _toppingUp = false);
   }
 
   Future<void> _onPaymentSuccess(PaymentSuccessResponse response) async {
@@ -232,7 +300,15 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
     }
   }
 
-  void _showTopupSheet() {
+  Future<void> _showTopupSheet() async {
+    if (Platform.isIOS) {
+      await _openAppleTopupSheet();
+    } else {
+      _showRazorpayTopupSheet();
+    }
+  }
+
+  void _showRazorpayTopupSheet() {
     showModalBottomSheet<void>(
       context: context,
       backgroundColor: AppColors.surface,
@@ -270,7 +346,7 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
                 child: OutlinedButton(
                   onPressed: () {
                     Navigator.of(sheetContext).pop();
-                    _startTopup(pack.$1 * 100);
+                    _startRazorpayTopup(pack.$1 * 100);
                   },
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -288,6 +364,168 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
                 ),
               );
             }),
+            const SizedBox(height: AppSpacing.xs),
+            Align(
+              alignment: Alignment.center,
+              child: TextButton(
+                onPressed: () {
+                  Navigator.of(sheetContext).pop();
+                  openLegalPage(context, LegalPage.refund);
+                },
+                child: const Text(
+                  'Refund & Cancellation Policy',
+                  style: TextStyle(
+                    fontSize: AppFont.xs,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Loads the real Apple-quoted prices before opening the sheet (rather
+  /// than a FutureBuilder inside it) so the sheet itself stays a plain,
+  /// synchronous list like the Razorpay one above.
+  Future<void> _openAppleTopupSheet() async {
+    setState(() => _toppingUp = true);
+    List<ProductDetails> products;
+    try {
+      products = await _appleIap!.loadProducts();
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _toppingUp = false);
+      showAppSnackBar(context, 'Could not load top-up options: $e');
+      return;
+    }
+    if (!mounted) return;
+    setState(() => _toppingUp = false);
+
+    final byId = {for (final p in products) p.id: p};
+    // Pairs each fixed package with its real StoreKit product, in the same
+    // order as kAppleTopupProductIds/_kRechargePackages. A package whose
+    // product wasn't found (e.g. not yet created in App Store Connect) is
+    // simply omitted rather than shown broken.
+    final rows = <(int uniminutes, ProductDetails product)>[
+      for (var i = 0; i < _kRechargePackages.length && i < kAppleTopupProductIds.length; i++)
+        if (byId[kAppleTopupProductIds[i]] != null)
+          (_kRechargePackages[i].$2, byId[kAppleTopupProductIds[i]]!),
+    ];
+
+    if (!mounted) return;
+    if (rows.isEmpty) {
+      showAppSnackBar(context, 'Top-up is not available right now — please try again later.');
+      return;
+    }
+
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: AppColors.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.xl)),
+      ),
+      builder: (sheetContext) => Padding(
+        padding: const EdgeInsets.all(AppSpacing.lg),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Top up wallet',
+              style: TextStyle(
+                fontSize: AppFont.lg,
+                fontWeight: AppFont.extraBold,
+              ),
+            ),
+            const SizedBox(height: AppSpacing.xs),
+            const Text(
+              'Uniminutes are your talk time. Pick a recharge pack — bigger '
+              'packs give more Uniminutes per rupee.',
+              style: TextStyle(
+                fontSize: AppFont.xs,
+                color: AppColors.textSecondary,
+              ),
+            ),
+            const SizedBox(height: AppSpacing.md),
+            ...rows.map((row) {
+              final (uniminutes, product) = row;
+              return Padding(
+                padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+                child: OutlinedButton(
+                  onPressed: () {
+                    Navigator.of(sheetContext).pop();
+                    _startAppleTopup(product);
+                  },
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        uniminutesLabel(uniminutes),
+                        style: const TextStyle(color: AppColors.textSecondary),
+                      ),
+                      // The real price StoreKit quotes for this device's
+                      // storefront — whatever price tier was set in App
+                      // Store Connect, marked up ~30% over the Razorpay
+                      // price to absorb Apple's commission (see the banner
+                      // below). Never hardcode a rupee figure here — this
+                      // is always correct even if the exact tier drifts
+                      // from the target.
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: AppSpacing.sm,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppColors.textPrimary,
+                          borderRadius: BorderRadius.circular(999),
+                        ),
+                        child: Text(
+                          product.price,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: AppFont.bold,
+                            fontSize: AppFont.xs,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            }),
+            const SizedBox(height: AppSpacing.sm),
+            Container(
+              padding: const EdgeInsets.all(AppSpacing.sm),
+              decoration: BoxDecoration(
+                color: AppColors.warning.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(AppRadius.md),
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Icon(
+                    Icons.info_outline_rounded,
+                    size: 16,
+                    color: AppColors.warning,
+                  ),
+                  const SizedBox(width: AppSpacing.xs),
+                  Expanded(
+                    child: Text(
+                      "Prices include Apple's 30% service fee. To avoid "
+                      'this fee, top up your wallet from the Uniscope '
+                      'Android app instead.',
+                      style: TextStyle(
+                        fontSize: AppFont.xs,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
             const SizedBox(height: AppSpacing.xs),
             Align(
               alignment: Alignment.center,

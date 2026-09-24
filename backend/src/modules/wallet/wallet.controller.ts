@@ -23,6 +23,7 @@ import { RolesGuard } from '../../auth/guards/roles.guard.js';
 import { AdjustWalletDto } from './dto/adjust-wallet.dto.js';
 import { CreateTopupDto } from './dto/create-topup.dto.js';
 import { ListLedgerDto } from './dto/list-ledger.dto.js';
+import { VerifyAppleTopupDto } from './dto/verify-apple-topup.dto.js';
 import { VerifyTopupDto } from './dto/verify-topup.dto.js';
 import { WalletService } from './wallet.service.js';
 
@@ -78,6 +79,41 @@ export class WalletController {
   @Post('topup/verify')
   verifyTopup(@CurrentUser() user: JwtPayload, @Body() dto: VerifyTopupDto) {
     return this.walletService.verifyAndCreditTopup(user.sub, dto);
+  }
+
+  /**
+   * iOS/StoreKit equivalent of `topup/verify` above — the mobile app POSTs
+   * the signed transaction JWS it got from StoreKit right after a purchase.
+   * Android is unaffected; this only ever fires from an iOS client.
+   */
+  @UseGuards(JwtAuthGuard)
+  @Post('topup/apple/verify')
+  verifyAppleTopup(@CurrentUser() user: JwtPayload, @Body() dto: VerifyAppleTopupDto) {
+    return this.walletService.verifyAndCreditAppleTopup(user.sub, dto);
+  }
+
+  /**
+   * Apple calls this directly (App Store Server Notifications V2) — no user
+   * session exists, so it's NOT behind JwtAuthGuard. Trust comes entirely
+   * from the JWS signature chain verified inside verifyAppleServerNotification,
+   * not from a header secret — unlike Razorpay's webhook, Apple's V2 payload
+   * is a plain JSON body, not HMAC'd raw bytes, so no rawBody handling is
+   * needed here.
+   */
+  @Post('topup/apple/notifications')
+  @HttpCode(HttpStatus.OK)
+  async handleAppleNotification(@Body('signedPayload') signedPayload: string | undefined) {
+    if (!signedPayload) {
+      throw new BadRequestException('Missing signedPayload');
+    }
+
+    const payload = await this.walletService.verifyAppleServerNotification(signedPayload);
+    if (!payload) {
+      throw new BadRequestException('Invalid Apple notification signature');
+    }
+
+    await this.walletService.handleAppleServerNotification(payload);
+    return { received: true };
   }
 
   /**
