@@ -15,6 +15,7 @@ import {
   LANGUAGES,
 } from "../lib/options";
 import { useMultiStep } from "../lib/useMultiStep";
+import { useFormAnalytics } from "../lib/useFormAnalytics";
 import { Field, TextInput, Select, ChipGroup, toggleInArray, ProgressBar, ErrorText, ConsentCheckbox } from "./form-bits";
 import { CollegeSearch } from "./CollegeSearch";
 import { CuratedCollegeSearch } from "./CuratedCollegeSearch";
@@ -74,6 +75,7 @@ export function AspirantForm({ onExit }: { onExit: () => void }) {
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState(false);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
+  useFormAnalytics("aspirant_form", done, wizard.step);
 
   const set = <K extends keyof FormState>(key: K, value: FormState[K]) =>
     setForm((f) => ({ ...f, [key]: value }));

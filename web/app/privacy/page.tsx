@@ -51,8 +51,9 @@ export default function PrivacyPage() {
               </li>
             </ul>
             <p>
-              We don&apos;t use cookies, analytics scripts, or any third-party tracking on this site — nothing is
-              collected beyond what you type into the form.
+              We don&apos;t use cookies or any third-party tracking on this site. We do use Vercel Analytics to see
+              which pages get visited and whether the enrolment form gets completed — it&apos;s cookieless, stores no
+              personal identifier in your browser, and can&apos;t recognize you across visits.
             </p>
           </Section>
 

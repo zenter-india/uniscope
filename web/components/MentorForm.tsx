@@ -22,6 +22,7 @@ import {
   recentYears,
 } from "../lib/options";
 import { useMultiStep } from "../lib/useMultiStep";
+import { useFormAnalytics } from "../lib/useFormAnalytics";
 import { Field, TextInput, Select, ChipGroup, Toggle, toggleInArray, ProgressBar, ErrorText, ConsentCheckbox } from "./form-bits";
 
 type FormState = {
@@ -256,6 +257,7 @@ export function MentorForm({ onExit }: { onExit: () => void }) {
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState(false);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
+  useFormAnalytics("mentor_form", done, wizard.step);
 
   // Curated College/University picker — populated for the Medical-stream
   // degrees in CURATED_DEGREE_MAP (see UniversitiesService.findCurated).
