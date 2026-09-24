@@ -208,6 +208,7 @@ model User {
   actionedReports       Report[]              @relation("ActionedByReports")
   technicalReports      TechnicalReport[]     @relation("TechnicalReportAuthor")
   resolvedTechReports   TechnicalReport[]     @relation("TechnicalReportResolver")
+  appleTransactions     AppleTransaction[]
   notifications         Notification[]
   pushTokens            PushToken[]
   mentorReviewsReceived MentorReview[]        @relation("MentorReviewsReceived")
@@ -811,6 +812,41 @@ model WalletHold {
   @@index([walletId, status])
   @@index([status, expiresAt])
   @@map("wallet_holds")
+}
+
+/// Apple IAP top-up audit trail — deliberately NOT the source of truth for
+/// crediting (that's still LedgerEntry.idempotencyKey, same as Razorpay).
+/// This table exists for two things Razorpay's flow doesn't need: (1)
+/// replay/idempotency awareness for a REFUND/REVOKE notification even when
+/// the original purchase failed verification before ever reaching the
+/// ledger, and (2) the refund-clawback audit trail — REFUND_PENDING_MANUAL
+/// rows are what an admin reconciles by hand via POST
+/// /wallet/admin/:userId/adjust when the wallet balance can't cover a
+/// clawback outright.
+model AppleTransaction {
+  id                    String                 @id @default(cuid())
+  transactionId         String                 @unique @map("transaction_id")
+  originalTransactionId String                 @map("original_transaction_id")
+  userId                String                 @map("user_id")
+  productId             String                 @map("product_id")
+  creditedAmountMinor   Int                    @map("credited_amount_minor")
+  status                AppleTransactionStatus
+  idempotencyKey        String                 @unique @map("idempotency_key")
+  rawPayload            Json                   @map("raw_payload")
+  createdAt             DateTime               @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt             DateTime               @updatedAt @map("updated_at") @db.Timestamptz
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@map("apple_transactions")
+}
+
+enum AppleTransactionStatus {
+  CREDITED
+  REFUNDED
+  REFUND_PENDING_MANUAL
+  REVOKED
 }
 
 /// Manual, admin-triggered mentor payout. Disbursement automation is

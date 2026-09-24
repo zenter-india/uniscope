@@ -28,6 +28,7 @@
     "test:e2e": "jest --config ./test/jest-e2e.json"
   },
   "dependencies": {
+    "@apple/app-store-server-library": "^3.1.0",
     "@dicebear/collection": "^9.4.2",
     "@dicebear/core": "^9.4.3",
     "@nestjs/common": "^11.0.1",

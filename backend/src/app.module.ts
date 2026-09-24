@@ -19,6 +19,7 @@ import {
   twilioConfig,
   msg91Config,
   razorpayConfig,
+  appleConfig,
   agoraConfig,
   validationSchema,
 } from './config/index.js';
@@ -75,6 +76,7 @@ import { IntegrationsModule } from './modules/integrations/integrations.module.j
         twilioConfig,
         msg91Config,
         razorpayConfig,
+        appleConfig,
         agoraConfig,
       ],
       validationSchema,
