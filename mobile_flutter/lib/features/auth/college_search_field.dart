@@ -77,6 +77,24 @@ class _CollegeSearchFieldState extends ConsumerState<CollegeSearchField> {
       if (_focusNode.hasFocus) {
         setState(() => _open = true);
         _fetch(_controller.text);
+        // Device report: when this field sits low on the form, the results
+        // list below it renders right under the keyboard — invisible, so a
+        // user assumed typing was the only option and free-typed a college
+        // that already existed in the list, creating a duplicate entry.
+        // Scroll the field up near the top of the visible area (not just
+        // "barely on screen", which the default alignment would do) so the
+        // dropdown has room to actually show above the keyboard. Delayed
+        // a frame so this runs after the keyboard has started animating in
+        // and the viewport insets it depends on are current.
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted) return;
+          Scrollable.ensureVisible(
+            context,
+            alignment: 0.1,
+            duration: const Duration(milliseconds: 250),
+            curve: Curves.easeOut,
+          );
+        });
       } else {
         // Small delay so a tap on a suggestion registers before the list
         // closes out from under it.

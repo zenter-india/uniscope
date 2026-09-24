@@ -46,15 +46,44 @@ String _dayGroupLabel(DateTime dt) {
   return '${dt.day} ${_kGroupMonths[dt.month - 1]}';
 }
 
-/// The four fixed recharge packages — `(rupees, uniminutes)`. Must match the
+/// The four fixed recharge packages. `rupees`/`uniminutes` must match the
 /// backend's `RECHARGE_PACKAGES` exactly (`create-topup.dto.ts`): the server
 /// rejects any amount that isn't one of these. Non-linear: bigger packs give
-/// more Uniminutes per rupee.
-const _kRechargePackages = <(int, int)>[
-  (250, 10),
-  (400, 20),
-  (750, 40),
-  (1000, 60),
+/// more Uniminutes per rupee. `name`/`tagline` are display-only.
+typedef RechargePackage =
+    ({int rupees, int uniminutes, String name, String tagline});
+
+/// Razorpay prices (Android). iOS top-ups go through Apple IAP instead —
+/// see [_openAppleTopupSheet], which reads live StoreKit prices.
+const _kRechargePackagesAndroid = <RechargePackage>[
+  (
+    rupees: 250,
+    uniminutes: 10,
+    name: 'Sneak Peek',
+    tagline: 'A focused conversation with a mentor who has lived on campus.',
+  ),
+  (
+    rupees: 400,
+    uniminutes: 20,
+    name: 'Campus Tour',
+    tagline:
+        'Curated time to weigh your shortlist with informed, firsthand '
+        'insight.',
+  ),
+  (
+    rupees: 750,
+    uniminutes: 40,
+    name: 'Deep Dive',
+    tagline: 'In-depth guidance on placements, academics, and campus culture.',
+  ),
+  (
+    rupees: 1000,
+    uniminutes: 60,
+    name: 'Insider Pass',
+    tagline:
+        'Our most considered pack, for the decision that shapes your '
+        'future.',
+  ),
 ];
 
 final walletBalanceProvider = FutureProvider.autoDispose<Wallet>(
@@ -340,24 +369,54 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
             const SizedBox(height: AppSpacing.md),
             // Fixed recharge packages — must match the backend's
             // RECHARGE_PACKAGES exactly (any other amount is rejected).
-            ..._kRechargePackages.map((pack) {
+            ..._kRechargePackagesAndroid.map((pack) {
               return Padding(
                 padding: const EdgeInsets.only(bottom: AppSpacing.sm),
                 child: OutlinedButton(
                   onPressed: () {
                     Navigator.of(sheetContext).pop();
-                    _startRazorpayTopup(pack.$1 * 100);
+                    _startRazorpayTopup(pack.rupees * 100);
                   },
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  style: OutlinedButton.styleFrom(
+                    alignment: Alignment.centerLeft,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.md,
+                      vertical: AppSpacing.sm,
+                    ),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        '₹${pack.$1}',
-                        style: const TextStyle(fontWeight: AppFont.bold),
+                        pack.name,
+                        style: const TextStyle(
+                          fontWeight: AppFont.bold,
+                          fontSize: AppFont.sm,
+                        ),
                       ),
+                      const SizedBox(height: 2),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            '₹${pack.rupees}',
+                            style: const TextStyle(fontWeight: AppFont.bold),
+                          ),
+                          Text(
+                            uniminutesLabel(pack.uniminutes),
+                            style: const TextStyle(
+                              color: AppColors.textSecondary,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 2),
                       Text(
-                        uniminutesLabel(pack.$2),
-                        style: const TextStyle(color: AppColors.textSecondary),
+                        pack.tagline,
+                        style: const TextStyle(
+                          fontSize: AppFont.xs,
+                          color: AppColors.textSecondary,
+                        ),
                       ),
                     ],
                   ),
@@ -406,13 +465,13 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
 
     final byId = {for (final p in products) p.id: p};
     // Pairs each fixed package with its real StoreKit product, in the same
-    // order as kAppleTopupProductIds/_kRechargePackages. A package whose
+    // order as kAppleTopupProductIds/_kRechargePackagesAndroid. A package whose
     // product wasn't found (e.g. not yet created in App Store Connect) is
     // simply omitted rather than shown broken.
     final rows = <(int uniminutes, ProductDetails product)>[
-      for (var i = 0; i < _kRechargePackages.length && i < kAppleTopupProductIds.length; i++)
+      for (var i = 0; i < _kRechargePackagesAndroid.length && i < kAppleTopupProductIds.length; i++)
         if (byId[kAppleTopupProductIds[i]] != null)
-          (_kRechargePackages[i].$2, byId[kAppleTopupProductIds[i]]!),
+          (_kRechargePackagesAndroid[i].uniminutes, byId[kAppleTopupProductIds[i]]!),
     ];
 
     if (!mounted) return;
@@ -976,24 +1035,28 @@ class _LedgerRow extends StatelessWidget {
     }
   }
 
-  /// The recharge packages are a closed set (see _kRechargePackages) — a
-  /// TOPUP entry's credited Uniminutes always maps back to exactly one
-  /// package, so the rupee amount actually paid can be shown without the
-  /// backend needing to store it separately on the ledger row.
-  (int, int)? get _matchingPackage {
-    if (entry.type != 'TOPUP') return null;
-    final credited = minorToUniminutes(entry.amountMinor);
-    for (final pack in _kRechargePackages) {
-      if (pack.$2 == credited) return pack;
-    }
-    return null;
+  /// The rupees actually paid, parsed straight out of the backend's own
+  /// ledger-entry note (something like "Razorpay order X — paid 32500
+  /// minor, credited 10 Uniminutes" — see WalletService.applyLedgerEntry's
+  /// TOPUP calls). Used to be reverse-inferred from the credited Uniminutes via
+  /// the package list, which broke once the same Uniminute credit could
+  /// come from two different prices (the 2026-09-24 iOS 30% markup) — a
+  /// past top-up's real paid amount is unambiguous, so read it from the
+  /// one place that actually recorded it instead of guessing.
+  int? get _paidRupees {
+    final match = RegExp(r'paid (\d+) minor').firstMatch(entry.note ?? '');
+    if (match == null) return null;
+    return int.parse(match.group(1)!) ~/ 100;
   }
 
   String get _subtitle {
     final time = clockLabel(entry.createdAtLocal);
     if (entry.type == 'TOPUP' && !asRupees) {
-      final pack = _matchingPackage;
-      if (pack != null) return '₹${pack.$1} → ${uniminutesLabel(pack.$2)} · $time';
+      final paid = _paidRupees;
+      final credited = uniminutesLabel(minorToUniminutes(entry.amountMinor));
+      return paid != null
+          ? '₹$paid → $credited · $time'
+          : '$credited · $time';
     }
     if (_isNoShow) {
       final detail = entry.note!.contains('waited')

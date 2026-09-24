@@ -71,6 +71,7 @@ class _AspirantOnboardingScreenState
   String? _universityId;
   final _collegeNameController = TextEditingController();
   String? _specialization;
+  final _specializationOtherController = TextEditingController();
 
   final _courseInterestedController = TextEditingController();
   final Set<String> _preferredLanguages = {};
@@ -101,6 +102,7 @@ class _AspirantOnboardingScreenState
     _qualificationOtherController.dispose();
     _streamOtherController.dispose();
     _collegeNameController.dispose();
+    _specializationOtherController.dispose();
     _courseInterestedController.dispose();
     _preferredLanguageOtherController.dispose();
     super.dispose();
@@ -128,20 +130,22 @@ class _AspirantOnboardingScreenState
       _stream == 'Medical' &&
       (_qualification == 'Doctorate' || _qualification == 'Others');
 
-  /// Specialization shows for any stream+degree that has real data behind it
-  /// — a specific curated degree, or Medical's stream-wide union — but never
-  /// for an undergraduate degree (MBBS / BDS / plain UG have no
-  /// specialization concept), matching the web enrollment form.
+  /// Specialization shows for any non-undergraduate qualification (MBBS /
+  /// BDS / plain UG have no specialization concept) in ANY field of
+  /// interest — previously this also required a real curated/stream-wide
+  /// data source behind it, which silently hid the field for streams with
+  /// no such dataset (Arts & Humanities, Commerce & Business, Design, the
+  /// free-typed "Others" stream) even for PG/Doctorate/Others, a real
+  /// device report ("specialisation bar should be available when selected
+  /// PG, Doctorate, and others" for every field of interest). Whether real
+  /// options exist now only decides *how* the field is shown — see
+  /// _specializationOptions()/the render site below, which falls back to a
+  /// plain free-text field when the list would otherwise be empty.
   bool get _needsSpecialization {
     if (!_showCollege) return false;
-    if (_qualification == 'MBBS' ||
-        _qualification == 'BDS' ||
-        _qualification == 'UG') {
-      return false;
-    }
-    return _curatedDegree != null ||
-        _needsMedicalStreamWideSpecialization ||
-        needsStreamWideSpecialization(_stream, _qualification);
+    return _qualification != 'MBBS' &&
+        _qualification != 'BDS' &&
+        _qualification != 'UG';
   }
 
   List<String> _specializationOptions() {
@@ -477,6 +481,7 @@ class _AspirantOnboardingScreenState
                           _universityId = null;
                           _collegeNameController.clear();
                           _specialization = null;
+                          _specializationOtherController.clear();
                         }),
                       ),
                       if (_stream == 'Others') ...[
@@ -501,6 +506,7 @@ class _AspirantOnboardingScreenState
                           _universityId = null;
                           _collegeNameController.clear();
                           _specialization = null;
+                          _specializationOtherController.clear();
                         }),
                       ),
                       if (_qualification == 'Others') ...[
@@ -544,11 +550,35 @@ class _AspirantOnboardingScreenState
                           _collegeNameController.text.trim().isNotEmpty) ...[
                         const SizedBox(height: AppSpacing.md),
                         const OnboardingFieldLabel('Specialization'),
-                        OnboardingSearchableField(
-                          value: _specialization,
-                          hint: 'Select specialization',
-                          options: _specializationOptions(),
-                          onChanged: (v) => setState(() => _specialization = v),
+                        Builder(
+                          builder: (context) {
+                            final options = _specializationOptions();
+                            // No curated/stream-wide data at all for this
+                            // field of interest (e.g. Arts & Humanities,
+                            // Commerce & Business, Design, a free-typed
+                            // "Others" stream) — a plain free-text field
+                            // beats hiding Specialization entirely, per
+                            // device report.
+                            if (options.isEmpty) {
+                              return TextFormField(
+                                controller: _specializationOtherController,
+                                onChanged: (v) => setState(
+                                  () => _specialization =
+                                      v.trim().isEmpty ? null : v.trim(),
+                                ),
+                                decoration: const InputDecoration(
+                                  hintText: 'Enter your specialization',
+                                ),
+                              );
+                            }
+                            return OnboardingSearchableField(
+                              value: _specialization,
+                              hint: 'Select specialization',
+                              options: options,
+                              onChanged: (v) =>
+                                  setState(() => _specialization = v),
+                            );
+                          },
                         ),
                       ],
                       const SizedBox(height: AppSpacing.md),

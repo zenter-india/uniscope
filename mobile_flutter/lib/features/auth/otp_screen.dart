@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/network/auth_api.dart';
+import '../../core/network/users_api.dart';
 import '../../core/theme/app_theme.dart';
 import '../../state/auth_controller.dart';
 import 'auth_background.dart';
@@ -83,8 +84,39 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
       final result = await ref
           .read(authApiProvider)
           .verifyOtp(_serviceId, widget.phone, code);
+
+      // isNewUser is only ever true on the account's very first login — a
+      // real device report: a user who entered just their display name,
+      // then closed the app before finishing the rest of the wizard, was
+      // forced through a fresh OTP login on reopening (their stored session
+      // wasn't restored), and this then set needsOnboarding: false (since
+      // the account already existed) and dropped them straight onto Home
+      // with an otherwise-blank profile — stuck, no way back into the
+      // wizard. For a *returning* login, check the profile itself instead
+      // of trusting isNewUser: the wizard's core fields (qualification,
+      // stream, state, city — shared by both the aspirant and mentor
+      // flows) are always saved together once a user reaches Finish or the
+      // avatar/verification "Skip for now" (see aspirant_onboarding_screen
+      // .dart's _finish — only the avatar itself is optional, everything
+      // before it is mandatory to advance), so a profile missing all four
+      // can only mean the wizard was abandoned before ever getting there.
+      var needsOnboarding = result.isNewUser;
+      if (!needsOnboarding) {
+        try {
+          final profile = await ref.read(usersApiProvider).getMe();
+          needsOnboarding =
+              profile.qualification == null &&
+              profile.stream == null &&
+              profile.state == null &&
+              profile.city == null;
+        } catch (_) {
+          // Fail open — a transient network error here shouldn't lock a
+          // genuine returning user out of an already-complete profile.
+        }
+      }
+
       // Deliberately no context.go here — setting isAuthenticated (and
-      // needsOnboarding for new users) triggers the router's redirect via
+      // needsOnboarding) triggers the router's redirect via
       // refreshListenable, which is the single source of truth for where
       // this goes next (see app_router.dart). A screen-level context.go
       // racing that redirect is what previously let new users fall through
@@ -95,7 +127,7 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
             result.accessToken,
             result.refreshToken,
             result.user,
-            needsOnboarding: result.isNewUser,
+            needsOnboarding: needsOnboarding,
           );
     } on DioException catch (err) {
       // A deleted-account-past-reactivation-window rejection (see

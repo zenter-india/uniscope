@@ -507,10 +507,34 @@ class _SearchableOptionSheetState extends State<_SearchableOptionSheet> {
             const SizedBox(height: AppSpacing.sm),
             Expanded(
               child: filtered.isEmpty
-                  ? const Center(
-                      child: Text(
-                        'No matches',
-                        style: TextStyle(color: AppColors.textMuted),
+                  ? Center(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: AppSpacing.lg,
+                        ),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Text(
+                              'No matches',
+                              style: TextStyle(color: AppColors.textMuted),
+                            ),
+                            // Same free-text fallback CollegeSearchField
+                            // already has — if a real specialization isn't
+                            // in the list, typing it and using it as-is
+                            // beats leaving the user with no way to
+                            // proceed. The backend column is a plain
+                            // string, no enum to violate.
+                            if (_query.trim().isNotEmpty) ...[
+                              const SizedBox(height: AppSpacing.md),
+                              OutlinedButton(
+                                onPressed: () => Navigator.of(context)
+                                    .pop(_query.trim()),
+                                child: Text('Use "${_query.trim()}"'),
+                              ),
+                            ],
+                          ],
+                        ),
                       ),
                     )
                   : ListView.builder(

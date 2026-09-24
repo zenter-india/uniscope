@@ -69,6 +69,7 @@ class _MentorOnboardingScreenState extends ConsumerState<MentorOnboardingScreen>
   final _streamOtherController = TextEditingController();
   String? _degree;
   String? _specialization;
+  final _specializationOtherController = TextEditingController();
 
   String? _currentStatus;
   String? _yearOfStudyLabel;
@@ -106,6 +107,7 @@ class _MentorOnboardingScreenState extends ConsumerState<MentorOnboardingScreen>
     _cityOtherController.dispose();
     _collegeNameController.dispose();
     _streamOtherController.dispose();
+    _specializationOtherController.dispose();
     _graduationYearController.dispose();
     _languagesOtherController.dispose();
     super.dispose();
@@ -160,9 +162,15 @@ class _MentorOnboardingScreenState extends ConsumerState<MentorOnboardingScreen>
     return null;
   }
 
-  /// Specialization shows for any stream+degree with real data behind it (a
-  /// specific curated degree, or Medical's stream-wide union), never for an
-  /// undergraduate degree — matching the web MentorForm.
+  /// Specialization shows for any non-undergraduate degree, in ANY field of
+  /// interest — never for MBBS/BDS/plain UG. Previously also required a
+  /// real curated/stream-wide data source behind it, which silently hid the
+  /// field for streams with no such dataset (Arts & Humanities, Commerce &
+  /// Business, Design, a free-typed "Others" stream), matching the same
+  /// device report fixed on the aspirant wizard's equivalent getter.
+  /// Whether real options exist now only decides *how* the field renders —
+  /// see the render site below, which falls back to a plain free-text field
+  /// when the list would otherwise be empty.
   bool get _needsSpecialization {
     if (_degree == null ||
         _degree == 'MBBS' ||
@@ -170,9 +178,7 @@ class _MentorOnboardingScreenState extends ConsumerState<MentorOnboardingScreen>
         _degree == 'UG') {
       return false;
     }
-    return _curatedDegree != null ||
-        _needsMedicalStreamWideSpecialization ||
-        needsStreamWideSpecialization(_stream, _degree);
+    return true;
   }
 
   /// Real bug fix (ported from web/components/MentorForm.tsx's own
@@ -601,6 +607,7 @@ class _MentorOnboardingScreenState extends ConsumerState<MentorOnboardingScreen>
                           _pickedSpecializations = const [];
                           _degree = null;
                           _specialization = null;
+                          _specializationOtherController.clear();
                         }),
                       ),
                       if (_stream == 'Others') ...[
@@ -628,6 +635,7 @@ class _MentorOnboardingScreenState extends ConsumerState<MentorOnboardingScreen>
                             _collegeNameController.clear();
                             _pickedSpecializations = const [];
                             _specialization = null;
+                          _specializationOtherController.clear();
                           }),
                         ),
                       ],
@@ -647,6 +655,7 @@ class _MentorOnboardingScreenState extends ConsumerState<MentorOnboardingScreen>
                             _collegeNameController.text = text;
                             _pickedSpecializations = specs;
                             _specialization = null;
+                          _specializationOtherController.clear();
                           }),
                         ),
                       ],
@@ -658,18 +667,43 @@ class _MentorOnboardingScreenState extends ConsumerState<MentorOnboardingScreen>
                           _collegeNameController.text.trim().isNotEmpty) ...[
                         const SizedBox(height: AppSpacing.md),
                         const OnboardingFieldLabel('Specialization'),
-                        OnboardingSearchableField(
-                          value: _specialization,
-                          hint: 'Select specialization',
-                          options: _specializationOptions(),
-                          // Only meaningful for the "picked college's own
-                          // list" case above — search widens beyond it.
-                          // The stream-wide branches already show the full
-                          // union by default, so there's nothing to widen.
-                          widenedOptions: _curatedDegree != null
-                              ? _curatedDegreeWideOptions()
-                              : null,
-                          onChanged: (v) => setState(() => _specialization = v),
+                        Builder(
+                          builder: (context) {
+                            final options = _specializationOptions();
+                            // No curated/stream-wide data at all for this
+                            // field of interest (e.g. Arts & Humanities,
+                            // Commerce & Business, Design, a free-typed
+                            // "Others" stream) — a plain free-text field
+                            // beats hiding Specialization entirely, per
+                            // device report.
+                            if (options.isEmpty) {
+                              return TextFormField(
+                                controller: _specializationOtherController,
+                                onChanged: (v) => setState(
+                                  () => _specialization =
+                                      v.trim().isEmpty ? null : v.trim(),
+                                ),
+                                decoration: const InputDecoration(
+                                  hintText: 'Enter your specialization',
+                                ),
+                              );
+                            }
+                            return OnboardingSearchableField(
+                              value: _specialization,
+                              hint: 'Select specialization',
+                              options: options,
+                              // Only meaningful for the "picked college's
+                              // own list" case above — search widens
+                              // beyond it. The stream-wide branches
+                              // already show the full union by default,
+                              // so there's nothing to widen.
+                              widenedOptions: _curatedDegree != null
+                                  ? _curatedDegreeWideOptions()
+                                  : null,
+                              onChanged: (v) =>
+                                  setState(() => _specialization = v),
+                            );
+                          },
                         ),
                       ],
                     ],
@@ -786,7 +820,7 @@ class _MentorOnboardingScreenState extends ConsumerState<MentorOnboardingScreen>
                       const SizedBox(height: AppSpacing.md),
                       const OnboardingFieldLabel('College ID'),
                       const Text(
-                        'We\'ll need a geo-tagged photo of your valid college ID.',
+                        'We\'ll need a clear photo of your valid college ID.',
                         style: TextStyle(
                           fontSize: AppFont.xs,
                           color: AppColors.textSecondary,
