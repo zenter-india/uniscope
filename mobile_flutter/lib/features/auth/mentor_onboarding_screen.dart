@@ -820,7 +820,7 @@ class _MentorOnboardingScreenState extends ConsumerState<MentorOnboardingScreen>
                       const SizedBox(height: AppSpacing.md),
                       const OnboardingFieldLabel('College ID'),
                       const Text(
-                        'We\'ll need a geo-tagged photo of your valid college ID.',
+                        'We\'ll need a clear photo of your valid college ID.',
                         style: TextStyle(
                           fontSize: AppFont.xs,
                           color: AppColors.textSecondary,
