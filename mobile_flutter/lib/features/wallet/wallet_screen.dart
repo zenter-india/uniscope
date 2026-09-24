@@ -555,36 +555,8 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
                 ),
               );
             }),
-            const SizedBox(height: AppSpacing.sm),
-            Container(
-              padding: const EdgeInsets.all(AppSpacing.sm),
-              decoration: BoxDecoration(
-                color: AppColors.warning.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(AppRadius.md),
-              ),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Icon(
-                    Icons.info_outline_rounded,
-                    size: 16,
-                    color: AppColors.warning,
-                  ),
-                  const SizedBox(width: AppSpacing.xs),
-                  Expanded(
-                    child: Text(
-                      "Prices include Apple's 30% service fee. To avoid "
-                      'this fee, top up your wallet from the Uniscope '
-                      'Android app instead.',
-                      style: TextStyle(
-                        fontSize: AppFont.xs,
-                        color: AppColors.textSecondary,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
+            // No "cheaper on Android" / Apple-fee note here: App Store
+            // Guideline 3.1.1 forbids pointing iOS users to other ways to pay.
             const SizedBox(height: AppSpacing.xs),
             Align(
               alignment: Alignment.center,
