@@ -476,9 +476,16 @@ export class WalletService {
     userId: string,
     dto: VerifyAppleTopupDto,
   ): Promise<WalletResponse> {
-    const transaction = await this.requireAppleVerifier().verifyAndDecodeTransaction(
-      dto.signedTransactionInfo,
-    );
+    const verifier = this.requireAppleVerifier();
+    let transaction: JWSTransactionDecodedPayload;
+    try {
+      transaction = await verifier.verifyAndDecodeTransaction(dto.signedTransactionInfo);
+    } catch (err) {
+      // A forged, malformed, or wrong-environment receipt is a bad request,
+      // not a server fault (and shouldn't page Sentry as one).
+      this.logger.warn(`Apple transaction failed verification for user ${userId}: ${err}`);
+      throw new BadRequestException('Could not verify this App Store purchase');
+    }
     await this.creditAppleTransaction(userId, transaction);
     return toWalletResponse(await this.requireWallet(userId));
   }
