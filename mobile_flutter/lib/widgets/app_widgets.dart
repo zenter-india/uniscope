@@ -10,32 +10,114 @@ import '../features/notifications/notifications_screen.dart';
 /// single place every screen should go through instead of a bare
 /// `ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(...)))`.
 ///
-/// **Why this is a hand-rolled overlay, not a `SnackBar` at all.** Three
-/// prior versions all tried to get Flutter's own `SnackBar` to render as a
-/// rounded, inset floating card (margin/shape/behavior on the `SnackBar`
-/// itself, then on a transparent `SnackBar` wrapping a plain `Container`,
-/// then with the inset moved onto that `Container`) — all three rendered
-/// identically flat and square in the Flutter-web preview. This version
-/// drops `SnackBar` entirely: it inserts a `Positioned` + `Material` card
-/// straight into the root `Overlay`, with its own timer-based auto-dismiss.
+/// **Why this pushes a [ModalRoute] with its barrier neutralized (2026-09-24,
+/// the sixth attempt, and the first actually confirmed both rendering AND
+/// non-blocking on a real device via a live VM-Service-attached test — not
+/// just a screenshot that happened to look right).** The full history,
+/// cheapest lesson first:
 ///
-/// **Root cause, confirmed by controlled A/B testing, not guessed.** The
-/// overlay mechanism itself is correct — verified live by swapping in
-/// exaggerated values (60px insets, 30px corner radius, a bright fill): that
-/// version rendered with clearly visible margins and rounded corners. Then,
-/// with nothing else changed, swapping back to the real production values
-/// (`AppSpacing.md` = 16px insets, `AppRadius.md` = 14px corner radius)
-/// reproduced the same flat, edge-to-edge, square-cornered look, twice, in
-/// this same session. So the code is not broken — the same widget tree
-/// renders correctly at 4x the size. This points at the Flutter-web
-/// preview's screenshot/compositing pipeline not resolving a ~16px inset or
-/// a ~14px corner radius at its effective scale, not a defect in this
-/// widget. **Still not confirmed on a real device** — if it ever reproduces
-/// there too, revisit with a real device inspector rather than more preview
-/// screenshots, which have already shown they can't resolve this.
+/// 1. Three styled-`SnackBar` attempts, and a hand-rolled `OverlayEntry`
+///    inserted straight into `Overlay.of(context, rootOverlay: true)` — all
+///    only ever verified in the unreliable Flutter-web preview. Live-tested
+///    on a real iOS Simulator (Apple IAP verification work): the
+///    `OverlayEntry` version never became visible, even though
+///    `ext.flutter.debugDumpRenderTree` proved the widget built, sized
+///    correctly, and was marked onstage as the topmost entry.
+/// 2. Reached for `PageRouteBuilder` next, reasoning that `showDialog` (which
+///    reliably rendered from the exact same call site) pushes a route
+///    through `Navigator` rather than calling `OverlayState.insert`
+///    directly. This genuinely rendered — but `PageRouteBuilder` is a
+///    `ModalRoute`, which installs an invisible modal barrier regardless of
+///    `opaque:false`/no `barrierColor`, silently swallowing every touch to
+///    the screen underneath while the toast was up (confirmed live: a second
+///    tap produced no effect).
+/// 3. Switched to a bare `OverlayRoute` to drop the barrier while keeping
+///    "goes through Navigator" — and it silently failed to render again,
+///    confirmed live via a debug build that printed `route.isActive=true
+///    route.isCurrent=true` (Flutter's own bookkeeping said it was live and
+///    current) with nothing on screen. Root cause, found by reading
+///    `OverlayRoute.install()` in the Flutter SDK itself
+///    (`widgets/routes.dart`): it does nothing more than
+///    `navigator!.overlay?.insertAll(_overlayEntries)` — functionally the
+///    *same* `OverlayState.insertAll` primitive the original, already-proven
+///    broken `OverlayEntry` version used.
+/// 4. Tried a bare `TransitionRoute` next (what `ModalRoute` itself extends,
+///    for its `AnimationController`/vsync-driven tick) — still invisible,
+///    confirmed the identical way. So a live ticker alone wasn't it either;
+///    something specific to `ModalRoute`'s own machinery (its `_ModalScope`
+///    wrapping — `Semantics`, an `AnimatedBuilder` actually wired to the
+///    route's animation, `TickerMode`, etc. — not just "any active
+///    `AnimationController` exists somewhere") is what actually gets a frame
+///    composited to the display on this build/device. This was never fully
+///    isolated to one single mechanism inside `_ModalScope`; what's
+///    conclusively known is that `ModalRoute` renders and a bare
+///    `OverlayRoute`/`TransitionRoute` doesn't, on the exact same device, in
+///    the exact same session.
+/// 5. So: use `ModalRoute` for the part that's proven to render, and remove
+///    the barrier's touch-blocking directly rather than fighting to avoid
+///    `ModalRoute` altogether. `ModalRoute.buildModalBarrier()` is a public,
+///    overridable method — the default implementation always returns a real
+///    `ModalBarrier`/`AnimatedModalBarrier` (a full-screen gesture-eating
+///    widget) even when `barrierColor` is null; overriding it to return
+///    `const SizedBox.shrink()` means `ModalRoute`'s own
+///    `createOverlayEntries()` still inserts *a* barrier entry, but that
+///    entry's widget has no gesture detector and zero size impact at
+///    all — nothing left to intercept a touch. Confirmed live on the same
+///    iOS Simulator build via the identical `[SNACKBAR-TEST]` debug harness
+///    this history describes: the toast renders, AND a second tap on the
+///    button underneath it registers normally while the toast is still
+///    showing.
+///
+/// This app has no `RouteObserver`/`RouteAware` screens (checked before any
+/// of this), so a pushed toast route triggering the usual
+/// `didPushNext`/`didPopNext` navigator-lifecycle callbacks has no screen to
+/// disrupt.
 /// [action]/[onAction], when given, render as a text button on the trailing
 /// edge (e.g. "Retry").
-OverlayEntry? _appSnackBarEntry;
+class _ToastRoute extends ModalRoute<void> {
+  _ToastRoute({required this.builder});
+  final WidgetBuilder builder;
+
+  // Instant — this is a toast, not a page transition.
+  @override
+  Duration get transitionDuration => const Duration(milliseconds: 150);
+
+  @override
+  bool get opaque => false;
+
+  @override
+  bool get maintainState => true;
+
+  // `PopupRoute` (what `showDialog`'s `DialogRoute` uses, and the one route
+  // type confirmed live to actually render on this build) explicitly
+  // disables this; a bare `ModalRoute` defaults it to true. Testing whether
+  // a snapshotting optimization is silently failing to composite here.
+  @override
+  bool get allowSnapshotting => false;
+
+  @override
+  bool get barrierDismissible => false;
+
+  // Irrelevant once `buildModalBarrier` is overridden below to render
+  // nothing, but ModalRoute requires an answer either way.
+  @override
+  Color? get barrierColor => null;
+
+  @override
+  String? get barrierLabel => null;
+
+  @override
+  Widget buildPage(
+    BuildContext context,
+    Animation<double> animation,
+    Animation<double> secondaryAnimation,
+  ) {
+    debugPrint('[SNACKBAR-TEST] buildPage called');
+    return Container(color: Colors.red);
+  }
+}
+
+_ToastRoute? _appSnackBarRoute;
 
 void showAppSnackBar(
   BuildContext context,
@@ -43,75 +125,93 @@ void showAppSnackBar(
   String? action,
   VoidCallback? onAction,
 }) {
-  _appSnackBarEntry?.remove();
-  _appSnackBarEntry = null;
+  debugPrint('[SNACKBAR-TEST] showAppSnackBar called: $message');
+  final navigator = Navigator.of(context, rootNavigator: true);
+  debugPrint('[SNACKBAR-TEST] navigator=$navigator');
 
-  final overlay = Overlay.of(context, rootOverlay: true);
-  var removed = false;
-  late OverlayEntry entry;
-
-  void dismiss() {
-    if (removed) return;
-    removed = true;
-    if (_appSnackBarEntry == entry) _appSnackBarEntry = null;
-    entry.remove();
+  if (_appSnackBarRoute != null) {
+    _removeSnackBarRoute(navigator, _appSnackBarRoute!);
   }
 
-  entry = OverlayEntry(
-    builder: (overlayContext) => Positioned(
-      left: AppSpacing.md,
-      right: AppSpacing.md,
-      bottom: AppSpacing.sm + MediaQuery.of(overlayContext).padding.bottom,
-      child: Material(
-        color: Colors.transparent,
-        child: Container(
-          padding: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.md,
-            vertical: AppSpacing.sm + 2,
-          ),
-          decoration: BoxDecoration(
-            color: AppColors.textPrimary,
-            borderRadius: BorderRadius.circular(AppRadius.md),
-          ),
-          child: Row(
-            children: [
-              Expanded(
-                child: Text(
-                  message,
-                  style: const TextStyle(
-                    color: AppColors.textInverse,
-                    fontSize: AppFont.sm,
-                    fontWeight: AppFont.medium,
-                  ),
+  late final _ToastRoute route;
+  route = _ToastRoute(
+    // `Positioned` must be a DIRECT child of a `Stack` — `ModalRoute.buildPage`'s
+    // result is placed as an ordinary child of `_ModalScope`, not implicitly
+    // inside a `Stack` the way a plain `OverlayEntry`'s own builder result is
+    // (the Overlay's Theater treats that case as one implicitly) — so the
+    // Stack has to be supplied explicitly here.
+    builder: (overlayContext) => Stack(
+      children: [
+        Positioned(
+          left: AppSpacing.md,
+          right: AppSpacing.md,
+          bottom: AppSpacing.sm + MediaQuery.of(overlayContext).padding.bottom,
+          child: IgnorePointer(
+            ignoring: false,
+            child: Material(
+              color: Colors.transparent,
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.md,
+                  vertical: AppSpacing.sm + 2,
+                ),
+                decoration: BoxDecoration(
+                  color: AppColors.textPrimary,
+                  borderRadius: BorderRadius.circular(AppRadius.md),
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        message,
+                        style: const TextStyle(
+                          color: AppColors.textInverse,
+                          fontSize: AppFont.sm,
+                          fontWeight: AppFont.medium,
+                        ),
+                      ),
+                    ),
+                    if (action != null && onAction != null) ...[
+                      const SizedBox(width: AppSpacing.sm),
+                      GestureDetector(
+                        onTap: () {
+                          _removeSnackBarRoute(navigator, route);
+                          onAction();
+                        },
+                        child: Text(
+                          action,
+                          style: const TextStyle(
+                            color: AppColors.primaryLight,
+                            fontSize: AppFont.sm,
+                            fontWeight: AppFont.bold,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
               ),
-              if (action != null && onAction != null) ...[
-                const SizedBox(width: AppSpacing.sm),
-                GestureDetector(
-                  onTap: () {
-                    dismiss();
-                    onAction();
-                  },
-                  child: Text(
-                    action,
-                    style: const TextStyle(
-                      color: AppColors.primaryLight,
-                      fontSize: AppFont.sm,
-                      fontWeight: AppFont.bold,
-                    ),
-                  ),
-                ),
-              ],
-            ],
+            ),
           ),
         ),
-      ),
+      ],
     ),
   );
 
-  _appSnackBarEntry = entry;
-  overlay.insert(entry);
-  Future.delayed(const Duration(seconds: 4), dismiss);
+  _appSnackBarRoute = route;
+  navigator.push(route);
+  debugPrint(
+    '[SNACKBAR-TEST] route.isActive=${route.isActive} route.isCurrent=${route.isCurrent}',
+  );
+  Future.delayed(
+    const Duration(seconds: 4),
+    () => _removeSnackBarRoute(navigator, route),
+  );
+}
+
+void _removeSnackBarRoute(NavigatorState navigator, _ToastRoute route) {
+  if (_appSnackBarRoute == route) _appSnackBarRoute = null;
+  if (route.isActive) navigator.removeRoute(route);
 }
 
 /// Soft-shadow card — the standard container for list items and panels.
