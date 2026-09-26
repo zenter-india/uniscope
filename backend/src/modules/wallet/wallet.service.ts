@@ -137,7 +137,7 @@ export class WalletService {
   /** null when Apple IAP env vars are unset (e.g. an Android-only rollout
    * window) — every Apple-path method below guards on this before use, so
    * an unconfigured Apple config never breaks app boot or Android traffic. */
-  private readonly appleVerifier: SignedDataVerifier | null = null;
+  private readonly appleVerifiers: SignedDataVerifier[] = [];
 
   constructor(
     private readonly prisma: PrismaService,
@@ -161,23 +161,69 @@ export class WalletService {
     if (appleCfg.bundleId) {
       const environment = toAppleEnvironment(appleCfg.environment);
       const appAppleId = appleCfg.appAppleId ? Number(appleCfg.appAppleId) : undefined;
-      this.appleVerifier = new SignedDataVerifier(
-        APPLE_ROOT_CERTIFICATES,
-        environment === Environment.PRODUCTION,
-        environment,
-        appleCfg.bundleId,
-        appAppleId,
-      );
+      // A production server must ALSO accept sandbox-signed transactions:
+      // App Review and TestFlight purchase against Apple's sandbox even on
+      // a production build, and Apple's own guidance is "verify against
+      // production first, fall back to sandbox". Without this, a reviewer's
+      // test purchase fails verification and the build is rejected.
+      const environments =
+        environment === Environment.PRODUCTION
+          ? [Environment.PRODUCTION, Environment.SANDBOX]
+          : [environment];
+      for (const env of environments) {
+        try {
+          this.appleVerifiers.push(
+            new SignedDataVerifier(
+              APPLE_ROOT_CERTIFICATES,
+              env === Environment.PRODUCTION,
+              env,
+              appleCfg.bundleId,
+              // appAppleId is only enforced for production; sandbox JWS omit it.
+              env === Environment.PRODUCTION ? appAppleId : undefined,
+            ),
+          );
+        } catch (err) {
+          // e.g. production without APPLE_APP_APPLE_ID. Never let an Apple
+          // misconfiguration crash app boot (and take Android down with it).
+          this.logger.error(`Apple IAP verifier for ${env} not created: ${err}`);
+        }
+      }
     } else {
       this.logger.log('Apple IAP not configured — iOS top-ups are unavailable');
     }
   }
 
-  private requireAppleVerifier(): SignedDataVerifier {
-    if (!this.appleVerifier) {
+  private requireAppleVerifiers(): SignedDataVerifier[] {
+    if (this.appleVerifiers.length === 0) {
       throw new BadRequestException('Apple In-App Purchase is not configured on this server');
     }
-    return this.appleVerifier;
+    return this.appleVerifiers;
+  }
+
+  /** Tries each configured environment in order (production, then sandbox);
+   * throws the first environment's error only if every one rejects it. */
+  private async decodeAppleTransaction(jws: string): Promise<JWSTransactionDecodedPayload> {
+    let firstErr: unknown;
+    for (const v of this.requireAppleVerifiers()) {
+      try {
+        return await v.verifyAndDecodeTransaction(jws);
+      } catch (err) {
+        firstErr ??= err;
+      }
+    }
+    throw firstErr;
+  }
+
+  private async decodeAppleNotification(jws: string): Promise<ResponseBodyV2DecodedPayload> {
+    let firstErr: unknown;
+    for (const v of this.requireAppleVerifiers()) {
+      try {
+        return await v.verifyAndDecodeNotification(jws);
+      } catch (err) {
+        firstErr ??= err;
+      }
+    }
+    throw firstErr;
   }
 
   async getBalance(userId: string): Promise<WalletResponse> {
@@ -476,10 +522,10 @@ export class WalletService {
     userId: string,
     dto: VerifyAppleTopupDto,
   ): Promise<WalletResponse> {
-    const verifier = this.requireAppleVerifier();
+    this.requireAppleVerifiers();
     let transaction: JWSTransactionDecodedPayload;
     try {
-      transaction = await verifier.verifyAndDecodeTransaction(dto.signedTransactionInfo);
+      transaction = await this.decodeAppleTransaction(dto.signedTransactionInfo);
     } catch (err) {
       // A forged, malformed, or wrong-environment receipt is a bad request,
       // not a server fault (and shouldn't page Sentry as one).
@@ -500,7 +546,7 @@ export class WalletService {
     signedPayload: string,
   ): Promise<ResponseBodyV2DecodedPayload | null> {
     try {
-      return await this.requireAppleVerifier().verifyAndDecodeNotification(signedPayload);
+      return await this.decodeAppleNotification(signedPayload);
     } catch (err) {
       this.logger.warn(`Apple server notification failed verification: ${err}`);
       return null;
@@ -520,7 +566,7 @@ export class WalletService {
 
     if (payload.notificationType === 'ONE_TIME_CHARGE' && signedTransactionInfo) {
       const transaction =
-        await this.requireAppleVerifier().verifyAndDecodeTransaction(signedTransactionInfo);
+        await this.decodeAppleTransaction(signedTransactionInfo);
       const userId = await this.resolveUserIdForAppleTransaction(transaction);
       if (userId) {
         await this.creditAppleTransaction(userId, transaction);
@@ -537,7 +583,7 @@ export class WalletService {
       signedTransactionInfo
     ) {
       const transaction =
-        await this.requireAppleVerifier().verifyAndDecodeTransaction(signedTransactionInfo);
+        await this.decodeAppleTransaction(signedTransactionInfo);
       await this.handleAppleRefund(transaction);
       return;
     }
