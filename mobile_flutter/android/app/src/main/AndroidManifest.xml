@@ -7,6 +7,11 @@
          from the merged manifest rather than declaring a false "why" for it
          in the Play Console foreground-service-permissions questionnaire. -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION" tools:node="remove"/>
+    <!-- in_app_purchase (used for Apple IAP on iOS only) pulls in Google Play
+         Billing, which declares BILLING. Android top-ups use Razorpay and
+         never call Play Billing, so strip it rather than signal Play Billing
+         to Google Play. -->
+    <uses-permission android:name="com.android.vending.BILLING" tools:node="remove"/>
     <!-- Required for ImageSource.camera (image_picker) — the "Take a photo"
          option on ID/document verification uploads. -->
     <uses-permission android:name="android.permission.CAMERA"/>
