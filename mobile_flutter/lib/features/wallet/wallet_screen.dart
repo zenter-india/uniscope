@@ -684,21 +684,29 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
                           if (!isMentor && wallet.reservedMinor > 0) ...[
                             const SizedBox(height: 4),
                             Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Icon(
-                                  Icons.lock_clock_rounded,
-                                  size: 13,
-                                  color: Colors.white.withValues(alpha: 0.75),
+                                Padding(
+                                  padding: const EdgeInsets.only(top: 1),
+                                  child: Icon(
+                                    Icons.lock_clock_rounded,
+                                    size: 13,
+                                    color: Colors.white.withValues(alpha: 0.75),
+                                  ),
                                 ),
                                 const SizedBox(width: 4),
-                                Text(
-                                  '${uniminutesLabel(wallet.reservedUniminutes)} '
-                                  'reserved for a pending call · '
-                                  '${wallet.availableUniminutes} available',
-                                  style: TextStyle(
-                                    color: Colors.white.withValues(alpha: 0.75),
-                                    fontSize: AppFont.xs,
-                                    fontWeight: AppFont.medium,
+                                // Expanded so this wraps on narrow phones
+                                // instead of overflowing the card.
+                                Expanded(
+                                  child: Text(
+                                    '${uniminutesLabel(wallet.reservedUniminutes)} '
+                                    'reserved for a pending call · '
+                                    '${wallet.availableUniminutes} available',
+                                    style: TextStyle(
+                                      color: Colors.white.withValues(alpha: 0.75),
+                                      fontSize: AppFont.xs,
+                                      fontWeight: AppFont.medium,
+                                    ),
                                   ),
                                 ),
                               ],

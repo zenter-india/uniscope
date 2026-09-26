@@ -1,80 +1,80 @@
 {
-  "identifier" : "8F0A1B2C-0000-4000-8000-000000000001",
-  "nonRenewingSubscriptions" : [],
-  "products" : [
+  "identifier": "8F0A1B2C-0000-4000-8000-000000000001",
+  "nonRenewingSubscriptions": [],
+  "products": [
     {
-      "displayPrice" : "3.25",
-      "familyShareable" : false,
-      "internalID" : "8F0A1B2C-0000-4000-8000-000000000010",
-      "localizations" : [
+      "displayPrice": "325",
+      "familyShareable": false,
+      "internalID": "8F0A1B2C-0000-4000-8000-000000000010",
+      "localizations": [
         {
-          "description" : "Wallet Top-up 10 Uniminutes",
-          "displayName" : "Wallet Top-up 10 Uniminutes",
-          "locale" : "en_US"
+          "description": "Wallet Top-up 10 Uniminutes",
+          "displayName": "Wallet Top-up 10 Uniminutes",
+          "locale": "en_US"
         }
       ],
-      "productID" : "com.uniscope.uniscopeMobile.uniminutes10",
-      "referenceName" : "Wallet Top-up 10 Uniminutes",
-      "type" : "Consumable"
+      "productID": "com.uniscope.uniscopeMobile.uniminutes10",
+      "referenceName": "Wallet Top-up 10 Uniminutes",
+      "type": "Consumable"
     },
     {
-      "displayPrice" : "5.20",
-      "familyShareable" : false,
-      "internalID" : "8F0A1B2C-0000-4000-8000-000000000020",
-      "localizations" : [
+      "displayPrice": "520",
+      "familyShareable": false,
+      "internalID": "8F0A1B2C-0000-4000-8000-000000000020",
+      "localizations": [
         {
-          "description" : "Wallet Top-up 20 Uniminutes",
-          "displayName" : "Wallet Top-up 20 Uniminutes",
-          "locale" : "en_US"
+          "description": "Wallet Top-up 20 Uniminutes",
+          "displayName": "Wallet Top-up 20 Uniminutes",
+          "locale": "en_US"
         }
       ],
-      "productID" : "com.uniscope.uniscopeMobile.uniminutes20",
-      "referenceName" : "Wallet Top-up 20 Uniminutes",
-      "type" : "Consumable"
+      "productID": "com.uniscope.uniscopeMobile.uniminutes20",
+      "referenceName": "Wallet Top-up 20 Uniminutes",
+      "type": "Consumable"
     },
     {
-      "displayPrice" : "9.75",
-      "familyShareable" : false,
-      "internalID" : "8F0A1B2C-0000-4000-8000-000000000040",
-      "localizations" : [
+      "displayPrice": "975",
+      "familyShareable": false,
+      "internalID": "8F0A1B2C-0000-4000-8000-000000000040",
+      "localizations": [
         {
-          "description" : "Wallet Top-up 40 Uniminutes",
-          "displayName" : "Wallet Top-up 40 Uniminutes",
-          "locale" : "en_US"
+          "description": "Wallet Top-up 40 Uniminutes",
+          "displayName": "Wallet Top-up 40 Uniminutes",
+          "locale": "en_US"
         }
       ],
-      "productID" : "com.uniscope.uniscopeMobile.uniminutes40",
-      "referenceName" : "Wallet Top-up 40 Uniminutes",
-      "type" : "Consumable"
+      "productID": "com.uniscope.uniscopeMobile.uniminutes40",
+      "referenceName": "Wallet Top-up 40 Uniminutes",
+      "type": "Consumable"
     },
     {
-      "displayPrice" : "13.00",
-      "familyShareable" : false,
-      "internalID" : "8F0A1B2C-0000-4000-8000-000000000060",
-      "localizations" : [
+      "displayPrice": "1300",
+      "familyShareable": false,
+      "internalID": "8F0A1B2C-0000-4000-8000-000000000060",
+      "localizations": [
         {
-          "description" : "Wallet Top-up 60 Uniminutes",
-          "displayName" : "Wallet Top-up 60 Uniminutes",
-          "locale" : "en_US"
+          "description": "Wallet Top-up 60 Uniminutes",
+          "displayName": "Wallet Top-up 60 Uniminutes",
+          "locale": "en_US"
         }
       ],
-      "productID" : "com.uniscope.uniscopeMobile.uniminutes60",
-      "referenceName" : "Wallet Top-up 60 Uniminutes",
-      "type" : "Consumable"
+      "productID": "com.uniscope.uniscopeMobile.uniminutes60",
+      "referenceName": "Wallet Top-up 60 Uniminutes",
+      "type": "Consumable"
     }
   ],
-  "settings" : {
-    "_askToBuyEnabled" : false,
-    "_billingIssuesEnabled" : false,
-    "_disableDialogs" : true,
-    "_failTransactionsEnabled" : false,
-    "_locale" : "en_US",
-    "_storefront" : "USA",
-    "_storeKitErrors" : []
+  "settings": {
+    "_askToBuyEnabled": false,
+    "_billingIssuesEnabled": false,
+    "_disableDialogs": true,
+    "_failTransactionsEnabled": false,
+    "_locale": "en_IN",
+    "_storefront": "IND",
+    "_storeKitErrors": []
   },
-  "subscriptionGroups" : [],
-  "version" : {
-    "major" : 3,
-    "minor" : 0
+  "subscriptionGroups": [],
+  "version": {
+    "major": 3,
+    "minor": 0
   }
 }
