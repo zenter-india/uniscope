@@ -314,13 +314,37 @@ class _CallScreenState extends ConsumerState<CallScreen> {
     // web has no native counterpart, so only a genuine MissingPluginException
     // still falls through to `true` here — a real Android/iOS "denied"
     // now correctly stops at the permission screen on both platforms.
+    // Bounded: unlike every other await in this method (Dio calls have a
+    // 10s connectTimeout/receiveTimeout, the Agora join loop below has its
+    // own 20s×2 timeout), a bare MethodChannel.invokeMethod has NO built-in
+    // timeout in Flutter — if the native completion handler is ever never
+    // called (a real, documented iOS quirk: AVAudioSession's deprecated
+    // requestRecordPermission completion closure can fail to fire while the
+    // audio session is in certain states), this await hangs forever with
+    // nothing to catch it. That leaves the screen stuck on "Starting call…"
+    // (requestingPermission) — easy to misremember as "stuck on Connecting…"
+    // since both render the same spinner+status layout — with no error ever
+    // shown, until the backend's no-show sweep silently ends the session
+    // 90s+ later. A device report of exactly that ("stuck, times out,
+    // ends in no-show, no error screen") on an iOS-to-iOS call is what this
+    // timeout closes.
     bool granted;
     try {
       granted =
-          await _permissionsChannel.invokeMethod<bool>('requestMicrophone') ??
+          await _permissionsChannel
+              .invokeMethod<bool>('requestMicrophone')
+              .timeout(const Duration(seconds: 15)) ??
           true;
     } on MissingPluginException {
       granted = true;
+    } on TimeoutException {
+      if (!mounted) return;
+      setState(() {
+        _phase = _Phase.error;
+        _errorMessage =
+            'Could not confirm microphone access — please try again.';
+      });
+      return;
     }
     if (!granted) {
       if (!mounted) return;
