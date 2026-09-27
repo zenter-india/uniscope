@@ -555,22 +555,23 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
                 ),
               );
             }),
-            // No "cheaper on Android" / Apple-fee note here: App Store
-            // Guideline 3.1.1 forbids pointing iOS users to other ways to pay.
+            // Plain fee disclosure only — no comparison to other platforms
+            // or any other way to pay. App Store Guideline 3.1.1 forbids an
+            // iOS app from pointing users to another purchase method to
+            // avoid Apple's commission; even an implied comparison (e.g.
+            // "cheaper elsewhere") risks the same rejection this app has
+            // already had once. The Refund & Cancellation Policy link this
+            // replaced is still reachable from Settings and the Help Centre
+            // footer, so it isn't lost — just not duplicated on this sheet.
             const SizedBox(height: AppSpacing.xs),
-            Align(
+            const Align(
               alignment: Alignment.center,
-              child: TextButton(
-                onPressed: () {
-                  Navigator.of(sheetContext).pop();
-                  openLegalPage(context, LegalPage.refund);
-                },
-                child: const Text(
-                  'Refund & Cancellation Policy',
-                  style: TextStyle(
-                    fontSize: AppFont.xs,
-                    color: AppColors.textSecondary,
-                  ),
+              child: Text(
+                'Prices include 30% Apple service fee.',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: AppFont.xs,
+                  color: AppColors.textSecondary,
                 ),
               ),
             ),
