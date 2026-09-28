@@ -224,9 +224,22 @@ class _SubmissionFormState extends ConsumerState<_SubmissionForm> {
       ref.invalidate(myVerificationProvider);
       if (!mounted) return;
       showAppSnackBar(context, 'Submitted — we\'ll review it within 48 hours');
+    } on AlreadySubmittedException {
+      // A request is already on file — refresh so the status card shows it
+      // instead of surfacing the 409 as a failure.
+      ref.invalidate(myVerificationProvider);
+      if (!mounted) return;
+      showAppSnackBar(
+        context,
+        'Your verification request is already submitted — we\'ll review it within 48 hours',
+      );
     } catch (e) {
       if (!mounted) return;
-      showAppSnackBar(context, 'Could not submit: $e');
+      final text = e.toString();
+      showAppSnackBar(
+        context,
+        'Could not submit: ${text.startsWith('Exception: ') ? text.substring('Exception: '.length) : text}',
+      );
     } finally {
       if (mounted) setState(() => _submitting = false);
     }

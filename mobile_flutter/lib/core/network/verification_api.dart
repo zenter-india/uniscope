@@ -48,6 +48,18 @@ class VerificationRequest {
       );
 }
 
+/// Thrown by [VerificationApi.submit] on a 409 — the backend only 409s when
+/// the account's verification status is already SUBMITTED / UNDER_REVIEW /
+/// VERIFIED (`VerificationService.submit`'s RESUBMITTABLE_STATUSES check),
+/// i.e. a request is already on file. A real device report: the mentor
+/// onboarding wizard showed a raw "DioException [bad response] … 409" error
+/// even though the submission had genuinely landed (visible after logging
+/// in, and in the admin panel) — the UI treated "already received" as a
+/// failure. Callers should treat this as success.
+class AlreadySubmittedException implements Exception {
+  const AlreadySubmittedException();
+}
+
 class VerificationApi {
   VerificationApi(this._dio);
 
@@ -58,15 +70,35 @@ class VerificationApi {
     required DocumentType documentType,
     required String documentBase64,
   }) async {
-    final res = await _dio.post<Map<String, dynamic>>(
-      '/verification',
-      data: {
-        'universityId': universityId,
-        'documentType': documentType.wire,
-        'documentBase64': documentBase64,
-      },
-    );
-    return VerificationRequest.fromJson(res.data!);
+    try {
+      final res = await _dio.post<Map<String, dynamic>>(
+        '/verification',
+        data: {
+          'universityId': universityId,
+          'documentType': documentType.wire,
+          'documentBase64': documentBase64,
+        },
+      );
+      return VerificationRequest.fromJson(res.data!);
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 409) {
+        throw const AlreadySubmittedException();
+      }
+      // Surface the backend's own message (string or validation list)
+      // instead of DioException.toString()'s status-code boilerplate.
+      final data = e.response?.data;
+      String? msg;
+      if (data is Map) {
+        final m = data['message'];
+        if (m is String) {
+          msg = m;
+        } else if (m is List && m.isNotEmpty) {
+          msg = m.join('\n');
+        }
+      }
+      if (msg != null && msg.isNotEmpty) throw Exception(msg);
+      rethrow;
+    }
   }
 
   Future<List<VerificationRequest>> mine() async {

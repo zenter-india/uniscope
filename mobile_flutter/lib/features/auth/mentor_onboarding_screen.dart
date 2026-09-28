@@ -465,10 +465,24 @@ class _MentorOnboardingScreenState extends ConsumerState<MentorOnboardingScreen>
         _saving = false;
         _verificationSubmitted = true;
       });
+    } on AlreadySubmittedException {
+      // A request is already on file (a retry / double-tap after the first
+      // attempt landed, or one created earlier — e.g. from the website
+      // enrollment form). Same outcome the user wanted: show the
+      // "Verification Submitted" screen, not an error.
+      if (!mounted) return;
+      setState(() {
+        _saving = false;
+        _verificationSubmitted = true;
+      });
     } catch (e) {
       if (!mounted) return;
       setState(() => _saving = false);
-      showAppSnackBar(context, 'Could not submit: $e');
+      final text = e.toString();
+      showAppSnackBar(
+        context,
+        'Could not submit: ${text.startsWith('Exception: ') ? text.substring('Exception: '.length) : text}',
+      );
     }
   }
 
