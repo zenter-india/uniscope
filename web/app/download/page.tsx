@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import {
   BadgeCheck,
   Compass,
@@ -12,12 +11,14 @@ import {
   Star,
 } from "lucide-react";
 import { SiteNav } from "../../components/SiteNav";
+import { SiteFooter } from "../../components/SiteFooter";
 import { Reveal } from "../../components/Reveal";
 import { RoleTrigger } from "../../components/RoleTrigger";
 import { GetStarted } from "../../components/GetStarted";
-import { StoreButton } from "../../components/StoreButton";
+import { Stores } from "../../components/Stores";
 import { PhoneMockup } from "../../components/PhoneMockup";
-import { DownloadQr } from "../../components/DownloadQr";
+import { HowItWorks } from "../../components/HowItWorks";
+import { DownloadBand, NAVY_GLOW } from "../../components/DownloadBand";
 import { APP_STORE_URL, PLAY_STORE_URL } from "../../lib/app-links";
 
 export const metadata: Metadata = {
@@ -25,24 +26,6 @@ export const metadata: Metadata = {
   description:
     "Don't guess your college — ask someone who's studying there. Chat with students and alumni on the Uniscope app for iPhone and Android.",
 };
-
-const STEPS = [
-  {
-    n: "1",
-    title: "Download & sign in",
-    body: "Verify your phone number with a one-time code. No passwords to remember.",
-  },
-  {
-    n: "2",
-    title: "Find your mentors",
-    body: "Browse by college, stream and degree — including the exact college you're considering.",
-  },
-  {
-    n: "3",
-    title: "Ask anything",
-    body: "Start a chat, or book a live audio call in 6, 10 or 20-minute slots when you want a proper conversation.",
-  },
-];
 
 const FEATURES = [
   {
@@ -83,24 +66,6 @@ const TRUST = [
   { icon: Sparkles, text: "Free to download" },
 ];
 
-const HERO_BG =
-  "radial-gradient(60% 55% at 78% 30%, rgba(46,91,232,.42), transparent 70%), radial-gradient(45% 45% at 8% 95%, rgba(221,176,90,.16), transparent 70%)";
-
-/** Centered until `leftFrom`, then left-aligned — the hero switches to two
- * columns at `lg`, the closing band at `md`. */
-function Stores({ leftFrom }: { leftFrom: "md" | "lg" }) {
-  return (
-    <div
-      className={`flex flex-col items-center gap-3.5 sm:flex-row sm:flex-wrap sm:justify-center ${
-        leftFrom === "lg" ? "lg:justify-start" : "md:justify-start"
-      }`}
-    >
-      <StoreButton store="ios" href={APP_STORE_URL} />
-      <StoreButton store="android" href={PLAY_STORE_URL} />
-    </div>
-  );
-}
-
 export default function DownloadPage() {
   const storesLive = Boolean(APP_STORE_URL && PLAY_STORE_URL);
 
@@ -109,7 +74,7 @@ export default function DownloadPage() {
       <SiteNav />
       <main>
         {/* Hero */}
-        <section className="relative overflow-hidden bg-navy-deep text-white" style={{ backgroundImage: HERO_BG }}>
+        <section className="relative overflow-hidden bg-navy-deep text-white" style={{ backgroundImage: NAVY_GLOW }}>
           <div className="mx-auto grid max-w-[1180px] items-center gap-14 px-6 pb-20 pt-14 md:pb-24 md:pt-20 lg:grid-cols-[minmax(0,1.08fr)_minmax(0,.92fr)]">
             <div className="text-center lg:text-left">
               <Reveal>
@@ -160,30 +125,7 @@ export default function DownloadPage() {
           </div>
         </section>
 
-        {/* How it works */}
-        <section className="px-6 py-20">
-          <div className="mx-auto max-w-[1000px]">
-            <Reveal className="mx-auto max-w-[560px] text-center">
-              <p className="text-[12.5px] font-extrabold uppercase tracking-wide text-blue-600">How it works</p>
-              <h2 className="mt-2 text-[clamp(26px,3.6vw,36px)] font-extrabold leading-tight text-ink text-balance">
-                From download to real answers in three steps
-              </h2>
-            </Reveal>
-            <div className="mt-12 grid gap-5 md:grid-cols-3">
-              {STEPS.map((s, i) => (
-                <Reveal key={s.n} delay={i * 100}>
-                  <div className="h-full rounded-[22px] border border-border bg-surface p-7 shadow-[0_16px_36px_-24px_rgba(16,27,59,.25)]">
-                    <span className="flex h-11 w-11 items-center justify-center rounded-full bg-linear-to-br from-gold-400 to-gold-600 text-[18px] font-extrabold text-white shadow-[0_10px_22px_-8px_rgba(180,132,42,.7)]">
-                      {s.n}
-                    </span>
-                    <h3 className="mt-5 text-[18px] font-extrabold text-ink">{s.title}</h3>
-                    <p className="mt-2 text-[14.5px] leading-relaxed text-slate-600">{s.body}</p>
-                  </div>
-                </Reveal>
-              ))}
-            </div>
-          </div>
-        </section>
+        <HowItWorks />
 
         {/* What's inside */}
         <section className="px-6 pb-20">
@@ -210,34 +152,7 @@ export default function DownloadPage() {
           </div>
         </section>
 
-        {/* Closing call to action */}
-        <section
-          className="relative overflow-hidden bg-navy-deep px-6 py-20 text-white"
-          style={{ backgroundImage: HERO_BG }}
-        >
-          <div className="mx-auto grid max-w-[1000px] items-center gap-10 md:grid-cols-[1fr_auto]">
-            <Reveal className="text-center md:text-left">
-              <h2 className="text-[clamp(26px,3.8vw,40px)] font-extrabold leading-tight text-balance">
-                Your future is too important to guess.
-                <span className="block text-gold-400">Uniscope it.</span>
-              </h2>
-              <p className="mx-auto mt-4 max-w-[480px] text-[15.5px] leading-relaxed text-white/75 md:mx-0">
-                Get the app and hear from the people who&rsquo;ve already been where you&rsquo;re headed.
-              </p>
-              <div className="mt-7">
-                <Stores leftFrom="md" />
-              </div>
-            </Reveal>
-
-            <Reveal delay={150} className="hidden md:block">
-              <div className="rounded-[24px] bg-white p-4 text-center shadow-[0_30px_60px_-24px_rgba(0,0,0,.7)]">
-                <DownloadQr className="h-[148px] w-[148px]" />
-                <p className="mt-3 text-[12.5px] font-extrabold text-ink">Scan with your phone</p>
-                <p className="text-[11.5px] font-semibold text-slate-600">to get the app</p>
-              </div>
-            </Reveal>
-          </div>
-        </section>
+        <DownloadBand />
 
         {/* Same registration section as the home page — also makes the nav's
             Sign up / Log in buttons work on this page, since they scroll to
@@ -245,26 +160,7 @@ export default function DownloadPage() {
         <GetStarted />
       </main>
 
-      <footer className="px-6 py-10 text-center text-[12.5px] font-semibold text-slate-400">
-        <p>© {new Date().getFullYear()} Uniscope. Real Insights. Real Mentors. Real Guidance.</p>
-        <p className="mt-1.5">
-          <Link href="/privacy" className="hover:text-slate-600 hover:underline">
-            Privacy Policy
-          </Link>
-          <span className="mx-2">·</span>
-          <Link href="/terms" className="hover:text-slate-600 hover:underline">
-            Terms and Conditions
-          </Link>
-          <span className="mx-2">·</span>
-          <Link href="/refund" className="hover:text-slate-600 hover:underline">
-            Refund and Cancellation Policy
-          </Link>
-          <span className="mx-2">·</span>
-          <Link href="/community-guidelines" className="hover:text-slate-600 hover:underline">
-            Community Guidelines
-          </Link>
-        </p>
-      </footer>
+      <SiteFooter />
     </>
   );
 }
