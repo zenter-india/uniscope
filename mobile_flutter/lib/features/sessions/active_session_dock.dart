@@ -305,7 +305,8 @@ class _DockRowState extends ConsumerState<_DockRow> {
                 session.confirmedFor,
                 alreadyLive: session.status == SessionStatus.inProgress,
               );
-              return _DockButton(
+              return Flexible(
+                child: _DockButton(
                 label: joinableNow
                     ? 'Join'
                     : friendlyCallTime(session.confirmedFor!),
@@ -321,6 +322,7 @@ class _DockRowState extends ConsumerState<_DockRow> {
                   }
                   CallOverlayController.instance.open(session.id);
                 },
+              ),
               );
             },
           ),
@@ -378,7 +380,7 @@ class _DockButton extends StatelessWidget {
               color: Colors.white,
             ),
           )
-        : Text(label);
+        : Text(label, maxLines: 1, overflow: TextOverflow.ellipsis);
 
     return outlined
         ? OutlinedButton(
