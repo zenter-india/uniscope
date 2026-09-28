@@ -64,44 +64,6 @@ export function searchUniversities(query: string, level?: string, stream?: strin
   return request(`/universities?${params.toString()}`);
 }
 
-/** A college as shown on the public /colleges page. */
-export interface CollegeListing {
-  id: string;
-  name: string;
-  slug: string;
-  state: string;
-  city: string | null;
-  /** Derived server-side from the college's programs; more reliable than `city`
-   * for the hospital-type PG training sites. */
-  district: string | null;
-  stream: string | null;
-  levels: string[];
-  rating: number | null;
-  reviewCount: number;
-}
-
-/** One page of the public college catalogue for /colleges. Unlike
- * `searchUniversities` this deliberately does NOT send `browse=true` — that
- * mode returns the entire ~10k-row catalogue (megabytes) in one response,
- * fine for a dropdown that fetches once but wrong for a page that re-queries
- * on every keystroke. Here the backend's normal cursor pagination applies
- * (max 50 per page). */
-export function listColleges(opts: {
-  search?: string;
-  stream?: string;
-  level?: string;
-  cursor?: string | null;
-  limit?: number;
-  signal?: AbortSignal;
-}): Promise<{ data: CollegeListing[]; nextCursor: string | null }> {
-  const params = new URLSearchParams({ limit: String(opts.limit ?? 24) });
-  if (opts.search?.trim()) params.set("search", opts.search.trim());
-  if (opts.stream) params.set("stream", opts.stream);
-  if (opts.level) params.set("level", opts.level);
-  if (opts.cursor) params.set("cursor", opts.cursor);
-  return request(`/universities?${params.toString()}`, { signal: opts.signal });
-}
-
 export interface CuratedCollege {
   id: string;
   label: string;

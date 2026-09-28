@@ -1,57 +1,19 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { AspirantForm } from "./AspirantForm";
 import { MentorForm } from "./MentorForm";
 import { Reveal } from "./Reveal";
-import { PENDING_ROLE_KEY } from "./RoleTrigger";
 
 type Role = "student" | "mentor" | null;
 
 export function GetStarted() {
   const [role, setRole] = useState<Role>(null);
 
-  // The handler below is registered once, so it reads the current role through
-  // a ref rather than a stale closure.
-  const roleRef = useRef<Role>(null);
-  useEffect(() => {
-    roleRef.current = role;
-  }, [role]);
-
-  // A trigger clicked on a page without this section (Explore / Mentors /
-  // Colleges / legal pages) navigates here and leaves the chosen role in
-  // sessionStorage — pick it up once on arrival.
-  useEffect(() => {
-    try {
-      const pending = sessionStorage.getItem(PENDING_ROLE_KEY);
-      if (!pending) return;
-      sessionStorage.removeItem(PENDING_ROLE_KEY);
-      // One-time read of an external store on mount — not state derived from props.
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      if (pending === "student" || pending === "mentor") setRole(pending);
-    } catch {
-      // Storage blocked: the visitor just sees the role picker.
-    }
-  }, []);
-
   // Every nav/hero/CTA trigger on the page dispatches this — see
-  // RoleTrigger's comment for why an event instead of context. `null` means
-  // "back to the picker".
+  // RoleTrigger's comment for why an event instead of context.
   useEffect(() => {
-    const handler = (e: Event) => {
-      const next = (e as CustomEvent<Role>).detail ?? null;
-      const current = roleRef.current;
-      // Switching away from an open form throws away whatever was typed, and
-      // the always-visible nav makes a stray click easy — so ask first.
-      if (
-        current !== null &&
-        next !== current &&
-        !window.confirm("Go back and choose again? Anything you've entered so far will be cleared.")
-      ) {
-        return;
-      }
-      setRole(next);
-    };
+    const handler = (e: Event) => setRole((e as CustomEvent<Role>).detail);
     window.addEventListener("uniscope:pick-role", handler);
     return () => window.removeEventListener("uniscope:pick-role", handler);
   }, []);
