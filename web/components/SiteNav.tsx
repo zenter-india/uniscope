@@ -42,6 +42,9 @@ export function SiteNav() {
           <RoleTrigger className="hover:text-ink transition-colors">Explore</RoleTrigger>
           <RoleTrigger className="hover:text-ink transition-colors">Mentors</RoleTrigger>
           <RoleTrigger className="hover:text-ink transition-colors">Colleges</RoleTrigger>
+          <Link href="/download" className="hover:text-ink transition-colors">
+            Get the app
+          </Link>
         </div>
 
         <div className="flex gap-2.5 items-center">

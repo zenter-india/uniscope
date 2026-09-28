@@ -31,6 +31,10 @@ export default function HomePage() {
           <Link href="/community-guidelines" className="hover:text-slate-600 hover:underline">
             Community Guidelines
           </Link>
+          <span className="mx-2">·</span>
+          <Link href="/download" className="hover:text-slate-600 hover:underline">
+            Download the App
+          </Link>
         </p>
       </footer>
     </>
