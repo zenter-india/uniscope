@@ -16,11 +16,17 @@ Future<void> showLowBalanceSheet(
 }) {
   return showModalBottomSheet<void>(
     context: context,
+    // Scroll-controlled: on a small phone the default 9/16-height cap clips this.
+    isScrollControlled: true,
+    useSafeArea: true,
     backgroundColor: AppColors.surface,
     shape: const RoundedRectangleBorder(
       borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.xl)),
     ),
-    builder: (sheetContext) => Padding(
+    builder: (sheetContext) => SafeArea(
+      top: false,
+      child: SingleChildScrollView(
+        child: Padding(
       padding: const EdgeInsets.fromLTRB(
         AppSpacing.lg,
         AppSpacing.lg,
@@ -93,6 +99,8 @@ Future<void> showLowBalanceSheet(
           ),
         ],
       ),
+    ),
+    ),
     ),
   );
 }
