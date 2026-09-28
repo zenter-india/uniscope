@@ -33,7 +33,16 @@ const STORES = {
  * styling — not the official "Download on the App Store" / "Get it on Google
  * Play" badge artwork, which has its own usage rules; swap those badge SVGs
  * in here once the listings are live if you want them. */
-export function StoreButton({ store, href }: { store: keyof typeof STORES; href: string }) {
+export function StoreButton({
+  store,
+  href,
+  tone = "dark",
+}: {
+  store: keyof typeof STORES;
+  href: string;
+  /** "dark" for the navy sections; "light" for white page sections. */
+  tone?: "dark" | "light";
+}) {
   const { caption, soonCaption, name, Icon } = STORES[store];
 
   const inner = (
@@ -54,7 +63,11 @@ export function StoreButton({ store, href }: { store: keyof typeof STORES; href:
         role="link"
         aria-disabled="true"
         aria-label={`${name} — coming soon`}
-        className={`${base} cursor-not-allowed select-none border border-white/20 bg-white/10 text-white/80 backdrop-blur`}
+        className={`${base} cursor-not-allowed select-none ${
+          tone === "light"
+            ? "border border-navy-deep/15 bg-white text-navy-deep shadow-[0_6px_18px_-10px_rgba(7,21,57,.35)]"
+            : "border border-white/20 bg-white/10 text-white/80 backdrop-blur"
+        }`}
       >
         {inner}
       </span>
@@ -67,7 +80,11 @@ export function StoreButton({ store, href }: { store: keyof typeof STORES; href:
       target="_blank"
       rel="noopener noreferrer"
       aria-label={`${caption} ${name}`}
-      className={`${base} bg-white text-navy-deep shadow-[0_14px_34px_-12px_rgba(0,0,0,.65)] transition-all hover:-translate-y-0.5 hover:bg-[#f1f4ff] hover:shadow-[0_20px_40px_-12px_rgba(0,0,0,.7)] active:translate-y-0 active:scale-[0.97]`}
+      className={`${base} transition-all hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.97] ${
+        tone === "light"
+          ? "bg-navy-deep text-white shadow-[0_14px_30px_-12px_rgba(7,21,57,.6)] hover:bg-navy-800"
+          : "bg-white text-navy-deep shadow-[0_14px_34px_-12px_rgba(0,0,0,.65)] hover:bg-[#f1f4ff] hover:shadow-[0_20px_40px_-12px_rgba(0,0,0,.7)]"
+      }`}
     >
       {inner}
     </a>

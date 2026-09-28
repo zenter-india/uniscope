@@ -1,5 +1,6 @@
 import { RoleTrigger } from "./RoleTrigger";
 import { Reveal } from "./Reveal";
+import { Stores } from "./Stores";
 
 /** No trust-stats bar here on purpose — see conversation: the app has no
  * real users yet, and shipping invented numbers ("50K+ Students") is the
@@ -29,6 +30,12 @@ export function ClosingCta() {
             Begin your Mentorship
           </RoleTrigger>
         </div>
+      </Reveal>
+      <Reveal delay={200}>
+        <p className="mt-10 mb-4 text-[12.5px] font-extrabold uppercase tracking-[0.18em] text-gold-600">
+          Or get the Uniscope app
+        </p>
+        <Stores leftFrom="never" tone="light" />
       </Reveal>
     </section>
   );
