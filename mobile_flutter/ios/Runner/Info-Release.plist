@@ -45,7 +45,7 @@
 	     weakening, and production only ever talks to the https:// Railway
 	     URL, which needs no exception. It exists in the plain Info.plist
 	     (Debug only) purely so a developer can point a physical device at
-	     a LAN http:// backend (--dart-define=API_URL=http://192.168.x.x:...)
+	     a LAN http:// backend (dart-define API_URL=http://192.168.x.x:...)
 	     while iterating locally. -->
 	<key>UIApplicationSceneManifest</key>
 	<dict>

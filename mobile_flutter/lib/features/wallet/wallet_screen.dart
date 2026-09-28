@@ -340,11 +340,18 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
   void _showRazorpayTopupSheet() {
     showModalBottomSheet<void>(
       context: context,
+      // Scroll-controlled so a tall pack list can't be clipped by the default
+      // 9/16-height cap (nothing to scroll to in release builds otherwise).
+      isScrollControlled: true,
+      useSafeArea: true,
       backgroundColor: AppColors.surface,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.xl)),
       ),
-      builder: (sheetContext) => Padding(
+      builder: (sheetContext) => SafeArea(
+        top: false,
+        child: SingleChildScrollView(
+          child: Padding(
         padding: const EdgeInsets.all(AppSpacing.lg),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -443,6 +450,8 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
           ],
         ),
       ),
+    ),
+    ),
     );
   }
 
@@ -482,11 +491,18 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
 
     showModalBottomSheet<void>(
       context: context,
+      // Scroll-controlled so a tall pack list can't be clipped by the default
+      // 9/16-height cap (nothing to scroll to in release builds otherwise).
+      isScrollControlled: true,
+      useSafeArea: true,
       backgroundColor: AppColors.surface,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.xl)),
       ),
-      builder: (sheetContext) => Padding(
+      builder: (sheetContext) => SafeArea(
+        top: false,
+        child: SingleChildScrollView(
+          child: Padding(
         padding: const EdgeInsets.all(AppSpacing.lg),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -578,6 +594,8 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
           ],
         ),
       ),
+    ),
+    ),
     );
   }
 

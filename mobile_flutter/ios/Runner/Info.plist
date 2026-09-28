@@ -43,7 +43,7 @@
 	     instead (see project.pbxproj's INFOPLIST_FILE per config), which
 	     has no ATS exception at all. The app talks to the backend over
 	     plain http:// at a LAN IP
-	     (e.g. --dart-define=API_URL=http://192.168.x.x:3001/api/v1) while
+	     (e.g. dart-define API_URL=http://192.168.x.x:3001/api/v1) while
 	     testing on a physical device in Debug. iOS blocks cleartext HTTP by
 	     default (App Transport Security), which silently breaks every
 	     network call including OTP request/verify — no error shown,
