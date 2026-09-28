@@ -42,7 +42,7 @@ export function SiteNav() {
           <RoleTrigger className="hover:text-ink transition-colors">Explore</RoleTrigger>
           <RoleTrigger className="hover:text-ink transition-colors">Mentors</RoleTrigger>
           <RoleTrigger className="hover:text-ink transition-colors">Colleges</RoleTrigger>
-          <Link href="/download" className="hover:text-ink transition-colors">
+          <Link href="/download" className="hidden lg:block whitespace-nowrap hover:text-ink transition-colors">
             Get the app
           </Link>
         </div>

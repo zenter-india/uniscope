@@ -78,6 +78,22 @@ html {
   }
 }
 
+/* Gentle idle float for the feature chips around the phone mockup on
+   /download. The reduced-motion block below collapses it to a still frame. */
+@keyframes float-y {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+.animate-float {
+  animation: float-y 6s ease-in-out infinite;
+}
+
 body {
   background: var(--page);
   color: var(--ink);
