@@ -69,6 +69,24 @@ class _CollegeSearchFieldState extends ConsumerState<CollegeSearchField> {
   bool _open = false;
   bool _loading = false;
   int _requestId = 0;
+  // Whether the once-per-focus "results arrived, scroll them into view"
+  // pass has run — see _scrollIntoView / _fetch.
+  bool _scrolledForResults = false;
+
+  /// Scrolls this field (and the results list under it) up near the top of
+  /// the visible area — not just "barely on screen", which is all the
+  /// default alignment would do.
+  void _scrollIntoView() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      Scrollable.ensureVisible(
+        context,
+        alignment: 0.1,
+        duration: const Duration(milliseconds: 250),
+        curve: Curves.easeOut,
+      );
+    });
+  }
 
   @override
   void initState() {
@@ -76,25 +94,21 @@ class _CollegeSearchFieldState extends ConsumerState<CollegeSearchField> {
     _focusNode.addListener(() {
       if (_focusNode.hasFocus) {
         setState(() => _open = true);
+        _scrolledForResults = false;
         _fetch(_controller.text);
         // Device report: when this field sits low on the form, the results
         // list below it renders right under the keyboard — invisible, so a
         // user assumed typing was the only option and free-typed a college
         // that already existed in the list, creating a duplicate entry.
-        // Scroll the field up near the top of the visible area (not just
-        // "barely on screen", which the default alignment would do) so the
-        // dropdown has room to actually show above the keyboard. Delayed
-        // a frame so this runs after the keyboard has started animating in
-        // and the viewport insets it depends on are current.
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (!mounted) return;
-          Scrollable.ensureVisible(
-            context,
-            alignment: 0.1,
-            duration: const Duration(milliseconds: 250),
-            curve: Curves.easeOut,
-          );
-        });
+        // This first scroll runs immediately on focus, but at that moment
+        // the list is only a spinner and the keyboard hasn't shrunk the
+        // viewport yet, so the scroll view may not yet have enough
+        // scrollable distance to bring the field near the top (real report:
+        // fine on the aspirant wizard, which has more content below the
+        // field, but not on the mentor wizard's College step, where this
+        // field sits lower with little below it). _fetch scrolls again once
+        // the results have actually rendered.
+        _scrollIntoView();
       } else {
         // Small delay so a tap on a suggestion registers before the list
         // closes out from under it.
@@ -177,6 +191,16 @@ class _CollegeSearchFieldState extends ConsumerState<CollegeSearchField> {
           _results = options;
           _loading = false;
         });
+        // Now that the list is rendered (and the keyboard, which takes a
+        // few hundred ms, is normally fully up after the debounce + network
+        // round trip), the scroll extent includes the list — scroll once
+        // more so the field and its results end up above the keyboard.
+        // Once per focus so it never fights a user who scrolls by hand
+        // while typing.
+        if (_focusNode.hasFocus && !_scrolledForResults && options.isNotEmpty) {
+          _scrolledForResults = true;
+          _scrollIntoView();
+        }
       } catch (_) {
         if (!mounted || thisRequest != _requestId) return;
         setState(() {
