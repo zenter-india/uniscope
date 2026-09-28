@@ -68,6 +68,11 @@ class _MentorOnboardingScreenState extends ConsumerState<MentorOnboardingScreen>
   String? _stream;
   final _streamOtherController = TextEditingController();
   String? _degree;
+  // Free-text degree when "Others" is picked — same as the aspirant wizard's
+  // _qualificationOtherController. `_degree` itself stays 'Others' (the
+  // curated-degree / specialization logic keys off that chip value); only
+  // what's saved as the profile's qualification is the typed text.
+  final _degreeOtherController = TextEditingController();
   String? _specialization;
   final _specializationOtherController = TextEditingController();
 
@@ -107,6 +112,7 @@ class _MentorOnboardingScreenState extends ConsumerState<MentorOnboardingScreen>
     _cityOtherController.dispose();
     _collegeNameController.dispose();
     _streamOtherController.dispose();
+    _degreeOtherController.dispose();
     _specializationOtherController.dispose();
     _graduationYearController.dispose();
     _languagesOtherController.dispose();
@@ -132,9 +138,11 @@ class _MentorOnboardingScreenState extends ConsumerState<MentorOnboardingScreen>
       case 2:
         final streamOk = _stream != null &&
             (_stream != 'Others' || _streamOtherController.text.trim().isNotEmpty);
+        final degreeOk = _degree != null &&
+            (_degree != 'Others' || _degreeOtherController.text.trim().isNotEmpty);
         final collegeOk = _collegeNameController.text.trim().isNotEmpty;
         final specializationOk = !_needsSpecialization || _specialization != null;
-        return _degree != null && streamOk && collegeOk && specializationOk;
+        return degreeOk && streamOk && collegeOk && specializationOk;
       case 3:
         final statusOk = _currentStatus == 'Currently Studying'
             ? _yearOfStudyLabel != null
@@ -368,6 +376,10 @@ class _MentorOnboardingScreenState extends ConsumerState<MentorOnboardingScreen>
               _streamOtherController.text.trim().isNotEmpty
           ? _streamOtherController.text.trim()
           : _stream;
+      final resolvedDegree = _degree == 'Others' &&
+              _degreeOtherController.text.trim().isNotEmpty
+          ? _degreeOtherController.text.trim()
+          : _degree;
       await ref.read(usersApiProvider).updateProfile(
             realName: _fullNameController.text.trim().isEmpty
                 ? null
@@ -375,7 +387,7 @@ class _MentorOnboardingScreenState extends ConsumerState<MentorOnboardingScreen>
             gender: _gender,
             state: _resolvedState,
             city: _resolvedCity.isEmpty ? null : _resolvedCity,
-            qualification: _degree,
+            qualification: resolvedDegree,
             specialization: _needsSpecialization ? _specialization : null,
             stream: resolvedStream,
             yearOfStudy: _currentStatus == 'Currently Studying'
@@ -620,6 +632,7 @@ class _MentorOnboardingScreenState extends ConsumerState<MentorOnboardingScreen>
                           _collegeNameController.clear();
                           _pickedSpecializations = const [];
                           _degree = null;
+                          _degreeOtherController.clear();
                           _specialization = null;
                           _specializationOtherController.clear();
                         }),
@@ -645,13 +658,26 @@ class _MentorOnboardingScreenState extends ConsumerState<MentorOnboardingScreen>
                           // one — clear it, same as the web MentorForm.
                           onSelect: (v) => setState(() {
                             _degree = v;
+                            if (v != 'Others') _degreeOtherController.clear();
                             _universityId = null;
                             _collegeNameController.clear();
                             _pickedSpecializations = const [];
                             _specialization = null;
-                          _specializationOtherController.clear();
+                            _specializationOtherController.clear();
                           }),
                         ),
+                        // "Others" needs somewhere to say what — same as the
+                        // Field-of-study "Others" box above and the aspirant
+                        // wizard's own "Enter your qualification" field.
+                        if (_degree == 'Others') ...[
+                          const SizedBox(height: AppSpacing.sm),
+                          TextFormField(
+                            controller: _degreeOtherController,
+                            onChanged: (_) => setState(() {}),
+                            decoration: const InputDecoration(
+                                hintText: 'Enter your degree'),
+                          ),
+                        ],
                       ],
                       if (_degree != null) ...[
                         const SizedBox(height: AppSpacing.md),
