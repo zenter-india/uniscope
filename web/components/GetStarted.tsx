@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { AspirantForm } from "./AspirantForm";
 import { MentorForm } from "./MentorForm";
 import { Reveal } from "./Reveal";
@@ -10,10 +10,31 @@ type Role = "student" | "mentor" | null;
 export function GetStarted() {
   const [role, setRole] = useState<Role>(null);
 
-  // Every nav/hero/CTA trigger on the page dispatches this — see
-  // RoleTrigger's comment for why an event instead of context.
+  // The handler below is registered once, so it reads the current role through
+  // a ref rather than a stale closure.
+  const roleRef = useRef<Role>(null);
   useEffect(() => {
-    const handler = (e: Event) => setRole((e as CustomEvent<Role>).detail);
+    roleRef.current = role;
+  }, [role]);
+
+  // Every nav/hero/CTA trigger on the page dispatches this — see
+  // RoleTrigger's comment for why an event instead of context. `null` means
+  // "back to the picker".
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const next = (e as CustomEvent<Role>).detail ?? null;
+      const current = roleRef.current;
+      // Switching away from an open form throws away whatever was typed, and
+      // the always-visible nav makes a stray click easy — so ask first.
+      if (
+        current !== null &&
+        next !== current &&
+        !window.confirm("Go back and choose again? Anything you've entered so far will be cleared.")
+      ) {
+        return;
+      }
+      setRole(next);
+    };
     window.addEventListener("uniscope:pick-role", handler);
     return () => window.removeEventListener("uniscope:pick-role", handler);
   }, []);

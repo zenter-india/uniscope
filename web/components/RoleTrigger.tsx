@@ -27,7 +27,11 @@ export function RoleTrigger({
       onClick={(e) => {
         e.preventDefault();
         document.getElementById("get-started")?.scrollIntoView({ behavior: "smooth" });
-        if (role) window.dispatchEvent(new CustomEvent("uniscope:pick-role", { detail: role }));
+        // Always tell GetStarted, even with no role: a plain link means "let me
+        // choose", so if a form is already open it has to bring the picker back
+        // (`null`). Only dispatching when a role was passed left every plain nav
+        // button looking dead once someone had picked student or mentor.
+        window.dispatchEvent(new CustomEvent("uniscope:pick-role", { detail: role ?? null }));
       }}
     >
       {children}
