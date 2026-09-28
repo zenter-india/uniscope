@@ -1172,28 +1172,42 @@ class _MyReviewRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return AppCard(
       margin: const EdgeInsets.only(bottom: AppSpacing.sm),
-      child: Row(
-        children: [
-          Expanded(
-            child: Text(
-              title,
-              style: const TextStyle(
-                fontSize: AppFont.sm,
-                color: AppColors.textSecondary,
+      // Real device video: with the answer as a bare, unconstrained Text in
+      // this Row, a long answer ("Depends on what they're looking for",
+      // "Borderline — think carefully before joining") took nearly the whole
+      // row width and left the label `Expanded` only a sliver — "Would You
+      // Recommend?" and "Value for Money" wrapped one letter per line. Cap
+      // the answer at 60% of the row so it wraps onto a second line instead
+      // and the label always keeps at least the remaining 40%; a short
+      // answer ("Average") still takes only its natural width, so the label
+      // keeps the rest and stays on one line.
+      child: LayoutBuilder(
+        builder: (context, constraints) => Row(
+          children: [
+            Expanded(
+              child: Text(
+                title,
+                style: const TextStyle(
+                  fontSize: AppFont.sm,
+                  color: AppColors.textSecondary,
+                ),
               ),
             ),
-          ),
-          const SizedBox(width: AppSpacing.sm),
-          Text(
-            value,
-            textAlign: TextAlign.right,
-            style: const TextStyle(
-              fontSize: AppFont.sm,
-              fontWeight: AppFont.bold,
-              color: AppColors.textPrimary,
+            const SizedBox(width: AppSpacing.sm),
+            ConstrainedBox(
+              constraints: BoxConstraints(maxWidth: constraints.maxWidth * 0.6),
+              child: Text(
+                value,
+                textAlign: TextAlign.right,
+                style: const TextStyle(
+                  fontSize: AppFont.sm,
+                  fontWeight: AppFont.bold,
+                  color: AppColors.textPrimary,
+                ),
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
