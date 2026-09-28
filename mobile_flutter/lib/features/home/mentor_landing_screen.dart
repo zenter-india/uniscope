@@ -182,73 +182,52 @@ class MentorLandingScreen extends ConsumerWidget {
                       error: (_, __) => const SizedBox.shrink(),
                       data: (stats) => Column(
                         children: [
-                          Row(
-                            children: [
-                              Expanded(
-                                child: _StatTile(
+                          _StatRow(
+                            left: _StatTile(
                                   value: '${stats.todaysSessionsCount}',
                                   label: "Today's Sessions",
                                   icon: Icons.calendar_today_rounded,
                                   color: AppColors.primary,
                                 ),
-                              ),
-                              const SizedBox(width: AppSpacing.sm),
-                              Expanded(
-                                child: _StatTile(
+                            right: _StatTile(
                                   value: '${stats.minutesConsultedToday} min',
                                   label: 'Minutes Consulted',
                                   icon: Icons.timer_outlined,
                                   color: AppColors.primary,
                                 ),
-                              ),
-                            ],
                           ),
                           const SizedBox(height: AppSpacing.sm),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: _StatTile(
+                          _StatRow(
+                            left: _StatTile(
                                   value:
                                       '₹${stats.todaysEarningsRupees.toStringAsFixed(0)}',
                                   label: "Today's Earnings",
                                   icon: Icons.payments_rounded,
                                   color: AppColors.success,
                                 ),
-                              ),
-                              const SizedBox(width: AppSpacing.sm),
-                              Expanded(
-                                child: _StatTile(
+                            right: _StatTile(
                                   value:
                                       '₹${stats.weeklyEarningsRupees.toStringAsFixed(0)}',
                                   label: 'Weekly Earnings',
                                   icon: Icons.account_balance_wallet_rounded,
                                   color: AppColors.warning,
                                 ),
-                              ),
-                            ],
                           ),
                           const SizedBox(height: AppSpacing.sm),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: _StatTile(
+                          _StatRow(
+                            left: _StatTile(
                                   value:
                                       stats.rating?.toStringAsFixed(1) ?? '—',
                                   label: 'Average Rating',
                                   icon: Icons.star_rounded,
                                   color: AppColors.warning,
                                 ),
-                              ),
-                              const SizedBox(width: AppSpacing.sm),
-                              Expanded(
-                                child: _StatTile(
+                            right: _StatTile(
                                   value: '${stats.totalSessionsCount}',
                                   label: 'Sessions Completed',
                                   icon: Icons.task_alt_rounded,
                                   color: AppColors.primary,
                                 ),
-                              ),
-                            ],
                           ),
                         ],
                       ),
@@ -375,6 +354,33 @@ class MentorLandingScreen extends ConsumerWidget {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// Two stat tiles side by side, forced to the same height. A plain `Row`
+/// centres its children, so a tile whose label wraps to two lines ("Minutes
+/// Consulted", "Sessions Completed" on a narrow phone) grew taller than its
+/// one-line neighbour and the right column looked bigger than the left
+/// (real screenshot). `IntrinsicHeight` + `stretch` gives both tiles the
+/// taller one's height whichever side wraps.
+class _StatRow extends StatelessWidget {
+  const _StatRow({required this.left, required this.right});
+
+  final Widget left;
+  final Widget right;
+
+  @override
+  Widget build(BuildContext context) {
+    return IntrinsicHeight(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Expanded(child: left),
+          const SizedBox(width: AppSpacing.sm),
+          Expanded(child: right),
+        ],
       ),
     );
   }
