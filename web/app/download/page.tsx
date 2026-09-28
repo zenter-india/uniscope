@@ -135,10 +135,9 @@ export default function DownloadPage() {
                 {!storesLive && (
                   <p className="mx-auto mt-5 max-w-[520px] text-[14px] font-semibold leading-relaxed text-white/70 lg:mx-0">
                     The store listings are on their way.{" "}
-                    <RoleTrigger
-                      role="student"
-                      className="font-extrabold text-gold-400 underline underline-offset-4 hover:text-gold-500"
-                    >
+                    {/* No `role`: a generic "register" link shouldn't presume student vs
+                        mentor — omitting it lands on the role picker, like the nav does. */}
+                    <RoleTrigger className="font-extrabold text-gold-400 underline underline-offset-4 hover:text-gold-500">
                       Register on the web now
                     </RoleTrigger>{" "}
                     and your account will be waiting in the app &mdash; just verify the same phone number.
