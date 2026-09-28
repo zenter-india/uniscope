@@ -1,4 +1,5 @@
 import Image from "next/image";
+import { Stores } from "./Stores";
 
 /**
  * The "worried aspirant" hero. The approved design's headline, subtext, and
@@ -19,6 +20,15 @@ export function HeroCold() {
       <p className="max-w-xl md:max-w-none mx-auto text-center px-6 pt-10 pb-5 text-[15px] md:text-[17px] font-semibold italic text-sky-300 md:whitespace-nowrap">
         &ldquo;The best people to help you choose a college are the people who are already studying there.&rdquo;
       </p>
+
+      {/* The app, up where the first screen is: store buttons (they read
+          "Coming soon" until the listings are live — see lib/app-links.ts). */}
+      <div className="px-6 pb-8 text-center">
+        <p className="mb-4 text-[12.5px] font-extrabold uppercase tracking-[0.18em] text-gold-400">
+          Get the Uniscope app
+        </p>
+        <Stores leftFrom="never" />
+      </div>
       <Image
         src="https://kfxxsqxynofjywywygza.supabase.co/storage/v1/object/public/web-assets/hero-cold.jpg"
         alt="Too many questions before the right decision? You're not alone. A worried aspirant sits in an empty classroom surrounded by the questions on their mind: is there any toxicity, how's the curriculum, how's the climate, how's the placement support, how's the hands-on experience, how's life outside college, will I fit in there."
