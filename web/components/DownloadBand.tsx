@@ -32,10 +32,22 @@ export function DownloadBand({
         </Reveal>
 
         <Reveal delay={150} className="hidden md:block">
-          <div className="rounded-[24px] bg-white p-4 text-center shadow-[0_30px_60px_-24px_rgba(0,0,0,.7)]">
-            <DownloadQr className="h-[148px] w-[148px]" />
-            <p className="mt-3 text-[12.5px] font-extrabold text-ink">Scan with your phone</p>
-            <p className="text-[11.5px] font-semibold text-slate-600">to get the app</p>
+          <div className="flex gap-4">
+            {(
+              [
+                { platform: "ios", label: "iPhone" },
+                { platform: "android", label: "Android" },
+              ] as const
+            ).map(({ platform, label }) => (
+              <div
+                key={platform}
+                className="rounded-[24px] bg-white p-4 text-center shadow-[0_30px_60px_-24px_rgba(0,0,0,.7)]"
+              >
+                <DownloadQr platform={platform} className="h-[132px] w-[132px]" />
+                <p className="mt-3 text-[12.5px] font-extrabold text-ink">{label}</p>
+                <p className="text-[11.5px] font-semibold text-slate-600">Scan to get the app</p>
+              </div>
+            ))}
           </div>
         </Reveal>
       </div>
