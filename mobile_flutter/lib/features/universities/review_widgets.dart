@@ -382,6 +382,31 @@ class _ChoiceDistributionCardState extends State<ChoiceDistributionCard> {
         ? 0
         : ((positiveCount / total) * 100).round();
 
+    // "0% would recommend this college" reads as a verdict against the
+    // college even when nobody actually said no — e.g. every reviewer picked
+    // "Depends on what they're looking for" (real screenshot, 100% Depends).
+    // That's both misleading and a defamation exposure (a college could
+    // argue Uniscope is publishing false information). When no one gave a
+    // positive answer to the recommend question, headline the answer people
+    // actually gave instead of a bare 0%. Scoped to this question: its four
+    // answers include two neutral-to-positive ones and a neutral "Depends",
+    // so "0% positive" is routinely a mislabel of a mixed/neutral result.
+    String headline = '$positivePct% ${spec.positivePhrase}';
+    if (spec.field == 'wouldRecommend' && total > 0 && positivePct == 0) {
+      ReviewChoiceOption? top;
+      var topCount = 0;
+      for (final o in spec.options) {
+        final n = widget.distribution[o.code] ?? 0;
+        if (n > topCount) {
+          top = o;
+          topCount = n;
+        }
+      }
+      if (top != null) {
+        headline = '${_pct(topCount)}% said "${top.label}"';
+      }
+    }
+
     return AppCard(
       margin: const EdgeInsets.only(bottom: AppSpacing.sm),
       onTap: () => setState(() => _expanded = !_expanded),
@@ -411,7 +436,7 @@ class _ChoiceDistributionCardState extends State<ChoiceDistributionCard> {
           ),
           const SizedBox(height: 4),
           Text(
-            '$positivePct% ${spec.positivePhrase}',
+            headline,
             style: const TextStyle(
               fontSize: AppFont.xs,
               fontWeight: AppFont.semibold,
