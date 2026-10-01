@@ -49,14 +49,11 @@ export function SiteNav() {
           <Link
             href="/download"
             aria-label="Get the Uniscope app"
-            className="inline-flex items-center gap-1.5 rounded-[9px] bg-gradient-to-b from-gold-400 to-gold-500 text-navy-deep text-[13.5px] font-extrabold px-2.5 sm:px-3.5 py-2 shadow-[0_8px_20px_-8px_rgba(201,150,47,.75)] hover:brightness-105 active:scale-[0.96] transition-all"
+            className="inline-flex items-center gap-1.5 rounded-[9px] bg-gradient-to-b from-gold-400 to-gold-500 text-navy-deep text-[12.5px] sm:text-[13.5px] font-extrabold px-2.5 sm:px-3.5 py-2 shadow-[0_8px_20px_-8px_rgba(201,150,47,.75)] hover:brightness-105 active:scale-[0.96] transition-all"
           >
             <Smartphone size={16} strokeWidth={2.4} aria-hidden="true" />
-            <span className="hidden sm:inline whitespace-nowrap">Get the app</span>
+            <span className="whitespace-nowrap">Get the app</span>
           </Link>
-          <RoleTrigger className="inline-flex items-center rounded-[9px] border-[1.5px] border-blue-600 text-blue-600 text-[13.5px] font-bold px-3.5 py-2 hover:bg-[#eef3ff] active:scale-[0.96] transition-all">
-            Log in
-          </RoleTrigger>
           <RoleTrigger className="inline-flex items-center rounded-[9px] bg-blue-600 text-white text-[13.5px] font-bold px-3.5 py-2 shadow-[0_8px_20px_-8px_rgba(33,72,201,0.55)] hover:bg-blue-500 active:scale-[0.96] transition-all">
             Sign up
           </RoleTrigger>
