@@ -99,6 +99,8 @@ class _HelpScreenState extends ConsumerState<HelpScreen> {
             else
               _ArticleCard(articles: matches),
           ] else ...[
+            const _TechDifficultyBlock(),
+            const SizedBox(height: AppSpacing.lg),
             const _SectionLabel('Browse topics'),
             _TopicsCard(
               topics: topics,
@@ -119,8 +121,6 @@ class _HelpScreenState extends ConsumerState<HelpScreen> {
                   .where((a) => a.popular)
                   .toList(growable: false),
             ),
-            const SizedBox(height: AppSpacing.lg),
-            const _TechDifficultyBlock(),
             const SizedBox(height: AppSpacing.lg),
             const _StillNeedHelpBand(),
             const SizedBox(height: AppSpacing.lg),

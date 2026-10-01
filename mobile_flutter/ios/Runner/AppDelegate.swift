@@ -1,6 +1,7 @@
 import AVFoundation
 import Flutter
 import UIKit
+import UserNotifications
 
 @main
 @objc class AppDelegate: FlutterAppDelegate, FlutterImplicitEngineDelegate {
@@ -37,6 +38,17 @@ import UIKit
         @unknown default:
           result(false)
         }
+      case "requestNotifications":
+        // iOS counterpart to the Android requestNotifications call — requests
+        // alert + sound + badge permission so the in-call ongoing notification
+        // (showCallOngoingNotification in push_service.dart) can actually
+        // display. Best-effort: result(nil) whether granted or denied so the
+        // call flow is never blocked by this.
+        UNUserNotificationCenter.current().requestAuthorization(
+          options: [.alert, .sound, .badge]
+        ) { _, _ in
+          DispatchQueue.main.async { result(nil) }
+        }
       case "openAppSettings":
         if let url = URL(string: UIApplication.openSettingsURLString) {
           UIApplication.shared.open(url, options: [:], completionHandler: nil)
@@ -69,7 +81,7 @@ import UIKit
     )
     callChannel.setMethodCallHandler { call, result in
       switch call.method {
-      case "startCallService", "stopCallService":
+      case "startCallService", "stopCallService", "beep":
         result(nil)
       case "keepScreenOn":
         let on = (call.arguments as? Bool) ?? false

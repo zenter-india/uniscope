@@ -10,7 +10,9 @@ import 'package:go_router/go_router.dart';
 import '../../features/calls/call_overlay.dart'
     show CallOverlayController, CallPresence;
 import '../../router/app_router.dart';
-import '../network/sessions_api.dart' show sessionsApiProvider;
+import '../../state/auth_controller.dart' show UserRole, authControllerProvider;
+import '../network/sessions_api.dart'
+    show Session, SessionKind, sessionsApiProvider;
 import '../network/users_api.dart';
 
 /// Must be a top-level (or static) function — the Firebase plugin invokes
@@ -185,6 +187,24 @@ class PushService {
 
     final messaging = FirebaseMessaging.instance;
     await messaging.requestPermission(alert: true, badge: true, sound: true);
+    // iOS only (no-op on Android). Firebase's iOS SDK registers its own
+    // UNUserNotificationCenterDelegate, and that delegate's `willPresent`
+    // handler governs whether ANY notification — not just a raw incoming
+    // push, but also one WE show locally via flutter_local_notifications'
+    // own `.show()` below — is actually allowed to display while the app is
+    // in the foreground. Without this call, Firebase's default is to
+    // withhold foreground presentation entirely: the notification is still
+    // created and delivered, just never rendered as a banner, with no error
+    // anywhere — exactly the reported symptom ("only shows when the app is
+    // out, not when it's open"). This has nothing to do with `onMessage`
+    // itself firing correctly (it already does, confirmed by the in-app
+    // list updating) — it's purely about whether iOS is willing to paint a
+    // banner for it at that exact moment.
+    await messaging.setForegroundNotificationPresentationOptions(
+      alert: true,
+      badge: true,
+      sound: true,
+    );
 
     messaging.onTokenRefresh.listen(_upload);
 
@@ -465,15 +485,45 @@ class PushService {
     _navigate('/chats');
   }
 
-  void _handleDeepLink(RemoteMessage message, {bool fromTap = true}) =>
+  Future<void> _handleDeepLink(RemoteMessage message, {bool fromTap = true}) =>
       _handleDeepLinkData(message.data, fromTap: fromTap);
+
+  /// Resolves the real CHAT-type session with the call's counterpart and
+  /// opens it — NEVER reuse the AUDIO_CALL session's own id as a chat-thread
+  /// id. A call session has no chat thread of its own; the backend's
+  /// `ChatController.requireChannel` 403s with "This session is not a chat
+  /// session" the instant the thread tries to load its history, which
+  /// crashed this exact screen (confirmed via a real device + Sentry-less
+  /// TestFlight build, 2026-10-01) whenever a scheduled call's "accepted"
+  /// notification was tapped more than ~2 minutes before the confirmed time
+  /// (the only path that was passing the call session's id here at all —
+  /// see the SESSION_ACCEPTED/SESSION_RESCHEDULED branch above).
+  Future<void> _openChatForCallSession(String callSessionId) async {
+    try {
+      final api = _ref.read(sessionsApiProvider);
+      final call = await api.findById(callSessionId);
+      final me = _ref.read(authControllerProvider).user;
+      final Session chat = me?.role == UserRole.mentor
+          ? await api.startChatWithStudent(call.aspirantId)
+          : await api.create(call.mentorId, SessionKind.chat);
+      _navigate('/chats/room', extra: {'sessionId': chat.id});
+    } catch (_) {
+      // Resolving/creating the chat failed (network hiccup, the call
+      // session itself 404'd, etc.) — land on the Sessions tab rather than
+      // dead-ending or crashing again on the bad id.
+      _navigate('/chats');
+    }
+  }
 
   /// Route a push to the screen it's about. [fromTap] is false when the
   /// push was merely *received* in the foreground — in that case only a
   /// live/imminent call auto-navigates; every other type waits for the
   /// user to tap the heads-up notification (which comes back through here
   /// with [fromTap] true).
-  void _handleDeepLinkData(Map<String, dynamic> data, {bool fromTap = true}) {
+  Future<void> _handleDeepLinkData(
+    Map<String, dynamic> data, {
+    bool fromTap = true,
+  }) async {
     final type = data['type'];
     final sessionId = data['sessionId'] as String?;
     // A scheduled AUDIO_CALL accept carries `confirmedFor` but deliberately
@@ -516,7 +566,7 @@ class PushService {
         if (imminent) {
           _navigate('/call/$sessionId');
         } else if (fromTap) {
-          _navigate('/chats/room', extra: {'sessionId': sessionId});
+          await _openChatForCallSession(sessionId);
         }
         return;
       }

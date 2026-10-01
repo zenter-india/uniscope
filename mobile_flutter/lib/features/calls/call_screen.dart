@@ -485,13 +485,15 @@ class _CallScreenState extends ConsumerState<CallScreen> {
     await engine.initialize(RtcEngineContext(appId: creds.appId));
     await engine.enableAudio();
     await engine.setDefaultAudioRouteToSpeakerphone(true);
-    // Drives the "speaking" glow on the peer avatar. 250ms is responsive
-    // without being jittery; reportVad isn't needed (we only look at level).
-    await engine.enableAudioVolumeIndication(
-      interval: 250,
-      smooth: 3,
-      reportVad: false,
-    );
+    // enableAudioVolumeIndication is intentionally NOT called here.
+    // On iOS, calling it before joinChannelWithUserAccount crashes the
+    // Agora iris SDK with EXC_BAD_ACCESS (code=1, address=0xfa) in
+    // platform_memmove inside a DartWorker thread — the iris volume
+    // reporter tries to access an RTC audio session object that doesn't
+    // exist yet because no channel has been joined. It is called below,
+    // after joined.future resolves (i.e. onJoinChannelSuccess fired), at
+    // which point the channel is fully established and the audio session
+    // is live. Confirmed via device crash report 2026-09-30.
     engine.registerEventHandler(
       RtcEngineEventHandler(
         onJoinChannelSuccess: (connection, elapsed) {
@@ -600,6 +602,17 @@ class _CallScreenState extends ConsumerState<CallScreen> {
       ),
     );
     await joined.future;
+    // Safe to enable now — we are inside the channel (onJoinChannelSuccess
+    // already fired). Drives the "speaking" glow on the peer avatar.
+    // 250ms interval is responsive without being jittery.
+    // Intentionally unawaited: failure here is non-fatal (the call is
+    // already live), and waiting would delay confirmJoined unnecessarily.
+    // ignore: unawaited_futures
+    engine.enableAudioVolumeIndication(
+      interval: 250,
+      smooth: 3,
+      reportVad: false,
+    );
   }
 
   Future<void> _poll() async {
@@ -1064,7 +1077,16 @@ class _CallScreenState extends ConsumerState<CallScreen> {
           peerAvatarUrl: _peerAvatarUrl,
           status: 'Starting call…',
           onBack: _handleBack,
-          onEnd: () => _endCall(),
+          // Never actually connected yet (still requesting mic permission) —
+          // see the _kEndReasonBeforeConnect doc comment. _endCall()'s own
+          // `reason` param defaults to 'NORMAL', so leaving this unset here
+          // mislabeled a call that never connected as one that ended
+          // normally, both to the backend's own records and to the "Call
+          // ended" summary screen both parties then saw — confirmed live
+          // 2026-10-01: a real call never reached IN_PROGRESS (no
+          // "both parties joined" ever logged, nothing billed) yet was
+          // recorded and displayed as a plain, successful "Call ended".
+          onEnd: () => _endCall(reason: _kEndReasonBeforeConnect),
         );
       case _Phase.connecting:
         return _ConnectingView(
@@ -1073,7 +1095,9 @@ class _CallScreenState extends ConsumerState<CallScreen> {
           peerAvatarUrl: _peerAvatarUrl,
           status: 'Connecting…',
           onBack: _handleBack,
-          onEnd: () => _endCall(),
+          // Same gap as the requestingPermission branch above — the join
+          // hasn't succeeded yet at this point either.
+          onEnd: () => _endCall(reason: _kEndReasonBeforeConnect),
         );
       case _Phase.permissionDenied:
         return _MessageScreen(
@@ -2076,7 +2100,16 @@ class _EndedView extends StatelessWidget {
               ),
             ],
             const SizedBox(height: AppSpacing.xl),
-            if (onRate != null)
+            if (onRate != null) ...[
+              const Text(
+                'Rate your Mentor',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: AppFont.lg,
+                  fontWeight: AppFont.extraBold,
+                ),
+              ),
+              const SizedBox(height: AppSpacing.sm),
               SizedBox(
                 width: double.infinity,
                 child: FilledButton.icon(
@@ -2089,7 +2122,8 @@ class _EndedView extends StatelessWidget {
                   label: const Text('Rate this call'),
                 ),
               ),
-            if (onRate != null) const SizedBox(height: AppSpacing.sm),
+              const SizedBox(height: AppSpacing.sm),
+            ],
             SizedBox(
               width: double.infinity,
               child: FilledButton(
