@@ -67,7 +67,12 @@ const TRUST = [
 ];
 
 export default function DownloadPage() {
-  const storesLive = Boolean(APP_STORE_URL && PLAY_STORE_URL);
+  // At least one store live is enough to drop the "register on the web
+  // instead" nudge — once a real download button exists for any platform,
+  // "the store listings are on their way" is no longer an accurate framing
+  // for this page's primary CTA. Each StoreButton already shows its own
+  // "Coming soon" state individually for whichever platform isn't live yet.
+  const storesLive = Boolean(APP_STORE_URL || PLAY_STORE_URL);
 
   return (
     <>
