@@ -814,6 +814,46 @@ model WalletHold {
   @@map("wallet_holds")
 }
 
+/// Populated ONLY by a DB trigger (wallet_balance_audit_trigger /
+/// wallet_balance_audit_insert_trigger, see migration
+/// 20261002150000_add_wallet_balance_audit) — no application code ever
+/// writes here. Logs every change to Wallet.balanceMinor, flagging whether
+/// it landed alongside a matching LedgerEntry row (the signature of a real
+/// credit/debit path) or not (the signature of a direct manual edit that
+/// bypassed WalletService). Built after a real incident (2026-10-02): a
+/// user's wallet carried a nonzero balance with zero ledger history and no
+/// trace in any application or infra log, because every DB connection —
+/// the live backend included — authenticates as the same Postgres
+/// superuser role, so there was nothing to attribute the change to. This
+/// table can't fix that attribution gap (matchedLedgerEntry's `changedBy`
+/// will read the shared role for every row, app or human) — it only makes
+/// the *fact* of an unexplained change show up in one query
+/// (wallet_ledger_reconciliation, a plain SQL view, not a Prisma model)
+/// instead of a multi-tool forensic session. See the "Wallet-balance audit
+/// trail" note in CLAUDE.md for the full incident + the remaining,
+/// explicitly-deferred prevention work (giving the backend its own
+/// least-privilege DB role instead of sharing the superuser).
+model WalletBalanceAudit {
+  id                  String   @id @default(uuid())
+  walletId            String   @map("wallet_id")
+  userId              String?  @map("user_id")
+  oldBalanceMinor     Int      @map("old_balance_minor")
+  newBalanceMinor     Int      @map("new_balance_minor")
+  deltaMinor          Int      @map("delta_minor")
+  /// The Postgres role that made the change — always the same shared role
+  /// today (see the model doc comment), kept for when that changes.
+  changedBy           String   @map("changed_by")
+  clientAddr          String?  @map("client_addr")
+  applicationName     String?  @map("application_name")
+  txid                BigInt
+  matchedLedgerEntry  Boolean  @map("matched_ledger_entry")
+  createdAt           DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  @@index([walletId])
+  @@index([matchedLedgerEntry])
+  @@map("wallet_balance_audit")
+}
+
 /// Apple IAP top-up audit trail — deliberately NOT the source of truth for
 /// crediting (that's still LedgerEntry.idempotencyKey, same as Razorpay).
 /// This table exists for two things Razorpay's flow doesn't need: (1)
