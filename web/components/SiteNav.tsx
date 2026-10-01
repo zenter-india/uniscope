@@ -45,11 +45,8 @@ export function SiteNav() {
         </div>
 
         <div className="flex gap-2.5 items-center">
-          <RoleTrigger className="inline-flex items-center rounded-[9px] border-[1.5px] border-blue-600 text-blue-600 text-[13.5px] font-bold px-3.5 py-2 hover:bg-[#eef3ff] active:scale-[0.96] transition-all">
-            Log in
-          </RoleTrigger>
-          <RoleTrigger className="inline-flex items-center rounded-[9px] bg-blue-600 text-white text-[13.5px] font-bold px-3.5 py-2 shadow-[0_8px_20px_-8px_rgba(33,72,201,0.55)] hover:bg-blue-500 active:scale-[0.96] transition-all">
-            Sign up
+          <RoleTrigger className="inline-flex items-center rounded-[9px] bg-blue-600 text-white text-[13px] sm:text-[13.5px] font-bold px-3 sm:px-3.5 py-2 shadow-[0_8px_20px_-8px_rgba(33,72,201,0.55)] hover:bg-blue-500 active:scale-[0.96] transition-all whitespace-nowrap">
+            Get the app
           </RoleTrigger>
         </div>
       </div>
