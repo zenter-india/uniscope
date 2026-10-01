@@ -429,7 +429,26 @@ class _CallScreenState extends ConsumerState<CallScreen> {
       try {
         await _joinAgoraChannel(creds).timeout(timeout);
         return;
-      } on TimeoutException {
+      } on Object catch (e) {
+        // Was `on TimeoutException` only — a real device report (2026-10-01,
+        // iOS, instant "Could not connect" with AgoraRtcException(-2, null))
+        // showed a non-timeout failure (the native SDK synchronously
+        // rejecting joinChannelWithUserAccount, not an async hang) skipped
+        // this whole catch entirely: no retry, and — the worse half —
+        // the stale engine below was never torn down either, since it was
+        // only reachable from inside the TimeoutException branch. Per a
+        // real Agora GitHub issue (AgoraIO-Extensions/Agora-Flutter-SDK#349),
+        // a channel left dangling on an un-released engine makes the
+        // native SDK refuse the NEXT join with this exact error
+        // ("Refused to join channel X: curPublishChannel is Y") — so a
+        // single uncaught AgoraRtcException here could cascade into every
+        // subsequent attempt failing the same way, on the same app
+        // install, even across a fresh _joinAgoraChannel call. Catching
+        // Object (not just TimeoutException) ensures the teardown below
+        // always runs and this gets the same one-retry resilience a
+        // timeout already had — Agora's own docs for error -2 literally
+        // recommend "provide valid parameters and rejoin the channel",
+        // i.e. a retry is the documented recovery, not just a timeout one.
         final stale = _engine;
         _engine = null;
         // Real device report (2026-09-15, both Android and iOS, stuck on
@@ -458,7 +477,7 @@ class _CallScreenState extends ConsumerState<CallScreen> {
             'Could not connect to the call — check your connection and try again.',
           );
         }
-        debugPrint('[call] join attempt $attempt timed out, retrying once');
+        debugPrint('[call] join attempt $attempt failed ($e), retrying once');
       }
     }
   }
