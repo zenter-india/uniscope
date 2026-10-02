@@ -5,10 +5,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 
-import '../../core/network/universities_api.dart';
+import '../../core/network/users_api.dart';
 import '../../core/network/verification_api.dart';
 import '../../core/theme/app_theme.dart';
 import '../../widgets/app_widgets.dart';
+import '../auth/college_search_field.dart';
 
 class VerificationScreen extends ConsumerWidget {
   const VerificationScreen({super.key});
@@ -168,10 +169,17 @@ class _SubmissionForm extends ConsumerStatefulWidget {
 }
 
 class _SubmissionFormState extends ConsumerState<_SubmissionForm> {
-  University? _university;
+  String? _universityId;
+  final _collegeNameController = TextEditingController();
   DocumentType _docType = DocumentType.studentId;
   Uint8List? _imageBytes;
   bool _submitting = false;
+
+  @override
+  void dispose() {
+    _collegeNameController.dispose();
+    super.dispose();
+  }
 
   // Was gallery-only — see the identical fix + doc comment on
   // MentorOnboardingScreen's own _pickImage, same underlying bug.
@@ -212,12 +220,12 @@ class _SubmissionFormState extends ConsumerState<_SubmissionForm> {
   }
 
   Future<void> _submit() async {
-    if (_university == null || _imageBytes == null) return;
+    if (_universityId == null || _imageBytes == null) return;
     setState(() => _submitting = true);
     try {
       final base64Image = base64Encode(_imageBytes!);
       await ref.read(verificationApiProvider).submit(
-            universityId: _university!.id,
+            universityId: _universityId!,
             documentType: _docType,
             documentBase64: base64Image,
           );
@@ -247,7 +255,7 @@ class _SubmissionFormState extends ConsumerState<_SubmissionForm> {
 
   @override
   Widget build(BuildContext context) {
-    final universitiesAsync = ref.watch(universitiesListProvider);
+    final profileAsync = ref.watch(myProfileProvider);
 
     return AppCard(
       child: Column(
@@ -259,18 +267,22 @@ class _SubmissionFormState extends ConsumerState<_SubmissionForm> {
           const Text('University',
               style: TextStyle(fontSize: AppFont.sm, fontWeight: AppFont.semibold)),
           const SizedBox(height: AppSpacing.xs),
-          universitiesAsync.when(
+          // Was a bare DropdownButtonFormField over the whole ~10k-college
+          // catalogue with no search — unusable (real device report: a
+          // flat alphabetical list with no way to filter it). Swapped for
+          // the same searchable/browsable picker the onboarding wizards
+          // already use.
+          profileAsync.when(
             loading: () => const Skeleton(height: 48),
-            error: (_, __) => const Text('Could not load universities',
+            error: (_, __) => const Text('Could not load your profile',
                 style: TextStyle(color: AppColors.error, fontSize: AppFont.xs)),
-            data: (universities) => DropdownButtonFormField<University>(
-              initialValue: _university,
-              isExpanded: true,
-              hint: const Text('Select your university'),
-              items: universities
-                  .map((u) => DropdownMenuItem(value: u, child: Text(u.name)))
-                  .toList(),
-              onChanged: (u) => setState(() => _university = u),
+            data: (profile) => CollegeSearchField(
+              initialText: _collegeNameController.text,
+              stream: profile.stream,
+              onPick: (universityId, text, _) => setState(() {
+                _universityId = universityId;
+                _collegeNameController.text = text;
+              }),
             ),
           ),
           const SizedBox(height: AppSpacing.md),
@@ -346,7 +358,7 @@ class _SubmissionFormState extends ConsumerState<_SubmissionForm> {
           SizedBox(
             width: double.infinity,
             child: FilledButton(
-              onPressed: (_university != null && _imageBytes != null && !_submitting)
+              onPressed: (_universityId != null && _imageBytes != null && !_submitting)
                   ? _submit
                   : null,
               child: _submitting
