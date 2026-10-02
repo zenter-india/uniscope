@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:uniscope_mobile/core/feature_flags.dart';
 import 'package:uniscope_mobile/core/network/wallet_api.dart';
 import 'package:uniscope_mobile/core/theme/app_theme.dart';
 import 'package:uniscope_mobile/features/wallet/wallet_screen.dart';
@@ -78,21 +79,28 @@ void main() {
   };
 
   for (final MapEntry(key: name, value: size) in phones.entries) {
-    testWidgets('Android top-up sheet fits and is fully reachable — $name', (tester) async {
-      debugDefaultTargetPlatformOverride = TargetPlatform.android;
-      try {
-        await _openTopUpSheet(tester, size);
-        for (final price in ['₹250', '₹400', '₹750', '₹1000']) {
-          expect(find.text(price), findsOneWidget, reason: '$price missing');
+    testWidgets(
+      'Android top-up sheet fits and is fully reachable — $name',
+      // Tapping "Top Up" now shows the WalletTopupPausedDialog instead of
+      // the sheet while kWalletTopupEnabled is off (see feature_flags.dart)
+      // — this layout check can't run against the real sheet until it's
+      // flipped back on.
+      skip: !kWalletTopupEnabled,
+      (tester) async {
+        debugDefaultTargetPlatformOverride = TargetPlatform.android;
+        try {
+          await _openTopUpSheet(tester, size);
+          for (final price in ['₹250', '₹400', '₹750', '₹1000']) {
+            expect(find.text(price), findsOneWidget, reason: '$price missing');
+          }
+          await _expectSheetReachable(tester, size);
+          for (final price in ['₹325', '₹520', '₹975', '₹1300']) {
+            expect(find.text(price), findsNothing, reason: '$price on Android');
+          }
+        } finally {
+          debugDefaultTargetPlatformOverride = null;
         }
-        await _expectSheetReachable(tester, size);
-        for (final price in ['₹325', '₹520', '₹975', '₹1300']) {
-          expect(find.text(price), findsNothing, reason: '$price on Android');
-        }
-      } finally {
-        debugDefaultTargetPlatformOverride = null;
-      }
-    });
-
+      },
+    );
   }
 }

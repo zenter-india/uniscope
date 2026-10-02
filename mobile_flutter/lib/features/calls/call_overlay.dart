@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
+import '../../core/feature_flags.dart';
 import '../../core/theme/app_theme.dart';
+import '../../router/app_router.dart' show rootNavigatorKey;
 import '../../widgets/app_widgets.dart';
 import 'call_screen.dart';
 
@@ -25,7 +27,21 @@ class CallOverlayController extends ChangeNotifier {
 
   /// Open (or re-focus) the call screen for [sessionId]. Idempotent — a
   /// second call for the same session just re-expands it.
+  ///
+  /// While [kCallBookingEnabled] is off, calls are paused entirely — this is
+  /// the one place every launch site funnels through (Join, auto-navigate on
+  /// accept, a tapped push notification, the `/call/:id` deep-link redirect),
+  /// so gating it here blocks joining an already-booked call too, not just
+  /// starting a new one. Shows the same "coming back soon" notice a direct
+  /// tap would have gotten from [showCallRequestSheet].
   void open(String sessionId) {
+    if (!kCallBookingEnabled) {
+      final context = rootNavigatorKey.currentContext;
+      if (context != null && context.mounted) {
+        showDialog<void>(context: context, builder: (_) => const CallsPausedDialog());
+      }
+      return;
+    }
     if (_sessionId == sessionId) {
       if (!_expanded) {
         _expanded = true;

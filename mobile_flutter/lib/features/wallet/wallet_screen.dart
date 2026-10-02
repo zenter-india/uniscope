@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
 import 'package:razorpay_flutter/razorpay_flutter.dart';
 
+import '../../core/feature_flags.dart';
 import '../../core/network/apple_iap_service.dart';
 import '../../core/network/payouts_api.dart';
 import '../../core/network/sessions_api.dart' show kCallSlotMinutes;
@@ -330,6 +331,10 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
   }
 
   Future<void> _showTopupSheet() async {
+    if (!kWalletTopupEnabled) {
+      await showDialog<void>(context: context, builder: (_) => const WalletTopupPausedDialog());
+      return;
+    }
     if (Platform.isIOS) {
       await _openAppleTopupSheet();
     } else {

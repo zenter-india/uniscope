@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/feature_flags.dart';
 import '../../core/network/sessions_api.dart';
 import '../../core/network/wallet_api.dart';
 import '../../core/theme/app_theme.dart';
@@ -37,6 +38,11 @@ Future<void> showCallRequestSheet(
   String? mentorName,
   List<String> mentorWindows = const [],
 }) async {
+  if (!kCallBookingEnabled) {
+    await showDialog<void>(context: context, builder: (_) => const CallsPausedDialog());
+    return;
+  }
+
   final result = await showModalBottomSheet<_CallRequestResult>(
     context: context,
     backgroundColor: AppColors.surface,
