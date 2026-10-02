@@ -105,7 +105,7 @@ void main() {
       expect(find.text('₹250'), findsOneWidget);
       await tester.tap(find.text('₹250'));
       await tester.pumpAndSettle();
-      expect(find.text('Recharge unavailable right now'), findsOneWidget);
+      expect(find.text('Recharge isn’t available right now'), findsOneWidget);
       final dialog = find.byType(AlertDialog);
       expect(dialog, findsOneWidget);
       expect(

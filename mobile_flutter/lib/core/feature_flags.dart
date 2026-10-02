@@ -47,11 +47,10 @@ class CallsPausedDialog extends StatelessWidget {
         alignment: Alignment.center,
         child: const Icon(Icons.phone_in_talk_rounded, color: AppColors.primary, size: 26),
       ),
-      title: const Text('Calls unavailable right now'),
+      title: const Text('Calls aren’t available right now'),
       content: const Text(
-        "We're unable to connect a call at the moment. Please try again a "
-        "little later — chat with your mentor still works as usual. "
-        'Thanks for your patience!',
+        "We're working on it, and it'll be back soon — chat with your "
+        'mentor still works as usual. Thanks for your patience!',
         textAlign: TextAlign.center,
       ),
       actionsAlignment: MainAxisAlignment.center,
@@ -79,10 +78,10 @@ class WalletTopupPausedDialog extends StatelessWidget {
         alignment: Alignment.center,
         child: const Icon(Icons.account_balance_wallet_rounded, color: AppColors.primary, size: 26),
       ),
-      title: const Text('Recharge unavailable right now'),
+      title: const Text('Recharge isn’t available right now'),
       content: const Text(
-        "We're unable to process a recharge at the moment. Please try "
-        'again a little later — thanks for your patience!',
+        "We're working on it, and it'll be back soon. Thanks for your "
+        'patience!',
         textAlign: TextAlign.center,
       ),
       actionsAlignment: MainAxisAlignment.center,

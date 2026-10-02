@@ -441,6 +441,8 @@ App is live in the App Store; the client reported calls "not working" and this s
 
 ## Calls and wallet top-up both show everything, block only the last step (2026-10-02)
 
+Wording revised the same day, per explicit follow-up ("the message should be polite it is not available right now it will be back soon working on it") — both dialogs now read: "Calls aren't available right now / Recharge isn't available right now" + "We're working on it, and it'll be back soon... Thanks for your patience!" Still names no reason. `flutter test` updated to match the new exact title text (19/19 passing).
+
 Real calls are still failing on both platforms (see the "iOS published to App Store, call still not connecting" section above — a confirmed, still-open Agora SDK native crash, pinned at `agora_rtc_engine: 6.5.4`). Per explicit instruction, both calls and wallet top-up now follow the same shape: **show every feature as normal, block only the final action, and say nothing about the real reason** — soft, polite, generic wording only.
 
 **Mechanism:** `lib/core/feature_flags.dart` — `const bool kCallBookingEnabled = false;` and `const bool kWalletTopupEnabled = false;`, plus two shared dialogs (`CallsPausedDialog`, `WalletTopupPausedDialog`), both reworded to name no reason ("We're unable to connect a call / process a recharge at the moment. Please try again a little later...").
