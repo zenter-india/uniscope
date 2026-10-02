@@ -87,7 +87,7 @@ class _AspirantOnboardingScreenState
   ];
   static const _stepSubtitles = [
     'Core identity details.',
-    'Helps us suggest mentors from your region.',
+    'Your home state and city — not your college. We\'ll ask about that next.',
     'What stage are you at, and what are you aiming for?',
     'Helps us find the right mentors for you.',
     'Pick a look — you can always change this later from your profile.',

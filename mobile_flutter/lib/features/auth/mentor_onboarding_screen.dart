@@ -97,7 +97,7 @@ class _MentorOnboardingScreenState extends ConsumerState<MentorOnboardingScreen>
   ];
   static const _stepSubtitles = [
     'Core identity details.',
-    'Helps aspirants from your region find you.',
+    'Your home state and city — not your college. We\'ll ask about that next.',
     'Your institution and degree.',
     'Are you still studying or graduated? How can aspirants reach you?',
     'Pick a look — you can always change this later from your profile.',
