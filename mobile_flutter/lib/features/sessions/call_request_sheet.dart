@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/feature_flags.dart';
 import '../../core/network/sessions_api.dart';
 import '../../core/network/wallet_api.dart';
 import '../../core/theme/app_theme.dart';
@@ -49,6 +50,11 @@ Future<void> showCallRequestSheet(
   );
 
   if (result == null || !context.mounted) return;
+
+  if (!kCallsEnabled) {
+    showAppSnackBar(context, kFeatureDisabledMessage);
+    return;
+  }
 
   try {
     await ref

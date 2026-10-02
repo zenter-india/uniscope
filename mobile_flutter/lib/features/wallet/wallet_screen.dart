@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
 import 'package:razorpay_flutter/razorpay_flutter.dart';
 
+import '../../core/feature_flags.dart';
 import '../../core/network/apple_iap_service.dart';
 import '../../core/network/payouts_api.dart';
 import '../../core/network/sessions_api.dart' show kCallSlotMinutes;
@@ -149,6 +150,10 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
   }
 
   Future<void> _startRazorpayTopup(int amountMinor) async {
+    if (!kWalletTopupEnabled) {
+      showAppSnackBar(context, kFeatureDisabledMessage);
+      return;
+    }
     setState(() => _toppingUp = true);
     try {
       final order = await ref
@@ -174,6 +179,10 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
   }
 
   Future<void> _startAppleTopup(ProductDetails product) async {
+    if (!kWalletTopupEnabled) {
+      showAppSnackBar(context, kFeatureDisabledMessage);
+      return;
+    }
     setState(() => _toppingUp = true);
     try {
       final started = await _appleIap!.buy(product);
