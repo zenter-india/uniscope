@@ -150,6 +150,10 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
   }
 
   Future<void> _startRazorpayTopup(int amountMinor) async {
+    if (!kWalletTopupEnabled) {
+      await showDialog<void>(context: context, builder: (_) => const WalletTopupPausedDialog());
+      return;
+    }
     setState(() => _toppingUp = true);
     try {
       final order = await ref
@@ -175,6 +179,10 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
   }
 
   Future<void> _startAppleTopup(ProductDetails product) async {
+    if (!kWalletTopupEnabled) {
+      await showDialog<void>(context: context, builder: (_) => const WalletTopupPausedDialog());
+      return;
+    }
     setState(() => _toppingUp = true);
     try {
       final started = await _appleIap!.buy(product);
@@ -331,10 +339,6 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
   }
 
   Future<void> _showTopupSheet() async {
-    if (!kWalletTopupEnabled) {
-      await showDialog<void>(context: context, builder: (_) => const WalletTopupPausedDialog());
-      return;
-    }
     if (Platform.isIOS) {
       await _openAppleTopupSheet();
     } else {

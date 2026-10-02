@@ -60,8 +60,10 @@ class CallsPausedDialog extends StatelessWidget {
   }
 }
 
-/// Shown in place of the wallet top-up sheet while [kWalletTopupEnabled] is
-/// off.
+/// Shown once the user has seen the full package list and picks one to pay
+/// for, while [kWalletTopupEnabled] is off. Deliberately soft and generic —
+/// it names no reason, so it doesn't disclose the real cause (see
+/// feature_flags.dart's own doc comment on [kWalletTopupEnabled]).
 class WalletTopupPausedDialog extends StatelessWidget {
   const WalletTopupPausedDialog({super.key});
 
@@ -75,12 +77,10 @@ class WalletTopupPausedDialog extends StatelessWidget {
         alignment: Alignment.center,
         child: const Icon(Icons.account_balance_wallet_rounded, color: AppColors.primary, size: 26),
       ),
-      title: const Text('Top-up is paused right now'),
+      title: const Text('Recharge unavailable right now'),
       content: const Text(
-        "Wallet recharge is paused while we fix an issue with calls — "
-        "Uniminutes are only spendable on a call right now. Chat with "
-        "mentors still works exactly as usual — we'll turn top-up back on "
-        'along with calls.',
+        "We're unable to process a recharge at the moment. Please try "
+        'again a little later — thanks for your patience!',
         textAlign: TextAlign.center,
       ),
       actionsAlignment: MainAxisAlignment.center,
