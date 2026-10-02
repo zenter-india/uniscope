@@ -177,12 +177,18 @@ class _CollegeSearchFieldState extends ConsumerState<CollegeSearchField> {
           options = [
             for (final u in data)
               _Option(
+                // Was built from `u.city` only — for a lot of colleges
+                // (especially generic-named DNB/Diploma hospital-training
+                // sites like "District Hospital", repeated across dozens of
+                // districts) the real location only ever lands on `district`
+                // (derived server-side from a program's description), never
+                // `city`, so this list showed a wall of identical,
+                // unlabelled "District Hospital" rows (real device report).
+                // `locationLabel` already falls through district → city and
+                // drops a duplicate/blank candidate — reuse it instead of
+                // re-deriving a weaker version of the same thing here.
                 id: u.id,
-                label: [
-                  u.name,
-                  if (u.city != null && u.city!.isNotEmpty) u.city!,
-                  u.state,
-                ].join(', '),
+                label: '${u.name}, ${u.locationLabel}',
               ),
           ];
         }
