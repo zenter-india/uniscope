@@ -1,5 +1,11 @@
 # iOS call "Could not connect" — investigation status (2026-10-03)
 
+**UPDATE: the `-ObjC` fix below was real but INSUFFICIENT — it was not the
+actual root cause. The real root cause and fix are documented in the new
+section "REAL ROOT CAUSE — found after rebuilding the `-ObjC` fix (2026-10-03,
+continued)" below. Read that section first; this top section is kept for the
+investigative trail that led there.**
+
 Handoff note for whoever continues this. Written mid-investigation because the
 session that found the root cause ran low on context — **the fix below is
 applied but NOT YET rebuilt+device-tested.** Do that first.
@@ -194,3 +200,131 @@ in this shared working tree, not reviewed, not part of this investigation):
 `mobile_flutter/android/app/libs/README.md`,
 `mobile_flutter/android/app/libs/iris-rtc-patched.aar`,
 `backend/scratchpad/`.
+
+## REAL ROOT CAUSE — found after rebuilding the `-ObjC` fix (2026-10-03, continued)
+
+Followed this file's own "NEXT STEPS" exactly: rebuilt via
+`build_ios_release.sh`, then — before any device test — ran
+`nm -g Runner | grep -i InitDartApiDL` on the fresh archive. **It still came
+back empty.** Per this file's own instruction ("If it still doesn't, the
+-ObjC theory was wrong or incompletely applied — re-open the investigation,
+don't just retest on device blind"), re-opened the investigation instead of
+testing on device.
+
+### Why `-ObjC` was a red herring (confirmed, not assumed)
+
+`-ObjC`'s entire mechanism is about **selective extraction from static
+archives (`.a` files)**: without it, a linker can skip an archive member
+(`.o`) that contains only Objective-C classes if nothing else references it.
+It has nothing to do with plain object files passed directly to the linker —
+those are never selectively skipped at the file level.
+
+Checked directly in DerivedData after a fresh archive build:
+`iris_method_channel`'s Swift Package Manager target is NOT built as a
+static archive at all — Xcode's modern SPM integration builds it as a single
+**merged relocatable object file**, `iris_method_channel.o`
+(`BuildProductsPath/Release-iphoneos/iris_method_channel.o`). This exact
+path appears as a genuine, direct entry in `Runner.LinkFileList` — i.e. it
+**was** being linked into the app the whole time, `-ObjC` or not. Inspecting
+that pre-link `.o` directly with `nm` confirmed it contains
+`_Iris_InitDartApiDL` and all 4 sibling functions as real, global (`T`)
+symbols, plus the full `IrisMethodChannelPlugin` Objective-C class metadata —
+the object file itself was always complete and correct.
+
+So the file reaches the linker intact. Something **after** that was removing
+the symbols from the final shipped binary.
+
+### The actual cause: Xcode's post-link `strip` step, not the linker
+
+Checked the real resolved build settings for `Release`:
+```
+STRIP_INSTALLED_PRODUCT = YES
+STRIP_STYLE             = all        <- the culprit
+DEAD_CODE_STRIPPING     = YES        <- unrelated, was already fine
+```
+`STRIP_STYLE = all` is Xcode's default for a **main app executable** in a
+Release/Archive build (as opposed to `non-global`, the default for
+*frameworks*, which need to keep their public API symbols since external
+code links against them). Apple's reasoning: nothing external ever needs to
+dynamically link against an app's own executable, so by default it strips
+**every** symbol not required for the binary's own normal execution —
+including a plain global C function that's never called via a *named
+symbol reference* anywhere else in the compiled code.
+
+That's exactly `Iris_InitDartApiDL`'s situation. It IS called, but only from
+within the same object file
+(`+[IrisMethodChannelPlugin _irisMethodChannelDummyFunc]`), which compiles to
+a direct address-relative branch instruction — no symbol-table lookup is
+needed for that call to work, so the *code* keeps working fine even after its
+*name* is stripped from the symbol table. The only thing that actually needs
+the name to survive is `iris_method_channel`'s own Dart↔native bridge, which
+calls (effectively) `dlsym(RTLD_DEFAULT, "Iris_InitDartApiDL")` at **runtime**
+via `ffi.DynamicLibrary.process().lookup(...)`
+(`iris_event_io.dart` → `NativeIrisEventBinding`) — a lookup that can only
+ever find symbols present in the binary's exported symbol table. Confirmed
+the exact 5 names this lookup needs, straight from the dummy-function
+safeguard's own source
+(`IrisMethodChannelPlugin.m`):
+`Iris_InitDartApiDL`, `Iris_Dispose`, `Iris_OnEvent`,
+`Iris_RegisterDartPort`, `Iris_UnregisterDartPort`.
+
+This also explains why no `flutter run` debug session ever reproduced this,
+across the whole multi-session investigation: **Debug builds don't strip the
+binary** (`STRIP_INSTALLED_PRODUCT` is effectively a no-op there). Only a
+Release/Archive build — i.e. exactly what TestFlight ships — hits this. It's
+also unrelated to which `agora_rtc_engine` version is pinned (currently
+`6.6.4`) and unrelated to the earlier `AgoraRtcWrapper` native-crash
+investigation.
+
+### Fix applied and verified in the actual shipped binary
+
+Added `STRIP_STYLE = "non-global";` to all three Runner **app-target**
+build configs in `project.pbxproj` (same three blocks the `-ObjC` fix
+touched: Debug `97C147061CF9000F007C117D`, Release `97C147071CF9000F007C117D`,
+Profile `249021D4217E4FDB00AE95B9`) — right alongside the existing
+`OTHER_LDFLAGS` line in each. `non-global` is the same strip style frameworks
+already use by default: strip local/debug symbols, but keep every
+global/exported one — which is exactly what lets `dlsym`-style runtime
+lookups keep working.
+
+Verified via `xcodebuild -showBuildSettings` that this resolves correctly
+(`STRIP_STYLE = non-global` for Release). Rebuilt via
+`build_ios_release.sh` (archive succeeded, `-exportArchive` transiently
+failed once with Xcode's generic "The request expected results but none were
+found" — a known flaky error, not a real signing/content problem; a plain
+retry via `xcodebuild -exportArchive` against the same already-fixed archive
+succeeded cleanly). Checked the symbols **inside the actual final exported
+`.ipa`** (extracted and ran `nm -g` on `Payload/Runner.app/Runner`), not just
+the intermediate archive:
+
+```
+00000001000cb5b0 T _Iris_Dispose
+00000001000cb4d4 T _Iris_InitDartApiDL
+00000001000cb648 T _Iris_OnEvent
+00000001000cb6ac T _Iris_RegisterDartPort
+00000001000cb7a8 T _Iris_UnregisterDartPort
+```
+
+All 5 present. Also re-confirmed no `localhost:3001` leak in the same binary.
+This is version `1.0.1` build `27`, at
+`mobile_flutter/build/ios/ipa/uniscope_mobile.ipa` (~69MB — exceeds
+`SendUserFile`'s 30MB cap, so it exists locally on this Mac only; needs
+Transporter or `xcrun altool` with the user's own App Store Connect API key
+to actually reach TestFlight, same standing limitation as every prior iOS
+build in this project's history).
+
+### What's still NOT confirmed
+
+The symbol surviving in the binary is a necessary condition for the original
+crash/exception to stop happening, confirmed by direct inspection of the
+exact shipped artifact — but this has **not yet been device-tested**. The
+`-ObjC` addition from the first pass is harmless and was left in place
+(doesn't hurt, and is still a reasonable defensive setting for a project that
+links several CocoaPods-based Objective-C static libraries via
+`razorpay_flutter`), it just wasn't the fix that mattered here. Next real
+step: install this exact IPA/archive on a real device and place a genuine
+call, both directions, the same rigor the 2026-10-01/02 two-device test used.
+If it still fails, capture a fresh `idevicesyslog ... archive` log (recipe
+above) rather than guessing again — if the dlsym failure is truly gone this
+should show real Agora join/connect activity instead of an immediate
+exception at isolate startup.
