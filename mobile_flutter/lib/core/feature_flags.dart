@@ -28,9 +28,12 @@ const bool kCallBookingEnabled = false;
 /// top-up) are both confirmed working again.
 const bool kWalletTopupEnabled = false;
 
-/// Shown in place of the call-request sheet, or in place of opening the call
-/// overlay (Join, auto-navigate on accept, a tapped push notification, a
-/// `/call/:id` deep link), while [kCallBookingEnabled] is off.
+/// Shown once the aspirant has gone through the full "When?"/"How long?"
+/// sheet and would otherwise place the request, or in place of opening the
+/// call overlay (Join, auto-navigate on accept, a tapped push notification,
+/// a `/call/:id` deep link), while [kCallBookingEnabled] is off. Deliberately
+/// soft and generic — it names no reason, so it doesn't disclose the real
+/// cause (see [kCallBookingEnabled]'s own doc comment).
 class CallsPausedDialog extends StatelessWidget {
   const CallsPausedDialog({super.key});
 
@@ -44,12 +47,11 @@ class CallsPausedDialog extends StatelessWidget {
         alignment: Alignment.center,
         child: const Icon(Icons.phone_in_talk_rounded, color: AppColors.primary, size: 26),
       ),
-      title: const Text('Calls are paused right now'),
+      title: const Text('Calls unavailable right now'),
       content: const Text(
-        "We're fixing an issue with audio calls on both Android and iOS, so "
-        'calls — including joining one already booked — are paused for now. '
-        "Chat with mentors still works exactly as usual — we'll turn calls "
-        'back on as soon as it’s fixed.',
+        "We're unable to connect a call at the moment. Please try again a "
+        "little later — chat with your mentor still works as usual. "
+        'Thanks for your patience!',
         textAlign: TextAlign.center,
       ),
       actionsAlignment: MainAxisAlignment.center,

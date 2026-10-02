@@ -38,11 +38,6 @@ Future<void> showCallRequestSheet(
   String? mentorName,
   List<String> mentorWindows = const [],
 }) async {
-  if (!kCallBookingEnabled) {
-    await showDialog<void>(context: context, builder: (_) => const CallsPausedDialog());
-    return;
-  }
-
   final result = await showModalBottomSheet<_CallRequestResult>(
     context: context,
     backgroundColor: AppColors.surface,
@@ -55,6 +50,14 @@ Future<void> showCallRequestSheet(
   );
 
   if (result == null || !context.mounted) return;
+
+  // The "When?"/"How long?" sheet above shows exactly as it would with
+  // calls fully on — this is the last step, where the aspirant has already
+  // confirmed everything and would otherwise place the request.
+  if (!kCallBookingEnabled) {
+    await showDialog<void>(context: context, builder: (_) => const CallsPausedDialog());
+    return;
+  }
 
   try {
     await ref
