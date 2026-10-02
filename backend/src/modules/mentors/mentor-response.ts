@@ -55,6 +55,8 @@ export interface MentorResponse {
    * product request; null until the mentor's own onboarding sets it. */
   gender: string | null;
   languages: string[];
+  /** Null whenever the mentor flipped `yearInfoPrivate` on, regardless of
+   * what's actually stored on the profile — see `toMentorResponse`. */
   yearOfStudy: number | null;
   graduationYear: number | null;
   pricePerMinuteMinor: number;
@@ -126,8 +128,10 @@ export function toMentorResponse(
     bio: profile?.bio ?? null,
     gender: profile?.gender ?? null,
     languages: profile?.languages ?? [],
-    yearOfStudy: profile?.yearOfStudy ?? null,
-    graduationYear: profile?.graduationYear ?? null,
+    yearOfStudy: profile?.yearInfoPrivate ? null : (profile?.yearOfStudy ?? null),
+    graduationYear: profile?.yearInfoPrivate
+      ? null
+      : (profile?.graduationYear ?? null),
     pricePerMinuteMinor: profile?.pricePerMinuteMinor ?? 0,
     university: profile?.university
       ? {
