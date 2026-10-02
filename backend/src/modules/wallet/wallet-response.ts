@@ -1,4 +1,4 @@
-import { LedgerEntry, Wallet } from '@prisma/client';
+import { LedgerEntry, Wallet, WalletBalanceAudit } from '@prisma/client';
 
 export interface WalletResponse {
   id: string;
@@ -55,6 +55,70 @@ export function toLedgerEntryResponse(entry: LedgerEntry): LedgerEntryResponse {
     balanceAfterMinor: entry.balanceAfterMinor,
     sessionId: entry.sessionId,
     note: entry.note,
+    createdAt: entry.createdAt,
+  };
+}
+
+/** One wallet whose current balance doesn't sum-match its own ledger
+ * history — see migration 20261002150000_add_wallet_balance_audit and the
+ * `wallet_ledger_reconciliation` view it adds. Assembled in
+ * WalletService.getUnreconciledWallets from a raw query + a batched user
+ * lookup, not a single Prisma model, so there's no toXResponse mapper for
+ * it (unlike every other response here) — just the shared shape. */
+export interface UnreconciledWalletResponse {
+  walletId: string;
+  userId: string | null;
+  balanceMinor: number;
+  ledgerSumMinor: number;
+  unexplainedMinor: number;
+  user: { id: string; displayName: string; uniqueId: string | null; role: string } | null;
+}
+
+/** One row of the DB-trigger-populated wallet_balance_audit trail for a
+ * single wallet. No application code ever writes this table — only the
+ * `wallet_balance_audit_trigger` / `wallet_balance_audit_insert_trigger`
+ * triggers do, on every change to Wallet.balanceMinor. `changedBy` is the
+ * Postgres role that made the change — today that's always the same
+ * shared role for the live backend AND any human with direct DB access
+ * (see the migration's own doc comment), so it identifies "something
+ * touched the DB directly," not who. */
+export interface WalletBalanceAuditResponse {
+  id: string;
+  walletId: string;
+  userId: string | null;
+  oldBalanceMinor: number;
+  newBalanceMinor: number;
+  deltaMinor: number;
+  changedBy: string;
+  clientAddr: string | null;
+  applicationName: string | null;
+  /** Postgres transaction id (txid_current()) — returned as a string since
+   * it's a Prisma BigInt and the default JSON serializer can't handle a
+   * raw bigint. */
+  txid: string;
+  /** False whenever this change didn't land alongside a ledger_entries row
+   * for the exact same delta within 10 seconds — the signature of a direct
+   * SQL edit that bypassed WalletService, as opposed to a real credit/debit
+   * path (which always writes both rows in the same DB transaction). */
+  matchedLedgerEntry: boolean;
+  createdAt: Date;
+}
+
+export function toWalletBalanceAuditResponse(
+  entry: WalletBalanceAudit,
+): WalletBalanceAuditResponse {
+  return {
+    id: entry.id,
+    walletId: entry.walletId,
+    userId: entry.userId,
+    oldBalanceMinor: entry.oldBalanceMinor,
+    newBalanceMinor: entry.newBalanceMinor,
+    deltaMinor: entry.deltaMinor,
+    changedBy: entry.changedBy,
+    clientAddr: entry.clientAddr,
+    applicationName: entry.applicationName,
+    txid: entry.txid.toString(),
+    matchedLedgerEntry: entry.matchedLedgerEntry,
     createdAt: entry.createdAt,
   };
 }

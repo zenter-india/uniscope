@@ -51,6 +51,23 @@ export class WalletController {
     return this.walletService.adjustBalanceAdmin(userId, dto);
   }
 
+  /** Every wallet whose balance doesn't sum-match its own ledger history —
+   * see migration 20261002150000_add_wallet_balance_audit. */
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @Get('admin/reconciliation')
+  getReconciliation() {
+    return this.walletService.getUnreconciledWallets();
+  }
+
+  /** The DB-trigger-populated balance-change trail for one user's wallet. */
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @Get('admin/:userId/audit')
+  getBalanceAuditAdmin(@Param('userId') userId: string) {
+    return this.walletService.getBalanceAuditTrail(userId);
+  }
+
   // ── user-facing ───────────────────────────────────────────────────────
 
   @UseGuards(JwtAuthGuard)

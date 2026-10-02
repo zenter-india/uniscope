@@ -7,7 +7,8 @@ import { BanToggle, VerificationDocButton } from './interactive';
 import { DangerZone } from './DangerZone';
 import { EditUserPanel } from './EditUserPanel';
 import { WalletPanel } from './WalletPanel';
-import type { LedgerPage } from './actions';
+import { WalletAuditPanel } from './WalletAuditPanel';
+import type { LedgerPage, WalletBalanceAuditEntry } from './actions';
 
 interface AdminUserDetail {
   id: string;
@@ -169,7 +170,7 @@ export default async function UserDetailPage({
 }) {
   const { id } = await params;
 
-  const [email, user, ledger] = await Promise.all([
+  const [email, user, ledger, walletAudit] = await Promise.all([
     getAdminEmail(),
     backendFetch<AdminUserDetail>(`/users/${id}`).catch((e) => {
       if (e instanceof BackendApiError && e.status === 404) return null;
@@ -178,6 +179,7 @@ export default async function UserDetailPage({
     backendFetch<LedgerPage>(`/wallet/admin/${id}/ledger?limit=15`).catch(
       () => null,
     ),
+    backendFetch<WalletBalanceAuditEntry[]>(`/wallet/admin/${id}/audit`).catch(() => []),
   ]);
 
   if (!user) notFound();
@@ -373,6 +375,8 @@ export default async function UserDetailPage({
           initialEntries={ledger?.data ?? []}
           initialCursor={ledger?.nextCursor ?? null}
         />
+
+        <WalletAuditPanel entries={walletAudit} />
 
         <Section title="Free tier">
           <Field

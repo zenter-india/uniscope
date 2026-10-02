@@ -79,6 +79,20 @@ export interface LedgerPage {
   nextCursor: string | null;
 }
 
+/** One row of the DB-trigger-populated balance audit trail — see migration
+ * 20261002150000_add_wallet_balance_audit. Only ever non-empty when
+ * something touched this wallet's balance_minor directly, outside the
+ * app's own ledger-writing code paths. */
+export interface WalletBalanceAuditEntry {
+  id: string;
+  oldBalanceMinor: number;
+  newBalanceMinor: number;
+  deltaMinor: number;
+  changedBy: string;
+  matchedLedgerEntry: boolean;
+  createdAt: string;
+}
+
 /** Next page of a user's wallet ledger. Drives the "Load more" in WalletPanel. */
 export async function loadMoreLedger(
   userId: string,

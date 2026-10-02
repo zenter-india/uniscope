@@ -33,8 +33,11 @@ import { VerifyAppleTopupDto } from './dto/verify-apple-topup.dto.js';
 import { VerifyTopupDto } from './dto/verify-topup.dto.js';
 import {
   LedgerEntryResponse,
+  UnreconciledWalletResponse,
+  WalletBalanceAuditResponse,
   WalletResponse,
   toLedgerEntryResponse,
+  toWalletBalanceAuditResponse,
   toWalletResponse,
 } from './wallet-response.js';
 
@@ -358,6 +361,62 @@ export class WalletService {
     });
 
     return toWalletResponse(await this.requireWallet(userId));
+  }
+
+  /** ADMIN — every wallet whose current balance doesn't sum-match its own
+   * ledger history, read straight from the `wallet_ledger_reconciliation`
+   * view (plain SQL, not a Prisma model — see migration
+   * 20261002150000_add_wallet_balance_audit). Enriched with enough user
+   * info to recognize who it is in one batched query, same pattern as
+   * attachCounterparts above. Built after a real incident where a wallet's
+   * balance had no ledger trail and no way to surface it short of a raw
+   * SQL query — this is that query, wired into the admin panel. */
+  async getUnreconciledWallets(): Promise<UnreconciledWalletResponse[]> {
+    const rows = await this.prisma.$queryRaw<
+      {
+        wallet_id: string;
+        user_id: string | null;
+        balance_minor: number;
+        ledger_sum_minor: bigint;
+        unexplained_minor: bigint;
+      }[]
+    >`SELECT wallet_id, user_id, balance_minor, ledger_sum_minor, unexplained_minor
+      FROM wallet_ledger_reconciliation`;
+
+    const userIds = [
+      ...new Set(rows.map((r) => r.user_id).filter((id): id is string => id != null)),
+    ];
+    const users = userIds.length
+      ? await this.prisma.user.findMany({
+          where: { id: { in: userIds } },
+          select: { id: true, displayName: true, uniqueId: true, role: true },
+        })
+      : [];
+    const byId = new Map(users.map((u) => [u.id, u]));
+
+    return rows.map((r) => ({
+      walletId: r.wallet_id,
+      userId: r.user_id,
+      balanceMinor: r.balance_minor,
+      ledgerSumMinor: Number(r.ledger_sum_minor),
+      unexplainedMinor: Number(r.unexplained_minor),
+      user: r.user_id ? (byId.get(r.user_id) ?? null) : null,
+    }));
+  }
+
+  /** ADMIN — the full wallet_balance_audit trail for one user's wallet,
+   * newest first. Populated solely by the DB triggers on `wallets`; no
+   * application code writes this table (see the migration's own doc
+   * comment). 404s (via requireWallet's 400, same as every other admin
+   * wallet route) on a userId with no wallet. */
+  async getBalanceAuditTrail(userId: string): Promise<WalletBalanceAuditResponse[]> {
+    const wallet = await this.requireWallet(userId);
+    const rows = await this.prisma.walletBalanceAudit.findMany({
+      where: { walletId: wallet.id },
+      orderBy: { createdAt: 'desc' },
+      take: 200,
+    });
+    return rows.map(toWalletBalanceAuditResponse);
   }
 
   /**
