@@ -382,17 +382,20 @@ class _ChoiceDistributionCardState extends State<ChoiceDistributionCard> {
         ? 0
         : ((positiveCount / total) * 100).round();
 
-    // "0% would recommend this college" reads as a verdict against the
-    // college even when nobody actually said no — e.g. every reviewer picked
-    // "Depends on what they're looking for" (real screenshot, 100% Depends).
-    // That's both misleading and a defamation exposure (a college could
-    // argue Uniscope is publishing false information). When no one gave a
-    // positive answer to the recommend question, headline the answer people
-    // actually gave instead of a bare 0%. Scoped to this question: its four
-    // answers include two neutral-to-positive ones and a neutral "Depends",
-    // so "0% positive" is routinely a mislabel of a mixed/neutral result.
+    // "0% get paid on time every month" / "0% have hostel access in good or
+    // average condition" reads as a verdict against the college even when
+    // nobody actually said that — e.g. every reviewer picked "Not applicable
+    // / No stipend provided" (real screenshot: Stipend, Hostel & Residential
+    // Facility and Hostel Safety & Comfort all showed a misleading 0%
+    // alongside an "NA"/neutral majority answer). Originally scoped to just
+    // "Would You Recommend?" (its own defamation-exposure concern — a
+    // college could argue Uniscope is publishing false information), then
+    // generalised to every choice card per explicit follow-up request after
+    // the same misleading-0% pattern was reported on these other three.
+    // When no one gave a positive answer, headline the answer people
+    // actually gave instead of a bare 0%.
     String headline = '$positivePct% ${spec.positivePhrase}';
-    if (spec.field == 'wouldRecommend' && total > 0 && positivePct == 0) {
+    if (total > 0 && positivePct == 0) {
       ReviewChoiceOption? top;
       var topCount = 0;
       for (final o in spec.options) {
