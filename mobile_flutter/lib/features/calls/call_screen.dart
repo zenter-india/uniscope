@@ -104,6 +104,11 @@ class _CallScreenState extends ConsumerState<CallScreen> {
   String? _errorMessage;
   Session? _session;
   RtcEngine? _engine;
+  /// The exact handler instance passed to _engine's registerEventHandler —
+  /// kept so it can be unregistered with the matching instance before
+  /// teardown (see _releaseEngine). A fresh instance is created per
+  /// _joinAgoraChannel call/retry attempt.
+  RtcEngineEventHandler? _eventHandler;
   ErrorCodeType? _lastSurfacedAgoraError;
   Timer? _pollTimer;
   Timer? _tickTimer;
@@ -240,8 +245,17 @@ class _CallScreenState extends ConsumerState<CallScreen> {
     _pollTimer?.cancel();
     _tickTimer?.cancel();
     _noAnswerTimer?.cancel();
-    _engine?.leaveChannel();
-    _engine?.release();
+    // Detach before kicking off the (necessarily un-awaited, since dispose()
+    // is sync) teardown — see _releaseEngine's doc comment. Usually a no-op
+    // here, since _endLocally() already tore the engine down when the call
+    // actually ended; this is the defensive fallback for a dispose that
+    // happens without _endLocally ever running (e.g. backing out pre-connect).
+    final staleEngine = _engine;
+    final staleHandler = _eventHandler;
+    _engine = null;
+    _eventHandler = null;
+    // ignore: unawaited_futures
+    _releaseEngine(staleEngine, staleHandler);
     _stopCallService();
     _callChannel.setMethodCallHandler(null);
     if (widget.inOverlay) {
@@ -450,7 +464,9 @@ class _CallScreenState extends ConsumerState<CallScreen> {
         // recommend "provide valid parameters and rejoin the channel",
         // i.e. a retry is the documented recovery, not just a timeout one.
         final stale = _engine;
+        final staleHandler = _eventHandler;
         _engine = null;
+        _eventHandler = null;
         // Real device report (2026-09-15, both Android and iOS, stuck on
         // "Connecting…" for 60+ seconds — well past the 20s×2 this loop
         // should ever take): the engine that just failed to join is, by
@@ -461,17 +477,9 @@ class _CallScreenState extends ConsumerState<CallScreen> {
         // or the final throw, leaving _phase on .connecting indefinitely on
         // both platforms (this is pure Dart logic, not native-per-platform
         // code, which is why it hit both the same way). Bounded so a stuck
-        // teardown can never block the retry/failure path again.
-        try {
-          await (() async {
-            await stale?.leaveChannel();
-            await stale?.release();
-          })().timeout(const Duration(seconds: 5));
-        } catch (_) {
-          // Best-effort teardown of the abandoned attempt — nothing to
-          // recover into if this itself fails or times out; proceed to the
-          // next attempt (or the final throw) regardless.
-        }
+        // teardown can never block the retry/failure path again. Now also
+        // unregisters the stale handler first — see _releaseEngine.
+        await _releaseEngine(stale, staleHandler);
         if (attempt == 2) {
           throw Exception(
             'Could not connect to the call — check your connection and try again.',
@@ -513,8 +521,13 @@ class _CallScreenState extends ConsumerState<CallScreen> {
     // after joined.future resolves (i.e. onJoinChannelSuccess fired), at
     // which point the channel is fully established and the audio session
     // is live. Confirmed via device crash report 2026-09-30.
-    engine.registerEventHandler(
-      RtcEngineEventHandler(
+    // Captured in a local (and mirrored onto _eventHandler) so teardown can
+    // unregister this exact instance later — see _releaseEngine. Per
+    // Agora's own RtcEngine.release() doc, calling release() immediately
+    // after leaveChannel() without first letting the SDK actually finish
+    // leaving (and with a stale handler still registered to receive native
+    // callbacks) is a real, documented footgun — this is the fix for that.
+    final handler = RtcEngineEventHandler(
         onJoinChannelSuccess: (connection, elapsed) {
           if (!joined.isCompleted) joined.complete();
         },
@@ -609,8 +622,9 @@ class _CallScreenState extends ConsumerState<CallScreen> {
             joined.completeError(Exception('Agora error: ${err.name} ($msg)'));
           }
         },
-      ),
     );
+    _eventHandler = handler;
+    engine.registerEventHandler(handler);
     await engine.joinChannelWithUserAccount(
       token: creds.token,
       channelId: creds.channelName,
@@ -632,6 +646,44 @@ class _CallScreenState extends ConsumerState<CallScreen> {
       smooth: 3,
       reportVad: false,
     );
+  }
+
+  /// Tears down one Agora engine instance: unregisters its event handler
+  /// first (so no more native callbacks reach a widget/State that may
+  /// already be gone), then awaits leaveChannel() before release(), the
+  /// whole sequence bounded by a timeout so a stuck teardown can never hang
+  /// the caller. Per Agora's own leaveChannel() doc comment: "This method
+  /// is asynchronous. When the method returns, the user has not actually
+  /// left the channel yet... If you call the release method immediately
+  /// after this method, the SDK will not trigger the onLeaveChannel
+  /// callback" — i.e. calling release() right after leaveChannel() without
+  /// waiting for it to actually finish is a real, Agora-documented footgun.
+  /// Every call site in this file used to do exactly that: fire-and-forget,
+  /// back-to-back, un-awaited, with no unregister — a real device test
+  /// (2026-10-01/02) found a deterministic native SIGSEGV
+  /// (EXC_BAD_ACCESS/DartWorker, inside AgoraRtcWrapper) on iOS that this
+  /// pattern is consistent with (Agora support's own guidance, same date,
+  /// pointed at exactly this: "verify that no UI or Dart code is accessing
+  /// Agora SDK objects after they are released"). Callers detach the engine
+  /// from `_engine`/`_eventHandler` *before* calling this, so nothing else
+  /// in the State can reach a half-torn-down engine even though a
+  /// synchronous `dispose()` can't itself await the native cleanup
+  /// finishing — this is the best achievable fix given that constraint.
+  Future<void> _releaseEngine(
+    RtcEngine? engine,
+    RtcEngineEventHandler? handler,
+  ) async {
+    if (engine == null) return;
+    try {
+      if (handler != null) engine.unregisterEventHandler(handler);
+      await (() async {
+        await engine.leaveChannel();
+        await engine.release();
+      })().timeout(const Duration(seconds: 5));
+    } catch (_) {
+      // Best-effort — this instance is already detached from this State's
+      // fields either way, so a failure here can't leave anything reachable.
+    }
   }
 
   Future<void> _poll() async {
@@ -940,7 +992,17 @@ class _CallScreenState extends ConsumerState<CallScreen> {
   void _endLocally() {
     _pollTimer?.cancel();
     _tickTimer?.cancel();
-    _engine?.leaveChannel();
+    // Detach before tearing down — see _releaseEngine's doc comment. This
+    // used to be a bare fire-and-forget `_engine?.leaveChannel()` with no
+    // release() at all (the engine sat around, un-released, until dispose()
+    // eventually ran its own unsafe back-to-back leaveChannel+release) —
+    // now the real teardown for "the call just ended" happens right here.
+    final staleEngine = _engine;
+    final staleHandler = _eventHandler;
+    _engine = null;
+    _eventHandler = null;
+    // ignore: unawaited_futures
+    _releaseEngine(staleEngine, staleHandler);
     _stopCallService();
     if (mounted) setState(() => _phase = _Phase.ended);
     _syncPresence();
