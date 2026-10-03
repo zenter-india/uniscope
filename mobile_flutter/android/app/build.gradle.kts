@@ -122,7 +122,7 @@ flutter {
     source = "../.."
 }
 
-// KNOWN UPSTREAM ISSUE (agora_rtc_engine 6.5.4, reproduced on 6.6.3 too):
+// KNOWN UPSTREAM ISSUE (agora_rtc_engine 6.5.4, reproduced on 6.6.3/6.6.4 too):
 // io.agora.rtc:iris-rtc and io.agora.rtc:agora-special-full both declare
 // manifest package "io.agora.rtc". AGP 8.3+ hard-fails the build on that
 // duplicate namespace. The two .so files are mutually dependent (iris-rtc's
