@@ -154,6 +154,19 @@ export function EditUserPanel({ user }: { user: EditableUser }) {
       setError('Nothing changed.');
       return;
     }
+    // Belt-and-suspenders: the checkbox below is already disabled whenever
+    // verificationStatus isn't VERIFIED, so this shouldn't be reachable
+    // through normal use -- but adminUpdateUser itself applies both fields
+    // with no server-side link between them (by design, see its own doc
+    // comment), so this is the one place left to catch it before a save
+    // request goes out at all. This is exactly the gap that let a real
+    // unverified mentor ("Spidey", 2026-10-02) end up bookable for calls.
+    if (form.isMentorAvailable && form.verificationStatus !== 'VERIFIED') {
+      setError(
+        'Cannot enable "Accepting call bookings" while verification status is not VERIFIED.',
+      );
+      return;
+    }
     if ('displayName' in patch && !String(patch.displayName ?? '').trim()) {
       setError('Display name cannot be empty.');
       return;
@@ -270,13 +283,25 @@ export function EditUserPanel({ user }: { user: EditableUser }) {
             <Row label="Specialty">{T('specialty')}</Row>
             <Row label="Languages (comma-separated)">{T('languages')}</Row>
             <Row label="Available days (comma-separated)">{T('availableDays')}</Row>
-            <label className="flex items-center gap-2 text-sm text-zinc-700 dark:text-zinc-300">
+            <label
+              className={`flex items-center gap-2 text-sm ${
+                form.verificationStatus === 'VERIFIED'
+                  ? 'text-zinc-700 dark:text-zinc-300'
+                  : 'text-zinc-400 dark:text-zinc-600'
+              }`}
+            >
               <input
                 type="checkbox"
                 checked={form.isMentorAvailable as boolean}
+                disabled={form.verificationStatus !== 'VERIFIED'}
                 onChange={(e) => set('isMentorAvailable', e.target.checked)}
               />
               Accepting call bookings
+              {form.verificationStatus !== 'VERIFIED' && (
+                <span className="text-xs italic">
+                  (requires Verification status = VERIFIED)
+                </span>
+              )}
             </label>
             <Row label="Bio">
               <textarea
