@@ -18,7 +18,6 @@ import '../reports/report_sheet.dart';
 import '../sessions/call_time_windows.dart' show isScheduledCallJoinableNow;
 import '../sessions/rate_mentor_sheet.dart';
 import '../sessions/session_status.dart';
-import '../wallet/wallet_screen.dart' show walletBalanceProvider;
 import 'call_overlay.dart';
 
 /// Hand-rolled native channels, real on both platforms — `uniscope/permissions`
@@ -117,12 +116,11 @@ class _CallScreenState extends ConsumerState<CallScreen> {
   bool _muted = false;
   bool _speakerOn = true;
   bool _remoteJoinedChannel = false;
-  bool _extendDialogShowing = false;
-  // The "1 minute left" extend prompt + warning beep fire once per slot;
-  // this latches after they do and re-arms once the remaining time climbs
-  // well clear of the warning window again (i.e. after an extension).
+  // The "1 minute left" warning beep fires once per slot; this latches
+  // after it does and re-arms if the remaining time ever climbs back well
+  // clear of the warning window (defensive — nothing currently extends a
+  // slot, so this shouldn't happen in practice).
   bool _oneMinWarned = false;
-  DateTime? _slotExpiredAt;
   Timer? _noAnswerTimer;
   // Live call-quality signals from the Agora engine (see _joinAgoraChannel's
   // event handler). _reconnecting flips true on a dropped connection and
@@ -790,40 +788,27 @@ class _CallScreenState extends ConsumerState<CallScreen> {
     final remaining = Duration(seconds: slotSeconds) - elapsed;
 
     if (remaining.isNegative) {
-      _slotExpiredAt ??= DateTime.now();
-      // Fallback — if the 1-min warning was missed (app backgrounded through
-      // it), surface the prompt now rather than only enforcing the cutoff.
-      if (_isAspirant && !_extendDialogShowing && !_oneMinWarned) {
-        _oneMinWarned = true;
-        _extendDialogShowing = true;
-        _showExtendDialog();
-      }
-      // Hard cutoff: if the aspirant hasn't responded within 20s of slot
-      // expiry, end the call automatically — see product decision on
-      // "hard cut off with a popup to continue".
-      final graceElapsed = DateTime.now().difference(_slotExpiredAt!);
-      if (_isAspirant &&
-          graceElapsed > const Duration(seconds: 20) &&
-          _phase == _Phase.active) {
+      // The booked slot is up — end the call automatically, straight to the
+      // ended/review screen for both parties. No "continue another N
+      // minutes?" prompt: per explicit product decision (2026-10-03,
+      // reversing the earlier "call overrun" design — see CLAUDE.md), a
+      // call that reaches its slot time just ends, with nothing to decide
+      // mid-call and no interactive option that could itself fail (the
+      // old extend button's `POST .../call/extend` could 409 on an
+      // already-settled session, surfacing a raw DioException on screen).
+      if (_isAspirant && _phase == _Phase.active) {
         _endCall(reason: 'SLOT_EXPIRED');
       }
-    } else {
-      _slotExpiredAt = null;
-      // 1 minute left: a warning beep + the extend prompt, once per slot.
-      if (remaining.inSeconds <= 60 &&
-          _isAspirant &&
-          !_oneMinWarned &&
-          !_extendDialogShowing &&
-          _phase == _Phase.active) {
-        _oneMinWarned = true;
-        _extendDialogShowing = true;
-        _beepWarning();
-        _showExtendDialog();
-      } else if (remaining.inSeconds > 75) {
-        // Comfortably past the warning window (e.g. after an extension) —
-        // re-arm so the next slot's final minute warns again.
-        _oneMinWarned = false;
-      }
+    } else if (remaining.inSeconds <= 60 &&
+        _isAspirant &&
+        !_oneMinWarned &&
+        _phase == _Phase.active) {
+      // A quiet, informational heads-up only — no interactive choice (that
+      // was the removed "Continue" option).
+      _oneMinWarned = true;
+      _beepWarning();
+    } else if (remaining.inSeconds > 75) {
+      _oneMinWarned = false;
     }
   }
 
@@ -837,75 +822,6 @@ class _CallScreenState extends ConsumerState<CallScreen> {
       await _callChannel.invokeMethod('beep');
     } catch (_) {
       // ignore — the haptic already fired
-    }
-  }
-
-  Future<void> _showExtendDialog() async {
-    if (!mounted) return;
-    final extendCost = slotUniminutes(kCallSlotMinutes.first);
-    // Await the balance rather than reading whatever's cached — otherwise on
-    // the first extend of a call (provider not yet resolved) the "You have N
-    // available" line silently drops off.
-    int? available;
-    try {
-      available = (await ref.read(
-        walletBalanceProvider.future,
-      )).availableUniminutes;
-    } catch (_) {
-      available = ref
-          .read(walletBalanceProvider)
-          .asData
-          ?.value
-          .availableUniminutes;
-    }
-    if (!mounted) return;
-    final continue_ = await showDialog<bool>(
-      context: context,
-      barrierDismissible: false,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('1 minute left'),
-        content: Text(
-          // Extension length always mirrors the shortest bookable slot
-          // (kCallSlotMinutes.first) and is billed at that slot's price —
-          // see SessionsService.extendCall.
-          'Your slot is almost up. Continue for another '
-          '${kCallSlotMinutes.first} minutes? '
-          '${uniminutesLabel(extendCost)} will be deducted.'
-          '${available == null ? '' : ' You have ${uniminutesLabel(available)} available.'}',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: const Text('End Call'),
-          ),
-          FilledButton(
-            style: FilledButton.styleFrom(backgroundColor: AppColors.primary),
-            onPressed: () => Navigator.of(dialogContext).pop(true),
-            child: const Text('Continue'),
-          ),
-        ],
-      ),
-    );
-    _extendDialogShowing = false;
-    _slotExpiredAt = null;
-
-    if (!mounted) return;
-    if (continue_ == true) {
-      try {
-        final updated = await ref
-            .read(sessionsApiProvider)
-            .extendCall(widget.sessionId);
-        if (!mounted) return;
-        // Re-arm the 1-min warning for the freshly-added block.
-        _oneMinWarned = false;
-        setState(() => _session = updated);
-      } catch (e) {
-        if (!mounted) return;
-        showAppSnackBar(context, 'Could not extend call: $e');
-        _endCall(reason: 'SLOT_EXPIRED');
-      }
-    } else {
-      _endCall(reason: 'SLOT_EXPIRED');
     }
   }
 
