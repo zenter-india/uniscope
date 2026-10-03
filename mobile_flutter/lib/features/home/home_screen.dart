@@ -13,6 +13,7 @@ import '../auth/auth_background.dart' show authBrandTeal;
 import '../calls/call_overlay.dart' show CallOverlayController;
 import '../mentors/mentor_list_screen.dart';
 import '../profile/profile_options.dart' show kStreamOptions;
+import '../sessions/call_time_windows.dart' show isScheduledCallJoinableNow;
 import '../sessions/session_list_screen.dart' show sessionsListProvider;
 import '../universities/stream_visuals.dart';
 import '../universities/university_list_screen.dart'
@@ -812,8 +813,23 @@ class _ActiveSessionRow extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final isCall = session.type == 'AUDIO_CALL';
+    // Real incident, 2026-10-03: this used to be true for any
+    // accepted/ringing/in-progress call with no regard for a scheduled
+    // call's confirmedFor — every other Join button in the app (session
+    // list, the call-request watcher) checks isScheduledCallJoinableNow
+    // first; this one didn't, so tapping it could open the call screen
+    // hours before a scheduled slot, which then self-timed-out as a
+    // NO_ANSWER a couple of minutes later. See the 2026-10-03 CLAUDE.md
+    // entry for the full incident writeup.
+    final joinableNow = isCall
+        ? isScheduledCallJoinableNow(
+            session.confirmedFor,
+            alreadyLive: session.status == SessionStatus.inProgress,
+          )
+        : false;
     final joinable =
         isCall &&
+        joinableNow &&
         (session.status == SessionStatus.accepted ||
             session.status == SessionStatus.ringing ||
             session.status == SessionStatus.inProgress);

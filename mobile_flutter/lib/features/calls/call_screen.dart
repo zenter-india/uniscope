@@ -15,6 +15,7 @@ import '../../core/theme/app_theme.dart';
 import '../../state/auth_controller.dart';
 import '../../widgets/app_widgets.dart';
 import '../reports/report_sheet.dart';
+import '../sessions/call_time_windows.dart' show isScheduledCallJoinableNow;
 import '../sessions/rate_mentor_sheet.dart';
 import '../sessions/session_status.dart';
 import '../wallet/wallet_screen.dart' show walletBalanceProvider;
@@ -734,7 +735,19 @@ class _CallScreenState extends ConsumerState<CallScreen> {
       // realistically needs time to notice the notification, unlock, and
       // tap Join; the backend no-show sweep (half the slot) is the real
       // backstop, this just avoids an indefinite ring if that's far off.
-      _noAnswerTimer ??= Timer(const Duration(seconds: 90), _noAnswer);
+      //
+      // Only arm it once the call is actually due, though — real incident,
+      // 2026-10-03: this used to fire unconditionally, so if this screen
+      // ever ended up open for a call scheduled far in the future (e.g. via
+      // a Join button elsewhere that didn't check the early-join window —
+      // see the home_screen.dart fix from the same incident), it would
+      // give up and end the call as NO_ANSWER ~90s later, hours or days
+      // before the booked slot. A scheduled call legitimately waiting for
+      // a future confirmedFor should rely on the backend's own
+      // confirmedFor-aware sweep, not this screen's short give-up clock.
+      if (isScheduledCallJoinableNow(session.confirmedFor)) {
+        _noAnswerTimer ??= Timer(const Duration(seconds: 90), _noAnswer);
+      }
     }
   }
 
