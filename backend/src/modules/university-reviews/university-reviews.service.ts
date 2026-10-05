@@ -95,6 +95,17 @@ export class UniversityReviewsService {
         data: { authorId, universityId, ...dto },
         include: { author: { select: { role: true } } },
       });
+      // Finishing the review gate is the last step of mentor onboarding
+      // (verified -> review submitted): switch call bookings on for them
+      // automatically. It then stays as-is until the mentor turns it off.
+      // Reviews are write-once, so this fires at most once per mentor and
+      // never re-enables a mentor who later opts out.
+      if (user.role === UserRole.MENTOR && user.profile?.mustReviewCollege) {
+        await this.prisma.userProfile.update({
+          where: { userId: authorId },
+          data: { isMentorAvailable: true, availabilitySetAt: new Date() },
+        });
+      }
       return toUniversityReviewResponse(review);
     } catch (err) {
       if (this.isUniqueConstraintError(err)) {

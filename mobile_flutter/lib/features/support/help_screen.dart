@@ -955,8 +955,8 @@ const _kArticles = <_HelpArticle>[
     answer:
         'No. It’s your stated intent to take call bookings, not a live '
         'presence indicator. It only controls whether aspirants can book a '
-        'call with you — you stay listed and reachable by chat either way — '
-        'and it switches itself off after 24 hours so a forgotten toggle '
-        'can’t make a stale promise.',
+        'call with you — you stay listed and reachable by chat either way. '
+        'It switches on automatically once you’re verified and have '
+        'reviewed your college, and stays on until you turn it off yourself.',
   ),
 ];
