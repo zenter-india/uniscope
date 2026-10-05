@@ -933,9 +933,9 @@ const _kArticles = <_HelpArticle>[
     question: 'Why can’t I turn on "Accepting calls"?',
     answer:
         'Three things need to be true: your account is a mentor account, '
-        'your ID is verified, and — for mentors verified recently — you’ve '
-        'posted a review of your own college. Once all three are met the '
-        'switch unlocks.',
+        'your ID is verified, and you’ve posted a review of your own '
+        'college. Once you submit that review, the switch turns on '
+        'automatically.',
   ),
   _HelpArticle(
     category: _HelpCategory.mentor,

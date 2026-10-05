@@ -100,7 +100,7 @@ export class UniversityReviewsService {
       // automatically. It then stays as-is until the mentor turns it off.
       // Reviews are write-once, so this fires at most once per mentor and
       // never re-enables a mentor who later opts out.
-      if (user.role === UserRole.MENTOR && user.profile?.mustReviewCollege) {
+      if (user.role === UserRole.MENTOR) {
         await this.prisma.userProfile.update({
           where: { userId: authorId },
           data: { isMentorAvailable: true, availabilitySetAt: new Date() },

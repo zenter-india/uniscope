@@ -461,11 +461,10 @@ export class UsersService {
       // Mentors onboarded under the college-review requirement (see
       // VerificationService.review — `mustReviewCollege`) must post a
       // review of their own college before they can accept call bookings.
-      // Existing verified mentors have the flag false and skip this.
+      // Applies to every mentor (2026-10-05: no longer only those verified after the requirement was introduced).
       if (
         dto.isMentorAvailable &&
-        user.profile?.mustReviewCollege &&
-        !(await this.hasReviewedOwnCollege(userId, user.profile))
+        !(await this.hasReviewedOwnCollege(userId, user.profile ?? { universityId: null }))
       ) {
         throw new BadRequestException(
           'Add a review of your college before you can accept call bookings — it only takes a minute and helps future applicants.',
