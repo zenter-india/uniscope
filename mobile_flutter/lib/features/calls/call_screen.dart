@@ -109,7 +109,11 @@ class _CallScreenState extends ConsumerState<CallScreen> {
   Timer? _tickTimer;
   Duration _elapsed = Duration.zero;
   bool _muted = false;
-  bool _speakerOn = true;
+  // Default to the earpiece, not the loudspeaker (per explicit request —
+  // the speaker was on by default on both platforms). setDefaultAudioRouteTo
+  // Speakerphone(false) below is what actually sets the native default;
+  // this just keeps the toggle button's initial state in sync with it.
+  bool _speakerOn = false;
   bool _remoteJoinedChannel = false;
   bool _extendDialogShowing = false;
   // The "1 minute left" extend prompt + warning beep fire once per slot;
@@ -503,7 +507,7 @@ class _CallScreenState extends ConsumerState<CallScreen> {
     final joined = Completer<void>();
     await engine.initialize(RtcEngineContext(appId: creds.appId));
     await engine.enableAudio();
-    await engine.setDefaultAudioRouteToSpeakerphone(true);
+    await engine.setDefaultAudioRouteToSpeakerphone(false);
     // enableAudioVolumeIndication is intentionally NOT called here.
     // On iOS, calling it before joinChannelWithUserAccount crashes the
     // Agora iris SDK with EXC_BAD_ACCESS (code=1, address=0xfa) in
