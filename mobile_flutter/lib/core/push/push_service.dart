@@ -187,24 +187,35 @@ class PushService {
 
     final messaging = FirebaseMessaging.instance;
     await messaging.requestPermission(alert: true, badge: true, sound: true);
-    // iOS only (no-op on Android). Firebase's iOS SDK registers its own
-    // UNUserNotificationCenterDelegate, and that delegate's `willPresent`
-    // handler governs whether ANY notification — not just a raw incoming
-    // push, but also one WE show locally via flutter_local_notifications'
-    // own `.show()` below — is actually allowed to display while the app is
-    // in the foreground. Without this call, Firebase's default is to
-    // withhold foreground presentation entirely: the notification is still
-    // created and delivered, just never rendered as a banner, with no error
-    // anywhere — exactly the reported symptom ("only shows when the app is
-    // out, not when it's open"). This has nothing to do with `onMessage`
-    // itself firing correctly (it already does, confirmed by the in-app
-    // list updating) — it's purely about whether iOS is willing to paint a
-    // banner for it at that exact moment.
-    await messaging.setForegroundNotificationPresentationOptions(
-      alert: true,
-      badge: true,
-      sound: true,
-    );
+    // iOS only (no-op on Android). REVERTED 2026-10-06 — this was the real
+    // cause of the "dual notification when the app is open" report on
+    // build 32, confirmed by reading firebase_messaging's own iOS plugin
+    // source (FLTFirebaseMessagingPlugin.m's `willPresentNotification`):
+    // this option doesn't gate whether WE are allowed to show our own local
+    // notification below — `willPresentNotification` fires independently
+    // for (a) the raw incoming FCM push the moment it arrives, AND (b) the
+    // local notification `_showLocalNotification` schedules via
+    // flutter_local_notifications' `.show()` a moment later (that call goes
+    // through the exact same UNUserNotificationCenter API, so it re-enters
+    // the same delegate callback). With this option ON, iOS auto-presents
+    // (a) as a banner *in addition to* us presenting (b) ourselves — two
+    // banners for one logical push, every time, only in the foreground
+    // (background/terminated delivery never goes through onMessage at all,
+    // matching the report being foreground-only). Leaving this off (the
+    // default) means iOS silently withholds (a)'s own auto-presentation —
+    // which is exactly what we want, since `_showLocalNotification` below
+    // is the one deliberate display path. If the foreground banner ever
+    // goes missing again, the fix is NOT to re-enable this — check instead
+    // that (1) notification permission was actually granted and (2)
+    // `_showLocalNotification` itself is being reached (it's gated on
+    // `message.notification` being non-null, so a data-only payload
+    // legitimately shows nothing here by design).
+    //
+    // await messaging.setForegroundNotificationPresentationOptions(
+    //   alert: true,
+    //   badge: true,
+    //   sound: true,
+    // );
 
     messaging.onTokenRefresh.listen(_upload);
 
