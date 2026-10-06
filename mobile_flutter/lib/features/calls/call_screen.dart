@@ -120,6 +120,21 @@ class _CallScreenState extends ConsumerState<CallScreen> {
   // this just keeps the toggle button's initial state in sync with it.
   bool _speakerOn = false;
   bool _remoteJoinedChannel = false;
+  // Set once _applySessionUpdate ever sees the session genuinely reach
+  // IN_PROGRESS (both parties dual-confirmed) — a direct, local record that
+  // this call really connected, independent of whatever `_session.status`
+  // happens to read by the time the ended screen renders. Added 2026-10-06
+  // after a real report: a fully-connected call ("we talked") landed on the
+  // ended screen with the "Rate your Mentor" button missing. `endCall`'s
+  // catch-block fallback (the `findById` refetch after a failed end-call
+  // POST) can itself fail and leave `_session` on a stale pre-connect
+  // status, or a backend-side race can do the same — the exact mechanism
+  // was never pinned down, but the fix doesn't need to be: if this device
+  // itself observed IN_PROGRESS, the call happened, full stop, so the
+  // aspirant should always be able to rate it regardless of what the final
+  // fetched `_session.status` says. See the `completed` computation in
+  // `_buildBody`'s `_Phase.ended` case.
+  bool _wasConnected = false;
   // The "1 minute left" warning beep fires once per slot; this latches
   // after it does and re-arms if the remaining time ever climbs back well
   // clear of the warning window (defensive — nothing currently extends a
@@ -710,6 +725,7 @@ class _CallScreenState extends ConsumerState<CallScreen> {
     }
 
     if (session.status == SessionStatus.inProgress) {
+      _wasConnected = true;
       _noAnswerTimer?.cancel();
       _noAnswerTimer = null;
       if (_phase != _Phase.active) {
@@ -1188,7 +1204,15 @@ class _CallScreenState extends ConsumerState<CallScreen> {
         );
       case _Phase.ended:
         final s = _session;
-        final completed = s?.status == SessionStatus.completed;
+        // `_wasConnected` (set the moment this device itself observed the
+        // session reach IN_PROGRESS) is OR'd in alongside the backend's own
+        // `status` — see its doc comment: a real call this device just
+        // lived through must always be rateable, even if the final fetched
+        // `_session` happens to be stale (a failed end-call POST whose
+        // fallback refetch also failed, or any other backend-side race
+        // between hangup and this screen rendering).
+        final completed =
+            s?.status == SessionStatus.completed || _wasConnected;
         return _EndedView(
           session: s,
           isMentor: !_isAspirant,
