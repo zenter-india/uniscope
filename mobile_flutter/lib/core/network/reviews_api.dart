@@ -3,6 +3,27 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'dio_client.dart';
 
+/// `POST /reviews` 409s a second attempt for the same session (unique
+/// `sessionId` on `MentorReview`) — most likely a duplicate submit (a fast
+/// double-tap, or a retry after a slow/lost response whose first attempt
+/// actually landed), not a genuinely new failure. The caller's review IS
+/// posted either way, so this is treated as success upstream, same as the
+/// equivalent `AlreadyReviewedException` for college reviews.
+class AlreadyReviewedException implements Exception {
+  const AlreadyReviewedException();
+}
+
+/// `POST /reviews` 403s with "You can only review a completed session" when
+/// the backend's own record of the session's status hasn't (yet) caught up
+/// with what the call screen locally knows happened — e.g. the call just
+/// ended and the terminal status is still settling. Distinguished from the
+/// generic rethrow so the caller can show a clear "try again in a moment"
+/// message instead of the raw backend sentence, which reads like a genuine
+/// rejection rather than a timing race.
+class ReviewSessionNotCompletedException implements Exception {
+  const ReviewSessionNotCompletedException();
+}
+
 class MentorReview {
   const MentorReview({
     required this.id,
@@ -35,20 +56,47 @@ class ReviewsApi {
 
   final Dio _dio;
 
+  /// On failure, rethrows with the backend's own message where possible
+  /// (same pattern as `UniversityReviewsApi.create`) — a bare
+  /// `DioException.toString()` previously surfaced as a raw, unfriendly
+  /// dump on the call-ended screen's "Rate this call" sheet (real device
+  /// report, 2026-10-06).
   Future<MentorReview> create({
     required String sessionId,
     required int rating,
     String? comment,
   }) async {
-    final res = await _dio.post<Map<String, dynamic>>(
-      '/reviews',
-      data: {
-        'sessionId': sessionId,
-        'rating': rating,
-        if (comment != null && comment.isNotEmpty) 'comment': comment,
-      },
-    );
-    return MentorReview.fromJson(res.data!);
+    try {
+      final res = await _dio.post<Map<String, dynamic>>(
+        '/reviews',
+        data: {
+          'sessionId': sessionId,
+          'rating': rating,
+          if (comment != null && comment.isNotEmpty) 'comment': comment,
+        },
+      );
+      return MentorReview.fromJson(res.data!);
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 409) {
+        throw const AlreadyReviewedException();
+      }
+      final data = e.response?.data;
+      String? msg;
+      if (data is Map) {
+        final m = data['message'];
+        if (m is String) {
+          msg = m;
+        } else if (m is List && m.isNotEmpty) {
+          msg = m.join('\n');
+        }
+      }
+      if (e.response?.statusCode == 403 &&
+          msg == 'You can only review a completed session') {
+        throw const ReviewSessionNotCompletedException();
+      }
+      if (msg != null && msg.isNotEmpty) throw Exception(msg);
+      rethrow;
+    }
   }
 
   Future<List<MentorReview>> listForMentor(String mentorId) async {

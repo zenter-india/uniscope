@@ -54,9 +54,32 @@ class _RateMentorSheetState extends ConsumerState<RateMentorSheet> {
           );
       if (!mounted) return;
       Navigator.of(context).pop(true);
+    } on AlreadyReviewedException {
+      // A review for this session already exists — most likely a duplicate
+      // submit (double-tap, or a retry after a slow/lost response whose
+      // first attempt actually landed). The caller's review IS posted
+      // either way, so this reads as success, not an error.
+      if (!mounted) return;
+      Navigator.of(context).pop(true);
+    } on ReviewSessionNotCompletedException {
+      // The backend's own record of this session hasn't caught up with
+      // "it just ended" yet (real device report, 2026-10-06 — tapping
+      // "Rate this call" right after a call ended threw a raw 403). This is
+      // a timing race, not a genuine rejection, so say so plainly instead
+      // of the backend's own confusing sentence.
+      if (!mounted) return;
+      showAppSnackBar(
+        context,
+        "This call hasn't finished processing yet — give it a moment and try again.",
+      );
+      setState(() => _submitting = false);
     } catch (e) {
       if (!mounted) return;
-      showAppSnackBar(context, 'Could not submit review: $e');
+      var message = e.toString();
+      if (message.startsWith('Exception: ')) {
+        message = message.substring('Exception: '.length);
+      }
+      showAppSnackBar(context, 'Could not submit review: $message');
       setState(() => _submitting = false);
     }
   }
