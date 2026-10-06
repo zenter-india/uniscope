@@ -100,7 +100,10 @@ class _HelpScreenState extends ConsumerState<HelpScreen> {
               _ArticleCard(articles: matches),
           ] else ...[
             const _TechDifficultyBlock(),
-            const SizedBox(height: AppSpacing.lg),
+            // No extra SizedBox here — _SectionLabel already carries its own
+            // top padding (AppSpacing.lg), same as every other section label
+            // in this list; stacking another one doubled the gap below the
+            // "Report a technical issue" button (device screenshot report).
             const _SectionLabel('Browse topics'),
             _TopicsCard(
               topics: topics,
