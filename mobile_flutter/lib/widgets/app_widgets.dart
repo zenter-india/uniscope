@@ -1,8 +1,12 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 
+import '../core/network/university_reviews_api.dart'
+    show hasReviewedUniversityProvider;
+import '../core/network/users_api.dart' show myProfileProvider, usersApiProvider;
 import '../core/theme/app_theme.dart';
 import '../features/notifications/notifications_screen.dart';
 
@@ -637,4 +641,135 @@ class GradientAppBar extends AppBar {
          iconTheme: const IconThemeData(color: AppColors.textPrimary),
          actionsIconTheme: const IconThemeData(color: AppColors.textPrimary),
        );
+}
+
+/// Compact, label-free companion to the mentor's "Accepting call bookings"
+/// switch — meant for the Home/Sessions app bars so a mentor can flip call
+/// bookings on/off without leaving whatever tab they're on. Shares the same
+/// `isMentorAvailable` state and the same verification/college-review gates
+/// as the full switch (profile_home_screen.dart's `MentorAvailabilityCard`)
+/// but never repeats its explanatory copy — doubling that text in every app
+/// bar would be noise, and a bare always-visible toggle already risks
+/// reading as an "online" presence dot, which this app deliberately never
+/// implies (see the mentor-availability rule in CLAUDE.md). When a gate is
+/// open, tapping jumps to where it's actually resolved (Verification, or
+/// Profile for the college-review prompt) instead of duplicating that flow
+/// here.
+class MentorCallsToggleChip extends ConsumerStatefulWidget {
+  const MentorCallsToggleChip({super.key});
+
+  @override
+  ConsumerState<MentorCallsToggleChip> createState() =>
+      _MentorCallsToggleChipState();
+}
+
+class _MentorCallsToggleChipState
+    extends ConsumerState<MentorCallsToggleChip> {
+  bool _saving = false;
+
+  Future<void> _toggle(bool value) async {
+    setState(() => _saving = true);
+    try {
+      await ref.read(usersApiProvider).updateProfile(isMentorAvailable: value);
+      ref.invalidate(myProfileProvider);
+    } catch (e) {
+      if (!mounted) return;
+      final message = e is DioException
+          ? ((e.response?.data as Map<String, dynamic>?)?['message']
+                    as String? ??
+                e.message ??
+                '$e')
+          : '$e';
+      showAppSnackBar(context, message);
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final profileAsync = ref.watch(myProfileProvider);
+    final profile = profileAsync.hasValue ? profileAsync.value : null;
+    // Nothing to show before the profile has loaded once — avoids a flash
+    // of the "unverified" state for an already-verified mentor.
+    if (profile == null) return const SizedBox.shrink();
+
+    final isVerified = profile.verificationStatus == 'VERIFIED';
+    final needsCollegeReview =
+        profile.mustReviewCollege && profile.universityId != null;
+    final hasReviewedCollege = needsCollegeReview
+        ? (ref
+                  .watch(hasReviewedUniversityProvider(profile.universityId!))
+                  .asData
+                  ?.value ??
+              false)
+        : true;
+    final reviewGateOpen =
+        isVerified && needsCollegeReview && !hasReviewedCollege;
+    final isAvailable = isVerified && profile.isMentorAvailable;
+
+    final onTap = _saving
+        ? null
+        : !isVerified
+        ? () => context.go('/profile/verification')
+        : reviewGateOpen
+        // The full explanation + "Review your college" link live on
+        // Profile — this chip doesn't try to open that flow inline.
+        ? () => context.go('/profile')
+        : () => _toggle(!isAvailable);
+
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(10, 4, 8, 4),
+        decoration: BoxDecoration(
+          color: AppColors.primaryLight,
+          borderRadius: BorderRadius.circular(999),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text(
+              'Calls',
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: AppFont.bold,
+                color: AppColors.primaryDark,
+              ),
+            ),
+            const SizedBox(width: 6),
+            if (_saving)
+              const SizedBox(
+                width: 16,
+                height: 16,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              )
+            else
+              Container(
+                width: 28,
+                height: 16,
+                decoration: BoxDecoration(
+                  color: isAvailable ? AppColors.primary : AppColors.border,
+                  borderRadius: BorderRadius.circular(999),
+                ),
+                child: Align(
+                  alignment: isAvailable
+                      ? Alignment.centerRight
+                      : Alignment.centerLeft,
+                  child: Container(
+                    width: 12,
+                    height: 12,
+                    margin: const EdgeInsets.symmetric(horizontal: 2),
+                    decoration: const BoxDecoration(
+                      color: Colors.white,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
 }

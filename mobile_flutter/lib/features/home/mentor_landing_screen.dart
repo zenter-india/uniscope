@@ -88,6 +88,8 @@ class MentorLandingScreen extends ConsumerWidget {
                                 ),
                               ),
                             ),
+                            const MentorCallsToggleChip(),
+                            const SizedBox(width: AppSpacing.sm),
                             if (displayName != null)
                               Material(
                                 color: Colors.transparent,
