@@ -936,9 +936,6 @@ Future<void> showMentorSessionHistory(
   required List<Session> sessions,
   bool isMentor = false,
 }) {
-  final sorted =
-      sessions.where((s) => s.type == 'AUDIO_CALL').toList()
-        ..sort((a, b) => b.requestedAt.compareTo(a.requestedAt));
   return showModalBottomSheet(
     context: context,
     backgroundColor: AppColors.surface,
@@ -979,22 +976,51 @@ Future<void> showMentorSessionHistory(
             ),
           ),
           Expanded(
-            child: sorted.isEmpty
-                ? const EmptyState(
-                    icon: Icons.call_rounded,
-                    title: 'No calls yet',
-                    message:
-                        'Past audio calls with this person will show up here.',
-                  )
-                : ListView.builder(
-                    controller: scrollController,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: AppSpacing.md,
-                    ),
-                    itemCount: sorted.length,
-                    itemBuilder: (_, i) =>
-                        _SessionCard(session: sorted[i], isMentor: isMentor),
-                  ),
+            // Was a plain list captured once when the sheet opened — an
+            // accept/confirm-time action taken from inside this sheet
+            // (_SessionActions below) invalidates sessionsListProvider, but
+            // that invalidation never reached this already-open sheet's
+            // static snapshot, so the card kept showing its pre-accept
+            // state ("Confirm a time") and a second tap re-sent an already-
+            // accepted session's accept request, surfacing the backend's
+            // "Cannot accept a session in status ACCEPTED" as a raw error
+            // (device report). Now watches the live list directly, falling
+            // back to the snapshot passed in only while that watch hasn't
+            // resolved yet, so the sheet reflects the real session state the
+            // instant an action inside it completes.
+            child: Consumer(
+              builder: (context, ref, _) {
+                final live = ref
+                    .watch(sessionsListProvider)
+                    .maybeWhen(data: (all) => all, orElse: () => sessions);
+                final counterpart = live.where(
+                  (s) => isMentor
+                      ? s.aspirantId == mentorId
+                      : s.mentorId == mentorId,
+                );
+                final sorted =
+                    counterpart.where((s) => s.type == 'AUDIO_CALL').toList()
+                      ..sort((a, b) => b.requestedAt.compareTo(a.requestedAt));
+                return sorted.isEmpty
+                    ? const EmptyState(
+                        icon: Icons.call_rounded,
+                        title: 'No calls yet',
+                        message:
+                            'Past audio calls with this person will show up here.',
+                      )
+                    : ListView.builder(
+                        controller: scrollController,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: AppSpacing.md,
+                        ),
+                        itemCount: sorted.length,
+                        itemBuilder: (_, i) => _SessionCard(
+                          session: sorted[i],
+                          isMentor: isMentor,
+                        ),
+                      );
+              },
+            ),
           ),
         ],
       ),
