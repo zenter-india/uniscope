@@ -1150,9 +1150,22 @@ class _CollegeSpotlightCard extends StatelessWidget {
                         color: AppColors.textSecondary,
                       ),
                     ),
-                    if (university.rating != null) ...[
-                      const SizedBox(height: 6),
-                      Row(
+                    const SizedBox(height: 6),
+                    // This rail is pinned to a fixed height (172, sized for
+                    // the worst-case 2-line name — see the doc comment
+                    // above), so every card is force-stretched to fill it
+                    // regardless of its own content height. Omitting the
+                    // rating row outright for an unreviewed college (the
+                    // alphabetical fallback, see home_screen's own
+                    // top-for-mentor fallback note) left a big empty gap
+                    // between the subtitle and the card's bottom edge —
+                    // reported from a screenshot. Reserving the row's exact
+                    // height either way (invisible rather than omitted) keeps
+                    // every card the same visual height with no leftover
+                    // dead space.
+                    Opacity(
+                      opacity: university.rating == null ? 0 : 1,
+                      child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           const Icon(
@@ -1162,7 +1175,9 @@ class _CollegeSpotlightCard extends StatelessWidget {
                           ),
                           const SizedBox(width: 2),
                           Text(
-                            '${university.rating!.toStringAsFixed(1)} (${university.reviewCount})',
+                            university.rating == null
+                                ? '0.0 (0)'
+                                : '${university.rating!.toStringAsFixed(1)} (${university.reviewCount})',
                             style: const TextStyle(
                               fontSize: 11,
                               fontWeight: AppFont.semibold,
@@ -1171,7 +1186,7 @@ class _CollegeSpotlightCard extends StatelessWidget {
                           ),
                         ],
                       ),
-                    ],
+                    ),
                   ],
                 ),
               ),
