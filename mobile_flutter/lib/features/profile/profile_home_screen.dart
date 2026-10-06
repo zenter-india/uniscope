@@ -545,8 +545,8 @@ class _MentorAvailabilityCardState
                       'college to unlock paid call bookings — it takes a minute '
                       'and helps future applicants.'
                 : 'Students can always message you. This only controls whether '
-                      'they can book a paid call. It switches itself off after 24 '
-                      'hours so your profile never promises a call you forgot about.',
+                      'they can book a paid call — it stays on until you turn '
+                      'it off yourself.',
             style: const TextStyle(
               fontSize: AppFont.xs,
               color: AppColors.textSecondary,

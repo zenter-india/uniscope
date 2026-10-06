@@ -109,9 +109,10 @@ class Mentor {
   final MentorUniversity? university;
 
   /// Whether the mentor is currently accepting call bookings — their own
-  /// stated intent, which the backend auto-expires after 24h. This is NOT
-  /// real-time presence: never label it "online". Doesn't affect whether
-  /// they're listed, and chat is always allowed regardless.
+  /// stated intent, sticky until they flip it themselves (the earlier 24h
+  /// auto-expiry was removed backend-side 2026-10-05, see CLAUDE.md). This
+  /// is NOT real-time presence: never label it "online". Doesn't affect
+  /// whether they're listed, and chat is always allowed regardless.
   final bool isAvailable;
 
   /// True only once an admin has approved this mentor's ID verification.
