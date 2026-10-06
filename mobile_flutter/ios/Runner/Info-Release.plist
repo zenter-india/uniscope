@@ -90,23 +90,31 @@
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>remote-notification</string>
-		<!-- `audio` was removed 2026-09-16 per Apple App Store rejection
-		     (Guideline 2.5.4): review found no feature that actually needs
-		     persistent background audio, and iOS call audio was never
-		     confirmed working end-to-end anyway (see the "iOS call audio
-		     investigated" note elsewhere in this file — real audio issues
-		     were still unresolved when this was added). If background-audio
-		     continuity during a backgrounded call is ever built and verified
-		     working on a real device, re-add `audio` here (and to the
-		     Debug-only Info.plist) and reply to Apple's review message with
-		     a screen recording proving it, per their own instructions.
-		     Deliberately NOT adding `voip` either — real PushKit/CallKit
+		<!-- `audio` re-added 2026-10-03. It was removed 2026-09-16 per an
+		     Apple App Store rejection (Guideline 2.5.4: no feature that
+		     actually needed persistent background audio, and iOS call
+		     audio was never confirmed working end-to-end at the time).
+		     That condition no longer holds: the real cause of every iOS
+		     call failure was found and fixed the same day (Xcode's
+		     Release-archive STRIP_STYLE=all was deleting the
+		     Iris_InitDartApiDL symbol agora_rtc_engine's Dart<->native
+		     bridge needs at runtime — see "iOS published to App Store,
+		     call still not connecting" in CLAUDE.md for the full
+		     root-cause writeup), and a real two-device call was confirmed
+		     connecting on real iPhones the same day. Audio calls are this
+		     app's core paid feature, which is now a genuine, demonstrable
+		     justification for this background mode. Before re-submitting
+		     for review, record a short screen recording showing a live
+		     call continuing while the app is backgrounded, per Apple's own
+		     rejection instructions, and attach it to the resolution reply.
+		     Deliberately still NOT adding `voip` — real PushKit/CallKit
 		     ringing was built and then reverted (2026-09-13, client decision:
 		     no ringtone needed, plain notifications are enough) specifically
 		     because it required declaring FOREGROUND_SERVICE_PHONE_CALL on
 		     Android, which triggers extra Play Console review burden the
 		     client didn't want. Apple review also rejects a `voip`
 		     declaration with no real VoIP-push usage behind it. -->
+		<string>audio</string>
 	</array>
 </dict>
 </plist>

@@ -7,18 +7,22 @@ import 'package:flutter/material.dart';
 
 import 'theme/app_theme.dart';
 
-/// Audio calls are temporarily off on both Android and iOS (2026-10-02) —
-/// real connectivity issues are still being root-caused on both platforms
-/// (see the "iOS call-path review" / Agora investigation notes in
-/// CLAUDE.md). Booking **or joining** a call reliably fails or goes silent,
-/// so instead of shipping a broken call flow, both [showCallRequestSheet]
-/// and [CallOverlayController.open] show a "coming back soon" notice
-/// instead of starting/opening the call.
+/// Audio calls were temporarily off on both Android and iOS (2026-10-02)
+/// while real connectivity issues were root-caused. **Re-enabled
+/// 2026-10-03** — the real cause was found and fixed the same day (a
+/// stripped runtime symbol in Xcode's Release-archive build, not an Agora
+/// SDK bug at all; see "iOS published to App Store, call still not
+/// connecting" in CLAUDE.md for the full writeup), and confirmed via a real
+/// two-device call connecting cleanly on real iPhones. Android has not yet
+/// been retested with this exact fix — the change that mattered
+/// (`STRIP_STYLE`) is iOS-only (`project.pbxproj`'s `OTHER_LDFLAGS`), so
+/// Android's own call path is unaffected either way, but a real-device
+/// confirmation on Android is still outstanding.
 ///
 /// Deliberately scoped to calls only — chat and browsing mentors/colleges
-/// are completely unaffected. Flip this back to `true` once calls are
-/// confirmed working end-to-end on a real device.
-const bool kCallBookingEnabled = false;
+/// are completely unaffected. Flip back to `false` if either platform
+/// regresses.
+const bool kCallBookingEnabled = true;
 
 /// Wallet top-up is temporarily off too (2026-10-02, per explicit
 /// instruction alongside the calls pause) — the balance a top-up buys is

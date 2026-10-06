@@ -15,9 +15,9 @@ import '../../core/theme/app_theme.dart';
 import '../../state/auth_controller.dart';
 import '../../widgets/app_widgets.dart';
 import '../reports/report_sheet.dart';
+import '../sessions/call_time_windows.dart' show isScheduledCallJoinableNow;
 import '../sessions/rate_mentor_sheet.dart';
 import '../sessions/session_status.dart';
-import '../wallet/wallet_screen.dart' show walletBalanceProvider;
 import 'call_overlay.dart';
 
 /// Hand-rolled native channels, real on both platforms — `uniscope/permissions`
@@ -104,6 +104,11 @@ class _CallScreenState extends ConsumerState<CallScreen> {
   String? _errorMessage;
   Session? _session;
   RtcEngine? _engine;
+  /// The exact handler instance passed to _engine's registerEventHandler —
+  /// kept so it can be unregistered with the matching instance before
+  /// teardown (see _releaseEngine). A fresh instance is created per
+  /// _joinAgoraChannel call/retry attempt.
+  RtcEngineEventHandler? _eventHandler;
   ErrorCodeType? _lastSurfacedAgoraError;
   Timer? _pollTimer;
   Timer? _tickTimer;
@@ -115,12 +120,11 @@ class _CallScreenState extends ConsumerState<CallScreen> {
   // this just keeps the toggle button's initial state in sync with it.
   bool _speakerOn = false;
   bool _remoteJoinedChannel = false;
-  bool _extendDialogShowing = false;
-  // The "1 minute left" extend prompt + warning beep fire once per slot;
-  // this latches after they do and re-arms once the remaining time climbs
-  // well clear of the warning window again (i.e. after an extension).
+  // The "1 minute left" warning beep fires once per slot; this latches
+  // after it does and re-arms if the remaining time ever climbs back well
+  // clear of the warning window (defensive — nothing currently extends a
+  // slot, so this shouldn't happen in practice).
   bool _oneMinWarned = false;
-  DateTime? _slotExpiredAt;
   Timer? _noAnswerTimer;
   // Live call-quality signals from the Agora engine (see _joinAgoraChannel's
   // event handler). _reconnecting flips true on a dropped connection and
@@ -244,8 +248,17 @@ class _CallScreenState extends ConsumerState<CallScreen> {
     _pollTimer?.cancel();
     _tickTimer?.cancel();
     _noAnswerTimer?.cancel();
-    _engine?.leaveChannel();
-    _engine?.release();
+    // Detach before kicking off the (necessarily un-awaited, since dispose()
+    // is sync) teardown — see _releaseEngine's doc comment. Usually a no-op
+    // here, since _endLocally() already tore the engine down when the call
+    // actually ended; this is the defensive fallback for a dispose that
+    // happens without _endLocally ever running (e.g. backing out pre-connect).
+    final staleEngine = _engine;
+    final staleHandler = _eventHandler;
+    _engine = null;
+    _eventHandler = null;
+    // ignore: unawaited_futures
+    _releaseEngine(staleEngine, staleHandler);
     _stopCallService();
     _callChannel.setMethodCallHandler(null);
     if (widget.inOverlay) {
@@ -454,7 +467,9 @@ class _CallScreenState extends ConsumerState<CallScreen> {
         // recommend "provide valid parameters and rejoin the channel",
         // i.e. a retry is the documented recovery, not just a timeout one.
         final stale = _engine;
+        final staleHandler = _eventHandler;
         _engine = null;
+        _eventHandler = null;
         // Real device report (2026-09-15, both Android and iOS, stuck on
         // "Connecting…" for 60+ seconds — well past the 20s×2 this loop
         // should ever take): the engine that just failed to join is, by
@@ -465,17 +480,9 @@ class _CallScreenState extends ConsumerState<CallScreen> {
         // or the final throw, leaving _phase on .connecting indefinitely on
         // both platforms (this is pure Dart logic, not native-per-platform
         // code, which is why it hit both the same way). Bounded so a stuck
-        // teardown can never block the retry/failure path again.
-        try {
-          await (() async {
-            await stale?.leaveChannel();
-            await stale?.release();
-          })().timeout(const Duration(seconds: 5));
-        } catch (_) {
-          // Best-effort teardown of the abandoned attempt — nothing to
-          // recover into if this itself fails or times out; proceed to the
-          // next attempt (or the final throw) regardless.
-        }
+        // teardown can never block the retry/failure path again. Now also
+        // unregisters the stale handler first — see _releaseEngine.
+        await _releaseEngine(stale, staleHandler);
         if (attempt == 2) {
           throw Exception(
             'Could not connect to the call — check your connection and try again.',
@@ -517,8 +524,13 @@ class _CallScreenState extends ConsumerState<CallScreen> {
     // after joined.future resolves (i.e. onJoinChannelSuccess fired), at
     // which point the channel is fully established and the audio session
     // is live. Confirmed via device crash report 2026-09-30.
-    engine.registerEventHandler(
-      RtcEngineEventHandler(
+    // Captured in a local (and mirrored onto _eventHandler) so teardown can
+    // unregister this exact instance later — see _releaseEngine. Per
+    // Agora's own RtcEngine.release() doc, calling release() immediately
+    // after leaveChannel() without first letting the SDK actually finish
+    // leaving (and with a stale handler still registered to receive native
+    // callbacks) is a real, documented footgun — this is the fix for that.
+    final handler = RtcEngineEventHandler(
         onJoinChannelSuccess: (connection, elapsed) {
           if (!joined.isCompleted) joined.complete();
         },
@@ -613,8 +625,9 @@ class _CallScreenState extends ConsumerState<CallScreen> {
             joined.completeError(Exception('Agora error: ${err.name} ($msg)'));
           }
         },
-      ),
     );
+    _eventHandler = handler;
+    engine.registerEventHandler(handler);
     await engine.joinChannelWithUserAccount(
       token: creds.token,
       channelId: creds.channelName,
@@ -636,6 +649,44 @@ class _CallScreenState extends ConsumerState<CallScreen> {
       smooth: 3,
       reportVad: false,
     );
+  }
+
+  /// Tears down one Agora engine instance: unregisters its event handler
+  /// first (so no more native callbacks reach a widget/State that may
+  /// already be gone), then awaits leaveChannel() before release(), the
+  /// whole sequence bounded by a timeout so a stuck teardown can never hang
+  /// the caller. Per Agora's own leaveChannel() doc comment: "This method
+  /// is asynchronous. When the method returns, the user has not actually
+  /// left the channel yet... If you call the release method immediately
+  /// after this method, the SDK will not trigger the onLeaveChannel
+  /// callback" — i.e. calling release() right after leaveChannel() without
+  /// waiting for it to actually finish is a real, Agora-documented footgun.
+  /// Every call site in this file used to do exactly that: fire-and-forget,
+  /// back-to-back, un-awaited, with no unregister — a real device test
+  /// (2026-10-01/02) found a deterministic native SIGSEGV
+  /// (EXC_BAD_ACCESS/DartWorker, inside AgoraRtcWrapper) on iOS that this
+  /// pattern is consistent with (Agora support's own guidance, same date,
+  /// pointed at exactly this: "verify that no UI or Dart code is accessing
+  /// Agora SDK objects after they are released"). Callers detach the engine
+  /// from `_engine`/`_eventHandler` *before* calling this, so nothing else
+  /// in the State can reach a half-torn-down engine even though a
+  /// synchronous `dispose()` can't itself await the native cleanup
+  /// finishing — this is the best achievable fix given that constraint.
+  Future<void> _releaseEngine(
+    RtcEngine? engine,
+    RtcEngineEventHandler? handler,
+  ) async {
+    if (engine == null) return;
+    try {
+      if (handler != null) engine.unregisterEventHandler(handler);
+      await (() async {
+        await engine.leaveChannel();
+        await engine.release();
+      })().timeout(const Duration(seconds: 5));
+    } catch (_) {
+      // Best-effort — this instance is already detached from this State's
+      // fields either way, so a failure here can't leave anything reachable.
+    }
   }
 
   Future<void> _poll() async {
@@ -686,7 +737,19 @@ class _CallScreenState extends ConsumerState<CallScreen> {
       // realistically needs time to notice the notification, unlock, and
       // tap Join; the backend no-show sweep (half the slot) is the real
       // backstop, this just avoids an indefinite ring if that's far off.
-      _noAnswerTimer ??= Timer(const Duration(seconds: 90), _noAnswer);
+      //
+      // Only arm it once the call is actually due, though — real incident,
+      // 2026-10-03: this used to fire unconditionally, so if this screen
+      // ever ended up open for a call scheduled far in the future (e.g. via
+      // a Join button elsewhere that didn't check the early-join window —
+      // see the home_screen.dart fix from the same incident), it would
+      // give up and end the call as NO_ANSWER ~90s later, hours or days
+      // before the booked slot. A scheduled call legitimately waiting for
+      // a future confirmedFor should rely on the backend's own
+      // confirmedFor-aware sweep, not this screen's short give-up clock.
+      if (isScheduledCallJoinableNow(session.confirmedFor)) {
+        _noAnswerTimer ??= Timer(const Duration(seconds: 90), _noAnswer);
+      }
     }
   }
 
@@ -729,40 +792,27 @@ class _CallScreenState extends ConsumerState<CallScreen> {
     final remaining = Duration(seconds: slotSeconds) - elapsed;
 
     if (remaining.isNegative) {
-      _slotExpiredAt ??= DateTime.now();
-      // Fallback — if the 1-min warning was missed (app backgrounded through
-      // it), surface the prompt now rather than only enforcing the cutoff.
-      if (_isAspirant && !_extendDialogShowing && !_oneMinWarned) {
-        _oneMinWarned = true;
-        _extendDialogShowing = true;
-        _showExtendDialog();
-      }
-      // Hard cutoff: if the aspirant hasn't responded within 20s of slot
-      // expiry, end the call automatically — see product decision on
-      // "hard cut off with a popup to continue".
-      final graceElapsed = DateTime.now().difference(_slotExpiredAt!);
-      if (_isAspirant &&
-          graceElapsed > const Duration(seconds: 20) &&
-          _phase == _Phase.active) {
+      // The booked slot is up — end the call automatically, straight to the
+      // ended/review screen for both parties. No "continue another N
+      // minutes?" prompt: per explicit product decision (2026-10-03,
+      // reversing the earlier "call overrun" design — see CLAUDE.md), a
+      // call that reaches its slot time just ends, with nothing to decide
+      // mid-call and no interactive option that could itself fail (the
+      // old extend button's `POST .../call/extend` could 409 on an
+      // already-settled session, surfacing a raw DioException on screen).
+      if (_isAspirant && _phase == _Phase.active) {
         _endCall(reason: 'SLOT_EXPIRED');
       }
-    } else {
-      _slotExpiredAt = null;
-      // 1 minute left: a warning beep + the extend prompt, once per slot.
-      if (remaining.inSeconds <= 60 &&
-          _isAspirant &&
-          !_oneMinWarned &&
-          !_extendDialogShowing &&
-          _phase == _Phase.active) {
-        _oneMinWarned = true;
-        _extendDialogShowing = true;
-        _beepWarning();
-        _showExtendDialog();
-      } else if (remaining.inSeconds > 75) {
-        // Comfortably past the warning window (e.g. after an extension) —
-        // re-arm so the next slot's final minute warns again.
-        _oneMinWarned = false;
-      }
+    } else if (remaining.inSeconds <= 60 &&
+        _isAspirant &&
+        !_oneMinWarned &&
+        _phase == _Phase.active) {
+      // A quiet, informational heads-up only — no interactive choice (that
+      // was the removed "Continue" option).
+      _oneMinWarned = true;
+      _beepWarning();
+    } else if (remaining.inSeconds > 75) {
+      _oneMinWarned = false;
     }
   }
 
@@ -776,75 +826,6 @@ class _CallScreenState extends ConsumerState<CallScreen> {
       await _callChannel.invokeMethod('beep');
     } catch (_) {
       // ignore — the haptic already fired
-    }
-  }
-
-  Future<void> _showExtendDialog() async {
-    if (!mounted) return;
-    final extendCost = slotUniminutes(kCallSlotMinutes.first);
-    // Await the balance rather than reading whatever's cached — otherwise on
-    // the first extend of a call (provider not yet resolved) the "You have N
-    // available" line silently drops off.
-    int? available;
-    try {
-      available = (await ref.read(
-        walletBalanceProvider.future,
-      )).availableUniminutes;
-    } catch (_) {
-      available = ref
-          .read(walletBalanceProvider)
-          .asData
-          ?.value
-          .availableUniminutes;
-    }
-    if (!mounted) return;
-    final continue_ = await showDialog<bool>(
-      context: context,
-      barrierDismissible: false,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('1 minute left'),
-        content: Text(
-          // Extension length always mirrors the shortest bookable slot
-          // (kCallSlotMinutes.first) and is billed at that slot's price —
-          // see SessionsService.extendCall.
-          'Your slot is almost up. Continue for another '
-          '${kCallSlotMinutes.first} minutes? '
-          '${uniminutesLabel(extendCost)} will be deducted.'
-          '${available == null ? '' : ' You have ${uniminutesLabel(available)} available.'}',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: const Text('End Call'),
-          ),
-          FilledButton(
-            style: FilledButton.styleFrom(backgroundColor: AppColors.primary),
-            onPressed: () => Navigator.of(dialogContext).pop(true),
-            child: const Text('Continue'),
-          ),
-        ],
-      ),
-    );
-    _extendDialogShowing = false;
-    _slotExpiredAt = null;
-
-    if (!mounted) return;
-    if (continue_ == true) {
-      try {
-        final updated = await ref
-            .read(sessionsApiProvider)
-            .extendCall(widget.sessionId);
-        if (!mounted) return;
-        // Re-arm the 1-min warning for the freshly-added block.
-        _oneMinWarned = false;
-        setState(() => _session = updated);
-      } catch (e) {
-        if (!mounted) return;
-        showAppSnackBar(context, 'Could not extend call: $e');
-        _endCall(reason: 'SLOT_EXPIRED');
-      }
-    } else {
-      _endCall(reason: 'SLOT_EXPIRED');
     }
   }
 
@@ -944,7 +925,17 @@ class _CallScreenState extends ConsumerState<CallScreen> {
   void _endLocally() {
     _pollTimer?.cancel();
     _tickTimer?.cancel();
-    _engine?.leaveChannel();
+    // Detach before tearing down — see _releaseEngine's doc comment. This
+    // used to be a bare fire-and-forget `_engine?.leaveChannel()` with no
+    // release() at all (the engine sat around, un-released, until dispose()
+    // eventually ran its own unsafe back-to-back leaveChannel+release) —
+    // now the real teardown for "the call just ended" happens right here.
+    final staleEngine = _engine;
+    final staleHandler = _eventHandler;
+    _engine = null;
+    _eventHandler = null;
+    // ignore: unawaited_futures
+    _releaseEngine(staleEngine, staleHandler);
     _stopCallService();
     if (mounted) setState(() => _phase = _Phase.ended);
     _syncPresence();

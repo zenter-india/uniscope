@@ -933,9 +933,9 @@ const _kArticles = <_HelpArticle>[
     question: 'Why can’t I turn on "Accepting calls"?',
     answer:
         'Three things need to be true: your account is a mentor account, '
-        'your ID is verified, and — for mentors verified recently — you’ve '
-        'posted a review of your own college. Once all three are met the '
-        'switch unlocks.',
+        'your ID is verified, and you’ve posted a review of your own '
+        'college. Once you submit that review, the switch turns on '
+        'automatically.',
   ),
   _HelpArticle(
     category: _HelpCategory.mentor,
@@ -955,8 +955,8 @@ const _kArticles = <_HelpArticle>[
     answer:
         'No. It’s your stated intent to take call bookings, not a live '
         'presence indicator. It only controls whether aspirants can book a '
-        'call with you — you stay listed and reachable by chat either way — '
-        'and it switches itself off after 24 hours so a forgotten toggle '
-        'can’t make a stale promise.',
+        'call with you — you stay listed and reachable by chat either way. '
+        'It switches on automatically once you’re verified and have '
+        'reviewed your college, and stays on until you turn it off yourself.',
   ),
 ];

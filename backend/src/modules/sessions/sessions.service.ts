@@ -1243,6 +1243,26 @@ export class SessionsService {
    * "joined" call to hang this off of the way confirmJoined settles a
    * successful connect.
    */
+  /** The grace clock runs from whichever is later: the mentor's accept, or
+   * the confirmed slot start. A call confirmed for a slot days ahead must
+   * survive untouched until that slot actually arrives. Shared between the
+   * sweep's initial (possibly-batch-stale) filter and resolveNoShow's own
+   * fresh re-check immediately before it actually resolves anything — see
+   * resolveNoShow's doc comment for why that second check exists. */
+  private noShowDeadlineMs(candidate: {
+    respondedAt: Date | null;
+    confirmedFor: Date | null;
+    callSlotMinutes: number | null;
+  }): number | null {
+    if (!candidate.respondedAt || !candidate.callSlotMinutes) return null;
+    const graceMs = candidate.callSlotMinutes * CALL_GRACE_FRACTION * 60_000;
+    const clockStart = Math.max(
+      candidate.respondedAt.getTime(),
+      candidate.confirmedFor?.getTime() ?? 0,
+    );
+    return clockStart + graceMs;
+  }
+
   @Interval(NO_SHOW_SWEEP_INTERVAL_MS)
   async sweepCallNoShows(): Promise<void> {
     const candidates = await this.prisma.session.findMany({
@@ -1261,16 +1281,25 @@ export class SessionsService {
 
     const now = Date.now();
     for (const candidate of candidates) {
-      if (!candidate.respondedAt || !candidate.callSlotMinutes) continue;
-      const graceMs = candidate.callSlotMinutes * CALL_GRACE_FRACTION * 60_000;
-      // The grace clock runs from whichever is later: the mentor's accept,
-      // or the confirmed slot start. A call confirmed for a slot days ahead
-      // must survive untouched until that slot actually arrives.
-      const clockStart = Math.max(
-        candidate.respondedAt.getTime(),
-        candidate.confirmedFor?.getTime() ?? 0,
+      const deadline = this.noShowDeadlineMs(candidate);
+      if (deadline === null || now < deadline) continue;
+
+      // Real incident, 2026-10-03: a session confirmed ~27 minutes in the
+      // future was resolved as NO_ANSWER only ~3 minutes after accept —
+      // i.e. as if confirmedFor had been ignored — despite this exact
+      // comparison reading correctly on every static review. Root cause
+      // was never conclusively pinned to one line (every avenue checked —
+      // the formula itself, the Prisma schema mapping, duplicate
+      // @Interval tasks, DB triggers, a stale build — came back clean).
+      // Logging the actual inputs here so a recurrence is undeniable
+      // instead of another multi-hour investigation from a bare DB row.
+      this.logger.log(
+        `[call] no-show sweep candidate sessionId=${candidate.id} ` +
+          `now=${new Date(now).toISOString()} deadline=${new Date(deadline).toISOString()} ` +
+          `respondedAt=${candidate.respondedAt?.toISOString()} ` +
+          `confirmedFor=${candidate.confirmedFor?.toISOString() ?? 'none'} ` +
+          `callSlotMinutes=${candidate.callSlotMinutes}`,
       );
-      if (now < clockStart + graceMs) continue;
 
       try {
         await this.resolveNoShow(candidate.id);
@@ -1287,10 +1316,32 @@ export class SessionsService {
    * whether a fee applies, and notifying both sides. Guards its own status
    * transition (updateMany + count check) so a late confirmJoined racing
    * the sweep can't be double-resolved, the same pattern confirmJoined
-   * itself uses for the both-joined transition. */
+   * itself uses for the both-joined transition.
+   *
+   * Re-validates the grace deadline itself, against this method's own
+   * fresh read, before resolving anything — not just trusting the caller's
+   * (sweepCallNoShows') earlier batch-query snapshot. Added 2026-10-03
+   * after a real incident where a session confirmed ~27 minutes out was
+   * resolved as NO_ANSWER only ~3 minutes after accept, despite the
+   * sweep's own clockStart math reading correctly on every review — the
+   * exact mechanism was never conclusively pinned down, so this closes the
+   * gap unconditionally rather than trusting that whatever the batch query
+   * saw is still true by the time this actually runs. */
   private async resolveNoShow(sessionId: string): Promise<void> {
     const session = await this.prisma.session.findUnique({ where: { id: sessionId } });
     if (!session || !JOINABLE_STATUSES.includes(session.status)) return;
+
+    const freshDeadline = this.noShowDeadlineMs(session);
+    if (freshDeadline === null || Date.now() < freshDeadline) {
+      this.logger.warn(
+        `[call] no-show resolution ABORTED on fresh re-check sessionId=${sessionId} ` +
+          `now=${new Date().toISOString()} ` +
+          `freshDeadline=${freshDeadline === null ? 'null' : new Date(freshDeadline).toISOString()} ` +
+          `respondedAt=${session.respondedAt?.toISOString() ?? 'none'} ` +
+          `confirmedFor=${session.confirmedFor?.toISOString() ?? 'none'}`,
+      );
+      return;
+    }
 
     const aspirantShowed = session.aspirantJoinedAt !== null;
     const mentorShowed = session.mentorJoinedAt !== null;
