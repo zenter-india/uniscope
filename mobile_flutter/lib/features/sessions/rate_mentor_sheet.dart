@@ -54,9 +54,21 @@ class _RateMentorSheetState extends ConsumerState<RateMentorSheet> {
           );
       if (!mounted) return;
       Navigator.of(context).pop(true);
+    } on AlreadyReviewedException {
+      // A review for this session is already on file — most likely this
+      // sheet was opened a second time (e.g. tapping "Rate this call" again
+      // on the call-ended screen). Nothing to submit; just close it rather
+      // than surface a confusing "could not submit" error for something
+      // that, from the aspirant's side, already succeeded.
+      if (!mounted) return;
+      Navigator.of(context).pop(true);
     } catch (e) {
       if (!mounted) return;
-      showAppSnackBar(context, 'Could not submit review: $e');
+      final text = e.toString();
+      showAppSnackBar(
+        context,
+        'Could not submit review: ${text.startsWith('Exception: ') ? text.substring('Exception: '.length) : text}',
+      );
       setState(() => _submitting = false);
     }
   }

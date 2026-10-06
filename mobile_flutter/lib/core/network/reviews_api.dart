@@ -30,25 +30,52 @@ class MentorReview {
       );
 }
 
+/// Thrown when `POST /reviews` 409s because this session already has a
+/// review on file — a second genuine attempt, not a real failure (see
+/// `RateMentorSheet._submit`, which treats this as success and just closes).
+class AlreadyReviewedException implements Exception {
+  const AlreadyReviewedException();
+}
+
 class ReviewsApi {
   ReviewsApi(this._dio);
 
   final Dio _dio;
 
+  /// On failure, rethrows with the backend's own message — mirrors
+  /// `UniversityReviewsApi.create`'s handling, including the 409 case.
   Future<MentorReview> create({
     required String sessionId,
     required int rating,
     String? comment,
   }) async {
-    final res = await _dio.post<Map<String, dynamic>>(
-      '/reviews',
-      data: {
-        'sessionId': sessionId,
-        'rating': rating,
-        if (comment != null && comment.isNotEmpty) 'comment': comment,
-      },
-    );
-    return MentorReview.fromJson(res.data!);
+    try {
+      final res = await _dio.post<Map<String, dynamic>>(
+        '/reviews',
+        data: {
+          'sessionId': sessionId,
+          'rating': rating,
+          if (comment != null && comment.isNotEmpty) 'comment': comment,
+        },
+      );
+      return MentorReview.fromJson(res.data!);
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 409) {
+        throw const AlreadyReviewedException();
+      }
+      final data = e.response?.data;
+      String? msg;
+      if (data is Map) {
+        final m = data['message'];
+        if (m is String) {
+          msg = m;
+        } else if (m is List && m.isNotEmpty) {
+          msg = m.join('\n');
+        }
+      }
+      if (msg != null && msg.isNotEmpty) throw Exception(msg);
+      rethrow;
+    }
   }
 
   Future<List<MentorReview>> listForMentor(String mentorId) async {
