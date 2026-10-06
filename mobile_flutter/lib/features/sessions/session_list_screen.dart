@@ -546,6 +546,18 @@ class _MentorStudentRow extends ConsumerWidget {
                       const SizedBox(height: 2),
                       _SubtitleRow(sub: sub, unread: unreadCount > 0),
                     ],
+                    // Call actions sit under the name (they wrap) rather
+                    // than beside the chat icon, where a confirmed call's
+                    // wide status chip + Reschedule + Join pushed off-screen.
+                    if (primaryCall != null) ...[
+                      const SizedBox(height: 6),
+                      _SessionActions(
+                        session: primaryCall,
+                        isMentor: true,
+                        dense: true,
+                        showLabel: false,
+                      ),
+                    ],
                   ],
                 ),
               ),
@@ -557,15 +569,6 @@ class _MentorStudentRow extends ConsumerWidget {
                 badgeCount: unreadCount,
                 onTap: () => _openChat(context, ref),
               ),
-              if (primaryCall != null) ...[
-                const SizedBox(width: AppSpacing.xs),
-                _SessionActions(
-                  session: primaryCall,
-                  isMentor: true,
-                  dense: true,
-                  showLabel: false,
-                ),
-              ],
             ],
           ),
         ),
@@ -1328,11 +1331,9 @@ class _SessionActionsState extends ConsumerState<_SessionActions> {
           ],
           SizedBox(height: widget.dense ? AppSpacing.xs : AppSpacing.sm),
         ],
-        Row(
-          mainAxisSize: widget.showLabel ? MainAxisSize.max : MainAxisSize.min,
-          mainAxisAlignment: widget.dense
-              ? MainAxisAlignment.end
-              : MainAxisAlignment.start,
+        _ActionsLayout(
+          dense: widget.dense,
+          stretch: widget.showLabel,
           children: [
             if (widget.isMentor && session.status == SessionStatus.pending) ...[
               _ActionButton(
@@ -1341,7 +1342,7 @@ class _SessionActionsState extends ConsumerState<_SessionActions> {
                 dense: widget.dense,
                 onPressed: _busy ? null : () => _act(api.reject),
               ),
-              const SizedBox(width: AppSpacing.sm),
+              const _Gap(),
               _ActionButton(
                 label: !isCall
                     ? 'Accept'
@@ -1378,7 +1379,7 @@ class _SessionActionsState extends ConsumerState<_SessionActions> {
               // still-PENDING one is withdrawn (Cancel), not rescheduled.
               if (session.status == SessionStatus.accepted &&
                   session.confirmedFor != null) ...[
-                const SizedBox(width: AppSpacing.sm),
+                const _Gap(),
                 widget.dense
                     ? _CompactIconAction(
                         icon: Icons.event_repeat_rounded,
@@ -1417,7 +1418,7 @@ class _SessionActionsState extends ConsumerState<_SessionActions> {
               // condition, same "move it directly, other party notified"
               // action, either party can initiate.
               if (session.confirmedFor != null) ...[
-                const SizedBox(width: AppSpacing.sm),
+                const _Gap(),
                 widget.dense
                     ? _CompactIconAction(
                         icon: Icons.event_repeat_rounded,
@@ -1436,7 +1437,7 @@ class _SessionActionsState extends ConsumerState<_SessionActions> {
               ],
             ],
             if (canOpenChat) ...[
-              const SizedBox(width: AppSpacing.sm),
+              const _Gap(),
               widget.dense
                   ? _CompactIconAction(
                       icon: Icons.forum_rounded,
@@ -1458,7 +1459,7 @@ class _SessionActionsState extends ConsumerState<_SessionActions> {
                     ),
             ],
             if (canJoinCall) ...[
-              const SizedBox(width: AppSpacing.sm),
+              const _Gap(),
               Builder(
                 builder: (context) {
                   final joinableNow = isScheduledCallJoinableNow(
@@ -1513,6 +1514,48 @@ class _SessionActionsState extends ConsumerState<_SessionActions> {
         ),
         if (canReview) _ReviewPrompt(session: session),
       ],
+    );
+  }
+}
+
+/// Spacer between action buttons. A dedicated type (not a bare SizedBox) so
+/// [_ActionsLayout] can drop it in wrap mode, where `Wrap.spacing` does the job.
+class _Gap extends StatelessWidget {
+  const _Gap();
+  @override
+  Widget build(BuildContext context) => const SizedBox(width: AppSpacing.sm);
+}
+
+/// Lays out a session's action buttons. Full-width rows (the labelled card)
+/// stay a plain [Row]; the [dense] list-row variant wraps onto a second line
+/// instead, because "Confirmed for Tomorrow, 12:00 PM ×" + Reschedule + Join
+/// is wider than the space a Sessions list row has left after the avatar,
+/// name and chat icon — as a single Row it overflowed off-screen and crushed
+/// the person's name to nothing.
+class _ActionsLayout extends StatelessWidget {
+  const _ActionsLayout({
+    required this.dense,
+    required this.stretch,
+    required this.children,
+  });
+
+  final bool dense;
+  final bool stretch;
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) {
+    if (!dense) {
+      return Row(
+        mainAxisSize: stretch ? MainAxisSize.max : MainAxisSize.min,
+        children: children,
+      );
+    }
+    return Wrap(
+      spacing: AppSpacing.sm,
+      runSpacing: AppSpacing.xs,
+      crossAxisAlignment: WrapCrossAlignment.center,
+      children: children.where((c) => c is! _Gap).toList(),
     );
   }
 }

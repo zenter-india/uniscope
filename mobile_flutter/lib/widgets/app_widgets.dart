@@ -252,10 +252,11 @@ class AppAvatar extends StatelessWidget {
 ///
 /// Deliberately a labelled chip and not a bare status dot: a green dot next
 /// to a person reads as "they're online right now", which the app cannot and
-/// does not claim — this reflects the mentor's own opt-in (auto-expired after
-/// 24h server-side), not presence. The unavailable state says "Chat only"
-/// rather than "Offline" for the same reason, and because it tells the
-/// student what they *can* do instead of just what they can't.
+/// does not claim — this reflects the mentor's own opt-in (sticky until they
+/// flip it themselves server-side; the earlier 24h auto-expiry was removed
+/// 2026-10-05, see CLAUDE.md), not presence. The unavailable state says
+/// "Chat only" rather than "Offline" for the same reason, and because it
+/// tells the student what they *can* do instead of just what they can't.
 class CallAvailabilityChip extends StatelessWidget {
   const CallAvailabilityChip({
     super.key,

@@ -139,19 +139,21 @@ class _UniscopeAppState extends ConsumerState<UniscopeApp>
   }
 
   /// A screen that gates on server-side profile state (the mentor
-  /// college-review requirement, `isMentorAvailable`'s 24h auto-expiry) only
-  /// ever shows what `myProfileProvider` had cached the last time it was
-  /// watched. If a mentor writes their review — or the availability window
-  /// simply expires — while the app sits backgrounded rather than force-
-  /// quit, nothing rebuilds that cache: `FutureProvider.autoDispose` only
-  /// refetches when its last watcher unmounts and re-mounts, which doesn't
-  /// happen for a screen the bottom-nav shell keeps alive. Reported live: a
-  /// mentor who'd genuinely already reviewed their college (confirmed
-  /// server-side) kept seeing "review your college" and a locked
-  /// call-booking toggle for two days. Force a refetch on every app resume
-  /// (the same pattern `ChatThreadView` already uses for its own message
-  /// staleness) so this — and the availability-expiry case — self-heals the
-  /// moment the user comes back to the app, not only on a cold relaunch.
+  /// college-review requirement) only ever shows what `myProfileProvider`
+  /// had cached the last time it was watched. If a mentor writes their
+  /// review while the app sits backgrounded rather than force-quit, nothing
+  /// rebuilds that cache: `FutureProvider.autoDispose` only refetches when
+  /// its last watcher unmounts and re-mounts, which doesn't happen for a
+  /// screen the bottom-nav shell keeps alive. Reported live: a mentor who'd
+  /// genuinely already reviewed their college (confirmed server-side) kept
+  /// seeing "review your college" and a locked call-booking toggle for two
+  /// days. Force a refetch on every app resume (the same pattern
+  /// `ChatThreadView` already uses for its own message staleness) so this
+  /// self-heals the moment the user comes back to the app, not only on a
+  /// cold relaunch. (`isMentorAvailable`'s own 24h auto-expiry, this
+  /// comment's other original motivation, was removed backend-side
+  /// 2026-10-05 — see CLAUDE.md — but the resume-refetch is still worth
+  /// keeping for the review-gate case above.)
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed &&
