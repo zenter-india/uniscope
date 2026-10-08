@@ -154,10 +154,11 @@ class _CallScreenState extends ConsumerState<CallScreen> {
   // mic level is above a small floor, so the avatar can show a "speaking"
   // glow (the main "is this call actually live" signal).
   bool _peerSpeaking = false;
-  // Agora AudioRoute int (see onAudioRoutingChanged). 4 = loudspeaker, the
-  // default we set on join. _btSeen latches once a Bluetooth route has been
-  // reported, so the picker can offer it.
-  int _audioRoute = 4;
+  // Agora AudioRoute int (see onAudioRoutingChanged). 1 = earpiece, the
+  // default we set on join (updated by the first onAudioRoutingChanged).
+  // _btSeen latches once a Bluetooth route has been reported, so the picker
+  // can offer it.
+  int _audioRoute = 1;
   bool _btSeen = false;
 
   bool get _isAspirant =>
@@ -653,6 +654,19 @@ class _CallScreenState extends ConsumerState<CallScreen> {
       ),
     );
     await joined.future;
+    // Explicitly route to the earpiece now that the channel is joined.
+    // setDefaultAudioRouteToSpeakerphone(false) above only sets the *default*
+    // and, in practice (real-device report, builds 34/35: "once the call
+    // connects, instant or scheduled, it connects with the speaker instead of
+    // the earpiece"), the route could still come up on the loudspeaker after
+    // the join. setEnableSpeakerphone is the definitive switch and, per
+    // Agora, is a no-op while a wired/Bluetooth headset is connected — so a
+    // headset still wins. Non-fatal: the call is already live.
+    try {
+      await engine.setEnableSpeakerphone(false);
+    } catch (e) {
+      debugPrint('[call] setEnableSpeakerphone(false) failed: $e');
+    }
     // Safe to enable now — we are inside the channel (onJoinChannelSuccess
     // already fired). Drives the "speaking" glow on the peer avatar.
     // 250ms interval is responsive without being jittery.
