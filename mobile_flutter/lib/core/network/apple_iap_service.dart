@@ -45,6 +45,17 @@ class AppleIapService {
     return response.productDetails;
   }
 
+  /// The App Store storefront country StoreKit is actually quoting prices
+  /// for (ISO 3166-1 alpha-3, e.g. "IND"/"USA"), or '' if it can't be read.
+  /// Diagnostic only — see wallet_screen.dart's store-diagnostic line.
+  Future<String> storefrontCountry() async {
+    try {
+      return await _iap.countryCode();
+    } catch (_) {
+      return '';
+    }
+  }
+
   /// Uniminute top-ups are consumable — repeatable purchases, never a
   /// non-consumable/subscription. `autoConsume: true` is StoreKit's default
   /// for exactly this case.

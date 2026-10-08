@@ -24,13 +24,17 @@ import 'theme/app_theme.dart';
 /// regresses.
 const bool kCallBookingEnabled = true;
 
-/// Wallet top-up is temporarily off too (2026-10-02, per explicit
-/// instruction alongside the calls pause) — the balance a top-up buys is
-/// Uniminutes, which today can only be spent on a call, so selling more of
-/// it while calls are down isn't useful to a user. Chat stays free and
-/// unaffected regardless. Flip back to `true` once calls (and therefore
-/// top-up) are both confirmed working again.
-const bool kWalletTopupEnabled = false;
+/// Wallet top-up, per platform. Both were paused 2026-10-02 alongside the
+/// calls pause (the balance a top-up buys can only be spent on a call).
+///
+/// **iOS re-enabled 2026-10-08, per explicit instruction** — calls work again
+/// (see [kCallBookingEnabled]) and the StoreKit top-up path is the one App
+/// Review approved. **Android stays paused**: its top-up goes through Razorpay,
+/// whose live credentials are still pending, so enabling it would let users
+/// start payments against a gateway that isn't live. Flip
+/// [kWalletTopupEnabledAndroid] to `true` once Razorpay is live.
+const bool kWalletTopupEnabledIOS = true;
+const bool kWalletTopupEnabledAndroid = false;
 
 /// Shown once the aspirant has gone through the full "When?"/"How long?"
 /// sheet and would otherwise place the request, or in place of opening the
@@ -66,9 +70,9 @@ class CallsPausedDialog extends StatelessWidget {
 }
 
 /// Shown once the user has seen the full package list and picks one to pay
-/// for, while [kWalletTopupEnabled] is off. Deliberately soft and generic —
+/// for, while a platform's top-up flag is off. Deliberately soft and generic —
 /// it names no reason, so it doesn't disclose the real cause (see
-/// feature_flags.dart's own doc comment on [kWalletTopupEnabled]).
+/// feature_flags.dart's own doc comment on [kWalletTopupEnabledAndroid]).
 class WalletTopupPausedDialog extends StatelessWidget {
   const WalletTopupPausedDialog({super.key});
 

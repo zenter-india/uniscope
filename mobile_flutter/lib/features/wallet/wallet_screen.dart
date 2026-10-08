@@ -150,7 +150,7 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
   }
 
   Future<void> _startRazorpayTopup(int amountMinor) async {
-    if (!kWalletTopupEnabled) {
+    if (!kWalletTopupEnabledAndroid) {
       await showDialog<void>(context: context, builder: (_) => const WalletTopupPausedDialog());
       return;
     }
@@ -179,7 +179,7 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
   }
 
   Future<void> _startAppleTopup(ProductDetails product) async {
-    if (!kWalletTopupEnabled) {
+    if (!kWalletTopupEnabledIOS) {
       await showDialog<void>(context: context, builder: (_) => const WalletTopupPausedDialog());
       return;
     }
@@ -481,6 +481,17 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
     if (!mounted) return;
     setState(() => _toppingUp = false);
 
+    // Which storefront/currency StoreKit is really quoting. Only surfaced
+    // when it isn't INR (see the line under the pack list) — real customers
+    // are all INR, so they never see it; it appears in sandbox/TestFlight
+    // when Apple quotes a non-India storefront.
+    final storeCountry = await _appleIap!.storefrontCountry();
+    final storeCurrency = products.isEmpty ? '' : products.first.currencyCode;
+    final storeDiagnostic =
+        (products.isNotEmpty && storeCurrency != 'INR')
+        ? 'Store: ${storeCountry.isEmpty ? '?' : storeCountry} · $storeCurrency'
+        : null;
+
     final byId = {for (final p in products) p.id: p};
     // Pairs each fixed package with its real StoreKit product, in the same
     // order as kAppleTopupProductIds/_kRechargePackagesAndroid. A package whose
@@ -600,6 +611,20 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
                 ),
               ),
             ),
+            if (storeDiagnostic != null) ...[
+              const SizedBox(height: AppSpacing.xs),
+              Align(
+                alignment: Alignment.center,
+                child: Text(
+                  storeDiagnostic,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    fontSize: 10,
+                    color: AppColors.textMuted,
+                  ),
+                ),
+              ),
+            ],
           ],
         ),
       ),

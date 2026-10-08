@@ -95,7 +95,7 @@ void main() {
     });
   }
 
-  // While kWalletTopupEnabled is off (see feature_flags.dart), the full
+  // While kWalletTopupEnabledAndroid is off (see feature_flags.dart), the full
   // sheet still opens and shows every package — only picking one to actually
   // pay is blocked, with a soft notice that names no reason.
   testWidgets('tapping a package shows the paused notice, not Razorpay', (tester) async {
