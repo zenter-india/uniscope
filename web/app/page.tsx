@@ -15,8 +15,8 @@ export default function HomePage() {
       <ClosingCta />
       <GetStarted />
       <footer className="px-6 py-10 text-center text-[12.5px] font-semibold text-slate-400">
-        <FooterCredits />
-        <p className="mt-3">
+        <p>© {new Date().getFullYear()} Uniscope. Real Insights. Real Mentors. Real Guidance.</p>
+        <p className="mt-1.5">
           <Link href="/privacy" className="hover:text-slate-600 hover:underline">
             Privacy Policy
           </Link>
@@ -33,6 +33,9 @@ export default function HomePage() {
             Community Guidelines
           </Link>
         </p>
+        <div className="mt-4">
+          <FooterCredits />
+        </div>
       </footer>
     </>
   );
