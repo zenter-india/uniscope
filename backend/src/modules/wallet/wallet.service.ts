@@ -529,7 +529,11 @@ export class WalletService {
     } catch (err) {
       // A forged, malformed, or wrong-environment receipt is a bad request,
       // not a server fault (and shouldn't page Sentry as one).
-      this.logger.warn(`Apple transaction failed verification for user ${userId}: ${err}`);
+      const reason =
+        err instanceof Error
+          ? `${err.name}: ${err.message}`
+          : JSON.stringify(err, Object.getOwnPropertyNames(Object(err)));
+      this.logger.warn(`Apple transaction failed verification for user ${userId}: ${reason}`);
       throw new BadRequestException('Could not verify this App Store purchase');
     }
     await this.creditAppleTransaction(userId, transaction);

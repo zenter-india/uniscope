@@ -215,16 +215,57 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
       showAppSnackBar(context, 'Wallet topped up successfully');
     } catch (e) {
       if (!mounted) return;
-      showAppSnackBar(context, 'Payment succeeded but crediting failed: $e');
+      showAppSnackBar(context, _creditingFailedMessage(e));
     } finally {
       if (mounted) setState(() => _toppingUp = false);
     }
   }
 
+  /// User-facing text for a failed credit step. The payment itself already
+  /// went through, so the message says so and what happens next, instead of
+  /// dumping a raw DioException. A 4xx means the server rejected the receipt
+  /// (the purchase stays unfinished with Apple and is re-delivered on the
+  /// next launch); anything else is most likely a network problem.
+  String _creditingFailedMessage(Object e) {
+    const retry = 'Your payment was received but your Uniminutes are not '
+        'added yet. Please close and reopen the app, then open the Wallet '
+        'tab — we will retry automatically. Do not pay again.';
+    if (e is DioException) {
+      final code = e.response?.statusCode;
+      if (code == null) {
+        return 'Payment received, but we could not reach Uniscope to add '
+            'your Uniminutes. Check your connection and reopen the Wallet '
+            'tab — we will retry automatically. Do not pay again.';
+      }
+      if (code == 401) {
+        return 'Payment received. Please log in again, then open the Wallet '
+            'tab — your Uniminutes will be added automatically.';
+      }
+    }
+    return retry;
+  }
+
   void _onAppleError(String message) {
     if (!mounted) return;
     setState(() => _toppingUp = false);
-    showAppSnackBar(context, 'Payment failed: $message');
+    showAppSnackBar(context, _applePurchaseErrorMessage(message));
+  }
+
+  /// StoreKit surfaces raw platform strings (e.g.
+  /// `storekit_duplicate_product_object` when an earlier purchase of the
+  /// same pack is still waiting to be credited). Map the known ones to plain
+  /// language and keep everything else short.
+  String _applePurchaseErrorMessage(String raw) {
+    final m = raw.toLowerCase();
+    if (m.contains('duplicate_product') || m.contains('pending transaction')) {
+      return 'A previous purchase is still being processed. Close and '
+          'reopen the app, then open the Wallet tab to finish it before '
+          'buying again.';
+    }
+    if (m.contains('network') || m.contains('offline')) {
+      return 'Could not reach the App Store. Check your connection and try again.';
+    }
+    return 'The purchase could not be completed. Please try again.';
   }
 
   void _onAppleCancelled() {
@@ -247,7 +288,7 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
       showAppSnackBar(context, 'Wallet topped up successfully');
     } catch (e) {
       if (!mounted) return;
-      showAppSnackBar(context, 'Payment succeeded but crediting failed: $e');
+      showAppSnackBar(context, _creditingFailedMessage(e));
     } finally {
       if (mounted) setState(() => _toppingUp = false);
     }
