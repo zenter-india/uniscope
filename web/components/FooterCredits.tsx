@@ -18,7 +18,7 @@ export function FooterCredits() {
             rel="noopener noreferrer"
             className="hover:text-slate-600 hover:underline"
           >
-            @ASTYLLEX - Technology Consulting &amp; Product Engineering
+            @ASTYLLEX
           </a>
         </p>
       </div>
