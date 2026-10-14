@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:agora_rtc_engine/agora_rtc_engine.dart';
+import 'package:dio/dio.dart' show DioException;
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -18,6 +19,7 @@ import '../reports/report_sheet.dart';
 import '../sessions/call_time_windows.dart' show isScheduledCallJoinableNow;
 import '../sessions/rate_mentor_sheet.dart';
 import '../sessions/session_status.dart';
+import '../wallet/wallet_screen.dart' show walletBalanceProvider;
 import 'call_overlay.dart';
 
 /// Hand-rolled native channels, real on both platforms — `uniscope/permissions`
@@ -135,11 +137,16 @@ class _CallScreenState extends ConsumerState<CallScreen> {
   // fetched `_session.status` says. See the `completed` computation in
   // `_buildBody`'s `_Phase.ended` case.
   bool _wasConnected = false;
-  // The "1 minute left" warning beep fires once per slot; this latches
-  // after it does and re-arms if the remaining time ever climbs back well
-  // clear of the warning window (defensive — nothing currently extends a
-  // slot, so this shouldn't happen in practice).
-  bool _oneMinWarned = false;
+  // The "30 seconds left" warning beep + End/Continue prompt (aspirant only)
+  // fire once per slot; this latches after they do and re-arms once the
+  // remaining time climbs back well clear of the window (i.e. after a
+  // successful extension adds minutes).
+  bool _endWarned = false;
+  bool _extendDialogShowing = false;
+  // Seconds left in the slot, fed to the open prompt so it can count down
+  // and close itself (at 0, or -1 when the call ends some other way) —
+  // the prompt must never outlive the call it is asking about.
+  final ValueNotifier<int> _extendSecondsLeft = ValueNotifier<int>(0);
   Timer? _noAnswerTimer;
   // Live call-quality signals from the Agora engine (see _joinAgoraChannel's
   // event handler). _reconnecting flips true on a dropped connection and
@@ -821,29 +828,102 @@ class _CallScreenState extends ConsumerState<CallScreen> {
     );
     final remaining = Duration(seconds: slotSeconds) - elapsed;
 
+    if (_extendDialogShowing) {
+      _extendSecondsLeft.value = remaining.isNegative ? 0 : remaining.inSeconds;
+    }
+
     if (remaining.isNegative) {
-      // The booked slot is up — end the call automatically, straight to the
-      // ended/review screen for both parties. No "continue another N
-      // minutes?" prompt: per explicit product decision (2026-10-03,
-      // reversing the earlier "call overrun" design — see CLAUDE.md), a
-      // call that reaches its slot time just ends, with nothing to decide
-      // mid-call and no interactive option that could itself fail (the
-      // old extend button's `POST .../call/extend` could 409 on an
-      // already-settled session, surfacing a raw DioException on screen).
+      // The booked slot is up — end the call automatically if the aspirant
+      // didn't extend it (the prompt, if still open, closes itself at 0).
       if (_isAspirant && _phase == _Phase.active) {
         _endCall(reason: 'SLOT_EXPIRED');
       }
-    } else if (remaining.inSeconds <= 60 &&
+    } else if (remaining.inSeconds <= _kEndWarningSeconds &&
         _isAspirant &&
-        !_oneMinWarned &&
+        !_endWarned &&
+        !_extendDialogShowing &&
         _phase == _Phase.active) {
-      // A quiet, informational heads-up only — no interactive choice (that
-      // was the removed "Continue" option).
-      _oneMinWarned = true;
+      _endWarned = true;
       _beepWarning();
-    } else if (remaining.inSeconds > 75) {
-      _oneMinWarned = false;
+      _showExtendDialog(remaining.inSeconds);
+    } else if (remaining.inSeconds > _kEndWarningSeconds + 15) {
+      _endWarned = false;
     }
+  }
+
+  Future<void> _showExtendDialog(int secondsLeft) async {
+    if (!mounted) return;
+    _extendDialogShowing = true;
+    _extendSecondsLeft.value = secondsLeft;
+    final extendMinutes = kCallSlotMinutes.first;
+    final extendCost = slotUniminutes(extendMinutes);
+    int? available;
+    try {
+      available = (await ref.read(
+        walletBalanceProvider.future,
+      )).availableUniminutes;
+    } catch (_) {
+      available = ref
+          .read(walletBalanceProvider)
+          .asData
+          ?.value
+          .availableUniminutes;
+    }
+    if (!mounted) {
+      _extendDialogShowing = false;
+      return;
+    }
+    final canAfford = available == null || available >= extendCost;
+    final choice = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) => _ExtendCallDialog(
+        secondsLeft: _extendSecondsLeft,
+        extendMinutes: extendMinutes,
+        extendCostLabel: uniminutesLabel(extendCost),
+        availableLabel: available == null ? null : uniminutesLabel(available),
+        canAfford: canAfford,
+      ),
+    );
+    _extendDialogShowing = false;
+    if (!mounted) return;
+
+    if (choice == true) {
+      try {
+        final updated = await ref
+            .read(sessionsApiProvider)
+            .extendCall(widget.sessionId);
+        if (!mounted) return;
+        _endWarned = false;
+        setState(() => _session = updated);
+      } catch (e) {
+        if (!mounted) return;
+        // Don't end the call here — the remaining seconds of the paid slot
+        // are still the aspirant's; the normal cutoff ends it at slot end.
+        showAppSnackBar(context, _extendErrorMessage(e));
+      }
+    } else if (choice == false) {
+      _endCall(reason: 'SLOT_EXPIRED');
+    }
+    // choice == null: the prompt timed out / the call ended underneath it —
+    // the slot cutoff (or the ended screen) takes it from here.
+  }
+
+  String _extendErrorMessage(Object e) {
+    if (e is DioException) {
+      final code = e.response?.statusCode;
+      if (code == 409) return 'This call has already ended.';
+      final data = e.response?.data;
+      final msg = data is Map ? data['message'] : null;
+      if (code == 400 && msg is String && msg.isNotEmpty) {
+        return '$msg. The call will end when your slot does.';
+      }
+      if (code == null) {
+        return 'Could not reach Uniscope to extend the call. '
+            'It will end when your slot does.';
+      }
+    }
+    return 'Could not extend the call. It will end when your slot does.';
   }
 
   /// Short in-call warning tone (native ToneGenerator via the call channel —
@@ -953,6 +1033,7 @@ class _CallScreenState extends ConsumerState<CallScreen> {
   }
 
   void _endLocally() {
+    _extendSecondsLeft.value = -1;
     _pollTimer?.cancel();
     _tickTimer?.cancel();
     // Detach before tearing down — see _releaseEngine's doc comment. This
@@ -1280,6 +1361,85 @@ class _CallScreenState extends ConsumerState<CallScreen> {
 /// Bottom padding under the control row — clears the gesture nav pill
 /// without the arbitrary `xxl` the layout used before.
 const double _kCallBottomPad = 36;
+
+/// Seconds before the booked slot ends at which the aspirant gets the
+/// warning beep and the End / Continue prompt.
+const int _kEndWarningSeconds = 30;
+
+class _ExtendCallDialog extends StatefulWidget {
+  const _ExtendCallDialog({
+    required this.secondsLeft,
+    required this.extendMinutes,
+    required this.extendCostLabel,
+    required this.availableLabel,
+    required this.canAfford,
+  });
+
+  final ValueNotifier<int> secondsLeft;
+  final int extendMinutes;
+  final String extendCostLabel;
+  final String? availableLabel;
+  final bool canAfford;
+
+  @override
+  State<_ExtendCallDialog> createState() => _ExtendCallDialogState();
+}
+
+class _ExtendCallDialogState extends State<_ExtendCallDialog> {
+  @override
+  void initState() {
+    super.initState();
+    widget.secondsLeft.addListener(_onTick);
+  }
+
+  @override
+  void dispose() {
+    widget.secondsLeft.removeListener(_onTick);
+    super.dispose();
+  }
+
+  // Close ourselves when the slot runs out or the call ends underneath us,
+  // so Continue can never be tapped against a call that is already over.
+  void _onTick() {
+    if (widget.secondsLeft.value <= 0 && mounted) {
+      Navigator.of(context).pop();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: ValueListenableBuilder<int>(
+        valueListenable: widget.secondsLeft,
+        builder: (_, secs, _) =>
+            Text('${secs < 0 ? 0 : secs} seconds left'),
+      ),
+      content: Text(
+        widget.canAfford
+            ? 'Your slot is almost up. Continue for another '
+                  '${widget.extendMinutes} minutes? '
+                  '${widget.extendCostLabel} will be deducted.'
+                  '${widget.availableLabel == null ? '' : ' You have ${widget.availableLabel} available.'}'
+            : 'Your slot is almost up. You have ${widget.availableLabel} '
+                  'available, which is not enough to add '
+                  '${widget.extendMinutes} more minutes — top up your wallet '
+                  'after the call to keep talking.',
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(false),
+          child: const Text('End Call'),
+        ),
+        if (widget.canAfford)
+          FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: AppColors.primary),
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Continue'),
+          ),
+      ],
+    );
+  }
+}
 
 class _MessageScreen extends StatelessWidget {
   const _MessageScreen({
