@@ -73,6 +73,9 @@ class AppleIapService {
     required void Function(String message) onError,
     required VoidCallback onCancelled,
   }) {
+    _onVerified = onVerified;
+    _onError = onError;
+    _onCancelled = onCancelled;
     _subscription?.cancel();
     _subscription = _iap.purchaseStream.listen(
       (purchases) async {
@@ -95,6 +98,22 @@ class AppleIapService {
       },
       onError: (Object error) => onError('$error'),
     );
+  }
+
+  Future<void> Function(PurchaseDetails purchase)? _onVerified;
+  void Function(String message)? _onError;
+  VoidCallback? _onCancelled;
+
+  /// Drops and re-adds the purchase-stream subscription. Cancelling the last
+  /// listener makes the plugin stop observing StoreKit's transaction queue,
+  /// and re-subscribing starts it again — which makes StoreKit re-deliver
+  /// every transaction still unfinished. That is how a purchase that was
+  /// paid but never credited (and so is blocking a new purchase of the same
+  /// pack) gets another chance to be verified and finished.
+  void replayPending() {
+    final v = _onVerified, e = _onError, c = _onCancelled;
+    if (v == null || e == null || c == null) return;
+    listen(onVerified: v, onError: e, onCancelled: c);
   }
 
   void dispose() {

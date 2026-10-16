@@ -614,6 +614,32 @@ export class WalletService {
     const { creditedAmountMinor } = computeAppleTopupCredit(productId);
     const idempotencyKey = `apple-iap:${transactionId}`;
 
+    // Apple already refunded/revoked this purchase (e.g. the user asked for
+    // a refund while it sat unfinished on their device) — never credit
+    // Uniminutes for money Apple handed back. Record it and return success
+    // so the app can finish the transaction and clear StoreKit's queue
+    // (an unfinished one blocks buying the same pack again).
+    if (transaction.revocationDate) {
+      this.logger.warn(
+        `Apple transaction ${transactionId} was revoked (${transaction.revocationType ?? 'unknown'}) before it was credited — not crediting user ${userId}`,
+      );
+      await this.prisma.appleTransaction.upsert({
+        where: { transactionId },
+        create: {
+          transactionId,
+          originalTransactionId: transaction.originalTransactionId ?? transactionId,
+          userId,
+          productId,
+          creditedAmountMinor: 0,
+          status: AppleTransactionStatus.REFUNDED,
+          idempotencyKey,
+          rawPayload: transaction as unknown as Prisma.InputJsonValue,
+        },
+        update: {},
+      });
+      return;
+    }
+
     const applied = await this.applyLedgerEntry({
       walletId: wallet.id,
       type: LedgerEntryType.TOPUP,

@@ -194,7 +194,19 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
     } catch (e) {
       if (!mounted) return;
       setState(() => _toppingUp = false);
-      showAppSnackBar(context, 'Could not start top-up: $e');
+      final raw = '$e'.toLowerCase();
+      if (raw.contains('duplicate_product') || raw.contains('pending transaction')) {
+        // An earlier purchase of this pack is still unfinished in StoreKit.
+        // Have it re-delivered so it gets verified/credited and finished.
+        _appleIap?.replayPending();
+        showAppSnackBar(
+          context,
+          'Finishing your previous purchase — your balance will update in a '
+          'moment. If it does not, close and reopen the app, then try again.',
+        );
+        return;
+      }
+      showAppSnackBar(context, 'Could not start top-up. Please try again.');
     }
   }
 
@@ -208,11 +220,17 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
       await ref
           .read(walletApiProvider)
           .verifyAppleTopup(purchase.verificationData.serverVerificationData);
-      await InAppPurchase.instance.completePurchase(purchase);
+      // The server has confirmed (credited, or recognised it as already
+      // credited/refunded) — refresh the balance right away, then finish the
+      // transaction. Finishing is best-effort on its own: if it throws, the
+      // credit still landed and must not be reported as a failure.
       ref.invalidate(walletBalanceProvider);
       ref.invalidate(walletLedgerProvider);
+      try {
+        await InAppPurchase.instance.completePurchase(purchase);
+      } catch (_) {}
       if (!mounted) return;
-      showAppSnackBar(context, 'Wallet topped up successfully');
+      showAppSnackBar(context, 'Wallet updated');
     } catch (e) {
       if (!mounted) return;
       showAppSnackBar(context, _creditingFailedMessage(e));
