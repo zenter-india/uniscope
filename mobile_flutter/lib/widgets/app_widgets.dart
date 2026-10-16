@@ -39,7 +39,15 @@ import '../features/notifications/notifications_screen.dart';
 /// screenshots, which have already shown they can't resolve this.
 /// [action]/[onAction], when given, render as a text button on the trailing
 /// edge (e.g. "Retry").
-OverlayEntry? _appSnackBarEntry;
+///
+/// The current snackbar's own dismiss function (not the raw entry): a new
+/// snackbar must close the previous one through it, so the previous one's
+/// 4s timer sees `removed` and does nothing. Removing the raw entry here
+/// used to leave that flag unset, and the old timer then called
+/// `OverlayEntry.remove()` a second time — a null-check crash in Flutter's
+/// overlay (Sentry UNISCOPE-MOBILE-4) whenever two snackbars showed within
+/// 4 seconds of each other, e.g. a top-up credit followed by another message.
+VoidCallback? _dismissCurrentAppSnackBar;
 
 void showAppSnackBar(
   BuildContext context,
@@ -47,8 +55,8 @@ void showAppSnackBar(
   String? action,
   VoidCallback? onAction,
 }) {
-  _appSnackBarEntry?.remove();
-  _appSnackBarEntry = null;
+  _dismissCurrentAppSnackBar?.call();
+  _dismissCurrentAppSnackBar = null;
 
   final overlay = Overlay.of(context, rootOverlay: true);
   var removed = false;
@@ -57,8 +65,10 @@ void showAppSnackBar(
   void dismiss() {
     if (removed) return;
     removed = true;
-    if (_appSnackBarEntry == entry) _appSnackBarEntry = null;
-    entry.remove();
+    if (_dismissCurrentAppSnackBar == dismiss) {
+      _dismissCurrentAppSnackBar = null;
+    }
+    if (entry.mounted) entry.remove();
   }
 
   entry = OverlayEntry(
@@ -113,7 +123,7 @@ void showAppSnackBar(
     ),
   );
 
-  _appSnackBarEntry = entry;
+  _dismissCurrentAppSnackBar = dismiss;
   overlay.insert(entry);
   Future.delayed(const Duration(seconds: 4), dismiss);
 }

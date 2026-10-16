@@ -623,6 +623,20 @@ export class WalletService {
     const { creditedAmountMinor } = computeAppleTopupCredit(productId);
     const idempotencyKey = `apple-iap:${transactionId}`;
 
+    // Already processed (by the app re-sending it, or by another account
+    // logged in on the same device). The ledger key is globally unique so
+    // it can never be credited twice; just say so in the logs and return,
+    // letting the app finish the transaction.
+    const existing = await this.prisma.appleTransaction.findUnique({ where: { transactionId } });
+    if (existing) {
+      if (existing.userId !== userId) {
+        this.logger.warn(
+          `Apple transaction ${transactionId} was already processed for user ${existing.userId} (status ${existing.status}); re-sent by user ${userId} — not crediting again`,
+        );
+      }
+      return;
+    }
+
     // Apple already refunded/revoked this purchase (e.g. the user asked for
     // a refund while it sat unfinished on their device) — never credit
     // Uniminutes for money Apple handed back. Record it and return success

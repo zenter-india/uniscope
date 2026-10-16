@@ -2,6 +2,10 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
+import 'package:in_app_purchase_storekit/in_app_purchase_storekit.dart'
+    show InAppPurchaseStoreKitPlatform;
+import 'package:in_app_purchase_storekit/store_kit_2_wrappers.dart'
+    show SK2Transaction;
 
 /// The 4 Apple IAP product ids, index-matched against wallet_screen.dart's
 /// `_kRechargePackages` ([10, 20, 40, 60] Uniminutes in that order) — must
@@ -73,9 +77,6 @@ class AppleIapService {
     required void Function(String message) onError,
     required VoidCallback onCancelled,
   }) {
-    _onVerified = onVerified;
-    _onError = onError;
-    _onCancelled = onCancelled;
     _subscription?.cancel();
     _subscription = _iap.purchaseStream.listen(
       (purchases) async {
@@ -100,21 +101,39 @@ class AppleIapService {
     );
   }
 
-  Future<void> Function(PurchaseDetails purchase)? _onVerified;
-  void Function(String message)? _onError;
-  VoidCallback? _onCancelled;
-
-  /// Drops and re-adds the purchase-stream subscription. Cancelling the last
-  /// listener makes the plugin stop observing StoreKit's transaction queue,
-  /// and re-subscribing starts it again — which makes StoreKit re-deliver
-  /// every transaction still unfinished. That is how a purchase that was
-  /// paid but never credited (and so is blocking a new purchase of the same
-  /// pack) gets another chance to be verified and finished.
-  void replayPending() {
-    final v = _onVerified, e = _onError, c = _onCancelled;
-    if (v == null || e == null || c == null) return;
-    listen(onVerified: v, onError: e, onCancelled: c);
+  /// Every top-up transaction StoreKit still holds as unfinished — paid for,
+  /// but never finished because the server never confirmed it (bad config,
+  /// network, the app closed mid-flow, …). An unfinished transaction blocks
+  /// buying the same pack again (`storekit_duplicate_product_object`).
+  ///
+  /// Read straight from StoreKit 2's `Transaction.unfinished` rather than
+  /// waiting for the purchase stream: that stream (`Transaction.updates`)
+  /// hands unfinished transactions over only once per app launch, so if that
+  /// one delivery failed, nothing retries until the app is relaunched.
+  Future<List<({String id, String productId, String jws})>>
+  unfinishedTopups() async {
+    if (!InAppPurchaseStoreKitPlatform.isStoreKit2Enabled) return const [];
+    final txs = await SK2Transaction.unfinishedTransactions().timeout(
+      const Duration(seconds: 10),
+    );
+    return [
+      for (final t in txs)
+        if (kAppleTopupProductIds.contains(t.productId) &&
+            (t.receiptData ?? '').isNotEmpty)
+          (id: t.id, productId: t.productId, jws: t.receiptData!),
+    ];
   }
+
+  /// Finishes a transaction found by [unfinishedTopups]. Time-limited: the
+  /// plugin's native `finish` never answers if StoreKit can't find the
+  /// transaction, and an un-bounded await would freeze the caller.
+  Future<void> finishTransaction(String id) =>
+      SK2Transaction.finish(int.parse(id)).timeout(const Duration(seconds: 8));
+
+  /// Finishes a transaction delivered on the purchase stream (same
+  /// time-limit reason as [finishTransaction]).
+  Future<void> completePurchase(PurchaseDetails purchase) =>
+      _iap.completePurchase(purchase).timeout(const Duration(seconds: 8));
 
   void dispose() {
     _subscription?.cancel();

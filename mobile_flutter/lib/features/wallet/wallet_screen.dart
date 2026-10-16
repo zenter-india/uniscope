@@ -134,6 +134,10 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
           onError: _onAppleError,
           onCancelled: _onAppleCancelled,
         );
+      // Credit + finish anything paid for earlier but never confirmed.
+      WidgetsBinding.instance.addPostFrameCallback(
+        (_) => _recoverUnfinishedApplePurchases(),
+      );
     } else {
       _razorpay = Razorpay();
       _razorpay!.on(Razorpay.EVENT_PAYMENT_SUCCESS, _onPaymentSuccess);
@@ -197,45 +201,121 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
       final raw = '$e'.toLowerCase();
       if (raw.contains('duplicate_product') || raw.contains('pending transaction')) {
         // An earlier purchase of this pack is still unfinished in StoreKit.
-        // Have it re-delivered so it gets verified/credited and finished.
-        _appleIap?.replayPending();
-        showAppSnackBar(
-          context,
-          'Finishing your previous purchase — your balance will update in a '
-          'moment. If it does not, close and reopen the app, then try again.',
-        );
+        // Send it to the server and finish it, so the pack can be bought
+        // again.
+        showAppSnackBar(context, 'Finishing your previous purchase…');
+        await _recoverUnfinishedApplePurchases(userInitiated: true);
         return;
       }
       showAppSnackBar(context, 'Could not start top-up. Please try again.');
     }
   }
 
-  /// Only completes the purchase (marking it finished with Apple) once the
-  /// backend confirms the credit. If verification fails, the transaction is
-  /// left unfinished so StoreKit re-delivers it on next launch/
-  /// restorePurchases — a real retry path, instead of silently losing the
-  /// credit by completing before confirming it landed.
-  Future<void> _onApplePurchaseVerified(PurchaseDetails purchase) async {
+  /// Apple transaction ids currently being sent to the server — the purchase
+  /// stream and the unfinished-transaction scan can both surface the same
+  /// transaction at once; it only needs handling once.
+  final Set<String> _appleTxInFlight = {};
+  bool _recoveringApple = false;
+
+  /// Sends one Apple transaction to the server and, once the server accepts
+  /// it (credited now, or already processed / refunded — it never credits
+  /// twice), finishes it with StoreKit so it stops blocking new purchases of
+  /// the same pack. Returns false if this transaction is already being
+  /// handled. Throws if the server or network rejects it — the transaction
+  /// then stays unfinished and is retried next time.
+  ///
+  /// Never finishes before the server confirms: finishing first would lose
+  /// the credit if the server call then failed.
+  Future<bool> _processAppleTransaction({
+    required String? transactionId,
+    required String jws,
+    required Future<void> Function() finish,
+  }) async {
+    if (transactionId != null && !_appleTxInFlight.add(transactionId)) {
+      return false;
+    }
     try {
-      await ref
-          .read(walletApiProvider)
-          .verifyAppleTopup(purchase.verificationData.serverVerificationData);
-      // The server has confirmed (credited, or recognised it as already
-      // credited/refunded) — refresh the balance right away, then finish the
-      // transaction. Finishing is best-effort on its own: if it throws, the
-      // credit still landed and must not be reported as a failure.
+      await ref.read(walletApiProvider).verifyAppleTopup(jws);
       ref.invalidate(walletBalanceProvider);
       ref.invalidate(walletLedgerProvider);
       try {
-        await InAppPurchase.instance.completePurchase(purchase);
-      } catch (_) {}
-      if (!mounted) return;
-      showAppSnackBar(context, 'Wallet updated');
+        await finish();
+      } catch (_) {
+        // Server already has it; a failed finish only means StoreKit offers
+        // it again later, and the server ignores the repeat.
+      }
+      return true;
+    } finally {
+      if (transactionId != null) _appleTxInFlight.remove(transactionId);
+    }
+  }
+
+  Future<void> _onApplePurchaseVerified(PurchaseDetails purchase) async {
+    try {
+      final handled = await _processAppleTransaction(
+        transactionId: purchase.purchaseID,
+        jws: purchase.verificationData.serverVerificationData,
+        finish: () => _appleIap!.completePurchase(purchase),
+      );
+      if (handled && mounted) {
+        showAppSnackBar(context, 'Purchase complete — your balance is updated.');
+      }
     } catch (e) {
       if (!mounted) return;
       showAppSnackBar(context, _creditingFailedMessage(e));
     } finally {
       if (mounted) setState(() => _toppingUp = false);
+    }
+  }
+
+  /// Finds top-ups that were paid for but never finished, and sends each to
+  /// the server. Runs when the Wallet opens and when a purchase is blocked
+  /// by one ([userInitiated] — then the user is always told the outcome).
+  Future<void> _recoverUnfinishedApplePurchases({
+    bool userInitiated = false,
+  }) async {
+    final iap = _appleIap;
+    if (iap == null || _recoveringApple) return;
+    _recoveringApple = true;
+    var processed = 0;
+    Object? creditFailure;
+    var lookupFailed = false;
+    try {
+      final pending = await iap.unfinishedTopups();
+      for (final tx in pending) {
+        try {
+          final handled = await _processAppleTransaction(
+            transactionId: tx.id,
+            jws: tx.jws,
+            finish: () => iap.finishTransaction(tx.id),
+          );
+          if (handled) processed++;
+        } catch (e) {
+          creditFailure ??= e;
+        }
+      }
+    } catch (_) {
+      lookupFailed = true;
+    } finally {
+      _recoveringApple = false;
+    }
+    if (!mounted) return;
+    if (creditFailure != null) {
+      showAppSnackBar(context, _creditingFailedMessage(creditFailure));
+    } else if (processed > 0) {
+      showAppSnackBar(
+        context,
+        'Your earlier App Store purchase has been processed — your balance '
+        'is updated.',
+      );
+    } else if (userInitiated) {
+      showAppSnackBar(
+        context,
+        lookupFailed
+            ? 'Could not check with the App Store. Please try again.'
+            : 'Your previous purchase is still finishing with the App Store. '
+                  'Please try again in a minute.',
+      );
     }
   }
 
