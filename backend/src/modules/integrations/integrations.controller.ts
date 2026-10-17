@@ -5,6 +5,7 @@ import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard.js';
 import { RolesGuard } from '../../auth/guards/roles.guard.js';
 import { RailwayUsageService } from './railway-usage.service.js';
 import { SupabaseUsageService } from './supabase-usage.service.js';
+import { SystemHealthService } from './system-health.service.js';
 
 /**
  * Third-party infrastructure usage/limits, surfaced for the admin panel's
@@ -19,6 +20,7 @@ export class IntegrationsController {
   constructor(
     private readonly railwayUsageService: RailwayUsageService,
     private readonly supabaseUsageService: SupabaseUsageService,
+    private readonly systemHealthService: SystemHealthService,
   ) {}
 
   @Get('railway')
@@ -29,5 +31,11 @@ export class IntegrationsController {
   @Get('supabase')
   getSupabaseUsage() {
     return this.supabaseUsageService.getUsageSummary();
+  }
+
+  /** Last-24h business health for the admin Health page. */
+  @Get('health')
+  getSystemHealth() {
+    return this.systemHealthService.getSummary();
   }
 }
