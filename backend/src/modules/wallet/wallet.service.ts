@@ -9,6 +9,7 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { AppleTransactionStatus, HoldStatus, LedgerEntryType, NotificationType, Prisma } from '@prisma/client';
 import { createHmac, randomUUID, timingSafeEqual } from 'crypto';
+import * as Sentry from '@sentry/node';
 import Razorpay from 'razorpay';
 import {
   Environment,
@@ -543,6 +544,13 @@ export class WalletService {
         .filter(Boolean)
         .join(' ');
       this.logger.warn(`Apple transaction failed verification for user ${userId}: ${reason}`);
+      // A 400 is not sent to Sentry by the global filter, but a real user's
+      // receipt failing here usually means paid-but-not-credited — report it
+      // so an alert fires instead of waiting for a support ticket.
+      reportPaymentIssue('Apple IAP: receipt failed verification', userId, {
+        apple_status: e?.status !== undefined ? String(e.status) : 'none',
+        reason,
+      });
       throw new BadRequestException('Could not verify this App Store purchase');
     }
     await this.creditAppleTransaction(userId, transaction);
@@ -562,6 +570,9 @@ export class WalletService {
       return await this.decodeAppleNotification(signedPayload);
     } catch (err) {
       this.logger.warn(`Apple server notification failed verification: ${err}`);
+      reportPaymentIssue('Apple IAP: server notification failed verification', null, {
+        reason: String(err),
+      });
       return null;
     }
   }
@@ -646,6 +657,11 @@ export class WalletService {
       this.logger.warn(
         `Apple transaction ${transactionId} was revoked (${transaction.revocationType ?? 'unknown'}) before it was credited — not crediting user ${userId}`,
       );
+      reportPaymentIssue('Apple IAP: purchase refunded before it was credited', userId, {
+        transactionId,
+        productId,
+        revocationType: String(transaction.revocationType ?? 'unknown'),
+      });
       await this.prisma.appleTransaction.upsert({
         where: { transactionId },
         create: {
@@ -687,6 +703,9 @@ export class WalletService {
     });
 
     if (applied) {
+      this.logger.log(
+        `Apple IAP credited ${creditedAmountMinor} minor to user ${userId} (${productId}, transaction ${transactionId})`,
+      );
       await this.notifyTopupCredited(userId, creditedAmountMinor);
     }
   }
@@ -756,6 +775,10 @@ export class WalletService {
         `Apple refund for transaction ${transactionId} (user ${record.userId}) exceeds available balance ` +
           `(needs ${record.creditedAmountMinor} minor) — flagged REFUND_PENDING_MANUAL, reconcile via POST /wallet/admin/${record.userId}/adjust`,
       );
+      reportPaymentIssue('Apple IAP: refund needs manual reconciliation', record.userId, {
+        transactionId,
+        creditedAmountMinor: String(record.creditedAmountMinor),
+      });
     }
   }
 
@@ -909,4 +932,25 @@ export class WalletService {
     }
     return wallet;
   }
+}
+
+/**
+ * Sends a payment problem to Sentry as an error-level message (one issue per
+ * message text). Error level makes Sentry mark it high priority, so the
+ * existing "high priority issues" email alert fires. Expected 4xx responses are
+ * filtered out of Sentry globally, which is why these are reported by hand.
+ * A no-op when Sentry isn't configured.
+ */
+function reportPaymentIssue(
+  message: string,
+  userId: string | null,
+  extra: Record<string, string>,
+): void {
+  Sentry.withScope((scope) => {
+    scope.setLevel('error');
+    scope.setTag('flow', 'payments');
+    if (userId) scope.setUser({ id: userId });
+    scope.setExtras(extra);
+    Sentry.captureMessage(message);
+  });
 }

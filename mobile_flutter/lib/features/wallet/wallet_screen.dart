@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
 import 'package:razorpay_flutter/razorpay_flutter.dart';
+import 'package:sentry_flutter/sentry_flutter.dart';
 
 import '../../core/feature_flags.dart';
 import '../../core/network/apple_iap_service.dart';
@@ -260,12 +261,35 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
       if (handled && mounted) {
         showAppSnackBar(context, 'Purchase complete — your balance is updated.');
       }
-    } catch (e) {
+    } catch (e, st) {
+      _reportPaymentFailure(e, st, 'apple_purchase', purchase.purchaseID);
       if (!mounted) return;
       showAppSnackBar(context, _creditingFailedMessage(e));
     } finally {
       if (mounted) setState(() => _toppingUp = false);
     }
+  }
+
+  /// A paid-but-not-credited purchase, sent to Sentry with the user id so it
+  /// can be looked up (and alerted on) without waiting for a support ticket.
+  /// A no-op when Sentry isn't configured in this build.
+  void _reportPaymentFailure(
+    Object error,
+    StackTrace stack,
+    String stage,
+    String? transactionId,
+  ) {
+    final userId = ref.read(authControllerProvider).user?.id;
+    Sentry.captureException(
+      error,
+      stackTrace: stack,
+      withScope: (scope) {
+        scope.setTag('flow', 'payments');
+        scope.setTag('payment_stage', stage);
+        if (transactionId != null) scope.setTag('transaction_id', transactionId);
+        if (userId != null) scope.setUser(SentryUser(id: userId));
+      },
+    );
   }
 
   /// Finds top-ups that were paid for but never finished, and sends each to
@@ -290,7 +314,8 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
             finish: () => iap.finishTransaction(tx.id),
           );
           if (handled) processed++;
-        } catch (e) {
+        } catch (e, st) {
+          _reportPaymentFailure(e, st, 'apple_recovery', tx.id);
           creditFailure ??= e;
         }
       }
@@ -384,7 +409,8 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
       ref.invalidate(walletLedgerProvider);
       if (!mounted) return;
       showAppSnackBar(context, 'Wallet topped up successfully');
-    } catch (e) {
+    } catch (e, st) {
+      _reportPaymentFailure(e, st, 'razorpay_verify', response.paymentId);
       if (!mounted) return;
       showAppSnackBar(context, _creditingFailedMessage(e));
     } finally {
