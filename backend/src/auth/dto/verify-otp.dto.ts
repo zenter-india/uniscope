@@ -5,7 +5,7 @@ export class VerifyOtpDto {
   @IsPhoneNumber('IN')
   phone!: string;
 
-  // Was a strict 6-6 (matching Twilio's fixed 6-digit codes and
+  // Was a strict 6-6 (matching the old fixed 6-digit codes and
   // MockOtpProvider's fixed '111111'). Widened after finding live that
   // MSG91's DLT-approved OTP template generates a 4-digit code regardless
   // of the otp_length param on the send call — the DLT-approved template

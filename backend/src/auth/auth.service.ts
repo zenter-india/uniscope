@@ -59,7 +59,7 @@ export class AuthService {
     }
 
     // Derive phone hash to look up / create the user.
-    // MockOtpProvider stores the hash; for Twilio/MSG91 (and the demo-
+    // MockOtpProvider stores the hash; for MSG91 (and the demo-
     // account bypass above, which never touches a real provider) we
     // compute it here from the verified phone number the same way.
     let phoneHash: string;

@@ -19,17 +19,15 @@ interface Msg91Response {
 }
 
 /**
- * MSG91 OTP — India-focused SMS OTP provider, cheaper per-message than
- * Twilio for Indian numbers (see CLAUDE.md "OTP integration" for why this
- * exists alongside TwilioOtpProvider rather than replacing it: OTP_PROVIDER_TYPE
- * picks whichever is configured, so switching back is a one-line env change
- * if MSG91 ever needs to be swapped out).
+ * MSG91 OTP — India-focused SMS OTP provider, the live OTP provider (it
+ * replaced Twilio, which has been removed entirely; see CLAUDE.md
+ * "OTP integration").
  *
  * Live-verified against a real MSG91 account and a real DLT-approved OTP
  * template: two real phone numbers, two real SMS round trips through
  * POST /auth/otp/request -> POST /auth/otp/verify, both issuing real JWTs.
  * `otp_length=6` below matches what the app already expects everywhere
- * else (Twilio's fixed 6-digit codes, MockOtpProvider's fixed '111111')
+ * else (the old fixed 6-digit codes, MockOtpProvider's fixed '111111')
  * — one live test came back 4 digits regardless of that param, inconclusive
  * whether that was a stale code from before this param was added or a real
  * template-level override, so VerifyOtpDto.code was also widened to a 4-8
@@ -57,7 +55,7 @@ export class Msg91OtpProvider implements OtpProvider {
     const mobile = this.normaliseMobile(phone);
     // otp_length=6 explicitly — MSG91's own default is 4 digits, which
     // doesn't match VerifyOtpDto's `code` validator (min 6, sized for
-    // Twilio's 6-digit codes and MockOtpProvider's fixed 6-digit
+    // the former 6-digit codes and MockOtpProvider's fixed 6-digit
     // '111111'). Found this live: a real 4-digit MSG91 code got rejected
     // by our own validation before ever reaching MSG91's verify call.
     // Matching MSG91's length to what the rest of the app already expects
@@ -79,11 +77,10 @@ export class Msg91OtpProvider implements OtpProvider {
       throw new ServiceUnavailableException('OTP service temporarily unavailable');
     }
 
-    // Unlike Twilio (a Verify Service SID) MSG91 has no separate per-request
-    // service identifier — it tracks the pending OTP by mobile number on its
-    // own side. templateId is a stable, non-secret value that's safe to
-    // round-trip through the client as "serviceId" the same way Twilio's
-    // provider reuses its (also non-per-request) verifyServiceSid.
+    // MSG91 has no separate per-request service identifier — it tracks the
+    // pending OTP by mobile number on its own side. templateId is a stable,
+    // non-secret value that's safe to round-trip through the client as
+    // "serviceId".
     return { serviceId: this.templateId };
   }
 
@@ -100,9 +97,8 @@ export class Msg91OtpProvider implements OtpProvider {
 
     if (!data || data.type !== 'success') {
       // MSG91 returns type:"error" (still HTTP 200) for both "wrong code"
-      // and "expired/no pending OTP" — it doesn't distinguish the way
-      // Twilio's 404-vs-other-error split does, so both collapse to the
-      // same user-facing message.
+      // and "expired/no pending OTP" — it doesn't distinguish them, so both
+      // collapse to the same user-facing message.
       throw new UnauthorizedException('OTP expired or invalid');
     }
 

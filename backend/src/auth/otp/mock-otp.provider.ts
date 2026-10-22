@@ -18,7 +18,7 @@ const RATE_LIMIT_WINDOW = 3600; // 1 hour in seconds
 
 /** Fixed dev-only code — mock mode never sends a real SMS, so a stable code
  * lets you log in on any device without asking someone else to read it out
- * of the server logs each time. Never used when OTP_PROVIDER_TYPE=twilio. */
+ * of the server logs each time. Never used when OTP_PROVIDER_TYPE=msg91. */
 export const MOCK_OTP_FIXED_CODE = '111111';
 
 @Injectable()

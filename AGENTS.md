@@ -12,7 +12,7 @@ Mentorship marketplace connecting prospective medical students (Aspirants) with 
 | Backend | NestJS + TypeScript (`backend/`) — Prisma 7 ORM |
 | Database | PostgreSQL on Supabase (pooler connection; `DIRECT_URL` bypasses pooler for migrations) |
 | Admin panel | Next.js (`admin/`) — single hardcoded admin login, kept as a **separately-deployed, non-public** surface (not linked from user-facing app) |
-| Auth | Phone OTP (Twilio Verify, or `mock` provider for local dev) + JWT access/refresh |
+| Auth | Phone OTP (MSG91, or `mock` provider for local dev) + JWT access/refresh |
 | Real-time chat | Postgres (persistence, via Prisma) + Supabase Realtime Broadcast (content-free "new message" ping — see CLAUDE.md's "Chat architecture" section for the full design). Replaced Stream Chat (cost-driven migration, 2026-09-02). |
 | Audio calls | Agora (RTC token server built; see below) |
 | Payments | Razorpay (Orders API + webhook, also a direct client-confirm fallback for local dev since webhooks need a public URL) |
@@ -24,9 +24,9 @@ Root is an npm workspace monorepo (`backend`, `admin`; `mobile_flutter` is separ
 - Backend: `cd backend && npm run start:dev` (or build+run `dist/main.js` directly — see below). Runs on port **3001**, prefix `/api/v1`.
 - Admin: `npm run dev --workspace=admin` — **must use `next dev --webpack`**, not the Turbopack default (Turbopack can't resolve `lightningcss`'s native binding in this monorepo's hoisted `node_modules`; already fixed in `admin/package.json`).
 - Mobile: `flutter run --dart-define=API_URL=http://10.0.2.2:3001/api/v1` for Android emulator (localhost aliasing), or your LAN IP for a physical device.
-- All secrets live in `backend/.env` and `admin/.env.local` (both gitignored). See `backend/.env.example` for the full list — Supabase, Twilio, Redis (Upstash), Razorpay, Agora, JWT secrets are all already populated in the working `.env` for this project's own accounts. (No separate chat-vendor secret — chat reuses the same Supabase project/keys already configured for storage.)
+- All secrets live in `backend/.env` and `admin/.env.local` (both gitignored). See `backend/.env.example` for the full list — Supabase, MSG91, Redis (Upstash), Razorpay, Agora, JWT secrets are all already populated in the working `.env` for this project's own accounts. (No separate chat-vendor secret — chat reuses the same Supabase project/keys already configured for storage.)
 - Admin login (local dev): credentials are in `admin/.env.local` (`ADMIN_EMAIL`/`ADMIN_PASSWORD`/`ADMIN_SESSION_SECRET`) — not committed.
-- **Mobile login in `mock` OTP mode**: any phone number, code is always the fixed `MOCK_OTP_FIXED_CODE` in `backend/src/auth/otp/mock-otp.provider.ts` (currently `111111`) — deliberately not random, so anyone can log in without reading server logs. Only applies when `OTP_PROVIDER_TYPE=mock`; switching to `twilio` sends and requires a real SMS code again. Don't ship this backend reachable outside localhost while in mock mode — the fixed code means anyone who can reach it can log in as any phone number.
+- **Mobile login in `mock` OTP mode**: any phone number, code is always the fixed `MOCK_OTP_FIXED_CODE` in `backend/src/auth/otp/mock-otp.provider.ts` (currently `111111`) — deliberately not random, so anyone can log in without reading server logs. Only applies when `OTP_PROVIDER_TYPE=mock`; switching to `msg91` sends and requires a real SMS code again. Don't ship this backend reachable outside localhost while in mock mode — the fixed code means anyone who can reach it can log in as any phone number.
 - **A recurring dev-server gotcha:** the Supabase free-tier project auto-pauses after inactivity; if DB calls start failing, check the Supabase dashboard shows the project "Active" and retry.
 - **Backend restart pattern used throughout this project's history** (Claude_Preview MCP tools were unreliable mid-session): `rm -f tsconfig.build.tsbuildinfo && npx tsc -p tsconfig.build.json && node dist/main.js` backgrounded, health-check via `curl localhost:3001/health`.
 
@@ -60,7 +60,7 @@ Root is an npm workspace monorepo (`backend`, `admin`; `mobile_flutter` is separ
 
 ## What's built (backend modules, all tested live against the real Supabase DB + real Stream/Razorpay/Agora APIs — not just unit-style tests)
 
-- `auth` — Phone OTP (Twilio/mock) + JWT
+- `auth` — Phone OTP (MSG91/mock) + JWT
 - `users` — profile CRUD, role transitions
 - `universities` — listing/search (mobile Colleges tab wired to real data, not hardcoded placeholders)
 - `mentors` — discovery/search, eligibility filtering, `{rating, reviewCount}` attached from `reviews`
