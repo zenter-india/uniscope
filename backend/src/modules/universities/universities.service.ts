@@ -444,6 +444,10 @@ export class UniversitiesService {
     const take = Math.min(query.limit ?? DEFAULT_LIMIT, MAX_LIMIT);
 
     const where: Prisma.UniversityWhereInput = {
+      // Rows merged into another college are gone as far as admins are
+      // concerned; a plain deactivation (isActive=false) stays listed.
+      mergedIntoId: null,
+      ...(query.activeOnly === 'true' && { isActive: true }),
       ...(query.state && { state: query.state }),
       ...(query.stream && { stream: query.stream }),
       ...(query.search && {
@@ -457,7 +461,10 @@ export class UniversitiesService {
 
     const rows = await this.prisma.university.findMany({
       where,
-      orderBy: [{ createdAt: 'desc' }, { id: 'asc' }],
+      orderBy:
+        query.sort === 'name'
+          ? [{ name: 'asc' }, { id: 'asc' }]
+          : [{ createdAt: 'desc' }, { id: 'asc' }],
       take: take + 1,
       ...(query.cursor && { cursor: { id: query.cursor }, skip: 1 }),
     });
@@ -817,7 +824,7 @@ export class UniversitiesService {
 
       const deactivateResult = await tx.university.updateMany({
         where: { id: { in: loserIds } },
-        data: { isActive: false },
+        data: { isActive: false, mergedIntoId: winnerId },
       });
 
       return {

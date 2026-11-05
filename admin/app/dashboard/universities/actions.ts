@@ -32,14 +32,13 @@ export interface CollegeOption {
 /** Active colleges from our DB matching `query` (name, district or state) —
  * feeds the "pick an existing college" dropdown in the Edit row. */
 export async function searchColleges(query: string): Promise<CollegeOption[]> {
-  const params = new URLSearchParams({ limit: '30' });
+  const params = new URLSearchParams({ limit: '50', sort: 'name', activeOnly: 'true' });
   if (query.trim()) params.set('search', query.trim());
   const page = await backendFetch<{
-    data: (CollegeOption & { isActive: boolean })[];
+    data: CollegeOption[];
     nextCursor: string | null;
   }>(`/universities/admin/list?${params.toString()}`);
   return page.data
-    .filter((u) => u.isActive)
     .map(({ id, name, city, state }) => ({ id, name, city, state }));
 }
 

@@ -43,6 +43,16 @@ export class ListUniversitiesDto {
   @IsString()
   browse?: string;
 
+  /** Admin list only: `sort=name` orders A–Z instead of newest-first. */
+  @IsOptional()
+  @IsString()
+  sort?: string;
+
+  /** Admin list only: `activeOnly=true` drops deactivated colleges. */
+  @IsOptional()
+  @IsString()
+  activeOnly?: string;
+
   @IsOptional()
   @Type(() => Number)
   @IsInt()
