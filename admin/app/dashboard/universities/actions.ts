@@ -22,6 +22,27 @@ export async function loadMoreUniversities(
   );
 }
 
+export interface CollegeOption {
+  id: string;
+  name: string;
+  city: string | null;
+  state: string;
+}
+
+/** Active colleges from our DB matching `query` (name, district or state) —
+ * feeds the "pick an existing college" dropdown in the Edit row. */
+export async function searchColleges(query: string): Promise<CollegeOption[]> {
+  const params = new URLSearchParams({ limit: '30' });
+  if (query.trim()) params.set('search', query.trim());
+  const page = await backendFetch<{
+    data: (CollegeOption & { isActive: boolean })[];
+    nextCursor: string | null;
+  }>(`/universities/admin/list?${params.toString()}`);
+  return page.data
+    .filter((u) => u.isActive)
+    .map(({ id, name, city, state }) => ({ id, name, city, state }));
+}
+
 export interface UniversityInput {
   name: string;
   stream?: string;

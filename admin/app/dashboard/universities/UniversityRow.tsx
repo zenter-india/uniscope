@@ -4,7 +4,8 @@ import { useRef, useState, useTransition } from 'react';
 import { Badge, Button, Table, fieldClass } from '../../../components/ui';
 import { ConfirmButton } from '../../../components/ConfirmButton';
 import { toast } from '../../../lib/toast';
-import { updateUniversity, uploadUniversityPhoto } from './actions';
+import { mergeUniversities, updateUniversity, uploadUniversityPhoto, type CollegeOption } from './actions';
+import { CollegePicker } from './CollegePicker';
 
 export interface UniversityRowData {
   id: string;
@@ -44,6 +45,7 @@ export function UniversityRow({ university }: { university: UniversityRowData })
     establishedYear: university.establishedYear?.toString() ?? '',
     website: university.website ?? '',
   });
+  const [mergeTarget, setMergeTarget] = useState<CollegeOption | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
@@ -51,6 +53,15 @@ export function UniversityRow({ university }: { university: UniversityRowData })
     setError(null);
     startTransition(async () => {
       try {
+        if (mergeTarget) {
+          // Merge into the chosen college: mentors, reviews, programs, saves,
+          // verifications and leads move over; this typed-in row is retired.
+          const res = await mergeUniversities(mergeTarget.id, [university.id]);
+          if (!res.ok) throw new Error(res.error);
+          setEditing(false);
+          toast.success(`Merged ${university.name} into ${mergeTarget.name}.`);
+          return;
+        }
         await updateUniversity(university.id, {
           name: form.name,
           state: form.state,
@@ -108,12 +119,28 @@ export function UniversityRow({ university }: { university: UniversityRowData })
       <tr>
         <td colSpan={4} className="p-4">
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-            <input
-              value={form.name}
-              onChange={(e) => setForm({ ...form, name: e.target.value })}
-              placeholder="Name"
-              className={fieldClass}
-            />
+            <div className="col-span-2 sm:col-span-3">
+              <CollegePicker
+                excludeId={university.id}
+                selected={mergeTarget}
+                onSelect={setMergeTarget}
+              />
+              {mergeTarget && (
+                <p className="mt-1 text-xs text-amber-700 dark:text-amber-400">
+                  Saving will merge “{university.name}” into “{mergeTarget.name}”: its mentors,
+                  reviews, programs and saves move to the selected college, and “{university.name}”
+                  is removed from the list.
+                </p>
+              )}
+            </div>
+            {!mergeTarget && (
+              <input
+                value={form.name}
+                onChange={(e) => setForm({ ...form, name: e.target.value })}
+                placeholder="Or rename this college"
+                className={fieldClass}
+              />
+            )}
             <input
               value={form.state}
               onChange={(e) => setForm({ ...form, state: e.target.value })}
@@ -143,7 +170,7 @@ export function UniversityRow({ university }: { university: UniversityRowData })
           {error && <p className="mt-2 text-xs text-red-600 dark:text-red-400">{error}</p>}
           <div className="mt-3 flex gap-2">
             <Button variant="successSolid" size="sm" onClick={save} disabled={isPending}>
-              {isPending ? 'Saving…' : 'Save'}
+              {isPending ? 'Saving…' : mergeTarget ? 'Merge & save' : 'Save'}
             </Button>
             <Button size="sm" onClick={() => setEditing(false)} disabled={isPending}>
               Cancel
