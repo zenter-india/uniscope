@@ -38,7 +38,17 @@ class ChatThreadView extends StatefulWidget {
     required this.onLoadOlder,
     this.initialDraft,
     this.starterSuggestions,
+    this.locked = false,
+    this.onContactSupport,
   });
+
+  /// True while the user's account is UNDER_REVIEW: the composer is replaced
+  /// by a locked notice (history stays readable). The support chat never sets
+  /// this, so "Contact support" always has somewhere to land.
+  final bool locked;
+
+  /// Opens the support thread from the locked notice.
+  final VoidCallback? onContactSupport;
 
   /// Pre-fills the composer once, on first mount — used when a chat is
   /// started from a tapped sample question so the aspirant lands with the
@@ -53,7 +63,8 @@ class ChatThreadView extends StatefulWidget {
 
   final ChatConnection connection;
   final String currentUserId;
-  final Future<ChatMessage> Function(String text, String clientMessageId) onSend;
+  final Future<ChatMessage> Function(String text, String clientMessageId)
+  onSend;
   final Future<ChatConnection> Function() onRefetch;
   final Future<ChatConnection> Function(String beforeMessageId) onLoadOlder;
 
@@ -283,8 +294,9 @@ class _ChatThreadViewState extends State<ChatThreadView>
                   suggestions: widget.starterSuggestions,
                   onPick: (q) {
                     _composerController.text = q;
-                    _composerController.selection =
-                        TextSelection.collapsed(offset: q.length);
+                    _composerController.selection = TextSelection.collapsed(
+                      offset: q.length,
+                    );
                     setState(() {});
                   },
                 )
@@ -330,54 +342,122 @@ class _ChatThreadViewState extends State<ChatThreadView>
               child: child!,
             );
           },
-          child: Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppSpacing.md,
-              vertical: AppSpacing.sm,
-            ),
-            child: Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: _composerController,
-                    minLines: 1,
-                    maxLines: 4,
-                    textInputAction: TextInputAction.send,
-                    onSubmitted: (_) => _send(),
-                    decoration: InputDecoration(
-                      hintText: 'Message',
-                      filled: true,
-                      fillColor: AppColors.background,
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: AppSpacing.md,
-                        vertical: AppSpacing.sm,
+          child: widget.locked
+              ? _LockedComposer(onContactSupport: widget.onContactSupport)
+              : Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.md,
+                    vertical: AppSpacing.sm,
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: _composerController,
+                          minLines: 1,
+                          maxLines: 4,
+                          textInputAction: TextInputAction.send,
+                          onSubmitted: (_) => _send(),
+                          decoration: InputDecoration(
+                            hintText: 'Message',
+                            filled: true,
+                            fillColor: AppColors.background,
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: AppSpacing.md,
+                              vertical: AppSpacing.sm,
+                            ),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(24),
+                              borderSide: BorderSide.none,
+                            ),
+                          ),
+                        ),
                       ),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(24),
-                        borderSide: BorderSide.none,
+                      const SizedBox(width: AppSpacing.sm),
+                      IconButton(
+                        onPressed: _sending ? null : _send,
+                        icon: _sending
+                            ? const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
+                              )
+                            : const Icon(
+                                Icons.send_rounded,
+                                color: AppColors.primary,
+                              ),
                       ),
-                    ),
+                    ],
                   ),
                 ),
-                const SizedBox(width: AppSpacing.sm),
-                IconButton(
-                  onPressed: _sending ? null : _send,
-                  icon: _sending
-                      ? const SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const Icon(
-                          Icons.send_rounded,
-                          color: AppColors.primary,
-                        ),
+        ),
+      ],
+    );
+  }
+}
+
+/// Replaces the composer while the account is UNDER_REVIEW.
+class _LockedComposer extends StatelessWidget {
+  const _LockedComposer({this.onContactSupport});
+  final VoidCallback? onContactSupport;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.all(AppSpacing.md),
+      padding: const EdgeInsets.all(AppSpacing.md),
+      decoration: BoxDecoration(
+        color: AppColors.background,
+        border: Border.all(color: AppColors.border),
+        borderRadius: BorderRadius.circular(AppRadius.md),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Icon(
+            Icons.lock_outline_rounded,
+            size: 20,
+            color: AppColors.textMuted,
+          ),
+          const SizedBox(width: AppSpacing.sm),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Your profile is under review',
+                  style: TextStyle(
+                    fontSize: AppFont.sm,
+                    fontWeight: AppFont.semibold,
+                    color: AppColors.textPrimary,
+                  ),
                 ),
+                const SizedBox(height: 2),
+                const Text(
+                  'Contact Uniscope support to rectify.',
+                  style: TextStyle(
+                    fontSize: AppFont.xs,
+                    color: AppColors.textMuted,
+                  ),
+                ),
+                if (onContactSupport != null)
+                  TextButton(
+                    onPressed: onContactSupport,
+                    style: TextButton.styleFrom(
+                      padding: EdgeInsets.zero,
+                      minimumSize: const Size(0, 32),
+                      alignment: Alignment.centerLeft,
+                    ),
+                    child: const Text('Contact support'),
+                  ),
               ],
             ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }

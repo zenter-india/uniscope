@@ -2,9 +2,11 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../core/network/chat_api.dart';
 import '../../core/network/sessions_api.dart';
+import '../../core/network/users_api.dart';
 import '../../core/network/wallet_api.dart';
 import '../../core/theme/app_theme.dart';
 import '../../state/auth_controller.dart';
@@ -361,6 +363,16 @@ class _SessionChatScreenState extends ConsumerState<SessionChatScreen> {
               // mentor opening a new student thread, or the support chat,
               // gets the plain empty state.
               starterSuggestions: isAspirant ? kMentorChatStarters : null,
+              // An admin can put an account UNDER_REVIEW: reading stays
+              // available, sending is locked (the backend enforces it too).
+              locked:
+                  ref
+                      .watch(myProfileProvider)
+                      .asData
+                      ?.value
+                      .verificationStatus ==
+                  'UNDER_REVIEW',
+              onContactSupport: () => context.push('/chats/support'),
               onSend: (text, clientMessageId) => ref
                   .read(chatApiProvider)
                   .sendMessage(

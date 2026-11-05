@@ -125,7 +125,11 @@ Future<void> startChatWithMentor(
     // reads as a bug rather than "this person is gone." Every other failure
     // (blocked, network hiccup, …) keeps the backend's own message, which is
     // already written to be user-facing.
-    final message = e is DioException && e.response?.statusCode == 404
+    final data = e is DioException ? e.response?.data : null;
+    final underReview = data is Map && data['code'] == 'ACCOUNT_UNDER_REVIEW';
+    final message = underReview
+        ? 'Your profile is under review. Contact Uniscope support to rectify.'
+        : e is DioException && e.response?.statusCode == 404
         ? "This mentor's account is no longer available."
         : 'Could not start chat: ${_describeError(e)}';
     showAppSnackBar(context, message);
@@ -339,10 +343,7 @@ class _MentorListScreenState extends ConsumerState<MentorListScreen> {
             onPressed: () => context.push('/mentors/saved'),
             // Red matches the per-card save heart (AppColors.error) and the
             // Discover tab's equivalent "saved" nav icon.
-            icon: const Icon(
-              Icons.favorite_rounded,
-              color: AppColors.error,
-            ),
+            icon: const Icon(Icons.favorite_rounded, color: AppColors.error),
             tooltip: 'Saved mentors',
           ),
         ],

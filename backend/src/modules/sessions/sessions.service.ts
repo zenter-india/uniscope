@@ -23,6 +23,7 @@ import {
   uniminutesLabel,
 } from '../../common/helpers/notification-format.helper.js';
 import { PrismaService } from '../../database/prisma/prisma.service.js';
+import { assertNotUnderReview } from '../../common/helpers/account-review.helper.js';
 import { AgoraService } from '../agora/agora.service.js';
 import { ReviewsService } from '../reviews/reviews.service.js';
 import { AvatarService } from '../avatar/avatar.service.js';
@@ -149,6 +150,9 @@ export class SessionsService {
     if (dto.mentorId === aspirantId) {
       throw new ConflictException('You cannot book a session with yourself');
     }
+
+    // An account an admin has put UNDER_REVIEW can't start a conversation.
+    await assertNotUnderReview(this.prisma, aspirantId);
 
     // Blocking is checked in either direction — same 404 the mentor-not-
     // found path uses, so a blocked party can't tell whether they were
@@ -443,6 +447,8 @@ export class SessionsService {
   ): Promise<SessionResponse> {
     const session = await this.requireSession(sessionId);
     this.requireParty(session, mentorUserId, 'mentor');
+    // Accepting is the mentor's reply to a request -- locked while UNDER_REVIEW.
+    await assertNotUnderReview(this.prisma, mentorUserId);
 
     if (session.status !== SessionStatus.PENDING) {
       throw new ConflictException(

@@ -15,6 +15,7 @@ import type { JwtPayload } from '../../auth/decorators/current-user.decorator.js
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard.js';
 import { BlocksService } from '../blocks/blocks.service.js';
 import { PrismaService } from '../../database/prisma/prisma.service.js';
+import { assertNotUnderReview } from '../../common/helpers/account-review.helper.js';
 import { ChatService } from './chat.service.js';
 import { ListMessagesDto } from './dto/list-messages.dto.js';
 import { SendMessageDto } from './dto/send-message.dto.js';
@@ -93,6 +94,7 @@ export class ChatController {
     @Body() dto: SendMessageDto,
   ) {
     const { channel, session } = await this.requireChannel(sessionId, user.sub);
+    await assertNotUnderReview(this.prisma, user.sub);
     await this.forbidIfBlocked(session, user.sub);
     return this.chatService.sendMessage(
       channel.id,
