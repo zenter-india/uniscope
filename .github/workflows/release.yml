@@ -1,0 +1,91 @@
+name: Release
+
+# Every push to `staging` is built and tested, deployed to Railway staging
+# (Railway auto-deploys that branch), smoke-tested, and then HELD until a
+# reviewer approves the `production` GitHub Environment. Approval promotes the
+# exact tested commit by fast-forwarding PROD_BRANCH, which Railway production
+# deploys. Nothing reaches production without passing through staging first.
+
+on:
+  push:
+    branches: [staging]
+  workflow_dispatch:
+
+# One release at a time; a newer push waits instead of cancelling a pending
+# approval.
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+env:
+  # Branch Railway production tracks. Change here if it is renamed.
+  PROD_BRANCH: main
+  # GitHub deployment environment name Railway reports for staging.
+  STAGING_DEPLOYMENT_ENV: "Uniscope Mobile / staging"
+  STAGING_URL: https://uniscope-staging.up.railway.app
+
+jobs:
+  ci:
+    uses: ./.github/workflows/ci.yml
+
+  staging:
+    name: deploy to staging + smoke test
+    needs: ci
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    permissions:
+      deployments: read
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Wait for Railway staging deployment of this commit
+        run: |
+          sha="${{ github.sha }}"
+          for i in $(seq 1 60); do
+            id=$(gh api "repos/${{ github.repository }}/deployments?sha=$sha&per_page=30" \
+              --jq "[.[] | select(.environment == \"$STAGING_DEPLOYMENT_ENV\")][0].id // empty")
+            if [ -n "$id" ]; then
+              state=$(gh api "repos/${{ github.repository }}/deployments/$id/statuses" --jq '.[0].state // "pending"')
+              echo "staging deployment $id: $state"
+              case "$state" in
+                success) exit 0 ;;
+                failure|error|inactive) echo "::error::Staging deployment $state"; exit 1 ;;
+              esac
+            else
+              echo "no staging deployment for $sha yet"
+            fi
+            sleep 20
+          done
+          echo "::error::Timed out waiting for the staging deployment"; exit 1
+
+      - name: Smoke test staging
+        run: |
+          for i in 1 2 3 4 5 6; do
+            curl -fsS --max-time 15 "$STAGING_URL/health" && exit 0
+            sleep 10
+          done
+          echo "::error::Staging /health failed"; exit 1
+
+  promote:
+    name: promote to production (needs approval)
+    needs: staging
+    runs-on: ubuntu-latest
+    # Required reviewers on this environment are the manual confirmation.
+    environment: production
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Fast-forward production branch to the tested commit
+        run: |
+          sha="${{ github.sha }}"
+          git fetch origin "$PROD_BRANCH"
+          # Only ever move forward: refuse if production has commits staging lacks.
+          if ! git merge-base --is-ancestor "origin/$PROD_BRANCH" "$sha"; then
+            echo "::error::$PROD_BRANCH has commits not in staging; merge it into staging first."
+            exit 1
+          fi
+          git push origin "$sha:refs/heads/$PROD_BRANCH"
