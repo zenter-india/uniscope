@@ -23,6 +23,8 @@ env:
   # GitHub deployment environment name Railway reports for staging.
   STAGING_DEPLOYMENT_ENV: "Uniscope Mobile / staging"
   STAGING_URL: https://uniscope-staging.up.railway.app
+  # Staging admin panel (production is admin.uniscope.in).
+  STAGING_ADMIN_URL: https://admin-staging-15c9.up.railway.app
 
 jobs:
   ci:
@@ -65,6 +67,22 @@ jobs:
             sleep 10
           done
           echo "::error::Staging /health failed"; exit 1
+
+      - name: Smoke test staging admin
+        run: |
+          ok=""
+          for i in 1 2 3 4 5 6; do
+            code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 15 "$STAGING_ADMIN_URL/login")
+            [ "$code" = "200" ] && ok=1 && break
+            sleep 10
+          done
+          [ -n "$ok" ] || { echo "::error::Staging admin /login did not return 200"; exit 1; }
+          # Auth middleware must be live: an unauthenticated /dashboard redirects to /login.
+          loc=$(curl -s -o /dev/null -w '%{redirect_url}' --max-time 15 "$STAGING_ADMIN_URL/dashboard")
+          case "$loc" in
+            */login*) ;;
+            *) echo "::error::Staging admin /dashboard is not protected (redirect: '$loc')"; exit 1 ;;
+          esac
 
   promote:
     name: promote to production (needs approval)
