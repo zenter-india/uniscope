@@ -1,7 +1,6 @@
 name: CI
 
 on:
-  workflow_call:
   pull_request:
   push:
     branches: [main, stage/web-enrollment-site, prod/web-enrollment-site]
