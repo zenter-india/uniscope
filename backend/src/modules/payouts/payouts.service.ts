@@ -10,7 +10,6 @@ import {
   LedgerEntryType,
   NotificationType,
   PayoutStatus,
-  Prisma,
   UserRole,
 } from '@prisma/client';
 import { adminOrderBy } from '../../common/helpers/admin-sort.helper.js';

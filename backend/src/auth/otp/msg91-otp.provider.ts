@@ -88,11 +88,9 @@ export class Msg91OtpProvider implements OtpProvider {
     return { serviceId: this.templateId };
   }
 
-  async verifyOtp(
-    phone: string,
-    code: string,
-    _serviceId: string,
-  ): Promise<boolean> {
+  // MSG91 tracks the pending OTP by mobile number, so the serviceId from
+  // sendOtp is not needed here (the OtpProvider interface still allows it).
+  async verifyOtp(phone: string, code: string): Promise<boolean> {
     const mobile = this.normaliseMobile(phone);
     const url = `https://control.msg91.com/api/v5/otp/verify?mobile=${mobile}&otp=${code}`;
 

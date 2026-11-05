@@ -143,6 +143,13 @@ function toAppleEnvironment(value: string): Environment {
  * this same method once the Agora/BullMQ billing clock is wired in —
  * deliberately not duplicating this logic elsewhere.
  */
+/** Readable form of an unknown error field for logs ("[object Object]" is useless). */
+function describeValue(value: unknown): string {
+  if (value instanceof Error) return value.message;
+  if (typeof value === 'object' && value !== null) return JSON.stringify(value);
+  return String(value);
+}
+
 @Injectable()
 export class WalletService {
   private readonly logger = new Logger(WalletService.name);
@@ -601,8 +608,8 @@ export class WalletService {
       const reason = [
         e?.name ?? 'Error',
         e?.message ? `message=${e.message}` : null,
-        e?.status !== undefined ? `status=${String(e.status)}` : null,
-        e?.cause ? `cause=${String(e.cause)}` : null,
+        e?.status !== undefined ? `status=${describeValue(e.status)}` : null,
+        e?.cause ? `cause=${describeValue(e.cause)}` : null,
       ]
         .filter(Boolean)
         .join(' ');
@@ -613,7 +620,8 @@ export class WalletService {
       // receipt failing here usually means paid-but-not-credited — report it
       // so an alert fires instead of waiting for a support ticket.
       reportPaymentIssue('Apple IAP: receipt failed verification', userId, {
-        apple_status: e?.status !== undefined ? String(e.status) : 'none',
+        apple_status:
+          e?.status !== undefined ? describeValue(e.status) : 'none',
         reason,
       });
       throw new BadRequestException('Could not verify this App Store purchase');

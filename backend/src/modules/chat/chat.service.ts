@@ -286,7 +286,7 @@ export class ChatService {
     try {
       const channel = this.supabase.channel(this.broadcastTopic(channelId));
       await channel.httpSend('new_message', {});
-      this.supabase.removeChannel(channel);
+      void this.supabase.removeChannel(channel);
     } catch {
       // best-effort — see doc comment above.
     }
