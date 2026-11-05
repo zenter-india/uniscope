@@ -1,5 +1,12 @@
 import { ReviewStatus } from '@prisma/client';
-import { ArrayMaxSize, ArrayMinSize, IsArray, IsEnum, IsIn, IsString } from 'class-validator';
+import {
+  ArrayMaxSize,
+  ArrayMinSize,
+  IsArray,
+  IsEnum,
+  IsIn,
+  IsString,
+} from 'class-validator';
 
 /** ADMIN-only bulk moderation — e.g. hide a batch of spam reviews at once.
  * `kind` picks the table (mentor vs. university reviews are two separate

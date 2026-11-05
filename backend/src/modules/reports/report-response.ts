@@ -30,6 +30,8 @@ export function toReportResponse(
     actionedBy: report.actionedBy,
     resolution: report.resolution,
     createdAt: report.createdAt,
-    ...(report.reporter && { reporterDisplayName: report.reporter.displayName }),
+    ...(report.reporter && {
+      reporterDisplayName: report.reporter.displayName,
+    }),
   };
 }

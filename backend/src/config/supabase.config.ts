@@ -18,9 +18,11 @@ export const supabaseConfig = registerAs(
     anonKey: process.env['SUPABASE_ANON_KEY'] ?? '',
     serviceRoleKey: process.env['SUPABASE_SERVICE_ROLE_KEY'] ?? '',
     buckets: {
-      verificationDocs: process.env['SUPABASE_BUCKET_VERIFICATION_DOCS'] ?? 'verification-docs',
+      verificationDocs:
+        process.env['SUPABASE_BUCKET_VERIFICATION_DOCS'] ?? 'verification-docs',
       avatars: process.env['SUPABASE_BUCKET_AVATARS'] ?? 'avatars',
-      messageMedia: process.env['SUPABASE_BUCKET_MESSAGE_MEDIA'] ?? 'message-media',
+      messageMedia:
+        process.env['SUPABASE_BUCKET_MESSAGE_MEDIA'] ?? 'message-media',
     },
   }),
 );

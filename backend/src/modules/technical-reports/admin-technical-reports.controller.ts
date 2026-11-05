@@ -31,9 +31,7 @@ export class AdminTechnicalReportsController {
     @Query('limit') limit?: string,
   ) {
     const parsedStatus =
-      status === 'OPEN' || status === 'RESOLVED'
-        ? (status as TechnicalReportStatus)
-        : undefined;
+      status === 'OPEN' || status === 'RESOLVED' ? status : undefined;
     return this.service.findAllForAdmin({
       status: parsedStatus,
       cursor,

@@ -20,9 +20,15 @@ import { NotificationsService } from '../notifications/notifications.service.js'
 import { SettingsService } from '../settings/settings.service.js';
 import { WalletService } from '../wallet/wallet.service.js';
 import { ProcessPayoutDto } from './dto/process-payout.dto.js';
-import { PayoutRequestResponse, toPayoutRequestResponse } from './payout-response.js';
+import {
+  PayoutRequestResponse,
+  toPayoutRequestResponse,
+} from './payout-response.js';
 
-const OPEN_STATUSES: PayoutStatus[] = [PayoutStatus.PENDING, PayoutStatus.PROCESSING];
+const OPEN_STATUSES: PayoutStatus[] = [
+  PayoutStatus.PENDING,
+  PayoutStatus.PROCESSING,
+];
 
 /**
  * Payouts are deliberately manual/admin-triggered only — no auto-disbursement
@@ -76,7 +82,12 @@ export class PayoutsService {
   @Cron(CronExpression.EVERY_DAY_AT_9AM)
   async remindEligibleMentors(): Promise<void> {
     const mentors = await this.prisma.user.findMany({
-      where: { role: UserRole.MENTOR, isActive: true, isBanned: false, wallet: { isNot: null } },
+      where: {
+        role: UserRole.MENTOR,
+        isActive: true,
+        isBanned: false,
+        wallet: { isNot: null },
+      },
       select: { id: true, wallet: { select: { id: true } } },
     });
 
@@ -96,7 +107,10 @@ export class PayoutsService {
       } catch (err) {
         // One mentor's eligibility check failing must not stop the rest of
         // the batch from being checked.
-        this.logger.error(`Payout-reminder check failed for mentor ${mentor.id}`, err);
+        this.logger.error(
+          `Payout-reminder check failed for mentor ${mentor.id}`,
+          err,
+        );
       }
     }
     if (reminded > 0) {
@@ -104,7 +118,10 @@ export class PayoutsService {
     }
   }
 
-  private async isReminderDue(mentorId: string, walletId: string): Promise<boolean> {
+  private async isReminderDue(
+    mentorId: string,
+    walletId: string,
+  ): Promise<boolean> {
     const existingOpen = await this.prisma.payoutRequest.findFirst({
       where: { mentorId, status: { in: OPEN_STATUSES } },
     });
@@ -199,7 +216,9 @@ export class PayoutsService {
       );
     }
 
-    const wallet = await this.prisma.wallet.findUniqueOrThrow({ where: { userId: mentorId } });
+    const wallet = await this.prisma.wallet.findUniqueOrThrow({
+      where: { userId: mentorId },
+    });
 
     // The withdrawable amount is simply the current wallet balance. A
     // mentor's balance only ever moves two ways: +SESSION_CREDIT (earnings)
@@ -269,9 +288,14 @@ export class PayoutsService {
         orderBy: adminOrderBy(
           sortBy,
           sortDir,
-          { requested: 'createdAt', amount: 'amountMinor', status: 'status', period: 'periodEnd' },
+          {
+            requested: 'createdAt',
+            amount: 'amountMinor',
+            status: 'status',
+            period: 'periodEnd',
+          },
           { createdAt: 'asc' },
-        ) as Prisma.PayoutRequestOrderByWithRelationInput[],
+        ),
         include: {
           mentor: {
             select: {
@@ -300,12 +324,16 @@ export class PayoutsService {
     adminId: string,
     dto: ProcessPayoutDto,
   ): Promise<PayoutRequestResponse> {
-    const payout = await this.prisma.payoutRequest.findUnique({ where: { id: payoutId } });
+    const payout = await this.prisma.payoutRequest.findUnique({
+      where: { id: payoutId },
+    });
     if (!payout) {
       throw new NotFoundException(`Payout request '${payoutId}' not found`);
     }
     if (!OPEN_STATUSES.includes(payout.status)) {
-      throw new ConflictException(`Cannot transition a payout in status ${payout.status}`);
+      throw new ConflictException(
+        `Cannot transition a payout in status ${payout.status}`,
+      );
     }
 
     if (dto.status === PayoutStatus.COMPLETED) {
@@ -347,7 +375,11 @@ export class PayoutsService {
           title: 'Payout sent',
           body: `${rupeesLabel(payout.amountMinor)} has been transferred to your bank${dto.bankReference ? ` (ref ${dto.bankReference})` : ''}.`,
         })
-        .catch((err) => this.logger.warn(`Payout-completed notification failed for ${payout.id}: ${err}`));
+        .catch((err) =>
+          this.logger.warn(
+            `Payout-completed notification failed for ${payout.id}: ${err}`,
+          ),
+        );
     } else if (dto.status === PayoutStatus.FAILED) {
       await this.notifications
         .send({
@@ -356,7 +388,11 @@ export class PayoutsService {
           title: 'Payout could not be completed',
           body: `Your ${rupeesLabel(payout.amountMinor)} payout didn't go through. Your earnings stay claimable — you can request again.`,
         })
-        .catch((err) => this.logger.warn(`Payout-failed notification failed for ${payout.id}: ${err}`));
+        .catch((err) =>
+          this.logger.warn(
+            `Payout-failed notification failed for ${payout.id}: ${err}`,
+          ),
+        );
     }
 
     return toPayoutRequestResponse(updated, await this.overdueAfterMs());

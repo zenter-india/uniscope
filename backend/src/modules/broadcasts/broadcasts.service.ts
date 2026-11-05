@@ -52,7 +52,10 @@ export class BroadcastsService {
     return { ...base, role: { in: [UserRole.ASPIRANT, UserRole.MENTOR] } };
   }
 
-  async create(dto: CreateBroadcastDto, adminUserId: string): Promise<BroadcastResponse> {
+  async create(
+    dto: CreateBroadcastDto,
+    adminUserId: string,
+  ): Promise<BroadcastResponse> {
     const title = dto.title.trim();
     const body = dto.body?.trim() || undefined;
 

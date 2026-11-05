@@ -55,33 +55,29 @@ export const SESSION_WITH_NAMES_INCLUDE = {
 type SessionParty = {
   displayName: string;
   uniqueId: string | null;
-  profile:
-    | {
-        avatarKey: string | null;
-        updatedAt: Date;
-        stream: string | null;
-        qualification: string | null;
-        courseInterested: string | null;
-      }
-    | null;
+  profile: {
+    avatarKey: string | null;
+    updatedAt: Date;
+    stream: string | null;
+    qualification: string | null;
+    courseInterested: string | null;
+  } | null;
 };
 
 type MentorSessionParty = {
   displayName: string;
   uniqueId: string | null;
-  profile:
-    | {
-        avatarKey: string | null;
-        updatedAt: Date;
-        isMentorAvailable: boolean;
-        availabilitySetAt: Date | null;
-        availableDays: string[];
-        specialty: string | null;
-        specialization: string | null;
-        stream: string | null;
-        university: { name: string } | null;
-      }
-    | null;
+  profile: {
+    avatarKey: string | null;
+    updatedAt: Date;
+    isMentorAvailable: boolean;
+    availabilitySetAt: Date | null;
+    availableDays: string[];
+    specialty: string | null;
+    specialization: string | null;
+    stream: string | null;
+    university: { name: string } | null;
+  } | null;
 };
 
 /** Aggregate rating for the in-call context card — optional because only

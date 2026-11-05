@@ -31,9 +31,15 @@ import { BlocksService } from '../blocks/blocks.service.js';
 import { ChatService } from '../chat/chat.service.js';
 import { MentorsService } from '../mentors/mentors.service.js';
 import { NotificationsService } from '../notifications/notifications.service.js';
-import { MENTOR_RATE_PER_MINUTE_MINOR, WalletService } from '../wallet/wallet.service.js';
+import {
+  MENTOR_RATE_PER_MINUTE_MINOR,
+  WalletService,
+} from '../wallet/wallet.service.js';
 import { AcceptSessionDto } from './dto/accept-session.dto.js';
-import { CALL_SLOT_MINUTES, CreateSessionDto } from './dto/create-session.dto.js';
+import {
+  CALL_SLOT_MINUTES,
+  CreateSessionDto,
+} from './dto/create-session.dto.js';
 import { ListSessionsAdminDto } from './dto/list-sessions-admin.dto.js';
 import { ListSessionsDto } from './dto/list-sessions.dto.js';
 import { RescheduleSessionDto } from './dto/reschedule-session.dto.js';
@@ -48,7 +54,10 @@ const DEFAULT_LIMIT = 20;
 const MAX_LIMIT = 50;
 
 /** Statuses a call may be joined/connected from. */
-const JOINABLE_STATUSES: SessionStatus[] = [SessionStatus.ACCEPTED, SessionStatus.RINGING];
+const JOINABLE_STATUSES: SessionStatus[] = [
+  SessionStatus.ACCEPTED,
+  SessionStatus.RINGING,
+];
 
 /** No-show grace period, as a fraction of the booked slot — product decision:
  * exactly half the slot, for every slot size (5-min slot -> 2.5 min grace,
@@ -127,8 +136,11 @@ export class SessionsService {
   ) {}
 
   /** Passed to toSessionResponse at every call site — keeps that file DI-free. */
-  private resolveAvatarUrl: AvatarUrlResolver = (userId, avatarKey, updatedAt) =>
-    this.avatarService.publicUrl(userId, avatarKey, updatedAt);
+  private resolveAvatarUrl: AvatarUrlResolver = (
+    userId,
+    avatarKey,
+    updatedAt,
+  ) => this.avatarService.publicUrl(userId, avatarKey, updatedAt);
 
   /**
    * Creates a PENDING booking request. The mentor's current rate is
@@ -157,7 +169,12 @@ export class SessionsService {
     // Blocking is checked in either direction — same 404 the mentor-not-
     // found path uses, so a blocked party can't tell whether they were
     // blocked or the mentor just doesn't exist (avoids leaking block state).
-    if (await this.blocksService.isBlockedEitherDirection(aspirantId, dto.mentorId)) {
+    if (
+      await this.blocksService.isBlockedEitherDirection(
+        aspirantId,
+        dto.mentorId,
+      )
+    ) {
       throw new NotFoundException(`Mentor '${dto.mentorId}' not found`);
     }
 
@@ -310,7 +327,9 @@ export class SessionsService {
     }
 
     if (isAudioCall) {
-      this.logger.log(`[call] sending SESSION_REQUEST sessionId=${session.id} mentor=${dto.mentorId}`);
+      this.logger.log(
+        `[call] sending SESSION_REQUEST sessionId=${session.id} mentor=${dto.mentorId}`,
+      );
     }
 
     // The mentor decides whether to accept now or plan for later, so the
@@ -332,7 +351,9 @@ export class SessionsService {
 
     await this.notificationsService.send({
       userId: dto.mentorId,
-      type: isAudioCall ? NotificationType.SESSION_REQUEST : NotificationType.MESSAGE,
+      type: isAudioCall
+        ? NotificationType.SESSION_REQUEST
+        : NotificationType.MESSAGE,
       title: isAudioCall ? callTitle : 'New chat',
       body: isAudioCall ? callBody : 'A student started a chat with you.',
       // `instant` (only meaningful for SESSION_REQUEST) tells the client
@@ -552,7 +573,11 @@ export class SessionsService {
    * a proximity bound on the confirmed slot.
    */
   private resolveConfirmedSlot(
-    session: { type: SessionType; requestedFor: Date | null; requestedForAlt: Date | null },
+    session: {
+      type: SessionType;
+      requestedFor: Date | null;
+      requestedForAlt: Date | null;
+    },
     value: string | undefined,
   ): Date | null {
     if (!value) return null;
@@ -569,8 +594,11 @@ export class SessionsService {
     if (Number.isNaN(t)) {
       throw new BadRequestException('confirmedFor is not a valid time');
     }
-    if (slot.getUTCSeconds() !== 0 || slot.getUTCMilliseconds() !== 0 ||
-        (slot.getUTCMinutes() !== 0 && slot.getUTCMinutes() !== 30)) {
+    if (
+      slot.getUTCSeconds() !== 0 ||
+      slot.getUTCMilliseconds() !== 0 ||
+      (slot.getUTCMinutes() !== 0 && slot.getUTCMinutes() !== 30)
+    ) {
       throw new BadRequestException('confirmedFor must be a 30-minute slot');
     }
     const now = Date.now();
@@ -584,7 +612,10 @@ export class SessionsService {
   }
 
   /** Only the booked mentor may reject, and only while PENDING. */
-  async reject(sessionId: string, mentorUserId: string): Promise<SessionResponse> {
+  async reject(
+    sessionId: string,
+    mentorUserId: string,
+  ): Promise<SessionResponse> {
     const session = await this.requireSession(sessionId);
     this.requireParty(session, mentorUserId, 'mentor');
 
@@ -616,7 +647,9 @@ export class SessionsService {
         })
       )._sum.amountMinor ?? 0;
     await this.releaseHoldsForSession(sessionId);
-    this.logger.log(`[call] session rejected sessionId=${sessionId} mentor=${mentorUserId}`);
+    this.logger.log(
+      `[call] session rejected sessionId=${sessionId} mentor=${mentorUserId}`,
+    );
 
     await this.notificationsService.send({
       userId: session.aspirantId,
@@ -661,12 +694,12 @@ export class SessionsService {
 
     const wasConfirmed = session.status === SessionStatus.ACCEPTED;
     const heldMinor = wasConfirmed
-      ? (
+      ? ((
           await this.prisma.walletHold.aggregate({
             where: { sessionId, status: HoldStatus.ACTIVE },
             _sum: { amountMinor: true },
           })
-        )._sum.amountMinor ?? 0
+        )._sum.amountMinor ?? 0)
       : 0;
 
     await this.prisma.session.update({
@@ -841,22 +874,33 @@ export class SessionsService {
   async getCallCredentials(
     sessionId: string,
     userId: string,
-  ): Promise<{ appId: string; channelName: string; token: string; uid: string }> {
+  ): Promise<{
+    appId: string;
+    channelName: string;
+    token: string;
+    uid: string;
+  }> {
     const session = await this.requireSessionForParty(sessionId, userId);
 
     if (session.type !== SessionType.AUDIO_CALL) {
       throw new ForbiddenException('This session is not an audio call session');
     }
-    if (!JOINABLE_STATUSES.includes(session.status) && session.status !== SessionStatus.IN_PROGRESS) {
+    if (
+      !JOINABLE_STATUSES.includes(session.status) &&
+      session.status !== SessionStatus.IN_PROGRESS
+    ) {
       this.logger.warn(
         `[call] token request FAILED sessionId=${sessionId} userId=${userId} — status=${session.status}`,
       );
-      throw new ConflictException(`Cannot join a call in status ${session.status}`);
+      throw new ConflictException(
+        `Cannot join a call in status ${session.status}`,
+      );
     }
     if (
       session.confirmedFor &&
       session.status !== SessionStatus.IN_PROGRESS &&
-      Date.now() < session.confirmedFor.getTime() - CALL_EARLY_JOIN_WINDOW_MINUTES * 60_000
+      Date.now() <
+        session.confirmedFor.getTime() - CALL_EARLY_JOIN_WINDOW_MINUTES * 60_000
     ) {
       throw new ConflictException(
         `This call is scheduled for ${fmtIst(session.confirmedFor)}. ` +
@@ -894,7 +938,10 @@ export class SessionsService {
    * AUDIO_CALL always has a hold; the no-hold branch below only exists to
    * settle a pre-existing legacy free-tier session already in flight.
    */
-  async confirmJoined(sessionId: string, userId: string): Promise<SessionResponse> {
+  async confirmJoined(
+    sessionId: string,
+    userId: string,
+  ): Promise<SessionResponse> {
     const session = await this.requireSessionForParty(sessionId, userId);
 
     if (session.type !== SessionType.AUDIO_CALL) {
@@ -904,7 +951,9 @@ export class SessionsService {
       this.logger.warn(
         `[call] confirmJoined FAILED sessionId=${sessionId} userId=${userId} — status=${session.status}`,
       );
-      throw new ConflictException(`Cannot confirm join for a call in status ${session.status}`);
+      throw new ConflictException(
+        `Cannot confirm join for a call in status ${session.status}`,
+      );
     }
 
     const isAspirant = session.aspirantId === userId;
@@ -955,11 +1004,15 @@ export class SessionsService {
 
     if (settled.count === 0) {
       // Another concurrent call already made this transition — no-op.
-      this.logger.log(`[call] both joined but transition already settled by a concurrent call sessionId=${sessionId}`);
+      this.logger.log(
+        `[call] both joined but transition already settled by a concurrent call sessionId=${sessionId}`,
+      );
       return this.toResponseById(sessionId);
     }
 
-    this.logger.log(`[call] both parties joined — status=IN_PROGRESS sessionId=${sessionId}`);
+    this.logger.log(
+      `[call] both parties joined — status=IN_PROGRESS sessionId=${sessionId}`,
+    );
 
     const slotMinutes = updated.callSlotMinutes ?? 0;
     const slotCostMinor = slotMinutes * MENTOR_RATE_PER_MINUTE_MINOR;
@@ -981,7 +1034,9 @@ export class SessionsService {
         where: { id: sessionId },
         data: { totalCostMinor: slotCostMinor },
       });
-      this.logger.log(`[call] billing settled (paid hold) sessionId=${sessionId} slotMinutes=${slotMinutes}`);
+      this.logger.log(
+        `[call] billing settled (paid hold) sessionId=${sessionId} slotMinutes=${slotMinutes}`,
+      );
 
       const { aspirantName, mentorName } = await this.partyNames(
         session.aspirantId,
@@ -1009,7 +1064,10 @@ export class SessionsService {
       const availableAfter = await this.walletService.getAvailableBalanceMinor(
         hold.walletId,
       );
-      if (availableAfter < CALL_SLOT_MINUTES[0] * MENTOR_RATE_PER_MINUTE_MINOR) {
+      if (
+        availableAfter <
+        CALL_SLOT_MINUTES[0] * MENTOR_RATE_PER_MINUTE_MINOR
+      ) {
         await this.notifySafe({
           userId: session.aspirantId,
           type: NotificationType.LOW_BALANCE,
@@ -1032,10 +1090,15 @@ export class SessionsService {
         data: { freeCallSecondsRemaining: { decrement: slotMinutes * 60 } },
       });
       await this.prisma.userProfile.updateMany({
-        where: { userId: session.aspirantId, freeCallSecondsRemaining: { lt: 0 } },
+        where: {
+          userId: session.aspirantId,
+          freeCallSecondsRemaining: { lt: 0 },
+        },
         data: { freeCallSecondsRemaining: 0 },
       });
-      this.logger.log(`[call] billing settled (legacy free tier) sessionId=${sessionId} slotMinutes=${slotMinutes}`);
+      this.logger.log(
+        `[call] billing settled (legacy free tier) sessionId=${sessionId} slotMinutes=${slotMinutes}`,
+      );
     }
 
     return this.toResponseById(sessionId);
@@ -1047,7 +1110,10 @@ export class SessionsService {
    * is already IN_PROGRESS and both parties are already present. Only the
    * aspirant can trigger this (it costs them Uniminutes).
    */
-  async extendCall(sessionId: string, aspirantUserId: string): Promise<SessionResponse> {
+  async extendCall(
+    sessionId: string,
+    aspirantUserId: string,
+  ): Promise<SessionResponse> {
     const session = await this.requireSession(sessionId);
     this.requireParty(session, aspirantUserId, 'aspirant');
 
@@ -1055,20 +1121,30 @@ export class SessionsService {
       throw new ForbiddenException('This session is not an audio call session');
     }
     if (session.status !== SessionStatus.IN_PROGRESS) {
-      throw new ConflictException(`Cannot extend a call in status ${session.status}`);
+      throw new ConflictException(
+        `Cannot extend a call in status ${session.status}`,
+      );
     }
 
     const extensionMinutes = CALL_SLOT_MINUTES[0]; // fixed +6 min (shortest slot), see product decision
     const extensionCostMinor = extensionMinutes * MENTOR_RATE_PER_MINUTE_MINOR;
 
     const [aspirantWallet, mentorWallet] = await Promise.all([
-      this.prisma.wallet.findUniqueOrThrow({ where: { userId: session.aspirantId } }),
-      this.prisma.wallet.findUniqueOrThrow({ where: { userId: session.mentorId } }),
+      this.prisma.wallet.findUniqueOrThrow({
+        where: { userId: session.aspirantId },
+      }),
+      this.prisma.wallet.findUniqueOrThrow({
+        where: { userId: session.mentorId },
+      }),
     ]);
 
-    const available = await this.walletService.getAvailableBalanceMinor(aspirantWallet.id);
+    const available = await this.walletService.getAvailableBalanceMinor(
+      aspirantWallet.id,
+    );
     if (available < extensionCostMinor) {
-      throw new BadRequestException('Insufficient balance — top up to continue the call');
+      throw new BadRequestException(
+        'Insufficient balance — top up to continue the call',
+      );
     }
 
     // Direct debit/credit (no hold): the call is already connected, so
@@ -1138,11 +1214,16 @@ export class SessionsService {
     if (session.type !== SessionType.AUDIO_CALL) {
       throw new ForbiddenException('This session is not an audio call session');
     }
-    if (session.status !== SessionStatus.IN_PROGRESS && !JOINABLE_STATUSES.includes(session.status)) {
+    if (
+      session.status !== SessionStatus.IN_PROGRESS &&
+      !JOINABLE_STATUSES.includes(session.status)
+    ) {
       this.logger.warn(
         `[call] end FAILED sessionId=${sessionId} userId=${userId} — status=${session.status}`,
       );
-      throw new ConflictException(`Cannot end a call in status ${session.status}`);
+      throw new ConflictException(
+        `Cannot end a call in status ${session.status}`,
+      );
     }
 
     await this.prisma.session.update({
@@ -1165,7 +1246,10 @@ export class SessionsService {
       userId: otherPartyId,
       type: NotificationType.SESSION_ENDED,
       title: 'Call ended',
-      body: endReason === 'SLOT_EXPIRED' ? 'The paid slot ended.' : 'The call has ended.',
+      body:
+        endReason === 'SLOT_EXPIRED'
+          ? 'The paid slot ended.'
+          : 'The call has ended.',
       metadata: { sessionId: session.id },
     });
 
@@ -1235,7 +1319,10 @@ export class SessionsService {
           }),
         ]);
       } catch (err) {
-        this.logger.error(`[call] starting-reminder FAILED sessionId=${s.id}`, err);
+        this.logger.error(
+          `[call] starting-reminder FAILED sessionId=${s.id}`,
+          err,
+        );
       }
     }
   }
@@ -1313,7 +1400,10 @@ export class SessionsService {
         // One session's resolution failing must not stop the sweep from
         // reaching the rest of the batch — it'll simply be retried on the
         // next tick.
-        this.logger.error(`[call] no-show resolution FAILED sessionId=${candidate.id}`, err);
+        this.logger.error(
+          `[call] no-show resolution FAILED sessionId=${candidate.id}`,
+          err,
+        );
       }
     }
   }
@@ -1334,7 +1424,9 @@ export class SessionsService {
    * gap unconditionally rather than trusting that whatever the batch query
    * saw is still true by the time this actually runs. */
   private async resolveNoShow(sessionId: string): Promise<void> {
-    const session = await this.prisma.session.findUnique({ where: { id: sessionId } });
+    const session = await this.prisma.session.findUnique({
+      where: { id: sessionId },
+    });
     if (!session || !JOINABLE_STATUSES.includes(session.status)) return;
 
     const freshDeadline = this.noShowDeadlineMs(session);
@@ -1353,11 +1445,12 @@ export class SessionsService {
     const mentorShowed = session.mentorJoinedAt !== null;
     if (aspirantShowed && mentorShowed) return; // confirmJoined already handled this — nothing to do
 
-    const endReason = !aspirantShowed && !mentorShowed
-      ? 'NO_ANSWER'
-      : aspirantShowed
-        ? 'MENTOR_NO_SHOW'
-        : 'ASPIRANT_NO_SHOW';
+    const endReason =
+      !aspirantShowed && !mentorShowed
+        ? 'NO_ANSWER'
+        : aspirantShowed
+          ? 'MENTOR_NO_SHOW'
+          : 'ASPIRANT_NO_SHOW';
 
     const settled = await this.prisma.session.updateMany({
       where: { id: sessionId, status: { in: JOINABLE_STATUSES } },
@@ -1365,7 +1458,9 @@ export class SessionsService {
     });
     if (settled.count === 0) return; // lost the race — a concurrent tick or confirmJoined already resolved it
 
-    this.logger.log(`[call] no-show resolved sessionId=${sessionId} reason=${endReason}`);
+    this.logger.log(
+      `[call] no-show resolved sessionId=${sessionId} reason=${endReason}`,
+    );
 
     const hold = await this.prisma.walletHold.findFirst({
       where: { sessionId, status: HoldStatus.ACTIVE },
@@ -1422,12 +1517,17 @@ export class SessionsService {
         where: { userId: session.aspirantId },
         data: {
           freeCallSecondsRemaining: {
-            decrement: Math.round((session.callSlotMinutes ?? 0) * CALL_GRACE_FRACTION * 60),
+            decrement: Math.round(
+              (session.callSlotMinutes ?? 0) * CALL_GRACE_FRACTION * 60,
+            ),
           },
         },
       });
       await this.prisma.userProfile.updateMany({
-        where: { userId: session.aspirantId, freeCallSecondsRemaining: { lt: 0 } },
+        where: {
+          userId: session.aspirantId,
+          freeCallSecondsRemaining: { lt: 0 },
+        },
         data: { freeCallSecondsRemaining: 0 },
       });
     } else if (hold) {
@@ -1453,7 +1553,7 @@ export class SessionsService {
         ? "The aspirant didn't join — you've been compensated for waiting."
         : endReason === 'MENTOR_NO_SHOW'
           ? "You didn't join in time — the call was marked a no-show."
-          : "Nobody joined in time — the call was marked a no-show.";
+          : 'Nobody joined in time — the call was marked a no-show.';
 
     await Promise.all([
       this.notificationsService.send({
@@ -1666,7 +1766,7 @@ export class SessionsService {
         query.sortDir,
         { requested: 'requestedAt', cost: 'totalCostMinor', status: 'status' },
         { requestedAt: 'desc' },
-      ) as Prisma.SessionOrderByWithRelationInput[],
+      ),
       take: take + 1,
       ...(query.cursor && { cursor: { id: query.cursor }, skip: 1 }),
     });
@@ -1674,7 +1774,9 @@ export class SessionsService {
     const hasMore = rows.length > take;
     const rowsPage = hasMore ? rows.slice(0, take) : rows;
     return {
-      data: rowsPage.map((row) => toSessionResponse(row, this.resolveAvatarUrl)),
+      data: rowsPage.map((row) =>
+        toSessionResponse(row, this.resolveAvatarUrl),
+      ),
       nextCursor: hasMore ? rowsPage[rowsPage.length - 1].id : null,
     };
   }
@@ -1853,7 +1955,8 @@ export class SessionsService {
     userId: string,
     party: 'aspirant' | 'mentor',
   ): void {
-    const expectedId = party === 'aspirant' ? session.aspirantId : session.mentorId;
+    const expectedId =
+      party === 'aspirant' ? session.aspirantId : session.mentorId;
     if (expectedId !== userId) {
       throw new ForbiddenException(
         `Only the session's ${party} may perform this action`,
@@ -1864,7 +1967,10 @@ export class SessionsService {
   /** 404 (not 403) for a session the caller isn't a party to — same privacy
    * pattern as findById. Used by the call endpoints, which either party
    * (aspirant or mentor) may call. */
-  private async requireSessionForParty(sessionId: string, userId: string): Promise<Session> {
+  private async requireSessionForParty(
+    sessionId: string,
+    userId: string,
+  ): Promise<Session> {
     const session = await this.prisma.session.findFirst({
       where: {
         id: sessionId,
@@ -1881,7 +1987,9 @@ export class SessionsService {
     const holds = await this.prisma.walletHold.findMany({
       where: { sessionId, status: HoldStatus.ACTIVE },
     });
-    await Promise.all(holds.map((hold) => this.walletService.releaseHold(hold.id)));
+    await Promise.all(
+      holds.map((hold) => this.walletService.releaseHold(hold.id)),
+    );
   }
 
   /** Billing notifications must never break a settled call: the money has
@@ -1896,7 +2004,9 @@ export class SessionsService {
   }): Promise<unknown> {
     return this.notificationsService
       .send(params)
-      .catch((err) => this.logger.warn(`[notify] billing notification failed: ${err}`));
+      .catch((err) =>
+        this.logger.warn(`[notify] billing notification failed: ${err}`),
+      );
   }
 
   /** Aspirant + mentor display names for a session, with safe fallbacks —
@@ -1910,8 +2020,10 @@ export class SessionsService {
       select: { id: true, displayName: true },
     });
     return {
-      aspirantName: rows.find((r) => r.id === aspirantId)?.displayName ?? 'the student',
-      mentorName: rows.find((r) => r.id === mentorId)?.displayName ?? 'your mentor',
+      aspirantName:
+        rows.find((r) => r.id === aspirantId)?.displayName ?? 'the student',
+      mentorName:
+        rows.find((r) => r.id === mentorId)?.displayName ?? 'your mentor',
     };
   }
 }

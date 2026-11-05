@@ -39,7 +39,9 @@ describe('ChatController', () => {
     } as any;
     const chatService = {
       ensureChannelForSession: jest.fn().mockResolvedValue({ id: 'channel-1' }),
-      listMessages: jest.fn().mockResolvedValue({ messages: [], hasMore: false }),
+      listMessages: jest
+        .fn()
+        .mockResolvedValue({ messages: [], hasMore: false }),
       sendMessage: jest.fn().mockResolvedValue({ id: 'm1' }),
       connectionInfo: jest.fn().mockReturnValue({}),
     } as any;
@@ -68,7 +70,11 @@ describe('ChatController', () => {
     ).rejects.toBeInstanceOf(ForbiddenException);
   });
 
-  it.each([SessionStatus.PENDING, SessionStatus.REJECTED, SessionStatus.EXPIRED])(
+  it.each([
+    SessionStatus.PENDING,
+    SessionStatus.REJECTED,
+    SessionStatus.EXPIRED,
+  ])(
     '403s a participant while the session is %s (not yet/no longer chattable)',
     async (status) => {
       const controller = controllerWith({ session: baseSession({ status }) });
@@ -78,7 +84,11 @@ describe('ChatController', () => {
     },
   );
 
-  it.each([SessionStatus.ACCEPTED, SessionStatus.IN_PROGRESS, SessionStatus.COMPLETED])(
+  it.each([
+    SessionStatus.ACCEPTED,
+    SessionStatus.IN_PROGRESS,
+    SessionStatus.COMPLETED,
+  ])(
     'allows a participant to read history while the session is %s',
     async (status) => {
       const controller = controllerWith({ session: baseSession({ status }) });
@@ -89,14 +99,20 @@ describe('ChatController', () => {
   );
 
   it('lets either participant read history even if the pair has since blocked each other', async () => {
-    const controller = controllerWith({ session: baseSession(), isBlocked: true });
+    const controller = controllerWith({
+      session: baseSession(),
+      isBlocked: true,
+    });
     await expect(
       controller.listMessages(sessionId, { sub: aspirantId } as any, {}),
     ).resolves.toBeDefined();
   });
 
   it('403s sendMessage when the pair has blocked each other (either party, either direction)', async () => {
-    const controller = controllerWith({ session: baseSession(), isBlocked: true });
+    const controller = controllerWith({
+      session: baseSession(),
+      isBlocked: true,
+    });
     await expect(
       controller.sendMessage(sessionId, { sub: aspirantId } as any, {
         text: 'hi',

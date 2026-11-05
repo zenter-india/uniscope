@@ -13,7 +13,9 @@ export const supabaseProvider: Provider = {
   inject: [ConfigService],
   useFactory: (configService: ConfigService) => {
     const url = configService.getOrThrow<string>('supabase.url');
-    const serviceRoleKey = configService.getOrThrow<string>('supabase.serviceRoleKey');
+    const serviceRoleKey = configService.getOrThrow<string>(
+      'supabase.serviceRoleKey',
+    );
 
     return createClient(url, serviceRoleKey, {
       auth: {
