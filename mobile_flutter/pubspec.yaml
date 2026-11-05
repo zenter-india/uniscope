@@ -42,7 +42,7 @@ dependencies:
   razorpay_flutter: ^1.4.0
   agora_rtc_engine: 6.6.4
   image_picker: ^1.2.3
-  firebase_core: ^4.12.1
+  firebase_core: ^4.15.2
   firebase_messaging: ^16.4.3
   flutter_local_notifications: ^19.4.2
   flutter_svg: ^2.2.1
