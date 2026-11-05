@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { fetchCuratedColleges, type CuratedCollege } from "../lib/api";
 import { TextInput } from "./form-bits";
+import { BackToSearch, BypassOptions, EXAMPLE_COLLEGE, useRequirePick } from "./BypassOptions";
 
 /** Browsable + type-to-search College/University picker for a stream+degree
  * whose data is small enough to browse in full (MD/MS today) — same UX as
@@ -12,9 +13,10 @@ import { TextInput } from "./form-bits";
  * specializations come back in the same payload (see onPick) rather than
  * needing a second lookup.
  *
- * A typed value that matches nothing in the list is still accepted as free
- * text (onPick(name, null)), same fallback as CollegeSearch/the DNB-style
- * curated dropdowns' "Other" option — just without a separate menu item. */
+ * Typing only searches. A college not in the list is accepted only after the
+ * user chooses "Not listed here" (plain text entry, onPick(null, name));
+ * until a college is picked or that option is chosen, native form submission
+ * is blocked (useRequirePick). */
 export function CuratedCollegeSearch({
   stream,
   degree,
@@ -31,7 +33,15 @@ export function CuratedCollegeSearch({
   const [query, setQuery] = useState(value);
   const [results, setResults] = useState<CuratedCollege[]>([]);
   const [open, setOpen] = useState(false);
+  // "Not listed here" chosen: plain text entry, no list.
+  const [manual, setManual] = useState(false);
+  // The label of the college last picked from the list, if the text still
+  // equals it.
+  const [picked, setPicked] = useState<string | null>(null);
   const requestId = useRef(0);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useRequirePick(inputRef, manual || (picked !== null && picked === query));
 
   // Keeps the visible text in sync when the parent resets `value` out from
   // under this component without the mentor typing anything themselves --
@@ -57,6 +67,7 @@ export function CuratedCollegeSearch({
   // for the same reason: focusing the field should show a browsable list
   // immediately, not only once the mentor starts typing.
   useEffect(() => {
+    if (manual) return;
     const thisRequest = ++requestId.current;
     const handle = setTimeout(() => {
       fetchCuratedColleges(stream, degree, { browse: true, search: query.trim() || undefined })
@@ -68,53 +79,83 @@ export function CuratedCollegeSearch({
         });
     }, 250);
     return () => clearTimeout(handle);
-  }, [stream, degree, query]);
+  }, [stream, degree, query, manual]);
+
+  const enterManual = () => {
+    setManual(true);
+    setOpen(false);
+    setPicked(null);
+    setQuery("");
+    onPick(null, "");
+    inputRef.current?.focus();
+  };
+
+  const backToSearch = () => {
+    setManual(false);
+    setQuery("");
+    onPick(null, "");
+    inputRef.current?.focus();
+  };
 
   return (
     <div className="relative">
       <TextInput
+        ref={inputRef}
         gold={gold}
         required
-        placeholder="Select or type to search…"
+        placeholder={manual ? "Enter your college name" : "Select or type to search…"}
         value={query}
         onChange={(e) => {
           setQuery(e.target.value);
-          setOpen(true);
+          if (!manual) {
+            setOpen(true);
+            setPicked(null);
+          }
           onPick(null, e.target.value);
         }}
-        onFocus={() => setOpen(true)}
+        onFocus={() => {
+          if (!manual) setOpen(true);
+        }}
         onBlur={() => setTimeout(() => setOpen(false), 150)}
       />
-      {open && results.length > 0 && (
-        <ul className="absolute z-10 mt-1 w-full bg-white border border-border rounded-[11px] shadow-lg max-h-56 overflow-auto">
-          {results.map((college) => (
-            <li key={college.id}>
-              <button
-                type="button"
-                // Prevents the TextInput above from ever blurring when this
-                // is tapped/clicked -- without this, onBlur's setTimeout
-                // close can win the race against this button's own click on
-                // a real touch device (tap fires blur before the click/tap
-                // finishes registering), silently swallowing the pick and
-                // leaving the field looking empty. Found live on a real
-                // mobile device -- not reproducible with a desktop mouse or
-                // a synthetic .click(), which is why this shipped once
-                // already unnoticed. mousedown fires before blur in every
-                // browser (desktop and mobile), so preventDefault() here
-                // stops the blur from ever happening at all.
-                onMouseDown={(e) => e.preventDefault()}
-                onClick={() => {
-                  setQuery(college.label);
-                  onPick(college, college.label);
-                  setOpen(false);
-                }}
-                className={`w-full text-left px-3.5 py-2.5 text-[13.5px] font-semibold ${gold ? "hover:bg-[#fbf1de]" : "hover:bg-[#eef3ff]"}`}
-              >
-                {college.label}
-              </button>
-            </li>
-          ))}
-        </ul>
+      {manual && <BackToSearch onClick={backToSearch} />}
+      {open && !manual && (
+        <div className="absolute z-10 mt-1 w-full bg-white border border-border rounded-[11px] shadow-lg overflow-hidden">
+          <ul className="max-h-56 overflow-auto">
+            {results.length === 0 && (
+              <li className="px-3.5 py-2.5 text-[13px] text-muted">No matches</li>
+            )}
+            {results.map((college) => (
+              <li key={college.id}>
+                <button
+                  type="button"
+                  // Prevents the TextInput above from ever blurring when this
+                  // is tapped/clicked -- without this, onBlur's setTimeout
+                  // close can win the race against this button's own click on
+                  // a real touch device (tap fires blur before the click/tap
+                  // finishes registering), silently swallowing the pick and
+                  // leaving the field looking empty. Found live on a real
+                  // mobile device -- not reproducible with a desktop mouse or
+                  // a synthetic .click(), which is why this shipped once
+                  // already unnoticed. mousedown fires before blur in every
+                  // browser (desktop and mobile), so preventDefault() here
+                  // stops the blur from ever happening at all.
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={() => {
+                    setQuery(college.label);
+                    setPicked(college.label);
+                    onPick(college, college.label);
+                    setOpen(false);
+                  }}
+                  className={`w-full text-left px-3.5 py-2.5 text-[13.5px] font-semibold ${gold ? "hover:bg-[#fbf1de]" : "hover:bg-[#eef3ff]"}`}
+                >
+                  {college.label}
+                </button>
+              </li>
+            ))}
+          </ul>
+          <BypassOptions example={EXAMPLE_COLLEGE} onNotListed={enterManual} />
+        </div>
       )}
     </div>
   );
