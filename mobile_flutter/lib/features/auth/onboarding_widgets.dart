@@ -447,6 +447,95 @@ class OnboardingSearchableField extends StatelessWidget {
   }
 }
 
+/// The two escape hatches shown under every college / specialization search
+/// list: a hint to retry the search with a different spelling, and a "Not
+/// listed here" row that lets the user type their own value. Typing alone
+/// only searches - a value that isn't picked from the list is accepted only
+/// after "Not listed here" is chosen.
+class OnboardingBypassOptions extends StatelessWidget {
+  const OnboardingBypassOptions({
+    super.key,
+    required this.example,
+    required this.onNotListed,
+  });
+
+  /// The "e.g. ..." line under "Try searching in a different form".
+  final String example;
+  final VoidCallback onNotListed;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Divider(height: 1, color: AppColors.border),
+        Padding(
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.md,
+            vertical: AppSpacing.sm,
+          ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Icon(Icons.lightbulb_outline_rounded,
+                  size: 18, color: AppColors.textMuted),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Try searching in a different form',
+                      style: TextStyle(
+                        fontSize: AppFont.sm,
+                        fontWeight: AppFont.semibold,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      example,
+                      style: const TextStyle(
+                        fontSize: AppFont.xs,
+                        color: AppColors.textMuted,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+        const Divider(height: 1, color: AppColors.border),
+        InkWell(
+          onTap: onNotListed,
+          child: const Padding(
+            padding: EdgeInsets.symmetric(
+              horizontal: AppSpacing.md,
+              vertical: AppSpacing.md,
+            ),
+            child: Row(
+              children: [
+                Icon(Icons.edit_outlined, size: 18, color: AppColors.primary),
+                SizedBox(width: AppSpacing.sm),
+                Text(
+                  'Not listed here',
+                  style: TextStyle(
+                    fontSize: AppFont.sm,
+                    fontWeight: AppFont.semibold,
+                    color: AppColors.primary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
 class _SearchableOptionSheet extends StatefulWidget {
   const _SearchableOptionSheet({
     required this.title,
@@ -465,9 +554,63 @@ class _SearchableOptionSheet extends StatefulWidget {
 
 class _SearchableOptionSheetState extends State<_SearchableOptionSheet> {
   String _query = '';
+  // "Not listed here" was chosen - the sheet swaps the list for a plain text
+  // box and returns whatever the user types.
+  bool _manual = false;
+  String _manualText = '';
+
+  Widget _buildManual(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.only(
+        left: AppSpacing.lg,
+        right: AppSpacing.lg,
+        top: AppSpacing.md,
+        bottom: MediaQuery.of(context).viewInsets.bottom + AppSpacing.md,
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            widget.title,
+            style: const TextStyle(
+              fontSize: AppFont.md,
+              fontWeight: AppFont.bold,
+              color: AppColors.textPrimary,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          TextField(
+            autofocus: true,
+            onChanged: (v) => setState(() => _manualText = v),
+            decoration: const InputDecoration(
+              hintText: 'Type it here',
+            ),
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          Row(
+            children: [
+              TextButton(
+                onPressed: () => setState(() => _manual = false),
+                child: const Text('Back to list'),
+              ),
+              const Spacer(),
+              FilledButton(
+                onPressed: _manualText.trim().isEmpty
+                    ? null
+                    : () => Navigator.of(context).pop(_manualText.trim()),
+                child: const Text('Use this'),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
+    if (_manual) return _buildManual(context);
     final q = _query.trim().toLowerCase();
     // With nothing typed, show the narrow (e.g. college-scoped) list as-is.
     // Once searching, widen the pool first so a real option outside the
@@ -519,20 +662,6 @@ class _SearchableOptionSheetState extends State<_SearchableOptionSheet> {
                               'No matches',
                               style: TextStyle(color: AppColors.textMuted),
                             ),
-                            // Same free-text fallback CollegeSearchField
-                            // already has — if a real specialization isn't
-                            // in the list, typing it and using it as-is
-                            // beats leaving the user with no way to
-                            // proceed. The backend column is a plain
-                            // string, no enum to violate.
-                            if (_query.trim().isNotEmpty) ...[
-                              const SizedBox(height: AppSpacing.md),
-                              OutlinedButton(
-                                onPressed: () => Navigator.of(context)
-                                    .pop(_query.trim()),
-                                child: Text('Use "${_query.trim()}"'),
-                              ),
-                            ],
                           ],
                         ),
                       ),
@@ -552,6 +681,11 @@ class _SearchableOptionSheetState extends State<_SearchableOptionSheet> {
                         );
                       },
                     ),
+            ),
+            OnboardingBypassOptions(
+              example:
+                  'e.g. search the full name instead of a short form or abbreviation',
+              onNotListed: () => setState(() => _manual = true),
             ),
           ],
         ),

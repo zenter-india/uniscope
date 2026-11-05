@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/network/universities_api.dart';
 import '../../core/theme/app_theme.dart';
+import 'onboarding_widgets.dart';
 
 /// Browsable + type-to-search College/University picker — the same UX as the
 /// web enrollment forms' college fields (CollegeSearch / CuratedCollegeSearch
@@ -26,12 +27,18 @@ class CollegeSearchField extends ConsumerStatefulWidget {
     super.key,
     required this.initialText,
     required this.onPick,
+    this.initialUniversityId,
     this.stream,
     this.curatedDegree,
     this.level,
   });
 
   final String initialText;
+
+  /// The college id already picked when this field is (re)built, if any. A
+  /// non-empty [initialText] with no id means the user had typed their own
+  /// name via "Not listed here", so the field reopens in that mode.
+  final String? initialUniversityId;
 
   /// The user's field of study — bounds the general search and is required
   /// for the curated one. Null only in a not-yet-usable state (no stream
@@ -46,8 +53,10 @@ class CollegeSearchField extends ConsumerStatefulWidget {
   final String? level;
 
   /// `(universityId, displayText, specializations)` on a pick from the list
-  /// (id non-null), or `(null, rawText, const [])` on every keystroke so the
-  /// caller keeps the free-text answer in sync. `specializations` is the
+  /// (id non-null); `(null, '', const [])` while the user is only searching
+  /// (nothing chosen yet, so the caller treats the field as empty); and
+  /// `(null, rawText, const [])` on every keystroke once "Not listed here"
+  /// is chosen, so the caller keeps that typed answer in sync. `specializations` is the
   /// picked college's own list for this stream+degree (curated mode only —
   /// empty in the general search) so the caller can scope its Specialization
   /// field to that college, matching the web enrollment form.
@@ -72,6 +81,11 @@ class _CollegeSearchFieldState extends ConsumerState<CollegeSearchField> {
   // Whether the once-per-focus "results arrived, scroll them into view"
   // pass has run — see _scrollIntoView / _fetch.
   bool _scrolledForResults = false;
+  // "Not listed here" chosen: the field becomes a plain text box and what the
+  // user types is their college name (resolved via findOrCreate on submit).
+  // Otherwise typing only searches and nothing counts until a pick.
+  late bool _manual =
+      widget.initialText.trim().isNotEmpty && widget.initialUniversityId == null;
 
   /// Scrolls this field (and the results list under it) up near the top of
   /// the visible area — not just "barely on screen", which is all the
@@ -92,6 +106,7 @@ class _CollegeSearchFieldState extends ConsumerState<CollegeSearchField> {
   void initState() {
     super.initState();
     _focusNode.addListener(() {
+      if (_manual) return;
       if (_focusNode.hasFocus) {
         setState(() => _open = true);
         _scrolledForResults = false;
@@ -141,9 +156,32 @@ class _CollegeSearchFieldState extends ConsumerState<CollegeSearchField> {
   }
 
   void _onChanged(String query) {
-    widget.onPick(null, query, const []);
+    if (_manual) {
+      widget.onPick(null, query, const []);
+      return;
+    }
+    // Search only - the typed text is not an answer until a college is picked
+    // or "Not listed here" is chosen.
+    widget.onPick(null, '', const []);
     setState(() => _open = true);
     _fetch(query);
+  }
+
+  void _enterManual() {
+    _controller.clear();
+    widget.onPick(null, '', const []);
+    setState(() {
+      _manual = true;
+      _open = false;
+    });
+    _focusNode.requestFocus();
+  }
+
+  void _backToSearch() {
+    _controller.clear();
+    widget.onPick(null, '', const []);
+    setState(() => _manual = false);
+    _focusNode.requestFocus();
   }
 
   void _fetch(String query) {
@@ -226,7 +264,7 @@ class _CollegeSearchFieldState extends ConsumerState<CollegeSearchField> {
 
   @override
   Widget build(BuildContext context) {
-    final showList = _open && (_results.isNotEmpty || _loading);
+    final showList = _open && !_manual;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -234,10 +272,20 @@ class _CollegeSearchFieldState extends ConsumerState<CollegeSearchField> {
           controller: _controller,
           focusNode: _focusNode,
           onChanged: _onChanged,
-          decoration: const InputDecoration(
-            hintText: 'Select or type to search…',
+          decoration: InputDecoration(
+            hintText: _manual
+                ? 'Enter your college name'
+                : 'Select or type to search…',
           ),
         ),
+        if (_manual)
+          Align(
+            alignment: Alignment.centerLeft,
+            child: TextButton(
+              onPressed: _backToSearch,
+              child: const Text('Back to search'),
+            ),
+          ),
         if (showList)
           Container(
             margin: const EdgeInsets.only(top: AppSpacing.xs),
@@ -247,41 +295,62 @@ class _CollegeSearchFieldState extends ConsumerState<CollegeSearchField> {
               border: Border.all(color: AppColors.border),
               borderRadius: BorderRadius.circular(AppRadius.md),
             ),
-            child: _loading && _results.isEmpty
-                ? const Padding(
-                    padding: EdgeInsets.all(AppSpacing.md),
-                    child: Center(
-                      child: SizedBox(
-                        width: 18,
-                        height: 18,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      ),
-                    ),
-                  )
-                : ListView.builder(
-                    shrinkWrap: true,
-                    padding: EdgeInsets.zero,
-                    itemCount: _results.length,
-                    itemBuilder: (context, i) {
-                      final o = _results[i];
-                      return InkWell(
-                        onTap: () => _select(o),
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: AppSpacing.md,
-                            vertical: AppSpacing.sm,
-                          ),
-                          child: Text(
-                            o.label,
-                            style: const TextStyle(
-                              fontSize: AppFont.sm,
-                              fontWeight: AppFont.medium,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Flexible(
+                  child: _loading && _results.isEmpty
+                      ? const Padding(
+                          padding: EdgeInsets.all(AppSpacing.md),
+                          child: Center(
+                            child: SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(strokeWidth: 2),
                             ),
                           ),
-                        ),
-                      );
-                    },
-                  ),
+                        )
+                      : _results.isEmpty
+                          ? const Padding(
+                              padding: EdgeInsets.all(AppSpacing.md),
+                              child: Text(
+                                'No matches',
+                                style: TextStyle(color: AppColors.textMuted),
+                              ),
+                            )
+                          : ListView.builder(
+                              shrinkWrap: true,
+                              padding: EdgeInsets.zero,
+                              itemCount: _results.length,
+                              itemBuilder: (context, i) {
+                                final o = _results[i];
+                                return InkWell(
+                                  onTap: () => _select(o),
+                                  child: Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: AppSpacing.md,
+                                      vertical: AppSpacing.sm,
+                                    ),
+                                    child: Text(
+                                      o.label,
+                                      style: const TextStyle(
+                                        fontSize: AppFont.sm,
+                                        fontWeight: AppFont.medium,
+                                      ),
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                ),
+                OnboardingBypassOptions(
+                  example:
+                      'e.g. search "Jawaharlal Nehru Postgraduate Institute" instead of "JIPMER"',
+                  onNotListed: _enterManual,
+                ),
+              ],
+            ),
           ),
       ],
     );

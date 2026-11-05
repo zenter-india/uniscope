@@ -685,6 +685,7 @@ class _MentorOnboardingScreenState extends ConsumerState<MentorOnboardingScreen>
                         CollegeSearchField(
                           key: ValueKey('${_stream}_$_degree'),
                           initialText: _collegeNameController.text,
+                          initialUniversityId: _universityId,
                           stream: _stream == 'Others'
                               ? _streamOtherController.text.trim()
                               : _stream,

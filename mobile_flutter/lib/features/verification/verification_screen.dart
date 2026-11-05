@@ -278,6 +278,7 @@ class _SubmissionFormState extends ConsumerState<_SubmissionForm> {
                 style: TextStyle(color: AppColors.error, fontSize: AppFont.xs)),
             data: (profile) => CollegeSearchField(
               initialText: _collegeNameController.text,
+                          initialUniversityId: _universityId,
               stream: profile.stream,
               onPick: (universityId, text, _) => setState(() {
                 _universityId = universityId;

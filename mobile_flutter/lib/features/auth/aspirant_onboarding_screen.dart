@@ -527,6 +527,7 @@ class _AspirantOnboardingScreenState
                           // rather than reusing the previous data set's state.
                           key: ValueKey('${_stream}_$_qualification'),
                           initialText: _collegeNameController.text,
+                          initialUniversityId: _universityId,
                           stream: _stream == 'Others'
                               ? _streamOtherController.text.trim()
                               : _stream,
