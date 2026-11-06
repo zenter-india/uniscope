@@ -140,7 +140,8 @@ export class ReviewModerationService {
       where: { id },
       select: { id: true },
     });
-    if (!found) throw new NotFoundException(`University review '${id}' not found`);
+    if (!found)
+      throw new NotFoundException(`University review '${id}' not found`);
     await this.prisma.review.update({ where: { id }, data: { status } });
   }
 

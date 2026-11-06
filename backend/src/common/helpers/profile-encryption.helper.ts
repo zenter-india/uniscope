@@ -23,7 +23,9 @@ function loadKey(): Buffer {
   }
   const key = Buffer.from(hex, 'hex');
   if (key.length !== 32) {
-    throw new Error('PROFILE_ENCRYPTION_KEY must decode to exactly 32 bytes (a 64-char hex string).');
+    throw new Error(
+      'PROFILE_ENCRYPTION_KEY must decode to exactly 32 bytes (a 64-char hex string).',
+    );
   }
   return key;
 }
@@ -32,7 +34,10 @@ export function encryptField(plaintext: string): string {
   const key = loadKey();
   const iv = randomBytes(12);
   const cipher = createCipheriv(ALGORITHM, key, iv);
-  const ciphertext = Buffer.concat([cipher.update(plaintext, 'utf8'), cipher.final()]);
+  const ciphertext = Buffer.concat([
+    cipher.update(plaintext, 'utf8'),
+    cipher.final(),
+  ]);
   const authTag = cipher.getAuthTag();
   return `${iv.toString('hex')}:${authTag.toString('hex')}:${ciphertext.toString('hex')}`;
 }
@@ -55,7 +60,9 @@ export function decryptField(payload: string): string {
 /** Best-effort decrypt — returns null on a missing value or a decrypt
  * failure (e.g. the key was rotated), instead of throwing into a response
  * projection. */
-export function decryptFieldSafe(payload: string | null | undefined): string | null {
+export function decryptFieldSafe(
+  payload: string | null | undefined,
+): string | null {
   if (!payload) return null;
   try {
     return decryptField(payload);

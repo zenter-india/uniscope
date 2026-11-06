@@ -1,4 +1,11 @@
-import { BadRequestException, Body, Controller, Get, Patch, UseGuards } from '@nestjs/common';
+import {
+  BadRequestException,
+  Body,
+  Controller,
+  Get,
+  Patch,
+  UseGuards,
+} from '@nestjs/common';
 import { UserRole } from '@prisma/client';
 import { Roles } from '../../auth/decorators/roles.decorator.js';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard.js';
@@ -20,7 +27,9 @@ export class SettingsController {
   @Patch()
   update(@Body() body: unknown) {
     if (!isNumericRecord(body)) {
-      throw new BadRequestException('Body must be a flat object of setting key -> number');
+      throw new BadRequestException(
+        'Body must be a flat object of setting key -> number',
+      );
     }
     return this.settingsService.setMany(body);
   }

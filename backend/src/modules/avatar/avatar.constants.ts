@@ -11,56 +11,127 @@
  */
 
 export const AVATAR_TOPS = [
-  'shortFlat', 'shortWaved', 'shortCurly', 'shortRound', 'theCaesar',
-  'sides', 'shavedSides', 'dreads01', 'frizzle', 'shaggy',
-  'bob', 'bun', 'curly', 'curvy', 'straight01', 'straight02',
-  'longButNotTooLong', 'bigHair', 'fro', 'froBand',
-  'hijab', 'turban', 'hat',
+  'shortFlat',
+  'shortWaved',
+  'shortCurly',
+  'shortRound',
+  'theCaesar',
+  'sides',
+  'shavedSides',
+  'dreads01',
+  'frizzle',
+  'shaggy',
+  'bob',
+  'bun',
+  'curly',
+  'curvy',
+  'straight01',
+  'straight02',
+  'longButNotTooLong',
+  'bigHair',
+  'fro',
+  'froBand',
+  'hijab',
+  'turban',
+  'hat',
 ] as const;
 
 export const AVATAR_EYES = [
-  'default', 'happy', 'squint', 'wink', 'side', 'surprised', 'closed', 'hearts',
+  'default',
+  'happy',
+  'squint',
+  'wink',
+  'side',
+  'surprised',
+  'closed',
+  'hearts',
 ] as const;
 
 export const AVATAR_EYEBROWS = [
-  'defaultNatural', 'flatNatural', 'raisedExcitedNatural', 'upDownNatural',
-  'default', 'raisedExcited', 'upDown',
+  'defaultNatural',
+  'flatNatural',
+  'raisedExcitedNatural',
+  'upDownNatural',
+  'default',
+  'raisedExcited',
+  'upDown',
 ] as const;
 
 export const AVATAR_MOUTHS = [
-  'smile', 'default', 'twinkle', 'serious', 'tongue', 'grimace', 'eating',
+  'smile',
+  'default',
+  'twinkle',
+  'serious',
+  'tongue',
+  'grimace',
+  'eating',
 ] as const;
 
 /** `null` means clean-shaven — rendered by setting facialHairProbability to 0. */
 export const AVATAR_FACIAL_HAIR = [
-  null, 'beardLight', 'beardMedium', 'beardMajestic',
-  'moustacheFancy', 'moustacheMagnum',
+  null,
+  'beardLight',
+  'beardMedium',
+  'beardMajestic',
+  'moustacheFancy',
+  'moustacheMagnum',
 ] as const;
 
 /** `null` means no glasses. */
 export const AVATAR_ACCESSORIES = [
-  null, 'round', 'prescription01', 'prescription02', 'wayfarers', 'sunglasses',
+  null,
+  'round',
+  'prescription01',
+  'prescription02',
+  'wayfarers',
+  'sunglasses',
 ] as const;
 
 export const AVATAR_CLOTHING = [
-  'shirtCrewNeck', 'shirtVNeck', 'shirtScoopNeck', 'hoodie', 'collarAndSweater',
-  'blazerAndShirt', 'blazerAndSweater', 'graphicShirt', 'overall',
+  'shirtCrewNeck',
+  'shirtVNeck',
+  'shirtScoopNeck',
+  'hoodie',
+  'collarAndSweater',
+  'blazerAndShirt',
+  'blazerAndSweater',
+  'graphicShirt',
+  'overall',
 ] as const;
 
 // Hex without the leading '#', which is the format DiceBear expects.
 export const AVATAR_SKIN_COLORS = [
-  'edb98a', 'ffdbb4', 'd08b5b', 'ae5d29', '614335', 'f8d25c',
+  'edb98a',
+  'ffdbb4',
+  'd08b5b',
+  'ae5d29',
+  '614335',
+  'f8d25c',
 ] as const;
 
 export const AVATAR_HAIR_COLORS = [
-  '2c1b18', '4a312c', '724133', 'a55728', 'b58143', 'd6b370',
-  'c93305', 'e8e1e1',
+  '2c1b18',
+  '4a312c',
+  '724133',
+  'a55728',
+  'b58143',
+  'd6b370',
+  'c93305',
+  'e8e1e1',
 ] as const;
 
 /** Leads with the brand teal and blue so a default avatar looks in-family. */
 export const AVATAR_CLOTHES_COLORS = [
-  '12a9a3', '2a72dc', '3c4f5c', '929598', 'ff5c5c', 'ffafb9',
-  'ffffb1', '25557c', '65c9ff', 'a7ffc4',
+  '12a9a3',
+  '2a72dc',
+  '3c4f5c',
+  '929598',
+  'ff5c5c',
+  'ffafb9',
+  'ffffb1',
+  '25557c',
+  '65c9ff',
+  'a7ffc4',
 ] as const;
 
 export type AvatarConfig = {

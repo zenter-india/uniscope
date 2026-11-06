@@ -2,7 +2,12 @@ import { spawn } from 'node:child_process';
 import { mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
 import { DataImportStatus, DataImportType, Prisma } from '@prisma/client';
 import { PrismaService } from '../../database/prisma/prisma.service.js';
 import { ApplyDataImportDto } from './dto/apply-data-import.dto.js';
@@ -79,7 +84,10 @@ export class DataImportService {
     // holding the request open — a slow/flaky source site (MCC's in
     // particular) shouldn't be able to time out an HTTP request.
     this.executeCapture(job.id, type).catch((err) => {
-      this.logger.error(`data-import job ${job.id} crashed outside its own try/catch`, err);
+      this.logger.error(
+        `data-import job ${job.id} crashed outside its own try/catch`,
+        err,
+      );
     });
 
     return job;
@@ -137,7 +145,9 @@ export class DataImportService {
   private async executeCapture(jobId: string, type: DataImportType) {
     try {
       const diff =
-        type === DataImportType.UG ? await this.captureUg() : await this.capturePg();
+        type === DataImportType.UG
+          ? await this.captureUg()
+          : await this.capturePg();
       await this.prisma.dataImportJob.update({
         where: { id: jobId },
         data: {
@@ -182,12 +192,17 @@ export class DataImportService {
         continue;
       }
       const fieldDiffs: string[] = [];
-      if (c.city && c.city !== match.city) fieldDiffs.push(`city ${match.city ?? '—'} → ${c.city}`);
+      if (c.city && c.city !== match.city)
+        fieldDiffs.push(`city ${match.city ?? '—'} → ${c.city}`);
 
       if (fieldDiffs.length === 0) {
         unchanged += 1;
       } else {
-        changed.push({ key: match.id, name: c.name, detail: fieldDiffs.join(', ') });
+        changed.push({
+          key: match.id,
+          name: c.name,
+          detail: fieldDiffs.join(', '),
+        });
       }
     }
 
@@ -195,7 +210,10 @@ export class DataImportService {
   }
 
   private async capturePg(): Promise<Diff> {
-    const mcc = await runPython<{ code: string; name: string }[]>('refresh_pg.py', []);
+    const mcc = await runPython<{ code: string; name: string }[]>(
+      'refresh_pg.py',
+      [],
+    );
 
     const ours = await this.prisma.university.findMany({
       where: { isActive: true },
@@ -209,10 +227,15 @@ export class DataImportService {
       await writeFile(mccPath, JSON.stringify(mcc));
       await writeFile(
         oursPath,
-        JSON.stringify(ours.map((u) => ({ id: u.id, name: u.name, state: u.state }))),
+        JSON.stringify(
+          ours.map((u) => ({ id: u.id, name: u.name, state: u.state })),
+        ),
       );
 
-      const matches = await runPython<PgMatch[]>('match_pg.py', [mccPath, oursPath]);
+      const matches = await runPython<PgMatch[]>('match_pg.py', [
+        mccPath,
+        oursPath,
+      ]);
       const levelsById = new Map(ours.map((u) => [u.id, u.levels]));
 
       const added: DiffAdded[] = [];
@@ -330,7 +353,11 @@ function runPython<T>(script: string, args: string[]): Promise<T> {
       try {
         resolve(JSON.parse(stdout) as T);
       } catch (e) {
-        reject(new Error(`${script} did not print valid JSON: ${(e as Error).message}`));
+        reject(
+          new Error(
+            `${script} did not print valid JSON: ${(e as Error).message}`,
+          ),
+        );
       }
     });
   });

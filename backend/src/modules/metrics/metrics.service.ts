@@ -10,7 +10,10 @@ import {
 import { PrismaService } from '../../database/prisma/prisma.service.js';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
-const OPEN_PAYOUTS: PayoutStatus[] = [PayoutStatus.PENDING, PayoutStatus.PROCESSING];
+const OPEN_PAYOUTS: PayoutStatus[] = [
+  PayoutStatus.PENDING,
+  PayoutStatus.PROCESSING,
+];
 const IN_REVIEW: VerificationStatus[] = [
   VerificationStatus.SUBMITTED,
   VerificationStatus.UNDER_REVIEW,
@@ -115,13 +118,22 @@ export class MetricsService {
       this.prisma.user.count({ where: { role: notAdmin } }),
       this.prisma.user.count({ where: { role: UserRole.MENTOR } }),
       this.prisma.user.count({
-        where: { role: UserRole.MENTOR, verificationStatus: VerificationStatus.VERIFIED },
+        where: {
+          role: UserRole.MENTOR,
+          verificationStatus: VerificationStatus.VERIFIED,
+        },
       }),
       this.prisma.university.count(),
-      this.prisma.enrollmentLead.count({ where: { status: EnrollmentLeadStatus.NEW } }),
-      this.prisma.user.count({ where: { verificationStatus: { in: IN_REVIEW } } }),
+      this.prisma.enrollmentLead.count({
+        where: { status: EnrollmentLeadStatus.NEW },
+      }),
+      this.prisma.user.count({
+        where: { verificationStatus: { in: IN_REVIEW } },
+      }),
       this.prisma.report.count({ where: { status: 'OPEN' } }),
-      this.prisma.payoutRequest.count({ where: { status: { in: OPEN_PAYOUTS } } }),
+      this.prisma.payoutRequest.count({
+        where: { status: { in: OPEN_PAYOUTS } },
+      }),
     ]);
 
     // Day buckets covering the window (oldest first).
@@ -130,7 +142,11 @@ export class MetricsService {
     );
     const bucketIndex = new Map(buckets.map((d, i) => [d, i]));
 
-    const signupSeries = buckets.map((date) => ({ date, aspirant: 0, mentor: 0 }));
+    const signupSeries = buckets.map((date) => ({
+      date,
+      aspirant: 0,
+      mentor: 0,
+    }));
     for (const u of newUsers) {
       const i = bucketIndex.get(dayKey(u.createdAt));
       if (i === undefined) continue;
@@ -149,8 +165,12 @@ export class MetricsService {
     const ledgerSum = (t: LedgerEntryType) =>
       ledgerByType.find((l) => l.type === t)?._sum.amountMinor ?? 0;
 
-    const mentorSignups = newUsers.filter((u) => u.role === UserRole.MENTOR).length;
-    const callCount = windowSessions.filter((s) => s.type === SessionType.AUDIO_CALL).length;
+    const mentorSignups = newUsers.filter(
+      (u) => u.role === UserRole.MENTOR,
+    ).length;
+    const callCount = windowSessions.filter(
+      (s) => s.type === SessionType.AUDIO_CALL,
+    ).length;
 
     return {
       rangeDays: days,

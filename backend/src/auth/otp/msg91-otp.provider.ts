@@ -70,11 +70,15 @@ export class Msg91OtpProvider implements OtpProvider {
       },
     });
 
-    const data = (await response.json().catch(() => null)) as Msg91Response | null;
+    const data = (await response
+      .json()
+      .catch(() => null)) as Msg91Response | null;
 
     if (!response.ok || !data || data.type !== 'success') {
       console.error('[MSG91] sendOtp failed:', response.status, data);
-      throw new ServiceUnavailableException('OTP service temporarily unavailable');
+      throw new ServiceUnavailableException(
+        'OTP service temporarily unavailable',
+      );
     }
 
     // MSG91 has no separate per-request service identifier — it tracks the
@@ -84,7 +88,9 @@ export class Msg91OtpProvider implements OtpProvider {
     return { serviceId: this.templateId };
   }
 
-  async verifyOtp(phone: string, code: string, _serviceId: string): Promise<boolean> {
+  // MSG91 tracks the pending OTP by mobile number, so the serviceId from
+  // sendOtp is not needed here (the OtpProvider interface still allows it).
+  async verifyOtp(phone: string, code: string): Promise<boolean> {
     const mobile = this.normaliseMobile(phone);
     const url = `https://control.msg91.com/api/v5/otp/verify?mobile=${mobile}&otp=${code}`;
 
@@ -93,7 +99,9 @@ export class Msg91OtpProvider implements OtpProvider {
       headers: { authkey: this.authKey },
     });
 
-    const data = (await response.json().catch(() => null)) as Msg91Response | null;
+    const data = (await response
+      .json()
+      .catch(() => null)) as Msg91Response | null;
 
     if (!data || data.type !== 'success') {
       // MSG91 returns type:"error" (still HTTP 200) for both "wrong code"
@@ -104,7 +112,9 @@ export class Msg91OtpProvider implements OtpProvider {
 
     if (!response.ok) {
       console.error('[MSG91] verifyOtp failed:', response.status, data);
-      throw new ServiceUnavailableException('OTP service temporarily unavailable');
+      throw new ServiceUnavailableException(
+        'OTP service temporarily unavailable',
+      );
     }
 
     return true;

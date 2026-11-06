@@ -75,7 +75,11 @@ type QueueProfile = {
 
 export function toVerificationRequestResponse(
   req: VerificationRequest & {
-    user?: { displayName: string; role?: string; profile?: QueueProfile | null };
+    user?: {
+      displayName: string;
+      role?: string;
+      profile?: QueueProfile | null;
+    };
     university?: { name: string };
   },
 ): VerificationRequestResponse {
@@ -93,11 +97,13 @@ export function toVerificationRequestResponse(
     ...(req.user?.role !== undefined && { userRole: req.user.role }),
     ...(req.university && { universityName: req.university.name }),
     ...(req.user?.profile !== undefined && {
-      applicant: toApplicant(req.user as {
-        displayName: string;
-        role: string;
-        profile?: QueueProfile | null;
-      }),
+      applicant: toApplicant(
+        req.user as {
+          displayName: string;
+          role: string;
+          profile?: QueueProfile | null;
+        },
+      ),
     }),
   };
 }

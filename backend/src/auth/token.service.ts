@@ -89,7 +89,9 @@ export class TokenService {
     }
 
     if (payload.type !== 'refresh') {
-      this.logger.warn(`[refresh] rejected: wrong token type for userId=${payload.sub}`);
+      this.logger.warn(
+        `[refresh] rejected: wrong token type for userId=${payload.sub}`,
+      );
       throw new UnauthorizedException('Invalid token type');
     }
 
@@ -111,18 +113,24 @@ export class TokenService {
     // account keeps the real single-session reuse check unchanged.
     if (isDemoAccountUserId(user.id)) {
       const tokens = await this.issueTokenPair(user.id, user.role);
-      this.logger.log(`[refresh] rotated ok (demo account, multi-device) for userId=${user.id}`);
+      this.logger.log(
+        `[refresh] rotated ok (demo account, multi-device) for userId=${user.id}`,
+      );
       return { ...tokens, userId: user.id, role: user.role };
     }
 
     if (!user.refreshTokenHash) {
-      this.logger.warn(`[refresh] rejected: no stored hash for userId=${payload.sub}`);
+      this.logger.warn(
+        `[refresh] rejected: no stored hash for userId=${payload.sub}`,
+      );
       throw new UnauthorizedException('Session expired');
     }
 
     const incomingHash = this.sha256(refreshToken);
     if (incomingHash !== user.refreshTokenHash) {
-      this.logger.warn(`[refresh] rejected: token reuse detected for userId=${user.id}`);
+      this.logger.warn(
+        `[refresh] rejected: token reuse detected for userId=${user.id}`,
+      );
       throw new UnauthorizedException('Token reuse detected');
     }
 

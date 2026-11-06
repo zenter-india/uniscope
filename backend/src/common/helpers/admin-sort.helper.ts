@@ -20,6 +20,11 @@ export function adminOrderBy(
   fallback: Record<string, SortDir> = { createdAt: 'desc' },
 ): OrderBy {
   const dir: SortDir = sortDir === 'asc' ? 'asc' : 'desc';
-  const field = sortBy && Object.prototype.hasOwnProperty.call(allow, sortBy) ? allow[sortBy] : null;
-  return field ? [{ [field]: dir }, { id: 'asc' }] : [{ ...fallback }, { id: 'asc' }];
+  const field =
+    sortBy && Object.prototype.hasOwnProperty.call(allow, sortBy)
+      ? allow[sortBy]
+      : null;
+  return field
+    ? [{ [field]: dir }, { id: 'asc' }]
+    : [{ ...fallback }, { id: 'asc' }];
 }

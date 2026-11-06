@@ -7,7 +7,7 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
-import { TechnicalReportStatus, UserRole } from '@prisma/client';
+import { UserRole } from '@prisma/client';
 import { CurrentUser } from '../../auth/decorators/current-user.decorator.js';
 import type { JwtPayload } from '../../auth/decorators/current-user.decorator.js';
 import { Roles } from '../../auth/decorators/roles.decorator.js';
@@ -31,9 +31,7 @@ export class AdminTechnicalReportsController {
     @Query('limit') limit?: string,
   ) {
     const parsedStatus =
-      status === 'OPEN' || status === 'RESOLVED'
-        ? (status as TechnicalReportStatus)
-        : undefined;
+      status === 'OPEN' || status === 'RESOLVED' ? status : undefined;
     return this.service.findAllForAdmin({
       status: parsedStatus,
       cursor,

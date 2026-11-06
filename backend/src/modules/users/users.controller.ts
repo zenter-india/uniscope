@@ -54,7 +54,10 @@ export class UsersController {
       return { available: false };
     }
     return {
-      available: await this.usersService.isDisplayNameAvailable(trimmed, user.sub),
+      available: await this.usersService.isDisplayNameAvailable(
+        trimmed,
+        user.sub,
+      ),
     };
   }
 
@@ -106,15 +109,14 @@ export class UsersController {
    * catalogue in AvatarService before anything is rendered or stored. */
   @Patch('me/avatar')
   @HttpCode(HttpStatus.OK)
-  async updateAvatar(
-    @CurrentUser() user: JwtPayload,
-    @Body() body: unknown,
-  ) {
+  async updateAvatar(@CurrentUser() user: JwtPayload, @Body() body: unknown) {
     const config = await this.usersService.updateAvatar(user.sub, body);
     const found = await this.usersService.findById(user.sub);
     return {
       config,
-      user: found ? toPublicUser(found, this.usersService.avatarUrlFor(found)) : null,
+      user: found
+        ? toPublicUser(found, this.usersService.avatarUrlFor(found))
+        : null,
     };
   }
 
@@ -140,7 +142,11 @@ export class UsersController {
     @CurrentUser() user: JwtPayload,
     @Body() dto: StorePushTokenDto,
   ) {
-    await this.notificationsService.registerPushToken(user.sub, dto.token, dto.platform);
+    await this.notificationsService.registerPushToken(
+      user.sub,
+      dto.token,
+      dto.platform,
+    );
   }
 
   /** Unbind a device token from the caller (logout). Scoped to the caller's
@@ -179,7 +185,11 @@ export class UsersController {
   @Get(':id')
   async findOneAdmin(@Param('id') id: string) {
     const { user, activity } = await this.usersService.findDetailAdmin(id);
-    return toAdminUserDetail(user, activity, this.usersService.avatarUrlFor(user));
+    return toAdminUserDetail(
+      user,
+      activity,
+      this.usersService.avatarUrlFor(user),
+    );
   }
 
   @UseGuards(RolesGuard)
@@ -188,7 +198,11 @@ export class UsersController {
   @HttpCode(HttpStatus.OK)
   async adminUpdate(@Param('id') id: string, @Body() dto: AdminUpdateUserDto) {
     const { user, activity } = await this.usersService.adminUpdateUser(id, dto);
-    return toAdminUserDetail(user, activity, this.usersService.avatarUrlFor(user));
+    return toAdminUserDetail(
+      user,
+      activity,
+      this.usersService.avatarUrlFor(user),
+    );
   }
 
   @UseGuards(RolesGuard)

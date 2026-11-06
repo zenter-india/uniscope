@@ -11,7 +11,11 @@ export interface TechnicalReportResponse {
   resolvedAt: Date | null;
   /** Only populated on admin projections — the reporter's display name +
    * public unique id, never the internal user id or any PII. */
-  reporter?: { displayName: string; uniqueId: string | null; role: string } | null;
+  reporter?: {
+    displayName: string;
+    uniqueId: string | null;
+    role: string;
+  } | null;
 }
 
 type WithReporter = TechnicalReport & {

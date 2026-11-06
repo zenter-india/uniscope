@@ -1,5 +1,11 @@
 import { Type } from 'class-transformer';
-import { IsInt, IsString, MaxLength, MinLength, NotEquals } from 'class-validator';
+import {
+  IsInt,
+  IsString,
+  MaxLength,
+  MinLength,
+  NotEquals,
+} from 'class-validator';
 
 /** ADMIN manual balance correction. */
 export class AdjustWalletDto {

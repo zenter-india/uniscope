@@ -9,7 +9,10 @@ import { PrismaService } from '../../database/prisma/prisma.service.js';
 import { NotificationsService } from '../notifications/notifications.service.js';
 import { CreateReviewDto } from './dto/create-review.dto.js';
 import { ListMentorReviewsDto } from './dto/list-mentor-reviews.dto.js';
-import { MentorReviewResponse, toMentorReviewResponse } from './mentor-review-response.js';
+import {
+  MentorReviewResponse,
+  toMentorReviewResponse,
+} from './mentor-review-response.js';
 
 const DEFAULT_LIMIT = 20;
 const MAX_LIMIT = 50;
@@ -31,7 +34,10 @@ export class ReviewsService {
    * once ever (unique sessionId — a second attempt hits the DB constraint,
    * which we translate to a friendly 409 rather than a raw P2002).
    */
-  async create(aspirantId: string, dto: CreateReviewDto): Promise<MentorReviewResponse> {
+  async create(
+    aspirantId: string,
+    dto: CreateReviewDto,
+  ): Promise<MentorReviewResponse> {
     const session = await this.prisma.session.findFirst({
       where: { id: dto.sessionId, aspirantId },
     });
@@ -95,7 +101,9 @@ export class ReviewsService {
 
   /** Used by MentorsService to attach {rating, reviewCount} onto mentor
    * discovery/detail responses — batchable via mentorIds for the list view. */
-  async ratingSummaries(mentorIds: string[]): Promise<Map<string, MentorRatingSummary>> {
+  async ratingSummaries(
+    mentorIds: string[],
+  ): Promise<Map<string, MentorRatingSummary>> {
     if (mentorIds.length === 0) return new Map();
 
     const grouped = await this.prisma.mentorReview.groupBy({
@@ -135,7 +143,7 @@ export class ReviewsService {
       typeof err === 'object' &&
       err !== null &&
       'code' in err &&
-      (err as { code: unknown }).code === 'P2002'
+      err.code === 'P2002'
     );
   }
 }

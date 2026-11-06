@@ -1,4 +1,11 @@
-import { Controller, Delete, Get, Param, Post, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Post,
+  UseGuards,
+} from '@nestjs/common';
 import { CurrentUser } from '../../auth/decorators/current-user.decorator.js';
 import type { JwtPayload } from '../../auth/decorators/current-user.decorator.js';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard.js';
@@ -20,12 +27,18 @@ export class UniversityWishlistController {
   }
 
   @Post(':universityId')
-  save(@CurrentUser() user: JwtPayload, @Param('universityId') universityId: string) {
+  save(
+    @CurrentUser() user: JwtPayload,
+    @Param('universityId') universityId: string,
+  ) {
     return this.wishlistService.save(user.sub, universityId);
   }
 
   @Delete(':universityId')
-  unsave(@CurrentUser() user: JwtPayload, @Param('universityId') universityId: string) {
+  unsave(
+    @CurrentUser() user: JwtPayload,
+    @Param('universityId') universityId: string,
+  ) {
     return this.wishlistService.unsave(user.sub, universityId);
   }
 }

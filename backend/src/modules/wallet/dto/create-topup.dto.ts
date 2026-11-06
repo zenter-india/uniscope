@@ -45,7 +45,8 @@ export const RECHARGE_PACKAGES: Readonly<Record<number, number>> = {
   130_000: 60,
 };
 
-export const RECHARGE_AMOUNTS_MINOR = Object.keys(RECHARGE_PACKAGES).map(Number);
+export const RECHARGE_AMOUNTS_MINOR =
+  Object.keys(RECHARGE_PACKAGES).map(Number);
 
 export class CreateTopupDto {
   @Type(() => Number)

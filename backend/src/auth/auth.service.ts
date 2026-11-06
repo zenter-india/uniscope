@@ -69,16 +69,16 @@ export class AuthService {
         this.otpProvider.normalisePhonePublic(phone),
       );
     } else {
-      phoneHash = createHash('sha256').update(normalisePhone(phone)).digest('hex');
+      phoneHash = createHash('sha256')
+        .update(normalisePhone(phone))
+        .digest('hex');
     }
 
     const { user, isNewUser } =
       await this.usersService.findOrCreateByPhoneHash(phoneHash);
 
-    const { accessToken, refreshToken } = await this.tokenService.issueTokenPair(
-      user.id,
-      user.role,
-    );
+    const { accessToken, refreshToken } =
+      await this.tokenService.issueTokenPair(user.id, user.role);
 
     return {
       accessToken,

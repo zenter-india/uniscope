@@ -7,7 +7,13 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { AppleTransactionStatus, HoldStatus, LedgerEntryType, NotificationType, Prisma } from '@prisma/client';
+import {
+  AppleTransactionStatus,
+  HoldStatus,
+  LedgerEntryType,
+  NotificationType,
+  Prisma,
+} from '@prisma/client';
 import { createHmac, randomUUID, timingSafeEqual } from 'crypto';
 import * as Sentry from '@sentry/node';
 import Razorpay from 'razorpay';
@@ -81,7 +87,10 @@ function computeTopupCredit(paidAmountMinor: number): {
         `Valid packages: ${RECHARGE_AMOUNTS_MINOR.join(', ')} minor.`,
     );
   }
-  return { uniminutes, creditedAmountMinor: uniminutes * UNIMINUTE_VALUE_MINOR };
+  return {
+    uniminutes,
+    creditedAmountMinor: uniminutes * UNIMINUTE_VALUE_MINOR,
+  };
 }
 
 /**
@@ -92,10 +101,14 @@ function computeTopupCredit(paidAmountMinor: number): {
  * any product id not created in App Store Connect / not yet added to
  * APPLE_PRODUCT_PACKAGES.
  */
-function computeAppleTopupCredit(productId: string): { creditedAmountMinor: number } {
+function computeAppleTopupCredit(productId: string): {
+  creditedAmountMinor: number;
+} {
   const uniminutes = APPLE_PRODUCT_PACKAGES[productId];
   if (uniminutes === undefined) {
-    throw new BadRequestException(`Unrecognised Apple product id: ${productId}`);
+    throw new BadRequestException(
+      `Unrecognised Apple product id: ${productId}`,
+    );
   }
   return { creditedAmountMinor: uniminutes * UNIMINUTE_VALUE_MINOR };
 }
@@ -130,6 +143,13 @@ function toAppleEnvironment(value: string): Environment {
  * this same method once the Agora/BullMQ billing clock is wired in —
  * deliberately not duplicating this logic elsewhere.
  */
+/** Readable form of an unknown error field for logs ("[object Object]" is useless). */
+function describeValue(value: unknown): string {
+  if (value instanceof Error) return value.message;
+  if (typeof value === 'object' && value !== null) return JSON.stringify(value);
+  return String(value);
+}
+
 @Injectable()
 export class WalletService {
   private readonly logger = new Logger(WalletService.name);
@@ -161,7 +181,9 @@ export class WalletService {
     const appleCfg = this.config.get<AppleConfig>('apple')!;
     if (appleCfg.bundleId) {
       const environment = toAppleEnvironment(appleCfg.environment);
-      const appAppleId = appleCfg.appAppleId ? Number(appleCfg.appAppleId) : undefined;
+      const appAppleId = appleCfg.appAppleId
+        ? Number(appleCfg.appAppleId)
+        : undefined;
       // A production server must ALSO accept sandbox-signed transactions:
       // App Review and TestFlight purchase against Apple's sandbox even on
       // a production build, and Apple's own guidance is "verify against
@@ -186,7 +208,9 @@ export class WalletService {
         } catch (err) {
           // e.g. production without APPLE_APP_APPLE_ID. Never let an Apple
           // misconfiguration crash app boot (and take Android down with it).
-          this.logger.error(`Apple IAP verifier for ${env} not created: ${err}`);
+          this.logger.error(
+            `Apple IAP verifier for ${env} not created: ${err}`,
+          );
         }
       }
     } else {
@@ -196,14 +220,18 @@ export class WalletService {
 
   private requireAppleVerifiers(): SignedDataVerifier[] {
     if (this.appleVerifiers.length === 0) {
-      throw new BadRequestException('Apple In-App Purchase is not configured on this server');
+      throw new BadRequestException(
+        'Apple In-App Purchase is not configured on this server',
+      );
     }
     return this.appleVerifiers;
   }
 
   /** Tries each configured environment in order (production, then sandbox);
    * throws the first environment's error only if every one rejects it. */
-  private async decodeAppleTransaction(jws: string): Promise<JWSTransactionDecodedPayload> {
+  private async decodeAppleTransaction(
+    jws: string,
+  ): Promise<JWSTransactionDecodedPayload> {
     let firstErr: unknown;
     for (const v of this.requireAppleVerifiers()) {
       try {
@@ -215,7 +243,9 @@ export class WalletService {
     throw firstErr;
   }
 
-  private async decodeAppleNotification(jws: string): Promise<ResponseBodyV2DecodedPayload> {
+  private async decodeAppleNotification(
+    jws: string,
+  ): Promise<ResponseBodyV2DecodedPayload> {
     let firstErr: unknown;
     for (const v of this.requireAppleVerifiers()) {
       try {
@@ -270,7 +300,9 @@ export class WalletService {
     walletOwnerId: string,
   ): Promise<LedgerEntryResponse[]> {
     const sessionIds = [
-      ...new Set(rows.map((r) => r.sessionId).filter((id): id is string => id != null)),
+      ...new Set(
+        rows.map((r) => r.sessionId).filter((id): id is string => id != null),
+      ),
     ];
     if (sessionIds.length === 0) return rows.map(toLedgerEntryResponse);
 
@@ -297,7 +329,11 @@ export class WalletService {
           : session.mentorId === walletOwnerId
             ? session.aspirant.displayName
             : null;
-      return { ...base, counterpartName, callSlotMinutes: session.callSlotMinutes };
+      return {
+        ...base,
+        counterpartName,
+        callSlotMinutes: session.callSlotMinutes,
+      };
     });
   }
 
@@ -370,7 +406,12 @@ export class WalletService {
   async createTopupOrder(
     userId: string,
     dto: CreateTopupDto,
-  ): Promise<{ orderId: string; amountMinor: number; currency: string; keyId: string }> {
+  ): Promise<{
+    orderId: string;
+    amountMinor: number;
+    currency: string;
+    keyId: string;
+  }> {
     const order = await this.razorpay.orders.create({
       amount: dto.amountMinor,
       currency: CURRENCY,
@@ -393,27 +434,36 @@ export class WalletService {
    * credits via the SAME idempotencyKey the webhook handler would use, so
    * whichever path fires first wins and the other is a safe no-op.
    */
-  async verifyAndCreditTopup(userId: string, dto: VerifyTopupDto): Promise<WalletResponse> {
+  async verifyAndCreditTopup(
+    userId: string,
+    dto: VerifyTopupDto,
+  ): Promise<WalletResponse> {
     const expectedSignature = createHmac('sha256', this.cfg.keySecret)
       .update(`${dto.razorpayOrderId}|${dto.razorpayPaymentId}`)
       .digest('hex');
     const expectedBuf = Buffer.from(expectedSignature, 'utf8');
     const actualBuf = Buffer.from(dto.razorpaySignature, 'utf8');
     const validSignature =
-      expectedBuf.length === actualBuf.length && timingSafeEqual(expectedBuf, actualBuf);
+      expectedBuf.length === actualBuf.length &&
+      timingSafeEqual(expectedBuf, actualBuf);
     if (!validSignature) {
       throw new BadRequestException('Invalid payment signature');
     }
 
     const order = await this.razorpay.orders.fetch(dto.razorpayOrderId);
-    const orderUserId = (order.notes as Record<string, string> | undefined)?.['userId'];
+    const orderUserId = (order.notes as Record<string, string> | undefined)?.[
+      'userId'
+    ];
     if (orderUserId !== userId) {
-      throw new ForbiddenException('This order does not belong to the current user');
+      throw new ForbiddenException(
+        'This order does not belong to the current user',
+      );
     }
 
     const wallet = await this.requireWallet(userId);
     const paidAmountMinor = Number(order.amount);
-    const { uniminutes, creditedAmountMinor } = computeTopupCredit(paidAmountMinor);
+    const { uniminutes, creditedAmountMinor } =
+      computeTopupCredit(paidAmountMinor);
     const applied = await this.applyLedgerEntry({
       walletId: wallet.id,
       type: LedgerEntryType.TOPUP,
@@ -433,7 +483,10 @@ export class WalletService {
    * must run before any payload field is trusted. Returns false (never
    * throws) on mismatch so the controller can respond generically.
    */
-  verifyWebhookSignature(rawBody: Buffer, signatureHeader: string | undefined): boolean {
+  verifyWebhookSignature(
+    rawBody: Buffer,
+    signatureHeader: string | undefined,
+  ): boolean {
     if (!signatureHeader) return false;
     const expected = createHmac('sha256', this.cfg.webhookSecret)
       .update(rawBody)
@@ -458,7 +511,9 @@ export class WalletService {
   }): Promise<void> {
     const payment = event.payload.payment.entity;
     const order = await this.razorpay.orders.fetch(payment.order_id);
-    const userId = (order.notes as Record<string, string> | undefined)?.['userId'];
+    const userId = (order.notes as Record<string, string> | undefined)?.[
+      'userId'
+    ];
 
     if (!userId) {
       this.logger.error(
@@ -469,11 +524,15 @@ export class WalletService {
 
     const wallet = await this.prisma.wallet.findUnique({ where: { userId } });
     if (!wallet) {
-      this.logger.error(`No wallet found for user ${userId} (order ${payment.order_id})`);
+      this.logger.error(
+        `No wallet found for user ${userId} (order ${payment.order_id})`,
+      );
       return;
     }
 
-    const { uniminutes, creditedAmountMinor } = computeTopupCredit(payment.amount);
+    const { uniminutes, creditedAmountMinor } = computeTopupCredit(
+      payment.amount,
+    );
     const applied = await this.applyLedgerEntry({
       walletId: wallet.id,
       type: LedgerEntryType.TOPUP,
@@ -483,7 +542,9 @@ export class WalletService {
     });
 
     if (!applied) {
-      this.logger.log(`Payment ${payment.id} already processed — webhook retry, no-op`);
+      this.logger.log(
+        `Payment ${payment.id} already processed — webhook retry, no-op`,
+      );
     } else {
       await this.notifyTopupCredited(userId, creditedAmountMinor);
     }
@@ -505,7 +566,9 @@ export class WalletService {
         body: `${uniminutesLabel(creditedAmountMinor)} added to your wallet.`,
         metadata: { kind: 'topup' },
       })
-      .catch((err) => this.logger.warn(`Top-up notification failed for ${userId}: ${err}`));
+      .catch((err) =>
+        this.logger.warn(`Top-up notification failed for ${userId}: ${err}`),
+      );
   }
 
   // ── Apple In-App Purchase (iOS-only top-up path) ────────────────────────
@@ -526,7 +589,9 @@ export class WalletService {
     this.requireAppleVerifiers();
     let transaction: JWSTransactionDecodedPayload;
     try {
-      transaction = await this.decodeAppleTransaction(dto.signedTransactionInfo);
+      transaction = await this.decodeAppleTransaction(
+        dto.signedTransactionInfo,
+      );
     } catch (err) {
       // A forged, malformed, or wrong-environment receipt is a bad request,
       // not a server fault (and shouldn't page Sentry as one).
@@ -534,21 +599,29 @@ export class WalletService {
       // `status` (VerificationStatus: 1 = invalid app identifier, 2 = invalid
       // environment, 3 = invalid chain length, 4 = invalid certificate,
       // 5 = failure) and an optional `cause`. Log those, or the line is blank.
-      const e = err as { name?: string; message?: string; status?: unknown; cause?: unknown };
+      const e = err as {
+        name?: string;
+        message?: string;
+        status?: unknown;
+        cause?: unknown;
+      };
       const reason = [
         e?.name ?? 'Error',
         e?.message ? `message=${e.message}` : null,
-        e?.status !== undefined ? `status=${String(e.status)}` : null,
-        e?.cause ? `cause=${String(e.cause)}` : null,
+        e?.status !== undefined ? `status=${describeValue(e.status)}` : null,
+        e?.cause ? `cause=${describeValue(e.cause)}` : null,
       ]
         .filter(Boolean)
         .join(' ');
-      this.logger.warn(`Apple transaction failed verification for user ${userId}: ${reason}`);
+      this.logger.warn(
+        `Apple transaction failed verification for user ${userId}: ${reason}`,
+      );
       // A 400 is not sent to Sentry by the global filter, but a real user's
       // receipt failing here usually means paid-but-not-credited — report it
       // so an alert fires instead of waiting for a support ticket.
       reportPaymentIssue('Apple IAP: receipt failed verification', userId, {
-        apple_status: e?.status !== undefined ? String(e.status) : 'none',
+        apple_status:
+          e?.status !== undefined ? describeValue(e.status) : 'none',
         reason,
       });
       throw new BadRequestException('Could not verify this App Store purchase');
@@ -570,9 +643,13 @@ export class WalletService {
       return await this.decodeAppleNotification(signedPayload);
     } catch (err) {
       this.logger.warn(`Apple server notification failed verification: ${err}`);
-      reportPaymentIssue('Apple IAP: server notification failed verification', null, {
-        reason: String(err),
-      });
+      reportPaymentIssue(
+        'Apple IAP: server notification failed verification',
+        null,
+        {
+          reason: String(err),
+        },
+      );
       return null;
     }
   }
@@ -585,12 +662,18 @@ export class WalletService {
    * wins and the other is a safe no-op via the ledger's unique constraint —
    * identical to Razorpay's dual-path pattern in handleTopupCaptured.
    */
-  async handleAppleServerNotification(payload: ResponseBodyV2DecodedPayload): Promise<void> {
+  async handleAppleServerNotification(
+    payload: ResponseBodyV2DecodedPayload,
+  ): Promise<void> {
     const signedTransactionInfo = payload.data?.signedTransactionInfo;
 
-    if (payload.notificationType === 'ONE_TIME_CHARGE' && signedTransactionInfo) {
-      const transaction =
-        await this.decodeAppleTransaction(signedTransactionInfo);
+    if (
+      payload.notificationType === 'ONE_TIME_CHARGE' &&
+      signedTransactionInfo
+    ) {
+      const transaction = await this.decodeAppleTransaction(
+        signedTransactionInfo,
+      );
       const userId = await this.resolveUserIdForAppleTransaction(transaction);
       if (userId) {
         await this.creditAppleTransaction(userId, transaction);
@@ -603,11 +686,13 @@ export class WalletService {
     }
 
     if (
-      (payload.notificationType === 'REFUND' || payload.notificationType === 'REVOKE') &&
+      (payload.notificationType === 'REFUND' ||
+        payload.notificationType === 'REVOKE') &&
       signedTransactionInfo
     ) {
-      const transaction =
-        await this.decodeAppleTransaction(signedTransactionInfo);
+      const transaction = await this.decodeAppleTransaction(
+        signedTransactionInfo,
+      );
       await this.handleAppleRefund(transaction);
       return;
     }
@@ -627,7 +712,9 @@ export class WalletService {
     const transactionId = transaction.transactionId;
     const productId = transaction.productId;
     if (!transactionId || !productId) {
-      throw new BadRequestException('Apple transaction is missing transactionId/productId');
+      throw new BadRequestException(
+        'Apple transaction is missing transactionId/productId',
+      );
     }
 
     const wallet = await this.requireWallet(userId);
@@ -638,7 +725,9 @@ export class WalletService {
     // logged in on the same device). The ledger key is globally unique so
     // it can never be credited twice; just say so in the logs and return,
     // letting the app finish the transaction.
-    const existing = await this.prisma.appleTransaction.findUnique({ where: { transactionId } });
+    const existing = await this.prisma.appleTransaction.findUnique({
+      where: { transactionId },
+    });
     if (existing) {
       if (existing.userId !== userId) {
         this.logger.warn(
@@ -657,16 +746,21 @@ export class WalletService {
       this.logger.warn(
         `Apple transaction ${transactionId} was revoked (${transaction.revocationType ?? 'unknown'}) before it was credited — not crediting user ${userId}`,
       );
-      reportPaymentIssue('Apple IAP: purchase refunded before it was credited', userId, {
-        transactionId,
-        productId,
-        revocationType: String(transaction.revocationType ?? 'unknown'),
-      });
+      reportPaymentIssue(
+        'Apple IAP: purchase refunded before it was credited',
+        userId,
+        {
+          transactionId,
+          productId,
+          revocationType: String(transaction.revocationType ?? 'unknown'),
+        },
+      );
       await this.prisma.appleTransaction.upsert({
         where: { transactionId },
         create: {
           transactionId,
-          originalTransactionId: transaction.originalTransactionId ?? transactionId,
+          originalTransactionId:
+            transaction.originalTransactionId ?? transactionId,
           userId,
           productId,
           creditedAmountMinor: 0,
@@ -691,7 +785,8 @@ export class WalletService {
       where: { transactionId },
       create: {
         transactionId,
-        originalTransactionId: transaction.originalTransactionId ?? transactionId,
+        originalTransactionId:
+          transaction.originalTransactionId ?? transactionId,
         userId,
         productId,
         creditedAmountMinor,
@@ -738,7 +833,9 @@ export class WalletService {
    * manual-review pattern already used for mentor-side call-drop refunds
    * (see ReportsService.resolve).
    */
-  private async handleAppleRefund(transaction: JWSTransactionDecodedPayload): Promise<void> {
+  private async handleAppleRefund(
+    transaction: JWSTransactionDecodedPayload,
+  ): Promise<void> {
     const transactionId = transaction.transactionId;
     if (!transactionId) return;
 
@@ -775,10 +872,14 @@ export class WalletService {
         `Apple refund for transaction ${transactionId} (user ${record.userId}) exceeds available balance ` +
           `(needs ${record.creditedAmountMinor} minor) — flagged REFUND_PENDING_MANUAL, reconcile via POST /wallet/admin/${record.userId}/adjust`,
       );
-      reportPaymentIssue('Apple IAP: refund needs manual reconciliation', record.userId, {
-        transactionId,
-        creditedAmountMinor: String(record.creditedAmountMinor),
-      });
+      reportPaymentIssue(
+        'Apple IAP: refund needs manual reconciliation',
+        record.userId,
+        {
+          transactionId,
+          creditedAmountMinor: String(record.creditedAmountMinor),
+        },
+      );
     }
   }
 
@@ -819,7 +920,10 @@ export class WalletService {
       });
       return true;
     } catch (err) {
-      if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') {
+      if (
+        err instanceof Prisma.PrismaClientKnownRequestError &&
+        err.code === 'P2002'
+      ) {
         return false; // idempotency key already used — safe no-op
       }
       throw err;
@@ -833,7 +937,9 @@ export class WalletService {
    * bookings.
    */
   async getAvailableBalanceMinor(walletId: string): Promise<number> {
-    const wallet = await this.prisma.wallet.findUniqueOrThrow({ where: { id: walletId } });
+    const wallet = await this.prisma.wallet.findUniqueOrThrow({
+      where: { id: walletId },
+    });
     const activeHolds = await this.prisma.walletHold.aggregate({
       where: { walletId, status: HoldStatus.ACTIVE },
       _sum: { amountMinor: true },
@@ -855,7 +961,9 @@ export class WalletService {
   }) {
     const available = await this.getAvailableBalanceMinor(params.walletId);
     if (available < params.amountMinor) {
-      throw new ConflictException('Insufficient balance — top up to book this slot');
+      throw new ConflictException(
+        'Insufficient balance — top up to book this slot',
+      );
     }
 
     return this.prisma.walletHold.create({
@@ -864,7 +972,9 @@ export class WalletService {
         sessionId: params.sessionId,
         amountMinor: params.amountMinor,
         status: HoldStatus.ACTIVE,
-        expiresAt: new Date(Date.now() + (params.expiresInMs ?? 60 * 60 * 1000)),
+        expiresAt: new Date(
+          Date.now() + (params.expiresInMs ?? 60 * 60 * 1000),
+        ),
       },
     });
   }
@@ -928,7 +1038,9 @@ export class WalletService {
   private async requireWallet(userId: string) {
     const wallet = await this.prisma.wallet.findUnique({ where: { userId } });
     if (!wallet) {
-      throw new BadRequestException('User has no wallet — this should never happen post-signup');
+      throw new BadRequestException(
+        'User has no wallet — this should never happen post-signup',
+      );
     }
     return wallet;
   }

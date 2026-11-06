@@ -1,5 +1,12 @@
 import { ReportStatus } from '@prisma/client';
-import { IsEnum, IsInt, IsOptional, IsString, Min, MaxLength } from 'class-validator';
+import {
+  IsEnum,
+  IsInt,
+  IsOptional,
+  IsString,
+  Min,
+  MaxLength,
+} from 'class-validator';
 
 /** Admin resolution of a report. If `refundAmountMinor` is set, the report
  * must target a SESSION — the amount is credited back to that session's
