@@ -81,7 +81,7 @@ export function DangerZone({
             value={confirmText}
             onChange={(e) => setConfirmText(e.target.value)}
             autoComplete="off"
-            className="w-72 rounded-md border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-1.5 text-sm text-zinc-900 dark:text-zinc-100 shadow-sm outline-none transition-colors placeholder:text-zinc-400 dark:placeholder:text-zinc-500 focus:border-red-400 dark:focus:border-red-500 focus:ring-2 focus:ring-red-400/40 dark:focus:ring-red-500/30"
+            className="min-w-0 flex-1 sm:w-72 sm:flex-none rounded-md border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-1.5 text-sm text-zinc-900 dark:text-zinc-100 shadow-sm outline-none transition-colors placeholder:text-zinc-400 dark:placeholder:text-zinc-500 focus:border-red-400 dark:focus:border-red-500 focus:ring-2 focus:ring-red-400/40 dark:focus:ring-red-500/30"
           />
           {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
           <div className="flex gap-2">
