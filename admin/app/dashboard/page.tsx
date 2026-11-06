@@ -45,7 +45,11 @@ interface DashboardMetrics {
   };
 }
 
-const RANGES = [7, 30, 90] as const;
+const RANGES = [1, 7, 30, 90] as const;
+
+/** 1 is the rolling last 24 hours, not a calendar day. */
+const rangeLabel = (d: number) => (d === 1 ? '24h' : `${d}d`);
+const windowLabel = (d: number) => (d === 1 ? 'last 24 hours' : `last ${d} days`);
 
 function inr(minor: number): string {
   return (minor / 100).toLocaleString('en-IN', {
@@ -166,7 +170,7 @@ export default async function DashboardPage({
           items={RANGES}
           current={days as (typeof RANGES)[number]}
           hrefFor={(r) => `/dashboard?days=${r}`}
-          labelFor={(r) => `${r}d`}
+          labelFor={rangeLabel}
         />
       </div>
 
@@ -216,7 +220,7 @@ export default async function DashboardPage({
           </div>
 
           <div className="grid gap-4 lg:grid-cols-2">
-            <Panel title={`Signups · last ${days} days`} icon="users">
+            <Panel title={`Signups · ${windowLabel(days)}`} icon="users">
               <div className="flex items-baseline gap-3">
                 <p className="text-3xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-100">{m.signups.total}</p>
                 <Trend current={m.signups.total} previous={m.signups.prevTotal} />
@@ -224,24 +228,28 @@ export default async function DashboardPage({
               <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
                 {m.signups.aspirant} students · {m.signups.mentor} mentors
               </p>
-              <div className="mt-3">
-                <MiniBarChart
-                  data={m.signups.series}
-                  keys={['aspirant', 'mentor']}
-                  colors={['#d4d4d8', '#6366f1']}
-                />
-              </div>
-              <div className="mt-2 flex gap-4 text-xs text-zinc-500 dark:text-zinc-400">
-                <span className="flex items-center gap-1">
-                  <span className="h-2 w-2 rounded-sm bg-zinc-300 dark:bg-zinc-700" /> Students
-                </span>
-                <span className="flex items-center gap-1">
-                  <span className="h-2 w-2 rounded-sm bg-indigo-500" /> Mentors
-                </span>
-              </div>
+              {days > 1 && (
+                <>
+                  <div className="mt-3">
+                    <MiniBarChart
+                      data={m.signups.series}
+                      keys={['aspirant', 'mentor']}
+                      colors={['#d4d4d8', '#6366f1']}
+                    />
+                  </div>
+                  <div className="mt-2 flex gap-4 text-xs text-zinc-500 dark:text-zinc-400">
+                    <span className="flex items-center gap-1">
+                      <span className="h-2 w-2 rounded-sm bg-zinc-300 dark:bg-zinc-700" /> Students
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <span className="h-2 w-2 rounded-sm bg-indigo-500" /> Mentors
+                    </span>
+                  </div>
+                </>
+              )}
             </Panel>
 
-            <Panel title={`Sessions · last ${days} days`} icon="message">
+            <Panel title={`Sessions · ${windowLabel(days)}`} icon="message">
               <div className="flex items-baseline gap-3">
                 <p className="text-3xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-100">{m.sessions.total}</p>
                 <Trend current={m.sessions.total} previous={m.sessions.prevTotal} />
@@ -249,25 +257,29 @@ export default async function DashboardPage({
               <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
                 {m.sessions.chat} chats · {m.sessions.call} calls
               </p>
-              <div className="mt-3">
-                <MiniBarChart
-                  data={m.sessions.series}
-                  keys={['chat', 'call']}
-                  colors={['#5eead4', '#a78bfa']}
-                />
-              </div>
-              <div className="mt-2 flex gap-4 text-xs text-zinc-500 dark:text-zinc-400">
-                <span className="flex items-center gap-1">
-                  <span className="h-2 w-2 rounded-sm bg-teal-300" /> Chat
-                </span>
-                <span className="flex items-center gap-1">
-                  <span className="h-2 w-2 rounded-sm bg-violet-400" /> Call
-                </span>
-              </div>
+              {days > 1 && (
+                <>
+                  <div className="mt-3">
+                    <MiniBarChart
+                      data={m.sessions.series}
+                      keys={['chat', 'call']}
+                      colors={['#5eead4', '#a78bfa']}
+                    />
+                  </div>
+                  <div className="mt-2 flex gap-4 text-xs text-zinc-500 dark:text-zinc-400">
+                    <span className="flex items-center gap-1">
+                      <span className="h-2 w-2 rounded-sm bg-teal-300" /> Chat
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <span className="h-2 w-2 rounded-sm bg-violet-400" /> Call
+                    </span>
+                  </div>
+                </>
+              )}
             </Panel>
           </div>
 
-          <Panel title={`Money · last ${days} days`} icon="wallet">
+          <Panel title={`Money · ${windowLabel(days)}`} icon="wallet">
             <div className="grid grid-cols-2 gap-x-6 gap-y-4 sm:grid-cols-3 lg:grid-cols-5">
               <Stat label="Top-ups collected" value={inr(m.revenue.topupMinor)} />
               <Stat label="Mentor earnings" value={inr(m.revenue.mentorEarningsMinor)} />
@@ -280,7 +292,7 @@ export default async function DashboardPage({
           <Panel title="All time" icon="gauge">
             <div className="grid grid-cols-2 gap-x-6 gap-y-4 sm:grid-cols-4">
               <Stat
-                label={`Active users (${days}d)`}
+                label={`Active users (${rangeLabel(days)})`}
                 value={m.activeUsers.current}
                 sub={<Trend current={m.activeUsers.current} previous={m.activeUsers.previous} />}
               />
