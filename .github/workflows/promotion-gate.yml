@@ -1,0 +1,89 @@
+name: Promotion gate
+
+# Production deploys from PROD_BRANCH (Railway). Nothing may reach it except a
+# PR from `staging`, and that PR can only be merged once `staging-verified`
+# passes: the exact commit being promoted has deployed successfully to Railway
+# staging (backend + admin) and answers its smoke tests. Merging the PR is the
+# manual approval; branch protection requires a reviewer.
+#
+# Add `staging-verified` as a required status check on PROD_BRANCH.
+
+on:
+  pull_request:
+    branches: [feature/flutter-migration]
+    types: [opened, synchronize, reopened, ready_for_review]
+
+concurrency:
+  group: promotion-gate-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+env:
+  # GitHub deployment environment name Railway reports for staging.
+  STAGING_DEPLOYMENT_ENV: "Uniscope Mobile / staging"
+  STAGING_URL: https://uniscope-staging.up.railway.app
+  # Staging admin panel (production is admin.uniscope.in).
+  STAGING_ADMIN_URL: https://admin-staging-15c9.up.railway.app
+
+jobs:
+  staging-verified:
+    name: staging-verified
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    permissions:
+      contents: read
+      deployments: read
+    env:
+      GH_TOKEN: ${{ github.token }}
+      HEAD_REF: ${{ github.event.pull_request.head.ref }}
+      HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+      HEAD_REPO: ${{ github.event.pull_request.head.repo.full_name }}
+    steps:
+      - name: Only the staging branch may be promoted
+        run: |
+          if [ "$HEAD_REPO" != "${{ github.repository }}" ] || [ "$HEAD_REF" != "staging" ]; then
+            echo "::error::Production only accepts PRs from the 'staging' branch (got '$HEAD_REPO:$HEAD_REF'). Merge your work into staging first, validate it there, then promote staging."
+            exit 1
+          fi
+
+      - name: Wait for the Railway staging deployment of this exact commit
+        run: |
+          for i in $(seq 1 60); do
+            id=$(gh api "repos/${{ github.repository }}/deployments?sha=$HEAD_SHA&per_page=30" \
+              --jq "[.[] | select(.environment == \"$STAGING_DEPLOYMENT_ENV\")][0].id // empty")
+            if [ -n "$id" ]; then
+              state=$(gh api "repos/${{ github.repository }}/deployments/$id/statuses" --jq '.[0].state // "pending"')
+              echo "staging deployment $id: $state"
+              case "$state" in
+                success) exit 0 ;;
+                failure|error|inactive) echo "::error::Staging deployment of $HEAD_SHA is $state"; exit 1 ;;
+              esac
+            else
+              echo "no staging deployment for $HEAD_SHA yet"
+            fi
+            sleep 20
+          done
+          echo "::error::Timed out waiting for the staging deployment of $HEAD_SHA (was it merged to staging?)"; exit 1
+
+      - name: Smoke test staging backend
+        run: |
+          for i in 1 2 3 4 5 6; do
+            curl -fsS --max-time 15 "$STAGING_URL/health" && exit 0
+            sleep 10
+          done
+          echo "::error::Staging /health failed"; exit 1
+
+      - name: Smoke test staging admin
+        run: |
+          ok=""
+          for i in 1 2 3 4 5 6; do
+            code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 15 "$STAGING_ADMIN_URL/login")
+            [ "$code" = "200" ] && ok=1 && break
+            sleep 10
+          done
+          [ -n "$ok" ] || { echo "::error::Staging admin /login did not return 200"; exit 1; }
+          # Auth middleware must be live: an unauthenticated /dashboard redirects to /login.
+          loc=$(curl -s -o /dev/null -w '%{redirect_url}' --max-time 15 "$STAGING_ADMIN_URL/dashboard")
+          case "$loc" in
+            */login*) ;;
+            *) echo "::error::Staging admin /dashboard is not protected (redirect: '$loc')"; exit 1 ;;
+          esac
