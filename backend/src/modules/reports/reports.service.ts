@@ -41,7 +41,10 @@ export class ReportsService {
     private readonly notifications: NotificationsService,
   ) {}
 
-  async create(reporterId: string, dto: CreateReportDto): Promise<ReportResponse> {
+  async create(
+    reporterId: string,
+    dto: CreateReportDto,
+  ): Promise<ReportResponse> {
     const report = await this.prisma.report.create({
       data: {
         reporterId,
@@ -89,7 +92,9 @@ export class ReportsService {
   }
 
   async findById(reportId: string): Promise<ReportResponse> {
-    const report = await this.prisma.report.findUnique({ where: { id: reportId } });
+    const report = await this.prisma.report.findUnique({
+      where: { id: reportId },
+    });
     if (!report) {
       throw new NotFoundException(`Report '${reportId}' not found`);
     }
@@ -107,14 +112,18 @@ export class ReportsService {
     adminUserId: string,
     dto: ResolveReportDto,
   ): Promise<ReportResponse> {
-    const report = await this.prisma.report.findUnique({ where: { id: reportId } });
+    const report = await this.prisma.report.findUnique({
+      where: { id: reportId },
+    });
     if (!report) {
       throw new NotFoundException(`Report '${reportId}' not found`);
     }
 
     if (dto.refundAmountMinor) {
       if (report.targetType !== ReportTargetType.SESSION) {
-        throw new BadRequestException('Refunds can only be issued against SESSION reports');
+        throw new BadRequestException(
+          'Refunds can only be issued against SESSION reports',
+        );
       }
 
       const session = await this.prisma.session.findUnique({
@@ -173,7 +182,9 @@ export class ReportsService {
           },
         })
         .catch((err) =>
-          this.logger.warn(`Report-resolution notification failed for ${report.id}: ${err}`),
+          this.logger.warn(
+            `Report-resolution notification failed for ${report.id}: ${err}`,
+          ),
         );
     }
 

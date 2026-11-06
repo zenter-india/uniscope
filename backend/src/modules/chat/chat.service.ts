@@ -7,7 +7,10 @@ import type { SupabaseConfig } from '../../config/index.js';
 import { PrismaService } from '../../database/prisma/prisma.service.js';
 import { NotificationsService } from '../notifications/notifications.service.js';
 import { NotificationType } from '@prisma/client';
-import { ChatMessageResponse, toChatMessageResponse } from './chat-message-response.js';
+import {
+  ChatMessageResponse,
+  toChatMessageResponse,
+} from './chat-message-response.js';
 
 /** Fixed identity for the "chat with UniScope" side of every support
  * channel — not a real User row, just a sentinel sender id every support
@@ -83,7 +86,11 @@ export class ChatService {
 
   /** Everything a client needs to open a channel: connection info plus the
    * first page of history, in one round trip. */
-  connectionInfo(channelId: string): { supabaseUrl: string; supabaseAnonKey: string; broadcastTopic: string } {
+  connectionInfo(channelId: string): {
+    supabaseUrl: string;
+    supabaseAnonKey: string;
+    broadcastTopic: string;
+  } {
     return {
       supabaseUrl: this.supabaseUrl,
       supabaseAnonKey: this.supabaseAnonKey,
@@ -94,7 +101,9 @@ export class ChatService {
   /** Idempotent — same create-or-return-existing pattern the Stream Chat
    * version held (channel.create() there, upsert-by-sessionId here). */
   async ensureChannelForSession(sessionId: string): Promise<ChatChannel> {
-    const existing = await this.prisma.chatChannel.findUnique({ where: { sessionId } });
+    const existing = await this.prisma.chatChannel.findUnique({
+      where: { sessionId },
+    });
     if (existing) return existing;
 
     return this.prisma.chatChannel.create({
@@ -182,7 +191,12 @@ export class ChatService {
     clientMessageId?: string,
   ): Promise<ChatMessageResponse> {
     const channel = await this.ensureSupportChannel(userId);
-    return this.sendMessage(channel.id, SUPPORT_ACCOUNT_ID, text, clientMessageId);
+    return this.sendMessage(
+      channel.id,
+      SUPPORT_ACCOUNT_ID,
+      text,
+      clientMessageId,
+    );
   }
 
   /**
@@ -272,7 +286,7 @@ export class ChatService {
     try {
       const channel = this.supabase.channel(this.broadcastTopic(channelId));
       await channel.httpSend('new_message', {});
-      this.supabase.removeChannel(channel);
+      void this.supabase.removeChannel(channel);
     } catch {
       // best-effort — see doc comment above.
     }

@@ -61,7 +61,7 @@ function loadDicebear(): Promise<DicebearModules> {
 }
 
 function pick<T>(values: readonly T[]): T {
-  return values[Math.floor(Math.random() * values.length)]!;
+  return values[Math.floor(Math.random() * values.length)];
 }
 
 /**
@@ -182,7 +182,10 @@ export class AvatarService {
 
   /** Renders and uploads, overwriting any previous avatar for this user.
    * Returns the config so callers can persist it in `avatarKey`. */
-  async renderAndStore(userId: string, config: AvatarConfig): Promise<AvatarConfig> {
+  async renderAndStore(
+    userId: string,
+    config: AvatarConfig,
+  ): Promise<AvatarConfig> {
     const svg = await this.renderSvg(config);
     await this.ensureBucket();
 
@@ -204,7 +207,11 @@ export class AvatarService {
    * changes — the path itself is stable, so without it a customised
    * avatar would keep showing the old picture.
    */
-  publicUrl(userId: string, avatarKey: string | null, updatedAt: Date): string | null {
+  publicUrl(
+    userId: string,
+    avatarKey: string | null,
+    updatedAt: Date,
+  ): string | null {
     if (!avatarKey) return null;
     const base = this.config.get<string>('supabase.url', '');
     if (!base) return null;

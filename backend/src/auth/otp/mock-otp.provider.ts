@@ -73,7 +73,11 @@ export class MockOtpProvider implements OtpProvider {
     return { serviceId };
   }
 
-  async verifyOtp(phone: string, code: string, serviceId: string): Promise<boolean> {
+  async verifyOtp(
+    phone: string,
+    code: string,
+    serviceId: string,
+  ): Promise<boolean> {
     const raw = await this.redis.get(`otp:${serviceId}`);
 
     if (!raw) {

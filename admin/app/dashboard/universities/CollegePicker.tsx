@@ -27,8 +27,10 @@ export function CollegePicker({
   useEffect(() => {
     if (!open) return;
     let cancelled = false;
-    setLoading(true);
     const t = setTimeout(async () => {
+      // Set from the debounce callback, not the effect body (react-hooks/
+      // set-state-in-effect), so the spinner shows once the search starts.
+      setLoading(true);
       try {
         const res = await searchColleges(query);
         if (!cancelled) setOptions(res.filter((c) => c.id !== excludeId));

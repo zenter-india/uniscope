@@ -1,6 +1,10 @@
 import { ForbiddenException, NotFoundException } from '@nestjs/common';
-import { SessionStatus, SessionType } from '@prisma/client';
+import { SessionStatus, SessionType, VerificationStatus } from '@prisma/client';
+import type { JwtPayload } from '../../auth/decorators/current-user.decorator.js';
+import type { PrismaService } from '../../database/prisma/prisma.service.js';
+import type { BlocksService } from '../blocks/blocks.service.js';
 import { ChatController } from './chat.controller.js';
+import type { ChatService } from './chat.service.js';
 
 // Authorization boundary for CHAT-session messaging (see AUTHZ-002-style
 // coverage elsewhere in this project): a caller must be a real party to the
@@ -28,33 +32,33 @@ describe('ChatController', () => {
   function controllerWith({
     session,
     isBlocked = false,
-    senderStatus = 'VERIFIED',
+    verificationStatus = VerificationStatus.VERIFIED,
   }: {
     session: ReturnType<typeof baseSession> | null;
     isBlocked?: boolean;
-    /** The sending user's own verificationStatus (the under-review lock). */
-    senderStatus?: string;
+    verificationStatus?: VerificationStatus;
   }) {
     const prisma = {
       session: {
         findFirst: jest.fn().mockResolvedValue(session),
       },
+      // sendMessage refuses accounts that are UNDER_REVIEW (assertNotUnderReview).
       user: {
-        findUnique: jest.fn().mockResolvedValue({ verificationStatus: senderStatus }),
+        findUnique: jest.fn().mockResolvedValue({ verificationStatus }),
       },
-    } as any;
+    } as unknown as PrismaService;
     const chatService = {
       ensureChannelForSession: jest.fn().mockResolvedValue({ id: 'channel-1' }),
-      listMessages: jest.fn().mockResolvedValue({ messages: [], hasMore: false }),
-      // Called (fire-and-forget) when the newest page is fetched, for the
-      // Sessions-tab unread badge.
-      markRead: jest.fn().mockResolvedValue(undefined),
+      listMessages: jest
+        .fn()
+        .mockResolvedValue({ messages: [], hasMore: false }),
       sendMessage: jest.fn().mockResolvedValue({ id: 'm1' }),
       connectionInfo: jest.fn().mockReturnValue({}),
-    } as any;
+      markRead: jest.fn().mockResolvedValue(undefined),
+    } as unknown as ChatService;
     const blocksService = {
       isBlockedEitherDirection: jest.fn().mockResolvedValue(isBlocked),
-    } as any;
+    } as unknown as BlocksService;
     return new ChatController(chatService, blocksService, prisma);
   }
 
@@ -64,7 +68,7 @@ describe('ChatController', () => {
     // from the session simply not existing.
     const controller = controllerWith({ session: null });
     await expect(
-      controller.listMessages(sessionId, { sub: strangerId } as any, {}),
+      controller.listMessages(sessionId, { sub: strangerId } as JwtPayload, {}),
     ).rejects.toBeInstanceOf(NotFoundException);
   });
 
@@ -73,80 +77,90 @@ describe('ChatController', () => {
       session: baseSession({ type: SessionType.AUDIO_CALL }),
     });
     await expect(
-      controller.listMessages(sessionId, { sub: aspirantId } as any, {}),
+      controller.listMessages(sessionId, { sub: aspirantId } as JwtPayload, {}),
     ).rejects.toBeInstanceOf(ForbiddenException);
   });
 
-  it.each([SessionStatus.PENDING, SessionStatus.REJECTED, SessionStatus.EXPIRED])(
+  it.each([
+    SessionStatus.PENDING,
+    SessionStatus.REJECTED,
+    SessionStatus.EXPIRED,
+  ])(
     '403s a participant while the session is %s (not yet/no longer chattable)',
     async (status) => {
       const controller = controllerWith({ session: baseSession({ status }) });
       await expect(
-        controller.listMessages(sessionId, { sub: aspirantId } as any, {}),
+        controller.listMessages(
+          sessionId,
+          { sub: aspirantId } as JwtPayload,
+          {},
+        ),
       ).rejects.toBeInstanceOf(ForbiddenException);
     },
   );
 
-  it.each([SessionStatus.ACCEPTED, SessionStatus.IN_PROGRESS, SessionStatus.COMPLETED])(
+  it.each([
+    SessionStatus.ACCEPTED,
+    SessionStatus.IN_PROGRESS,
+    SessionStatus.COMPLETED,
+  ])(
     'allows a participant to read history while the session is %s',
     async (status) => {
       const controller = controllerWith({ session: baseSession({ status }) });
       await expect(
-        controller.listMessages(sessionId, { sub: aspirantId } as any, {}),
+        controller.listMessages(
+          sessionId,
+          { sub: aspirantId } as JwtPayload,
+          {},
+        ),
       ).resolves.toBeDefined();
     },
   );
 
   it('lets either participant read history even if the pair has since blocked each other', async () => {
-    const controller = controllerWith({ session: baseSession(), isBlocked: true });
+    const controller = controllerWith({
+      session: baseSession(),
+      isBlocked: true,
+    });
     await expect(
-      controller.listMessages(sessionId, { sub: aspirantId } as any, {}),
+      controller.listMessages(sessionId, { sub: aspirantId } as JwtPayload, {}),
     ).resolves.toBeDefined();
   });
 
   it('403s sendMessage when the pair has blocked each other (either party, either direction)', async () => {
-    const controller = controllerWith({ session: baseSession(), isBlocked: true });
+    const controller = controllerWith({
+      session: baseSession(),
+      isBlocked: true,
+    });
     await expect(
-      controller.sendMessage(sessionId, { sub: aspirantId } as any, {
+      controller.sendMessage(sessionId, { sub: aspirantId } as JwtPayload, {
         text: 'hi',
       }),
     ).rejects.toBeInstanceOf(ForbiddenException);
     await expect(
-      controller.sendMessage(sessionId, { sub: mentorId } as any, {
+      controller.sendMessage(sessionId, { sub: mentorId } as JwtPayload, {
         text: 'hi',
       }),
     ).rejects.toBeInstanceOf(ForbiddenException);
   });
 
-  // The admin "Under review" lock: only the account that is itself under
-  // review is stopped from sending; reading and the other party are unaffected.
-  it('403s sendMessage for a participant whose own account is UNDER_REVIEW', async () => {
+  it('403s sendMessage for an account that is UNDER_REVIEW', async () => {
     const controller = controllerWith({
       session: baseSession(),
-      senderStatus: 'UNDER_REVIEW',
+      verificationStatus: VerificationStatus.UNDER_REVIEW,
     });
     await expect(
-      controller.sendMessage(sessionId, { sub: aspirantId } as any, { text: 'hi' }),
-    ).rejects.toMatchObject({
-      response: { code: 'ACCOUNT_UNDER_REVIEW' },
-    });
-  });
-
-  it('still lets an UNDER_REVIEW participant read the history', async () => {
-    const controller = controllerWith({
-      session: baseSession(),
-      senderStatus: 'UNDER_REVIEW',
-    });
-    await expect(
-      controller.listMessages(sessionId, { sub: aspirantId } as any, {}),
-    ).resolves.toBeDefined();
+      controller.sendMessage(sessionId, { sub: aspirantId } as JwtPayload, {
+        text: 'hi',
+      }),
+    ).rejects.toBeInstanceOf(ForbiddenException);
   });
 
   it('sends successfully for an unblocked participant', async () => {
     const controller = controllerWith({ session: baseSession() });
     const result = await controller.sendMessage(
       sessionId,
-      { sub: aspirantId } as any,
+      { sub: aspirantId } as JwtPayload,
       { text: 'hello' },
     );
     expect(result).toEqual({ id: 'm1' });

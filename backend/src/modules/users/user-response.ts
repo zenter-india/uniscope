@@ -211,7 +211,11 @@ export function toAdminUserDetail(
           state: p.state ?? null,
           city: p.city ?? null,
           university: p.university
-            ? { id: p.university.id, name: p.university.name, slug: p.university.slug }
+            ? {
+                id: p.university.id,
+                name: p.university.name,
+                slug: p.university.slug,
+              }
             : null,
           qualification: p.qualification ?? null,
           stream: p.stream ?? null,
@@ -316,10 +320,12 @@ export function toPublicUser(
       graduationYear: user.profile?.graduationYear ?? null,
       yearInfoPrivate: user.profile?.yearInfoPrivate ?? false,
       goals: user.profile?.goals ?? [],
-      dateOfBirth: user.profile?.dateOfBirth?.toISOString().slice(0, 10) ?? null,
+      dateOfBirth:
+        user.profile?.dateOfBirth?.toISOString().slice(0, 10) ?? null,
       courseInterested: user.profile?.courseInterested ?? null,
       preferredLanguage: user.profile?.preferredLanguage ?? null,
-      preferredMentorshipTiming: user.profile?.preferredMentorshipTiming ?? null,
+      preferredMentorshipTiming:
+        user.profile?.preferredMentorshipTiming ?? null,
     }),
   };
 }

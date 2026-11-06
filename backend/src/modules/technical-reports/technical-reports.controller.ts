@@ -13,7 +13,10 @@ export class TechnicalReportsController {
   constructor(private readonly service: TechnicalReportsService) {}
 
   @Post()
-  create(@CurrentUser() user: JwtPayload, @Body() dto: CreateTechnicalReportDto) {
+  create(
+    @CurrentUser() user: JwtPayload,
+    @Body() dto: CreateTechnicalReportDto,
+  ) {
     return this.service.create(user.sub, dto);
   }
 }

@@ -39,7 +39,9 @@ export class VerificationService {
     userId: string,
     dto: SubmitVerificationDto,
   ): Promise<VerificationRequestResponse> {
-    const user = await this.prisma.user.findUniqueOrThrow({ where: { id: userId } });
+    const user = await this.prisma.user.findUniqueOrThrow({
+      where: { id: userId },
+    });
     if (!RESUBMITTABLE_STATUSES.includes(user.verificationStatus)) {
       throw new ConflictException(
         `Cannot submit a new verification request while status is ${user.verificationStatus}`,
@@ -50,20 +52,29 @@ export class VerificationService {
       where: { id: dto.universityId },
     });
     if (!university) {
-      throw new BadRequestException(`University '${dto.universityId}' not found`);
+      throw new BadRequestException(
+        `University '${dto.universityId}' not found`,
+      );
     }
 
     const buffer = Buffer.from(dto.documentBase64, 'base64');
     if (buffer.length === 0) {
-      throw new BadRequestException('documentBase64 did not decode to any bytes');
+      throw new BadRequestException(
+        'documentBase64 did not decode to any bytes',
+      );
     }
 
     const documentKey = `${userId}/${randomUUID()}.jpg`;
     const { error: uploadError } = await this.supabase.storage
       .from(SUPABASE_BUCKETS.VERIFICATION_DOCS)
-      .upload(documentKey, buffer, { contentType: 'image/jpeg', upsert: false });
+      .upload(documentKey, buffer, {
+        contentType: 'image/jpeg',
+        upsert: false,
+      });
     if (uploadError) {
-      throw new BadRequestException(`Failed to upload document: ${uploadError.message}`);
+      throw new BadRequestException(
+        `Failed to upload document: ${uploadError.message}`,
+      );
     }
 
     const now = new Date();
@@ -111,7 +122,11 @@ export class VerificationService {
    * request now surfaces at the top of the queue instead of the bottom. */
   async findQueue(): Promise<VerificationRequestResponse[]> {
     const rows = await this.prisma.verificationRequest.findMany({
-      where: { status: { in: [VerificationStatus.SUBMITTED, VerificationStatus.UNDER_REVIEW] } },
+      where: {
+        status: {
+          in: [VerificationStatus.SUBMITTED, VerificationStatus.UNDER_REVIEW],
+        },
+      },
       orderBy: { submittedAt: 'desc' },
       include: {
         user: {
@@ -154,11 +169,15 @@ export class VerificationService {
    * and why", not "what's waiting" — so it carries the reviewer's note and
    * decision timestamp but not the full applicant snapshot (that's only
    * useful while a decision is still pending). */
-  async findHistory(
-    query: ListVerificationHistoryDto,
-  ): Promise<{ data: VerificationRequestResponse[]; nextCursor: string | null }> {
+  async findHistory(query: ListVerificationHistoryDto): Promise<{
+    data: VerificationRequestResponse[];
+    nextCursor: string | null;
+  }> {
     const take = Math.min(query.limit ?? 30, 50);
-    const resolvedStatuses = [VerificationStatus.VERIFIED, VerificationStatus.REJECTED];
+    const resolvedStatuses = [
+      VerificationStatus.VERIFIED,
+      VerificationStatus.REJECTED,
+    ];
 
     const where: Prisma.VerificationRequestWhereInput = {
       status: query.status ?? { in: resolvedStatuses },
@@ -193,14 +212,18 @@ export class VerificationService {
       where: { id: requestId },
     });
     if (!request) {
-      throw new NotFoundException(`Verification request '${requestId}' not found`);
+      throw new NotFoundException(
+        `Verification request '${requestId}' not found`,
+      );
     }
 
     const { data, error } = await this.supabase.storage
       .from(SUPABASE_BUCKETS.VERIFICATION_DOCS)
       .createSignedUrl(request.documentKey, 300);
     if (error || !data) {
-      throw new BadRequestException(`Failed to sign document URL: ${error?.message}`);
+      throw new BadRequestException(
+        `Failed to sign document URL: ${error?.message}`,
+      );
     }
     return data.signedUrl;
   }
@@ -214,7 +237,9 @@ export class VerificationService {
       where: { id: requestId },
     });
     if (!request) {
-      throw new NotFoundException(`Verification request '${requestId}' not found`);
+      throw new NotFoundException(
+        `Verification request '${requestId}' not found`,
+      );
     }
     if (
       request.status !== VerificationStatus.SUBMITTED &&
@@ -225,7 +250,9 @@ export class VerificationService {
       );
     }
 
-    const newStatus = dto.approve ? VerificationStatus.VERIFIED : VerificationStatus.REJECTED;
+    const newStatus = dto.approve
+      ? VerificationStatus.VERIFIED
+      : VerificationStatus.REJECTED;
     const now = new Date();
 
     const [updated] = await this.prisma.$transaction([
@@ -267,10 +294,11 @@ export class VerificationService {
     await this.notificationsService.send({
       userId: request.userId,
       type: NotificationType.VERIFICATION,
-      title: dto.approve ? 'You\'re verified!' : 'Verification declined',
+      title: dto.approve ? "You're verified!" : 'Verification declined',
       body: dto.approve
         ? 'Your student status is now verified.'
-        : dto.note ?? 'Your submission could not be verified — you can resubmit.',
+        : (dto.note ??
+          'Your submission could not be verified — you can resubmit.'),
     });
 
     return toVerificationRequestResponse(updated);

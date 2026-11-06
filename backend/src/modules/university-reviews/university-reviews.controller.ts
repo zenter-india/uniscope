@@ -1,4 +1,12 @@
-import { Body, Controller, Get, Param, Post, Query, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  Post,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
 import { CurrentUser } from '../../auth/decorators/current-user.decorator.js';
 import type { JwtPayload } from '../../auth/decorators/current-user.decorator.js';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard.js';
@@ -8,7 +16,9 @@ import { UniversityReviewsService } from './university-reviews.service.js';
 
 @Controller('universities/:universityId/reviews')
 export class UniversityReviewsController {
-  constructor(private readonly universityReviewsService: UniversityReviewsService) {}
+  constructor(
+    private readonly universityReviewsService: UniversityReviewsService,
+  ) {}
 
   @Get()
   findForUniversity(
@@ -54,7 +64,10 @@ export class UniversityReviewsController {
     @Param('universityId') universityId: string,
   ) {
     return {
-      hasReviewed: await this.universityReviewsService.hasReviewed(user.sub, universityId),
+      hasReviewed: await this.universityReviewsService.hasReviewed(
+        user.sub,
+        universityId,
+      ),
     };
   }
 
@@ -63,7 +76,10 @@ export class UniversityReviewsController {
    * no edit form to prefill. */
   @UseGuards(JwtAuthGuard)
   @Get('mine/detail')
-  findMine(@CurrentUser() user: JwtPayload, @Param('universityId') universityId: string) {
+  findMine(
+    @CurrentUser() user: JwtPayload,
+    @Param('universityId') universityId: string,
+  ) {
     return this.universityReviewsService.findMine(user.sub, universityId);
   }
 }

@@ -15,7 +15,9 @@ async function bootstrap() {
   // webhook's HMAC signature against the exact bytes Razorpay signed,
   // before the global body parser JSON-decodes (and potentially
   // re-serializes differently from) the payload.
-  const app = await NestFactory.create<NestExpressApplication>(AppModule, { rawBody: true });
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, {
+    rawBody: true,
+  });
 
   // Verification document submission sends a base64-encoded photo in the
   // JSON body (simpler than multipart for the mobile Dio client) — bump

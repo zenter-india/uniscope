@@ -251,9 +251,9 @@ export class UniversitiesService {
    * query. Cheap even for a `browse=true` full-catalogue fetch: the
    * aggregate is bounded by how many reviews actually exist (a handful per
    * college, gated to VERIFIED mentors), not by the size of the `in` list. */
-  private async attachRatings<
-    T extends { id: string },
-  >(rows: T[]): Promise<Array<T & { rating: number | null; reviewCount: number }>> {
+  private async attachRatings<T extends { id: string }>(
+    rows: T[],
+  ): Promise<Array<T & { rating: number | null; reviewCount: number }>> {
     const ratings = await this.universityReviewsService.ratingSummaries(
       rows.map((r) => r.id),
     );

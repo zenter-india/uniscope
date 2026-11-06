@@ -102,7 +102,10 @@ export class SystemHealthService {
         select: { createdAt: true },
       }),
       this.prisma.appleTransaction.count({
-        where: { status: AppleTransactionStatus.CREDITED, createdAt: { gte: since } },
+        where: {
+          status: AppleTransactionStatus.CREDITED,
+          createdAt: { gte: since },
+        },
       }),
       this.prisma.appleTransaction.count({
         where: {
@@ -142,34 +145,49 @@ export class SystemHealthService {
         where: { type: SessionType.AUDIO_CALL, status: SessionStatus.PENDING },
       }),
       this.prisma.session.count({
-        where: { type: SessionType.AUDIO_CALL, status: SessionStatus.IN_PROGRESS },
+        where: {
+          type: SessionType.AUDIO_CALL,
+          status: SessionStatus.IN_PROGRESS,
+        },
       }),
       this.prisma.user.count({ where: { createdAt: { gte: since } } }),
       this.prisma.user.count({ where: { lastActiveAt: { gte: since } } }),
       this.prisma.verificationRequest.count({
         where: {
-          status: { in: [VerificationStatus.SUBMITTED, VerificationStatus.UNDER_REVIEW] },
+          status: {
+            in: [VerificationStatus.SUBMITTED, VerificationStatus.UNDER_REVIEW],
+          },
         },
       }),
       this.prisma.verificationRequest.findFirst({
         where: {
-          status: { in: [VerificationStatus.SUBMITTED, VerificationStatus.UNDER_REVIEW] },
+          status: {
+            in: [VerificationStatus.SUBMITTED, VerificationStatus.UNDER_REVIEW],
+          },
         },
         orderBy: { createdAt: 'asc' },
         select: { createdAt: true },
       }),
       this.prisma.payoutRequest.count({
-        where: { status: { in: [PayoutStatus.PENDING, PayoutStatus.PROCESSING] } },
+        where: {
+          status: { in: [PayoutStatus.PENDING, PayoutStatus.PROCESSING] },
+        },
       }),
       this.prisma.payoutRequest.findFirst({
-        where: { status: { in: [PayoutStatus.PENDING, PayoutStatus.PROCESSING] } },
+        where: {
+          status: { in: [PayoutStatus.PENDING, PayoutStatus.PROCESSING] },
+        },
         orderBy: { createdAt: 'asc' },
         select: { createdAt: true },
       }),
       this.prisma.report.count({
-        where: { status: { in: [ReportStatus.OPEN, ReportStatus.UNDER_REVIEW] } },
+        where: {
+          status: { in: [ReportStatus.OPEN, ReportStatus.UNDER_REVIEW] },
+        },
       }),
-      this.prisma.technicalReport.count({ where: { status: TechnicalReportStatus.OPEN } }),
+      this.prisma.technicalReport.count({
+        where: { status: TechnicalReportStatus.OPEN },
+      }),
     ]);
 
     // Measured after the queries above so a cold connection doesn't read as
@@ -183,7 +201,9 @@ export class SystemHealthService {
     const warnings: string[] = [];
     if (!database.ok) warnings.push('The database did not respond.');
     else if (database.latencyMs != null && database.latencyMs > SLOW_DB_MS) {
-      warnings.push(`The database is slow (${database.latencyMs} ms to answer).`);
+      warnings.push(
+        `The database is slow (${database.latencyMs} ms to answer).`,
+      );
     }
     if (refundsNeedingManualFix > 0) {
       warnings.push(
@@ -195,17 +215,28 @@ export class SystemHealthService {
         `${appleRefundedBeforeCredit} Apple purchase(s) in the last 24h were refunded before they were credited — check whether those users got stuck.`,
       );
     }
-    if (attempts >= 4 && connectRatePercent != null && connectRatePercent < 50) {
+    if (
+      attempts >= 4 &&
+      connectRatePercent != null &&
+      connectRatePercent < 50
+    ) {
       warnings.push(
         `Only ${connectRatePercent}% of calls that ended in the last 24h actually connected (${callsConnected} of ${attempts}).`,
       );
     }
     const staleCutoff = now - QUEUE_STALE_HOURS * 60 * 60 * 1000;
-    if (oldestVerification && oldestVerification.createdAt.getTime() < staleCutoff) {
-      warnings.push(`A mentor verification has been waiting more than ${QUEUE_STALE_HOURS} hours.`);
+    if (
+      oldestVerification &&
+      oldestVerification.createdAt.getTime() < staleCutoff
+    ) {
+      warnings.push(
+        `A mentor verification has been waiting more than ${QUEUE_STALE_HOURS} hours.`,
+      );
     }
     if (oldestPayout && oldestPayout.createdAt.getTime() < staleCutoff) {
-      warnings.push(`A mentor payout has been waiting more than ${QUEUE_STALE_HOURS} hours.`);
+      warnings.push(
+        `A mentor payout has been waiting more than ${QUEUE_STALE_HOURS} hours.`,
+      );
     }
 
     return {
@@ -233,7 +264,8 @@ export class SystemHealthService {
       users: { signups, activeUsers },
       queues: {
         verificationsPending,
-        oldestVerificationAt: oldestVerification?.createdAt.toISOString() ?? null,
+        oldestVerificationAt:
+          oldestVerification?.createdAt.toISOString() ?? null,
         payoutsPending,
         oldestPayoutAt: oldestPayout?.createdAt.toISOString() ?? null,
         reportsOpen,
@@ -243,7 +275,10 @@ export class SystemHealthService {
     };
   }
 
-  private async pingDatabase(): Promise<{ ok: boolean; latencyMs: number | null }> {
+  private async pingDatabase(): Promise<{
+    ok: boolean;
+    latencyMs: number | null;
+  }> {
     const start = Date.now();
     try {
       await this.prisma.$queryRaw`SELECT 1`;

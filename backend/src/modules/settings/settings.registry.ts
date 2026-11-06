@@ -44,4 +44,6 @@ export const SETTINGS_REGISTRY: SettingDef[] = [
   },
 ];
 
-export const SETTINGS_BY_KEY = new Map(SETTINGS_REGISTRY.map((d) => [d.key, d]));
+export const SETTINGS_BY_KEY = new Map(
+  SETTINGS_REGISTRY.map((d) => [d.key, d]),
+);
