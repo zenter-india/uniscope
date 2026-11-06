@@ -1,5 +1,11 @@
 import { createHash, randomUUID } from 'node:crypto';
-import { BadRequestException, Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Inject,
+  Injectable,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import {
   EnrollmentLeadRole,
@@ -62,7 +68,9 @@ export class EnrollmentsService {
    * `+91<digits>` string are the same shape, so the two sides hash
    * identically without needing to coordinate normalization logic. */
   private phoneHashFor(e164Phone: string): string {
-    return createHash('sha256').update(e164Phone.replace(/\s+/g, '').trim()).digest('hex');
+    return createHash('sha256')
+      .update(e164Phone.replace(/\s+/g, '').trim())
+      .digest('hex');
   }
 
   /** E.164 so the (role, phone) uniqueness actually holds — otherwise the same
@@ -78,7 +86,9 @@ export class EnrollmentsService {
   private async uploadDocument(base64: string): Promise<string> {
     const buffer = Buffer.from(base64, 'base64');
     if (buffer.length === 0) {
-      throw new BadRequestException('documentBase64 did not decode to any bytes');
+      throw new BadRequestException(
+        'documentBase64 did not decode to any bytes',
+      );
     }
 
     const key = `${LEAD_DOCUMENT_PREFIX}/${randomUUID()}.jpg`;
@@ -86,7 +96,9 @@ export class EnrollmentsService {
       .from(SUPABASE_BUCKETS.VERIFICATION_DOCS)
       .upload(key, buffer, { contentType: 'image/jpeg', upsert: false });
     if (error) {
-      throw new BadRequestException(`Failed to upload document: ${error.message}`);
+      throw new BadRequestException(
+        `Failed to upload document: ${error.message}`,
+      );
     }
     return key;
   }
@@ -128,13 +140,17 @@ export class EnrollmentsService {
   ): Promise<void> {
     const phoneHash = this.phoneHashFor(phone);
 
-    const { user, isNewUser } = await this.usersService.provisionAccountFromLead({
-      phoneHash,
-      role: role === EnrollmentLeadRole.MENTOR ? UserRole.MENTOR : UserRole.ASPIRANT,
-      displayName: dto.alias,
-      realName: dto.fullName,
-      profile,
-    });
+    const { user, isNewUser } =
+      await this.usersService.provisionAccountFromLead({
+        phoneHash,
+        role:
+          role === EnrollmentLeadRole.MENTOR
+            ? UserRole.MENTOR
+            : UserRole.ASPIRANT,
+        displayName: dto.alias,
+        realName: dto.fullName,
+        profile,
+      });
 
     // Turn a web-form doc + resolved college into a real VerificationRequest
     // so it lands in the admin queue — instead of silently dropping it. This
@@ -205,14 +221,19 @@ export class EnrollmentsService {
             body: "We've got your documents from your web registration — you'll be notified once an admin reviews them.",
           })
           .catch((err) =>
-            this.logger.warn(`Web verification notification failed for ${user.id}: ${err}`),
+            this.logger.warn(
+              `Web verification notification failed for ${user.id}: ${err}`,
+            ),
           );
       }
     }
 
     await this.prisma.enrollmentLead.update({
       where: { role_phone: { role, phone } },
-      data: { convertedUserId: user.id, status: EnrollmentLeadStatus.CONVERTED },
+      data: {
+        convertedUserId: user.id,
+        status: EnrollmentLeadStatus.CONVERTED,
+      },
     });
   }
 
@@ -328,19 +349,24 @@ export class EnrollmentsService {
     });
 
     try {
-      await this.provisionAccountFromLead(EnrollmentLeadRole.ASPIRANT, this.normalizePhone(dto.phone), dto, {
-        gender: dto.gender,
-        state: dto.state,
-        city: dto.city,
-        stream: dto.stream,
-        dateOfBirth: dto.dateOfBirth ? new Date(dto.dateOfBirth) : undefined,
-        qualification: dto.qualification,
-        specialization: dto.specialization,
-        courseInterested: dto.courseInterested,
-        preferredLanguage: dto.preferredLanguage,
-        preferredMentorshipTiming: dto.preferredMentorshipTiming,
-        universityId: universityId ?? undefined,
-      });
+      await this.provisionAccountFromLead(
+        EnrollmentLeadRole.ASPIRANT,
+        this.normalizePhone(dto.phone),
+        dto,
+        {
+          gender: dto.gender,
+          state: dto.state,
+          city: dto.city,
+          stream: dto.stream,
+          dateOfBirth: dto.dateOfBirth ? new Date(dto.dateOfBirth) : undefined,
+          qualification: dto.qualification,
+          specialization: dto.specialization,
+          courseInterested: dto.courseInterested,
+          preferredLanguage: dto.preferredLanguage,
+          preferredMentorshipTiming: dto.preferredMentorshipTiming,
+          universityId: universityId ?? undefined,
+        },
+      );
     } catch (err) {
       // Never let account provisioning fail the public form submission --
       // the lead above is already safely saved either way.
@@ -382,7 +408,10 @@ export class EnrollmentsService {
     'Law',
   ]);
 
-  private static readonly CURATED_PROGRAM_NAME_BY_STREAM_DEGREE: Record<string, Record<string, string>> = {
+  private static readonly CURATED_PROGRAM_NAME_BY_STREAM_DEGREE: Record<
+    string,
+    Record<string, string>
+  > = {
     Medical: {
       DNB: 'DNB',
       PG: 'MD/MS',
@@ -427,10 +456,13 @@ export class EnrollmentsService {
     stream: string,
     specialization: string,
   ): Promise<void> {
-    if (!EnrollmentsService.SPECIALIZATION_SUGGESTION_STREAMS.has(stream)) return;
+    if (!EnrollmentsService.SPECIALIZATION_SUGGESTION_STREAMS.has(stream))
+      return;
     try {
       const curatedName =
-        EnrollmentsService.CURATED_PROGRAM_NAME_BY_STREAM_DEGREE[stream]?.[degree] ?? degree;
+        EnrollmentsService.CURATED_PROGRAM_NAME_BY_STREAM_DEGREE[stream]?.[
+          degree
+        ] ?? degree;
       const programName = curatedName.toUpperCase();
       const program = await this.prisma.program.findUnique({
         where: { universityId_name: { universityId, name: programName } },
@@ -487,7 +519,12 @@ export class EnrollmentsService {
       universityId = resolved.id;
     }
 
-    if (universityId && dto.degree && dto.stream && dto.specialization?.trim()) {
+    if (
+      universityId &&
+      dto.degree &&
+      dto.stream &&
+      dto.specialization?.trim()
+    ) {
       await this.mapSpecializationToCollege(
         universityId,
         dto.degree,
@@ -581,7 +618,7 @@ export class EnrollmentsService {
         name: 'fullName',
         status: 'status',
         role: 'role',
-      }) as Prisma.EnrollmentLeadOrderByWithRelationInput[],
+      }),
       take: take + 1,
       ...(query.cursor && { cursor: { id: query.cursor }, skip: 1 }),
     });
@@ -635,8 +672,12 @@ export class EnrollmentsService {
 
     if (newLeads === 0) return;
 
-    const byRoleLine = newByRole.map((r) => `${r._count} ${r.role.toLowerCase()}`).join(', ');
-    await this.slack.send(`:sunrise: ${newLeads} new enrollment lead(s) in the last 24h (${byRoleLine})`);
+    const byRoleLine = newByRole
+      .map((r) => `${r._count} ${r.role.toLowerCase()}`)
+      .join(', ');
+    await this.slack.send(
+      `:sunrise: ${newLeads} new enrollment lead(s) in the last 24h (${byRoleLine})`,
+    );
   }
 
   async findById(id: string): Promise<EnrollmentLeadResponse> {
@@ -658,19 +699,26 @@ export class EnrollmentsService {
       throw new NotFoundException(`Enrollment lead '${id}' not found`);
     }
     if (!lead.documentKey) {
-      throw new NotFoundException(`Enrollment lead '${id}' has no uploaded document`);
+      throw new NotFoundException(
+        `Enrollment lead '${id}' has no uploaded document`,
+      );
     }
 
     const { data, error } = await this.supabase.storage
       .from(SUPABASE_BUCKETS.VERIFICATION_DOCS)
       .createSignedUrl(lead.documentKey, 300);
     if (error || !data) {
-      throw new BadRequestException(`Failed to sign document URL: ${error?.message}`);
+      throw new BadRequestException(
+        `Failed to sign document URL: ${error?.message}`,
+      );
     }
     return data.signedUrl;
   }
 
-  async update(id: string, dto: UpdateLeadDto): Promise<EnrollmentLeadResponse> {
+  async update(
+    id: string,
+    dto: UpdateLeadDto,
+  ): Promise<EnrollmentLeadResponse> {
     const lead = await this.prisma.enrollmentLead.findUnique({ where: { id } });
     if (!lead) {
       throw new NotFoundException(`Enrollment lead '${id}' not found`);
@@ -682,7 +730,9 @@ export class EnrollmentsService {
         select: { id: true },
       });
       if (!user) {
-        throw new BadRequestException(`User '${dto.convertedUserId}' not found`);
+        throw new BadRequestException(
+          `User '${dto.convertedUserId}' not found`,
+        );
       }
     }
 
@@ -735,7 +785,10 @@ export class EnrollmentsService {
       orderBy: { createdAt: 'desc' },
     });
 
-    const columns: [string, (l: EnrollmentLeadResponse) => string | number | null | undefined][] = [
+    const columns: [
+      string,
+      (l: EnrollmentLeadResponse) => string | number | null | undefined,
+    ][] = [
       ['Submitted', (l) => l.createdAt.toISOString()],
       ['Role', (l) => l.role],
       ['Status', (l) => l.status],
@@ -774,7 +827,8 @@ export class EnrollmentsService {
     // cannot be hostile — the value is not user text but the output of
     // libphonenumber's normalisation (see normalizePhone), so it is always
     // "+" followed by digits and nothing else.
-    const isNormalizedPhone = (str: string): boolean => /^\+\d{6,15}$/.test(str);
+    const isNormalizedPhone = (str: string): boolean =>
+      /^\+\d{6,15}$/.test(str);
 
     const escape = (value: string | number | null | undefined): string => {
       if (value === null || value === undefined) return '';

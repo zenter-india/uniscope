@@ -125,13 +125,13 @@ export class UpdateProfileDto {
    * to the mentor themselves and on the admin payout list. An empty string
    * (or null) clears it. Rejected for a non-mentor at the service layer. */
   @IsOptional()
-  @Transform(({ value }) =>
+  @Transform(({ value }: { value: unknown }) =>
     typeof value === 'string' ? value.trim().toLowerCase() : value,
   )
-  @ValidateIf((o) => o.upiId !== '' && o.upiId != null)
+  @ValidateIf((o: UpdateProfileDto) => o.upiId !== '' && o.upiId != null)
   @IsString()
   @MaxLength(255)
-  @Matches(/^[\w.\-]{2,256}@[a-zA-Z][\w.\-]{1,63}$/, {
+  @Matches(/^[\w.-]{2,256}@[a-zA-Z][\w.-]{1,63}$/, {
     message: 'Enter a valid UPI ID, e.g. name@bank',
   })
   upiId?: string;

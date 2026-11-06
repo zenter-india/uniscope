@@ -4,7 +4,10 @@ import type { App } from 'firebase-admin/app';
 import { getMessaging } from 'firebase-admin/messaging';
 import { PrismaService } from '../../database/prisma/prisma.service.js';
 import { FIREBASE_APP } from '../../firebase/firebase.constants.js';
-import { NotificationResponse, toNotificationResponse } from './notification-response.js';
+import {
+  NotificationResponse,
+  toNotificationResponse,
+} from './notification-response.js';
 
 const DEFAULT_LIMIT = 20;
 const MAX_LIMIT = 50;
@@ -107,7 +110,9 @@ export class NotificationsService {
     );
 
     await this.pushToDevices(params).catch((err) => {
-      this.logger.warn(`Push delivery failed for user ${params.userId}: ${err}`);
+      this.logger.warn(
+        `Push delivery failed for user ${params.userId}: ${err}`,
+      );
     });
 
     return toNotificationResponse(notification);
@@ -121,7 +126,12 @@ export class NotificationsService {
    */
   async sendBulk(
     userIds: string[],
-    params: { type: NotificationType; title: string; body?: string; metadata?: Record<string, string> },
+    params: {
+      type: NotificationType;
+      title: string;
+      body?: string;
+      metadata?: Record<string, string>;
+    },
   ): Promise<void> {
     if (userIds.length === 0) return;
 
@@ -145,10 +155,17 @@ export class NotificationsService {
 
   private async pushBulk(
     userIds: string[],
-    params: { type: NotificationType; title: string; body?: string; metadata?: Record<string, string> },
+    params: {
+      type: NotificationType;
+      title: string;
+      body?: string;
+      metadata?: Record<string, string>;
+    },
   ): Promise<void> {
     if (!this.firebaseApp) {
-      this.logger.log(`[notify] bulk push SKIPPED (Firebase not configured) type=${params.type}`);
+      this.logger.log(
+        `[notify] bulk push SKIPPED (Firebase not configured) type=${params.type}`,
+      );
       return;
     }
     const tokens = await this.prisma.pushToken.findMany({
@@ -156,7 +173,9 @@ export class NotificationsService {
       select: { id: true, token: true },
     });
     if (tokens.length === 0) {
-      this.logger.log(`[notify] bulk push SKIPPED (no registered devices) type=${params.type}`);
+      this.logger.log(
+        `[notify] bulk push SKIPPED (no registered devices) type=${params.type}`,
+      );
       return;
     }
 
@@ -193,7 +212,9 @@ export class NotificationsService {
         `success=${success} failure=${failure}`,
     );
     if (staleTokenIds.length > 0) {
-      await this.prisma.pushToken.deleteMany({ where: { id: { in: staleTokenIds } } });
+      await this.prisma.pushToken.deleteMany({
+        where: { id: { in: staleTokenIds } },
+      });
     }
   }
 
@@ -265,7 +286,9 @@ export class NotificationsService {
       .map(({ id }) => id);
 
     if (staleTokenIds.length > 0) {
-      await this.prisma.pushToken.deleteMany({ where: { id: { in: staleTokenIds } } });
+      await this.prisma.pushToken.deleteMany({
+        where: { id: { in: staleTokenIds } },
+      });
     }
   }
 

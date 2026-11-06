@@ -67,14 +67,16 @@ export class TechnicalReportsService {
     adminId: string,
     dto: ResolveTechnicalReportDto,
   ): Promise<TechnicalReportResponse> {
-    const existing = await this.prisma.technicalReport.findUnique({ where: { id } });
+    const existing = await this.prisma.technicalReport.findUnique({
+      where: { id },
+    });
     if (!existing) throw new NotFoundException('Technical report not found');
 
     const resolving = dto.status === 'RESOLVED';
     const row = await this.prisma.technicalReport.update({
       where: { id },
       data: {
-        status: dto.status as TechnicalReportStatus,
+        status: dto.status,
         adminNote: dto.adminNote ?? existing.adminNote,
         resolvedBy: resolving ? adminId : null,
         resolvedAt: resolving ? new Date() : null,

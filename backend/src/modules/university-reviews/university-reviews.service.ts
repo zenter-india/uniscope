@@ -75,7 +75,9 @@ export class UniversityReviewsService {
     ]);
 
     if (user.verificationStatus !== VerificationStatus.VERIFIED) {
-      throw new ForbiddenException('Only verified students and alumni can post a review');
+      throw new ForbiddenException(
+        'Only verified students and alumni can post a review',
+      );
     }
     if (!university) {
       throw new NotFoundException(`University '${universityId}' not found`);
@@ -86,7 +88,10 @@ export class UniversityReviewsService {
     // is what keeps "verified students and alumni" honest: the review is
     // tied to the same college the ID document was actually verified
     // against.
-    if (user.role === UserRole.MENTOR && user.profile?.universityId !== universityId) {
+    if (
+      user.role === UserRole.MENTOR &&
+      user.profile?.universityId !== universityId
+    ) {
       throw new ForbiddenException('You can only review your own college');
     }
 
@@ -154,12 +159,18 @@ export class UniversityReviewsService {
 
   /** Used by UniversitiesService to attach {rating, reviewCount} onto
    * university list/detail responses — batchable via universityIds. */
-  async ratingSummaries(universityIds: string[]): Promise<Map<string, UniversityRatingSummary>> {
+  async ratingSummaries(
+    universityIds: string[],
+  ): Promise<Map<string, UniversityRatingSummary>> {
     if (universityIds.length === 0) return new Map();
 
     const grouped = await this.prisma.review.groupBy({
       by: ['universityId'],
-      where: { universityId: { in: universityIds }, status: ReviewStatus.ACTIVE, deletedAt: null },
+      where: {
+        universityId: { in: universityIds },
+        status: ReviewStatus.ACTIVE,
+        deletedAt: null,
+      },
       _avg: { overallRating: true },
       _count: { overallRating: true },
     });
@@ -226,7 +237,7 @@ export class UniversityReviewsService {
 
     const tagCounts: Record<string, number> = {};
     const choiceDistributions = Object.fromEntries(
-      choiceFieldNames.map((f) => [f, {} as Record<string, number>]),
+      choiceFieldNames.map((f) => [f, {}]),
     ) as Record<ReviewChoiceField, Record<string, number>>;
 
     for (const row of rows) {
@@ -282,7 +293,7 @@ export class UniversityReviewsService {
       typeof err === 'object' &&
       err !== null &&
       'code' in err &&
-      (err as { code: unknown }).code === 'P2002'
+      err.code === 'P2002'
     );
   }
 }

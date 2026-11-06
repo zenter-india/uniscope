@@ -10,7 +10,11 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
-import { EnrollmentLeadRole, EnrollmentLeadStatus, UserRole } from '@prisma/client';
+import {
+  EnrollmentLeadRole,
+  EnrollmentLeadStatus,
+  UserRole,
+} from '@prisma/client';
 import { Roles } from '../../auth/decorators/roles.decorator.js';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard.js';
 import { RolesGuard } from '../../auth/guards/roles.guard.js';
@@ -42,7 +46,8 @@ export class EnrollmentsController {
   createAspirant(
     @Body() dto: CreateAspirantLeadDto,
   ): Promise<EnrollmentLeadAcknowledgement> {
-    if (dto.website) return Promise.resolve(this.silentlyAccept(EnrollmentLeadRole.ASPIRANT));
+    if (dto.website)
+      return Promise.resolve(this.silentlyAccept(EnrollmentLeadRole.ASPIRANT));
     return this.enrollmentsService.createAspirantLead(dto);
   }
 
@@ -51,14 +56,17 @@ export class EnrollmentsController {
   createMentor(
     @Body() dto: CreateMentorLeadDto,
   ): Promise<EnrollmentLeadAcknowledgement> {
-    if (dto.website) return Promise.resolve(this.silentlyAccept(EnrollmentLeadRole.MENTOR));
+    if (dto.website)
+      return Promise.resolve(this.silentlyAccept(EnrollmentLeadRole.MENTOR));
     return this.enrollmentsService.createMentorLead(dto);
   }
 
   /** Honeypot tripped — hand back a response indistinguishable from success so
    * the bot has nothing to learn from, while storing nothing. The id is random
    * and references no row. */
-  private silentlyAccept(role: EnrollmentLeadRole): EnrollmentLeadAcknowledgement {
+  private silentlyAccept(
+    role: EnrollmentLeadRole,
+  ): EnrollmentLeadAcknowledgement {
     return {
       id: crypto.randomUUID(),
       role,
@@ -83,7 +91,10 @@ export class EnrollmentsController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN)
   @Header('Content-Type', 'text/csv; charset=utf-8')
-  @Header('Content-Disposition', 'attachment; filename="uniscope-enrollments.csv"')
+  @Header(
+    'Content-Disposition',
+    'attachment; filename="uniscope-enrollments.csv"',
+  )
   @Get('export')
   export(@Query() query: ListLeadsDto) {
     return this.enrollmentsService.exportCsv(query);

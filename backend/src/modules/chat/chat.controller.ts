@@ -107,7 +107,10 @@ export class ChatController {
   /** A session's two parties are always exactly the aspirant and the
    * mentor, so "the other party" is just whichever of those isn't the
    * caller — no separate participant lookup needed. */
-  private async forbidIfBlocked(session: Session, callerId: string): Promise<void> {
+  private async forbidIfBlocked(
+    session: Session,
+    callerId: string,
+  ): Promise<void> {
     const otherPartyId =
       callerId === session.aspirantId ? session.mentorId : session.aspirantId;
     const blocked = await this.blocksService.isBlockedEitherDirection(

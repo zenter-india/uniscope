@@ -12,7 +12,9 @@ export interface MentorReviewResponse {
   createdAt: Date;
 }
 
-export function toMentorReviewResponse(review: MentorReview): MentorReviewResponse {
+export function toMentorReviewResponse(
+  review: MentorReview,
+): MentorReviewResponse {
   return {
     id: review.id,
     sessionId: review.sessionId,

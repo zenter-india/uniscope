@@ -1,5 +1,10 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { LedgerEntryType, Prisma, SessionStatus, UserRole } from '@prisma/client';
+import {
+  LedgerEntryType,
+  Prisma,
+  SessionStatus,
+  UserRole,
+} from '@prisma/client';
 import { PrismaService } from '../../database/prisma/prisma.service.js';
 import { AvatarService } from '../avatar/avatar.service.js';
 import { ReviewsService } from '../reviews/reviews.service.js';
@@ -114,9 +119,16 @@ export class MentorsService {
 
     const hasMore = rows.length > take;
     const rowsPage = hasMore ? rows.slice(0, take) : rows;
-    const ratings = await this.reviewsService.ratingSummaries(rowsPage.map((r) => r.id));
+    const ratings = await this.reviewsService.ratingSummaries(
+      rowsPage.map((r) => r.id),
+    );
     const data = rowsPage.map((row) =>
-      toMentorResponse(row, ratings.get(row.id), undefined, this.avatarUrlFor(row)),
+      toMentorResponse(
+        row,
+        ratings.get(row.id),
+        undefined,
+        this.avatarUrlFor(row),
+      ),
     );
     const nextCursor = hasMore ? rowsPage[rowsPage.length - 1].id : null;
 
@@ -175,7 +187,9 @@ export class MentorsService {
   }
 
   /** Dashboard stats for the logged-in mentor — see mentor-dashboard-response.ts. */
-  async getDashboardStats(mentorId: string): Promise<MentorDashboardStatsResponse> {
+  async getDashboardStats(
+    mentorId: string,
+  ): Promise<MentorDashboardStatsResponse> {
     const startOfToday = new Date();
     startOfToday.setHours(0, 0, 0, 0);
 
@@ -254,7 +268,10 @@ export class MentorsService {
       monthlyEarningsMinor: monthlyEarnings._sum.amountMinor ?? 0,
       totalSessionsCount: totalStats._count,
       totalMinutesConsulted: totalStats._sum.billedMinutes ?? 0,
-      minutesConsultedToday: todaysSessions.reduce((sum, s) => sum + s.billedMinutes, 0),
+      minutesConsultedToday: todaysSessions.reduce(
+        (sum, s) => sum + s.billedMinutes,
+        0,
+      ),
       weeklyEarningsMinor: weeklyEarnings._sum.amountMinor ?? 0,
       rating,
       recentSessions: recentSessionRows.map((row) => ({
@@ -265,7 +282,10 @@ export class MentorsService {
         status: row.status,
         endedAt: row.endedAt,
         billedMinutes: row.billedMinutes,
-        earnedMinor: row.ledgerEntries.reduce((sum, e) => sum + e.amountMinor, 0),
+        earnedMinor: row.ledgerEntries.reduce(
+          (sum, e) => sum + e.amountMinor,
+          0,
+        ),
       })),
     });
   }

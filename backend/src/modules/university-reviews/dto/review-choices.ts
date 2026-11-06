@@ -66,7 +66,10 @@ export const WOULD_RECOMMEND = [
 
 /** Which `wouldRecommend` codes count toward the aggregated
  * "% would recommend" number on the summary card. */
-export const WOULD_RECOMMEND_POSITIVE: readonly string[] = ['ABSOLUTELY', 'RIGHT_PERSON'];
+export const WOULD_RECOMMEND_POSITIVE: readonly string[] = [
+  'ABSOLUTELY',
+  'RIGHT_PERSON',
+];
 
 export const VALUE_FOR_MONEY = [
   'WORTH_IT', // 100% worth every rupee

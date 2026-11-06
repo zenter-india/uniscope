@@ -30,7 +30,7 @@ export default async function IntegrationsPage() {
   return (
     <DashboardShell title="Integrations & Usage" email={email}>
       <p className="mb-5 text-sm text-zinc-500 dark:text-zinc-400">
-        Live usage and limits pulled directly from each third-party service's own API — not
+        Live usage and limits pulled directly from each third-party service&apos;s own API — not
         cached numbers typed in by hand. Currently wired: Railway, Supabase. MSG91 is next.
       </p>
 
@@ -39,7 +39,7 @@ export default async function IntegrationsPage() {
           <div>
             <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">Supabase</h2>
             <p className="text-xs text-zinc-500 dark:text-zinc-400">
-              Database size vs. the Free Plan's 500 MB read-only threshold.
+              Database size vs. the Free Plan&apos;s 500 MB read-only threshold.
             </p>
           </div>
           {supabase.fetchedAt && (

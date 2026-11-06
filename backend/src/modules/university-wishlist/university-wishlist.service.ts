@@ -12,7 +12,10 @@ export class UniversityWishlistService {
 
   /** Idempotent — saving an already-saved university is a no-op, not an
    * error. Validates the university exists and is active first. */
-  async save(aspirantId: string, universityId: string): Promise<{ saved: true }> {
+  async save(
+    aspirantId: string,
+    universityId: string,
+  ): Promise<{ saved: true }> {
     const university = await this.prisma.university.findFirst({
       where: { id: universityId, isActive: true },
     });
@@ -21,9 +24,16 @@ export class UniversityWishlistService {
     }
 
     try {
-      await this.prisma.savedUniversity.create({ data: { aspirantId, universityId } });
+      await this.prisma.savedUniversity.create({
+        data: { aspirantId, universityId },
+      });
     } catch (err) {
-      if (!(err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002')) {
+      if (
+        !(
+          err instanceof Prisma.PrismaClientKnownRequestError &&
+          err.code === 'P2002'
+        )
+      ) {
         throw err;
       }
       // Already saved — treat as success.
@@ -31,8 +41,13 @@ export class UniversityWishlistService {
     return { saved: true };
   }
 
-  async unsave(aspirantId: string, universityId: string): Promise<{ saved: false }> {
-    await this.prisma.savedUniversity.deleteMany({ where: { aspirantId, universityId } });
+  async unsave(
+    aspirantId: string,
+    universityId: string,
+  ): Promise<{ saved: false }> {
+    await this.prisma.savedUniversity.deleteMany({
+      where: { aspirantId, universityId },
+    });
     return { saved: false };
   }
 
@@ -57,7 +72,9 @@ export class UniversityWishlistService {
     });
 
     const active = rows.map((r) => r.university).filter((u) => u.isActive);
-    const ratings = await this.universityReviewsService.ratingSummaries(active.map((u) => u.id));
+    const ratings = await this.universityReviewsService.ratingSummaries(
+      active.map((u) => u.id),
+    );
 
     return active.map((u) => ({
       ...u,

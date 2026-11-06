@@ -25,7 +25,9 @@ export class SlackNotifierService {
         body: JSON.stringify({ text }),
       });
       if (!res.ok) {
-        this.logger.warn(`Slack webhook returned ${res.status}: ${await res.text()}`);
+        this.logger.warn(
+          `Slack webhook returned ${res.status}: ${await res.text()}`,
+        );
       }
     } catch (err) {
       // A Slack outage/misconfiguration must never take down whatever

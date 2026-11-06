@@ -7,7 +7,9 @@ import Joi from 'joi';
  */
 export const validationSchema = Joi.object({
   // App
-  NODE_ENV: Joi.string().valid('development', 'production', 'test').default('development'),
+  NODE_ENV: Joi.string()
+    .valid('development', 'production', 'test')
+    .default('development'),
   PORT: Joi.number().integer().positive().default(3000),
   APP_NAME: Joi.string().default('Uniscope API'),
   API_PREFIX: Joi.string().default('api/v1'),
@@ -23,11 +25,15 @@ export const validationSchema = Joi.object({
   // Supabase (required in production; placeholder allowed in local dev)
   SUPABASE_URL: Joi.string().default('https://placeholder.supabase.co'),
   SUPABASE_ANON_KEY: Joi.string().default('placeholder-anon-key'),
-  SUPABASE_SERVICE_ROLE_KEY: Joi.string().default('placeholder-service-role-key'),
+  SUPABASE_SERVICE_ROLE_KEY: Joi.string().default(
+    'placeholder-service-role-key',
+  ),
 
   // Firebase (optional in local dev — set FIREBASE_DISABLED=true to skip)
   FIREBASE_PROJECT_ID: Joi.string().default('uniscope-local'),
-  FIREBASE_SERVICE_ACCOUNT_KEY_PATH: Joi.string().default('./firebase-service-account.json'),
+  FIREBASE_SERVICE_ACCOUNT_KEY_PATH: Joi.string().default(
+    './firebase-service-account.json',
+  ),
   // Alternative to the file path above — base64-encoded key JSON, for hosts
   // with no mounted-secret-file feature (e.g. Railway).
   FIREBASE_SERVICE_ACCOUNT_KEY_BASE64: Joi.string().optional(),

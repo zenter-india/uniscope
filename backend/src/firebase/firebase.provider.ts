@@ -18,12 +18,14 @@ export const firebaseProvider: Provider = {
   useFactory: (configService: ConfigService): App | null => {
     const existingApps = getApps();
     if (existingApps.length > 0) {
-      return existingApps[0] as App;
+      return existingApps[0];
     }
 
     const disabled = configService.get<string>('FIREBASE_DISABLED');
     if (disabled === 'true') {
-      logger.warn('Firebase is disabled (FIREBASE_DISABLED=true). Push notifications unavailable.');
+      logger.warn(
+        'Firebase is disabled (FIREBASE_DISABLED=true). Push notifications unavailable.',
+      );
       return null;
     }
 
@@ -32,16 +34,19 @@ export const firebaseProvider: Provider = {
     // Prefer an inline base64 key (works on hosts with no "secret files"
     // feature, e.g. Railway, which is production) over the mounted-file
     // path (local dev only now — Render is no longer used).
-    const keyBase64 = configService.get<string>('firebase.serviceAccountKeyBase64');
+    const keyBase64 = configService.get<string>(
+      'firebase.serviceAccountKeyBase64',
+    );
     let serviceAccountJson: Record<string, unknown>;
 
     if (keyBase64) {
-      serviceAccountJson = JSON.parse(Buffer.from(keyBase64, 'base64').toString('utf-8')) as Record<
-        string,
-        unknown
-      >;
+      serviceAccountJson = JSON.parse(
+        Buffer.from(keyBase64, 'base64').toString('utf-8'),
+      ) as Record<string, unknown>;
     } else {
-      const keyPath = configService.getOrThrow<string>('firebase.serviceAccountKeyPath');
+      const keyPath = configService.getOrThrow<string>(
+        'firebase.serviceAccountKeyPath',
+      );
       const resolvedPath = path.isAbsolute(keyPath)
         ? keyPath
         : path.resolve(process.cwd(), keyPath);
@@ -53,14 +58,13 @@ export const firebaseProvider: Provider = {
         return null;
       }
 
-      serviceAccountJson = JSON.parse(fs.readFileSync(resolvedPath, 'utf-8')) as Record<
-        string,
-        unknown
-      >;
+      serviceAccountJson = JSON.parse(
+        fs.readFileSync(resolvedPath, 'utf-8'),
+      ) as Record<string, unknown>;
     }
 
     return initializeApp({
-      credential: cert(serviceAccountJson as Parameters<typeof cert>[0]),
+      credential: cert(serviceAccountJson),
       projectId,
     });
   },

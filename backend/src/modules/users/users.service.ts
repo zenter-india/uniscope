@@ -16,7 +16,10 @@ import {
 } from '@prisma/client';
 import { adminOrderBy } from '../../common/helpers/admin-sort.helper.js';
 import { generatePseudonym } from '../../common/helpers/pseudonym.helper.js';
-import { encryptField, encryptRealName } from '../../common/helpers/profile-encryption.helper.js';
+import {
+  encryptField,
+  encryptRealName,
+} from '../../common/helpers/profile-encryption.helper.js';
 import {
   bucketKeyFor,
   buildUniqueId,
@@ -163,14 +166,18 @@ export class UsersService {
       if (
         params.role === UserRole.MENTOR &&
         existing.role === UserRole.ASPIRANT &&
-        (ALLOWED_ROLE_TRANSITIONS[existing.role] ?? []).includes(UserRole.MENTOR)
+        (ALLOWED_ROLE_TRANSITIONS[existing.role] ?? []).includes(
+          UserRole.MENTOR,
+        )
       ) {
         const [promoted] = await this.prisma.$transaction([
           this.prisma.user.update({
             where: { id: existing.id },
             data: {
               role: UserRole.MENTOR,
-              ...(params.displayName?.trim() && { displayName: params.displayName.trim() }),
+              ...(params.displayName?.trim() && {
+                displayName: params.displayName.trim(),
+              }),
             },
           }),
           this.prisma.userProfile.update({
@@ -240,7 +247,11 @@ export class UsersService {
     // Matches findById's contract (null, not a throw) so callers like
     // UsersController.getMe can turn a missing user into a clean 404.
     if (!user) return null;
-    if (user.uniqueId || !user.profile?.stream || user.role === UserRole.ADMIN) {
+    if (
+      user.uniqueId ||
+      !user.profile?.stream ||
+      user.role === UserRole.ADMIN
+    ) {
       return user;
     }
 
@@ -319,7 +330,10 @@ export class UsersService {
   /** Re-renders and re-uploads, then persists the config. The stored SVG
    * path is stable per user, so the client busts its cache via the `v`
    * query param on avatarUrl (derived from profile.updatedAt). */
-  async updateAvatar(userId: string, rawConfig: unknown): Promise<AvatarConfig> {
+  async updateAvatar(
+    userId: string,
+    rawConfig: unknown,
+  ): Promise<AvatarConfig> {
     const config = this.avatarService.validateConfig(rawConfig);
     await this.avatarService.renderAndStore(userId, config);
     await this.prisma.userProfile.update({
@@ -354,7 +368,10 @@ export class UsersService {
    * pre-check for UX only; the actual guarantee is enforced at save time
    * in updateProfile via the DB constraint + a friendly ConflictException
    * on P2002. Case-insensitive so "Riya_NIT" and "riya_nit" collide. */
-  async isDisplayNameAvailable(displayName: string, excludingUserId?: string): Promise<boolean> {
+  async isDisplayNameAvailable(
+    displayName: string,
+    excludingUserId?: string,
+  ): Promise<boolean> {
     const existing = await this.prisma.user.findFirst({
       where: {
         displayName: { equals: displayName, mode: 'insensitive' },
@@ -369,7 +386,10 @@ export class UsersService {
    * pseudonym.helper.ts) — collisions are now rejected at the DB level
    * (case-insensitive unique index), so retry with a freshly rolled name
    * on the rare P2002 instead of letting signup fail outright. */
-  private async createUserWithUniquePseudonym(phoneHash: string, attempt = 0): Promise<User> {
+  private async createUserWithUniquePseudonym(
+    phoneHash: string,
+    attempt = 0,
+  ): Promise<User> {
     try {
       return await this.prisma.user.create({
         data: {
@@ -394,7 +414,7 @@ export class UsersService {
       typeof err === 'object' &&
       err !== null &&
       'code' in err &&
-      (err as { code: unknown }).code === 'P2002'
+      err.code === 'P2002'
     );
   }
 
@@ -429,7 +449,7 @@ export class UsersService {
 
     // The payout UPI ID is a mentor-only concept — reject it for an
     // aspirant rather than silently storing a value they can never use.
-    let applyUpiId = dto.upiId !== undefined;
+    const applyUpiId = dto.upiId !== undefined;
     if (applyUpiId) {
       const user = await this.prisma.user.findUniqueOrThrow({
         where: { id: userId },
@@ -446,14 +466,19 @@ export class UsersService {
         include: { profile: true },
       });
       if (user.role !== UserRole.MENTOR) {
-        throw new BadRequestException('Only mentors can set mentoring availability');
+        throw new BadRequestException(
+          'Only mentors can set mentoring availability',
+        );
       }
       // Identity verification is optional and never blocks a mentor from
       // being discoverable or chatted with (see MentorsService) — but
       // turning ON call bookability specifically requires it, since that's
       // the monetized, harder-to-reverse surface. Turning it off is always
       // allowed regardless of verification state.
-      if (dto.isMentorAvailable && user.verificationStatus !== VerificationStatus.VERIFIED) {
+      if (
+        dto.isMentorAvailable &&
+        user.verificationStatus !== VerificationStatus.VERIFIED
+      ) {
         throw new BadRequestException(
           'Complete identity verification before accepting call bookings — you can still chat with aspirants in the meantime.',
         );
@@ -464,7 +489,10 @@ export class UsersService {
       // Applies to every mentor (2026-10-05: no longer only those verified after the requirement was introduced).
       if (
         dto.isMentorAvailable &&
-        !(await this.hasReviewedOwnCollege(userId, user.profile ?? { universityId: null }))
+        !(await this.hasReviewedOwnCollege(
+          userId,
+          user.profile ?? { universityId: null },
+        ))
       ) {
         throw new BadRequestException(
           'Add a review of your college before you can accept call bookings — it only takes a minute and helps future applicants.',
@@ -476,7 +504,9 @@ export class UsersService {
       ...(dto.bio !== undefined && { bio: dto.bio }),
       ...(dto.specialty !== undefined && { specialty: dto.specialty }),
       ...(dto.languages !== undefined && { languages: dto.languages }),
-      ...(dto.availableDays !== undefined && { availableDays: dto.availableDays }),
+      ...(dto.availableDays !== undefined && {
+        availableDays: dto.availableDays,
+      }),
       // Re-stamp on every toggle so switching back on restarts the 24h
       // window (see isCallAvailable). Stamped on the off-flip too, purely so
       // the column always reflects the last deliberate change.
@@ -487,13 +517,23 @@ export class UsersService {
       ...(applyGender && { gender: dto.gender }),
       ...(dto.state !== undefined && { state: dto.state }),
       ...(dto.city !== undefined && { city: dto.city }),
-      ...(dto.qualification !== undefined && { qualification: dto.qualification }),
-      ...(dto.specialization !== undefined && { specialization: dto.specialization }),
+      ...(dto.qualification !== undefined && {
+        qualification: dto.qualification,
+      }),
+      ...(dto.specialization !== undefined && {
+        specialization: dto.specialization,
+      }),
       ...(dto.stream !== undefined && { stream: dto.stream }),
       ...(dto.goals !== undefined && { goals: dto.goals }),
-      ...(dto.dateOfBirth !== undefined && { dateOfBirth: new Date(dto.dateOfBirth) }),
-      ...(dto.courseInterested !== undefined && { courseInterested: dto.courseInterested }),
-      ...(dto.preferredLanguage !== undefined && { preferredLanguage: dto.preferredLanguage }),
+      ...(dto.dateOfBirth !== undefined && {
+        dateOfBirth: new Date(dto.dateOfBirth),
+      }),
+      ...(dto.courseInterested !== undefined && {
+        courseInterested: dto.courseInterested,
+      }),
+      ...(dto.preferredLanguage !== undefined && {
+        preferredLanguage: dto.preferredLanguage,
+      }),
       ...(dto.preferredMentorshipTiming !== undefined && {
         preferredMentorshipTiming: dto.preferredMentorshipTiming,
       }),
@@ -506,8 +546,12 @@ export class UsersService {
           : null,
       }),
       ...(dto.yearOfStudy !== undefined && { yearOfStudy: dto.yearOfStudy }),
-      ...(dto.graduationYear !== undefined && { graduationYear: dto.graduationYear }),
-      ...(dto.yearInfoPrivate !== undefined && { yearInfoPrivate: dto.yearInfoPrivate }),
+      ...(dto.graduationYear !== undefined && {
+        graduationYear: dto.graduationYear,
+      }),
+      ...(dto.yearInfoPrivate !== undefined && {
+        yearInfoPrivate: dto.yearInfoPrivate,
+      }),
       ...(applyUniversityId && { universityId: dto.universityId }),
     };
 
@@ -515,7 +559,9 @@ export class UsersService {
       await this.prisma.user.update({
         where: { id: userId },
         data: {
-          ...(dto.displayName !== undefined && { displayName: dto.displayName }),
+          ...(dto.displayName !== undefined && {
+            displayName: dto.displayName,
+          }),
           ...(Object.keys(profileUpdate).length > 0 && {
             profile: { update: profileUpdate },
           }),
@@ -526,8 +572,13 @@ export class UsersService {
       // only a UX hint — this is the actual guarantee (DB-level, so a race
       // between two people checking the same free name at once still can't
       // let both through).
-      if (dto.displayName !== undefined && this.isUniqueConstraintViolation(err)) {
-        throw new ConflictException('That name is already taken — try another.');
+      if (
+        dto.displayName !== undefined &&
+        this.isUniqueConstraintViolation(err)
+      ) {
+        throw new ConflictException(
+          'That name is already taken — try another.',
+        );
       }
       throw err;
     }
@@ -579,7 +630,9 @@ export class UsersService {
 
     const where: Prisma.UserWhereInput = {
       role: query.role ?? { not: UserRole.ADMIN },
-      ...(query.verificationStatus && { verificationStatus: query.verificationStatus }),
+      ...(query.verificationStatus && {
+        verificationStatus: query.verificationStatus,
+      }),
       ...(query.isBanned !== undefined && { isBanned: query.isBanned }),
       ...(query.search && {
         displayName: { contains: query.search, mode: 'insensitive' },
@@ -593,7 +646,7 @@ export class UsersService {
         name: 'displayName',
         role: 'role',
         verification: 'verificationStatus',
-      }) as Prisma.UserOrderByWithRelationInput[],
+      }),
       take: take + 1,
       ...(query.cursor && { cursor: { id: query.cursor }, skip: 1 }),
     });
@@ -674,14 +727,18 @@ export class UsersService {
       throw new NotFoundException(`User '${userId}' not found`);
     }
     if (user.role === UserRole.ADMIN) {
-      throw new BadRequestException('Admin accounts cannot be edited from here');
+      throw new BadRequestException(
+        'Admin accounts cannot be edited from here',
+      );
     }
 
     const profileUpdate: Prisma.UserProfileUpdateInput = {
       ...(dto.bio !== undefined && { bio: dto.bio }),
       ...(dto.specialty !== undefined && { specialty: dto.specialty }),
       ...(dto.languages !== undefined && { languages: dto.languages }),
-      ...(dto.availableDays !== undefined && { availableDays: dto.availableDays }),
+      ...(dto.availableDays !== undefined && {
+        availableDays: dto.availableDays,
+      }),
       ...(dto.isMentorAvailable !== undefined && {
         isMentorAvailable: dto.isMentorAvailable,
         availabilitySetAt: new Date(),
@@ -689,15 +746,23 @@ export class UsersService {
       ...(dto.gender !== undefined && { gender: dto.gender }),
       ...(dto.state !== undefined && { state: dto.state }),
       ...(dto.city !== undefined && { city: dto.city }),
-      ...(dto.qualification !== undefined && { qualification: dto.qualification }),
-      ...(dto.specialization !== undefined && { specialization: dto.specialization }),
+      ...(dto.qualification !== undefined && {
+        qualification: dto.qualification,
+      }),
+      ...(dto.specialization !== undefined && {
+        specialization: dto.specialization,
+      }),
       ...(dto.stream !== undefined && { stream: dto.stream }),
       ...(dto.goals !== undefined && { goals: dto.goals }),
       ...(dto.dateOfBirth !== undefined && {
         dateOfBirth: dto.dateOfBirth ? new Date(dto.dateOfBirth) : null,
       }),
-      ...(dto.courseInterested !== undefined && { courseInterested: dto.courseInterested }),
-      ...(dto.preferredLanguage !== undefined && { preferredLanguage: dto.preferredLanguage }),
+      ...(dto.courseInterested !== undefined && {
+        courseInterested: dto.courseInterested,
+      }),
+      ...(dto.preferredLanguage !== undefined && {
+        preferredLanguage: dto.preferredLanguage,
+      }),
       ...(dto.preferredMentorshipTiming !== undefined && {
         preferredMentorshipTiming: dto.preferredMentorshipTiming,
       }),
@@ -705,12 +770,20 @@ export class UsersService {
         realNameEncrypted: dto.realName ? encryptRealName(dto.realName) : null,
       }),
       ...(dto.upiId !== undefined && {
-        upiIdEncrypted: dto.upiId ? encryptField(dto.upiId.trim().toLowerCase()) : null,
+        upiIdEncrypted: dto.upiId
+          ? encryptField(dto.upiId.trim().toLowerCase())
+          : null,
       }),
       ...(dto.yearOfStudy !== undefined && { yearOfStudy: dto.yearOfStudy }),
-      ...(dto.graduationYear !== undefined && { graduationYear: dto.graduationYear }),
-      ...(dto.yearInfoPrivate !== undefined && { yearInfoPrivate: dto.yearInfoPrivate }),
-      ...(dto.freeChatsRemaining !== undefined && { freeChatsRemaining: dto.freeChatsRemaining }),
+      ...(dto.graduationYear !== undefined && {
+        graduationYear: dto.graduationYear,
+      }),
+      ...(dto.yearInfoPrivate !== undefined && {
+        yearInfoPrivate: dto.yearInfoPrivate,
+      }),
+      ...(dto.freeChatsRemaining !== undefined && {
+        freeChatsRemaining: dto.freeChatsRemaining,
+      }),
       ...(dto.freeCallSecondsRemaining !== undefined && {
         freeCallSecondsRemaining: dto.freeCallSecondsRemaining,
       }),
@@ -720,7 +793,9 @@ export class UsersService {
       await this.prisma.user.update({
         where: { id: userId },
         data: {
-          ...(dto.displayName !== undefined && { displayName: dto.displayName }),
+          ...(dto.displayName !== undefined && {
+            displayName: dto.displayName,
+          }),
           ...(dto.role !== undefined && { role: dto.role }),
           ...(dto.verificationStatus !== undefined && {
             verificationStatus: dto.verificationStatus,
@@ -731,7 +806,10 @@ export class UsersService {
         },
       });
     } catch (err) {
-      if (dto.displayName !== undefined && this.isUniqueConstraintViolation(err)) {
+      if (
+        dto.displayName !== undefined &&
+        this.isUniqueConstraintViolation(err)
+      ) {
         throw new ConflictException('That display name is already taken.');
       }
       throw err;
@@ -774,7 +852,10 @@ export class UsersService {
    * leaves chat message bodies alone — scrubbing them would destroy the
    * other party's conversation history and the moderation transcript.
    */
-  async eraseUser(userId: string, adminUserId: string): Promise<{ erased: true }> {
+  async eraseUser(
+    userId: string,
+    adminUserId: string,
+  ): Promise<{ erased: true }> {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
       include: { profile: { select: { userId: true } } },
@@ -783,7 +864,9 @@ export class UsersService {
       throw new NotFoundException(`User '${userId}' not found`);
     }
     if (user.role === UserRole.ADMIN) {
-      throw new BadRequestException('Admin accounts cannot be erased from here');
+      throw new BadRequestException(
+        'Admin accounts cannot be erased from here',
+      );
     }
     if (user.phoneHash.startsWith('erased:')) {
       // Already erased — idempotent, nothing left to scrub.
