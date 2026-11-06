@@ -30,13 +30,13 @@ export default async function UniversitiesPage({
         rather than delete — a deactivated college drops off the app but stays here.
       </p>
       <div className="mb-4 flex flex-wrap items-start justify-between gap-2">
-        <form className="flex gap-2" action="/dashboard/universities">
+        <form className="flex w-full gap-2 sm:w-auto" action="/dashboard/universities">
           <input
             type="text"
             name="search"
             defaultValue={search ?? ''}
             placeholder="Search by name, city, state…"
-            className="w-72 rounded-md border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-1.5 text-sm text-zinc-900 dark:text-zinc-100 shadow-sm outline-none transition-colors placeholder:text-zinc-400 dark:placeholder:text-zinc-500 focus:border-zinc-400 dark:focus:border-zinc-600 focus:ring-2 focus:ring-zinc-400/40 dark:focus:ring-zinc-600/40"
+            className="min-w-0 flex-1 sm:w-72 sm:flex-none rounded-md border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-1.5 text-sm text-zinc-900 dark:text-zinc-100 shadow-sm outline-none transition-colors placeholder:text-zinc-400 dark:placeholder:text-zinc-500 focus:border-zinc-400 dark:focus:border-zinc-600 focus:ring-2 focus:ring-zinc-400/40 dark:focus:ring-zinc-600/40"
           />
           <button
             type="submit"

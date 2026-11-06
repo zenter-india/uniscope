@@ -44,6 +44,7 @@ export const Icon = {
   external: (p: IconProps) => base({ ...p, children: <><path d="M15 3h6v6" /><path d="M10 14 21 3" /><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" /></> }),
   ban: (p: IconProps) => base({ ...p, children: <><circle cx="12" cy="12" r="10" /><path d="m4.9 4.9 14.2 14.2" /></> }),
   check: (p: IconProps) => base({ ...p, children: <path d="M20 6 9 17l-5-5" /> }),
+  menu: (p: IconProps) => base({ ...p, children: <><path d="M4 6h16" /><path d="M4 12h16" /><path d="M4 18h16" /></> }),
   x: (p: IconProps) => base({ ...p, children: <><path d="M18 6 6 18" /><path d="m6 6 12 12" /></> }),
   alert: (p: IconProps) => base({ ...p, children: <><path d="m21.7 18-8-14a2 2 0 0 0-3.4 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.7-3z" /><path d="M12 9v4M12 17h.01" /></> }),
   trendUp: (p: IconProps) => base({ ...p, children: <><path d="M16 7h6v6" /><path d="m22 7-8.5 8.5-5-5L2 17" /></> }),
