@@ -136,10 +136,15 @@ export class MetricsService {
       }),
     ]);
 
-    // Day buckets covering the window (oldest first).
-    const buckets = Array.from({ length: days }, (_, i) =>
-      dayKey(new Date(since.getTime() + i * DAY_MS)),
-    );
+    // Day buckets covering the window (oldest first). A 1-day window is a
+    // rolling 24h that straddles two UTC dates, so a per-day series would
+    // drop events; it has no chart, only the totals.
+    const buckets =
+      days === 1
+        ? []
+        : Array.from({ length: days }, (_, i) =>
+            dayKey(new Date(since.getTime() + i * DAY_MS)),
+          );
     const bucketIndex = new Map(buckets.map((d, i) => [d, i]));
 
     const signupSeries = buckets.map((date) => ({
