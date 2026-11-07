@@ -478,6 +478,10 @@ export class UniversitiesService {
       ...(query.activeOnly === 'true' && { isActive: true }),
       ...(query.state && { state: query.state }),
       ...(query.stream && { stream: query.stream }),
+      // Colleges offering a given course (Program.name, e.g. "MD/MS").
+      ...(query.course && {
+        programs: { some: { isActive: true, name: query.course } },
+      }),
       ...(query.search && {
         OR: [
           { name: { contains: query.search, mode: 'insensitive' } },
@@ -513,6 +517,19 @@ export class UniversitiesService {
     const nextCursor = hasMore ? page[page.length - 1].id : null;
 
     return { data: page.map(withDistrict), nextCursor };
+  }
+
+  /** Every course (distinct `Program.name`) offered by an active college that
+   * is still listed (not merged away), A–Z, with how many colleges offer it.
+   * Feeds the admin Universities page's "Course" filter. */
+  async listCourses(): Promise<{ name: string; colleges: number }[]> {
+    const rows = await this.prisma.program.groupBy({
+      by: ['name'],
+      where: { isActive: true, university: { mergedIntoId: null } },
+      _count: { universityId: true },
+      orderBy: { name: 'asc' },
+    });
+    return rows.map((r) => ({ name: r.name, colleges: r._count.universityId }));
   }
 
   /** Slug is derived once at creation and never changes afterward — stable

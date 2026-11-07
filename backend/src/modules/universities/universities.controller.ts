@@ -43,6 +43,15 @@ export class UniversitiesController {
     return this.universitiesService.findAllAdmin(query);
   }
 
+  /** Distinct courses (program names) for the admin list's Course filter.
+   * Declared before `:slug` so the literal path isn't swallowed by it. */
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @Get('admin/courses')
+  courses() {
+    return this.universitiesService.listCourses();
+  }
+
   /** Likely-duplicate groups (same name + state, both active) — see
    * UniversitiesService.findDuplicateGroups. Declared before `:slug` so the
    * literal path isn't swallowed by the slug param. */

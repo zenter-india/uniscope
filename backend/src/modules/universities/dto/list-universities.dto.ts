@@ -48,6 +48,12 @@ export class ListUniversitiesDto {
   @IsString()
   sort?: string;
 
+  /** Admin list only: keep colleges that offer this course (an exact
+   * `Program.name`, e.g. "MD/MS", "DNB", "B.Tech"). */
+  @IsOptional()
+  @IsString()
+  course?: string;
+
   /** Admin list only: `activeOnly=true` drops deactivated colleges. */
   @IsOptional()
   @IsString()
