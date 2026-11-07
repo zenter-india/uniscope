@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
 
@@ -6,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 
+import '../../core/network/profile_options_api.dart';
 import '../../core/network/universities_api.dart';
 import '../../core/network/users_api.dart';
 import '../../core/network/verification_api.dart';
@@ -73,6 +75,11 @@ class _MentorOnboardingScreenState extends ConsumerState<MentorOnboardingScreen>
   // curated-degree / specialization logic keys off that chip value); only
   // what's saved as the profile's qualification is the typed text.
   final _degreeOtherController = TextEditingController();
+  // The degree came from an admin-approved chip, not typed under "Others":
+  // `_degree` is still 'Others' with the name in [_degreeOtherController] (so
+  // every downstream rule is unchanged), but the typing box is hidden and
+  // nothing is re-submitted for approval.
+  bool _degreeFromList = false;
   String? _specialization;
   final _specializationOtherController = TextEditingController();
 
@@ -403,6 +410,7 @@ class _MentorOnboardingScreenState extends ConsumerState<MentorOnboardingScreen>
                 .toList(),
             availableDays: _preferredTimings.toList(),
           );
+      _queueCustomDegree();
       if (!mounted) return;
       setState(() => _saving = false);
       _goTo(4);
@@ -411,6 +419,40 @@ class _MentorOnboardingScreenState extends ConsumerState<MentorOnboardingScreen>
       setState(() => _saving = false);
       showAppSnackBar(context, 'Could not save: $e');
     }
+  }
+
+  /// Admin-approved custom degrees for the chosen stream (empty for the
+  /// free-typed "Others" stream, offline, or an older backend).
+  List<String> _approvedDegrees({bool watch = false}) {
+    final stream = _stream;
+    if (stream == null || !kCustomDegreeStreams.contains(stream)) {
+      return const [];
+    }
+    final provider = approvedDegreesProvider(stream);
+    return (watch ? ref.watch(provider) : ref.read(provider)).asData?.value ??
+        const [];
+  }
+
+  /// A degree typed under "Others" that isn't a known/approved one yet goes to
+  /// an admin; once approved it shows up as a chip for everyone next time.
+  /// Fire-and-forget: never blocks or fails onboarding.
+  void _queueCustomDegree() {
+    if (_degree != 'Others' || _degreeFromList) return;
+    final text = _degreeOtherController.text;
+    if (!isNewCustomDegree(
+      stream: _stream,
+      text: text,
+      base: degreesForStream(_stream),
+      approved: _approvedDegrees(),
+    )) {
+      return;
+    }
+    unawaited(
+      ref
+          .read(profileOptionsApiProvider)
+          .submitDegree(stream: _stream!, name: text)
+          .catchError((Object _) {}),
+    );
   }
 
   // The card said "Take picture to upload" but only ever opened the
@@ -633,6 +675,7 @@ class _MentorOnboardingScreenState extends ConsumerState<MentorOnboardingScreen>
                           _pickedSpecializations = const [];
                           _degree = null;
                           _degreeOtherController.clear();
+                          _degreeFromList = false;
                           _specialization = null;
                           _specializationOtherController.clear();
                         }),
@@ -650,15 +693,42 @@ class _MentorOnboardingScreenState extends ConsumerState<MentorOnboardingScreen>
                         const SizedBox(height: AppSpacing.md),
                         const OnboardingFieldLabel('Degree'),
                         OnboardingSingleChipGroup(
-                          options: degreesForStream(_stream),
-                          selected: _degree,
+                          // Degrees earlier users typed under "Others" and an
+                          // admin approved appear here, just before "Others".
+                          options: degreeChipOptions(
+                            degreesForStream(_stream),
+                            _approvedDegrees(watch: true),
+                          ),
+                          selected: _degreeFromList
+                              ? _degreeOtherController.text
+                              : _degree,
                           // The curated college dataset is degree-specific
                           // (MD/MS vs Diploma vs DM/MCh), so a college picked
                           // under the old degree may not exist under the new
                           // one — clear it, same as the web MentorForm.
                           onSelect: (v) => setState(() {
-                            _degree = v;
-                            if (v != 'Others') _degreeOtherController.clear();
+                            final base = degreesForStream(_stream);
+                            final custom = approvedDegreeMatching(
+                              v,
+                              base,
+                              _approvedDegrees(),
+                            );
+                            if (custom != null) {
+                              // An approved custom degree: same as typing it
+                              // under "Others".
+                              _degree = 'Others';
+                              _degreeOtherController.text = custom;
+                              _degreeFromList = true;
+                            } else {
+                              // Leaving a list pick (or any non-Others chip)
+                              // clears the text; re-tapping "Others" while
+                              // typing keeps what was typed.
+                              if (v != 'Others' || _degreeFromList) {
+                                _degreeOtherController.clear();
+                              }
+                              _degree = v;
+                              _degreeFromList = false;
+                            }
                             _universityId = null;
                             _collegeNameController.clear();
                             _pickedSpecializations = const [];
@@ -669,7 +739,7 @@ class _MentorOnboardingScreenState extends ConsumerState<MentorOnboardingScreen>
                         // "Others" needs somewhere to say what — same as the
                         // Field-of-study "Others" box above and the aspirant
                         // wizard's own "Enter your qualification" field.
-                        if (_degree == 'Others') ...[
+                        if (_degree == 'Others' && !_degreeFromList) ...[
                           const SizedBox(height: AppSpacing.sm),
                           TextFormField(
                             controller: _degreeOtherController,

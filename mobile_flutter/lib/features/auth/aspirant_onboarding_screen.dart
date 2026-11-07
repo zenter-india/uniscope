@@ -1,7 +1,10 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/network/profile_options_api.dart';
 import '../../core/network/universities_api.dart';
 import '../../core/network/users_api.dart';
 import '../../core/theme/app_theme.dart';
@@ -64,6 +67,11 @@ class _AspirantOnboardingScreenState
 
   String? _qualification;
   final _qualificationOtherController = TextEditingController();
+  // The qualification came from an admin-approved chip, not typed under
+  // "Others": `_qualification` is still 'Others' with the name in
+  // [_qualificationOtherController] (so every downstream rule is unchanged),
+  // but the typing box is hidden and nothing is re-submitted for approval.
+  bool _qualificationFromList = false;
 
   String? _stream;
   final _streamOtherController = TextEditingController();
@@ -335,6 +343,7 @@ class _AspirantOnboardingScreenState
             preferredMentorshipTiming:
                 _preferredTimings.isEmpty ? null : _preferredTimings.join(', '),
           );
+      _queueCustomQualification();
       if (saveAvatar) {
         final avatarConfig = _avatarPanelKey.currentState?.currentConfig;
         if (avatarConfig != null) {
@@ -354,6 +363,47 @@ class _AspirantOnboardingScreenState
       setState(() => _saving = false);
       showAppSnackBar(context, 'Could not save: $e');
     }
+  }
+
+  /// The qualification chips before any approved custom degrees are added:
+  /// "Higher Secondary (12th)" always first, then the stream's degrees.
+  List<String> get _baseQualifications => [
+    'Higher Secondary (12th)',
+    ...degreesForStream(_stream),
+  ];
+
+  /// Admin-approved custom degrees for the chosen stream (empty for the
+  /// free-typed "Others" stream, offline, or an older backend).
+  List<String> _approvedDegrees({bool watch = false}) {
+    final stream = _stream;
+    if (stream == null || !kCustomDegreeStreams.contains(stream)) {
+      return const [];
+    }
+    final provider = approvedDegreesProvider(stream);
+    return (watch ? ref.watch(provider) : ref.read(provider)).asData?.value ??
+        const [];
+  }
+
+  /// A qualification typed under "Others" that isn't a known/approved one yet
+  /// goes to an admin; once approved it shows up as a chip for everyone next
+  /// time. Fire-and-forget: never blocks or fails onboarding.
+  void _queueCustomQualification() {
+    if (_qualification != 'Others' || _qualificationFromList) return;
+    final text = _qualificationOtherController.text;
+    if (!isNewCustomDegree(
+      stream: _stream,
+      text: text,
+      base: _baseQualifications,
+      approved: _approvedDegrees(),
+    )) {
+      return;
+    }
+    unawaited(
+      ref
+          .read(profileOptionsApiProvider)
+          .submitDegree(stream: _stream!, name: text)
+          .catchError((Object _) {}),
+    );
   }
 
   @override
@@ -478,6 +528,8 @@ class _AspirantOnboardingScreenState
                         onSelect: (v) => setState(() {
                           _stream = v;
                           _qualification = null;
+                          _qualificationOtherController.clear();
+                          _qualificationFromList = false;
                           _universityId = null;
                           _collegeNameController.clear();
                           _specialization = null;
@@ -496,20 +548,45 @@ class _AspirantOnboardingScreenState
                       const SizedBox(height: AppSpacing.md),
                       const OnboardingFieldLabel('Current qualification'),
                       OnboardingSingleChipGroup(
-                        options: [
-                          'Higher Secondary (12th)',
-                          ...degreesForStream(_stream),
-                        ],
-                        selected: _qualification,
+                        // Degrees earlier users typed under "Others" and an
+                        // admin approved appear here, just before "Others".
+                        options: degreeChipOptions(
+                          _baseQualifications,
+                          _approvedDegrees(watch: true),
+                        ),
+                        selected: _qualificationFromList
+                            ? _qualificationOtherController.text
+                            : _qualification,
                         onSelect: (v) => setState(() {
-                          _qualification = v;
+                          final custom = approvedDegreeMatching(
+                            v,
+                            _baseQualifications,
+                            _approvedDegrees(),
+                          );
+                          if (custom != null) {
+                            // An approved custom degree: same as typing it
+                            // under "Others".
+                            _qualification = 'Others';
+                            _qualificationOtherController.text = custom;
+                            _qualificationFromList = true;
+                          } else {
+                            // Leaving a list pick (or any non-Others chip)
+                            // clears the text; re-tapping "Others" while
+                            // typing keeps what was typed.
+                            if (v != 'Others' || _qualificationFromList) {
+                              _qualificationOtherController.clear();
+                            }
+                            _qualification = v;
+                            _qualificationFromList = false;
+                          }
                           _universityId = null;
                           _collegeNameController.clear();
                           _specialization = null;
                           _specializationOtherController.clear();
                         }),
                       ),
-                      if (_qualification == 'Others') ...[
+                      if (_qualification == 'Others' &&
+                          !_qualificationFromList) ...[
                         const SizedBox(height: AppSpacing.sm),
                         TextFormField(
                           controller: _qualificationOtherController,
