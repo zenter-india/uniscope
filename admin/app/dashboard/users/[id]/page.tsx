@@ -13,6 +13,9 @@ interface AdminUserDetail {
   id: string;
   displayName: string;
   realName: string | null;
+  /** Mobile number, decrypted by the backend; null until the user next logs in
+   * (absent on an older backend). */
+  phone?: string | null;
   role: 'ASPIRANT' | 'MENTOR' | 'ADMIN';
   verificationStatus: string;
   isActive: boolean;
@@ -240,6 +243,11 @@ export default async function UserDetailPage({
                 Real name: <span className="font-medium text-zinc-900 dark:text-zinc-100">{user.realName}</span>
               </p>
             )}
+            {user.phone && (
+              <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-300">
+                Mobile: <span className="font-medium text-zinc-900 dark:text-zinc-100">{user.phone}</span>
+              </p>
+            )}
             <p className="mt-1 text-xs text-zinc-400 dark:text-zinc-500">
               Joined {fmtDate(user.createdAt)} · Last active {fmtDate(user.lastActiveAt)}
             </p>
@@ -289,6 +297,18 @@ export default async function UserDetailPage({
         <Section title="Identity">
           <Field label="Display name / alias" value={user.displayName} />
           <Field label="Real name" value={user.realName} />
+          <Field
+            label="Mobile number"
+            value={
+              user.phone === undefined
+                ? null
+                : (user.phone ?? (
+                    <span className="text-xs text-zinc-400 dark:text-zinc-500">
+                      Not available yet — it appears after the user’s next login
+                    </span>
+                  ))
+            }
+          />
           <Field
             label="Date of birth"
             value={p?.dateOfBirth ? `${fmtDateOnly(p.dateOfBirth)}${ageFrom(p.dateOfBirth)}` : null}
