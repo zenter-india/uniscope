@@ -932,6 +932,41 @@ model TechnicalReport {
   @@map("technical_reports")
 }
 
+enum CustomDegreeStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+/// A degree / course a user typed under "Others" during profile creation.
+/// It is stored once per (stream, name) and stays PENDING until an admin
+/// approves it; APPROVED rows are then offered as an ordinary option in that
+/// stream's degree picker for everyone next time. REJECTED rows are kept so
+/// the same typo isn't re-queued (a re-submission only bumps the count).
+model CustomDegree {
+  id              String             @id @default(uuid())
+  stream          String             @db.VarChar(60)
+  /// As shown to users (admin can fix casing/typos when approving).
+  name            String             @db.VarChar(50)
+  /// lower-cased, whitespace-collapsed `name` — the dedupe key.
+  nameKey         String             @map("name_key") @db.VarChar(50)
+  status          CustomDegreeStatus @default(PENDING)
+  /// How many times people have typed this exact degree — lets an admin see
+  /// which pending ones matter first.
+  submissionCount Int                @default(1) @map("submission_count")
+  /// User id of the first person who typed it. Plain column (no relation) so
+  /// a deleted/anonymised user never blocks or cascades into this list.
+  firstSubmittedBy String?           @map("first_submitted_by")
+  reviewedBy      String?            @map("reviewed_by")
+  reviewedAt      DateTime?          @map("reviewed_at") @db.Timestamptz
+  createdAt       DateTime           @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt       DateTime           @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@unique([stream, nameKey])
+  @@index([status, createdAt(sort: Desc)])
+  @@map("custom_degrees")
+}
+
 /// In-app notification record linked to a user.
 model Notification {
   id        String           @id @default(uuid())
