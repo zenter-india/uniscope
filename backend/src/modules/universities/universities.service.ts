@@ -103,6 +103,31 @@ function withSpecializations(
   return { ...rest, specializations, district };
 }
 
+/** Admin lists only need the district, not the specialization union —
+ * a lighter include than UNIVERSITY_SPECIALIZATIONS_INCLUDE. */
+const UNIVERSITY_DISTRICT_INCLUDE = {
+  programs: {
+    where: { isActive: true },
+    select: { description: true },
+  },
+} satisfies Prisma.UniversityInclude;
+
+/** Attaches the cleaned district (from `Program.description`, see
+ * cleanDistrict) to an admin-list row and drops the `programs` relation.
+ * Many hospital-type colleges ("District Hospital", …) repeat the same name
+ * across districts and have no `city`, so without this an admin sees only
+ * the state and can't tell them apart. */
+function withDistrict<
+  T extends { state: string; programs: { description: string | null }[] },
+>(university: T): Omit<T, 'programs'> & { district: string | null } {
+  const { programs, ...rest } = university;
+  const district =
+    programs
+      .map((program) => cleanDistrict(program.description, university.state))
+      .find((value) => value !== null) ?? null;
+  return { ...rest, district };
+}
+
 @Injectable()
 export class UniversitiesService {
   constructor(
@@ -440,7 +465,10 @@ export class UniversitiesService {
   /** Admin-only — includes inactive universities, unlike the public list. */
   async findAllAdmin(
     query: ListUniversitiesDto,
-  ): Promise<{ data: University[]; nextCursor: string | null }> {
+  ): Promise<{
+    data: Array<University & { district: string | null }>;
+    nextCursor: string | null;
+  }> {
     const take = Math.min(query.limit ?? DEFAULT_LIMIT, MAX_LIMIT);
 
     const where: Prisma.UniversityWhereInput = {
@@ -455,12 +483,23 @@ export class UniversitiesService {
           { name: { contains: query.search, mode: 'insensitive' } },
           { city: { contains: query.search, mode: 'insensitive' } },
           { state: { contains: query.search, mode: 'insensitive' } },
+          // District lives on the programs (see cleanDistrict) — so an admin
+          // can find "District Hospital" by typing its district.
+          {
+            programs: {
+              some: {
+                isActive: true,
+                description: { contains: query.search, mode: 'insensitive' },
+              },
+            },
+          },
         ],
       }),
     };
 
     const rows = await this.prisma.university.findMany({
       where,
+      include: UNIVERSITY_DISTRICT_INCLUDE,
       orderBy:
         query.sort === 'name'
           ? [{ name: 'asc' }, { id: 'asc' }]
@@ -470,10 +509,10 @@ export class UniversitiesService {
     });
 
     const hasMore = rows.length > take;
-    const data = hasMore ? rows.slice(0, take) : rows;
-    const nextCursor = hasMore ? data[data.length - 1].id : null;
+    const page = hasMore ? rows.slice(0, take) : rows;
+    const nextCursor = hasMore ? page[page.length - 1].id : null;
 
-    return { data, nextCursor };
+    return { data: page.map(withDistrict), nextCursor };
   }
 
   /** Slug is derived once at creation and never changes afterward — stable
@@ -613,6 +652,7 @@ export class UniversitiesService {
       key: string;
       state: string;
       universities: (University & {
+        district: string | null;
         programCount: number;
         reviewCount: number;
       })[];
@@ -634,7 +674,10 @@ export class UniversitiesService {
 
     const allIds = grouped.flatMap((g) => g.ids);
     const [universities, programCounts, reviewCounts] = await Promise.all([
-      this.prisma.university.findMany({ where: { id: { in: allIds } } }),
+      this.prisma.university.findMany({
+        where: { id: { in: allIds } },
+        include: UNIVERSITY_DISTRICT_INCLUDE,
+      }),
       this.prisma.program.groupBy({
         by: ['universityId'],
         where: { universityId: { in: allIds } },
@@ -647,7 +690,7 @@ export class UniversitiesService {
       }),
     ]);
 
-    const byId = new Map(universities.map((u) => [u.id, u]));
+    const byId = new Map(universities.map((u) => [u.id, withDistrict(u)]));
     const programCountById = new Map(
       programCounts.map((p) => [p.universityId, p._count._all]),
     );
@@ -660,7 +703,7 @@ export class UniversitiesService {
       state: g.state,
       universities: g.ids
         .map((id) => byId.get(id))
-        .filter((u): u is University => u != null)
+        .filter((u): u is NonNullable<typeof u> => u != null)
         .map((u) => ({
           ...u,
           programCount: programCountById.get(u.id) ?? 0,
