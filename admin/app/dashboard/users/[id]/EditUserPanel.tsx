@@ -135,7 +135,23 @@ export function EditUserPanel({ user }: { user: EditableUser }) {
   const [isPending, startTransition] = useTransition();
 
   const set = (k: string, v: string | boolean) =>
-    setForm((f) => ({ ...f, [k]: v }));
+    setForm((f) => {
+      const next = { ...f, [k]: v };
+      if (k === 'verificationStatus') {
+        if (v !== 'VERIFIED') {
+          // A mentor can only accept call bookings while VERIFIED, and the
+          // switch is disabled otherwise — so moving a verified, accepting
+          // mentor to e.g. UNDER_REVIEW switches it off here instead of
+          // leaving it ticked and failing the save check below.
+          next.isMentorAvailable = false;
+        } else if (original.verificationStatus === 'VERIFIED') {
+          // Changed their mind and went back to VERIFIED: undo that
+          // auto-off, so the switch returns to its saved value.
+          next.isMentorAvailable = original.isMentorAvailable;
+        }
+      }
+      return next;
+    });
 
   const T = (k: keyof FormState, props: React.InputHTMLAttributes<HTMLInputElement> = {}) => (
     <input
