@@ -28,18 +28,27 @@ describe('ChatController', () => {
   function controllerWith({
     session,
     isBlocked = false,
+    senderStatus = 'VERIFIED',
   }: {
     session: ReturnType<typeof baseSession> | null;
     isBlocked?: boolean;
+    /** The sending user's own verificationStatus (the under-review lock). */
+    senderStatus?: string;
   }) {
     const prisma = {
       session: {
         findFirst: jest.fn().mockResolvedValue(session),
       },
+      user: {
+        findUnique: jest.fn().mockResolvedValue({ verificationStatus: senderStatus }),
+      },
     } as any;
     const chatService = {
       ensureChannelForSession: jest.fn().mockResolvedValue({ id: 'channel-1' }),
       listMessages: jest.fn().mockResolvedValue({ messages: [], hasMore: false }),
+      // Called (fire-and-forget) when the newest page is fetched, for the
+      // Sessions-tab unread badge.
+      markRead: jest.fn().mockResolvedValue(undefined),
       sendMessage: jest.fn().mockResolvedValue({ id: 'm1' }),
       connectionInfo: jest.fn().mockReturnValue({}),
     } as any;
@@ -107,6 +116,30 @@ describe('ChatController', () => {
         text: 'hi',
       }),
     ).rejects.toBeInstanceOf(ForbiddenException);
+  });
+
+  // The admin "Under review" lock: only the account that is itself under
+  // review is stopped from sending; reading and the other party are unaffected.
+  it('403s sendMessage for a participant whose own account is UNDER_REVIEW', async () => {
+    const controller = controllerWith({
+      session: baseSession(),
+      senderStatus: 'UNDER_REVIEW',
+    });
+    await expect(
+      controller.sendMessage(sessionId, { sub: aspirantId } as any, { text: 'hi' }),
+    ).rejects.toMatchObject({
+      response: { code: 'ACCOUNT_UNDER_REVIEW' },
+    });
+  });
+
+  it('still lets an UNDER_REVIEW participant read the history', async () => {
+    const controller = controllerWith({
+      session: baseSession(),
+      senderStatus: 'UNDER_REVIEW',
+    });
+    await expect(
+      controller.listMessages(sessionId, { sub: aspirantId } as any, {}),
+    ).resolves.toBeDefined();
   });
 
   it('sends successfully for an unblocked participant', async () => {
