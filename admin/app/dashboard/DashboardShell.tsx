@@ -32,6 +32,7 @@ const NAV_SECTIONS: {
     items: [
       { label: 'Users', href: '/dashboard/users', icon: 'users' },
       { label: 'Universities', href: '/dashboard/universities', icon: 'building' },
+      { label: 'Custom degrees', href: '/dashboard/degrees', icon: 'check' },
       { label: 'Data Import', href: '/dashboard/data-import', icon: 'upload' },
     ],
   },
