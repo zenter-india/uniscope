@@ -22,29 +22,54 @@ export function CollegePicker({
   const [options, setOptions] = useState<CollegeOption[]>([]);
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [nextCursor, setNextCursor] = useState<string | null>(null);
   const boxRef = useRef<HTMLDivElement>(null);
+  // Bumped whenever the query changes, so a slow "next page" response for an
+  // old query can never be appended to the new query's list.
+  const generation = useRef(0);
 
   useEffect(() => {
     if (!open) return;
-    let cancelled = false;
+    const gen = ++generation.current;
     const t = setTimeout(async () => {
       // Set from the debounce callback, not the effect body (react-hooks/
       // set-state-in-effect), so the spinner shows once the search starts.
       setLoading(true);
+      setLoadingMore(false);
       try {
         const res = await searchColleges(query);
-        if (!cancelled) setOptions(res.filter((c) => c.id !== excludeId));
+        if (gen !== generation.current) return;
+        setOptions(res.data.filter((c) => c.id !== excludeId));
+        setNextCursor(res.nextCursor);
       } catch {
-        if (!cancelled) setOptions([]);
+        if (gen !== generation.current) return;
+        setOptions([]);
+        setNextCursor(null);
       } finally {
-        if (!cancelled) setLoading(false);
+        if (gen === generation.current) setLoading(false);
       }
     }, 250);
-    return () => {
-      cancelled = true;
-      clearTimeout(t);
-    };
+    return () => clearTimeout(t);
   }, [query, open, excludeId]);
+
+  // No cap: when the admin scrolls near the bottom, fetch the next page and
+  // keep going until the whole (filtered) list has been loaded.
+  const loadMore = async () => {
+    if (!nextCursor || loading || loadingMore) return;
+    const gen = generation.current;
+    setLoadingMore(true);
+    try {
+      const res = await searchColleges(query, nextCursor);
+      if (gen !== generation.current) return;
+      setOptions((prev) => [...prev, ...res.data.filter((c) => c.id !== excludeId)]);
+      setNextCursor(res.nextCursor);
+    } catch {
+      // Leave the cursor so scrolling again retries.
+    } finally {
+      if (gen === generation.current) setLoadingMore(false);
+    }
+  };
 
   useEffect(() => {
     const close = (e: MouseEvent) => {
@@ -68,7 +93,13 @@ export function CollegePicker({
         className={fieldClass}
       />
       {open && !selected && (
-        <ul className="absolute z-20 mt-1 max-h-64 w-full overflow-auto rounded-md border border-zinc-300 bg-white py-1 text-sm shadow-lg dark:border-zinc-700 dark:bg-zinc-900">
+        <ul
+          onScroll={(e) => {
+            const el = e.currentTarget;
+            if (el.scrollHeight - el.scrollTop - el.clientHeight < 120) void loadMore();
+          }}
+          className="absolute z-20 mt-1 max-h-64 w-full overflow-auto rounded-md border border-zinc-300 bg-white py-1 text-sm shadow-lg dark:border-zinc-700 dark:bg-zinc-900"
+        >
           {loading && <li className="px-3 py-1.5 text-zinc-500">Searching…</li>}
           {!loading && options.length === 0 && (
             <li className="px-3 py-1.5 text-zinc-500">No matching colleges.</li>
@@ -90,6 +121,7 @@ export function CollegePicker({
               </button>
             </li>
           ))}
+          {loadingMore && <li className="px-3 py-1.5 text-zinc-500">Loading more…</li>}
         </ul>
       )}
     </div>

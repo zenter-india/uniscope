@@ -29,17 +29,25 @@ export interface CollegeOption {
   state: string;
 }
 
-/** Active colleges from our DB matching `query` (name, district or state) —
- * feeds the "pick an existing college" dropdown in the Edit row. */
-export async function searchColleges(query: string): Promise<CollegeOption[]> {
+/** One page (50, the backend's max) of active colleges from our DB matching
+ * `query` (name, district or state), A–Z. Pass the returned `nextCursor` back
+ * as `cursor` to get the following page — the picker keeps asking as the
+ * admin scrolls, so there is no cap on how many colleges can be reached. */
+export async function searchColleges(
+  query: string,
+  cursor?: string | null,
+): Promise<{ data: CollegeOption[]; nextCursor: string | null }> {
   const params = new URLSearchParams({ limit: '50', sort: 'name', activeOnly: 'true' });
   if (query.trim()) params.set('search', query.trim());
+  if (cursor) params.set('cursor', cursor);
   const page = await backendFetch<{
     data: CollegeOption[];
     nextCursor: string | null;
   }>(`/universities/admin/list?${params.toString()}`);
-  return page.data
-    .map(({ id, name, city, state }) => ({ id, name, city, state }));
+  return {
+    data: page.data.map(({ id, name, city, state }) => ({ id, name, city, state })),
+    nextCursor: page.nextCursor,
+  };
 }
 
 export interface UniversityInput {
