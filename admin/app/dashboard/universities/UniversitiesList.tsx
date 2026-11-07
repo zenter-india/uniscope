@@ -16,6 +16,7 @@ export function UniversitiesList({
 }) {
   return (
     <InfiniteList
+      autoLoad
       variant="table"
       tableHead={
         <tr>
