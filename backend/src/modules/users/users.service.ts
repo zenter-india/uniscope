@@ -605,6 +605,29 @@ export class UsersService {
     return { data, nextCursor };
   }
 
+  /**
+   * Keep the user's mobile number (encrypted) so an admin can see it on their
+   * profile. Called at each successful OTP login with the number just
+   * verified; it only writes while the column is still empty (the number is
+   * the account's identity, so it cannot differ later), which makes every
+   * login after the first a cheap no-op. Never throws — a failure here (e.g.
+   * the encryption key is missing) must not block anyone from logging in.
+   */
+  async rememberPhone(userId: string, normalisedPhone: string): Promise<void> {
+    try {
+      await this.prisma.user.updateMany({
+        where: { id: userId, phoneEncrypted: null },
+        data: { phoneEncrypted: encryptField(normalisedPhone) },
+      });
+    } catch (err) {
+      this.logger.warn(
+        `Could not store the encrypted phone for user ${userId}: ${
+          err instanceof Error ? err.message : String(err)
+        }`,
+      );
+    }
+  }
+
   /** Admin-only full detail for one user — every onboarding field, decrypted
    * real name, wallet balance, verification history and activity counters.
    * Returns the raw row + counters; the controller projects it via
@@ -646,8 +669,19 @@ export class UsersService {
       this.prisma.review.count({ where: { authorId: userId } }),
     ]);
 
+    // Accounts created from the website form already have their number on file
+    // in plain text (that is what the form collects and the privacy policy
+    // says) — show it for them until their own login stores the encrypted one.
+    const lead = user.phoneEncrypted
+      ? null
+      : await this.prisma.enrollmentLead.findUnique({
+          where: { convertedUserId: userId },
+          select: { phone: true },
+        });
+
     return {
       user,
+      leadPhone: lead?.phone ?? null,
       activity: {
         sessionsAsAspirant,
         sessionsAsMentor,
@@ -795,6 +829,8 @@ export class UsersService {
         where: { id: userId },
         data: {
           phoneHash: `erased:${randomUUID()}`,
+          // The readable number goes too — erasure wipes personal data.
+          phoneEncrypted: null,
           displayName: `deleted_user_${userId.slice(0, 8)}`,
           refreshTokenHash: null,
           isActive: false,

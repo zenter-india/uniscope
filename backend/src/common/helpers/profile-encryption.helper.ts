@@ -1,10 +1,12 @@
 import { createCipheriv, createDecipheriv, randomBytes } from 'crypto';
 
 /**
- * AES-256-GCM encrypt/decrypt for the reversible-sensitive `UserProfile`
- * columns — `realNameEncrypted` (a mentor's legal name, for admin identity
- * review) and `upiIdEncrypted` (a mentor's payout UPI VPA). Everything else
- * on the profile is either public or one-way hashed (phoneHash). Key comes
+ * AES-256-GCM encrypt/decrypt for the reversible-sensitive columns —
+ * `UserProfile.realNameEncrypted` (a mentor's legal name, for admin identity
+ * review), `UserProfile.upiIdEncrypted` (a mentor's payout UPI VPA) and
+ * `User.phoneEncrypted` (the mobile number, shown to admins only; login still
+ * uses the one-way `phoneHash`). Everything else is either public or
+ * one-way hashed. Key comes
  * from PROFILE_ENCRYPTION_KEY (a 32-byte hex string) so it can be rotated
  * independently of the JWT secrets.
  *

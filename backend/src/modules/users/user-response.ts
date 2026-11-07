@@ -87,6 +87,10 @@ export interface AdminUserDetail {
   /** Decrypted from `UserProfile.realNameEncrypted`. Null for aspirants (who
    * never set one) and if decryption fails (e.g. key rotated). */
   realName: string | null;
+  /** The user's mobile number, decrypted from `User.phoneEncrypted` (stored
+   * at login). Falls back to the plain number on the website sign-up form
+   * for accounts created from one. Null until the user next logs in. */
+  phone: string | null;
   role: User['role'];
   verificationStatus: User['verificationStatus'];
   isActive: boolean;
@@ -171,6 +175,7 @@ export function toAdminUserDetail(
   user: AdminUserRow,
   activity: AdminUserDetail['activity'],
   avatarUrl?: string | null,
+  leadPhone?: string | null,
 ): AdminUserDetail {
   const p = user.profile ?? null;
 
@@ -187,6 +192,7 @@ export function toAdminUserDetail(
     id: user.id,
     displayName: user.displayName,
     realName,
+    phone: decryptFieldSafe(user.phoneEncrypted) ?? leadPhone ?? null,
     role: user.role,
     verificationStatus: user.verificationStatus,
     isActive: user.isActive,

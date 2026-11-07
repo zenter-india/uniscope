@@ -177,10 +177,16 @@ enum EnrollmentLeadStatus {
 // ─────────────────────────────────────────────────────────────────────────────
 
 /// Central identity record. One record per phone number.
-/// Phone stored as bcrypt hash — never plaintext.
+/// Login identity is the one-way `phoneHash`. Separately, the number itself is
+/// kept AES-256-GCM encrypted in `phoneEncrypted` (same helper as the UPI ID),
+/// so an admin can see/contact the user — never stored or returned in plaintext
+/// anywhere else, and wiped on erasure.
 model User {
   id                 String             @id @default(uuid())
   phoneHash          String             @unique @map("phone_hash") @db.VarChar(128)
+  /// The user's mobile number (normalised E.164), encrypted. Filled in at each
+  /// OTP login while still null, so an account shows it after its next login.
+  phoneEncrypted     String?            @map("phone_encrypted") @db.VarChar(255)
   displayName        String             @map("display_name") @db.VarChar(60)
   role               UserRole
   /// Client-facing registration number, e.g. "A1134500001" (aspirant) or

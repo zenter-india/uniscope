@@ -75,6 +75,12 @@ export class AuthService {
     const { user, isNewUser } =
       await this.usersService.findOrCreateByPhoneHash(phoneHash);
 
+    // Keep the number (encrypted) so an admin can see it on the profile. Only
+    // writes while it is still empty; never blocks the login.
+    if (!user.phoneEncrypted) {
+      await this.usersService.rememberPhone(user.id, normalisePhone(phone));
+    }
+
     const { accessToken, refreshToken } = await this.tokenService.issueTokenPair(
       user.id,
       user.role,

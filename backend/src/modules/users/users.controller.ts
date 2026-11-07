@@ -178,8 +178,8 @@ export class UsersController {
   @Roles(UserRole.ADMIN)
   @Get(':id')
   async findOneAdmin(@Param('id') id: string) {
-    const { user, activity } = await this.usersService.findDetailAdmin(id);
-    return toAdminUserDetail(user, activity, this.usersService.avatarUrlFor(user));
+    const { user, activity, leadPhone } = await this.usersService.findDetailAdmin(id);
+    return toAdminUserDetail(user, activity, this.usersService.avatarUrlFor(user), leadPhone);
   }
 
   @UseGuards(RolesGuard)
@@ -187,8 +187,8 @@ export class UsersController {
   @Patch(':id')
   @HttpCode(HttpStatus.OK)
   async adminUpdate(@Param('id') id: string, @Body() dto: AdminUpdateUserDto) {
-    const { user, activity } = await this.usersService.adminUpdateUser(id, dto);
-    return toAdminUserDetail(user, activity, this.usersService.avatarUrlFor(user));
+    const { user, activity, leadPhone } = await this.usersService.adminUpdateUser(id, dto);
+    return toAdminUserDetail(user, activity, this.usersService.avatarUrlFor(user), leadPhone);
   }
 
   @UseGuards(RolesGuard)
