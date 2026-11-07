@@ -3,9 +3,10 @@
 import { useEffect, useRef, useState } from 'react';
 import { fieldClass } from '../../../components/ui';
 import { searchColleges, type CollegeOption } from './actions';
+import { locationLabel } from './location';
 
 export const collegeLabel = (c: CollegeOption) =>
-  `${c.name} — ${[c.city, c.state].filter(Boolean).join(', ')}`;
+  `${c.name} — ${locationLabel(c)}`;
 
 /** Searchable dropdown of the colleges already in our DB (name + district +
  * state). Selecting one is a request to merge into it. */
@@ -116,7 +117,7 @@ export function CollegePicker({
               >
                 {c.name}
                 <span className="ml-1 text-xs text-zinc-500">
-                  {[c.city, c.state].filter(Boolean).join(', ')}
+                  {locationLabel(c)}
                 </span>
               </button>
             </li>

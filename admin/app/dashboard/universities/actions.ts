@@ -25,6 +25,7 @@ export async function loadMoreUniversities(
 export interface CollegeOption {
   id: string;
   name: string;
+  district?: string | null;
   city: string | null;
   state: string;
 }
@@ -45,7 +46,13 @@ export async function searchColleges(
     nextCursor: string | null;
   }>(`/universities/admin/list?${params.toString()}`);
   return {
-    data: page.data.map(({ id, name, city, state }) => ({ id, name, city, state })),
+    data: page.data.map(({ id, name, district, city, state }) => ({
+      id,
+      name,
+      district,
+      city,
+      state,
+    })),
     nextCursor: page.nextCursor,
   };
 }
@@ -93,6 +100,7 @@ export interface DuplicateUniversity {
   slug: string;
   state: string;
   city: string | null;
+  district?: string | null;
   stream: string | null;
   establishedYear: number | null;
   isActive: boolean;

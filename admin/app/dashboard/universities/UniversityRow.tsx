@@ -6,6 +6,7 @@ import { ConfirmButton } from '../../../components/ConfirmButton';
 import { toast } from '../../../lib/toast';
 import { mergeUniversities, updateUniversity, uploadUniversityPhoto, type CollegeOption } from './actions';
 import { CollegePicker } from './CollegePicker';
+import { locationLabel } from './location';
 
 export interface UniversityRowData {
   id: string;
@@ -13,6 +14,7 @@ export interface UniversityRowData {
   slug: string;
   state: string;
   city: string | null;
+  district?: string | null;
   stream: string | null;
   establishedYear: number | null;
   website: string | null;
@@ -218,7 +220,7 @@ export function UniversityRow({ university }: { university: UniversityRowData })
         </div>
       </Table.Cell>
       <Table.Cell className="whitespace-nowrap text-xs text-zinc-500 dark:text-zinc-400">
-        {[university.city, university.state].filter(Boolean).join(', ')}
+        {locationLabel(university)}
       </Table.Cell>
       <Table.Cell>
         <Badge tone={university.isActive ? 'success' : 'danger'}>

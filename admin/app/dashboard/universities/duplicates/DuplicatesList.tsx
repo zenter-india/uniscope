@@ -5,6 +5,7 @@ import { Badge, Card, EmptyState } from '../../../../components/ui';
 import { ConfirmButton } from '../../../../components/ConfirmButton';
 import { toast } from '../../../../lib/toast';
 import { mergeUniversities, type DuplicateGroup, type DuplicateUniversity } from '../actions';
+import { locationLabel } from '../location';
 
 function groupId(g: DuplicateGroup): string {
   return `${g.key}|${g.state}`;
@@ -88,7 +89,7 @@ function GroupCard({
             <div className="min-w-0 flex-1">
               <div className="flex flex-wrap items-center gap-2">
                 <span className="font-medium text-zinc-900 dark:text-zinc-100">
-                  {[u.city, u.state].filter(Boolean).join(', ')}
+                  {locationLabel(u)}
                 </span>
                 {winnerId === u.id && <Badge tone="success">Keep this one</Badge>}
               </div>

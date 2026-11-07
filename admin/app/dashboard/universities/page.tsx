@@ -35,7 +35,7 @@ export default async function UniversitiesPage({
             type="text"
             name="search"
             defaultValue={search ?? ''}
-            placeholder="Search by name, city, state…"
+            placeholder="Search by name, district, city, state…"
             className="min-w-0 flex-1 sm:w-72 sm:flex-none rounded-md border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-1.5 text-sm text-zinc-900 dark:text-zinc-100 shadow-sm outline-none transition-colors placeholder:text-zinc-400 dark:placeholder:text-zinc-500 focus:border-zinc-400 dark:focus:border-zinc-600 focus:ring-2 focus:ring-zinc-400/40 dark:focus:ring-zinc-600/40"
           />
           <button
