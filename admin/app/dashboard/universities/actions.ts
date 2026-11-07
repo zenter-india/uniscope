@@ -6,16 +6,22 @@ import type { UniversityRowData } from './UniversityRow';
 
 export interface UniversityListFilters {
   search?: string;
+  /** Only colleges offering this course (a program name, e.g. "MD/MS"). */
+  course?: string;
+  /** 'name' = Alphabet (A–Z); anything else = newest first. */
+  sort?: 'name' | 'new';
 }
 
 /** Next page of the admin university list — same filters as the page, plus a
- * cursor. Drives the "Load more" button in UniversitiesList. */
+ * cursor. Drives the infinite scroll in UniversitiesList. */
 export async function loadMoreUniversities(
   filters: UniversityListFilters,
   cursor: string,
 ): Promise<{ data: UniversityRowData[]; nextCursor: string | null }> {
   const params = new URLSearchParams({ limit: '50', cursor });
   if (filters.search) params.set('search', filters.search);
+  if (filters.course) params.set('course', filters.course);
+  if (filters.sort === 'name') params.set('sort', 'name');
 
   return backendFetch<{ data: UniversityRowData[]; nextCursor: string | null }>(
     `/universities/admin/list?${params.toString()}`,

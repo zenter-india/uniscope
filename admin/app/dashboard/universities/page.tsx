@@ -5,22 +5,31 @@ import { DashboardShell } from '../DashboardShell';
 import { AddUniversityForm } from './AddUniversityForm';
 import type { UniversityRowData } from './UniversityRow';
 import { UniversitiesList } from './UniversitiesList';
+import { UniversityFilters } from './UniversityFilters';
 
 export default async function UniversitiesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ search?: string }>;
+  searchParams: Promise<{ search?: string; course?: string; sort?: string }>;
 }) {
-  const { search } = await searchParams;
+  const { search, course, sort: rawSort } = await searchParams;
+  // Alphabetical unless "Newest first" is picked explicitly.
+  const sort: 'name' | 'new' = rawSort === 'new' ? 'new' : 'name';
 
   const params = new URLSearchParams({ limit: '50' });
   if (search) params.set('search', search);
+  if (course) params.set('course', course);
+  if (sort === 'name') params.set('sort', 'name');
 
-  const [email, page] = await Promise.all([
+  const [email, page, courses] = await Promise.all([
     getAdminEmail(),
     backendFetch<{ data: UniversityRowData[]; nextCursor: string | null }>(
       `/universities/admin/list?${params.toString()}`,
     ).catch(() => ({ data: [], nextCursor: null })),
+    // The Course dropdown simply stays at "All courses" if this is unavailable.
+    backendFetch<{ name: string; colleges: number }[]>('/universities/admin/courses').catch(
+      () => [],
+    ),
   ]);
 
   return (
@@ -30,21 +39,12 @@ export default async function UniversitiesPage({
         rather than delete — a deactivated college drops off the app but stays here.
       </p>
       <div className="mb-4 flex flex-wrap items-start justify-between gap-2">
-        <form className="flex w-full gap-2 sm:w-auto" action="/dashboard/universities">
-          <input
-            type="text"
-            name="search"
-            defaultValue={search ?? ''}
-            placeholder="Search by name, district, city, state…"
-            className="min-w-0 flex-1 sm:w-72 sm:flex-none rounded-md border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-1.5 text-sm text-zinc-900 dark:text-zinc-100 shadow-sm outline-none transition-colors placeholder:text-zinc-400 dark:placeholder:text-zinc-500 focus:border-zinc-400 dark:focus:border-zinc-600 focus:ring-2 focus:ring-zinc-400/40 dark:focus:ring-zinc-600/40"
-          />
-          <button
-            type="submit"
-            className="inline-flex h-9 items-center rounded-md border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3.5 text-sm font-medium text-zinc-700 dark:text-zinc-300 shadow-sm transition-colors hover:bg-zinc-50 dark:hover:bg-zinc-800/60"
-          >
-            Search
-          </button>
-        </form>
+        <UniversityFilters
+          search={search ?? ''}
+          course={course ?? ''}
+          sort={sort}
+          courses={courses}
+        />
         <div className="flex items-center gap-2">
           <ButtonLink href="/dashboard/universities/duplicates">Find duplicates</ButtonLink>
           <AddUniversityForm />
@@ -52,10 +52,10 @@ export default async function UniversitiesPage({
       </div>
 
       <UniversitiesList
-        key={search ?? ''}
+        key={`${search ?? ''}|${course ?? ''}|${sort}`}
         initialItems={page.data}
         initialCursor={page.nextCursor}
-        filters={{ search }}
+        filters={{ search, course, sort }}
       />
     </DashboardShell>
   );
