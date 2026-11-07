@@ -121,6 +121,14 @@ export function UniversityRow({ university }: { university: UniversityRowData })
       <tr>
         <td colSpan={4} className="p-4">
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+            <p className="col-span-2 text-sm sm:col-span-3">
+              <span className="font-medium text-zinc-900 dark:text-zinc-100">{university.name}</span>
+              {locationLabel(university) && (
+                <span className="ml-2 text-xs text-zinc-500 dark:text-zinc-400">
+                  {locationLabel(university)}
+                </span>
+              )}
+            </p>
             <div className="col-span-2 sm:col-span-3">
               <CollegePicker
                 excludeId={university.id}
@@ -129,9 +137,10 @@ export function UniversityRow({ university }: { university: UniversityRowData })
               />
               {mergeTarget && (
                 <p className="mt-1 text-xs text-amber-700 dark:text-amber-400">
-                  Saving will merge “{university.name}” into “{mergeTarget.name}”: its mentors,
-                  reviews, programs and saves move to the selected college, and “{university.name}”
-                  is removed from the list.
+                  Saving will merge “{university.name}” ({locationLabel(university)}) into “
+                  {mergeTarget.name}” ({locationLabel(mergeTarget)}): its mentors, reviews, programs
+                  and saves move to the selected college, and “{university.name}” is removed from
+                  the list.
                 </p>
               )}
             </div>
