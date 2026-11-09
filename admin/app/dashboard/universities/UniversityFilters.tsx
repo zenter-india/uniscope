@@ -16,7 +16,7 @@ export function UniversityFilters({
 }: {
   search: string;
   course: string;
-  sort: 'name' | 'new';
+  sort: 'name' | 'name_desc' | 'new';
   courses: { name: string; colleges: number }[];
 }) {
   const formRef = useRef<HTMLFormElement>(null);
@@ -52,6 +52,7 @@ export function UniversityFilters({
         Sort
         <select name="sort" defaultValue={sort} onChange={submit} className={SELECT_CLASS}>
           <option value="name">Alphabet (A–Z)</option>
+          <option value="name_desc">Alphabet (Z–A)</option>
           <option value="new">Newest first</option>
         </select>
       </label>

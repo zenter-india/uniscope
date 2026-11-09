@@ -13,13 +13,14 @@ export default async function UniversitiesPage({
   searchParams: Promise<{ search?: string; course?: string; sort?: string }>;
 }) {
   const { search, course, sort: rawSort } = await searchParams;
-  // Alphabetical unless "Newest first" is picked explicitly.
-  const sort: 'name' | 'new' = rawSort === 'new' ? 'new' : 'name';
+  // A–Z unless Z–A or "Newest first" is picked explicitly.
+  const sort: 'name' | 'name_desc' | 'new' =
+    rawSort === 'new' || rawSort === 'name_desc' ? rawSort : 'name';
 
   const params = new URLSearchParams({ limit: '50' });
   if (search) params.set('search', search);
   if (course) params.set('course', course);
-  if (sort === 'name') params.set('sort', 'name');
+  if (sort !== 'new') params.set('sort', sort);
 
   const [email, page, courses] = await Promise.all([
     getAdminEmail(),

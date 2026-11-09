@@ -8,8 +8,8 @@ export interface UniversityListFilters {
   search?: string;
   /** Only colleges offering this course (a program name, e.g. "MD/MS"). */
   course?: string;
-  /** 'name' = Alphabet (A–Z); anything else = newest first. */
-  sort?: 'name' | 'new';
+  /** 'name' = Alphabet A–Z, 'name_desc' = Z–A, 'new' = newest first. */
+  sort?: 'name' | 'name_desc' | 'new';
 }
 
 /** Next page of the admin university list — same filters as the page, plus a
@@ -21,7 +21,7 @@ export async function loadMoreUniversities(
   const params = new URLSearchParams({ limit: '50', cursor });
   if (filters.search) params.set('search', filters.search);
   if (filters.course) params.set('course', filters.course);
-  if (filters.sort === 'name') params.set('sort', 'name');
+  if (filters.sort === 'name' || filters.sort === 'name_desc') params.set('sort', filters.sort);
 
   return backendFetch<{ data: UniversityRowData[]; nextCursor: string | null }>(
     `/universities/admin/list?${params.toString()}`,
