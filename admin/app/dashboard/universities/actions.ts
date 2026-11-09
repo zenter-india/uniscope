@@ -8,6 +8,10 @@ export interface UniversityListFilters {
   search?: string;
   /** Only colleges offering this course (a program name, e.g. "MD/MS"). */
   course?: string;
+  state?: string;
+  stream?: string;
+  /** "inactive" = hidden from the app (e.g. a college a user typed). */
+  status?: 'active' | 'inactive';
   /** 'name' = Alphabet A–Z, 'name_desc' = Z–A, 'new' = newest first. */
   sort?: 'name' | 'name_desc' | 'new';
 }
@@ -21,6 +25,9 @@ export async function loadMoreUniversities(
   const params = new URLSearchParams({ limit: '50', cursor });
   if (filters.search) params.set('search', filters.search);
   if (filters.course) params.set('course', filters.course);
+  if (filters.state) params.set('state', filters.state);
+  if (filters.stream) params.set('stream', filters.stream);
+  if (filters.status) params.set('status', filters.status);
   if (filters.sort === 'name' || filters.sort === 'name_desc') params.set('sort', filters.sort);
 
   return backendFetch<{ data: UniversityRowData[]; nextCursor: string | null }>(
