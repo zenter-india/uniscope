@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useRef, useState, useTransition } from 'react';
 import { Badge, Button, Table, fieldClass } from '../../../components/ui';
 import { ConfirmButton } from '../../../components/ConfirmButton';
@@ -220,7 +221,13 @@ export function UniversityRow({ university }: { university: UniversityRowData })
           </button>
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-1.5">
-              <span className="font-medium text-zinc-900 dark:text-zinc-100">{university.name}</span>
+              <Link
+                href={`/dashboard/universities/${university.id}`}
+                title="Open this college — its students and mentors"
+                className="font-medium text-zinc-900 hover:underline dark:text-zinc-100"
+              >
+                {university.name}
+              </Link>
               {university.stream && <Badge>{university.stream}</Badge>}
             </div>
             {photoError && <p className="mt-0.5 text-xs text-red-600 dark:text-red-400">{photoError}</p>}

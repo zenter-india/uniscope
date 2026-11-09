@@ -100,7 +100,7 @@ function SuggestionCard({ suggestion }: { suggestion: SpecializationSuggestion }
 
       <div className="mt-3">
         <Link
-          href={`/dashboard/universities?search=${encodeURIComponent(college.name)}`}
+          href={`/dashboard/universities/${college.id}`}
           className="font-medium text-zinc-900 hover:underline dark:text-zinc-100"
         >
           {college.name}

@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useState, useTransition } from 'react';
 import { Badge, Card, EmptyState } from '../../../../components/ui';
 import { ConfirmButton } from '../../../../components/ConfirmButton';
@@ -92,6 +93,12 @@ function GroupCard({
                   {locationLabel(u)}
                 </span>
                 {winnerId === u.id && <Badge tone="success">Keep this one</Badge>}
+                <Link
+                  href={`/dashboard/universities/${u.id}`}
+                  className="text-xs text-zinc-500 underline underline-offset-2 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-200"
+                >
+                  See its people
+                </Link>
               </div>
               <p className="mt-0.5 text-xs text-zinc-500 dark:text-zinc-400">
                 {u.stream ?? 'no stream'} · {u.programCount} program{u.programCount === 1 ? '' : 's'} ·{' '}

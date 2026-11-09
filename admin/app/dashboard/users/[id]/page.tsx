@@ -63,6 +63,7 @@ interface AdminUserDetail {
     reviewNote: string | null;
     reviewerName: string | null;
     universityName: string | null;
+    universityId?: string | null;
     hasDocument: boolean;
     submittedAt: string | null;
     reviewedAt: string | null;
@@ -327,7 +328,7 @@ export default async function UserDetailPage({
             value={
               p?.university ? (
                 <Link
-                  href={`/dashboard/universities?search=${encodeURIComponent(p.university.name)}`}
+                  href={`/dashboard/universities/${p.university.id}`}
                   className="text-zinc-900 dark:text-zinc-100 underline decoration-zinc-300 underline-offset-2 hover:decoration-zinc-600"
                 >
                   {p.university.name}
@@ -484,7 +485,16 @@ export default async function UserDetailPage({
                       {DOCUMENT_TYPE_LABELS[r.documentType] ?? r.documentType}
                     </span>
                     <span className="text-sm text-zinc-500 dark:text-zinc-400">
-                      {r.universityName ?? '—'}
+                      {r.universityName && r.universityId ? (
+                        <Link
+                          href={`/dashboard/universities/${r.universityId}`}
+                          className="underline decoration-zinc-300 underline-offset-2 hover:decoration-zinc-600"
+                        >
+                          {r.universityName}
+                        </Link>
+                      ) : (
+                        (r.universityName ?? '—')
+                      )}
                     </span>
                   </div>
                   <div className="mt-2 grid grid-cols-2 gap-x-6 gap-y-2 sm:grid-cols-3">

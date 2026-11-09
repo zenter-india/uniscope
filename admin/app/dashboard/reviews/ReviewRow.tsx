@@ -42,7 +42,7 @@ export function ReviewRow({
   const subjectHref =
     review.kind === 'mentor'
       ? `/dashboard/users/${review.subjectId}`
-      : `/dashboard/universities?search=${encodeURIComponent(review.subjectName)}`;
+      : `/dashboard/universities/${review.subjectId}`;
 
   return (
     <Table.Row>
