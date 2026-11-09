@@ -120,8 +120,8 @@ export function UniversityRow({ university }: { university: UniversityRowData })
     return (
       <tr>
         <td colSpan={4} className="p-4">
-          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-            <p className="col-span-2 text-sm sm:col-span-3">
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+            <p className="text-sm sm:col-span-3">
               <span className="font-medium text-zinc-900 dark:text-zinc-100">{university.name}</span>
               {locationLabel(university) && (
                 <span className="ml-2 text-xs text-zinc-500 dark:text-zinc-400">
@@ -129,7 +129,7 @@ export function UniversityRow({ university }: { university: UniversityRowData })
                 </span>
               )}
             </p>
-            <div className="col-span-2 sm:col-span-3">
+            <div className="sm:col-span-3">
               <CollegePicker
                 excludeId={university.id}
                 selected={mergeTarget}

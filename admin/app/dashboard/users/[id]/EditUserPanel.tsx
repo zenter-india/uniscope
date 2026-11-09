@@ -226,7 +226,7 @@ export function EditUserPanel({ user }: { user: EditableUser }) {
 
       {open && (
         <div className="mt-4 flex flex-col gap-5">
-          <fieldset className="grid grid-cols-2 gap-4 sm:grid-cols-3">
+          <fieldset className="grid grid-cols-1 gap-4 sm:grid-cols-3">
             <legend className="col-span-full mb-1 text-xs font-semibold text-zinc-500 dark:text-zinc-400">
               Account
             </legend>
@@ -256,7 +256,7 @@ export function EditUserPanel({ user }: { user: EditableUser }) {
             </Row>
           </fieldset>
 
-          <fieldset className="grid grid-cols-2 gap-4 sm:grid-cols-3">
+          <fieldset className="grid grid-cols-1 gap-4 sm:grid-cols-3">
             <legend className="col-span-full mb-1 text-xs font-semibold text-zinc-500 dark:text-zinc-400">
               Identity & location
             </legend>
@@ -267,7 +267,7 @@ export function EditUserPanel({ user }: { user: EditableUser }) {
             <Row label="City">{T('city')}</Row>
           </fieldset>
 
-          <fieldset className="grid grid-cols-2 gap-4 sm:grid-cols-3">
+          <fieldset className="grid grid-cols-1 gap-4 sm:grid-cols-3">
             <legend className="col-span-full mb-1 text-xs font-semibold text-zinc-500 dark:text-zinc-400">
               Academic
             </legend>
@@ -290,7 +290,7 @@ export function EditUserPanel({ user }: { user: EditableUser }) {
             <Row label="Goals (comma-separated)">{T('goals')}</Row>
           </fieldset>
 
-          <fieldset className="grid grid-cols-2 gap-4 sm:grid-cols-3">
+          <fieldset className="grid grid-cols-1 gap-4 sm:grid-cols-3">
             <legend className="col-span-full mb-1 text-xs font-semibold text-zinc-500 dark:text-zinc-400">
               Preferences & mentor profile
             </legend>
@@ -329,7 +329,7 @@ export function EditUserPanel({ user }: { user: EditableUser }) {
             </Row>
           </fieldset>
 
-          <fieldset className="grid grid-cols-2 gap-4 sm:grid-cols-3">
+          <fieldset className="grid grid-cols-1 gap-4 sm:grid-cols-3">
             <legend className="col-span-full mb-1 text-xs font-semibold text-zinc-500 dark:text-zinc-400">
               Free tier
             </legend>

@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import type { ComponentProps, ReactNode } from 'react';
 import { Icon, type IconName } from './icons';
+import { ResponsiveTable } from './ResponsiveTable';
 
 /* ------------------------------------------------------------------ *
  * Shared UI primitives — a small, deliberately plain design system.
@@ -31,8 +32,9 @@ const BTN_BASE =
   'inline-flex items-center justify-center gap-1.5 rounded-md font-medium transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400/50 dark:focus-visible:ring-zinc-600/50';
 
 const BTN_SIZE: Record<ButtonSize, string> = {
-  sm: 'h-8 px-3 text-xs',
-  md: 'h-9 px-3.5 text-sm',
+  // Bigger on phones: 40/44px tap targets instead of 32/36.
+  sm: 'h-8 px-3 text-xs max-md:h-10 max-md:px-3.5 max-md:text-sm',
+  md: 'h-9 px-3.5 text-sm max-md:h-11',
 };
 
 const BTN_VARIANT: Record<ButtonVariant, string> = {
@@ -161,22 +163,20 @@ export function Table({
   children: ReactNode;
   className?: string;
 }) {
+  // `rtable` (globals.css) turns each row into a labelled card below `md`;
+  // ResponsiveTable writes the column labels onto the cells.
   return (
-    <div
+    <ResponsiveTable
+      head={head}
       className={cx(
-        'max-h-[70vh] overflow-auto rounded-xl border border-zinc-200/80 bg-white shadow-[0_1px_2px_rgb(0_0_0/0.04),0_1px_1px_rgb(0_0_0/0.03)] dark:border-zinc-800 dark:bg-zinc-900 dark:shadow-none',
+        'rtable max-h-[70vh] overflow-auto rounded-xl border border-zinc-200/80 bg-white shadow-[0_1px_2px_rgb(0_0_0/0.04),0_1px_1px_rgb(0_0_0/0.03)] dark:border-zinc-800 dark:bg-zinc-900 dark:shadow-none',
         className,
       )}
+      headClassName="sticky top-0 z-[5] border-b border-zinc-200 bg-zinc-50/95 text-left backdrop-blur-sm dark:border-zinc-800 dark:bg-zinc-900/95"
+      bodyClassName="divide-y divide-zinc-100 dark:divide-zinc-800"
     >
-      <table className="w-full border-collapse text-sm">
-        {head && (
-          <thead className="sticky top-0 z-[5] border-b border-zinc-200 bg-zinc-50/95 text-left backdrop-blur-sm dark:border-zinc-800 dark:bg-zinc-900/95">
-            {head}
-          </thead>
-        )}
-        <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">{children}</tbody>
-      </table>
-    </div>
+      {children}
+    </ResponsiveTable>
   );
 }
 
@@ -276,7 +276,10 @@ export function FilterTabs<T extends string | number>({
   size?: 'sm' | 'md';
   labelFor?: (item: T) => string;
 }) {
-  const pad = size === 'sm' ? 'px-2.5 py-1 text-xs' : 'px-3 py-1.5 text-sm';
+  const pad =
+    size === 'sm'
+      ? 'px-2.5 py-1 text-xs max-md:py-2 max-md:text-sm'
+      : 'px-3 py-1.5 text-sm max-md:py-2.5';
   return (
     <div className="flex flex-wrap gap-1.5">
       {items.map((item) => {
