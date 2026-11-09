@@ -31,6 +31,26 @@ class ProfileOptionsApi {
       data: {'stream': stream, 'name': name.trim()},
     );
   }
+
+  /// Tells an admin that [name] is a specialization offered at the mentor's
+  /// college ([universityId]) for the curated [degree] key (e.g. "MD/MS"), when
+  /// the college's own list doesn't have it yet. Once an admin approves it, it
+  /// is added to that college's list for everyone — and a college a mentor typed
+  /// themselves is published at the same time.
+  Future<void> submitSpecialization({
+    required String universityId,
+    required String degree,
+    required String name,
+  }) async {
+    await _dio.post<void>(
+      '/profile-options/specializations',
+      data: {
+        'universityId': universityId,
+        'degree': degree,
+        'name': name.trim(),
+      },
+    );
+  }
 }
 
 final profileOptionsApiProvider = Provider<ProfileOptionsApi>(

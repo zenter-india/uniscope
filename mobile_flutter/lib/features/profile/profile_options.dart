@@ -443,6 +443,31 @@ String? approvedDegreeMatching(
   return null;
 }
 
+/// Whether the specialization a mentor settled on for their college should be
+/// sent to an admin so it is added to that college's own list.
+///
+/// True when it is not already on [collegeList] (the specializations the picked
+/// college is recorded with for this degree) — whether the mentor typed it under
+/// "Not listed here" or picked it from the wider list of the degree. For a
+/// brand-new college that list is empty, so whatever they choose is suggested.
+/// Needs a real college ([universityId]) and a curated [degreeKey] to attach it
+/// to; the plain free-text case and non-curated degrees have no college list.
+bool shouldSuggestCollegeSpecialization({
+  required String? specialization,
+  required String? universityId,
+  required String? degreeKey,
+  required List<String> collegeList,
+}) {
+  final name = (specialization ?? '').trim().replaceAll(RegExp(r'\s+'), ' ');
+  if (name.length < 2 || name.length > 100) return false;
+  if (universityId == null || universityId.isEmpty) return false;
+  if (degreeKey == null || degreeKey.isEmpty) return false;
+  if (!_degreeNamePattern.hasMatch(name)) return false;
+  final key = name.toLowerCase();
+  if (key == 'other' || key == 'others') return false;
+  return !collegeList.any((s) => s.trim().toLowerCase() == key);
+}
+
 /// Letters (any script), digits, spaces and the punctuation real degree names
 /// use — kept identical to the backend's accepted pattern so a submission is
 /// never bounced with a 400.

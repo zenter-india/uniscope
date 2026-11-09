@@ -411,6 +411,7 @@ class _MentorOnboardingScreenState extends ConsumerState<MentorOnboardingScreen>
             availableDays: _preferredTimings.toList(),
           );
       _queueCustomDegree();
+      _queueSpecializationSuggestion();
       if (!mounted) return;
       setState(() => _saving = false);
       _goTo(4);
@@ -431,6 +432,35 @@ class _MentorOnboardingScreenState extends ConsumerState<MentorOnboardingScreen>
     final provider = approvedDegreesProvider(stream);
     return (watch ? ref.watch(provider) : ref.read(provider)).asData?.value ??
         const [];
+  }
+
+  /// The mentor's specialization for THEIR college, when the college's own
+  /// list doesn't have it: sent to an admin, and once approved it is added to
+  /// that college's list (and a college they typed is published), so the next
+  /// person who picks the college sees it. A new college has no list yet, so
+  /// whatever its first mentor picks or types is suggested. Skipped for
+  /// Doctorate/Others in Medical, whose list is not the college's own.
+  /// Fire-and-forget: never blocks or fails onboarding.
+  void _queueSpecializationSuggestion() {
+    if (!_needsSpecialization || _needsMedicalStreamWideSpecialization) return;
+    if (!shouldSuggestCollegeSpecialization(
+      specialization: _specialization,
+      universityId: _universityId,
+      degreeKey: _curatedDegree,
+      collegeList: _pickedSpecializations,
+    )) {
+      return;
+    }
+    unawaited(
+      ref
+          .read(profileOptionsApiProvider)
+          .submitSpecialization(
+            universityId: _universityId!,
+            degree: _curatedDegree!,
+            name: _specialization!,
+          )
+          .catchError((Object _) {}),
+    );
   }
 
   /// A degree typed under "Others" that isn't a known/approved one yet goes to
