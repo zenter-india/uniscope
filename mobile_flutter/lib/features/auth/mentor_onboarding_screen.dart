@@ -802,6 +802,7 @@ class _MentorOnboardingScreenState extends ConsumerState<MentorOnboardingScreen>
                             return OnboardingSearchableField(
                               value: _specialization,
                               hint: 'Select specialization',
+                              bypassExample: kSpecializationBypassExample,
                               options: options,
                               // Only meaningful for the "picked college's
                               // own list" case above — search widens

@@ -652,6 +652,7 @@ class _AspirantOnboardingScreenState
                             return OnboardingSearchableField(
                               value: _specialization,
                               hint: 'Select specialization',
+                              bypassExample: kSpecializationBypassExample,
                               options: options,
                               onChanged: (v) =>
                                   setState(() => _specialization = v),
