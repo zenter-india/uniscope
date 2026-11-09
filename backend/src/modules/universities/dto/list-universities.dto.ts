@@ -43,7 +43,8 @@ export class ListUniversitiesDto {
   @IsString()
   browse?: string;
 
-  /** Admin list only: `sort=name` orders A–Z instead of newest-first. */
+  /** Admin list only: `sort=name` orders A–Z, `sort=name_desc` Z–A; anything
+   * else is newest-first. */
   @IsOptional()
   @IsString()
   sort?: string;

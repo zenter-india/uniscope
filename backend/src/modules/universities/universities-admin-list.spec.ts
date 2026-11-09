@@ -17,6 +17,17 @@ describe('UniversitiesService.findAllAdmin — course filter + A–Z sort', () =
     expect(args.orderBy).toEqual([{ name: 'asc' }, { id: 'asc' }]);
   });
 
+  it('sorts Z–A for sort=name_desc and newest-first by default', async () => {
+    const findMany = jest.fn().mockResolvedValue([]);
+    const svc = makeService({ university: { findMany } });
+
+    await svc.findAllAdmin({ sort: 'name_desc' });
+    expect(findMany.mock.calls[0][0].orderBy).toEqual([{ name: 'desc' }, { id: 'asc' }]);
+
+    await svc.findAllAdmin({});
+    expect(findMany.mock.calls[1][0].orderBy).toEqual([{ createdAt: 'desc' }, { id: 'asc' }]);
+  });
+
   it('adds no course condition when none is chosen', async () => {
     const findMany = jest.fn().mockResolvedValue([]);
     const svc = makeService({ university: { findMany } });

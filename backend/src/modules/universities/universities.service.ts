@@ -504,10 +504,13 @@ export class UniversitiesService {
     const rows = await this.prisma.university.findMany({
       where,
       include: UNIVERSITY_DISTRICT_INCLUDE,
+      // sort=name → A–Z, sort=name_desc → Z–A, anything else → newest first.
       orderBy:
         query.sort === 'name'
           ? [{ name: 'asc' }, { id: 'asc' }]
-          : [{ createdAt: 'desc' }, { id: 'asc' }],
+          : query.sort === 'name_desc'
+            ? [{ name: 'desc' }, { id: 'asc' }]
+            : [{ createdAt: 'desc' }, { id: 'asc' }],
       take: take + 1,
       ...(query.cursor && { cursor: { id: query.cursor }, skip: 1 }),
     });
