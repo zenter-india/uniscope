@@ -378,6 +378,7 @@ model University {
 
   profiles             UserProfile[]
   programs             Program[]
+  specializationSuggestions SpecializationSuggestion[]
   verificationRequests VerificationRequest[]
   reviews              Review[]
   savedByAspirants     SavedUniversity[]
@@ -971,6 +972,38 @@ model CustomDegree {
   @@unique([stream, nameKey])
   @@index([status, createdAt(sort: Desc)])
   @@map("custom_degrees")
+}
+
+/// A specialization a mentor entered for THEIR college that the college's own
+/// list doesn't have yet — typed under "Not listed here", or picked from the
+/// wider list of the degree. Approving it adds the specialization to that
+/// college's Program (creating the program, and publishing the college, if need
+/// be), so the next person who picks the college sees it. Same PENDING /
+/// APPROVED / REJECTED life cycle as CustomDegree.
+model SpecializationSuggestion {
+  id               String             @id @default(uuid())
+  universityId     String             @map("university_id")
+  /// Curated degree key, upper-case, exactly as Program.name (e.g. "MD/MS").
+  degree           String             @db.VarChar(40)
+  /// As shown to users (an admin can fix spelling when approving).
+  name             String             @db.VarChar(100)
+  /// lower-cased, whitespace-collapsed `name` — the dedupe key.
+  nameKey          String             @map("name_key") @db.VarChar(100)
+  status           CustomDegreeStatus @default(PENDING)
+  /// How many mentors entered this exact specialization for this college.
+  submissionCount  Int                @default(1) @map("submission_count")
+  /// Plain column (no relation) so a deleted/anonymised user never blocks this.
+  firstSubmittedBy String?            @map("first_submitted_by")
+  reviewedBy       String?            @map("reviewed_by")
+  reviewedAt       DateTime?          @map("reviewed_at") @db.Timestamptz
+  createdAt        DateTime           @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt        DateTime           @updatedAt @map("updated_at") @db.Timestamptz
+
+  university University @relation(fields: [universityId], references: [id])
+
+  @@unique([universityId, degree, nameKey])
+  @@index([status, createdAt(sort: Desc)])
+  @@map("specialization_suggestions")
 }
 
 /// In-app notification record linked to a user.

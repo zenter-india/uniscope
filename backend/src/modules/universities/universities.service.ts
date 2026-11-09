@@ -782,12 +782,15 @@ export class UniversitiesService {
     if (!winner || !winner.isActive) {
       throw new NotFoundException(`Active university '${winnerId}' not found`);
     }
+    // A college being merged away is often an INACTIVE one — a college a user
+    // typed under "Not listed here" starts out inactive — so activity is not
+    // required of it. It only must not already have been merged elsewhere.
     const losers = await this.prisma.university.findMany({
-      where: { id: { in: loserIds }, isActive: true },
+      where: { id: { in: loserIds }, mergedIntoId: null },
     });
     if (losers.length !== loserIds.length) {
       throw new NotFoundException(
-        'One or more loserIds are not active universities',
+        'One or more loserIds were not found or are already merged',
       );
     }
 
@@ -854,6 +857,33 @@ export class UniversitiesService {
           winnerSavedAspirants.add(saved.aspirantId);
           savedMoved += 1;
         }
+      }
+
+      // Specialization suggestions follow the college. (college, degree, name)
+      // is unique, so one the winner already has is dropped instead of moved.
+      const winnerSuggestions = await tx.specializationSuggestion.findMany({
+        where: { universityId: winnerId },
+        select: { degree: true, nameKey: true },
+      });
+      const winnerSuggestionKeys = new Set(
+        winnerSuggestions.map((s) => `${s.degree}|${s.nameKey}`),
+      );
+      const loserSuggestions = await tx.specializationSuggestion.findMany({
+        where: { universityId: { in: loserIds } },
+      });
+      for (const suggestion of loserSuggestions) {
+        const key = `${suggestion.degree}|${suggestion.nameKey}`;
+        if (winnerSuggestionKeys.has(key)) {
+          await tx.specializationSuggestion.delete({
+            where: { id: suggestion.id },
+          });
+          continue;
+        }
+        await tx.specializationSuggestion.update({
+          where: { id: suggestion.id },
+          data: { universityId: winnerId },
+        });
+        winnerSuggestionKeys.add(key);
       }
 
       // No uniqueness constraint on these three — a plain bulk repoint.
