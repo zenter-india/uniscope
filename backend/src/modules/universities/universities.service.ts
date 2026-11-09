@@ -5,7 +5,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { Prisma, University } from '@prisma/client';
+import { Prisma, University, UserRole } from '@prisma/client';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { PrismaService } from '../../database/prisma/prisma.service.js';
 import { SUPABASE_BUCKETS, SUPABASE_CLIENT } from '../../supabase/index.js';
@@ -16,9 +16,27 @@ import { ListCuratedUniversitiesDto } from './dto/list-curated-universities.dto.
 import { ListUniversitiesDto } from './dto/list-universities.dto.js';
 import { UpdateUniversityDto } from './dto/update-university.dto.js';
 import { UploadUniversityPhotoDto } from './dto/upload-university-photo.dto.js';
+import { educationLevel, type EducationLevel } from './college-people.helper.js';
 
 const DEFAULT_LIMIT = 20;
 const MAX_LIMIT = 50;
+/** Most mentors / students the admin college page lists per college. */
+const MAX_COLLEGE_PEOPLE = 1000;
+
+/** One mentor or student on the admin college page. */
+export interface CollegePerson {
+  id: string;
+  displayName: string;
+  verificationStatus: string;
+  isBanned: boolean;
+  qualification: string | null;
+  /** UG / PG worked out from the qualification (see educationLevel). */
+  level: EducationLevel;
+  stream: string | null;
+  specialization: string | null;
+  yearOfStudy: number | null;
+  graduationYear: number | null;
+}
 
 // Number of colleges shown directly in the mentor form's curated
 // College/University dropdown (highest specialization count first); every
@@ -523,6 +541,106 @@ export class UniversitiesService {
     const nextCursor = hasMore ? page[page.length - 1].id : null;
 
     return { data: page.map(withDistrict), nextCursor };
+  }
+
+  /**
+   * A college and the people linked to it, for the admin's college page:
+   * mentors and students (aspirants), each with the education details to show
+   * under their name. A college that was merged into another opens the
+   * surviving one. Capped per role so one huge college can't blow up the
+   * response (`truncated` says when).
+   */
+  async findCollegePeople(id: string): Promise<{
+    college: {
+      id: string;
+      name: string;
+      state: string;
+      city: string | null;
+      district: string | null;
+      stream: string | null;
+      isActive: boolean;
+    };
+    mentors: CollegePerson[];
+    aspirants: CollegePerson[];
+    truncated: { mentors: boolean; aspirants: boolean };
+  }> {
+    let collegeId = id;
+    let college = null as
+      | (University & { programs: { description: string | null }[] })
+      | null;
+    for (let hop = 0; hop < 5; hop++) {
+      college = await this.prisma.university.findUnique({
+        where: { id: collegeId },
+        include: {
+          programs: { where: { isActive: true }, select: { description: true } },
+        },
+      });
+      if (!college) throw new NotFoundException(`College '${id}' not found`);
+      if (!college.mergedIntoId) break;
+      collegeId = college.mergedIntoId;
+    }
+    if (!college) throw new NotFoundException(`College '${id}' not found`);
+
+    const select = {
+      id: true,
+      displayName: true,
+      verificationStatus: true,
+      isBanned: true,
+      profile: {
+        select: {
+          qualification: true,
+          stream: true,
+          specialization: true,
+          yearOfStudy: true,
+          graduationYear: true,
+        },
+      },
+    } as const;
+    const peopleOf = (role: UserRole) =>
+      this.prisma.user.findMany({
+        where: { role, deletedAt: null, profile: { universityId: college!.id } },
+        select,
+        orderBy: { displayName: 'asc' },
+        take: MAX_COLLEGE_PEOPLE + 1,
+      });
+    const [mentorRows, aspirantRows] = await Promise.all([
+      peopleOf(UserRole.MENTOR),
+      peopleOf(UserRole.ASPIRANT),
+    ]);
+
+    const toPerson = (u: (typeof mentorRows)[number]): CollegePerson => ({
+      id: u.id,
+      displayName: u.displayName,
+      verificationStatus: u.verificationStatus,
+      isBanned: u.isBanned,
+      qualification: u.profile?.qualification ?? null,
+      level: educationLevel(u.profile?.qualification, u.profile?.stream),
+      stream: u.profile?.stream ?? null,
+      specialization: u.profile?.specialization ?? null,
+      yearOfStudy: u.profile?.yearOfStudy ?? null,
+      graduationYear: u.profile?.graduationYear ?? null,
+    });
+
+    return {
+      college: {
+        id: college.id,
+        name: college.name,
+        state: college.state,
+        city: college.city,
+        district:
+          college.programs
+            .map((p) => cleanDistrict(p.description, college!.state))
+            .find((d) => d !== null) ?? null,
+        stream: college.stream,
+        isActive: college.isActive,
+      },
+      mentors: mentorRows.slice(0, MAX_COLLEGE_PEOPLE).map(toPerson),
+      aspirants: aspirantRows.slice(0, MAX_COLLEGE_PEOPLE).map(toPerson),
+      truncated: {
+        mentors: mentorRows.length > MAX_COLLEGE_PEOPLE,
+        aspirants: aspirantRows.length > MAX_COLLEGE_PEOPLE,
+      },
+    };
   }
 
   /** The States and Streams that exist among the listed colleges (not merged

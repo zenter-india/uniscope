@@ -43,6 +43,15 @@ export class UniversitiesController {
     return this.universitiesService.findAllAdmin(query);
   }
 
+  /** A college and the mentors / students linked to it, for the admin's
+   * college page. */
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @Get('admin/:id/people')
+  people(@Param('id') id: string) {
+    return this.universitiesService.findCollegePeople(id);
+  }
+
   /** The States and Streams for the admin list's dropdowns. Declared before
    * `:slug` so the literal path isn't swallowed by it. */
   @UseGuards(JwtAuthGuard, RolesGuard)
