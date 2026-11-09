@@ -49,6 +49,71 @@ describe('UniversitiesService.findAllAdmin — course filter + A–Z sort', () =
   });
 });
 
+describe('UniversitiesService.findAllAdmin — State, Stream and Status filters', () => {
+  async function whereFor(query: Record<string, unknown>) {
+    const findMany = jest.fn().mockResolvedValue([]);
+    await makeService({ university: { findMany } }).findAllAdmin(query);
+    return findMany.mock.calls[0][0].where;
+  }
+
+  it('narrows to a State and a Stream', async () => {
+    const where = await whereFor({ state: 'Tamil Nadu', stream: 'Medical' });
+    expect(where.state).toBe('Tamil Nadu');
+    expect(where.stream).toBe('Medical');
+  });
+
+  it('status=inactive keeps only hidden colleges, status=active only listed ones', async () => {
+    expect((await whereFor({ status: 'inactive' })).isActive).toBe(false);
+    expect((await whereFor({ status: 'active' })).isActive).toBe(true);
+  });
+
+  it('lists both when no status is chosen, and never lists merged-away colleges', async () => {
+    const where = await whereFor({});
+    expect(where.isActive).toBeUndefined();
+    expect(where.mergedIntoId).toBeNull();
+  });
+
+  it('combines with the course filter and search', async () => {
+    const where = await whereFor({
+      status: 'inactive',
+      state: 'Kerala',
+      course: 'DNB',
+      search: 'hospital',
+    });
+    expect(where).toMatchObject({ isActive: false, state: 'Kerala' });
+    expect(where.programs.some.name).toBe('DNB');
+    expect(where.OR).toHaveLength(4);
+  });
+});
+
+describe('UniversitiesService.listFilterOptions', () => {
+  it('returns the States and Streams that exist, A–Z with counts, skipping blanks', async () => {
+    const groupBy = jest
+      .fn()
+      .mockResolvedValueOnce([
+        { state: '', _count: { _all: 3 } },
+        { state: 'Kerala', _count: { _all: 120 } },
+        { state: 'Tamil Nadu', _count: { _all: 340 } },
+      ])
+      .mockResolvedValueOnce([
+        { stream: 'Engineering', _count: { _all: 900 } },
+        { stream: 'Medical', _count: { _all: 500 } },
+      ]);
+    const options = await makeService({ university: { groupBy } }).listFilterOptions();
+
+    expect(options.states).toEqual([
+      { name: 'Kerala', colleges: 120 },
+      { name: 'Tamil Nadu', colleges: 340 },
+    ]);
+    expect(options.streams).toEqual([
+      { name: 'Engineering', colleges: 900 },
+      { name: 'Medical', colleges: 500 },
+    ]);
+    // Merged-away colleges are not counted.
+    expect(groupBy.mock.calls[0][0].where).toEqual({ mergedIntoId: null });
+  });
+});
+
 describe('UniversitiesService.mergeUniversities — which colleges can be merged away', () => {
   it('accepts an inactive college (e.g. one a user typed) as the one merged away', async () => {
     const findMany = jest.fn().mockResolvedValue([{ id: 'typed', isActive: false }]);

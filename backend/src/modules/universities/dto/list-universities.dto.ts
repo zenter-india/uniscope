@@ -1,5 +1,5 @@
 import { Type } from 'class-transformer';
-import { IsInt, IsOptional, IsString, Max, Min } from 'class-validator';
+import { IsIn, IsInt, IsOptional, IsString, Max, Min } from 'class-validator';
 
 /**
  * Query parameters for GET /universities.
@@ -59,6 +59,13 @@ export class ListUniversitiesDto {
   @IsOptional()
   @IsString()
   activeOnly?: string;
+
+  /** Admin list only: `active` or `inactive` keeps just those colleges
+   * (inactive = hidden from the app, e.g. one a user typed and no admin has
+   * published yet). Anything else lists both. */
+  @IsOptional()
+  @IsIn(['active', 'inactive'])
+  status?: 'active' | 'inactive';
 
   @IsOptional()
   @Type(() => Number)

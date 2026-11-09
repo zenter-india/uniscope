@@ -476,6 +476,9 @@ export class UniversitiesService {
       // concerned; a plain deactivation (isActive=false) stays listed.
       mergedIntoId: null,
       ...(query.activeOnly === 'true' && { isActive: true }),
+      // The admin page's Status filter. (activeOnly above is the picker's.)
+      ...(query.status === 'active' && { isActive: true }),
+      ...(query.status === 'inactive' && { isActive: false }),
       ...(query.state && { state: query.state }),
       ...(query.stream && { stream: query.stream }),
       // Colleges offering a given course (Program.name, e.g. "MD/MS").
@@ -520,6 +523,38 @@ export class UniversitiesService {
     const nextCursor = hasMore ? page[page.length - 1].id : null;
 
     return { data: page.map(withDistrict), nextCursor };
+  }
+
+  /** The States and Streams that exist among the listed colleges (not merged
+   * away), A–Z, each with how many colleges it covers — for the admin list's
+   * State and Stream dropdowns, so they only offer values that match something. */
+  async listFilterOptions(): Promise<{
+    states: { name: string; colleges: number }[];
+    streams: { name: string; colleges: number }[];
+  }> {
+    const where = { mergedIntoId: null };
+    const [states, streams] = await Promise.all([
+      this.prisma.university.groupBy({
+        by: ['state'],
+        where,
+        _count: { _all: true },
+        orderBy: { state: 'asc' },
+      }),
+      this.prisma.university.groupBy({
+        by: ['stream'],
+        where: { ...where, stream: { not: null } },
+        _count: { _all: true },
+        orderBy: { stream: 'asc' },
+      }),
+    ]);
+    return {
+      states: states
+        .filter((s) => s.state.trim() !== '')
+        .map((s) => ({ name: s.state, colleges: s._count._all })),
+      streams: streams.flatMap((s) =>
+        s.stream ? [{ name: s.stream, colleges: s._count._all }] : [],
+      ),
+    };
   }
 
   /** Every course (distinct `Program.name`) offered by an active college that

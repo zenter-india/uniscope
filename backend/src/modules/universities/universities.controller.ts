@@ -43,6 +43,15 @@ export class UniversitiesController {
     return this.universitiesService.findAllAdmin(query);
   }
 
+  /** The States and Streams for the admin list's dropdowns. Declared before
+   * `:slug` so the literal path isn't swallowed by it. */
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @Get('admin/filter-options')
+  filterOptions() {
+    return this.universitiesService.listFilterOptions();
+  }
+
   /** Distinct courses (program names) for the admin list's Course filter.
    * Declared before `:slug` so the literal path isn't swallowed by it. */
   @UseGuards(JwtAuthGuard, RolesGuard)
