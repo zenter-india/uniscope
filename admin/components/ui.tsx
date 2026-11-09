@@ -271,7 +271,8 @@ export function FilterTabs<T extends string | number>({
   labelFor,
 }: {
   items: readonly T[];
-  current: T;
+  /** null = none of these is active (e.g. a custom range is showing). */
+  current: T | null;
   hrefFor: (item: T) => string;
   size?: 'sm' | 'md';
   labelFor?: (item: T) => string;
