@@ -144,6 +144,8 @@ export interface AdminUserDetail {
     reviewNote: string | null;
     reviewerName: string | null;
     universityName: string | null;
+    /** So the admin can link the college name to its page. */
+    universityId: string | null;
     hasDocument: boolean;
     submittedAt: Date | null;
     reviewedAt: Date | null;
@@ -244,6 +246,7 @@ export function toAdminUserDetail(
       reviewNote: r.reviewNote,
       reviewerName: r.reviewer?.displayName ?? null,
       universityName: r.university?.name ?? null,
+      universityId: r.universityId ?? null,
       hasDocument: r.documentKey !== null && r.documentKey !== '',
       submittedAt: r.submittedAt,
       reviewedAt: r.reviewedAt,
