@@ -1,4 +1,7 @@
 pdfplumber
 requests
 beautifulsoup4
-playwright
+# Pinned to the last version that built on Railway. playwright 1.65.0 needs
+# libatomic.so.1, which the build image does not have, so `playwright install`
+# fails (exit 127) and the whole backend build fails. Unpin only after that is fixed.
+playwright==1.64.1
