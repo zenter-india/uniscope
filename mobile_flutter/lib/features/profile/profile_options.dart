@@ -391,6 +391,109 @@ List<String> degreesForStream(String? stream) {
   return kDegreesByStream[stream] ?? kDefaultNonMedicalDegrees;
 }
 
+// ── Degrees typed under "Others" ────────────────────────────────────────────
+// A degree/course someone types under "Others" is sent to an admin; once
+// approved it is offered as a normal chip (just before "Others") in that
+// stream's degree picker for everyone. Picking such a chip is stored exactly
+// like typing it under "Others" (degree = 'Others' + the name as the typed
+// text), so every downstream rule — college search, specialization — behaves
+// the same as for any other "Others" degree.
+
+/// Streams whose degree list is shared (everything except the free-typed
+/// "Others" stream). Matches the backend's accepted streams.
+const kCustomDegreeStreams = {
+  'Medical',
+  'Dental',
+  'Engineering',
+  'Arts & Humanities',
+  'Commerce & Business',
+  'Law',
+  'Design',
+};
+
+/// [base] degree chips with the admin-[approved] custom degrees slotted in
+/// just before "Others". Approved names already in [base] (any casing) are
+/// dropped so nothing shows twice.
+List<String> degreeChipOptions(List<String> base, List<String> approved) {
+  final known = {for (final d in base) d.toLowerCase()};
+  final extras = <String>[];
+  for (final name in approved) {
+    if (known.add(name.toLowerCase())) extras.add(name);
+  }
+  if (extras.isEmpty) return base;
+  final at = base.indexOf('Others');
+  return at == -1
+      ? [...base, ...extras]
+      : [...base.sublist(0, at), ...extras, ...base.sublist(at)];
+}
+
+/// The approved custom degree [value] refers to (matched ignoring case), or
+/// null when it isn't one. [base] names never count as custom.
+String? approvedDegreeMatching(
+  String value,
+  List<String> base,
+  List<String> approved,
+) {
+  final key = value.trim().toLowerCase();
+  if (key.isEmpty) return null;
+  if (base.any((d) => d.toLowerCase() == key)) return null;
+  for (final name in approved) {
+    if (name.toLowerCase() == key) return name;
+  }
+  return null;
+}
+
+/// Whether the specialization a mentor settled on for their college should be
+/// sent to an admin so it is added to that college's own list.
+///
+/// True when it is not already on [collegeList] (the specializations the picked
+/// college is recorded with for this degree) — whether the mentor typed it under
+/// "Not listed here" or picked it from the wider list of the degree. For a
+/// brand-new college that list is empty, so whatever they choose is suggested.
+/// Needs a real college ([universityId]) and a curated [degreeKey] to attach it
+/// to; the plain free-text case and non-curated degrees have no college list.
+bool shouldSuggestCollegeSpecialization({
+  required String? specialization,
+  required String? universityId,
+  required String? degreeKey,
+  required List<String> collegeList,
+}) {
+  final name = (specialization ?? '').trim().replaceAll(RegExp(r'\s+'), ' ');
+  if (name.length < 2 || name.length > 100) return false;
+  if (universityId == null || universityId.isEmpty) return false;
+  if (degreeKey == null || degreeKey.isEmpty) return false;
+  if (!_degreeNamePattern.hasMatch(name)) return false;
+  final key = name.toLowerCase();
+  if (key == 'other' || key == 'others') return false;
+  return !collegeList.any((s) => s.trim().toLowerCase() == key);
+}
+
+/// Letters (any script), digits, spaces and the punctuation real degree names
+/// use — kept identical to the backend's accepted pattern so a submission is
+/// never bounced with a 400.
+final _degreeNamePattern = RegExp(r"^[\p{L}\p{N} .,&()'/+-]+$", unicode: true);
+
+/// Whether [text], typed under "Others" for [stream], is a degree worth
+/// sending to an admin: a shared stream, a plausible name, and not already
+/// one of the chips (built-in or approved).
+bool isNewCustomDegree({
+  required String? stream,
+  required String text,
+  required List<String> base,
+  required List<String> approved,
+}) {
+  final name = text.trim().replaceAll(RegExp(r'\s+'), ' ');
+  if (stream == null || !kCustomDegreeStreams.contains(stream)) return false;
+  if (name.length < 2 || name.length > 50) return false;
+  if (!_degreeNamePattern.hasMatch(name)) return false;
+  if (name.toLowerCase() == 'others' || name.toLowerCase() == 'other') {
+    return false;
+  }
+  final key = name.toLowerCase();
+  if (base.any((d) => d.toLowerCase() == key)) return false;
+  return !approved.any((d) => d.toLowerCase() == key);
+}
+
 /// Maps a user-facing degree (per stream) to the curated `degree` key the
 /// backend `GET /universities/curated` expects (a `Program.name`). Ported
 /// from web/components/MentorForm.tsx CURATED_DEGREE_MAP_BY_STREAM — keep in

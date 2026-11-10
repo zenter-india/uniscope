@@ -87,6 +87,10 @@ export interface AdminUserDetail {
   /** Decrypted from `UserProfile.realNameEncrypted`. Null for aspirants (who
    * never set one) and if decryption fails (e.g. key rotated). */
   realName: string | null;
+  /** The user's mobile number, decrypted from `User.phoneEncrypted` (stored
+   * at login). Falls back to the plain number on the website sign-up form
+   * for accounts created from one. Null until the user next logs in. */
+  phone: string | null;
   role: User['role'];
   verificationStatus: User['verificationStatus'];
   isActive: boolean;
@@ -140,6 +144,8 @@ export interface AdminUserDetail {
     reviewNote: string | null;
     reviewerName: string | null;
     universityName: string | null;
+    /** So the admin can link the college name to its page. */
+    universityId: string | null;
     hasDocument: boolean;
     submittedAt: Date | null;
     reviewedAt: Date | null;
@@ -171,6 +177,7 @@ export function toAdminUserDetail(
   user: AdminUserRow,
   activity: AdminUserDetail['activity'],
   avatarUrl?: string | null,
+  leadPhone?: string | null,
 ): AdminUserDetail {
   const p = user.profile ?? null;
 
@@ -187,6 +194,7 @@ export function toAdminUserDetail(
     id: user.id,
     displayName: user.displayName,
     realName,
+    phone: decryptFieldSafe(user.phoneEncrypted) ?? leadPhone ?? null,
     role: user.role,
     verificationStatus: user.verificationStatus,
     isActive: user.isActive,
@@ -242,12 +250,29 @@ export function toAdminUserDetail(
       reviewNote: r.reviewNote,
       reviewerName: r.reviewer?.displayName ?? null,
       universityName: r.university?.name ?? null,
+      universityId: r.universityId ?? null,
       hasDocument: r.documentKey !== null && r.documentKey !== '',
       submittedAt: r.submittedAt,
       reviewedAt: r.reviewedAt,
       createdAt: r.createdAt,
     })),
     activity,
+  };
+}
+
+/** A row of the admin Users list: the public fields plus the person's own
+ * specialization (their actual one, e.g. "Community Medicine" — not their UG/PG
+ * level). Built from the list query, which loads only that one profile column,
+ * so nothing else on the profile can leak into the list. */
+export type AdminListUser = PublicUser & { specialization: string | null };
+
+export function toAdminListUser(
+  user: User & { profile?: { specialization: string | null } | null },
+): AdminListUser {
+  const { profile, ...rest } = user;
+  return {
+    ...toPublicUser(rest),
+    specialization: profile?.specialization?.trim() || null,
   };
 }
 

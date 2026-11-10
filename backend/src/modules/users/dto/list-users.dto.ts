@@ -29,6 +29,39 @@ export class ListUsersDto {
   @IsBoolean()
   isBanned?: boolean;
 
+  /** Exact specialization, e.g. "Community Medicine". */
+  @IsOptional()
+  @IsString()
+  specialization?: string;
+
+  @IsOptional()
+  @IsString()
+  stream?: string;
+
+  /** Exact degree, e.g. "MD/MS". */
+  @IsOptional()
+  @IsString()
+  qualification?: string;
+
+  /** UG or PG, worked out from the degree. */
+  @IsOptional()
+  @IsIn(['UG', 'PG'])
+  level?: 'UG' | 'PG';
+
+  @IsOptional()
+  @IsString()
+  state?: string;
+
+  /** Only people linked to this college. */
+  @IsOptional()
+  @IsString()
+  universityId?: string;
+
+  /** `true` = only mentors currently accepting call bookings. */
+  @IsOptional()
+  @IsIn(['true'])
+  accepting?: 'true';
+
   @IsOptional()
   @IsString()
   cursor?: string;

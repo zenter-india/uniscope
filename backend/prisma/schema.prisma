@@ -177,10 +177,16 @@ enum EnrollmentLeadStatus {
 // ─────────────────────────────────────────────────────────────────────────────
 
 /// Central identity record. One record per phone number.
-/// Phone stored as bcrypt hash — never plaintext.
+/// Login identity is the one-way `phoneHash`. Separately, the number itself is
+/// kept AES-256-GCM encrypted in `phoneEncrypted` (same helper as the UPI ID),
+/// so an admin can see/contact the user — never stored or returned in plaintext
+/// anywhere else, and wiped on erasure.
 model User {
   id                 String             @id @default(uuid())
   phoneHash          String             @unique @map("phone_hash") @db.VarChar(128)
+  /// The user's mobile number (normalised E.164), encrypted. Filled in at each
+  /// OTP login while still null, so an account shows it after its next login.
+  phoneEncrypted     String?            @map("phone_encrypted") @db.VarChar(255)
   displayName        String             @map("display_name") @db.VarChar(60)
   role               UserRole
   /// Client-facing registration number, e.g. "A1134500001" (aspirant) or
@@ -372,6 +378,7 @@ model University {
 
   profiles             UserProfile[]
   programs             Program[]
+  specializationSuggestions SpecializationSuggestion[]
   verificationRequests VerificationRequest[]
   reviews              Review[]
   savedByAspirants     SavedUniversity[]
@@ -930,6 +937,73 @@ model TechnicalReport {
   @@index([status, createdAt(sort: Desc)])
   @@index([userId])
   @@map("technical_reports")
+}
+
+enum CustomDegreeStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+/// A degree / course a user typed under "Others" during profile creation.
+/// It is stored once per (stream, name) and stays PENDING until an admin
+/// approves it; APPROVED rows are then offered as an ordinary option in that
+/// stream's degree picker for everyone next time. REJECTED rows are kept so
+/// the same typo isn't re-queued (a re-submission only bumps the count).
+model CustomDegree {
+  id              String             @id @default(uuid())
+  stream          String             @db.VarChar(60)
+  /// As shown to users (admin can fix casing/typos when approving).
+  name            String             @db.VarChar(50)
+  /// lower-cased, whitespace-collapsed `name` — the dedupe key.
+  nameKey         String             @map("name_key") @db.VarChar(50)
+  status          CustomDegreeStatus @default(PENDING)
+  /// How many times people have typed this exact degree — lets an admin see
+  /// which pending ones matter first.
+  submissionCount Int                @default(1) @map("submission_count")
+  /// User id of the first person who typed it. Plain column (no relation) so
+  /// a deleted/anonymised user never blocks or cascades into this list.
+  firstSubmittedBy String?           @map("first_submitted_by")
+  reviewedBy      String?            @map("reviewed_by")
+  reviewedAt      DateTime?          @map("reviewed_at") @db.Timestamptz
+  createdAt       DateTime           @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt       DateTime           @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@unique([stream, nameKey])
+  @@index([status, createdAt(sort: Desc)])
+  @@map("custom_degrees")
+}
+
+/// A specialization a mentor entered for THEIR college that the college's own
+/// list doesn't have yet — typed under "Not listed here", or picked from the
+/// wider list of the degree. Approving it adds the specialization to that
+/// college's Program (creating the program, and publishing the college, if need
+/// be), so the next person who picks the college sees it. Same PENDING /
+/// APPROVED / REJECTED life cycle as CustomDegree.
+model SpecializationSuggestion {
+  id               String             @id @default(uuid())
+  universityId     String             @map("university_id")
+  /// Curated degree key, upper-case, exactly as Program.name (e.g. "MD/MS").
+  degree           String             @db.VarChar(40)
+  /// As shown to users (an admin can fix spelling when approving).
+  name             String             @db.VarChar(100)
+  /// lower-cased, whitespace-collapsed `name` — the dedupe key.
+  nameKey          String             @map("name_key") @db.VarChar(100)
+  status           CustomDegreeStatus @default(PENDING)
+  /// How many mentors entered this exact specialization for this college.
+  submissionCount  Int                @default(1) @map("submission_count")
+  /// Plain column (no relation) so a deleted/anonymised user never blocks this.
+  firstSubmittedBy String?            @map("first_submitted_by")
+  reviewedBy       String?            @map("reviewed_by")
+  reviewedAt       DateTime?          @map("reviewed_at") @db.Timestamptz
+  createdAt        DateTime           @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt        DateTime           @updatedAt @map("updated_at") @db.Timestamptz
+
+  university University @relation(fields: [universityId], references: [id])
+
+  @@unique([universityId, degree, nameKey])
+  @@index([status, createdAt(sort: Desc)])
+  @@map("specialization_suggestions")
 }
 
 /// In-app notification record linked to a user.

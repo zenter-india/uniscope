@@ -28,6 +28,7 @@ import {
 import { PrismaService } from '../../database/prisma/prisma.service.js';
 import { AvatarConfig } from '../avatar/avatar.constants.js';
 import { AvatarService } from '../avatar/avatar.service.js';
+import { profileLevelWhere } from '../universities/college-people.helper.js';
 import { AdminUpdateUserDto } from './dto/admin-update-user.dto.js';
 import { ListUsersDto } from './dto/list-users.dto.js';
 import { SetBannedDto } from './dto/set-banned.dto.js';
@@ -623,9 +624,96 @@ export class UsersService {
    * results (an admin managing other admins isn't a supported flow yet, and
    * silently excluding them avoids a support/admin accidentally banning
    * themselves or a colleague from this screen). */
-  async findAllAdmin(
-    query: ListUsersDto,
-  ): Promise<{ data: User[]; nextCursor: string | null }> {
+  /** The profile-based filters of the admin Users list, as a `where` fragment
+   * ({} when none is set). Level (UG/PG) is worked out from the degree. */
+  private profileFilter(query: ListUsersDto): Prisma.UserWhereInput {
+    const conditions: Prisma.UserProfileWhereInput[] = [];
+    if (query.specialization)
+      conditions.push({ specialization: query.specialization });
+    if (query.stream) conditions.push({ stream: query.stream });
+    if (query.qualification)
+      conditions.push({ qualification: query.qualification });
+    if (query.state) conditions.push({ state: query.state });
+    if (query.universityId)
+      conditions.push({ universityId: query.universityId });
+    if (query.accepting === 'true')
+      conditions.push({ isMentorAvailable: true });
+    if (query.level) conditions.push(profileLevelWhere(query.level));
+    return conditions.length > 0 ? { profile: { AND: conditions } } : {};
+  }
+
+  /** The values that exist among the (non-admin) users' profiles, A-Z with how
+   * many people each covers — so the admin's dropdowns only offer values that
+   * match someone. */
+  async listFilterOptions(): Promise<{
+    specializations: { name: string; users: number }[];
+    qualifications: { name: string; users: number }[];
+    streams: { name: string; users: number }[];
+    states: { name: string; users: number }[];
+  }> {
+    const user = { role: { not: UserRole.ADMIN } };
+    const [specializations, qualifications, streams, states] =
+      await Promise.all([
+        this.prisma.userProfile.groupBy({
+          by: ['specialization'],
+          where: { user, specialization: { not: null } },
+          _count: { _all: true },
+          orderBy: { specialization: 'asc' },
+        }),
+        this.prisma.userProfile.groupBy({
+          by: ['qualification'],
+          where: { user, qualification: { not: null } },
+          _count: { _all: true },
+          orderBy: { qualification: 'asc' },
+        }),
+        this.prisma.userProfile.groupBy({
+          by: ['stream'],
+          where: { user, stream: { not: null } },
+          _count: { _all: true },
+          orderBy: { stream: 'asc' },
+        }),
+        this.prisma.userProfile.groupBy({
+          by: ['state'],
+          where: { user, state: { not: null } },
+          _count: { _all: true },
+          orderBy: { state: 'asc' },
+        }),
+      ]);
+    // Blank values are skipped; each option says how many people it covers.
+    const options = (
+      rows: { name: string | null; users: number }[],
+    ): { name: string; users: number }[] =>
+      rows.flatMap((r) =>
+        r.name && r.name.trim() !== ''
+          ? [{ name: r.name, users: r.users }]
+          : [],
+      );
+    return {
+      specializations: options(
+        specializations.map((r) => ({
+          name: r.specialization,
+          users: r._count._all,
+        })),
+      ),
+      qualifications: options(
+        qualifications.map((r) => ({
+          name: r.qualification,
+          users: r._count._all,
+        })),
+      ),
+      streams: options(
+        streams.map((r) => ({ name: r.stream, users: r._count._all })),
+      ),
+      states: options(
+        states.map((r) => ({ name: r.state, users: r._count._all })),
+      ),
+    };
+  }
+
+  async findAllAdmin(query: ListUsersDto): Promise<{
+    data: Array<User & { profile: { specialization: string | null } | null }>;
+    nextCursor: string | null;
+  }> {
     const take = Math.min(query.limit ?? ADMIN_DEFAULT_LIMIT, ADMIN_MAX_LIMIT);
 
     const where: Prisma.UserWhereInput = {
@@ -634,13 +722,32 @@ export class UsersService {
         verificationStatus: query.verificationStatus,
       }),
       ...(query.isBanned !== undefined && { isBanned: query.isBanned }),
+      // One search box for what an admin looks for: a name, a specialization
+      // ("community medicine"), or a college.
       ...(query.search && {
-        displayName: { contains: query.search, mode: 'insensitive' },
+        OR: [
+          { displayName: { contains: query.search, mode: 'insensitive' } },
+          {
+            profile: {
+              specialization: { contains: query.search, mode: 'insensitive' },
+            },
+          },
+          {
+            profile: {
+              university: {
+                name: { contains: query.search, mode: 'insensitive' },
+              },
+            },
+          },
+        ],
       }),
+      ...this.profileFilter(query),
     };
 
     const rows = await this.prisma.user.findMany({
       where,
+      // Just the one profile column the list shows (the person's specialization).
+      include: { profile: { select: { specialization: true } } },
       orderBy: adminOrderBy(query.sortBy, query.sortDir, {
         joined: 'createdAt',
         name: 'displayName',
@@ -656,6 +763,29 @@ export class UsersService {
     const nextCursor = hasMore ? data[data.length - 1].id : null;
 
     return { data, nextCursor };
+  }
+
+  /**
+   * Keep the user's mobile number (encrypted) so an admin can see it on their
+   * profile. Called at each successful OTP login with the number just
+   * verified; it only writes while the column is still empty (the number is
+   * the account's identity, so it cannot differ later), which makes every
+   * login after the first a cheap no-op. Never throws — a failure here (e.g.
+   * the encryption key is missing) must not block anyone from logging in.
+   */
+  async rememberPhone(userId: string, normalisedPhone: string): Promise<void> {
+    try {
+      await this.prisma.user.updateMany({
+        where: { id: userId, phoneEncrypted: null },
+        data: { phoneEncrypted: encryptField(normalisedPhone) },
+      });
+    } catch (err) {
+      this.logger.warn(
+        `Could not store the encrypted phone for user ${userId}: ${
+          err instanceof Error ? err.message : String(err)
+        }`,
+      );
+    }
   }
 
   /** Admin-only full detail for one user — every onboarding field, decrypted
@@ -699,8 +829,19 @@ export class UsersService {
       this.prisma.review.count({ where: { authorId: userId } }),
     ]);
 
+    // Accounts created from the website form already have their number on file
+    // in plain text (that is what the form collects and the privacy policy
+    // says) — show it for them until their own login stores the encrypted one.
+    const lead = user.phoneEncrypted
+      ? null
+      : await this.prisma.enrollmentLead.findUnique({
+          where: { convertedUserId: userId },
+          select: { phone: true },
+        });
+
     return {
       user,
+      leadPhone: lead?.phone ?? null,
       activity: {
         sessionsAsAspirant,
         sessionsAsMentor,
@@ -878,6 +1019,8 @@ export class UsersService {
         where: { id: userId },
         data: {
           phoneHash: `erased:${randomUUID()}`,
+          // The readable number goes too — erasure wipes personal data.
+          phoneEncrypted: null,
           displayName: `deleted_user_${userId.slice(0, 8)}`,
           refreshTokenHash: null,
           isActive: false,

@@ -64,7 +64,8 @@ class CollegeSearchField extends ConsumerStatefulWidget {
     String? universityId,
     String text,
     List<String> specializations,
-  ) onPick;
+  )
+  onPick;
 
   @override
   ConsumerState<CollegeSearchField> createState() => _CollegeSearchFieldState();
@@ -85,7 +86,8 @@ class _CollegeSearchFieldState extends ConsumerState<CollegeSearchField> {
   // user types is their college name (resolved via findOrCreate on submit).
   // Otherwise typing only searches and nothing counts until a pick.
   late bool _manual =
-      widget.initialText.trim().isNotEmpty && widget.initialUniversityId == null;
+      widget.initialText.trim().isNotEmpty &&
+      widget.initialUniversityId == null;
 
   /// Scrolls this field (and the results list under it) up near the top of
   /// the visible area — not just "barely on screen", which is all the
@@ -193,7 +195,9 @@ class _CollegeSearchFieldState extends ConsumerState<CollegeSearchField> {
       try {
         final List<_Option> options;
         if (widget.curatedDegree != null) {
-          final data = await ref.read(universitiesApiProvider).curated(
+          final data = await ref
+              .read(universitiesApiProvider)
+              .curated(
                 stream: widget.stream!,
                 degree: widget.curatedDegree!,
                 search: query.trim().isEmpty ? null : query.trim(),
@@ -207,11 +211,9 @@ class _CollegeSearchFieldState extends ConsumerState<CollegeSearchField> {
               ),
           ];
         } else {
-          final data = await ref.read(universitiesApiProvider).search(
-                query,
-                stream: widget.stream,
-                level: widget.level,
-              );
+          final data = await ref
+              .read(universitiesApiProvider)
+              .search(query, stream: widget.stream, level: widget.level);
           options = [
             for (final u in data)
               _Option(
@@ -287,69 +289,84 @@ class _CollegeSearchFieldState extends ConsumerState<CollegeSearchField> {
             ),
           ),
         if (showList)
-          Container(
-            margin: const EdgeInsets.only(top: AppSpacing.xs),
-            constraints: const BoxConstraints(maxHeight: 320),
-            decoration: BoxDecoration(
-              color: AppColors.surface,
-              border: Border.all(color: AppColors.border),
-              borderRadius: BorderRadius.circular(AppRadius.md),
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Flexible(
-                  child: _loading && _results.isEmpty
-                      ? const Padding(
-                          padding: EdgeInsets.all(AppSpacing.md),
-                          child: Center(
-                            child: SizedBox(
-                              width: 18,
-                              height: 18,
-                              child: CircularProgressIndicator(strokeWidth: 2),
+          // A press inside the list must not count as a "tap outside" the
+          // text field: on web/desktop that unfocuses the field on pointer
+          // DOWN, and the 150ms close timer then removes the list before a
+          // slower click finishes, so "Not listed here" (or a college row)
+          // never received the click.
+          TextFieldTapRegion(
+            child: Container(
+              margin: const EdgeInsets.only(top: AppSpacing.xs),
+              constraints: const BoxConstraints(maxHeight: 320),
+              decoration: BoxDecoration(
+                color: AppColors.surface,
+                border: Border.all(color: AppColors.border),
+                borderRadius: BorderRadius.circular(AppRadius.md),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Flexible(
+                    child: _loading && _results.isEmpty
+                        ? const Padding(
+                            padding: EdgeInsets.all(AppSpacing.md),
+                            // Row, not Center: Center expands to the full 320px
+                            // max height while loading, which pushed the
+                            // "Not listed here" options off screen.
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                SizedBox(
+                                  width: 18,
+                                  height: 18,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                  ),
+                                ),
+                              ],
                             ),
-                          ),
-                        )
-                      : _results.isEmpty
-                          ? const Padding(
-                              padding: EdgeInsets.all(AppSpacing.md),
-                              child: Text(
-                                'No matches',
-                                style: TextStyle(color: AppColors.textMuted),
-                              ),
-                            )
-                          : ListView.builder(
-                              shrinkWrap: true,
-                              padding: EdgeInsets.zero,
-                              itemCount: _results.length,
-                              itemBuilder: (context, i) {
-                                final o = _results[i];
-                                return InkWell(
-                                  onTap: () => _select(o),
-                                  child: Padding(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: AppSpacing.md,
-                                      vertical: AppSpacing.sm,
-                                    ),
-                                    child: Text(
-                                      o.label,
-                                      style: const TextStyle(
-                                        fontSize: AppFont.sm,
-                                        fontWeight: AppFont.medium,
-                                      ),
+                          )
+                        : _results.isEmpty
+                        ? const Padding(
+                            padding: EdgeInsets.all(AppSpacing.md),
+                            child: Text(
+                              'No matches',
+                              style: TextStyle(color: AppColors.textMuted),
+                            ),
+                          )
+                        : ListView.builder(
+                            shrinkWrap: true,
+                            padding: EdgeInsets.zero,
+                            itemCount: _results.length,
+                            itemBuilder: (context, i) {
+                              final o = _results[i];
+                              return InkWell(
+                                onTap: () => _select(o),
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: AppSpacing.md,
+                                    vertical: AppSpacing.sm,
+                                  ),
+                                  child: Text(
+                                    o.label,
+                                    style: const TextStyle(
+                                      fontSize: AppFont.sm,
+                                      fontWeight: AppFont.medium,
                                     ),
                                   ),
-                                );
-                              },
-                            ),
-                ),
-                OnboardingBypassOptions(
-                  example:
-                      'e.g. search "Jawaharlal Nehru Postgraduate Institute" instead of "JIPMER"',
-                  onNotListed: _enterManual,
-                ),
-              ],
+                                ),
+                              );
+                            },
+                          ),
+                  ),
+                  OnboardingBypassOptions(
+                    example:
+                        'e.g. search "Jawaharlal Nehru Postgraduate Institute" instead of "JIPMER"',
+                    onNotListed: _enterManual,
+                  ),
+                ],
+              ),
             ),
           ),
       ],
