@@ -47,7 +47,8 @@ export function toPayoutRequestResponse(
   overdueAfterMs: number = DEFAULT_OVERDUE_AFTER_MS,
 ): PayoutRequestResponse {
   const isOpen = payout.status === 'PENDING' || payout.status === 'PROCESSING';
-  const isOverdue = isOpen && Date.now() - payout.createdAt.getTime() > overdueAfterMs;
+  const isOverdue =
+    isOpen && Date.now() - payout.createdAt.getTime() > overdueAfterMs;
 
   return {
     id: payout.id,

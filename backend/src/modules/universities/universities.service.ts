@@ -5,7 +5,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { Prisma, University } from '@prisma/client';
+import { Prisma, University, UserRole } from '@prisma/client';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { PrismaService } from '../../database/prisma/prisma.service.js';
 import { SUPABASE_BUCKETS, SUPABASE_CLIENT } from '../../supabase/index.js';
@@ -16,9 +16,30 @@ import { ListCuratedUniversitiesDto } from './dto/list-curated-universities.dto.
 import { ListUniversitiesDto } from './dto/list-universities.dto.js';
 import { UpdateUniversityDto } from './dto/update-university.dto.js';
 import { UploadUniversityPhotoDto } from './dto/upload-university-photo.dto.js';
+import {
+  educationLevel,
+  type EducationLevel,
+} from './college-people.helper.js';
 
 const DEFAULT_LIMIT = 20;
 const MAX_LIMIT = 50;
+/** Most mentors / students the admin college page lists per college. */
+const MAX_COLLEGE_PEOPLE = 1000;
+
+/** One mentor or student on the admin college page. */
+export interface CollegePerson {
+  id: string;
+  displayName: string;
+  verificationStatus: string;
+  isBanned: boolean;
+  qualification: string | null;
+  /** UG / PG worked out from the qualification (see educationLevel). */
+  level: EducationLevel;
+  stream: string | null;
+  specialization: string | null;
+  yearOfStudy: number | null;
+  graduationYear: number | null;
+}
 
 // Number of colleges shown directly in the mentor form's curated
 // College/University dropdown (highest specialization count first); every
@@ -101,6 +122,31 @@ function withSpecializations(
       .map((program) => cleanDistrict(program.description, rest.state))
       .find((value) => value !== null) ?? null;
   return { ...rest, specializations, district };
+}
+
+/** Admin lists only need the district, not the specialization union —
+ * a lighter include than UNIVERSITY_SPECIALIZATIONS_INCLUDE. */
+const UNIVERSITY_DISTRICT_INCLUDE = {
+  programs: {
+    where: { isActive: true },
+    select: { description: true },
+  },
+} satisfies Prisma.UniversityInclude;
+
+/** Attaches the cleaned district (from `Program.description`, see
+ * cleanDistrict) to an admin-list row and drops the `programs` relation.
+ * Many hospital-type colleges ("District Hospital", …) repeat the same name
+ * across districts and have no `city`, so without this an admin sees only
+ * the state and can't tell them apart. */
+function withDistrict<
+  T extends { state: string; programs: { description: string | null }[] },
+>(university: T): Omit<T, 'programs'> & { district: string | null } {
+  const { programs, ...rest } = university;
+  const district =
+    programs
+      .map((program) => cleanDistrict(program.description, university.state))
+      .find((value) => value !== null) ?? null;
+  return { ...rest, district };
 }
 
 @Injectable()
@@ -208,9 +254,9 @@ export class UniversitiesService {
    * query. Cheap even for a `browse=true` full-catalogue fetch: the
    * aggregate is bounded by how many reviews actually exist (a handful per
    * college, gated to VERIFIED mentors), not by the size of the `in` list. */
-  private async attachRatings<
-    T extends { id: string },
-  >(rows: T[]): Promise<Array<T & { rating: number | null; reviewCount: number }>> {
+  private async attachRatings<T extends { id: string }>(
+    rows: T[],
+  ): Promise<Array<T & { rating: number | null; reviewCount: number }>> {
     const ratings = await this.universityReviewsService.ratingSummaries(
       rows.map((r) => r.id),
     );
@@ -438,9 +484,10 @@ export class UniversitiesService {
   }
 
   /** Admin-only — includes inactive universities, unlike the public list. */
-  async findAllAdmin(
-    query: ListUniversitiesDto,
-  ): Promise<{ data: University[]; nextCursor: string | null }> {
+  async findAllAdmin(query: ListUniversitiesDto): Promise<{
+    data: Array<University & { district: string | null }>;
+    nextCursor: string | null;
+  }> {
     const take = Math.min(query.limit ?? DEFAULT_LIMIT, MAX_LIMIT);
 
     const where: Prisma.UniversityWhereInput = {
@@ -448,32 +495,205 @@ export class UniversitiesService {
       // concerned; a plain deactivation (isActive=false) stays listed.
       mergedIntoId: null,
       ...(query.activeOnly === 'true' && { isActive: true }),
+      // The admin page's Status filter. (activeOnly above is the picker's.)
+      ...(query.status === 'active' && { isActive: true }),
+      ...(query.status === 'inactive' && { isActive: false }),
       ...(query.state && { state: query.state }),
       ...(query.stream && { stream: query.stream }),
+      // Colleges offering a given course (Program.name, e.g. "MD/MS").
+      ...(query.course && {
+        programs: { some: { isActive: true, name: query.course } },
+      }),
       ...(query.search && {
         OR: [
           { name: { contains: query.search, mode: 'insensitive' } },
           { city: { contains: query.search, mode: 'insensitive' } },
           { state: { contains: query.search, mode: 'insensitive' } },
+          // District lives on the programs (see cleanDistrict) — so an admin
+          // can find "District Hospital" by typing its district.
+          {
+            programs: {
+              some: {
+                isActive: true,
+                description: { contains: query.search, mode: 'insensitive' },
+              },
+            },
+          },
         ],
       }),
     };
 
     const rows = await this.prisma.university.findMany({
       where,
+      include: UNIVERSITY_DISTRICT_INCLUDE,
+      // sort=name → A–Z, sort=name_desc → Z–A, anything else → newest first.
       orderBy:
         query.sort === 'name'
           ? [{ name: 'asc' }, { id: 'asc' }]
-          : [{ createdAt: 'desc' }, { id: 'asc' }],
+          : query.sort === 'name_desc'
+            ? [{ name: 'desc' }, { id: 'asc' }]
+            : [{ createdAt: 'desc' }, { id: 'asc' }],
       take: take + 1,
       ...(query.cursor && { cursor: { id: query.cursor }, skip: 1 }),
     });
 
     const hasMore = rows.length > take;
-    const data = hasMore ? rows.slice(0, take) : rows;
-    const nextCursor = hasMore ? data[data.length - 1].id : null;
+    const page = hasMore ? rows.slice(0, take) : rows;
+    const nextCursor = hasMore ? page[page.length - 1].id : null;
 
-    return { data, nextCursor };
+    return { data: page.map(withDistrict), nextCursor };
+  }
+
+  /**
+   * A college and the people linked to it, for the admin's college page:
+   * mentors and students (aspirants), each with the education details to show
+   * under their name. A college that was merged into another opens the
+   * surviving one. Capped per role so one huge college can't blow up the
+   * response (`truncated` says when).
+   */
+  async findCollegePeople(id: string): Promise<{
+    college: {
+      id: string;
+      name: string;
+      state: string;
+      city: string | null;
+      district: string | null;
+      stream: string | null;
+      isActive: boolean;
+    };
+    mentors: CollegePerson[];
+    aspirants: CollegePerson[];
+    truncated: { mentors: boolean; aspirants: boolean };
+  }> {
+    let collegeId = id;
+    let college = null as
+      | (University & { programs: { description: string | null }[] })
+      | null;
+    for (let hop = 0; hop < 5; hop++) {
+      college = await this.prisma.university.findUnique({
+        where: { id: collegeId },
+        include: {
+          programs: {
+            where: { isActive: true },
+            select: { description: true },
+          },
+        },
+      });
+      if (!college) throw new NotFoundException(`College '${id}' not found`);
+      if (!college.mergedIntoId) break;
+      collegeId = college.mergedIntoId;
+    }
+    if (!college) throw new NotFoundException(`College '${id}' not found`);
+
+    const select = {
+      id: true,
+      displayName: true,
+      verificationStatus: true,
+      isBanned: true,
+      profile: {
+        select: {
+          qualification: true,
+          stream: true,
+          specialization: true,
+          yearOfStudy: true,
+          graduationYear: true,
+        },
+      },
+    } as const;
+    const peopleOf = (role: UserRole) =>
+      this.prisma.user.findMany({
+        where: {
+          role,
+          deletedAt: null,
+          profile: { universityId: college.id },
+        },
+        select,
+        orderBy: { displayName: 'asc' },
+        take: MAX_COLLEGE_PEOPLE + 1,
+      });
+    const [mentorRows, aspirantRows] = await Promise.all([
+      peopleOf(UserRole.MENTOR),
+      peopleOf(UserRole.ASPIRANT),
+    ]);
+
+    const toPerson = (u: (typeof mentorRows)[number]): CollegePerson => ({
+      id: u.id,
+      displayName: u.displayName,
+      verificationStatus: u.verificationStatus,
+      isBanned: u.isBanned,
+      qualification: u.profile?.qualification ?? null,
+      level: educationLevel(u.profile?.qualification, u.profile?.stream),
+      stream: u.profile?.stream ?? null,
+      specialization: u.profile?.specialization ?? null,
+      yearOfStudy: u.profile?.yearOfStudy ?? null,
+      graduationYear: u.profile?.graduationYear ?? null,
+    });
+
+    return {
+      college: {
+        id: college.id,
+        name: college.name,
+        state: college.state,
+        city: college.city,
+        district:
+          college.programs
+            .map((p) => cleanDistrict(p.description, college.state))
+            .find((d) => d !== null) ?? null,
+        stream: college.stream,
+        isActive: college.isActive,
+      },
+      mentors: mentorRows.slice(0, MAX_COLLEGE_PEOPLE).map(toPerson),
+      aspirants: aspirantRows.slice(0, MAX_COLLEGE_PEOPLE).map(toPerson),
+      truncated: {
+        mentors: mentorRows.length > MAX_COLLEGE_PEOPLE,
+        aspirants: aspirantRows.length > MAX_COLLEGE_PEOPLE,
+      },
+    };
+  }
+
+  /** The States and Streams that exist among the listed colleges (not merged
+   * away), A–Z, each with how many colleges it covers — for the admin list's
+   * State and Stream dropdowns, so they only offer values that match something. */
+  async listFilterOptions(): Promise<{
+    states: { name: string; colleges: number }[];
+    streams: { name: string; colleges: number }[];
+  }> {
+    const where = { mergedIntoId: null };
+    const [states, streams] = await Promise.all([
+      this.prisma.university.groupBy({
+        by: ['state'],
+        where,
+        _count: { _all: true },
+        orderBy: { state: 'asc' },
+      }),
+      this.prisma.university.groupBy({
+        by: ['stream'],
+        where: { ...where, stream: { not: null } },
+        _count: { _all: true },
+        orderBy: { stream: 'asc' },
+      }),
+    ]);
+    return {
+      states: states
+        .filter((s) => s.state.trim() !== '')
+        .map((s) => ({ name: s.state, colleges: s._count._all })),
+      streams: streams.flatMap((s) =>
+        s.stream ? [{ name: s.stream, colleges: s._count._all }] : [],
+      ),
+    };
+  }
+
+  /** Every course (distinct `Program.name`) offered by an active college that
+   * is still listed (not merged away), A–Z, with how many colleges offer it.
+   * Feeds the admin Universities page's "Course" filter. */
+  async listCourses(): Promise<{ name: string; colleges: number }[]> {
+    const rows = await this.prisma.program.groupBy({
+      by: ['name'],
+      where: { isActive: true, university: { mergedIntoId: null } },
+      _count: { universityId: true },
+      orderBy: { name: 'asc' },
+    });
+    return rows.map((r) => ({ name: r.name, colleges: r._count.universityId }));
   }
 
   /** Slug is derived once at creation and never changes afterward — stable
@@ -613,6 +833,7 @@ export class UniversitiesService {
       key: string;
       state: string;
       universities: (University & {
+        district: string | null;
         programCount: number;
         reviewCount: number;
       })[];
@@ -634,7 +855,10 @@ export class UniversitiesService {
 
     const allIds = grouped.flatMap((g) => g.ids);
     const [universities, programCounts, reviewCounts] = await Promise.all([
-      this.prisma.university.findMany({ where: { id: { in: allIds } } }),
+      this.prisma.university.findMany({
+        where: { id: { in: allIds } },
+        include: UNIVERSITY_DISTRICT_INCLUDE,
+      }),
       this.prisma.program.groupBy({
         by: ['universityId'],
         where: { universityId: { in: allIds } },
@@ -647,7 +871,7 @@ export class UniversitiesService {
       }),
     ]);
 
-    const byId = new Map(universities.map((u) => [u.id, u]));
+    const byId = new Map(universities.map((u) => [u.id, withDistrict(u)]));
     const programCountById = new Map(
       programCounts.map((p) => [p.universityId, p._count._all]),
     );
@@ -660,7 +884,7 @@ export class UniversitiesService {
       state: g.state,
       universities: g.ids
         .map((id) => byId.get(id))
-        .filter((u): u is University => u != null)
+        .filter((u): u is NonNullable<typeof u> => u != null)
         .map((u) => ({
           ...u,
           programCount: programCountById.get(u.id) ?? 0,
@@ -719,12 +943,15 @@ export class UniversitiesService {
     if (!winner || !winner.isActive) {
       throw new NotFoundException(`Active university '${winnerId}' not found`);
     }
+    // A college being merged away is often an INACTIVE one — a college a user
+    // typed under "Not listed here" starts out inactive — so activity is not
+    // required of it. It only must not already have been merged elsewhere.
     const losers = await this.prisma.university.findMany({
-      where: { id: { in: loserIds }, isActive: true },
+      where: { id: { in: loserIds }, mergedIntoId: null },
     });
     if (losers.length !== loserIds.length) {
       throw new NotFoundException(
-        'One or more loserIds are not active universities',
+        'One or more loserIds were not found or are already merged',
       );
     }
 
@@ -791,6 +1018,33 @@ export class UniversitiesService {
           winnerSavedAspirants.add(saved.aspirantId);
           savedMoved += 1;
         }
+      }
+
+      // Specialization suggestions follow the college. (college, degree, name)
+      // is unique, so one the winner already has is dropped instead of moved.
+      const winnerSuggestions = await tx.specializationSuggestion.findMany({
+        where: { universityId: winnerId },
+        select: { degree: true, nameKey: true },
+      });
+      const winnerSuggestionKeys = new Set(
+        winnerSuggestions.map((s) => `${s.degree}|${s.nameKey}`),
+      );
+      const loserSuggestions = await tx.specializationSuggestion.findMany({
+        where: { universityId: { in: loserIds } },
+      });
+      for (const suggestion of loserSuggestions) {
+        const key = `${suggestion.degree}|${suggestion.nameKey}`;
+        if (winnerSuggestionKeys.has(key)) {
+          await tx.specializationSuggestion.delete({
+            where: { id: suggestion.id },
+          });
+          continue;
+        }
+        await tx.specializationSuggestion.update({
+          where: { id: suggestion.id },
+          data: { universityId: winnerId },
+        });
+        winnerSuggestionKeys.add(key);
       }
 
       // No uniqueness constraint on these three — a plain bulk repoint.

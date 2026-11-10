@@ -10,7 +10,9 @@ describe('isCallAvailable (MENTOR-002)', () => {
     expect(
       isCallAvailable({ isMentorAvailable: true, availabilitySetAt: longAgo }),
     ).toBe(true);
-    expect(isCallAvailable({ isMentorAvailable: true, availabilitySetAt: null })).toBe(true);
+    expect(
+      isCallAvailable({ isMentorAvailable: true, availabilitySetAt: null }),
+    ).toBe(true);
   });
 
   it('is false for a null/undefined profile', () => {

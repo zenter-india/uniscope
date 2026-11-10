@@ -21,7 +21,12 @@ export class WishlistService {
     try {
       await this.prisma.savedMentor.create({ data: { aspirantId, mentorId } });
     } catch (err) {
-      if (!(err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002')) {
+      if (
+        !(
+          err instanceof Prisma.PrismaClientKnownRequestError &&
+          err.code === 'P2002'
+        )
+      ) {
         throw err;
       }
       // Already saved — treat as success.
@@ -30,8 +35,13 @@ export class WishlistService {
   }
 
   /** Also idempotent — unsaving something not saved is a no-op. */
-  async unsave(aspirantId: string, mentorId: string): Promise<{ saved: false }> {
-    await this.prisma.savedMentor.deleteMany({ where: { aspirantId, mentorId } });
+  async unsave(
+    aspirantId: string,
+    mentorId: string,
+  ): Promise<{ saved: false }> {
+    await this.prisma.savedMentor.deleteMany({
+      where: { aspirantId, mentorId },
+    });
     return { saved: false };
   }
 
@@ -62,7 +72,10 @@ export class WishlistService {
     );
 
     return results
-      .filter((r): r is PromiseFulfilledResult<MentorResponse> => r.status === 'fulfilled')
+      .filter(
+        (r): r is PromiseFulfilledResult<MentorResponse> =>
+          r.status === 'fulfilled',
+      )
       .map((r) => r.value);
   }
 }

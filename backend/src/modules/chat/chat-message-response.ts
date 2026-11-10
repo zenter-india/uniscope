@@ -8,7 +8,9 @@ export interface ChatMessageResponse {
   createdAt: Date;
 }
 
-export function toChatMessageResponse(message: ChatMessage): ChatMessageResponse {
+export function toChatMessageResponse(
+  message: ChatMessage,
+): ChatMessageResponse {
   return {
     id: message.id,
     channelId: message.channelId,

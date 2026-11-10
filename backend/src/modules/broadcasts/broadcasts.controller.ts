@@ -6,7 +6,10 @@ import { Roles } from '../../auth/decorators/roles.decorator.js';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard.js';
 import { RolesGuard } from '../../auth/guards/roles.guard.js';
 import { BroadcastsService } from './broadcasts.service.js';
-import { BROADCAST_AUDIENCES, CreateBroadcastDto } from './dto/create-broadcast.dto.js';
+import {
+  BROADCAST_AUDIENCES,
+  CreateBroadcastDto,
+} from './dto/create-broadcast.dto.js';
 
 /** ADMIN-only broadcast announcements — fan out one in-app notification
  * (type SYSTEM) + a best-effort push to every active aspirant and/or
@@ -24,7 +27,9 @@ export class BroadcastsController {
 
   @Get('preview')
   preview(@Query('audience') audience?: string) {
-    const a = BROADCAST_AUDIENCES.includes(audience as never) ? (audience as string) : 'ALL';
+    const a = BROADCAST_AUDIENCES.includes(audience as never)
+      ? (audience as string)
+      : 'ALL';
     return this.service.previewCount(a);
   }
 

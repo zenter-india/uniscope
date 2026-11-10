@@ -42,7 +42,8 @@ export class SupabaseUsageService {
   private readonly accessToken = process.env.SUPABASE_ACCESS_TOKEN;
   private readonly projectRef = this.deriveProjectRef();
 
-  private cached: { summary: SupabaseUsageSummary; expiresAt: number } | null = null;
+  private cached: { summary: SupabaseUsageSummary; expiresAt: number } | null =
+    null;
 
   constructor(private readonly prisma: PrismaService) {}
 
@@ -67,26 +68,39 @@ export class SupabaseUsageService {
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       this.logger.warn(`[supabase-usage] db size query failed: ${message}`);
-      return { configured: false, apiRequestCountConfigured: false, error: message };
+      return {
+        configured: false,
+        apiRequestCountConfigured: false,
+        error: message,
+      };
     }
 
     let apiRequestCount24h: number | undefined;
-    const apiRequestCountConfigured = Boolean(this.accessToken && this.projectRef);
+    const apiRequestCountConfigured = Boolean(
+      this.accessToken && this.projectRef,
+    );
     if (apiRequestCountConfigured) {
       try {
         const res = await fetch(
           `${SUPABASE_MANAGEMENT_API_URL}/v1/projects/${this.projectRef}/analytics/endpoints/usage.api-requests-count`,
           { headers: { Authorization: `Bearer ${this.accessToken}` } },
         );
-        const body = (await res.json()) as { result?: { count: number }[]; error?: unknown };
+        const body = (await res.json()) as {
+          result?: { count: number }[];
+          error?: unknown;
+        };
         if (res.ok && body.result) {
           apiRequestCount24h = body.result[0]?.count;
         } else {
-          this.logger.warn(`[supabase-usage] api-requests-count failed: ${JSON.stringify(body.error)}`);
+          this.logger.warn(
+            `[supabase-usage] api-requests-count failed: ${JSON.stringify(body.error)}`,
+          );
         }
       } catch (err) {
         const message = err instanceof Error ? err.message : String(err);
-        this.logger.warn(`[supabase-usage] api-requests-count request failed: ${message}`);
+        this.logger.warn(
+          `[supabase-usage] api-requests-count request failed: ${message}`,
+        );
       }
     }
 

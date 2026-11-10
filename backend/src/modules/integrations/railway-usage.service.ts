@@ -46,7 +46,11 @@ interface CustomerBilling {
   trialDaysRemaining: number;
   isPrepaying: boolean;
   state: string;
-  usageLimit: { softLimit: number | null; hardLimit: number | null; isOverLimit: boolean } | null;
+  usageLimit: {
+    softLimit: number | null;
+    hardLimit: number | null;
+    isOverLimit: boolean;
+  } | null;
 }
 
 export interface RailwayUsageSummary {
@@ -99,7 +103,8 @@ export class RailwayUsageService {
   private readonly projectId = process.env.RAILWAY_PROJECT_ID;
   private readonly workspaceId = process.env.RAILWAY_WORKSPACE_ID;
 
-  private cached: { summary: RailwayUsageSummary; expiresAt: number } | null = null;
+  private cached: { summary: RailwayUsageSummary; expiresAt: number } | null =
+    null;
 
   async getUsageSummary(): Promise<RailwayUsageSummary> {
     if (!this.token || !this.projectId || !this.workspaceId) {
@@ -146,7 +151,8 @@ export class RailwayUsageService {
       };
 
       if (body.errors?.length || !body.data) {
-        const message = body.errors?.[0]?.message ?? 'Unknown Railway API error';
+        const message =
+          body.errors?.[0]?.message ?? 'Unknown Railway API error';
         this.logger.warn(`[railway-usage] query failed: ${message}`);
         return { configured: true, error: message };
       }
@@ -158,7 +164,8 @@ export class RailwayUsageService {
         services: (body.data.project?.services.edges ?? []).map((e) => ({
           id: e.node.id,
           name: e.node.name,
-          latestDeploymentStatus: e.node.deployments.edges[0]?.node.status ?? null,
+          latestDeploymentStatus:
+            e.node.deployments.edges[0]?.node.status ?? null,
         })),
         billing: body.data.workspace?.customer ?? undefined,
         fetchedAt: new Date().toISOString(),

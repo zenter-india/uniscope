@@ -31,7 +31,11 @@ import { ListUsersDto } from './dto/list-users.dto.js';
 import { SetBannedDto } from './dto/set-banned.dto.js';
 import { UpdateProfileDto } from './dto/update-profile.dto.js';
 import { UpdateRoleDto } from './dto/update-role.dto.js';
-import { toAdminUserDetail, toPublicUser } from './user-response.js';
+import {
+  toAdminListUser,
+  toAdminUserDetail,
+  toPublicUser,
+} from './user-response.js';
 import { UsersService } from './users.service.js';
 
 @UseGuards(JwtAuthGuard)
@@ -54,7 +58,10 @@ export class UsersController {
       return { available: false };
     }
     return {
-      available: await this.usersService.isDisplayNameAvailable(trimmed, user.sub),
+      available: await this.usersService.isDisplayNameAvailable(
+        trimmed,
+        user.sub,
+      ),
     };
   }
 
@@ -106,15 +113,14 @@ export class UsersController {
    * catalogue in AvatarService before anything is rendered or stored. */
   @Patch('me/avatar')
   @HttpCode(HttpStatus.OK)
-  async updateAvatar(
-    @CurrentUser() user: JwtPayload,
-    @Body() body: unknown,
-  ) {
+  async updateAvatar(@CurrentUser() user: JwtPayload, @Body() body: unknown) {
     const config = await this.usersService.updateAvatar(user.sub, body);
     const found = await this.usersService.findById(user.sub);
     return {
       config,
-      user: found ? toPublicUser(found, this.usersService.avatarUrlFor(found)) : null,
+      user: found
+        ? toPublicUser(found, this.usersService.avatarUrlFor(found))
+        : null,
     };
   }
 
@@ -140,7 +146,11 @@ export class UsersController {
     @CurrentUser() user: JwtPayload,
     @Body() dto: StorePushTokenDto,
   ) {
-    await this.notificationsService.registerPushToken(user.sub, dto.token, dto.platform);
+    await this.notificationsService.registerPushToken(
+      user.sub,
+      dto.token,
+      dto.platform,
+    );
   }
 
   /** Unbind a device token from the caller (logout). Scoped to the caller's
@@ -160,7 +170,17 @@ export class UsersController {
   @Get()
   async findAll(@Query() query: ListUsersDto) {
     const { data, nextCursor } = await this.usersService.findAllAdmin(query);
-    return { data: data.map((u) => toPublicUser(u)), nextCursor };
+    return { data: data.map((u) => toAdminListUser(u)), nextCursor };
+  }
+
+  /** The specializations / degrees / streams / states that exist among users,
+   * for the admin Users filters. Declared before the `:id` routes so
+   * `filter-options` isn't taken as an id. */
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @Get('filter-options')
+  filterOptions() {
+    return this.usersService.listFilterOptions();
   }
 
   /** ADMIN bulk ban/unban — see UsersService.bulkSetBanned. Declared before
@@ -178,8 +198,14 @@ export class UsersController {
   @Roles(UserRole.ADMIN)
   @Get(':id')
   async findOneAdmin(@Param('id') id: string) {
-    const { user, activity } = await this.usersService.findDetailAdmin(id);
-    return toAdminUserDetail(user, activity, this.usersService.avatarUrlFor(user));
+    const { user, activity, leadPhone } =
+      await this.usersService.findDetailAdmin(id);
+    return toAdminUserDetail(
+      user,
+      activity,
+      this.usersService.avatarUrlFor(user),
+      leadPhone,
+    );
   }
 
   @UseGuards(RolesGuard)
@@ -187,8 +213,14 @@ export class UsersController {
   @Patch(':id')
   @HttpCode(HttpStatus.OK)
   async adminUpdate(@Param('id') id: string, @Body() dto: AdminUpdateUserDto) {
-    const { user, activity } = await this.usersService.adminUpdateUser(id, dto);
-    return toAdminUserDetail(user, activity, this.usersService.avatarUrlFor(user));
+    const { user, activity, leadPhone } =
+      await this.usersService.adminUpdateUser(id, dto);
+    return toAdminUserDetail(
+      user,
+      activity,
+      this.usersService.avatarUrlFor(user),
+      leadPhone,
+    );
   }
 
   @UseGuards(RolesGuard)

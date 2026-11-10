@@ -1,4 +1,9 @@
-import { University, User, UserProfile, VerificationStatus } from '@prisma/client';
+import {
+  University,
+  User,
+  UserProfile,
+  VerificationStatus,
+} from '@prisma/client';
 import { isCallAvailable } from './availability.js';
 
 /**
@@ -96,9 +101,7 @@ export interface MentorTrackRecord {
 }
 
 type MentorRow = User & {
-  profile:
-    | (UserProfile & { university: University | null })
-    | null;
+  profile: (UserProfile & { university: University | null }) | null;
 };
 
 /** Callers must filter (active, not banned, correct role) at the query
@@ -128,7 +131,9 @@ export function toMentorResponse(
     bio: profile?.bio ?? null,
     gender: profile?.gender ?? null,
     languages: profile?.languages ?? [],
-    yearOfStudy: profile?.yearInfoPrivate ? null : (profile?.yearOfStudy ?? null),
+    yearOfStudy: profile?.yearInfoPrivate
+      ? null
+      : (profile?.yearOfStudy ?? null),
     graduationYear: profile?.yearInfoPrivate
       ? null
       : (profile?.graduationYear ?? null),

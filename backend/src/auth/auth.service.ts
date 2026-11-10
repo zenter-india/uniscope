@@ -69,16 +69,22 @@ export class AuthService {
         this.otpProvider.normalisePhonePublic(phone),
       );
     } else {
-      phoneHash = createHash('sha256').update(normalisePhone(phone)).digest('hex');
+      phoneHash = createHash('sha256')
+        .update(normalisePhone(phone))
+        .digest('hex');
     }
 
     const { user, isNewUser } =
       await this.usersService.findOrCreateByPhoneHash(phoneHash);
 
-    const { accessToken, refreshToken } = await this.tokenService.issueTokenPair(
-      user.id,
-      user.role,
-    );
+    // Keep the number (encrypted) so an admin can see it on the profile. Only
+    // writes while it is still empty; never blocks the login.
+    if (!user.phoneEncrypted) {
+      await this.usersService.rememberPhone(user.id, normalisePhone(phone));
+    }
+
+    const { accessToken, refreshToken } =
+      await this.tokenService.issueTokenPair(user.id, user.role);
 
     return {
       accessToken,

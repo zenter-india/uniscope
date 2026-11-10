@@ -9,6 +9,8 @@ describe('toMentorResponse (AUTH-007)', () => {
   const baseUser: User = {
     id: 'm1',
     phoneHash: 'super-secret-phone-hash',
+    phoneEncrypted: null,
+    uniqueId: null,
     displayName: 'Anon Mentor',
     role: 'MENTOR',
     verificationStatus: 'VERIFIED',

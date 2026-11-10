@@ -1,5 +1,5 @@
 import { Type } from 'class-transformer';
-import { IsInt, IsOptional, IsString, Max, Min } from 'class-validator';
+import { IsIn, IsInt, IsOptional, IsString, Max, Min } from 'class-validator';
 
 /**
  * Query parameters for GET /universities.
@@ -43,15 +43,29 @@ export class ListUniversitiesDto {
   @IsString()
   browse?: string;
 
-  /** Admin list only: `sort=name` orders A–Z instead of newest-first. */
+  /** Admin list only: `sort=name` orders A–Z, `sort=name_desc` Z–A; anything
+   * else is newest-first. */
   @IsOptional()
   @IsString()
   sort?: string;
+
+  /** Admin list only: keep colleges that offer this course (an exact
+   * `Program.name`, e.g. "MD/MS", "DNB", "B.Tech"). */
+  @IsOptional()
+  @IsString()
+  course?: string;
 
   /** Admin list only: `activeOnly=true` drops deactivated colleges. */
   @IsOptional()
   @IsString()
   activeOnly?: string;
+
+  /** Admin list only: `active` or `inactive` keeps just those colleges
+   * (inactive = hidden from the app, e.g. one a user typed and no admin has
+   * published yet). Anything else lists both. */
+  @IsOptional()
+  @IsIn(['active', 'inactive'])
+  status?: 'active' | 'inactive';
 
   @IsOptional()
   @Type(() => Number)

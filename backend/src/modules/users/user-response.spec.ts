@@ -9,6 +9,8 @@ describe('toPublicUser (AUTH-007)', () => {
   const baseUser: User = {
     id: 'u1',
     phoneHash: 'super-secret-phone-hash',
+    phoneEncrypted: null,
+    uniqueId: null,
     displayName: 'Test User',
     role: 'ASPIRANT',
     verificationStatus: 'VERIFIED',

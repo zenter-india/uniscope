@@ -1,4 +1,10 @@
-import { IsIn, IsOptional, IsString, MaxLength, MinLength } from 'class-validator';
+import {
+  IsIn,
+  IsOptional,
+  IsString,
+  MaxLength,
+  MinLength,
+} from 'class-validator';
 
 export const BROADCAST_AUDIENCES = ['ALL', 'ASPIRANT', 'MENTOR'] as const;
 export type BroadcastAudience = (typeof BROADCAST_AUDIENCES)[number];

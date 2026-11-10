@@ -51,7 +51,7 @@ export class SettingsService {
         default: def.default,
         min: def.min,
         max: def.max,
-        value: isDefault ? def.default : parsed!,
+        value: isDefault ? def.default : parsed,
         isDefault,
       };
     });

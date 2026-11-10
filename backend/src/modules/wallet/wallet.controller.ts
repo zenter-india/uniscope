@@ -36,7 +36,10 @@ export class WalletController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN)
   @Get('admin/:userId/ledger')
-  getLedgerAdmin(@Param('userId') userId: string, @Query() query: ListLedgerDto) {
+  getLedgerAdmin(
+    @Param('userId') userId: string,
+    @Query() query: ListLedgerDto,
+  ) {
     return this.walletService.getLedgerAdmin(userId, query);
   }
 
@@ -88,7 +91,10 @@ export class WalletController {
    */
   @UseGuards(JwtAuthGuard)
   @Post('topup/apple/verify')
-  verifyAppleTopup(@CurrentUser() user: JwtPayload, @Body() dto: VerifyAppleTopupDto) {
+  verifyAppleTopup(
+    @CurrentUser() user: JwtPayload,
+    @Body() dto: VerifyAppleTopupDto,
+  ) {
     return this.walletService.verifyAndCreditAppleTopup(user.sub, dto);
   }
 
@@ -102,12 +108,15 @@ export class WalletController {
    */
   @Post('topup/apple/notifications')
   @HttpCode(HttpStatus.OK)
-  async handleAppleNotification(@Body('signedPayload') signedPayload: string | undefined) {
+  async handleAppleNotification(
+    @Body('signedPayload') signedPayload: string | undefined,
+  ) {
     if (!signedPayload) {
       throw new BadRequestException('Missing signedPayload');
     }
 
-    const payload = await this.walletService.verifyAppleServerNotification(signedPayload);
+    const payload =
+      await this.walletService.verifyAppleServerNotification(signedPayload);
     if (!payload) {
       throw new BadRequestException('Invalid Apple notification signature');
     }
@@ -131,14 +140,19 @@ export class WalletController {
       throw new BadRequestException('Missing raw body');
     }
 
-    const valid = this.walletService.verifyWebhookSignature(req.rawBody, signature);
+    const valid = this.walletService.verifyWebhookSignature(
+      req.rawBody,
+      signature,
+    );
     if (!valid) {
       throw new BadRequestException('Invalid webhook signature');
     }
 
     const event = JSON.parse(req.rawBody.toString('utf8')) as {
       event: string;
-      payload: { payment: { entity: { id: string; order_id: string; amount: number } } };
+      payload: {
+        payment: { entity: { id: string; order_id: string; amount: number } };
+      };
     };
 
     if (event.event === 'payment.captured') {
