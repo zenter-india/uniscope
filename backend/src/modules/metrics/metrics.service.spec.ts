@@ -1,3 +1,7 @@
+/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-return --
+ * This spec inspects the arguments a jest mock was called with (Prisma
+ * where/orderBy trees). jest types those as `any`; typing every nested level
+ * would only restate the shape the assertions already check. */
 import 'reflect-metadata';
 import { BadRequestException } from '@nestjs/common';
 import { plainToInstance } from 'class-transformer';
@@ -82,9 +86,9 @@ describe('MetricsService.getOverview', () => {
     expect(m.revenue.previous.payoutsPaidMinor).toBe(7000);
     // The two ledger reads cover consecutive windows: previous ends where
     // the current one starts.
-    const [now, prev] = (prisma.ledgerEntry.groupBy as jest.Mock).mock.calls.map(
-      (c) => c[0].where.createdAt,
-    );
+    const [now, prev] = (
+      prisma.ledgerEntry.groupBy as jest.Mock
+    ).mock.calls.map((c) => c[0].where.createdAt);
     expect(prev.lt.getTime()).toBe(now.gte.getTime());
   });
 });
@@ -142,20 +146,18 @@ describe('MetricsService.getOverviewForDates', () => {
 
   it('treats a single day as a window with no per-day chart', async () => {
     const day = daysAgo(2);
-    const m = await new MetricsService(prismaWithNewUsers(0)).getOverviewForDates(
-      day,
-      day,
-    );
+    const m = await new MetricsService(
+      prismaWithNewUsers(0),
+    ).getOverviewForDates(day, day);
     expect(m.rangeDays).toBe(1);
     expect(m.range).toEqual({ from: day, to: day });
     expect(m.signups.series).toEqual([]);
   });
 
   it('cuts a "to" in the future back to today', async () => {
-    const m = await new MetricsService(prismaWithNewUsers(0)).getOverviewForDates(
-      daysAgo(2),
-      daysAgo(-5),
-    );
+    const m = await new MetricsService(
+      prismaWithNewUsers(0),
+    ).getOverviewForDates(daysAgo(2), daysAgo(-5));
     expect(m.range!.to).toBe(daysAgo(0));
     expect(m.rangeDays).toBe(3);
   });

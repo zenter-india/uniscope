@@ -10,7 +10,9 @@ export class MetricsQueryDto {
 
   /** Custom range: first day, `YYYY-MM-DD` (a UTC day). Send with `to`. */
   @IsOptional()
-  @Matches(/^\d{4}-\d{2}-\d{2}$/, { message: 'from must be written YYYY-MM-DD' })
+  @Matches(/^\d{4}-\d{2}-\d{2}$/, {
+    message: 'from must be written YYYY-MM-DD',
+  })
   from?: string;
 
   /** Custom range: last day (included), `YYYY-MM-DD`. Send with `from`. */

@@ -142,8 +142,7 @@ export class MetricsService {
     if (lastDay < start) {
       throw new BadRequestException('"to" cannot be before "from".');
     }
-    const days =
-      Math.round((lastDay.getTime() - start.getTime()) / DAY_MS) + 1;
+    const days = Math.round((lastDay.getTime() - start.getTime()) / DAY_MS) + 1;
     if (days > MAX_CUSTOM_DAYS) {
       throw new BadRequestException(
         `Pick a range of at most ${MAX_CUSTOM_DAYS} days.`,
