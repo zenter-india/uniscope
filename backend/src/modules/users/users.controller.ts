@@ -163,6 +163,16 @@ export class UsersController {
     return { data: data.map((u) => toAdminListUser(u)), nextCursor };
   }
 
+  /** The specializations / degrees / streams / states that exist among users,
+   * for the admin Users filters. Declared before the `:id` routes so
+   * `filter-options` isn't taken as an id. */
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @Get('filter-options')
+  filterOptions() {
+    return this.usersService.listFilterOptions();
+  }
+
   /** ADMIN bulk ban/unban — see UsersService.bulkSetBanned. Declared before
    * the `:id` routes so `/users/bulk-ban` isn't swallowed as `:id ===
    * 'bulk-ban'`. */
