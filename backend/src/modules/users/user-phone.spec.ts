@@ -1,4 +1,11 @@
-import { decryptField, encryptField } from '../../common/helpers/profile-encryption.helper';
+/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-argument --
+ * This spec inspects the arguments a jest mock was called with (Prisma
+ * where/orderBy trees). jest types those as `any`; typing every nested level
+ * would only restate the shape the assertions already check. */
+import {
+  decryptField,
+  encryptField,
+} from '../../common/helpers/profile-encryption.helper';
 import { toAdminUserDetail, toPublicUser } from './user-response';
 import { UsersService } from './users.service';
 
@@ -35,7 +42,9 @@ describe('UsersService.rememberPhone', () => {
     const updateMany = jest.fn().mockRejectedValue(new Error('db down'));
     const { svc, logger } = serviceWith({ user: { updateMany } });
 
-    await expect(svc.rememberPhone('u1', '+919876543210')).resolves.toBeUndefined();
+    await expect(
+      svc.rememberPhone('u1', '+919876543210'),
+    ).resolves.toBeUndefined();
     expect(logger.warn).toHaveBeenCalled();
   });
 });
@@ -59,20 +68,32 @@ const baseUser = {
 
 describe('toAdminUserDetail — mobile number', () => {
   const detail = (user: Record<string, unknown>, leadPhone?: string | null) =>
-    toAdminUserDetail({ ...baseUser, ...user } as never, {} as never, null, leadPhone);
+    toAdminUserDetail(
+      { ...baseUser, ...user } as never,
+      {} as never,
+      null,
+      leadPhone,
+    );
 
   it('shows the decrypted number stored at login', () => {
-    const phone = detail({ phoneEncrypted: encryptField('+919876543210') }).phone;
+    const phone = detail({
+      phoneEncrypted: encryptField('+919876543210'),
+    }).phone;
     expect(phone).toBe('+919876543210');
   });
 
   it('prefers the stored number over the website-form number', () => {
-    const phone = detail({ phoneEncrypted: encryptField('+919876543210') }, '8888888888').phone;
+    const phone = detail(
+      { phoneEncrypted: encryptField('+919876543210') },
+      '8888888888',
+    ).phone;
     expect(phone).toBe('+919876543210');
   });
 
   it('falls back to the website-form number until the user logs in', () => {
-    expect(detail({ phoneEncrypted: null }, '8888888888').phone).toBe('8888888888');
+    expect(detail({ phoneEncrypted: null }, '8888888888').phone).toBe(
+      '8888888888',
+    );
   });
 
   it('is null when neither exists, or the stored value cannot be decrypted', () => {

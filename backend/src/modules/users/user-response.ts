@@ -271,7 +271,7 @@ export function toAdminListUser(
 ): AdminListUser {
   const { profile, ...rest } = user;
   return {
-    ...toPublicUser(rest as UserWithProfile),
+    ...toPublicUser(rest),
     specialization: profile?.specialization?.trim() || null,
   };
 }

@@ -1,5 +1,8 @@
 import { IsIn, IsOptional, IsString, Length, Matches } from 'class-validator';
-import { DEGREE_NAME_MESSAGE, DEGREE_NAME_PATTERN } from './submit-custom-degree.dto.js';
+import {
+  DEGREE_NAME_MESSAGE,
+  DEGREE_NAME_PATTERN,
+} from './submit-custom-degree.dto.js';
 
 export class ReviewCustomDegreeDto {
   @IsIn(['PENDING', 'APPROVED', 'REJECTED'])

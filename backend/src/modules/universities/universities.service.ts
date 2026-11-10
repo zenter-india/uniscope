@@ -16,7 +16,10 @@ import { ListCuratedUniversitiesDto } from './dto/list-curated-universities.dto.
 import { ListUniversitiesDto } from './dto/list-universities.dto.js';
 import { UpdateUniversityDto } from './dto/update-university.dto.js';
 import { UploadUniversityPhotoDto } from './dto/upload-university-photo.dto.js';
-import { educationLevel, type EducationLevel } from './college-people.helper.js';
+import {
+  educationLevel,
+  type EducationLevel,
+} from './college-people.helper.js';
 
 const DEFAULT_LIMIT = 20;
 const MAX_LIMIT = 50;
@@ -481,9 +484,7 @@ export class UniversitiesService {
   }
 
   /** Admin-only — includes inactive universities, unlike the public list. */
-  async findAllAdmin(
-    query: ListUniversitiesDto,
-  ): Promise<{
+  async findAllAdmin(query: ListUniversitiesDto): Promise<{
     data: Array<University & { district: string | null }>;
     nextCursor: string | null;
   }> {
@@ -572,7 +573,10 @@ export class UniversitiesService {
       college = await this.prisma.university.findUnique({
         where: { id: collegeId },
         include: {
-          programs: { where: { isActive: true }, select: { description: true } },
+          programs: {
+            where: { isActive: true },
+            select: { description: true },
+          },
         },
       });
       if (!college) throw new NotFoundException(`College '${id}' not found`);
@@ -598,7 +602,11 @@ export class UniversitiesService {
     } as const;
     const peopleOf = (role: UserRole) =>
       this.prisma.user.findMany({
-        where: { role, deletedAt: null, profile: { universityId: college!.id } },
+        where: {
+          role,
+          deletedAt: null,
+          profile: { universityId: college.id },
+        },
         select,
         orderBy: { displayName: 'asc' },
         take: MAX_COLLEGE_PEOPLE + 1,
@@ -629,7 +637,7 @@ export class UniversitiesService {
         city: college.city,
         district:
           college.programs
-            .map((p) => cleanDistrict(p.description, college!.state))
+            .map((p) => cleanDistrict(p.description, college.state))
             .find((d) => d !== null) ?? null,
         stream: college.stream,
         isActive: college.isActive,

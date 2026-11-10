@@ -18,7 +18,8 @@ const baseUser = {
 };
 
 describe('toAdminListUser — the Users list row', () => {
-  const row = (profile: unknown) => toAdminListUser({ ...baseUser, profile } as never);
+  const row = (profile: unknown) =>
+    toAdminListUser({ ...baseUser, profile } as never);
 
   it("carries the person's own specialization, not their UG/PG level", () => {
     expect(row({ specialization: 'Community Medicine' }).specialization).toBe(
@@ -45,9 +46,20 @@ describe('toAdminListUser — the Users list row', () => {
 
   it('never leaks the secrets or any other profile field into the list', () => {
     const json = JSON.stringify(
-      row({ specialization: 'Anatomy', upiIdEncrypted: 'x', bio: 'private bio' }),
+      row({
+        specialization: 'Anatomy',
+        upiIdEncrypted: 'x',
+        bio: 'private bio',
+      }),
     );
-    for (const secret of ['phoneHash', 'phoneEncrypted', 'refreshTokenHash', 'upiId', 'private bio', 'bio']) {
+    for (const secret of [
+      'phoneHash',
+      'phoneEncrypted',
+      'refreshTokenHash',
+      'upiId',
+      'private bio',
+      'bio',
+    ]) {
       expect(json).not.toContain(secret);
     }
   });

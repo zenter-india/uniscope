@@ -1,4 +1,12 @@
-import { BadRequestException, ConflictException, NotFoundException } from '@nestjs/common';
+/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access --
+ * This spec inspects the arguments a jest mock was called with (Prisma
+ * where/orderBy trees). jest types those as `any`; typing every nested level
+ * would only restate the shape the assertions already check. */
+import {
+  BadRequestException,
+  ConflictException,
+  NotFoundException,
+} from '@nestjs/common';
 import { CustomDegreesService, tidyDegreeName } from './custom-degrees.service';
 
 function makeService(prisma: Record<string, unknown>) {
@@ -19,7 +27,10 @@ describe('CustomDegreesService.submit', () => {
     const upsert = jest.fn().mockResolvedValue({ status: 'PENDING' });
     const svc = makeService({ customDegree: { upsert } });
 
-    const res = await svc.submit('u1', { stream: 'Medical', name: '  Optometry  ' });
+    const res = await svc.submit('u1', {
+      stream: 'Medical',
+      name: '  Optometry  ',
+    });
 
     expect(res).toEqual({ status: 'PENDING' });
     expect(upsert).toHaveBeenCalledWith({
@@ -37,9 +48,9 @@ describe('CustomDegreesService.submit', () => {
   it('rejects the catch-all names', async () => {
     const upsert = jest.fn();
     const svc = makeService({ customDegree: { upsert } });
-    await expect(svc.submit('u1', { stream: 'Law', name: ' Others ' })).rejects.toBeInstanceOf(
-      BadRequestException,
-    );
+    await expect(
+      svc.submit('u1', { stream: 'Law', name: ' Others ' }),
+    ).rejects.toBeInstanceOf(BadRequestException);
     expect(upsert).not.toHaveBeenCalled();
   });
 });
@@ -57,10 +68,12 @@ describe('CustomDegreesService.review', () => {
   };
 
   it('404s for an unknown id', async () => {
-    const svc = makeService({ customDegree: { findUnique: jest.fn().mockResolvedValue(null) } });
-    await expect(svc.review('x', 'admin', { status: 'APPROVED' })).rejects.toBeInstanceOf(
-      NotFoundException,
-    );
+    const svc = makeService({
+      customDegree: { findUnique: jest.fn().mockResolvedValue(null) },
+    });
+    await expect(
+      svc.review('x', 'admin', { status: 'APPROVED' }),
+    ).rejects.toBeInstanceOf(NotFoundException);
   });
 
   it('approves with a corrected spelling and stamps the reviewer', async () => {
@@ -68,10 +81,15 @@ describe('CustomDegreesService.review', () => {
       .fn()
       .mockResolvedValueOnce(row) // the row being reviewed
       .mockResolvedValueOnce(null); // no clash for the new key
-    const update = jest.fn().mockImplementation(({ data }) => Promise.resolve({ ...row, ...data }));
+    const update = jest
+      .fn()
+      .mockImplementation(({ data }) => Promise.resolve({ ...row, ...data }));
     const svc = makeService({ customDegree: { findUnique, update } });
 
-    const res = await svc.review('d1', 'admin1', { status: 'APPROVED', name: 'Optometry (B.Optom)' });
+    const res = await svc.review('d1', 'admin1', {
+      status: 'APPROVED',
+      name: 'Optometry (B.Optom)',
+    });
 
     expect(res.name).toBe('Optometry (B.Optom)');
     expect(res.status).toBe('APPROVED');
@@ -85,15 +103,24 @@ describe('CustomDegreesService.review', () => {
     const findUnique = jest
       .fn()
       .mockResolvedValueOnce(row)
-      .mockResolvedValueOnce({ ...row, id: 'd2', name: 'B.Optom', nameKey: 'b.optom' });
-    const svc = makeService({ customDegree: { findUnique, update: jest.fn() } });
+      .mockResolvedValueOnce({
+        ...row,
+        id: 'd2',
+        name: 'B.Optom',
+        nameKey: 'b.optom',
+      });
+    const svc = makeService({
+      customDegree: { findUnique, update: jest.fn() },
+    });
     await expect(
       svc.review('d1', 'admin1', { status: 'APPROVED', name: 'B.Optom' }),
     ).rejects.toBeInstanceOf(ConflictException);
   });
 
   it('un-reviewing (back to PENDING) clears the reviewer', async () => {
-    const update = jest.fn().mockImplementation(({ data }) => Promise.resolve({ ...row, ...data }));
+    const update = jest
+      .fn()
+      .mockImplementation(({ data }) => Promise.resolve({ ...row, ...data }));
     const svc = makeService({
       customDegree: { findUnique: jest.fn().mockResolvedValue(row), update },
     });

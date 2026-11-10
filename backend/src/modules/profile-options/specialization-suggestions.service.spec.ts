@@ -1,3 +1,7 @@
+/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call --
+ * This spec inspects the arguments a jest mock was called with (Prisma
+ * where/orderBy trees). jest types those as `any`; typing every nested level
+ * would only restate the shape the assertions already check. */
 import {
   BadRequestException,
   ConflictException,
@@ -36,7 +40,13 @@ function makePrisma(over: Record<string, unknown> = {}) {
           degree: 'MD/MS',
           createdAt: new Date(),
           submissionCount: 1,
-          university: { id: 'c1', name: 'X', state: 'TN', city: null, isActive: true },
+          university: {
+            id: 'c1',
+            name: 'X',
+            state: 'TN',
+            city: null,
+            isActive: true,
+          },
           ...data,
         }),
       ),
@@ -51,11 +61,17 @@ const svc = (prisma: unknown) =>
   new SpecializationSuggestionsService(prisma as never);
 
 describe('SpecializationSuggestionsService.submit', () => {
-  const dto = { universityId: 'c1', degree: 'md/ms', name: '  Community   Medicine ' };
+  const dto = {
+    universityId: 'c1',
+    degree: 'md/ms',
+    name: '  Community   Medicine ',
+  };
 
-  it('queues it for the mentor\'s college under the upper-cased degree key', async () => {
+  it("queues it for the mentor's college under the upper-cased degree key", async () => {
     const prisma = makePrisma();
-    await expect(svc(prisma).submit('u1', dto)).resolves.toEqual({ status: 'PENDING' });
+    await expect(svc(prisma).submit('u1', dto)).resolves.toEqual({
+      status: 'PENDING',
+    });
 
     expect(prisma.specializationSuggestion.upsert).toHaveBeenCalledWith({
       where: {
@@ -80,7 +96,9 @@ describe('SpecializationSuggestionsService.submit', () => {
     const prisma = makePrisma({
       user: { findUnique: jest.fn().mockResolvedValue({ role: 'ASPIRANT' }) },
     });
-    await expect(svc(prisma).submit('u1', dto)).rejects.toBeInstanceOf(ForbiddenException);
+    await expect(svc(prisma).submit('u1', dto)).rejects.toBeInstanceOf(
+      ForbiddenException,
+    );
   });
 
   it('does nothing when the college already lists it (any casing)', async () => {
@@ -100,9 +118,10 @@ describe('SpecializationSuggestionsService.submit', () => {
       .mockResolvedValueOnce(college({ mergedIntoId: 'winner' }))
       .mockResolvedValueOnce(college());
     await svc(prisma).submit('u1', dto);
-    expect(prisma.specializationSuggestion.upsert.mock.calls[0][0].create.universityId).toBe(
-      'winner',
-    );
+    expect(
+      prisma.specializationSuggestion.upsert.mock.calls[0][0].create
+        .universityId,
+    ).toBe('winner');
   });
 
   it('rejects the catch-all name and a user with too many pending', async () => {
@@ -112,7 +131,9 @@ describe('SpecializationSuggestionsService.submit', () => {
 
     const prisma = makePrisma();
     prisma.specializationSuggestion.count.mockResolvedValue(25);
-    await expect(svc(prisma).submit('u1', dto)).rejects.toBeInstanceOf(BadRequestException);
+    await expect(svc(prisma).submit('u1', dto)).rejects.toBeInstanceOf(
+      BadRequestException,
+    );
   });
 });
 
@@ -134,7 +155,7 @@ describe('SpecializationSuggestionsService.review — approve', () => {
     return prisma;
   }
 
-  it('creates the college\'s program for the degree and publishes a new college', async () => {
+  it("creates the college's program for the degree and publishes a new college", async () => {
     const prisma = approvePrisma(null, college({ isActive: false }));
     const res = await svc(prisma).review('s1', 'admin1', {
       status: 'APPROVED',
@@ -146,35 +167,51 @@ describe('SpecializationSuggestionsService.review — approve', () => {
       data: { isActive: true },
     });
     expect(prisma.program.create).toHaveBeenCalledWith({
-      data: { universityId: 'c1', name: 'MD/MS', specializations: ['Community Medicine'] },
+      data: {
+        universityId: 'c1',
+        name: 'MD/MS',
+        specializations: ['Community Medicine'],
+      },
     });
     expect(res.collegeActivated).toBe(true);
     expect(res.status).toBe('APPROVED');
     expect(res.name).toBe('Community Medicine');
   });
 
-  it('adds it to the college\'s existing list without duplicating', async () => {
+  it("adds it to the college's existing list without duplicating", async () => {
     const prisma = approvePrisma({ id: 'p1', specializations: ['Anatomy'] });
-    const res = await svc(prisma).review('s1', 'admin1', { status: 'APPROVED' });
+    const res = await svc(prisma).review('s1', 'admin1', {
+      status: 'APPROVED',
+    });
 
     expect(prisma.program.update).toHaveBeenCalledWith({
       where: { id: 'p1' },
-      data: { specializations: ['Anatomy', 'community medicine'], isActive: true },
+      data: {
+        specializations: ['Anatomy', 'community medicine'],
+        isActive: true,
+      },
     });
     expect(prisma.university.update).not.toHaveBeenCalled();
     expect(res.collegeActivated).toBe(false);
 
-    const again = approvePrisma({ id: 'p1', specializations: ['Community Medicine'] });
+    const again = approvePrisma({
+      id: 'p1',
+      specializations: ['Community Medicine'],
+    });
     await svc(again).review('s1', 'admin1', { status: 'APPROVED' });
     expect(again.program.update).not.toHaveBeenCalled();
   });
 
   it('maps onto the surviving college when the suggested one was merged away', async () => {
     const prisma = approvePrisma(null);
-    prisma.university.findUnique.mockResolvedValueOnce(college({ mergedIntoId: 'winner' }));
+    prisma.university.findUnique.mockResolvedValueOnce(
+      college({ mergedIntoId: 'winner' }),
+    );
     prisma.university.findUnique.mockResolvedValueOnce(college());
     await svc(prisma).review('s1', 'admin1', { status: 'APPROVED' });
-    expect(prisma.program.create.mock.calls[0][0].data.universityId).toBe('winner');
+    expect(prisma.program.create.mock.calls[0][0].data.universityId).toBe(
+      'winner',
+    );
   });
 
   it('409s when a corrected spelling clashes with another suggestion', async () => {
@@ -183,7 +220,10 @@ describe('SpecializationSuggestionsService.review — approve', () => {
       .mockResolvedValueOnce(pendingRow)
       .mockResolvedValueOnce({ id: 's2', name: 'Anatomy' });
     await expect(
-      svc(prisma).review('s1', 'admin1', { status: 'APPROVED', name: 'Anatomy' }),
+      svc(prisma).review('s1', 'admin1', {
+        status: 'APPROVED',
+        name: 'Anatomy',
+      }),
     ).rejects.toBeInstanceOf(ConflictException);
   });
 

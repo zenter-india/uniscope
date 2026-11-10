@@ -1,3 +1,7 @@
+/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-return --
+ * This spec inspects the arguments a jest mock was called with (Prisma
+ * where/orderBy trees). jest types those as `any`; typing every nested level
+ * would only restate the shape the assertions already check. */
 import { UniversitiesService } from './universities.service';
 
 function makeService(prisma: Record<string, unknown>) {
@@ -12,7 +16,9 @@ describe('UniversitiesService.findAllAdmin — course filter + A–Z sort', () =
     await svc.findAllAdmin({ course: 'MD/MS', sort: 'name' });
 
     const args = findMany.mock.calls[0][0];
-    expect(args.where.programs).toEqual({ some: { isActive: true, name: 'MD/MS' } });
+    expect(args.where.programs).toEqual({
+      some: { isActive: true, name: 'MD/MS' },
+    });
     expect(args.where.mergedIntoId).toBeNull();
     expect(args.orderBy).toEqual([{ name: 'asc' }, { id: 'asc' }]);
   });
@@ -22,10 +28,16 @@ describe('UniversitiesService.findAllAdmin — course filter + A–Z sort', () =
     const svc = makeService({ university: { findMany } });
 
     await svc.findAllAdmin({ sort: 'name_desc' });
-    expect(findMany.mock.calls[0][0].orderBy).toEqual([{ name: 'desc' }, { id: 'asc' }]);
+    expect(findMany.mock.calls[0][0].orderBy).toEqual([
+      { name: 'desc' },
+      { id: 'asc' },
+    ]);
 
     await svc.findAllAdmin({});
-    expect(findMany.mock.calls[1][0].orderBy).toEqual([{ createdAt: 'desc' }, { id: 'asc' }]);
+    expect(findMany.mock.calls[1][0].orderBy).toEqual([
+      { createdAt: 'desc' },
+      { id: 'asc' },
+    ]);
   });
 
   it('adds no course condition when none is chosen', async () => {
@@ -99,7 +111,9 @@ describe('UniversitiesService.listFilterOptions', () => {
         { stream: 'Engineering', _count: { _all: 900 } },
         { stream: 'Medical', _count: { _all: 500 } },
       ]);
-    const options = await makeService({ university: { groupBy } }).listFilterOptions();
+    const options = await makeService({
+      university: { groupBy },
+    }).listFilterOptions();
 
     expect(options.states).toEqual([
       { name: 'Kerala', colleges: 120 },
@@ -116,14 +130,18 @@ describe('UniversitiesService.listFilterOptions', () => {
 
 describe('UniversitiesService.mergeUniversities — which colleges can be merged away', () => {
   it('accepts an inactive college (e.g. one a user typed) as the one merged away', async () => {
-    const findMany = jest.fn().mockResolvedValue([{ id: 'typed', isActive: false }]);
+    const findMany = jest
+      .fn()
+      .mockResolvedValue([{ id: 'typed', isActive: false }]);
     const prisma = {
       university: {
         findUnique: jest.fn().mockResolvedValue({ id: 'real', isActive: true }),
         findMany,
       },
       // Stop right after validation — the move itself is not under test here.
-      $transaction: jest.fn().mockRejectedValue(new Error('stop after validation')),
+      $transaction: jest
+        .fn()
+        .mockRejectedValue(new Error('stop after validation')),
     };
     const svc = makeService(prisma);
 

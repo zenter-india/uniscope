@@ -1,3 +1,7 @@
+/* eslint-disable @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-return --
+ * This spec inspects the arguments a jest mock was called with (Prisma
+ * where/orderBy trees). jest types those as `any`; typing every nested level
+ * would only restate the shape the assertions already check. */
 import { NotFoundException } from '@nestjs/common';
 import { educationLevel } from './college-people.helper';
 import { UniversitiesService } from './universities.service';
@@ -58,13 +62,27 @@ describe('UniversitiesService.findCollegePeople', () => {
     ...over,
   });
 
-  function makeService(over: { colleges?: Record<string, unknown>; mentors?: unknown[]; aspirants?: unknown[] } = {}) {
-    const findMany = jest.fn().mockImplementation(({ where }) =>
-      Promise.resolve(where.role === 'MENTOR' ? (over.mentors ?? []) : (over.aspirants ?? [])),
-    );
-    const findUnique = jest.fn().mockImplementation(({ where }) =>
-      Promise.resolve((over.colleges ?? { c1: college })[where.id] ?? null),
-    );
+  function makeService(
+    over: {
+      colleges?: Record<string, unknown>;
+      mentors?: unknown[];
+      aspirants?: unknown[];
+    } = {},
+  ) {
+    const findMany = jest
+      .fn()
+      .mockImplementation(({ where }) =>
+        Promise.resolve(
+          where.role === 'MENTOR'
+            ? (over.mentors ?? [])
+            : (over.aspirants ?? []),
+        ),
+      );
+    const findUnique = jest
+      .fn()
+      .mockImplementation(({ where }) =>
+        Promise.resolve((over.colleges ?? { c1: college })[where.id] ?? null),
+      );
     const svc = new UniversitiesService(
       { university: { findUnique }, user: { findMany } } as never,
       {} as never,
@@ -75,15 +93,50 @@ describe('UniversitiesService.findCollegePeople', () => {
 
   it('returns the college with its mentors and students, UG/PG worked out', async () => {
     const { svc } = makeService({
-      mentors: [person(), person({ id: 'u2', profile: { qualification: 'MBBS', stream: 'Medical', specialization: null, yearOfStudy: 4, graduationYear: null } })],
-      aspirants: [person({ id: 'u3', profile: { qualification: 'Higher Secondary (12th)', stream: 'Medical', specialization: null, yearOfStudy: null, graduationYear: null } })],
+      mentors: [
+        person(),
+        person({
+          id: 'u2',
+          profile: {
+            qualification: 'MBBS',
+            stream: 'Medical',
+            specialization: null,
+            yearOfStudy: 4,
+            graduationYear: null,
+          },
+        }),
+      ],
+      aspirants: [
+        person({
+          id: 'u3',
+          profile: {
+            qualification: 'Higher Secondary (12th)',
+            stream: 'Medical',
+            specialization: null,
+            yearOfStudy: null,
+            graduationYear: null,
+          },
+        }),
+      ],
     });
     const res = await svc.findCollegePeople('c1');
 
-    expect(res.college).toMatchObject({ id: 'c1', name: 'Sri Test Medical College', district: 'Madurai' });
-    expect(res.mentors.map((m) => [m.id, m.level])).toEqual([['u1', 'PG'], ['u2', 'UG']]);
-    expect(res.mentors[0]).toMatchObject({ specialization: 'Community Medicine', yearOfStudy: 2 });
-    expect(res.aspirants.map((a) => [a.id, a.level])).toEqual([['u3', 'OTHER']]);
+    expect(res.college).toMatchObject({
+      id: 'c1',
+      name: 'Sri Test Medical College',
+      district: 'Madurai',
+    });
+    expect(res.mentors.map((m) => [m.id, m.level])).toEqual([
+      ['u1', 'PG'],
+      ['u2', 'UG'],
+    ]);
+    expect(res.mentors[0]).toMatchObject({
+      specialization: 'Community Medicine',
+      yearOfStudy: 2,
+    });
+    expect(res.aspirants.map((a) => [a.id, a.level])).toEqual([
+      ['u3', 'OTHER'],
+    ]);
     expect(res.truncated).toEqual({ mentors: false, aspirants: false });
   });
 
@@ -107,15 +160,21 @@ describe('UniversitiesService.findCollegePeople', () => {
     });
     const res = await svc.findCollegePeople('old');
     expect(res.college.id).toBe('c1');
-    expect(findMany.mock.calls[0][0].where.profile).toEqual({ universityId: 'c1' });
+    expect(findMany.mock.calls[0][0].where.profile).toEqual({
+      universityId: 'c1',
+    });
   });
 
   it('404s for an unknown college', async () => {
-    await expect(makeService().svc.findCollegePeople('nope')).rejects.toBeInstanceOf(NotFoundException);
+    await expect(
+      makeService().svc.findCollegePeople('nope'),
+    ).rejects.toBeInstanceOf(NotFoundException);
   });
 
   it('flags a list longer than the cap and cuts it', async () => {
-    const many = Array.from({ length: 1001 }, (_, i) => person({ id: `m${i}` }));
+    const many = Array.from({ length: 1001 }, (_, i) =>
+      person({ id: `m${i}` }),
+    );
     const { svc } = makeService({ mentors: many });
     const res = await svc.findCollegePeople('c1');
     expect(res.mentors).toHaveLength(1000);

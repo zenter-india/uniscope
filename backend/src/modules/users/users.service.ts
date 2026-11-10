@@ -628,12 +628,16 @@ export class UsersService {
    * ({} when none is set). Level (UG/PG) is worked out from the degree. */
   private profileFilter(query: ListUsersDto): Prisma.UserWhereInput {
     const conditions: Prisma.UserProfileWhereInput[] = [];
-    if (query.specialization) conditions.push({ specialization: query.specialization });
+    if (query.specialization)
+      conditions.push({ specialization: query.specialization });
     if (query.stream) conditions.push({ stream: query.stream });
-    if (query.qualification) conditions.push({ qualification: query.qualification });
+    if (query.qualification)
+      conditions.push({ qualification: query.qualification });
     if (query.state) conditions.push({ state: query.state });
-    if (query.universityId) conditions.push({ universityId: query.universityId });
-    if (query.accepting === 'true') conditions.push({ isMentorAvailable: true });
+    if (query.universityId)
+      conditions.push({ universityId: query.universityId });
+    if (query.accepting === 'true')
+      conditions.push({ isMentorAvailable: true });
     if (query.level) conditions.push(profileLevelWhere(query.level));
     return conditions.length > 0 ? { profile: { AND: conditions } } : {};
   }
@@ -648,54 +652,65 @@ export class UsersService {
     states: { name: string; users: number }[];
   }> {
     const user = { role: { not: UserRole.ADMIN } };
-    const [specializations, qualifications, streams, states] = await Promise.all([
-      this.prisma.userProfile.groupBy({
-        by: ['specialization'],
-        where: { user, specialization: { not: null } },
-        _count: { _all: true },
-        orderBy: { specialization: 'asc' },
-      }),
-      this.prisma.userProfile.groupBy({
-        by: ['qualification'],
-        where: { user, qualification: { not: null } },
-        _count: { _all: true },
-        orderBy: { qualification: 'asc' },
-      }),
-      this.prisma.userProfile.groupBy({
-        by: ['stream'],
-        where: { user, stream: { not: null } },
-        _count: { _all: true },
-        orderBy: { stream: 'asc' },
-      }),
-      this.prisma.userProfile.groupBy({
-        by: ['state'],
-        where: { user, state: { not: null } },
-        _count: { _all: true },
-        orderBy: { state: 'asc' },
-      }),
-    ]);
+    const [specializations, qualifications, streams, states] =
+      await Promise.all([
+        this.prisma.userProfile.groupBy({
+          by: ['specialization'],
+          where: { user, specialization: { not: null } },
+          _count: { _all: true },
+          orderBy: { specialization: 'asc' },
+        }),
+        this.prisma.userProfile.groupBy({
+          by: ['qualification'],
+          where: { user, qualification: { not: null } },
+          _count: { _all: true },
+          orderBy: { qualification: 'asc' },
+        }),
+        this.prisma.userProfile.groupBy({
+          by: ['stream'],
+          where: { user, stream: { not: null } },
+          _count: { _all: true },
+          orderBy: { stream: 'asc' },
+        }),
+        this.prisma.userProfile.groupBy({
+          by: ['state'],
+          where: { user, state: { not: null } },
+          _count: { _all: true },
+          orderBy: { state: 'asc' },
+        }),
+      ]);
     // Blank values are skipped; each option says how many people it covers.
     const options = (
       rows: { name: string | null; users: number }[],
     ): { name: string; users: number }[] =>
       rows.flatMap((r) =>
-        r.name && r.name.trim() !== '' ? [{ name: r.name, users: r.users }] : [],
+        r.name && r.name.trim() !== ''
+          ? [{ name: r.name, users: r.users }]
+          : [],
       );
     return {
       specializations: options(
-        specializations.map((r) => ({ name: r.specialization, users: r._count._all })),
+        specializations.map((r) => ({
+          name: r.specialization,
+          users: r._count._all,
+        })),
       ),
       qualifications: options(
-        qualifications.map((r) => ({ name: r.qualification, users: r._count._all })),
+        qualifications.map((r) => ({
+          name: r.qualification,
+          users: r._count._all,
+        })),
       ),
-      streams: options(streams.map((r) => ({ name: r.stream, users: r._count._all }))),
-      states: options(states.map((r) => ({ name: r.state, users: r._count._all }))),
+      streams: options(
+        streams.map((r) => ({ name: r.stream, users: r._count._all })),
+      ),
+      states: options(
+        states.map((r) => ({ name: r.state, users: r._count._all })),
+      ),
     };
   }
 
-  async findAllAdmin(
-    query: ListUsersDto,
-  ): Promise<{
+  async findAllAdmin(query: ListUsersDto): Promise<{
     data: Array<User & { profile: { specialization: string | null } | null }>;
     nextCursor: string | null;
   }> {

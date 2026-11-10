@@ -45,7 +45,9 @@ export function tidyDegreeName(raw: string): { name: string; nameKey: string } {
 
 function isUsableName(name: string, nameKey: string): boolean {
   // Lower-casing can lengthen a few Unicode letters past the column width.
-  return name.length >= 2 && nameKey.length <= 50 && !RESERVED_KEYS.has(nameKey);
+  return (
+    name.length >= 2 && nameKey.length <= 50 && !RESERVED_KEYS.has(nameKey)
+  );
 }
 
 /**
@@ -94,7 +96,11 @@ export class CustomDegreesService {
     const rows = await this.prisma.customDegree.findMany({
       where: query.status ? { status: query.status } : undefined,
       // Most-typed first, so the ones that matter most are at the top.
-      orderBy: [{ submissionCount: 'desc' }, { createdAt: 'desc' }, { id: 'asc' }],
+      orderBy: [
+        { submissionCount: 'desc' },
+        { createdAt: 'desc' },
+        { id: 'asc' },
+      ],
       take: take + 1,
       ...(query.cursor && { cursor: { id: query.cursor }, skip: 1 }),
     });
@@ -111,7 +117,9 @@ export class CustomDegreesService {
     adminId: string,
     dto: ReviewCustomDegreeDto,
   ): Promise<CustomDegreeResponse> {
-    const existing = await this.prisma.customDegree.findUnique({ where: { id } });
+    const existing = await this.prisma.customDegree.findUnique({
+      where: { id },
+    });
     if (!existing) throw new NotFoundException('Custom degree not found');
 
     let name = existing.name;
@@ -124,7 +132,10 @@ export class CustomDegreesService {
       if (tidied.nameKey !== existing.nameKey) {
         const clash = await this.prisma.customDegree.findUnique({
           where: {
-            stream_nameKey: { stream: existing.stream, nameKey: tidied.nameKey },
+            stream_nameKey: {
+              stream: existing.stream,
+              nameKey: tidied.nameKey,
+            },
           },
         });
         if (clash) {
@@ -143,7 +154,7 @@ export class CustomDegreesService {
       data: {
         name,
         nameKey,
-        status: dto.status as CustomDegreeStatus,
+        status: dto.status,
         reviewedBy: pending ? null : adminId,
         reviewedAt: pending ? null : new Date(),
       },

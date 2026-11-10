@@ -234,7 +234,7 @@ export class SpecializationSuggestionsService {
     const reviewData = {
       name,
       nameKey,
-      status: dto.status as CustomDegreeStatus,
+      status: dto.status,
       reviewedBy: pending ? null : adminId,
       reviewedAt: pending ? null : new Date(),
     };

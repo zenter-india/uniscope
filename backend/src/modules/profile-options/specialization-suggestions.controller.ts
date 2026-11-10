@@ -8,7 +8,7 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
-import { CustomDegreeStatus, UserRole } from '@prisma/client';
+import { UserRole } from '@prisma/client';
 import { CurrentUser } from '../../auth/decorators/current-user.decorator.js';
 import type { JwtPayload } from '../../auth/decorators/current-user.decorator.js';
 import { Roles } from '../../auth/decorators/roles.decorator.js';
@@ -52,7 +52,7 @@ export class AdminSpecializationSuggestionsController {
   ) {
     const parsedStatus =
       status === 'PENDING' || status === 'APPROVED' || status === 'REJECTED'
-        ? (status as CustomDegreeStatus)
+        ? status
         : undefined;
     return this.suggestions.findAllForAdmin({
       status: parsedStatus,

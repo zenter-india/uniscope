@@ -1,13 +1,19 @@
+/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-return --
+ * This spec inspects the arguments a jest mock was called with (Prisma
+ * where/orderBy trees). jest types those as `any`; typing every nested level
+ * would only restate the shape the assertions already check. */
 import { UsersService } from './users.service';
 
 function service(prisma: Record<string, unknown>) {
   // The real constructor needs many unrelated collaborators.
-  return Object.assign(Object.create(UsersService.prototype), { prisma }) as UsersService;
+  return Object.assign(Object.create(UsersService.prototype), {
+    prisma,
+  }) as UsersService;
 }
 
 async function whereFor(query: Record<string, unknown>) {
   const findMany = jest.fn().mockResolvedValue([]);
-  await service({ user: { findMany } }).findAllAdmin(query as never);
+  await service({ user: { findMany } }).findAllAdmin(query);
   return findMany.mock.calls[0][0].where;
 }
 
@@ -49,13 +55,18 @@ describe('UsersService.findAllAdmin — filters', () => {
     expect(byDegree.qualification.in).toEqual(
       expect.arrayContaining(['MD/MS', 'DNB', 'DM/MCh', 'MDS', 'PG']),
     );
-    expect(medicalDiploma).toEqual({ qualification: 'Diploma', stream: 'Medical' });
+    expect(medicalDiploma).toEqual({
+      qualification: 'Diploma',
+      stream: 'Medical',
+    });
   });
 
   it('the search box finds a name, a specialization or a college', async () => {
     const where = await whereFor({ search: 'community' });
     expect(where.OR).toHaveLength(3);
-    expect(where.OR[0]).toEqual({ displayName: { contains: 'community', mode: 'insensitive' } });
+    expect(where.OR[0]).toEqual({
+      displayName: { contains: 'community', mode: 'insensitive' },
+    });
     expect(where.OR[1].profile.specialization.contains).toBe('community');
     expect(where.OR[2].profile.university.name.contains).toBe('community');
   });
@@ -67,7 +78,11 @@ describe('UsersService.findAllAdmin — filters', () => {
       isBanned: false,
       specialization: 'Anatomy',
     });
-    expect(where).toMatchObject({ role: 'MENTOR', verificationStatus: 'VERIFIED', isBanned: false });
+    expect(where).toMatchObject({
+      role: 'MENTOR',
+      verificationStatus: 'VERIFIED',
+      isBanned: false,
+    });
     expect(where.profile.AND).toEqual([{ specialization: 'Anatomy' }]);
   });
 });
@@ -84,7 +99,9 @@ describe('UsersService.listFilterOptions', () => {
       .mockResolvedValueOnce([{ qualification: 'MD/MS', _count: { _all: 12 } }])
       .mockResolvedValueOnce([{ stream: 'Medical', _count: { _all: 30 } }])
       .mockResolvedValueOnce([{ state: 'Kerala', _count: { _all: 7 } }]);
-    const options = await service({ userProfile: { groupBy } }).listFilterOptions();
+    const options = await service({
+      userProfile: { groupBy },
+    }).listFilterOptions();
 
     expect(options.specializations).toEqual([
       { name: 'Anatomy', users: 4 },
@@ -93,6 +110,8 @@ describe('UsersService.listFilterOptions', () => {
     expect(options.qualifications).toEqual([{ name: 'MD/MS', users: 12 }]);
     expect(options.streams).toEqual([{ name: 'Medical', users: 30 }]);
     expect(options.states).toEqual([{ name: 'Kerala', users: 7 }]);
-    expect(groupBy.mock.calls[0][0].where.user).toEqual({ role: { not: 'ADMIN' } });
+    expect(groupBy.mock.calls[0][0].where.user).toEqual({
+      role: { not: 'ADMIN' },
+    });
   });
 });
