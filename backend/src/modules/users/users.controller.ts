@@ -31,7 +31,7 @@ import { ListUsersDto } from './dto/list-users.dto.js';
 import { SetBannedDto } from './dto/set-banned.dto.js';
 import { UpdateProfileDto } from './dto/update-profile.dto.js';
 import { UpdateRoleDto } from './dto/update-role.dto.js';
-import { toAdminUserDetail, toPublicUser } from './user-response.js';
+import { toAdminListUser, toAdminUserDetail, toPublicUser } from './user-response.js';
 import { UsersService } from './users.service.js';
 
 @UseGuards(JwtAuthGuard)
@@ -160,7 +160,7 @@ export class UsersController {
   @Get()
   async findAll(@Query() query: ListUsersDto) {
     const { data, nextCursor } = await this.usersService.findAllAdmin(query);
-    return { data: data.map((u) => toPublicUser(u)), nextCursor };
+    return { data: data.map((u) => toAdminListUser(u)), nextCursor };
   }
 
   /** ADMIN bulk ban/unban — see UsersService.bulkSetBanned. Declared before

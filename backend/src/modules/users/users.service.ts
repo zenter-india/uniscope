@@ -574,7 +574,10 @@ export class UsersService {
    * themselves or a colleague from this screen). */
   async findAllAdmin(
     query: ListUsersDto,
-  ): Promise<{ data: User[]; nextCursor: string | null }> {
+  ): Promise<{
+    data: Array<User & { profile: { specialization: string | null } | null }>;
+    nextCursor: string | null;
+  }> {
     const take = Math.min(query.limit ?? ADMIN_DEFAULT_LIMIT, ADMIN_MAX_LIMIT);
 
     const where: Prisma.UserWhereInput = {
@@ -588,6 +591,8 @@ export class UsersService {
 
     const rows = await this.prisma.user.findMany({
       where,
+      // Just the one profile column the list shows (the person's specialization).
+      include: { profile: { select: { specialization: true } } },
       orderBy: adminOrderBy(query.sortBy, query.sortDir, {
         joined: 'createdAt',
         name: 'displayName',

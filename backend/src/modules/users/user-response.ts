@@ -256,6 +256,22 @@ export function toAdminUserDetail(
   };
 }
 
+/** A row of the admin Users list: the public fields plus the person's own
+ * specialization (their actual one, e.g. "Community Medicine" — not their UG/PG
+ * level). Built from the list query, which loads only that one profile column,
+ * so nothing else on the profile can leak into the list. */
+export type AdminListUser = PublicUser & { specialization: string | null };
+
+export function toAdminListUser(
+  user: User & { profile?: { specialization: string | null } | null },
+): AdminListUser {
+  const { profile, ...rest } = user;
+  return {
+    ...toPublicUser(rest as UserWithProfile),
+    specialization: profile?.specialization?.trim() || null,
+  };
+}
+
 export function toPublicUser(
   user: UserWithProfile,
   avatarUrl?: string | null,
