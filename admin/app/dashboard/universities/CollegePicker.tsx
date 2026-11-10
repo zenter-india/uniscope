@@ -5,8 +5,10 @@ import { fieldClass } from '../../../components/ui';
 import { searchColleges, type CollegeOption } from './actions';
 import { locationLabel } from './location';
 
-export const collegeLabel = (c: CollegeOption) =>
-  `${c.name} — ${locationLabel(c)}`;
+export const collegeLabel = (c: CollegeOption) => {
+  const place = locationLabel(c);
+  return place ? `${c.name} — ${place}` : c.name;
+};
 
 /** Searchable dropdown of the colleges already in our DB (name + district +
  * state). Selecting one is a request to merge into it. */
@@ -14,10 +16,12 @@ export function CollegePicker({
   excludeId,
   selected,
   onSelect,
+  placeholder = 'Pick an existing college (name, district, state)…',
 }: {
   excludeId: string;
   selected: CollegeOption | null;
   onSelect: (c: CollegeOption | null) => void;
+  placeholder?: string;
 }) {
   const [query, setQuery] = useState('');
   const [options, setOptions] = useState<CollegeOption[]>([]);
@@ -90,7 +94,7 @@ export function CollegePicker({
           setOpen(true);
         }}
         onFocus={() => setOpen(true)}
-        placeholder="Pick an existing college (name, district, state)…"
+        placeholder={placeholder}
         className={fieldClass}
       />
       {open && !selected && (
