@@ -1,11 +1,13 @@
 'use client';
 
+import Link from 'next/link';
 import { useRef, useState, useTransition } from 'react';
 import { Badge, Button, Table, fieldClass } from '../../../components/ui';
 import { ConfirmButton } from '../../../components/ConfirmButton';
 import { toast } from '../../../lib/toast';
 import { mergeUniversities, updateUniversity, uploadUniversityPhoto, type CollegeOption } from './actions';
 import { CollegePicker } from './CollegePicker';
+import { locationLabel } from './location';
 
 export interface UniversityRowData {
   id: string;
@@ -13,6 +15,7 @@ export interface UniversityRowData {
   slug: string;
   state: string;
   city: string | null;
+  district?: string | null;
   stream: string | null;
   establishedYear: number | null;
   website: string | null;
@@ -118,8 +121,16 @@ export function UniversityRow({ university }: { university: UniversityRowData })
     return (
       <tr>
         <td colSpan={4} className="p-4">
-          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-            <div className="col-span-2 sm:col-span-3">
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+            <p className="text-sm sm:col-span-3">
+              <span className="font-medium text-zinc-900 dark:text-zinc-100">{university.name}</span>
+              {locationLabel(university) && (
+                <span className="ml-2 text-xs text-zinc-500 dark:text-zinc-400">
+                  {locationLabel(university)}
+                </span>
+              )}
+            </p>
+            <div className="sm:col-span-3">
               <CollegePicker
                 excludeId={university.id}
                 selected={mergeTarget}
@@ -127,9 +138,10 @@ export function UniversityRow({ university }: { university: UniversityRowData })
               />
               {mergeTarget && (
                 <p className="mt-1 text-xs text-amber-700 dark:text-amber-400">
-                  Saving will merge “{university.name}” into “{mergeTarget.name}”: its mentors,
-                  reviews, programs and saves move to the selected college, and “{university.name}”
-                  is removed from the list.
+                  Saving will merge “{university.name}” ({locationLabel(university)}) into “
+                  {mergeTarget.name}” ({locationLabel(mergeTarget)}): its mentors, reviews, programs
+                  and saves move to the selected college, and “{university.name}” is removed from
+                  the list.
                 </p>
               )}
             </div>
@@ -209,7 +221,13 @@ export function UniversityRow({ university }: { university: UniversityRowData })
           </button>
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-1.5">
-              <span className="font-medium text-zinc-900 dark:text-zinc-100">{university.name}</span>
+              <Link
+                href={`/dashboard/universities/${university.id}`}
+                title="Open this college — its students and mentors"
+                className="font-medium text-zinc-900 hover:underline dark:text-zinc-100"
+              >
+                {university.name}
+              </Link>
               {university.stream && <Badge>{university.stream}</Badge>}
             </div>
             {photoError && <p className="mt-0.5 text-xs text-red-600 dark:text-red-400">{photoError}</p>}
@@ -218,7 +236,7 @@ export function UniversityRow({ university }: { university: UniversityRowData })
         </div>
       </Table.Cell>
       <Table.Cell className="whitespace-nowrap text-xs text-zinc-500 dark:text-zinc-400">
-        {[university.city, university.state].filter(Boolean).join(', ')}
+        {locationLabel(university)}
       </Table.Cell>
       <Table.Cell>
         <Badge tone={university.isActive ? 'success' : 'danger'}>

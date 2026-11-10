@@ -49,3 +49,143 @@ body {
 .dark :focus-visible {
   outline-color: rgb(113 113 122 / 0.7);
 }
+
+/* ------------------------------------------------------------------ *
+ * Phones (below md = 768px)
+ * ------------------------------------------------------------------ */
+@media (max-width: 767px) {
+  /* iOS Safari zooms the whole page when a focused field is under 16px. */
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+  select,
+  textarea {
+    font-size: 16px;
+  }
+
+  /* Checkboxes/radios are otherwise a ~13px tap target. */
+  input[type="checkbox"],
+  input[type="radio"] {
+    width: 1.25rem;
+    height: 1.25rem;
+  }
+
+  /* Data tables become cards: one card per row, each cell on its own line with
+   * its column name beside it (names are written onto the cells by
+   * components/ResponsiveTable.tsx). Desktop keeps the real table. */
+  .rtable {
+    max-height: none;
+    overflow: visible;
+  }
+  .rtable table,
+  .rtable tbody {
+    display: block;
+    width: 100%;
+  }
+  .rtable thead {
+    display: none;
+  }
+  .rtable tbody > tr {
+    position: relative;
+    display: block;
+    padding: 0.875rem 1rem;
+  }
+  /* Expanded detail panels and inline edit forms are full-width on their own. */
+  .rtable tbody > tr:has(> td[colspan]) {
+    padding: 0;
+  }
+  .rtable tbody > tr > td[colspan] {
+    display: block;
+    padding: 1rem;
+    text-align: left;
+  }
+  /* Default: label on its own line, value full width below it. Safe for any
+   * cell content (several spans, links, long text). */
+  .rtable tbody > tr > td {
+    display: block;
+    min-width: 0;
+    padding: 0.35rem 0;
+    text-align: left;
+    overflow-wrap: anywhere;
+  }
+  .rtable tbody > tr > td::before {
+    content: attr(data-label);
+    display: block;
+    margin-bottom: 0.15rem;
+    font-size: 0.6875rem;
+    font-weight: 500;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: rgb(113 113 122);
+  }
+  /* Short single values (a status, a date, an amount): label left, value right. */
+  .rtable tbody > tr > td[data-row] {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 1rem;
+    text-align: right;
+  }
+  .rtable tbody > tr > td[data-row]::before {
+    flex: none;
+    max-width: 42%;
+    margin-bottom: 0;
+    text-align: left;
+  }
+  .dark .rtable tbody > tr > td::before {
+    color: rgb(161 161 170);
+  }
+  .rtable tbody > tr > td[data-label=""]::before,
+  .rtable tbody > tr > td:not([data-label])::before {
+    display: none;
+  }
+
+  /* The row's title: no label, full width. */
+  .rtable td[data-primary] {
+    display: block;
+    padding: 0 0 0.35rem;
+    text-align: left;
+  }
+  /* Actions (no column name): full width, buttons wrap instead of overflowing. */
+  .rtable td[data-label=""]:not([data-primary]) {
+    display: block;
+    padding-top: 0.5rem;
+    text-align: left;
+  }
+  .rtable td[data-label=""] .flex {
+    flex-wrap: wrap;
+    justify-content: flex-start;
+  }
+  /* Bulk-select checkbox top-left, expand chevron top-right. The :has()
+   * selectors do the same job as data-kind before the labelling script has
+   * run, so there is no unstyled flash while the page hydrates. */
+  .rtable td[data-kind="check"],
+  .rtable td[data-kind="icon"],
+  .rtable tbody > tr > td:has(> input[type="checkbox"]:only-child),
+  .rtable tbody > tr > td:has(> svg:only-child) {
+    position: absolute;
+    top: 0.9rem;
+    display: block;
+    padding: 0;
+  }
+  .rtable td[data-kind="check"]::before,
+  .rtable td[data-kind="icon"]::before,
+  .rtable tbody > tr > td:has(> input[type="checkbox"]:only-child)::before,
+  .rtable tbody > tr > td:has(> svg:only-child)::before {
+    display: none;
+  }
+  .rtable td[data-kind="check"],
+  .rtable tbody > tr > td:has(> input[type="checkbox"]:only-child) {
+    left: 1rem;
+  }
+  .rtable td[data-kind="icon"],
+  .rtable tbody > tr > td:has(> svg:only-child) {
+    right: 1rem;
+  }
+  .rtable tbody > tr:has(> td[data-kind="check"]),
+  .rtable tbody > tr:has(> td > input[type="checkbox"]:only-child) {
+    padding-left: 2.75rem;
+  }
+  .rtable tbody > tr:has(> td[data-kind="icon"]) > td[data-primary],
+  .rtable tbody > tr:has(> td > svg:only-child) > td:first-child {
+    padding-right: 2rem;
+  }
+}
