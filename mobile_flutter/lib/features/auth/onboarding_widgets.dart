@@ -369,6 +369,15 @@ class OnboardingSingleChipGroup extends StatelessWidget {
 
 /// On/off switch with a label and optional hint below it — used for the
 /// "keep this private" choice on year-of-study / graduation year.
+/// The "e.g. ..." line under "Try searching in a different form" for the
+/// Specialization pickers — a short form people type vs. the full listed name.
+const kSpecializationBypassExample =
+    'e.g. search "MD - Social & Preventive Medicine / Community Medicine" instead of "MD-PSM"';
+
+/// Fallback hint for a searchable list that isn't a specialization.
+const kGenericBypassExample =
+    'e.g. search the full name instead of a short form or abbreviation';
+
 /// A read-only field that opens a searchable, scrollable option sheet on
 /// tap — for lists too long for a plain [OnboardingDropdown] (Medical has
 /// ~100 specializations). Same idea as the web enrollment form's
@@ -382,6 +391,7 @@ class OnboardingSearchableField extends StatelessWidget {
     required this.onChanged,
     this.sheetTitle,
     this.widenedOptions,
+    this.bypassExample = kGenericBypassExample,
   });
 
   final String? value;
@@ -389,6 +399,9 @@ class OnboardingSearchableField extends StatelessWidget {
   final List<String> options;
   final ValueChanged<String?> onChanged;
   final String? sheetTitle;
+
+  /// The "e.g. ..." example shown under "Try searching in a different form".
+  final String bypassExample;
   /// A broader option pool the sheet's search falls back to once the user
   /// types something — [options] alone stays the list shown with nothing
   /// typed. Lets a field default to a narrow, scoped list (e.g. a picked
@@ -411,6 +424,7 @@ class OnboardingSearchableField extends StatelessWidget {
         options: options,
         widenedOptions: widenedOptions,
         selected: value,
+        bypassExample: bypassExample,
       ),
     );
     if (picked != null) onChanged(picked);
@@ -542,11 +556,13 @@ class _SearchableOptionSheet extends StatefulWidget {
     required this.options,
     required this.selected,
     this.widenedOptions,
+    this.bypassExample = kGenericBypassExample,
   });
   final String title;
   final List<String> options;
   final String? selected;
   final List<String>? widenedOptions;
+  final String bypassExample;
 
   @override
   State<_SearchableOptionSheet> createState() => _SearchableOptionSheetState();
@@ -683,8 +699,7 @@ class _SearchableOptionSheetState extends State<_SearchableOptionSheet> {
                     ),
             ),
             OnboardingBypassOptions(
-              example:
-                  'e.g. search the full name instead of a short form or abbreviation',
+              example: widget.bypassExample,
               onNotListed: () => setState(() => _manual = true),
             ),
           ],
