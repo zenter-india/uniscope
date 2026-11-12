@@ -134,6 +134,9 @@ class AvatarPickerPanelState extends ConsumerState<AvatarPickerPanel> {
             ? Future<Map<String, dynamic>?>.value(null)
             : api.getAvatarConfig(),
       ]);
+      // The panel can be closed while the requests are in flight — setState
+      // on a disposed State threw (Sentry UNISCOPE-MOBILE-X).
+      if (!mounted) return;
       final catalog = results[0]!;
       final config = (widget.startFromFirstOption ? null : results[1]) ??
           {
@@ -162,6 +165,7 @@ class AvatarPickerPanelState extends ConsumerState<AvatarPickerPanel> {
       widget.onPreviewChanged?.call(_previewSvg, _previewUrl);
       _schedulePreview();
     } catch (e) {
+      if (!mounted) return;
       setState(() {
         _error = 'Could not load avatar options: $e';
         _loading = false;

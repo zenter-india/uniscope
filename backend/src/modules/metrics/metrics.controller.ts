@@ -1,4 +1,10 @@
-import { Controller, Get, Query, UseGuards } from '@nestjs/common';
+import {
+  BadRequestException,
+  Controller,
+  Get,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
 import { UserRole } from '@prisma/client';
 import { Roles } from '../../auth/decorators/roles.decorator.js';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard.js';
@@ -14,6 +20,15 @@ export class MetricsController {
 
   @Get()
   overview(@Query() query: MetricsQueryDto) {
+    // A custom range (from + to) wins over the preset `days`.
+    if (query.from || query.to) {
+      if (!query.from || !query.to) {
+        throw new BadRequestException(
+          'Send both from and to for a custom range.',
+        );
+      }
+      return this.metricsService.getOverviewForDates(query.from, query.to);
+    }
     return this.metricsService.getOverview(query.days ?? 30);
   }
 }

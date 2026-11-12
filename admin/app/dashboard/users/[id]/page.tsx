@@ -13,6 +13,9 @@ interface AdminUserDetail {
   id: string;
   displayName: string;
   realName: string | null;
+  /** Mobile number, decrypted by the backend; null until the user next logs in
+   * (absent on an older backend). */
+  phone?: string | null;
   role: 'ASPIRANT' | 'MENTOR' | 'ADMIN';
   verificationStatus: string;
   isActive: boolean;
@@ -60,6 +63,7 @@ interface AdminUserDetail {
     reviewNote: string | null;
     reviewerName: string | null;
     universityName: string | null;
+    universityId?: string | null;
     hasDocument: boolean;
     submittedAt: string | null;
     reviewedAt: string | null;
@@ -240,6 +244,11 @@ export default async function UserDetailPage({
                 Real name: <span className="font-medium text-zinc-900 dark:text-zinc-100">{user.realName}</span>
               </p>
             )}
+            {user.phone && (
+              <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-300">
+                Mobile: <span className="font-medium text-zinc-900 dark:text-zinc-100">{user.phone}</span>
+              </p>
+            )}
             <p className="mt-1 text-xs text-zinc-400 dark:text-zinc-500">
               Joined {fmtDate(user.createdAt)} · Last active {fmtDate(user.lastActiveAt)}
             </p>
@@ -290,6 +299,18 @@ export default async function UserDetailPage({
           <Field label="Display name / alias" value={user.displayName} />
           <Field label="Real name" value={user.realName} />
           <Field
+            label="Mobile number"
+            value={
+              user.phone === undefined
+                ? null
+                : (user.phone ?? (
+                    <span className="text-xs text-zinc-400 dark:text-zinc-500">
+                      Not available yet — it appears after the user’s next login
+                    </span>
+                  ))
+            }
+          />
+          <Field
             label="Date of birth"
             value={p?.dateOfBirth ? `${fmtDateOnly(p.dateOfBirth)}${ageFrom(p.dateOfBirth)}` : null}
           />
@@ -307,7 +328,7 @@ export default async function UserDetailPage({
             value={
               p?.university ? (
                 <Link
-                  href={`/dashboard/universities?search=${encodeURIComponent(p.university.name)}`}
+                  href={`/dashboard/universities/${p.university.id}`}
                   className="text-zinc-900 dark:text-zinc-100 underline decoration-zinc-300 underline-offset-2 hover:decoration-zinc-600"
                 >
                   {p.university.name}
@@ -464,7 +485,16 @@ export default async function UserDetailPage({
                       {DOCUMENT_TYPE_LABELS[r.documentType] ?? r.documentType}
                     </span>
                     <span className="text-sm text-zinc-500 dark:text-zinc-400">
-                      {r.universityName ?? '—'}
+                      {r.universityName && r.universityId ? (
+                        <Link
+                          href={`/dashboard/universities/${r.universityId}`}
+                          className="underline decoration-zinc-300 underline-offset-2 hover:decoration-zinc-600"
+                        >
+                          {r.universityName}
+                        </Link>
+                      ) : (
+                        (r.universityName ?? '—')
+                      )}
                     </span>
                   </div>
                   <div className="mt-2 grid grid-cols-2 gap-x-6 gap-y-2 sm:grid-cols-3">
