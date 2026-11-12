@@ -185,7 +185,21 @@ export function LeadRow({
             </>
           ) : (
             <>
-              <Field label="College" value={lead.universityName ?? lead.collegeName} />
+              <Field
+                label="College"
+                value={
+                  lead.universityId && lead.universityName ? (
+                    <Link
+                      href={`/dashboard/universities/${lead.universityId}`}
+                      className="underline decoration-zinc-300 underline-offset-2 hover:decoration-zinc-600"
+                    >
+                      {lead.universityName}
+                    </Link>
+                  ) : (
+                    (lead.universityName ?? lead.collegeName)
+                  )
+                }
+              />
               <Field label="Degree" value={lead.degree} />
               <Field label="Specialization" value={lead.specialization} />
               <Field label="Current status" value={lead.currentStatus} />

@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useState, useTransition } from 'react';
 import { Badge, Button } from '../../../components/ui';
 import { ExpandableRow } from '../../../components/ExpandableRow';
@@ -129,7 +130,13 @@ export function VerificationRow({
         </span>,
         a ? <Badge key="r">{a.role}</Badge> : <span key="r">—</span>,
         <span key="c" className="text-xs text-zinc-500 dark:text-zinc-400">
-          {request.universityName ?? request.universityId} ·{' '}
+          <Link
+            href={`/dashboard/universities/${request.universityId}`}
+            className="underline decoration-zinc-300 underline-offset-2 hover:decoration-zinc-600"
+          >
+            {request.universityName ?? request.universityId}
+          </Link>{' '}
+          ·{' '}
           {DOCUMENT_TYPE_LABELS[request.documentType] ?? request.documentType}
         </span>,
         <span key="d" className="whitespace-nowrap text-xs text-zinc-500 dark:text-zinc-400">
