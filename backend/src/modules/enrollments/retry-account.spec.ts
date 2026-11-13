@@ -93,6 +93,8 @@ describe('EnrollmentsService.retryAccount', () => {
       documentType: 'STUDENT_ID',
       documentKey: 'leads/abc.jpg',
     });
+    // The notice about a changed alias is compared with what the person typed.
+    expect(provision.mock.calls[0][5]).toBe('Naveen');
     expect(findById).toHaveBeenCalledWith('l1');
     expect(result).toMatchObject({ status: 'CONVERTED' });
   });
@@ -101,6 +103,8 @@ describe('EnrollmentsService.retryAccount', () => {
     const { svc, provision } = setup(baseLead);
     await svc.retryAccount('l1', '  Dr Naveen ');
     expect(provision.mock.calls[0][2].alias).toBe('Dr Naveen');
+    // ...but the person is still told about a change from what THEY typed.
+    expect(provision.mock.calls[0][5]).toBe('Naveen');
   });
 
   it('falls back to the lead alias when the admin leaves it blank', async () => {

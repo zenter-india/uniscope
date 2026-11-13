@@ -148,6 +148,11 @@ export class EnrollmentsService {
       documentType?: Prisma.VerificationRequestUncheckedCreateInput['documentType'];
       documentKey: string | null;
     },
+    /** What the person typed on the website form, when `dto.alias` is not it
+     * (an admin chose another alias on a retry). The "your alias was changed"
+     * notice always compares with this, so the person hears about any change
+     * from what they chose. */
+    typedAlias?: string,
   ): Promise<void> {
     const phoneHash = this.phoneHashFor(phone);
 
@@ -165,7 +170,7 @@ export class EnrollmentsService {
 
     // The alias they typed was already used, so they got the next free one
     // ("John" -> "John1"). Tell them, so a changed name is never a surprise.
-    const requestedAlias = dto.alias?.trim();
+    const requestedAlias = (typedAlias ?? dto.alias)?.trim();
     if (
       isNewUser &&
       requestedAlias &&
@@ -845,6 +850,7 @@ export class EnrollmentsService {
             documentType: lead.documentType ?? undefined,
             documentKey: lead.documentKey,
           },
+          lead.alias ?? undefined,
         );
       } else {
         await this.provisionAccountFromLead(
@@ -860,6 +866,8 @@ export class EnrollmentsService {
             preferredMentorshipTiming:
               lead.preferredMentorshipTiming ?? undefined,
           },
+          undefined,
+          lead.alias ?? undefined,
         );
       }
     } catch (err) {

@@ -24,12 +24,18 @@ function setup(user: { displayName: string }, isNewUser: boolean) {
   return { svc, notifications };
 }
 
-const provision = (svc: EnrollmentsService, alias: string) =>
+const provision = (
+  svc: EnrollmentsService,
+  alias: string,
+  typedAlias?: string,
+) =>
   (svc as any).provisionAccountFromLead(
     EnrollmentLeadRole.ASPIRANT,
     '+919876543210',
     { alias, fullName: 'Ayush' },
     {},
+    undefined,
+    typedAlias,
   );
 
 describe('website sign-up — alias changed notification', () => {
@@ -41,6 +47,22 @@ describe('website sign-up — alias changed notification', () => {
     expect(arg.userId).toBe('u1');
     expect(arg.body).toContain('"John"');
     expect(arg.body).toContain('"John1"');
+  });
+
+  it('compares with what the person typed when an admin picked another alias', async () => {
+    // The admin gave the account "Naveen1"; the person had typed "Naveen".
+    const { svc, notifications } = setup({ displayName: 'Naveen1' }, true);
+    await provision(svc, 'Naveen1', 'Naveen');
+    expect(notifications.send).toHaveBeenCalledTimes(1);
+    const arg = notifications.send.mock.calls[0][0];
+    expect(arg.body).toContain('"Naveen"');
+    expect(arg.body).toContain('"Naveen1"');
+  });
+
+  it('says nothing when the admin kept exactly what the person typed', async () => {
+    const { svc, notifications } = setup({ displayName: 'Naveen' }, true);
+    await provision(svc, 'Naveen', 'Naveen');
+    expect(notifications.send).not.toHaveBeenCalled();
   });
 
   it('says nothing when the alias was kept', async () => {
