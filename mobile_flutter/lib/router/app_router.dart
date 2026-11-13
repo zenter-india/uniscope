@@ -76,6 +76,10 @@ const _aspirantTabs = <TabItem>[
 const _mentorTabs = <TabItem>[
   TabItem('Home', Icons.home_outlined, Icons.home_rounded),
   TabItem('Discover', Icons.explore_outlined, Icons.explore_rounded),
+  // Same Mentors screen the aspirant sees. A mentor can browse other
+  // mentors and message them; calling is not enabled for mentors yet (the
+  // profile and list show a "coming soon" note instead).
+  TabItem('Mentors', Icons.people_alt_outlined, Icons.people_alt_rounded),
   TabItem(
     'Sessions',
     Icons.calendar_today_outlined,
@@ -223,6 +227,24 @@ List<StatefulShellBranch> _buildMentorBranches() => [
   StatefulShellBranch(
     routes: [
       GoRoute(
+        path: '/mentors',
+        builder: (_, __) => const MentorListScreen(),
+        routes: [
+          // No 'saved' route here: saving mentors (the wishlist) is
+          // aspirant-only on the backend, and the list hides its heart
+          // for a mentor viewer.
+          GoRoute(
+            path: ':id',
+            builder: (_, state) =>
+                MentorDetailScreen(mentorId: state.pathParameters['id']!),
+          ),
+        ],
+      ),
+    ],
+  ),
+  StatefulShellBranch(
+    routes: [
+      GoRoute(
         path: '/chats',
         builder: (_, __) => const SessionListScreen(),
         routes: [
@@ -246,7 +268,7 @@ List<StatefulShellBranch> _buildMentorBranches() => [
   ),
   StatefulShellBranch(
     routes: [
-      // The mentor's 4th tab is the Wallet (balance, Withdraw, payout
+      // The mentor's 5th tab is the Wallet (balance, Withdraw, payout
       // requests, ledger) — it replaced a separate "Dashboard" overview
       // screen, whose stats already live on the mentor Home tab
       // (MentorLandingScreen). Path kept as '/dashboard' so it can't
@@ -451,12 +473,12 @@ final routerProvider = Provider<GoRouter>((ref) {
 
       // Wallet needs no top-level standalone route for either role: both
       // reach it via a bottom-nav "Wallet" tab (aspirant branch 5 at
-      // '/wallet', mentor branch 4 at '/dashboard' — see the branch lists).
+      // '/wallet', mentor branch 5 at '/dashboard' — see the branch lists).
 
       // ─── Main tabs (StatefulShellRoute keeps the bottom bar) ─────
       // Branch order must exactly match the tab list passed to MainShell.
       // Aspirant: Home | Discover | Mentors | Sessions | Wallet | Profile
-      // Mentor:   Home | Discover | Sessions | Wallet | Profile
+      // Mentor:   Home | Discover | Mentors | Sessions | Wallet | Profile
       // Fully separate branch lists (rather than one shared list with
       // conditionals) since the two roles' tab orders and screen counts
       // diverge too much to share cleanly.

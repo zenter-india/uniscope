@@ -42,8 +42,18 @@ bool _isActiveStatus(SessionStatus status) =>
 
 const _kWeekdayAbbr = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 const _kMonthAbbr = [
-  'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-  'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+  'Jan',
+  'Feb',
+  'Mar',
+  'Apr',
+  'May',
+  'Jun',
+  'Jul',
+  'Aug',
+  'Sep',
+  'Oct',
+  'Nov',
+  'Dec',
 ];
 
 /// Compact chat-list timestamp: "now" / "8m" / "2:30 PM" (today) /
@@ -306,7 +316,7 @@ class SessionListScreen extends ConsumerWidget {
                                     icon: Icons.forum_rounded,
                                     title: 'No sessions yet',
                                     message:
-                                        'Sessions will show up here once an aspirant books a chat or call with you.',
+                                        'Sessions will show up here once an aspirant books a chat or call with you, or when you message another mentor.',
                                   )
                                 : EmptyState(
                                     icon: Icons.forum_rounded,
@@ -393,24 +403,36 @@ class _AspirantSessions extends StatelessWidget {
 /// [_AspirantSessions] on the other side (see [_groupAllSessionsByStudent]).
 /// Students with a live/pending session float to the top; the rest follow by
 /// recency.
-class _MentorSessions extends StatelessWidget {
+class _MentorSessions extends ConsumerWidget {
   const _MentorSessions({required this.sessions});
   final List<Session> sessions;
 
   @override
-  Widget build(BuildContext context) {
-    final groups = _groupAllSessionsByStudent(sessions);
+  Widget build(BuildContext context, WidgetRef ref) {
+    // A session where THIS mentor holds the "aspirant" seat is a chat they
+    // started with another mentor from the Mentors tab. Those show in the
+    // same row the aspirant sees (grouped by the other mentor, Call = coming
+    // soon); everything else is a student reaching out, as before.
+    final myId = ref.watch(authControllerProvider).user?.id;
+    final incoming = sessions.where((s) => s.aspirantId != myId).toList();
+    final outgoing = sessions.where((s) => s.aspirantId == myId).toList();
 
     String latestReq(List<Session> g) => g
         .map((s) => s.requestedAt)
         .reduce((a, b) => a.compareTo(b) >= 0 ? a : b);
 
-    groups.sort((a, b) {
-      final aActive = a.any((s) => _isActiveStatus(s.status));
-      final bActive = b.any((s) => _isActiveStatus(s.status));
-      if (aActive != bActive) return aActive ? -1 : 1;
-      return latestReq(b).compareTo(latestReq(a));
-    });
+    final groups =
+        <({List<Session> sessions, bool peer})>[
+          for (final g in _groupAllSessionsByStudent(incoming))
+            (sessions: g, peer: false),
+          for (final g in _groupAllSessionsByCounterpart(outgoing))
+            (sessions: g, peer: true),
+        ]..sort((a, b) {
+          final aActive = a.sessions.any((s) => _isActiveStatus(s.status));
+          final bActive = b.sessions.any((s) => _isActiveStatus(s.status));
+          if (aActive != bActive) return aActive ? -1 : 1;
+          return latestReq(b.sessions).compareTo(latestReq(a.sessions));
+        });
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(
@@ -437,7 +459,12 @@ class _MentorSessions extends StatelessWidget {
                     thickness: 1,
                     color: AppColors.border,
                   ),
-                _MentorStudentRow(sessions: groups[i]),
+                groups[i].peer
+                    ? _AspirantMentorRow(
+                        sessions: groups[i].sessions,
+                        peerChat: true,
+                      )
+                    : _MentorStudentRow(sessions: groups[i].sessions),
               ],
             ],
           ),
@@ -691,8 +718,13 @@ class _SessionCard extends StatelessWidget {
 /// the chat icon, opens the chat thread; the call icon opens the
 /// "Request a call" sheet (balance-gated, same as in-chat).
 class _AspirantMentorRow extends ConsumerWidget {
-  const _AspirantMentorRow({required this.sessions});
+  const _AspirantMentorRow({required this.sessions, this.peerChat = false});
   final List<Session> sessions;
+
+  /// True when the viewer is a MENTOR who started this chat with another
+  /// mentor (Mentors tab). Same row, but with no call icon — mentors can't
+  /// book or pay for calls, so it is chat only.
+  final bool peerChat;
 
   /// Opens the chat with this mentor. Reuses the existing CHAT thread in the
   /// relationship if there is one (mirrors `_MentorStudentRow._openChat`) —
@@ -808,27 +840,30 @@ class _AspirantMentorRow extends ConsumerWidget {
               // `isCallAvailable()` gate every other surface uses). Greyed
               // otherwise, same glyph — a request would just be rejected
               // server-side.
-              _RowIconButton(
-                icon: Icons.call_outlined,
-                tooltip: first.mentorIsAvailable
-                    ? 'Request a call'
-                    : 'Not accepting calls right now',
-                color: first.mentorIsAvailable
-                    ? AppColors.primary
-                    : AppColors.textMuted,
-                // Tappable only when the mentor is actually bookable —
-                // greyed + disabled otherwise (a request would just 409
-                // server-side).
-                onTap: first.mentorIsAvailable
-                    ? () => _requestCall(
-                        context,
-                        ref,
-                        mentorId,
-                        mentorName,
-                        first.mentorAvailableDays,
-                      )
-                    : null,
-              ),
+              // No call icon at all for a chat a mentor started with another
+              // mentor (peerChat): chat only.
+              if (!peerChat)
+                _RowIconButton(
+                  icon: Icons.call_outlined,
+                  tooltip: first.mentorIsAvailable
+                      ? 'Request a call'
+                      : 'Not accepting calls right now',
+                  color: first.mentorIsAvailable
+                      ? AppColors.primary
+                      : AppColors.textMuted,
+                  // Tappable only when the mentor is actually bookable —
+                  // greyed + disabled otherwise (a request would just 409
+                  // server-side).
+                  onTap: first.mentorIsAvailable
+                      ? () => _requestCall(
+                          context,
+                          ref,
+                          mentorId,
+                          mentorName,
+                          first.mentorAvailableDays,
+                        )
+                      : null,
+                ),
               _RowIconButton(
                 icon: Icons.chat_bubble_rounded,
                 tooltip: 'Open chat',
@@ -1179,9 +1214,9 @@ class _SessionActionsState extends ConsumerState<_SessionActions> {
   /// same as the original booking) — the backend's 409 on a real
   /// double-booking clash surfaces via `_act`'s own error snackbar.
   Future<void> _rescheduleBooking(SessionsApi api) async {
-    final picked = await Navigator.of(
-      context,
-    ).push<DateTime>(MaterialPageRoute(builder: (_) => const CustomCallTimeScreen()));
+    final picked = await Navigator.of(context).push<DateTime>(
+      MaterialPageRoute(builder: (_) => const CustomCallTimeScreen()),
+    );
     if (picked == null || !mounted) return;
     await _act((id) => api.reschedule(id, picked));
   }
@@ -1214,10 +1249,7 @@ class _SessionActionsState extends ConsumerState<_SessionActions> {
 
     setState(() => _busy = true);
     try {
-      final updated = await api.accept(
-        session.id,
-        confirmedFor: confirmedFor,
-      );
+      final updated = await api.accept(session.id, confirmedFor: confirmedFor);
       ref.invalidate(sessionsListProvider);
       if (!mounted) return;
       if (updated.type == 'AUDIO_CALL' && confirmedFor == null) {
@@ -1397,9 +1429,7 @@ class _SessionActionsState extends ConsumerState<_SessionActions> {
                     : _ActionButton(
                         label: 'Reschedule',
                         outlined: true,
-                        onPressed: _busy
-                            ? null
-                            : () => _rescheduleBooking(api),
+                        onPressed: _busy ? null : () => _rescheduleBooking(api),
                       ),
               ],
             ] else if (widget.isMentor &&
@@ -1436,9 +1466,7 @@ class _SessionActionsState extends ConsumerState<_SessionActions> {
                     : _ActionButton(
                         label: 'Reschedule',
                         outlined: true,
-                        onPressed: _busy
-                            ? null
-                            : () => _rescheduleBooking(api),
+                        onPressed: _busy ? null : () => _rescheduleBooking(api),
                       ),
               ],
             ],

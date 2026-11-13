@@ -84,6 +84,37 @@ Future<void> startChatWithMentor(
 }) async {
   final api = ref.read(sessionsApiProvider);
   try {
+    // A mentor opening another mentor who has ALREADY messaged them lands in
+    // that thread (they hold the mentor seat of it) instead of starting a
+    // second one with the seats swapped.
+    final me = ref.read(authControllerProvider).user;
+    if (me != null && me.role == UserRole.mentor) {
+      final all = await ref.read(sessionsListProvider.future);
+      final theirs =
+          all
+              .where(
+                (s) =>
+                    s.type == 'CHAT' &&
+                    s.aspirantId == mentorId &&
+                    s.mentorId == me.id &&
+                    (s.status == SessionStatus.accepted ||
+                        s.status == SessionStatus.inProgress ||
+                        s.status == SessionStatus.completed),
+              )
+              .toList()
+            ..sort((a, b) => b.requestedAt.compareTo(a.requestedAt));
+      if (theirs.isNotEmpty) {
+        if (!context.mounted) return;
+        context.push(
+          '/chats/room',
+          extra: {
+            'sessionId': theirs.first.id,
+            if (draft != null && draft.trim().isNotEmpty) 'draft': draft,
+          },
+        );
+        return;
+      }
+    }
     Session session;
     try {
       session = await api.create(mentorId, SessionKind.chat);
@@ -334,18 +365,25 @@ class _MentorListScreenState extends ConsumerState<MentorListScreen> {
     final mentorsAsync = ref.watch(mentorsListProvider(filters));
     final hasActiveFilters = _hasActiveFilters(effectiveStream);
 
+    // A mentor browsing this tab sees the same list as an aspirant, minus
+    // themselves, and without the saved-mentors heart (the wishlist is
+    // aspirant-only on the backend).
+    final viewer = ref.watch(authControllerProvider).user;
+    final isMentorViewer = viewer?.role == UserRole.mentor;
+
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: GradientAppBar(
         title: const Text('Mentors'),
         actions: [
-          IconButton(
-            onPressed: () => context.push('/mentors/saved'),
-            // Red matches the per-card save heart (AppColors.error) and the
-            // Discover tab's equivalent "saved" nav icon.
-            icon: const Icon(Icons.favorite_rounded, color: AppColors.error),
-            tooltip: 'Saved mentors',
-          ),
+          if (!isMentorViewer)
+            IconButton(
+              onPressed: () => context.push('/mentors/saved'),
+              // Red matches the per-card save heart (AppColors.error) and
+              // the Discover tab's equivalent "saved" nav icon.
+              icon: const Icon(Icons.favorite_rounded, color: AppColors.error),
+              tooltip: 'Saved mentors',
+            ),
         ],
       ),
       body: SafeArea(
@@ -519,6 +557,9 @@ class _MentorListScreenState extends ConsumerState<MentorListScreen> {
                     // page the server returned — see the field doc comment
                     // above for why those stay client-side.
                     final matched = mentors.where((m) {
+                      // A mentor never appears in their own list — there is
+                      // nobody to message there.
+                      if (isMentorViewer && m.id == viewer?.id) return false;
                       if (query.isNotEmpty &&
                           !m.displayName.toLowerCase().contains(query)) {
                         return false;

@@ -625,13 +625,16 @@ class _ActionBar extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // Chat and call are both aspirant→mentor actions — a mentor (or admin)
-    // landing on another mentor's profile has nothing to do down here, and
-    // the Call button in particular would run a Uniminutes balance check
-    // against a wallet that never funds calls. Hide the whole bar.
-    final isAspirant =
-        ref.watch(authControllerProvider).user?.role == UserRole.aspirant;
-    if (!isAspirant) return const SizedBox.shrink();
+    // Chat and call are aspirant→mentor actions. A mentor viewing ANOTHER
+    // mentor gets Chat only — there is no Call option at all (the real call
+    // flow would run a Uniminutes balance check against a wallet that never
+    // funds calls). Anyone else (an admin, or a mentor on their own profile)
+    // has nothing to do down here: hide the whole bar.
+    final viewer = ref.watch(authControllerProvider).user;
+    final isAspirant = viewer?.role == UserRole.aspirant;
+    final isPeerMentor =
+        viewer?.role == UserRole.mentor && viewer?.id != mentor.id;
+    if (!isAspirant && !isPeerMentor) return const SizedBox.shrink();
 
     return Container(
       decoration: const BoxDecoration(
@@ -671,38 +674,41 @@ class _ActionBar extends ConsumerWidget {
                       ),
                     ),
                   ),
-                  const SizedBox(width: AppSpacing.sm),
-                  Expanded(
-                    child: FilledButton.icon(
-                      onPressed: mentor.isAvailable
-                          ? () => showCallRequestSheet(
-                              context,
-                              ref,
-                              mentorId: mentor.id,
-                              mentorName: mentor.displayName,
-                              mentorWindows: mentor.availableDays,
-                            )
-                          : null,
-                      style: FilledButton.styleFrom(
-                        backgroundColor: AppColors.primary,
-                        padding: const EdgeInsets.symmetric(vertical: 13),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(AppRadius.md),
+                  // No Call option when a mentor views another mentor.
+                  if (!isPeerMentor) ...[
+                    const SizedBox(width: AppSpacing.sm),
+                    Expanded(
+                      child: FilledButton.icon(
+                        onPressed: mentor.isAvailable
+                            ? () => showCallRequestSheet(
+                                context,
+                                ref,
+                                mentorId: mentor.id,
+                                mentorName: mentor.displayName,
+                                mentorWindows: mentor.availableDays,
+                              )
+                            : null,
+                        style: FilledButton.styleFrom(
+                          backgroundColor: AppColors.primary,
+                          padding: const EdgeInsets.symmetric(vertical: 13),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(AppRadius.md),
+                          ),
+                        ),
+                        icon: const Icon(Icons.call_rounded, size: 18),
+                        label: Text(
+                          mentor.isAvailable ? 'Call' : 'Calls off',
+                          style: const TextStyle(fontWeight: AppFont.bold),
                         ),
                       ),
-                      icon: const Icon(Icons.call_rounded, size: 18),
-                      label: Text(
-                        mentor.isAvailable ? 'Call' : 'Calls off',
-                        style: const TextStyle(fontWeight: AppFont.bold),
-                      ),
                     ),
-                  ),
+                  ],
                 ],
               ),
               // Explains the disabled Call button at the exact moment it's
               // confusing, and makes the model explicit: chat never depends
               // on availability, calls do.
-              if (!mentor.isAvailable) ...[
+              if (!isPeerMentor && !mentor.isAvailable) ...[
                 const SizedBox(height: AppSpacing.xs),
                 const Text(
                   "This mentor isn't taking call bookings right now. "
