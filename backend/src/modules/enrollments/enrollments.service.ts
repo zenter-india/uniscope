@@ -152,6 +152,28 @@ export class EnrollmentsService {
         profile,
       });
 
+    // The alias they typed was already used, so they got the next free one
+    // ("John" -> "John1"). Tell them, so a changed name is never a surprise.
+    const requestedAlias = dto.alias?.trim();
+    if (
+      isNewUser &&
+      requestedAlias &&
+      user.displayName.toLowerCase() !== requestedAlias.toLowerCase()
+    ) {
+      await this.notifications
+        .send({
+          userId: user.id,
+          type: NotificationType.SYSTEM,
+          title: 'Your alias was changed',
+          body: `"${requestedAlias}" was already taken, so your alias is "${user.displayName}". You can change it any time in your profile.`,
+        })
+        .catch((err) =>
+          this.logger.warn(
+            `Alias-changed notification failed for ${user.id}: ${err}`,
+          ),
+        );
+    }
+
     // Turn a web-form doc + resolved college into a real VerificationRequest
     // so it lands in the admin queue — instead of silently dropping it. This
     // fires for a brand-new mentor account AND for an EXISTING mentor account
