@@ -2,11 +2,11 @@
 
 import Link from 'next/link';
 import { useState, useTransition } from 'react';
-import { Badge, Button, toneFor } from '../../../components/ui';
+import { Badge, Button, Input, toneFor } from '../../../components/ui';
 import { ExpandableRow } from '../../../components/ExpandableRow';
 import type { RowSelection } from '../../../components/InfiniteList';
 import { toast } from '../../../lib/toast';
-import { getLeadDocumentUrl, updateLead } from './actions';
+import { getLeadDocumentUrl, retryLeadAccount, updateLead } from './actions';
 
 const DOCUMENT_TYPE_LABELS: Record<string, string> = {
   STUDENT_ID: 'College / Student ID card',
@@ -75,7 +75,26 @@ export function LeadRow({
   const [docUrl, setDocUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
+  const [convertedUserId, setConvertedUserId] = useState(lead.convertedUserId);
+  const [retryOpen, setRetryOpen] = useState(false);
+  const [retryAlias, setRetryAlias] = useState(lead.alias ?? '');
   const [isPending, startTransition] = useTransition();
+
+  const retryAccount = () => {
+    setError(null);
+    startTransition(async () => {
+      const res = await retryLeadAccount(lead.id, retryAlias);
+      if (!res.ok) {
+        setError(res.error);
+        toast.error(res.error);
+        return;
+      }
+      setConvertedUserId(res.convertedUserId);
+      setStatus(res.status as (typeof STATUS_OPTIONS)[number]);
+      setRetryOpen(false);
+      toast.success('Account created.');
+    });
+  };
 
   const viewDocument = () => {
     setError(null);
@@ -141,6 +160,46 @@ export function LeadRow({
         </span>,
       ]}
     >
+      {!convertedUserId && (
+        <div className="mb-3 rounded-lg border border-amber-200 bg-amber-50 p-3 dark:border-amber-500/30 dark:bg-amber-500/10">
+          <p className="text-sm font-medium text-amber-900 dark:text-amber-200">
+            No account was created for this lead.
+          </p>
+          {retryOpen ? (
+            <div className="mt-2 flex flex-wrap items-end gap-3">
+              <div className="flex min-w-[220px] flex-col gap-1">
+                <label className="text-xs font-medium text-amber-900 dark:text-amber-200" htmlFor={`alias-${lead.id}`}>
+                  Alias for the account
+                </label>
+                <Input
+                  id={`alias-${lead.id}`}
+                  value={retryAlias}
+                  onChange={(e) => setRetryAlias(e.target.value)}
+                  placeholder="Leave empty to use what they typed"
+                  maxLength={60}
+                />
+              </div>
+              <Button size="sm" variant="primary" onClick={retryAccount} disabled={isPending}>
+                {isPending ? 'Creating…' : 'Create account'}
+              </Button>
+              <Button size="sm" onClick={() => setRetryOpen(false)} disabled={isPending}>
+                Cancel
+              </Button>
+              <p className="w-full text-xs text-amber-800 dark:text-amber-300">
+                Uses the details{lead.hasDocument ? ' and document' : ''} already saved on this lead. If the alias is taken,
+                the next free one is used (for example John1) and the person is notified.
+              </p>
+            </div>
+          ) : (
+            <div className="mt-2">
+              <Button size="sm" onClick={() => setRetryOpen(true)} disabled={isPending}>
+                Retry account
+              </Button>
+            </div>
+          )}
+        </div>
+      )}
+
       <div className="flex flex-wrap items-center gap-3">
         {lead.hasDocument && (
           <Button size="sm" onClick={viewDocument} disabled={isPending}>
@@ -223,9 +282,9 @@ export function LeadRow({
           <Field
             label="Converted account"
             value={
-              lead.convertedUserId ? (
+              convertedUserId ? (
                 <Link
-                  href={`/dashboard/users/${lead.convertedUserId}`}
+                  href={`/dashboard/users/${convertedUserId}`}
                   className="text-zinc-900 dark:text-zinc-100 underline decoration-zinc-300 underline-offset-2 hover:decoration-zinc-600"
                 >
                   View user

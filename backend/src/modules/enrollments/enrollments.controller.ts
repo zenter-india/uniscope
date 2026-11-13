@@ -24,6 +24,7 @@ import {
   CreateMentorLeadDto,
 } from './dto/create-lead.dto.js';
 import { ListLeadsDto } from './dto/list-leads.dto.js';
+import { RetryLeadAccountDto } from './dto/retry-lead-account.dto.js';
 import { UpdateLeadDto } from './dto/update-lead.dto.js';
 import { EnrollmentLeadAcknowledgement } from './enrollment-lead-response.js';
 import { EnrollmentsService } from './enrollments.service.js';
@@ -121,6 +122,14 @@ export class EnrollmentsController {
   @Patch('bulk')
   bulkUpdate(@Body() dto: BulkUpdateLeadsDto) {
     return this.enrollmentsService.bulkUpdateStatus(dto.ids, dto.status);
+  }
+
+  /** Re-runs account creation for a lead that never became an account. */
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @Post(':id/retry-account')
+  retryAccount(@Param('id') id: string, @Body() dto: RetryLeadAccountDto) {
+    return this.enrollmentsService.retryAccount(id, dto.alias);
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
