@@ -207,28 +207,29 @@ model User {
 
   // Relations
   profile               UserProfile?
-  verificationRequests  VerificationRequest[] @relation("UserVerificationRequests")
-  reviewedRequests      VerificationRequest[] @relation("ReviewerVerificationRequests")
+  verificationRequests  VerificationRequest[]  @relation("UserVerificationRequests")
+  reviewedRequests      VerificationRequest[]  @relation("ReviewerVerificationRequests")
   reviews               Review[]
-  sentReports           Report[]              @relation("ReporterReports")
-  actionedReports       Report[]              @relation("ActionedByReports")
-  technicalReports      TechnicalReport[]     @relation("TechnicalReportAuthor")
-  resolvedTechReports   TechnicalReport[]     @relation("TechnicalReportResolver")
+  sentReports           Report[]               @relation("ReporterReports")
+  actionedReports       Report[]               @relation("ActionedByReports")
+  technicalReports      TechnicalReport[]      @relation("TechnicalReportAuthor")
+  resolvedTechReports   TechnicalReport[]      @relation("TechnicalReportResolver")
   appleTransactions     AppleTransaction[]
   permissionDenials     UserPermissionDenial[]
+  permissionEvents      UserPermissionEvent[]
   notifications         Notification[]
   pushTokens            PushToken[]
-  mentorReviewsReceived MentorReview[]        @relation("MentorReviewsReceived")
-  mentorReviewsAuthored MentorReview[]        @relation("MentorReviewsAuthored")
+  mentorReviewsReceived MentorReview[]         @relation("MentorReviewsReceived")
+  mentorReviewsAuthored MentorReview[]         @relation("MentorReviewsAuthored")
   wallet                Wallet?
-  aspirantSessions      Session[]             @relation("AspirantSessions")
-  mentorSessions        Session[]             @relation("MentorSessions")
-  payoutRequests        PayoutRequest[]       @relation("MentorPayouts")
-  processedPayouts      PayoutRequest[]       @relation("ProcessedPayouts")
-  savedByAspirants      SavedMentor[]         @relation("SavedMentorTarget")
-  savedMentors          SavedMentor[]         @relation("SavedMentorAspirant")
-  blockedUsers          BlockedUser[]         @relation("BlockerRelation")
-  blockedByUsers        BlockedUser[]         @relation("BlockedRelation")
+  aspirantSessions      Session[]              @relation("AspirantSessions")
+  mentorSessions        Session[]              @relation("MentorSessions")
+  payoutRequests        PayoutRequest[]        @relation("MentorPayouts")
+  processedPayouts      PayoutRequest[]        @relation("ProcessedPayouts")
+  savedByAspirants      SavedMentor[]          @relation("SavedMentorTarget")
+  savedMentors          SavedMentor[]          @relation("SavedMentorAspirant")
+  blockedUsers          BlockedUser[]          @relation("BlockerRelation")
+  blockedByUsers        BlockedUser[]          @relation("BlockedRelation")
   savedUniversities     SavedUniversity[]
   chatChannelReads      ChatChannelRead[]
 
@@ -377,13 +378,13 @@ model University {
   createdAt       DateTime                 @default(now()) @map("created_at") @db.Timestamptz
   updatedAt       DateTime                 @updatedAt @map("updated_at") @db.Timestamptz
 
-  profiles             UserProfile[]
-  programs             Program[]
+  profiles                  UserProfile[]
+  programs                  Program[]
   specializationSuggestions SpecializationSuggestion[]
-  verificationRequests VerificationRequest[]
-  reviews              Review[]
-  savedByAspirants     SavedUniversity[]
-  enrollmentLeads      EnrollmentLead[]
+  verificationRequests      VerificationRequest[]
+  reviews                   Review[]
+  savedByAspirants          SavedUniversity[]
+  enrollmentLeads           EnrollmentLead[]
 
   @@index([state])
   @@index([stream])
@@ -952,23 +953,23 @@ enum CustomDegreeStatus {
 /// stream's degree picker for everyone next time. REJECTED rows are kept so
 /// the same typo isn't re-queued (a re-submission only bumps the count).
 model CustomDegree {
-  id              String             @id @default(uuid())
-  stream          String             @db.VarChar(60)
+  id               String             @id @default(uuid())
+  stream           String             @db.VarChar(60)
   /// As shown to users (admin can fix casing/typos when approving).
-  name            String             @db.VarChar(50)
+  name             String             @db.VarChar(50)
   /// lower-cased, whitespace-collapsed `name` — the dedupe key.
-  nameKey         String             @map("name_key") @db.VarChar(50)
-  status          CustomDegreeStatus @default(PENDING)
+  nameKey          String             @map("name_key") @db.VarChar(50)
+  status           CustomDegreeStatus @default(PENDING)
   /// How many times people have typed this exact degree — lets an admin see
   /// which pending ones matter first.
-  submissionCount Int                @default(1) @map("submission_count")
+  submissionCount  Int                @default(1) @map("submission_count")
   /// User id of the first person who typed it. Plain column (no relation) so
   /// a deleted/anonymised user never blocks or cascades into this list.
-  firstSubmittedBy String?           @map("first_submitted_by")
-  reviewedBy      String?            @map("reviewed_by")
-  reviewedAt      DateTime?          @map("reviewed_at") @db.Timestamptz
-  createdAt       DateTime           @default(now()) @map("created_at") @db.Timestamptz
-  updatedAt       DateTime           @updatedAt @map("updated_at") @db.Timestamptz
+  firstSubmittedBy String?            @map("first_submitted_by")
+  reviewedBy       String?            @map("reviewed_by")
+  reviewedAt       DateTime?          @map("reviewed_at") @db.Timestamptz
+  createdAt        DateTime           @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt        DateTime           @updatedAt @map("updated_at") @db.Timestamptz
 
   @@unique([stream, nameKey])
   @@index([status, createdAt(sort: Desc)])
@@ -1070,11 +1071,34 @@ model UserPermissionDenial {
   userId     String   @map("user_id")
   permission String   @db.VarChar(40)
   createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz
+  /// Email of the admin who switched it off, and why. Kept as the row is
+  /// only ever deleted (re-allowed), never rewritten, so createdAt stays the
+  /// original denial date.
+  deniedBy   String?  @map("denied_by") @db.VarChar(120)
+  reason     String?  @db.VarChar(300)
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@id([userId, permission])
   @@map("user_permission_denials")
+}
+
+/// History of every change to a user's permissions (who, what, when, why).
+/// Append-only; the current state lives in UserPermissionDenial.
+model UserPermissionEvent {
+  id         String   @id @default(uuid())
+  userId     String   @map("user_id")
+  permission String   @db.VarChar(40)
+  /// 'DENY' or 'ALLOW'
+  action     String   @db.VarChar(10)
+  adminEmail String?  @map("admin_email") @db.VarChar(120)
+  reason     String?  @db.VarChar(300)
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt(sort: Desc)])
+  @@map("user_permission_events")
 }
 
 /// Login credentials for the admin panel itself — separate from the app's
