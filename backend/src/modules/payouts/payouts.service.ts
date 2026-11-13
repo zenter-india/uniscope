@@ -23,6 +23,7 @@ import {
   PayoutRequestResponse,
   toPayoutRequestResponse,
 } from './payout-response.js';
+import { assertPermission } from '../../common/helpers/user-permissions.helper.js';
 
 const OPEN_STATUSES: PayoutStatus[] = [
   PayoutStatus.PENDING,
@@ -176,6 +177,7 @@ export class PayoutsService {
    * recent request regardless of its outcome.
    */
   async requestPayout(mentorId: string): Promise<PayoutRequestResponse> {
+    await assertPermission(this.prisma, mentorId, 'PAYOUT_REQUEST');
     const existingOpen = await this.prisma.payoutRequest.findFirst({
       where: { mentorId, status: { in: OPEN_STATUSES } },
     });

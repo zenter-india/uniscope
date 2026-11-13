@@ -215,6 +215,7 @@ model User {
   technicalReports      TechnicalReport[]     @relation("TechnicalReportAuthor")
   resolvedTechReports   TechnicalReport[]     @relation("TechnicalReportResolver")
   appleTransactions     AppleTransaction[]
+  permissionDenials     UserPermissionDenial[]
   notifications         Notification[]
   pushTokens            PushToken[]
   mentorReviewsReceived MentorReview[]        @relation("MentorReviewsReceived")
@@ -1058,6 +1059,22 @@ model AppSetting {
   updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
 
   @@map("app_settings")
+}
+
+/// One row = an admin has switched OFF one app-user permission for one user
+/// (see common/helpers/user-permissions.helper.ts for the permission keys).
+/// Everything is allowed by default, so a user with no rows has every
+/// permission -- the table only ever records revocations. Re-allowing a
+/// permission deletes its row.
+model UserPermissionDenial {
+  userId     String   @map("user_id")
+  permission String   @db.VarChar(40)
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([userId, permission])
+  @@map("user_permission_denials")
 }
 
 /// Login credentials for the admin panel itself — separate from the app's

@@ -16,6 +16,7 @@ import {
   toUniversityReviewResponse,
   UniversityReviewResponse,
 } from './university-review-response.js';
+import { assertPermission } from '../../common/helpers/user-permissions.helper.js';
 
 const DEFAULT_LIMIT = 20;
 const MAX_LIMIT = 50;
@@ -66,6 +67,7 @@ export class UniversityReviewsService {
     universityId: string,
     dto: CreateUniversityReviewDto,
   ): Promise<UniversityReviewResponse> {
+    await assertPermission(this.prisma, authorId, 'REVIEW_POST');
     const [user, university] = await Promise.all([
       this.prisma.user.findUniqueOrThrow({
         where: { id: authorId },
