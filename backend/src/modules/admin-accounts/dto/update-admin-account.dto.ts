@@ -1,4 +1,6 @@
 import {
+  ArrayMaxSize,
+  IsArray,
   IsBoolean,
   IsOptional,
   IsString,
@@ -26,4 +28,16 @@ export class UpdateAdminAccountDto {
   @MinLength(10)
   @MaxLength(200)
   password?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  fullAccess?: boolean;
+
+  /** The complete list of allowed keys (replaces the stored one). */
+  @IsOptional()
+  @IsArray()
+  @ArrayMaxSize(100)
+  @IsString({ each: true })
+  @MaxLength(60, { each: true })
+  permissions?: string[];
 }

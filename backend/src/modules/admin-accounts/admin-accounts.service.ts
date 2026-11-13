@@ -9,6 +9,7 @@ import {
   toAdminAccountResponse,
   type AdminAccountResponse,
 } from './admin-account-response.js';
+import { normalizePermissions } from './admin-permissions.js';
 import type { CreateAdminAccountDto } from './dto/create-admin-account.dto.js';
 import type { UpdateAdminAccountDto } from './dto/update-admin-account.dto.js';
 
@@ -24,6 +25,15 @@ const DUMMY_HASH = bcrypt.hashSync(
   'no-such-admin-account-placeholder',
   BCRYPT_ROUNDS,
 );
+
+/** What an admin may do right now, looked up per request by the admin panel
+ * so a change (or a deactivation) takes effect immediately. */
+export interface AdminAccess {
+  exists: boolean;
+  isActive: boolean;
+  fullAccess: boolean;
+  permissions: string[];
+}
 
 export interface AdminLoginResult {
   ok: boolean;
@@ -59,9 +69,31 @@ export class AdminAccountsService {
         email,
         passwordHash,
         displayName: dto.displayName?.trim() || null,
+        // A new admin starts with only what the creator ticked.
+        fullAccess: dto.fullAccess ?? false,
+        permissions: normalizePermissions(dto.permissions ?? []),
       },
     });
     return toAdminAccountResponse(row);
+  }
+
+  /** Access for one signed-in admin, by email. An unknown email returns
+   * exists:false (the root env login is not a row here and is handled by the
+   * admin panel itself). */
+  async accessFor(email: string): Promise<AdminAccess> {
+    const row = await this.prisma.adminAccount.findUnique({
+      where: { email: email.trim().toLowerCase() },
+      select: { isActive: true, fullAccess: true, permissions: true },
+    });
+    if (!row) {
+      return {
+        exists: false,
+        isActive: false,
+        fullAccess: false,
+        permissions: [],
+      };
+    }
+    return { exists: true, ...row };
   }
 
   async update(
@@ -77,6 +109,10 @@ export class AdminAccountsService {
       where: { id },
       data: {
         ...(dto.isActive !== undefined ? { isActive: dto.isActive } : {}),
+        ...(dto.fullAccess !== undefined ? { fullAccess: dto.fullAccess } : {}),
+        ...(dto.permissions !== undefined
+          ? { permissions: normalizePermissions(dto.permissions) }
+          : {}),
         ...(dto.displayName !== undefined
           ? { displayName: dto.displayName.trim() || null }
           : {}),

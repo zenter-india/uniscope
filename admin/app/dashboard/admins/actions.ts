@@ -8,6 +8,8 @@ export interface AdminAccount {
   email: string;
   displayName: string | null;
   isActive: boolean;
+  fullAccess: boolean;
+  permissions: string[];
   lastLoginAt: string | null;
   createdAt: string;
 }
@@ -23,6 +25,8 @@ export async function createAdminAccount(input: {
   email: string;
   password: string;
   displayName?: string;
+  fullAccess: boolean;
+  permissions: string[];
 }): Promise<CreateResult> {
   try {
     const account = await backendFetch<AdminAccount>('/admin/admin-accounts', {
@@ -59,5 +63,22 @@ export async function resetAdminAccountPassword(id: string, password: string): P
     return { ok: true };
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : 'Could not reset the password' };
+  }
+}
+
+/** Saves what an admin may open and change (replaces the stored list). */
+export async function updateAdminAccountPermissions(
+  id: string,
+  input: { fullAccess: boolean; permissions: string[] },
+): Promise<{ ok: true; account: AdminAccount } | { ok: false; error: string }> {
+  try {
+    const account = await backendFetch<AdminAccount>(`/admin/admin-accounts/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(input),
+    });
+    revalidatePath('/dashboard/admins');
+    return { ok: true, account };
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : 'Could not save the permissions' };
   }
 }
