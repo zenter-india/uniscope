@@ -8,6 +8,8 @@ import { GlobalSearch } from '../../components/GlobalSearch';
 import { ToastHost } from '../../components/ToastHost';
 import { ThemeToggle } from '../../components/ThemeToggle';
 import { Icon, type IconName } from '../../components/icons';
+import { useAccess } from '../../components/AccessContext';
+import { canView, sectionForPath } from '../../lib/permissions';
 
 const NAV_SECTIONS: {
   heading: string;
@@ -64,9 +66,18 @@ function NavSections({
   /** Larger rows for the mobile drawer (≥44px tap targets). */
   touch?: boolean;
 }) {
+  const access = useAccess();
+  // Only show the sections this admin may open.
+  const visible = NAV_SECTIONS.map((section) => ({
+    ...section,
+    items: section.items.filter((item) => {
+      const s = sectionForPath(item.href);
+      return !s || canView(access, s.key);
+    }),
+  })).filter((section) => section.items.length > 0);
   return (
     <>
-      {NAV_SECTIONS.map((section) => (
+      {visible.map((section) => (
         <div key={section.heading}>
           <p className="px-2 pb-1.5 text-[11px] font-semibold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">
             {section.heading}

@@ -1080,6 +1080,12 @@ model AdminAccount {
   /// Deactivate, never delete -- matches this project's convention
   /// everywhere else (University.isActive, User.isActive, ...).
   isActive     Boolean   @default(true) @map("is_active")
+  /// true = can open and change every section of the admin panel (the default,
+  /// so admins created before permissions existed keep working unchanged).
+  fullAccess   Boolean   @default(true) @map("full_access")
+  /// Used when fullAccess is false: keys like "users:view" / "users:edit",
+  /// one per admin-panel section and action (see admin-permissions.ts).
+  permissions  String[]  @default([])
   lastLoginAt  DateTime? @map("last_login_at") @db.Timestamptz
   createdAt    DateTime  @default(now()) @map("created_at") @db.Timestamptz
   updatedAt    DateTime  @updatedAt @map("updated_at") @db.Timestamptz
