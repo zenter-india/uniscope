@@ -62,6 +62,11 @@ export class ListUsersDto {
   @IsIn(['true'])
   accepting?: 'true';
 
+  /** `true` = only users with at least one permission an admin has denied. */
+  @IsOptional()
+  @IsIn(['true'])
+  restricted?: 'true';
+
   @IsOptional()
   @IsString()
   cursor?: string;

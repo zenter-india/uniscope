@@ -27,7 +27,7 @@ export default async function PermissionsPage({
       />
 
       <form className="mb-5 flex max-w-xl gap-2" action="/dashboard/permissions">
-        <Input name="search" defaultValue={search} placeholder="Search a user by display name" />
+        <Input name="search" defaultValue={search} placeholder="Search by display name or unique ID" />
         <Button type="submit">Search</Button>
       </form>
 

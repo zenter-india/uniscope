@@ -1,11 +1,13 @@
 import {
   BadRequestException,
   Injectable,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
-import { UserRole } from '@prisma/client';
+import { NotificationType, UserRole } from '@prisma/client';
 import { permissionsForRole } from '../../common/helpers/user-permissions.helper.js';
 import { PrismaService } from '../../database/prisma/prisma.service.js';
+import { NotificationsService } from '../notifications/notifications.service.js';
 
 export interface UserPermissionsView {
   user: {
@@ -48,7 +50,12 @@ const REASON_MAX = 300;
 
 @Injectable()
 export class UserPermissionsService {
-  constructor(private readonly prisma: PrismaService) {}
+  private readonly logger = new Logger(UserPermissionsService.name);
+
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly notifications: NotificationsService,
+  ) {}
 
   private async requireAppUser(userId: string) {
     const user = await this.prisma.user.findUnique({
@@ -181,7 +188,54 @@ export class UserPermissionsService {
           ],
         }),
       ]);
+      await this.notifyUser(user.role, userId, toDeny, toAllow, reason);
     }
     return this.get(userId);
+  }
+
+  /** Tells the user in the app what changed (and why, for a denial). Best
+   * effort: a failed notification never fails the admin's save. */
+  private async notifyUser(
+    role: UserRole,
+    userId: string,
+    toDeny: string[],
+    toAllow: string[],
+    reason: string | null,
+  ): Promise<void> {
+    const labels = (keys: string[]) =>
+      keys
+        .map(
+          (k) =>
+            permissionsForRole(role)
+              .find((p) => p.key === k)
+              ?.label.toLowerCase() ?? k,
+        )
+        .join(', ');
+    try {
+      if (toDeny.length > 0) {
+        await this.notifications.send({
+          userId,
+          type: NotificationType.SYSTEM,
+          title: 'Some features are turned off for your account',
+          body: `Uniscope has turned off: ${labels(toDeny)}. Reason: ${reason ?? 'not given'}. If you think this is a mistake, contact Uniscope support.`,
+          metadata: { kind: 'PERMISSION_DENIED' },
+        });
+      }
+      if (toAllow.length > 0) {
+        await this.notifications.send({
+          userId,
+          type: NotificationType.SYSTEM,
+          title: 'Features turned back on',
+          body: `You can use these again: ${labels(toAllow)}.`,
+          metadata: { kind: 'PERMISSION_ALLOWED' },
+        });
+      }
+    } catch (err) {
+      this.logger.warn(
+        `Could not notify user ${userId} of a permission change: ${
+          err instanceof Error ? err.message : String(err)
+        }`,
+      );
+    }
   }
 }

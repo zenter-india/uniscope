@@ -36,7 +36,7 @@ function Field({ label, children }: { label: string; children: ReactNode }) {
  * verification / banned choices made with the tabs above are carried along in
  * hidden fields so they are not lost.
  *
- *  - Search finds a name, a specialization or a college.
+ *  - Search finds a name, a unique ID, a specialization or a college.
  *  - Always shown: Specialization and Level (UG / PG).
  *  - "More filters": Degree, Stream, State, Accepting calls, and College.
  */
@@ -111,7 +111,7 @@ export function UserFilters({
           type="text"
           name="search"
           defaultValue={search}
-          placeholder="Search a name, specialization or college…"
+          placeholder="Search a name, unique ID, specialization or college…"
           className="min-w-0 flex-1 sm:max-w-md rounded-md border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-1.5 text-sm text-zinc-900 dark:text-zinc-100 shadow-sm outline-none transition-colors placeholder:text-zinc-400 dark:placeholder:text-zinc-500 focus:border-zinc-400 dark:focus:border-zinc-600 focus:ring-2 focus:ring-zinc-400/40 dark:focus:ring-zinc-600/40"
         />
         <button

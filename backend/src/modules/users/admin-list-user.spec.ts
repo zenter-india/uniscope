@@ -34,6 +34,18 @@ describe('toAdminListUser — the Users list row', () => {
     expect(row(undefined).specialization).toBeNull();
   });
 
+  it('carries how many permissions an admin has denied (0 when none)', () => {
+    const withCount = (n?: number) =>
+      toAdminListUser({
+        ...baseUser,
+        profile: null,
+        ...(n !== undefined && { _count: { permissionDenials: n } }),
+      } as never).deniedPermissions;
+    expect(withCount(2)).toBe(2);
+    expect(withCount(0)).toBe(0);
+    expect(withCount()).toBe(0);
+  });
+
   it('keeps the usual list fields', () => {
     expect(row({ specialization: 'Anatomy' })).toMatchObject({
       id: 'u1',

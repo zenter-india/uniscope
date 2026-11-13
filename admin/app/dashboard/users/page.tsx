@@ -25,6 +25,7 @@ interface Current {
   role: string;
   verificationStatus: string;
   banned: boolean;
+  restricted: boolean;
   search: string;
   sort?: string;
   dir?: string;
@@ -47,6 +48,7 @@ function hrefFor(current: Current, changes: Partial<Current> = {}) {
   if (c.verificationStatus && c.verificationStatus !== 'ALL')
     qs.set('verificationStatus', c.verificationStatus);
   if (c.banned) qs.set('banned', '1');
+  if (c.restricted) qs.set('restricted', '1');
   if (c.search) qs.set('search', c.search);
   if (c.specialization) qs.set('specialization', c.specialization);
   if (c.level) qs.set('level', c.level);
@@ -72,6 +74,7 @@ export default async function UsersPage({
     search?: string;
     verificationStatus?: string;
     banned?: string;
+    restricted?: string;
     sort?: string;
     dir?: string;
     specialization?: string;
@@ -97,6 +100,7 @@ export default async function UsersPage({
     role,
     verificationStatus,
     banned: sp.banned === '1',
+    restricted: sp.restricted === '1',
     search: sp.search ?? '',
     sort,
     dir: sp.dir === 'asc' ? 'asc' : sort ? 'desc' : undefined,
@@ -115,6 +119,7 @@ export default async function UsersPage({
   if (current.search) params.set('search', current.search);
   if (verificationStatus !== 'ALL') params.set('verificationStatus', verificationStatus);
   if (current.banned) params.set('isBanned', 'true');
+  if (current.restricted) params.set('restricted', 'true');
   if (current.sort) params.set('sortBy', current.sort);
   if (current.dir) params.set('sortDir', current.dir);
   if (current.specialization) params.set('specialization', current.specialization);
@@ -145,6 +150,7 @@ export default async function UsersPage({
   if (role !== 'ALL') carried.role = role;
   if (verificationStatus !== 'ALL') carried.verificationStatus = verificationStatus;
   if (current.banned) carried.banned = '1';
+  if (current.restricted) carried.restricted = '1';
   if (current.sort) carried.sort = current.sort;
   if (current.dir) carried.dir = current.dir;
 
@@ -205,6 +211,16 @@ export default async function UsersPage({
           >
             {current.banned ? '✓ Banned only' : 'Banned only'}
           </Link>
+          <Link
+            href={hrefFor(current, { restricted: !current.restricted })}
+            className={`rounded-md px-2.5 py-1 text-xs font-medium transition-colors max-md:py-2 ${
+              current.restricted
+                ? 'bg-amber-600 text-white'
+                : 'border border-zinc-200 dark:border-zinc-800 text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800'
+            }`}
+          >
+            {current.restricted ? '✓ Restricted only' : 'Restricted only'}
+          </Link>
         </div>
       </div>
 
@@ -217,6 +233,7 @@ export default async function UsersPage({
           search: current.search || undefined,
           verificationStatus,
           banned: current.banned,
+          restricted: current.restricted || undefined,
           sort: current.sort,
           dir: current.dir,
           specialization: current.specialization || undefined,

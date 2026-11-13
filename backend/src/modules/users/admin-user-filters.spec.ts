@@ -61,14 +61,31 @@ describe('UsersService.findAllAdmin — filters', () => {
     });
   });
 
-  it('the search box finds a name, a specialization or a college', async () => {
+  it('the search box finds a name, a unique ID, a specialization or a college', async () => {
     const where = await whereFor({ search: 'community' });
-    expect(where.OR).toHaveLength(3);
+    expect(where.OR).toHaveLength(4);
     expect(where.OR[0]).toEqual({
       displayName: { contains: 'community', mode: 'insensitive' },
     });
-    expect(where.OR[1].profile.specialization.contains).toBe('community');
-    expect(where.OR[2].profile.university.name.contains).toBe('community');
+    expect(where.OR[1]).toEqual({
+      uniqueId: { contains: 'community', mode: 'insensitive' },
+    });
+    expect(where.OR[2].profile.specialization.contains).toBe('community');
+    expect(where.OR[3].profile.university.name.contains).toBe('community');
+  });
+
+  it('restricted=true keeps only users with a denied permission', async () => {
+    const where = await whereFor({ restricted: 'true' });
+    expect(where.permissionDenials).toEqual({ some: {} });
+    expect((await whereFor({})).permissionDenials).toBeUndefined();
+  });
+
+  it('counts the denied permissions of each user for the Restricted tag', async () => {
+    const findMany = jest.fn().mockResolvedValue([]);
+    await service({ user: { findMany } }).findAllAdmin({});
+    expect(findMany.mock.calls[0][0].include._count).toEqual({
+      select: { permissionDenials: true },
+    });
   });
 
   it('still combines with role, verification and banned', async () => {
