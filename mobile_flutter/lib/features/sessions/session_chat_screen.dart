@@ -10,12 +10,12 @@ import '../../core/network/users_api.dart';
 import '../../core/network/wallet_api.dart';
 import '../../core/theme/app_theme.dart';
 import '../../state/auth_controller.dart';
-import '../../widgets/app_widgets.dart';
 import '../reports/safety_menu_sheet.dart';
 import '../wallet/low_balance_sheet.dart';
 import '../wallet/wallet_screen.dart' show walletBalanceProvider;
 import 'active_session_dock.dart';
 import 'call_request_sheet.dart';
+import 'chat_party_header.dart';
 import 'chat_thread_view.dart';
 import 'session_list_screen.dart'
     show sessionsListProvider, showMentorSessionHistory;
@@ -229,35 +229,18 @@ class _SessionChatScreenState extends ConsumerState<SessionChatScreen> {
       backgroundColor: AppColors.background,
       appBar: AppBar(
         titleSpacing: 0,
-        // Deliberately a plain, non-tappable header — no navigation to the
-        // counterparty's profile from here. The unique ID (their public
-        // registration number, never the internal DB id) shown under the
-        // name is the only identity signal, for both aspirant and mentor.
-        title: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            AppAvatar(name: otherName, avatarUrl: otherAvatarUrl, size: 32),
-            const SizedBox(width: AppSpacing.sm),
-            Expanded(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(otherName, overflow: TextOverflow.ellipsis),
-                  if (otherUniqueId != null)
-                    Text(
-                      '@$otherUniqueId',
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        fontSize: AppFont.xs,
-                        fontWeight: AppFont.regular,
-                        color: AppColors.textSecondary,
-                      ),
-                    ),
-                ],
-              ),
-            ),
-          ],
+        // The name block opens the mentor's profile for the aspirant (UNI-37:
+        // an aspirant can see the mentor's details from the chat). For the
+        // mentor's side of a chat it stays a plain, non-tappable label. The
+        // unique ID (their public registration number, never the internal DB
+        // id) under the name is the identity signal for both roles.
+        title: ChatPartyHeader(
+          name: otherName,
+          avatarUrl: otherAvatarUrl,
+          uniqueId: otherUniqueId,
+          onTap: isAspirant
+              ? () => context.push('/mentors/${_session!.mentorId}')
+              : null,
         ),
         actions: [
           // Calls are always aspirant-initiated (request → mentor accepts →
