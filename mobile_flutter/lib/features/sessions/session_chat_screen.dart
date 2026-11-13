@@ -206,8 +206,14 @@ class _SessionChatScreenState extends ConsumerState<SessionChatScreen> {
       );
     }
 
-    final currentUserId = ref.read(authControllerProvider).user!.id;
+    final me = ref.read(authControllerProvider).user!;
+    final currentUserId = me.id;
     final isAspirant = currentUserId == _session!.aspirantId;
+    // A mentor who started this chat with another mentor (from the Mentors
+    // tab) holds the "aspirant" seat on the session but is not a student:
+    // no call booking, call history, or student-style starter prompts. Chat
+    // only: no Call icon.
+    final isPeerChat = isAspirant && me.role == UserRole.mentor;
     final otherName = isAspirant
         ? _session!.mentorName
         : _session!.aspirantName;
@@ -264,7 +270,8 @@ class _SessionChatScreenState extends ConsumerState<SessionChatScreen> {
           // `isCallAvailable()` gate every other surface uses). Greyed and
           // NOT tappable otherwise — a request would just be rejected
           // server-side.
-          if (isAspirant)
+          // A mentor chatting with another mentor gets no call icon at all.
+          if (isAspirant && !isPeerChat)
             IconButton(
               icon: Icon(
                 Icons.call_rounded,
@@ -307,7 +314,7 @@ class _SessionChatScreenState extends ConsumerState<SessionChatScreen> {
           // relationship it belongs to instead of a separate tab. A mentor
           // already sees every individual student's history distinctly on
           // their own Sessions tab, so this icon is redundant there.
-          if (isAspirant)
+          if (isAspirant && !isPeerChat)
             IconButton(
               icon: const Icon(
                 Icons.history_rounded,
@@ -349,10 +356,14 @@ class _SessionChatScreenState extends ConsumerState<SessionChatScreen> {
           // mentor's global cross-app dock in MainShell is gone; a mentor
           // now sees a pending/live call the same way a student always did,
           // inline inside this specific chat, not floating over every tab).
-          ActiveSessionDock(
-            mentorId: isAspirant ? _session!.mentorId : null,
-            aspirantId: isAspirant ? null : _session!.aspirantId,
-          ),
+          // No calls exist between two mentors, so a peer chat has nothing
+          // for the dock to show (and a dock with no filter would list
+          // every counterpart's active session).
+          if (!isPeerChat)
+            ActiveSessionDock(
+              mentorId: isAspirant ? _session!.mentorId : null,
+              aspirantId: isAspirant ? null : _session!.aspirantId,
+            ),
           Expanded(
             child: ChatThreadView(
               connection: _connection!,
@@ -362,7 +373,9 @@ class _SessionChatScreenState extends ConsumerState<SessionChatScreen> {
               // empty (see ChatThreadView) — aspirant → mentor only; a
               // mentor opening a new student thread, or the support chat,
               // gets the plain empty state.
-              starterSuggestions: isAspirant ? kMentorChatStarters : null,
+              starterSuggestions: isAspirant && !isPeerChat
+                  ? kMentorChatStarters
+                  : null,
               // An admin can put an account UNDER_REVIEW: reading stays
               // available, sending is locked (the backend enforces it too).
               locked:
