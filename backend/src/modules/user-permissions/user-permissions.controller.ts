@@ -25,16 +25,23 @@ export class UserPermissionsController {
     return this.service.get(userId);
   }
 
-  /** Body: `{ denied: string[] }` -- the complete list of revoked permission keys. */
+  /** Body: `{ denied: string[], reason?: string, adminEmail?: string }` --
+   * `denied` is the complete list of revoked permission keys; `reason` is
+   * required when something is newly denied; `adminEmail` is the signed-in
+   * admin (sent by the admin panel) so the change can be attributed. */
   @Put(':userId')
   setDenied(
     @Param('userId') userId: string,
-    @Body() body: { denied?: unknown },
+    @Body() body: { denied?: unknown; reason?: unknown; adminEmail?: unknown },
   ) {
     const denied = body?.denied;
     if (!Array.isArray(denied) || !denied.every((k) => typeof k === 'string')) {
       throw new BadRequestException('Body must be { denied: string[] }');
     }
-    return this.service.setDenied(userId, denied);
+    const text = (v: unknown) => (typeof v === 'string' ? v : undefined);
+    return this.service.setDenied(userId, denied, {
+      reason: text(body.reason),
+      adminEmail: text(body.adminEmail),
+    });
   }
 }

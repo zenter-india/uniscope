@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' as sb;
 import 'package:uuid/uuid.dart';
 
+import '../../core/network/api_error.dart';
 import '../../core/network/chat_api.dart';
 import '../../core/theme/app_theme.dart';
 import '../../widgets/app_widgets.dart';
@@ -279,12 +280,26 @@ class _ChatThreadViewState extends State<ChatThreadView>
       WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
     } catch (e) {
       if (!mounted) return;
-      showAppSnackBar(
-        context,
-        'Could not send: $e',
-        action: 'Retry',
-        onAction: () => _sendWithRetryId(text, clientMessageId),
-      );
+      if (isPermissionDenied(e)) {
+        // An admin turned messaging off for this account: retrying won't
+        // help, so explain why and point to support instead.
+        showAppSnackBar(
+          context,
+          friendlyApiError(
+            e,
+            fallback: 'Messaging is turned off for your account.',
+          ),
+          action: widget.onContactSupport != null ? 'Contact support' : null,
+          onAction: widget.onContactSupport,
+        );
+      } else {
+        showAppSnackBar(
+          context,
+          'Could not send: ${friendlyApiError(e)}',
+          action: 'Retry',
+          onAction: () => _sendWithRetryId(text, clientMessageId),
+        );
+      }
     } finally {
       if (mounted) setState(() => _sending = false);
     }
