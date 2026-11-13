@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { PrismaModule } from '../../database/prisma/prisma.module.js';
+import { NotificationsModule } from '../notifications/notifications.module.js';
 import { UserPermissionsController } from './user-permissions.controller.js';
 import { UserPermissionsService } from './user-permissions.service.js';
 
@@ -7,7 +8,7 @@ import { UserPermissionsService } from './user-permissions.service.js';
  * action via assertPermission() (common/helpers/user-permissions.helper.ts),
  * which needs no module wiring. */
 @Module({
-  imports: [PrismaModule],
+  imports: [PrismaModule, NotificationsModule],
   controllers: [UserPermissionsController],
   providers: [UserPermissionsService],
 })

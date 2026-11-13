@@ -51,6 +51,8 @@ export interface UserListFilters {
   universityId?: string;
   /** Only mentors currently accepting call bookings. */
   accepting?: boolean;
+  /** Only users with at least one permission an admin has denied. */
+  restricted?: boolean;
 }
 
 /** Next page of the admin user list — same filters as the page, plus a cursor.
@@ -75,6 +77,7 @@ export async function loadMoreUsers(
   if (filters.state) params.set('state', filters.state);
   if (filters.universityId) params.set('universityId', filters.universityId);
   if (filters.accepting) params.set('accepting', 'true');
+  if (filters.restricted) params.set('restricted', 'true');
 
   return backendFetch<{ data: UserRowData[]; nextCursor: string | null }>(
     `/users?${params.toString()}`,
