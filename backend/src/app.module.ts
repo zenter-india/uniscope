@@ -59,6 +59,7 @@ import { TechnicalReportsModule } from './modules/technical-reports/technical-re
 import { ProfileOptionsModule } from './modules/profile-options/profile-options.module.js';
 import { SettingsModule } from './modules/settings/settings.module.js';
 import { AdminAccountsModule } from './modules/admin-accounts/admin-accounts.module.js';
+import { UserPermissionsModule } from './modules/user-permissions/user-permissions.module.js';
 import { IntegrationsModule } from './modules/integrations/integrations.module.js';
 
 @Module({
@@ -141,6 +142,7 @@ import { IntegrationsModule } from './modules/integrations/integrations.module.j
     ProfileOptionsModule,
     SettingsModule,
     AdminAccountsModule,
+    UserPermissionsModule,
     IntegrationsModule,
   ],
   controllers: [AppController],
