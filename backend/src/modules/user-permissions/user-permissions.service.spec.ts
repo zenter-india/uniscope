@@ -1,9 +1,6 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment --
- * expect.stringContaining/objectContaining are typed `any` by jest. */
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { UserRole } from '@prisma/client';
 import type { PrismaService } from '../../database/prisma/prisma.service.js';
-import type { NotificationsService } from '../notifications/notifications.service.js';
 import { UserPermissionsService } from './user-permissions.service.js';
 
 const T0 = new Date('2026-11-01T10:00:00Z');
@@ -53,14 +50,10 @@ function setup(opts: {
     },
     $transaction: jest.fn().mockResolvedValue([]),
   };
-  const notifications = {
-    send: jest.fn().mockResolvedValue({}),
-  };
   const service = new UserPermissionsService(
     prisma as unknown as PrismaService,
-    notifications as unknown as NotificationsService,
   );
-  return { service, prisma, notifications };
+  return { service, prisma };
 }
 
 describe('UserPermissionsService', () => {
@@ -264,55 +257,6 @@ describe('UserPermissionsService', () => {
         service.setDenied('u1', ['CALL_ACCEPT'], { reason: 'abc' }),
       ).rejects.toBeInstanceOf(BadRequestException);
       expect(prisma.$transaction).not.toHaveBeenCalled();
-    });
-
-    it('tells the user what was turned off, and why', async () => {
-      const { service, notifications } = setup({});
-      await service.setDenied('u1', ['CHAT_SEND'], { reason: 'Spam reports' });
-      expect(notifications.send).toHaveBeenCalledTimes(1);
-      expect(notifications.send).toHaveBeenCalledWith(
-        expect.objectContaining({
-          userId: 'u1',
-          type: 'SYSTEM',
-          body: expect.stringContaining('send chat messages'),
-        }),
-      );
-      expect(notifications.send).toHaveBeenCalledWith(
-        expect.objectContaining({
-          body: expect.stringContaining('Reason: Spam reports'),
-        }),
-      );
-    });
-
-    it('tells the user when something is turned back on', async () => {
-      const { service, notifications } = setup({
-        denials: [{ permission: 'CHAT_SEND' }],
-      });
-      await service.setDenied('u1', []);
-      expect(notifications.send).toHaveBeenCalledTimes(1);
-      expect(notifications.send).toHaveBeenCalledWith(
-        expect.objectContaining({
-          title: 'Features turned back on',
-          body: expect.stringContaining('send chat messages'),
-        }),
-      );
-    });
-
-    it('sends nothing when nothing changed', async () => {
-      const { service, notifications } = setup({
-        denials: [{ permission: 'CHAT_SEND' }],
-      });
-      await service.setDenied('u1', ['CHAT_SEND']);
-      expect(notifications.send).not.toHaveBeenCalled();
-    });
-
-    it('still saves when the notification fails', async () => {
-      const { service, prisma, notifications } = setup({});
-      notifications.send.mockRejectedValue(new Error('push down'));
-      await expect(
-        service.setDenied('u1', ['CHAT_SEND'], { reason: 'Spam' }),
-      ).resolves.toBeDefined();
-      expect(prisma.$transaction).toHaveBeenCalledTimes(1);
     });
 
     it('rejects admin accounts and unknown users', async () => {

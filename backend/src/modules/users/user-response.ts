@@ -264,23 +264,15 @@ export function toAdminUserDetail(
  * specialization (their actual one, e.g. "Community Medicine" — not their UG/PG
  * level). Built from the list query, which loads only that one profile column,
  * so nothing else on the profile can leak into the list. */
-export type AdminListUser = PublicUser & {
-  specialization: string | null;
-  /** How many permissions an admin has denied for this user (0 = none). */
-  deniedPermissions: number;
-};
+export type AdminListUser = PublicUser & { specialization: string | null };
 
 export function toAdminListUser(
-  user: User & {
-    profile?: { specialization: string | null } | null;
-    _count?: { permissionDenials: number };
-  },
+  user: User & { profile?: { specialization: string | null } | null },
 ): AdminListUser {
-  const { profile, _count, ...rest } = user;
+  const { profile, ...rest } = user;
   return {
     ...toPublicUser(rest),
     specialization: profile?.specialization?.trim() || null,
-    deniedPermissions: _count?.permissionDenials ?? 0,
   };
 }
 

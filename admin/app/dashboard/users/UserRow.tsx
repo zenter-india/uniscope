@@ -1,6 +1,5 @@
 'use client';
 
-import Link from 'next/link';
 import { useState, useTransition } from 'react';
 import { Badge, Button, ButtonLink, Table, toneFor } from '../../../components/ui';
 import { ConfirmButton } from '../../../components/ConfirmButton';
@@ -19,8 +18,6 @@ export interface UserRowData {
   isBanned: boolean;
   isActive: boolean;
   createdAt: string;
-  /** How many permissions an admin has denied (0 or absent = none). */
-  deniedPermissions?: number;
 }
 
 export function UserRow({
@@ -67,14 +64,6 @@ export function UserRow({
         <div className="flex flex-wrap items-center gap-1.5">
           <span className="font-medium text-zinc-900 dark:text-zinc-100">{user.displayName}</span>
           {isBanned && <Badge tone="danger">Banned</Badge>}
-          {(user.deniedPermissions ?? 0) > 0 && (
-            <Link
-              href={`/dashboard/permissions?user=${user.id}`}
-              title={`${user.deniedPermissions} permission(s) denied — open Permissions`}
-            >
-              <Badge tone="warning">Restricted</Badge>
-            </Link>
-          )}
           {!user.isActive && !isBanned && (
             <span title="Self-deleted their account — reactivates automatically if they log in again">
               <Badge>Deleted</Badge>
