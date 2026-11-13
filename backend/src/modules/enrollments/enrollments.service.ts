@@ -1,6 +1,7 @@
 import { createHash, randomUUID } from 'node:crypto';
 import {
   BadRequestException,
+  ConflictException,
   Inject,
   Injectable,
   Logger,
@@ -44,6 +45,16 @@ const MAX_LIMIT = 100;
  * verification bucket, so a lead's document is never confused with a real
  * VerificationRequest's (which is keyed by `<userId>/`). */
 const LEAD_DOCUMENT_PREFIX = 'enrollment-leads';
+
+/** The last non-empty line of an error message, shortened (Prisma errors put
+ * the useful reason at the end). */
+function lastLine(text: string): string {
+  const lines = text
+    .split(/\r?\n/)
+    .map((l) => l.trim())
+    .filter(Boolean);
+  return (lines[lines.length - 1] ?? 'unknown error').slice(0, 200);
+}
 
 @Injectable()
 export class EnrollmentsService {
@@ -775,6 +786,99 @@ export class EnrollmentsService {
     });
 
     return toEnrollmentLeadResponse(updated);
+  }
+
+  /**
+   * ADMIN: re-run account creation for a lead that never became an account
+   * (it failed when the person submitted the website form). Uses the details
+   * and college-ID document already saved on the lead -- nothing is uploaded
+   * again -- and goes through the same path as the form, so the account, the
+   * mentor's verification request and the notifications are created exactly
+   * as they would have been.
+   *
+   * `alias` is optional: leave it out to use what the person typed; if the
+   * name is taken the next free one is used ("John" -> "John1").
+   */
+  async retryAccount(
+    id: string,
+    alias?: string,
+  ): Promise<EnrollmentLeadResponse> {
+    const lead = await this.prisma.enrollmentLead.findUnique({ where: { id } });
+    if (!lead) {
+      throw new NotFoundException(`Enrollment lead '${id}' not found`);
+    }
+    if (lead.convertedUserId) {
+      throw new ConflictException('This lead already has an account.');
+    }
+
+    const dto = {
+      fullName: lead.fullName,
+      alias: alias?.trim() || lead.alias?.trim() || undefined,
+    } as BaseLeadDto;
+    const common = {
+      gender: lead.gender ?? undefined,
+      state: lead.state ?? undefined,
+      city: lead.city ?? undefined,
+      stream: lead.stream ?? undefined,
+      dateOfBirth: lead.dateOfBirth ?? undefined,
+      universityId: lead.universityId ?? undefined,
+    };
+
+    try {
+      if (lead.role === EnrollmentLeadRole.MENTOR) {
+        await this.provisionAccountFromLead(
+          EnrollmentLeadRole.MENTOR,
+          lead.phone,
+          dto,
+          {
+            ...common,
+            qualification: lead.degree ?? undefined,
+            specialization: lead.specialization ?? undefined,
+            yearOfStudy: lead.yearOfStudy ?? undefined,
+            graduationYear: lead.graduationYear ?? undefined,
+            yearInfoPrivate: lead.yearInfoPrivate,
+            languages: lead.languages,
+            availableDays: lead.availableDays,
+          },
+          {
+            universityId: lead.universityId,
+            documentType: lead.documentType ?? undefined,
+            documentKey: lead.documentKey,
+          },
+        );
+      } else {
+        await this.provisionAccountFromLead(
+          EnrollmentLeadRole.ASPIRANT,
+          lead.phone,
+          dto,
+          {
+            ...common,
+            qualification: lead.qualification ?? undefined,
+            specialization: lead.specialization ?? undefined,
+            courseInterested: lead.courseInterested ?? undefined,
+            preferredLanguage: lead.preferredLanguage ?? undefined,
+            preferredMentorshipTiming:
+              lead.preferredMentorshipTiming ?? undefined,
+          },
+        );
+      }
+    } catch (err) {
+      this.logger.error(
+        `Retry of account creation failed for lead ${id}`,
+        err instanceof Error ? err.stack : String(err),
+      );
+      const text = err instanceof Error ? err.message : String(err);
+      if (/converted_user_id/i.test(text)) {
+        throw new ConflictException(
+          'This phone number already has an account that is linked to another lead, so this lead cannot be linked to it.',
+        );
+      }
+      throw new BadRequestException(
+        `Could not create the account: ${lastLine(text)}`,
+      );
+    }
+
+    return this.findById(id);
   }
 
   /** ADMIN bulk status change — e.g. mark a batch "Contacted" after a call
