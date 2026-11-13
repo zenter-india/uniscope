@@ -15,6 +15,10 @@ import {
   VerificationStatus,
 } from '@prisma/client';
 import { adminOrderBy } from '../../common/helpers/admin-sort.helper.js';
+import {
+  firstFreeDisplayName,
+  nthDisplayName,
+} from '../../common/helpers/display-name.helper.js';
 import { generatePseudonym } from '../../common/helpers/pseudonym.helper.js';
 import {
   encryptField,
@@ -171,48 +175,75 @@ export class UsersService {
           UserRole.MENTOR,
         )
       ) {
-        const [promoted] = await this.prisma.$transaction([
-          this.prisma.user.update({
-            where: { id: existing.id },
-            data: {
-              role: UserRole.MENTOR,
-              ...(params.displayName?.trim() && {
-                displayName: params.displayName.trim(),
+        const wanted = params.displayName?.trim();
+        let promoted: User | undefined;
+        for (let attempt = 0; !promoted; attempt++) {
+          const displayName = wanted
+            ? await this.resolveFreeDisplayName(wanted, existing.id)
+            : undefined;
+          try {
+            [promoted] = await this.prisma.$transaction([
+              this.prisma.user.update({
+                where: { id: existing.id },
+                data: {
+                  role: UserRole.MENTOR,
+                  ...(displayName && { displayName }),
+                },
               }),
-            },
-          }),
-          this.prisma.userProfile.update({
-            where: { userId: existing.id },
-            data: {
-              ...params.profile,
-              ...(params.realName?.trim() && {
-                realNameEncrypted: encryptRealName(params.realName.trim()),
+              this.prisma.userProfile.update({
+                where: { userId: existing.id },
+                data: {
+                  ...params.profile,
+                  ...(params.realName?.trim() && {
+                    realNameEncrypted: encryptRealName(params.realName.trim()),
+                  }),
+                },
               }),
-            },
-          }),
-        ]);
+            ]);
+          } catch (err) {
+            // Someone took the same name between the check and the write:
+            // pick again. Anything else is a real error.
+            if (!this.isDisplayNameViolation(err) || attempt >= 4) throw err;
+          }
+        }
         return { user: promoted, isNewUser: false };
       }
       return { user: existing, isNewUser: false };
     }
 
-    const user = await this.prisma.user.create({
-      data: {
-        phoneHash: params.phoneHash,
-        displayName: params.displayName?.trim() || generatePseudonym(),
-        role: params.role,
-        lastActiveAt: new Date(),
-        profile: {
-          create: {
-            ...params.profile,
-            ...(params.realName?.trim() && {
-              realNameEncrypted: encryptRealName(params.realName.trim()),
-            }),
+    // A website sign-up must never be lost because the alias they typed is
+    // already used (names are unique, ignoring case): they get the next free
+    // one ("John" -> "John1" -> "John2" ...) and are told about it.
+    const wanted = params.displayName?.trim();
+    let user: User | undefined;
+    for (let attempt = 0; !user; attempt++) {
+      const displayName = wanted
+        ? await this.resolveFreeDisplayName(wanted)
+        : generatePseudonym();
+      try {
+        user = await this.prisma.user.create({
+          data: {
+            phoneHash: params.phoneHash,
+            displayName,
+            role: params.role,
+            lastActiveAt: new Date(),
+            profile: {
+              create: {
+                ...params.profile,
+                ...(params.realName?.trim() && {
+                  realNameEncrypted: encryptRealName(params.realName.trim()),
+                }),
+              },
+            },
+            wallet: { create: {} },
           },
-        },
-        wallet: { create: {} },
-      },
-    });
+        });
+      } catch (err) {
+        // Someone took the same name between the check and the write: pick
+        // again. Anything else (including a clash on the phone) is a real error.
+        if (!this.isDisplayNameViolation(err) || attempt >= 4) throw err;
+      }
+    }
 
     await this.generateAvatarBestEffort(user.id, params.profile.gender);
 
@@ -408,6 +439,50 @@ export class UsersService {
       }
       throw err;
     }
+  }
+
+  /** The first name that is free, starting with `desired` itself and then
+   * `desired1`, `desired2` … Letter case is ignored, as the database does.
+   * `excludeUserId` is the user who is about to get the name (so keeping their
+   * own current name counts as free). Falls back to a generated pseudonym if
+   * 200 numbered names in a row are taken. */
+  private async resolveFreeDisplayName(
+    desired: string,
+    excludeUserId?: string,
+  ): Promise<string> {
+    const BATCH = 25;
+    for (let batch = 0; batch < 8; batch++) {
+      const candidates = Array.from({ length: BATCH }, (_, i) =>
+        nthDisplayName(desired, batch * BATCH + i),
+      );
+      const rows = await this.prisma.user.findMany({
+        where: {
+          OR: candidates.map((name) => ({
+            displayName: { equals: name, mode: 'insensitive' as const },
+          })),
+          ...(excludeUserId && { id: { not: excludeUserId } }),
+        },
+        select: { displayName: true },
+      });
+      const free = firstFreeDisplayName(
+        candidates,
+        rows.map((r) => r.displayName),
+      );
+      if (free) return free;
+    }
+    return generatePseudonym();
+  }
+
+  /** A unique-constraint error on the display name (not on the phone). */
+  private isDisplayNameViolation(err: unknown): boolean {
+    return (
+      this.isUniqueConstraintViolation(err) &&
+      /display_name/i.test(
+        `${(err as { message?: string }).message ?? ''} ${JSON.stringify(
+          (err as { meta?: unknown }).meta ?? '',
+        )}`,
+      )
+    );
   }
 
   private isUniqueConstraintViolation(err: unknown): boolean {
