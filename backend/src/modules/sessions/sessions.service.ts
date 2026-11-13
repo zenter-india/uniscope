@@ -24,7 +24,6 @@ import {
 } from '../../common/helpers/notification-format.helper.js';
 import { PrismaService } from '../../database/prisma/prisma.service.js';
 import { assertNotUnderReview } from '../../common/helpers/account-review.helper.js';
-import { assertPermission } from '../../common/helpers/user-permissions.helper.js';
 import { AgoraService } from '../agora/agora.service.js';
 import { ReviewsService } from '../reviews/reviews.service.js';
 import { AvatarService } from '../avatar/avatar.service.js';
@@ -166,9 +165,6 @@ export class SessionsService {
 
     // An account an admin has put UNDER_REVIEW can't start a conversation.
     await assertNotUnderReview(this.prisma, aspirantId);
-    if (dto.type === SessionType.AUDIO_CALL) {
-      await assertPermission(this.prisma, aspirantId, 'CALL_BOOKING');
-    }
 
     // Blocking is checked in either direction — same 404 the mentor-not-
     // found path uses, so a blocked party can't tell whether they were
@@ -474,7 +470,6 @@ export class SessionsService {
     this.requireParty(session, mentorUserId, 'mentor');
     // Accepting is the mentor's reply to a request -- locked while UNDER_REVIEW.
     await assertNotUnderReview(this.prisma, mentorUserId);
-    await assertPermission(this.prisma, mentorUserId, 'CALL_ACCEPT');
 
     if (session.status !== SessionStatus.PENDING) {
       throw new ConflictException(

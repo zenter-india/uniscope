@@ -33,12 +33,10 @@ describe('ChatController', () => {
     session,
     isBlocked = false,
     verificationStatus = VerificationStatus.VERIFIED,
-    chatPermissionRevoked = false,
   }: {
     session: ReturnType<typeof baseSession> | null;
     isBlocked?: boolean;
     verificationStatus?: VerificationStatus;
-    chatPermissionRevoked?: boolean;
   }) {
     const prisma = {
       session: {
@@ -47,13 +45,6 @@ describe('ChatController', () => {
       // sendMessage refuses accounts that are UNDER_REVIEW (assertNotUnderReview).
       user: {
         findUnique: jest.fn().mockResolvedValue({ verificationStatus }),
-      },
-      // sendMessage also checks the admin-managed CHAT_SEND permission
-      // (assertPermission): a row means an admin has revoked it.
-      userPermissionDenial: {
-        findUnique: jest
-          .fn()
-          .mockResolvedValue(chatPermissionRevoked ? { userId: 'u' } : null),
       },
     } as unknown as PrismaService;
     const chatService = {
@@ -157,18 +148,6 @@ describe('ChatController', () => {
     const controller = controllerWith({
       session: baseSession(),
       verificationStatus: VerificationStatus.UNDER_REVIEW,
-    });
-    await expect(
-      controller.sendMessage(sessionId, { sub: aspirantId } as JwtPayload, {
-        text: 'hi',
-      }),
-    ).rejects.toBeInstanceOf(ForbiddenException);
-  });
-
-  it('403s sendMessage when an admin has revoked the CHAT_SEND permission', async () => {
-    const controller = controllerWith({
-      session: baseSession(),
-      chatPermissionRevoked: true,
     });
     await expect(
       controller.sendMessage(sessionId, { sub: aspirantId } as JwtPayload, {

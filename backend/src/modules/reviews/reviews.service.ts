@@ -13,7 +13,6 @@ import {
   MentorReviewResponse,
   toMentorReviewResponse,
 } from './mentor-review-response.js';
-import { assertPermission } from '../../common/helpers/user-permissions.helper.js';
 
 const DEFAULT_LIMIT = 20;
 const MAX_LIMIT = 50;
@@ -39,7 +38,6 @@ export class ReviewsService {
     aspirantId: string,
     dto: CreateReviewDto,
   ): Promise<MentorReviewResponse> {
-    await assertPermission(this.prisma, aspirantId, 'REVIEW_POST');
     const session = await this.prisma.session.findFirst({
       where: { id: dto.sessionId, aspirantId },
     });

@@ -2,7 +2,6 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { backendFetch, BackendApiError } from '../../../../lib/backend';
 import { getAdminEmail } from '../../../../lib/adminAuth';
-import { ButtonLink } from '../../../../components/ui';
 import { DashboardShell } from '../../DashboardShell';
 import { BanToggle, VerificationDocButton } from './interactive';
 import { DangerZone } from './DangerZone';
@@ -257,15 +256,7 @@ export default async function UserDetailPage({
           </div>
         </div>
         {user.role !== 'ADMIN' && (
-          <div className="flex flex-wrap items-center gap-2">
-            <ButtonLink
-              href={`/dashboard/permissions?user=${user.id}`}
-              variant="secondary"
-            >
-              Permissions
-            </ButtonLink>
-            <BanToggle userId={user.id} isBanned={user.isBanned} />
-          </div>
+          <BanToggle userId={user.id} isBanned={user.isBanned} />
         )}
       </div>
 

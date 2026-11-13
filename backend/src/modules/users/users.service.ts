@@ -711,12 +711,7 @@ export class UsersService {
   }
 
   async findAllAdmin(query: ListUsersDto): Promise<{
-    data: Array<
-      User & {
-        profile: { specialization: string | null } | null;
-        _count: { permissionDenials: number };
-      }
-    >;
+    data: Array<User & { profile: { specialization: string | null } | null }>;
     nextCursor: string | null;
   }> {
     const take = Math.min(query.limit ?? ADMIN_DEFAULT_LIMIT, ADMIN_MAX_LIMIT);
@@ -727,15 +722,11 @@ export class UsersService {
         verificationStatus: query.verificationStatus,
       }),
       ...(query.isBanned !== undefined && { isBanned: query.isBanned }),
-      ...(query.restricted === 'true' && {
-        permissionDenials: { some: {} },
-      }),
-      // One search box for what an admin looks for: a name, the unique ID, a
-      // specialization ("community medicine"), or a college.
+      // One search box for what an admin looks for: a name, a specialization
+      // ("community medicine"), or a college.
       ...(query.search && {
         OR: [
           { displayName: { contains: query.search, mode: 'insensitive' } },
-          { uniqueId: { contains: query.search, mode: 'insensitive' } },
           {
             profile: {
               specialization: { contains: query.search, mode: 'insensitive' },
@@ -755,12 +746,8 @@ export class UsersService {
 
     const rows = await this.prisma.user.findMany({
       where,
-      // Just the one profile column the list shows (the person's specialization),
-      // plus how many permissions an admin has denied (the "Restricted" tag).
-      include: {
-        profile: { select: { specialization: true } },
-        _count: { select: { permissionDenials: true } },
-      },
+      // Just the one profile column the list shows (the person's specialization).
+      include: { profile: { select: { specialization: true } } },
       orderBy: adminOrderBy(query.sortBy, query.sortDir, {
         joined: 'createdAt',
         name: 'displayName',
