@@ -31,6 +31,7 @@ const NAV_SECTIONS: {
     heading: 'Directory',
     items: [
       { label: 'Users', href: '/dashboard/users', icon: 'users' },
+      { label: 'Permissions', href: '/dashboard/permissions', icon: 'shieldCheck' },
       { label: 'Universities', href: '/dashboard/universities', icon: 'building' },
       { label: 'Custom degrees', href: '/dashboard/degrees', icon: 'check' },
       { label: 'College specializations', href: '/dashboard/specializations', icon: 'check' },
