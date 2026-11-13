@@ -1,11 +1,25 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { UserRole } from '@prisma/client';
 import { permissionsForRole } from '../../common/helpers/user-permissions.helper.js';
 import { PrismaService } from '../../database/prisma/prisma.service.js';
 
 export interface UserPermissionsView {
-  user: { id: string; displayName: string; uniqueId: string | null; role: UserRole };
-  permissions: { key: string; label: string; description: string; allowed: boolean }[];
+  user: {
+    id: string;
+    displayName: string;
+    uniqueId: string | null;
+    role: UserRole;
+  };
+  permissions: {
+    key: string;
+    label: string;
+    description: string;
+    allowed: boolean;
+  }[];
 }
 
 @Injectable()
@@ -19,7 +33,9 @@ export class UserPermissionsService {
     });
     if (!user) throw new NotFoundException(`User '${userId}' not found`);
     if (user.role === UserRole.ADMIN) {
-      throw new BadRequestException('Permissions apply to aspirants and mentors, not admin accounts');
+      throw new BadRequestException(
+        'Permissions apply to aspirants and mentors, not admin accounts',
+      );
     }
     return user;
   }
@@ -45,13 +61,20 @@ export class UserPermissionsService {
   /** Replaces the user's full set of revoked permissions with `denied`.
    * Unknown keys, or keys that don't apply to the user's role, reject the
    * whole request (nothing is written). */
-  async setDenied(userId: string, denied: string[]): Promise<UserPermissionsView> {
+  async setDenied(
+    userId: string,
+    denied: string[],
+  ): Promise<UserPermissionsView> {
     const user = await this.requireAppUser(userId);
-    const valid = new Set<string>(permissionsForRole(user.role).map((p) => p.key));
+    const valid = new Set<string>(
+      permissionsForRole(user.role).map((p) => p.key),
+    );
     const unique = [...new Set(denied)];
     const bad = unique.filter((k) => !valid.has(k));
     if (bad.length) {
-      throw new BadRequestException(`Not a permission for a ${user.role.toLowerCase()}: ${bad.join(', ')}`);
+      throw new BadRequestException(
+        `Not a permission for a ${user.role.toLowerCase()}: ${bad.join(', ')}`,
+      );
     }
     await this.prisma.$transaction([
       this.prisma.userPermissionDenial.deleteMany({ where: { userId } }),

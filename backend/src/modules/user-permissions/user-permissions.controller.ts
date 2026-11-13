@@ -1,4 +1,12 @@
-import { BadRequestException, Body, Controller, Get, Param, Put, UseGuards } from '@nestjs/common';
+import {
+  BadRequestException,
+  Body,
+  Controller,
+  Get,
+  Param,
+  Put,
+  UseGuards,
+} from '@nestjs/common';
 import { UserRole } from '@prisma/client';
 import { Roles } from '../../auth/decorators/roles.decorator.js';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard.js';
@@ -19,7 +27,10 @@ export class UserPermissionsController {
 
   /** Body: `{ denied: string[] }` -- the complete list of revoked permission keys. */
   @Put(':userId')
-  setDenied(@Param('userId') userId: string, @Body() body: { denied?: unknown }) {
+  setDenied(
+    @Param('userId') userId: string,
+    @Body() body: { denied?: unknown },
+  ) {
     const denied = body?.denied;
     if (!Array.isArray(denied) || !denied.every((k) => typeof k === 'string')) {
       throw new BadRequestException('Body must be { denied: string[] }');

@@ -12,7 +12,8 @@ export const USER_PERMISSIONS = [
   {
     key: 'CHAT_SEND',
     label: 'Send chat messages',
-    description: 'Send messages in session chats. The support chat is never blocked.',
+    description:
+      'Send messages in session chats. The support chat is never blocked.',
     roles: [UserRole.ASPIRANT, UserRole.MENTOR],
   },
   {
@@ -46,7 +47,9 @@ export type UserPermissionKey = (typeof USER_PERMISSIONS)[number]['key'];
 export const PERMISSION_DENIED_CODE = 'PERMISSION_DENIED';
 
 export function permissionsForRole(role: UserRole) {
-  return USER_PERMISSIONS.filter((p) => (p.roles as readonly UserRole[]).includes(role));
+  return USER_PERMISSIONS.filter((p) =>
+    (p.roles as readonly UserRole[]).includes(role),
+  );
 }
 
 /** Throws 403 if an admin has revoked `key` for this user. One indexed
