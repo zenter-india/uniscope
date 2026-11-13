@@ -1,7 +1,6 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { getAdminEmail } from '../../../lib/adminAuth';
 import { backendFetch } from '../../../lib/backend';
 
 export interface PermissionUser {
@@ -16,25 +15,11 @@ export interface PermissionItem {
   label: string;
   description: string;
   allowed: boolean;
-  /** Set only while denied. */
-  deniedAt: string | null;
-  deniedBy: string | null;
-  reason: string | null;
-}
-
-export interface PermissionEvent {
-  permission: string;
-  label: string;
-  action: 'DENY' | 'ALLOW';
-  adminEmail: string | null;
-  reason: string | null;
-  at: string;
 }
 
 export interface UserPermissions {
   user: PermissionUser;
   permissions: PermissionItem[];
-  history: PermissionEvent[];
 }
 
 type SaveResult = { ok: true; data: UserPermissions } | { ok: false; error: string };
@@ -43,19 +28,12 @@ export async function getUserPermissions(userId: string): Promise<UserPermission
   return backendFetch<UserPermissions>(`/admin/user-permissions/${userId}`);
 }
 
-/** Saves the complete list of revoked permission keys for the user. `reason`
- * is required when something is newly denied; the signed-in admin's email is
- * recorded with the change. */
-export async function saveUserPermissions(
-  userId: string,
-  denied: string[],
-  reason: string,
-): Promise<SaveResult> {
+/** Saves the complete list of revoked permission keys for the user. */
+export async function saveUserPermissions(userId: string, denied: string[]): Promise<SaveResult> {
   try {
-    const adminEmail = await getAdminEmail();
     const data = await backendFetch<UserPermissions>(`/admin/user-permissions/${userId}`, {
       method: 'PUT',
-      body: JSON.stringify({ denied, reason, adminEmail }),
+      body: JSON.stringify({ denied }),
     });
     revalidatePath('/dashboard/permissions');
     return { ok: true, data };
