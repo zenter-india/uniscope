@@ -351,6 +351,16 @@ export class EnrollmentsService {
     return { id: lead.id, role: lead.role, status: lead.status };
   }
 
+  /** Whether nobody has this display name yet (letter case ignored, like the
+   * database's unique rule). Public, so it returns only the yes/no. */
+  async isAliasAvailable(alias: string): Promise<{ available: boolean }> {
+    const taken = await this.prisma.user.findFirst({
+      where: { displayName: { equals: alias.trim(), mode: 'insensitive' } },
+      select: { id: true },
+    });
+    return { available: taken === null };
+  }
+
   /** Only accepts a universityId that actually resolves — a bad id from a
    * stale cached page would otherwise fail the FK and 500 the whole form.
    * The typed college name always survives regardless. */
