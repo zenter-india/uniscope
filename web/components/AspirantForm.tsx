@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { submitAspirantLead, fetchCuratedColleges, ApiError } from "../lib/api";
+import { checkAliasAvailable, submitAspirantLead, fetchCuratedColleges, ApiError } from "../lib/api";
 import {
   GENDERS,
   INDIAN_STATES,
@@ -15,6 +15,7 @@ import {
   LANGUAGES,
 } from "../lib/options";
 import { useMultiStep } from "../lib/useMultiStep";
+import { ALIAS_TAKEN_MESSAGE, useAliasCheck } from "../lib/useAliasCheck";
 import { Field, TextInput, Select, ChipGroup, toggleInArray, ProgressBar, ErrorText } from "./form-bits";
 import { CollegeSearch } from "./CollegeSearch";
 import { CuratedCollegeSearch } from "./CuratedCollegeSearch";
@@ -72,6 +73,7 @@ export function AspirantForm({ onExit }: { onExit: () => void }) {
   const [form, setForm] = useState<FormState>(EMPTY);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const aliasStatus = useAliasCheck(form.alias);
   const [done, setDone] = useState(false);
 
   const set = <K extends keyof FormState>(key: K, value: FormState[K]) =>
@@ -188,6 +190,7 @@ export function AspirantForm({ onExit }: { onExit: () => void }) {
     if (wizard.step === 1) {
       if (!form.fullName.trim()) return "Enter your full name.";
       if (!form.alias.trim()) return "Enter an alias / display name.";
+      if (aliasStatus === "taken") return ALIAS_TAKEN_MESSAGE;
       if (form.phone.trim().length !== 10) return "Enter a valid 10-digit phone number.";
       if (!form.gender) return "Select a gender.";
     }
@@ -225,6 +228,12 @@ export function AspirantForm({ onExit }: { onExit: () => void }) {
     const err = validateStep();
     if (err) {
       setError(err);
+      return;
+    }
+    // The alias must be free before the person goes past the first step: ask
+    // once more now, in case the live check has not finished or is stale.
+    if (wizard.step === 1 && (await checkAliasAvailable(form.alias)) === false) {
+      setError(ALIAS_TAKEN_MESSAGE);
       return;
     }
     setError(null);
@@ -342,10 +351,15 @@ export function AspirantForm({ onExit }: { onExit: () => void }) {
           <Field label="Alias / Display name" hint="Real name stays private. Mentors only see your alias.">
             <TextInput
               required
-              placeholder="e.g. John Snow"
+              placeholder="Choose a unique name"
               value={form.alias}
               onChange={(e) => set("alias", e.target.value)}
             />
+            {aliasStatus === "taken" && (
+              <span role="alert" className="block mt-1.5 text-[12.5px] font-semibold text-red-600">
+                {ALIAS_TAKEN_MESSAGE}
+              </span>
+            )}
           </Field>
           <Field label="Phone number">
             <TextInput

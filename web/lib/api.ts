@@ -85,6 +85,22 @@ export function fetchCuratedColleges(
   return request(`/universities/curated?${params.toString()}`);
 }
 
+/** Is this alias free? `null` when it could not be checked (network error, or
+ * the backend has no such check yet) — callers must then let the person go on,
+ * because the server still gives such an account a free alias. */
+export async function checkAliasAvailable(alias: string): Promise<boolean | null> {
+  const value = alias.trim();
+  if (value.length < 2) return null;
+  try {
+    const res = await request<{ available: boolean }>(
+      `/enrollments/alias-available?alias=${encodeURIComponent(value)}`,
+    );
+    return typeof res.available === "boolean" ? res.available : null;
+  } catch {
+    return null;
+  }
+}
+
 export interface LeadAcknowledgement {
   id: string;
   role: "ASPIRANT" | "MENTOR";
