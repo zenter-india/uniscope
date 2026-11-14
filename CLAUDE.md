@@ -595,6 +595,16 @@ The user asked directly to wire this up after a specific, recurring pain point i
 
 Figma file (Medconnect design): `https://www.figma.com/design/OObflKZgWgc2UaRZiMsPMP/Medconnect--TO-DEV`. Reviewed screen-by-screen against the built app twice — an early pass, then a full re-pull via the Figma MCP (`get_metadata` on the `SIGNUP, LOGIN, VERIFICATION, PINSETUP` / `Mentor` / `Aspirant` sections) that surfaced the structured onboarding wizards. The mobile UI is functional but styled with placeholder theme tokens, not the real design system. Non-visual gaps (imply schema/backend/flow work, not just restyling) are listed in "What's NOT built yet" above. Noise to ignore when reviewing this file: several frames ("Total Active Chits", "Branches", "Aadhaar, PAN", a "Prized" filter tab) are leftover fintech-template placeholder content, not real Uniscope features.
 
+## Secrets — never in chat (2026-11-15)
+
+**No one pastes a key, secret, token or password into a Claude chat — not the key ID, not the secret, not a test key.** A project hook (`.claude/settings.json` → `.claude/hooks/block-secrets.sh`) blocks prompts that look like credentials. If one gets through anyway, don't repeat it back; tell the user to rotate it. Refer to secrets only by variable NAME.
+
+Where secrets actually live:
+- **Backend + admin (Railway):** workspace "Uniscope Project" → project "Uniscope Mobile" → service `uniscope` (backend) or `admin` → environment `staging` or `production` → Variables. The variable names are listed in `backend/.env.example` / `admin/.env.example`.
+- **Website (Vercel):** project settings → Environment Variables (Preview vs Production). Browser-visible values use the `NEXT_PUBLIC_` prefix and must never be secrets.
+- **Local dev:** `backend/.env`, `admin/.env.local`, `web/.env.local` — all gitignored.
+- **Mobile builds:** `--dart-define` values passed by `mobile_flutter/scripts/build_*_release.sh` from the build machine's environment.
+
 ## Conventions to follow
 
 - Explicit allowlist response projections (`toXResponse()` functions) for every entity — never return a raw Prisma row, to avoid leaking fields like `phoneHash`/`realNameEncrypted` as the schema evolves.
