@@ -342,6 +342,16 @@ export class EnrollmentsService {
     return { id: lead.id, role: lead.role, status: lead.status };
   }
 
+  /** Whether nobody has this display name yet (letter case ignored, like the
+   * database's unique rule). Public, so it returns only the yes/no. */
+  async isAliasAvailable(alias: string): Promise<{ available: boolean }> {
+    const taken = await this.prisma.user.findFirst({
+      where: { displayName: { equals: alias.trim(), mode: 'insensitive' } },
+      select: { id: true },
+    });
+    return { available: taken === null };
+  }
+
   /** Whether this number is free to sign up with: a number can only ever be
    * used for one account, so it is taken the moment any account has it — for
    * either role, with no exceptions. Public, so it answers only yes/no. */

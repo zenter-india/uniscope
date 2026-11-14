@@ -24,6 +24,7 @@ import {
   CreateAspirantLeadDto,
   CreateMentorLeadDto,
 } from './dto/create-lead.dto.js';
+import { AliasAvailableDto } from './dto/alias-available.dto.js';
 import { ListLeadsDto } from './dto/list-leads.dto.js';
 import { PhoneAvailableDto } from './dto/phone-available.dto.js';
 import { UpdateLeadDto } from './dto/update-lead.dto.js';
@@ -61,6 +62,17 @@ export class EnrollmentsController {
     if (dto.website)
       return Promise.resolve(this.silentlyAccept(EnrollmentLeadRole.MENTOR));
     return this.enrollmentsService.createMentorLead(dto);
+  }
+
+  /** Public: is this alias free? The website forms call it as the person types,
+   * so they can be asked for another name before they go on. Answers only
+   * yes/no (never who has it), and is throttled so it can't be used to list
+   * names. Declared before the admin `:id` routes so "alias-available" is not
+   * read as an id. */
+  @Throttle({ default: { limit: 40, ttl: 60_000 } })
+  @Get('alias-available')
+  aliasAvailable(@Query() query: AliasAvailableDto) {
+    return this.enrollmentsService.isAliasAvailable(query.alias);
   }
 
   /** Public: is this phone number free to sign up with? A number can only be
