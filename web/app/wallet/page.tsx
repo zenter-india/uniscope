@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { SiteNav } from "../../components/SiteNav";
 import { SiteFooter } from "../../components/SiteFooter";
 import { WalletTopup } from "../../components/WalletTopup";
@@ -17,6 +18,9 @@ export default function WalletPage() {
       <SiteNav />
       <main className="px-4 sm:px-6 py-12 sm:py-14">
         <div className="max-w-[760px] mx-auto">
+          <Link href="/" className="inline-block mb-5 text-[13.5px] font-bold text-blue-600 hover:underline">
+            ← Back to home
+          </Link>
           <p className="text-[12.5px] font-extrabold uppercase tracking-wide text-blue-600">Wallet</p>
           <h1 className="mt-2 text-[clamp(26px,4vw,36px)] font-extrabold text-ink text-wrap-balance">
             Buy Uniminutes

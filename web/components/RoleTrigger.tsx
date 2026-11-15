@@ -1,5 +1,7 @@
 "use client";
 
+import { useRouter } from "next/navigation";
+
 /** Every "Explore Colleges" / "Talk to Mentors" (and formerly nav) button on
  * the page. This is a forms-only microsite — none of those destinations
  * exist yet — so every one of them scrolls to #get-started. Passing a `role`
@@ -10,7 +12,12 @@
  * GetStarted listens for the "uniscope:pick-role" event this dispatches; a
  * DOM event (rather than React context) because these triggers live in
  * server-rendered sections (nav, both heroes, closing CTA) with no shared
- * client-component ancestor to thread state through. */
+ * client-component ancestor to thread state through.
+ *
+ * Only the home page and /download contain the #get-started section. On any
+ * other page (/wallet and the legal pages) there is nothing to scroll to, so the
+ * click used to do nothing at all — the nav looked dead. There it takes the
+ * person to the home page's sign-up section instead. */
 export function RoleTrigger({
   role,
   className,
@@ -20,13 +27,19 @@ export function RoleTrigger({
   className?: string;
   children: React.ReactNode;
 }) {
+  const router = useRouter();
   return (
     <a
       href="#get-started"
       className={className}
       onClick={(e) => {
         e.preventDefault();
-        document.getElementById("get-started")?.scrollIntoView({ behavior: "smooth" });
+        const target = document.getElementById("get-started");
+        if (!target) {
+          router.push("/#get-started");
+          return;
+        }
+        target.scrollIntoView({ behavior: "smooth" });
         if (role) window.dispatchEvent(new CustomEvent("uniscope:pick-role", { detail: role }));
       }}
     >
