@@ -30,6 +30,10 @@ import {
   CreateMentorLeadDto,
 } from './dto/create-lead.dto.js';
 import { ListLeadsDto } from './dto/list-leads.dto.js';
+import {
+  PHONE_TAKEN_MESSAGE,
+  phoneSignupAllowed,
+} from './phone-signup-rule.js';
 import { UpdateLeadDto } from './dto/update-lead.dto.js';
 import {
   EnrollmentLeadAcknowledgement,
@@ -318,6 +322,31 @@ export class EnrollmentsService {
     return { id: lead.id, role: lead.role, status: lead.status };
   }
 
+  /** Whether this number may be used for a sign-up as `role` (see
+   * phoneSignupAllowed). Public, so it answers only yes/no. */
+  async isPhoneAvailable(
+    role: EnrollmentLeadRole,
+    rawPhone: string,
+  ): Promise<{ available: boolean }> {
+    const phone = this.normalizePhone(rawPhone);
+    const existing = await this.prisma.user.findUnique({
+      where: { phoneHash: this.phoneHashFor(phone) },
+      select: { role: true },
+    });
+    return { available: phoneSignupAllowed(role, existing?.role) };
+  }
+
+  /** The server-side authority for the same rule, so a form that skipped the
+   * check (or an old cached page) still can't make a second account. Runs
+   * before anything is uploaded or saved. */
+  private async assertPhoneAvailable(
+    role: EnrollmentLeadRole,
+    rawPhone: string,
+  ): Promise<void> {
+    const { available } = await this.isPhoneAvailable(role, rawPhone);
+    if (!available) throw new ConflictException(PHONE_TAKEN_MESSAGE);
+  }
+
   /** Only accepts a universityId that actually resolves — a bad id from a
    * stale cached page would otherwise fail the FK and 500 the whole form.
    * The typed college name always survives regardless. */
@@ -335,6 +364,7 @@ export class EnrollmentsService {
   async createAspirantLead(
     dto: CreateAspirantLeadDto,
   ): Promise<EnrollmentLeadAcknowledgement> {
+    await this.assertPhoneAvailable(EnrollmentLeadRole.ASPIRANT, dto.phone);
     const universityId = await this.resolveUniversityId(dto.universityId);
 
     const ack = await this.upsertLead(EnrollmentLeadRole.ASPIRANT, dto, {
@@ -495,6 +525,7 @@ export class EnrollmentsService {
   async createMentorLead(
     dto: CreateMentorLeadDto,
   ): Promise<EnrollmentLeadAcknowledgement> {
+    await this.assertPhoneAvailable(EnrollmentLeadRole.MENTOR, dto.phone);
     let universityId = await this.resolveUniversityId(dto.universityId);
 
     // The web form lets a mentor type a college that isn't in the dropdown.
