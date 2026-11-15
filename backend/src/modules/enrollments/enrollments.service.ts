@@ -1,6 +1,7 @@
 import { createHash, randomUUID } from 'node:crypto';
 import {
   BadRequestException,
+  ConflictException,
   Inject,
   Injectable,
   Logger,
