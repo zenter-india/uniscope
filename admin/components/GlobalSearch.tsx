@@ -20,7 +20,15 @@ interface FlatItem {
  * highlighted row (or the first one, if none has been highlighted yet);
  * Escape closes the panel.
  */
-export function GlobalSearch() {
+/** `fullWidth` is for the mobile drawer: always visible, input and results
+ * span the container. The header instance (default) is hidden below `sm`. */
+export function GlobalSearch({
+  fullWidth = false,
+  onNavigate,
+}: {
+  fullWidth?: boolean;
+  onNavigate?: () => void;
+} = {}) {
   const router = useRouter();
   const [q, setQ] = useState('');
   const [open, setOpen] = useState(false);
@@ -71,6 +79,7 @@ export function GlobalSearch() {
     setOpen(false);
     setQ('');
     router.push(href);
+    onNavigate?.();
   };
 
   // Same (users, then universities) order the panel renders in, so the
@@ -107,7 +116,7 @@ export function GlobalSearch() {
   const showPanel = open && q.trim().length >= 2;
 
   return (
-    <div ref={boxRef} className="relative hidden sm:block">
+    <div ref={boxRef} className={fullWidth ? 'relative' : 'relative hidden sm:block'}>
       <Icon.search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400 dark:text-zinc-500" />
       <input
         ref={inputRef}
@@ -130,14 +139,14 @@ export function GlobalSearch() {
         aria-activedescendant={
           highlight >= 0 && flatItems[highlight] ? flatItems[highlight].key : undefined
         }
-        className="h-8 w-56 rounded-md border border-zinc-300 bg-white pl-8 pr-3 text-sm text-zinc-900 shadow-sm outline-none transition-colors placeholder:text-zinc-400 focus:w-72 focus:border-zinc-400 focus:ring-2 focus:ring-zinc-400/40 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:placeholder:text-zinc-500 dark:focus:border-zinc-600 dark:focus:ring-zinc-600/40"
+        className={`${fullWidth ? 'h-10 w-full text-base' : 'h-8 w-56 text-sm focus:w-72'} rounded-md border border-zinc-300 bg-white pl-8 pr-3 text-zinc-900 shadow-sm outline-none transition-colors placeholder:text-zinc-400 focus:border-zinc-400 focus:ring-2 focus:ring-zinc-400/40 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:placeholder:text-zinc-500 dark:focus:border-zinc-600 dark:focus:ring-zinc-600/40`}
       />
 
       {showPanel && (
         <div
           id="global-search-listbox"
           role="listbox"
-          className="absolute right-0 top-full z-20 mt-1.5 max-h-[70vh] w-80 overflow-y-auto rounded-lg border border-zinc-200 bg-white py-1 shadow-lg dark:border-zinc-700 dark:bg-zinc-900"
+          className={`absolute right-0 top-full z-20 mt-1.5 max-h-[70vh] ${fullWidth ? 'w-full' : 'w-80'} overflow-y-auto rounded-lg border border-zinc-200 bg-white py-1 shadow-lg dark:border-zinc-700 dark:bg-zinc-900`}
         >
           {isPending && !hasResults && (
             <p className="px-3 py-2 text-xs text-zinc-400 dark:text-zinc-500">Searching…</p>

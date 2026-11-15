@@ -18,6 +18,10 @@ interface Msg91Response {
   message?: string;
 }
 
+/** Upper bound on a single MSG91 call — well under any client/proxy timeout,
+ * so a hung MSG91 request fails fast instead of tying up the OTP endpoint. */
+const REQUEST_TIMEOUT_MS = 10_000;
+
 /**
  * MSG91 OTP — India-focused SMS OTP provider, the live OTP provider (it
  * replaced Twilio, which has been removed entirely; see CLAUDE.md
@@ -51,6 +55,31 @@ export class Msg91OtpProvider implements OtpProvider {
     return phone.replace(/\D/g, '');
   }
 
+  /** `fetch` rejects with a bare `TypeError: fetch failed` when MSG91 is
+   * unreachable (DNS, reset, TLS) and, with no timeout, can also hang. Both
+   * used to surface as a raw 500 (Sentry UNISCOPE-BACKEND-7/8). Turn them
+   * into the same 503 the provider already uses for MSG91 error replies. */
+  private async request(
+    url: string,
+    init: RequestInit,
+    action: 'sendOtp' | 'verifyOtp',
+  ): Promise<Response> {
+    try {
+      return await fetch(url, {
+        ...init,
+        signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+      });
+    } catch (err) {
+      console.error(
+        `[MSG91] ${action} request failed:`,
+        err instanceof Error ? err.message : err,
+      );
+      throw new ServiceUnavailableException(
+        'OTP service temporarily unavailable',
+      );
+    }
+  }
+
   async sendOtp(phone: string): Promise<{ serviceId: string }> {
     const mobile = this.normaliseMobile(phone);
     // otp_length=6 explicitly — MSG91's own default is 4 digits, which
@@ -62,13 +91,17 @@ export class Msg91OtpProvider implements OtpProvider {
     // is simpler and safer than loosening validation app-wide.
     const url = `https://control.msg91.com/api/v5/otp?template_id=${this.templateId}&mobile=${mobile}&otp_length=6`;
 
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: {
-        authkey: this.authKey,
-        'Content-Type': 'application/json',
+    const response = await this.request(
+      url,
+      {
+        method: 'POST',
+        headers: {
+          authkey: this.authKey,
+          'Content-Type': 'application/json',
+        },
       },
-    });
+      'sendOtp',
+    );
 
     const data = (await response
       .json()
@@ -94,10 +127,11 @@ export class Msg91OtpProvider implements OtpProvider {
     const mobile = this.normaliseMobile(phone);
     const url = `https://control.msg91.com/api/v5/otp/verify?mobile=${mobile}&otp=${code}`;
 
-    const response = await fetch(url, {
-      method: 'GET',
-      headers: { authkey: this.authKey },
-    });
+    const response = await this.request(
+      url,
+      { method: 'GET', headers: { authkey: this.authKey } },
+      'verifyOtp',
+    );
 
     const data = (await response
       .json()

@@ -58,7 +58,7 @@ export function AddUniversityForm() {
   return (
     <Card className="w-full basis-full p-4">
       <p className="mb-3 text-sm font-semibold text-zinc-900 dark:text-zinc-100">New university</p>
-      <div className="grid grid-cols-2 gap-2">
+      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
         <input
           value={form.name}
           onChange={(e) => setForm({ ...form, name: e.target.value })}

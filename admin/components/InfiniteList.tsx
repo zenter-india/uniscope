@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useTransition, type ReactNode } from 'react';
+import { useEffect, useRef, useState, useTransition, type ReactNode } from 'react';
 import { Button, EmptyState, Table } from './ui';
 import type { IconName } from './icons';
 
@@ -52,7 +52,12 @@ export function InfiniteList<T>({
   tableHead,
   selectable,
   renderBulkBar,
+  autoLoad = false,
 }: {
+  /** Keep loading the next page by itself as the list is scrolled near its
+   * end (the "Load more" button stays as a fallback). Off by default so the
+   * other lists keep their explicit button. */
+  autoLoad?: boolean;
   initialItems: T[];
   initialCursor: string | null;
   loadMore: (cursor: string) => Promise<Page<T>>;
@@ -73,8 +78,10 @@ export function InfiniteList<T>({
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [isPending, startTransition] = useTransition();
 
+  const sentinelRef = useRef<HTMLDivElement>(null);
+
   const more = () => {
-    if (!cursor) return;
+    if (!cursor || isPending) return;
     setError(null);
     startTransition(async () => {
       try {
@@ -86,6 +93,31 @@ export function InfiniteList<T>({
       }
     });
   };
+
+  // Always call the latest `more` (it closes over the current cursor).
+  const moreRef = useRef(more);
+  useEffect(() => {
+    moreRef.current = more;
+  });
+
+  // Auto-load: when the sentinel under the list comes within ~400px of the
+  // viewport, fetch the next page. The observer is rebuilt after every page
+  // (cursor/isPending change), so if the new rows still don't fill the screen
+  // it fires again and keeps going until the end of the list. Not while an
+  // error is showing — otherwise a failing request would retry in a loop.
+  useEffect(() => {
+    if (!autoLoad || !cursor || error) return;
+    const el = sentinelRef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((entry) => entry.isIntersecting)) moreRef.current();
+      },
+      { rootMargin: '400px' },
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [autoLoad, cursor, error, isPending]);
 
   if (items.length === 0) {
     return <EmptyState icon={emptyIcon}>{emptyText}</EmptyState>;
@@ -131,6 +163,8 @@ export function InfiniteList<T>({
       )}
 
       {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
+
+      {autoLoad && <div ref={sentinelRef} aria-hidden className="h-px" />}
 
       <div className="flex items-center gap-3">
         {cursor ? (

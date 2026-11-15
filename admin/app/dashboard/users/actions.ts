@@ -39,6 +39,18 @@ export interface UserListFilters {
   banned?: boolean;
   sort?: string;
   dir?: string;
+  /** Exact specialization, e.g. "Community Medicine". */
+  specialization?: string;
+  stream?: string;
+  /** Exact degree, e.g. "MD/MS". */
+  qualification?: string;
+  /** UG or PG (worked out from the degree). */
+  level?: 'UG' | 'PG';
+  state?: string;
+  /** Only people linked to this college. */
+  universityId?: string;
+  /** Only mentors currently accepting call bookings. */
+  accepting?: boolean;
 }
 
 /** Next page of the admin user list — same filters as the page, plus a cursor.
@@ -56,6 +68,13 @@ export async function loadMoreUsers(
   if (filters.banned) params.set('isBanned', 'true');
   if (filters.sort) params.set('sortBy', filters.sort);
   if (filters.dir) params.set('sortDir', filters.dir);
+  if (filters.specialization) params.set('specialization', filters.specialization);
+  if (filters.stream) params.set('stream', filters.stream);
+  if (filters.qualification) params.set('qualification', filters.qualification);
+  if (filters.level) params.set('level', filters.level);
+  if (filters.state) params.set('state', filters.state);
+  if (filters.universityId) params.set('universityId', filters.universityId);
+  if (filters.accepting) params.set('accepting', 'true');
 
   return backendFetch<{ data: UserRowData[]; nextCursor: string | null }>(
     `/users?${params.toString()}`,

@@ -24,6 +24,7 @@ export function UsersList({
           <Table.HeadCell className="w-8" />
           <SortableHeader label="User" sortKey="name" />
           <SortableHeader label="Role" sortKey="role" />
+          <Table.HeadCell>Specialization</Table.HeadCell>
           <SortableHeader label="Verification" sortKey="verification" />
           <SortableHeader label="Joined" sortKey="joined" />
           <Table.HeadCell className="text-right">Actions</Table.HeadCell>

@@ -24,8 +24,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       context: context,
       builder: (dialogContext) => const _DeleteAccountDialog(),
     );
-    if (confirmed != true) return;
+    // The screen can be gone by the time the dialog closes (back gesture,
+    // app restored) — setState then threw (Sentry UNISCOPE-MOBILE-R).
+    if (confirmed != true || !mounted) return;
 
+    // Captured up front: `ref` can't be read once this screen is disposed,
+    // but a deleted account must still be signed out even then.
+    final auth = ref.read(authControllerProvider.notifier);
     setState(() => _deleting = true);
     try {
       await ref.read(usersApiProvider).deleteMe();
@@ -50,7 +55,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           ],
         ),
       );
-      ref.read(authControllerProvider.notifier).logout();
+      auth.logout();
       if (!mounted) return;
       context.go('/welcome');
     } catch (_) {

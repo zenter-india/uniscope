@@ -83,6 +83,7 @@ class _ChatThreadViewState extends State<ChatThreadView>
   bool _sending = false;
   bool _loadingMore = false;
   bool _disposed = false;
+  bool _resubscribePending = false;
 
   @override
   void initState() {
@@ -104,14 +105,21 @@ class _ChatThreadViewState extends State<ChatThreadView>
       widget.connection.supabaseAnonKey,
     );
     final channel = realtime.channel(widget.connection.broadcastTopic);
+    // Assigned before `subscribe` so the status callback below can tell
+    // whether it still belongs to the live channel.
+    _realtime = realtime;
+    _channel = channel;
     channel
         .onBroadcast(
           event: 'new_message',
           callback: (payload) => _onNewMessagePing(),
         )
-        .subscribe(_onSubscribeStatusChanged);
-    _realtime = realtime;
-    _channel = channel;
+        .subscribe((status, error) {
+      // A late status from a channel we already replaced (e.g. the `closed`
+      // fired by our own teardown) must not tear down its replacement.
+      if (!identical(_channel, channel)) return;
+      _onSubscribeStatusChanged(status, error);
+    });
   }
 
   /// A dropped/failed subscription (network hiccup, backgrounded app,
@@ -136,11 +144,21 @@ class _ChatThreadViewState extends State<ChatThreadView>
   }
 
   void _scheduleResubscribe() {
-    _channel?.unsubscribe();
-    _realtime?.dispose();
+    // `unsubscribe()` makes the package fire a `closed` status straight
+    // back into [_onSubscribeStatusChanged], which lands here again. The
+    // old order (unsubscribe, then clear `_channel`) recursed until the
+    // stack overflowed (Sentry UNISCOPE-MOBILE-1 and its look-alikes). So
+    // detach the channel first and ignore re-entry while a retry is queued.
+    if (_resubscribePending) return;
+    _resubscribePending = true;
+    final channel = _channel;
+    final realtime = _realtime;
     _channel = null;
     _realtime = null;
+    channel?.unsubscribe();
+    realtime?.dispose();
     Future.delayed(const Duration(seconds: 3), () {
+      _resubscribePending = false;
       if (_disposed) return;
       _subscribe();
     });

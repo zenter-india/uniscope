@@ -9,6 +9,7 @@ import 'core/build_info.dart' show kGitSha, kSentryDsn;
 import 'core/network/university_reviews_api.dart' show hasReviewedUniversityProvider;
 import 'core/network/users_api.dart' show myProfileProvider;
 import 'core/push/push_service.dart';
+import 'core/sentry_filter.dart';
 import 'core/theme/app_theme.dart';
 import 'features/calls/call_overlay.dart';
 import 'router/app_router.dart';
@@ -33,6 +34,8 @@ void main() async {
     // low-risk addition rather than turning on APM this app doesn't need.
     options.tracesSampleRate = 0;
     options.release = 'uniscope-mobile@$kGitSha';
+    // Drop user-declined permissions, downgrade connectivity noise.
+    options.beforeSend = filterSentryEvent;
   }, appRunner: _main);
 }
 

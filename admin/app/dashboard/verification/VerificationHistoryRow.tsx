@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { Badge, Table, toneFor } from '../../../components/ui';
 import type { VerificationHistoryRowData } from './actions';
 
@@ -15,7 +16,12 @@ export function VerificationHistoryRow({ request }: { request: VerificationHisto
         {request.userRole && <Badge className="ml-2">{request.userRole}</Badge>}
       </Table.Cell>
       <Table.Cell className="text-xs text-zinc-500 dark:text-zinc-400">
-        {request.universityName ?? request.universityId}
+        <Link
+          href={`/dashboard/universities/${request.universityId}`}
+          className="underline decoration-zinc-300 underline-offset-2 hover:decoration-zinc-600"
+        >
+          {request.universityName ?? request.universityId}
+        </Link>
       </Table.Cell>
       <Table.Cell>
         <Badge tone={toneFor(request.status)}>{request.status}</Badge>

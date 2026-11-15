@@ -58,12 +58,17 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       if (!mounted) return;
       context.push('/otp', extra: {'phone': fullPhone, 'serviceId': serviceId});
     } on DioException catch (err) {
+      // The request can outlive this screen (user backed out, app went to
+      // the background) — setState on a disposed State threw a null-check
+      // error (Sentry UNISCOPE-MOBILE-19).
+      if (!mounted) return;
       final msg = (err.response?.data is Map)
           ? (err.response?.data as Map)['message']
           : null;
       setState(() => _error =
           msg is String ? msg : 'Failed to send OTP. Please try again.');
     } catch (_) {
+      if (!mounted) return;
       setState(() => _error = 'Failed to send OTP. Please try again.');
     } finally {
       if (mounted) setState(() => _loading = false);

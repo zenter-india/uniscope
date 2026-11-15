@@ -6,16 +6,29 @@ import type { UniversityRowData } from './UniversityRow';
 
 export interface UniversityListFilters {
   search?: string;
+  /** Only colleges offering this course (a program name, e.g. "MD/MS"). */
+  course?: string;
+  state?: string;
+  stream?: string;
+  /** "inactive" = hidden from the app (e.g. a college a user typed). */
+  status?: 'active' | 'inactive';
+  /** 'name' = Alphabet A–Z, 'name_desc' = Z–A, 'new' = newest first. */
+  sort?: 'name' | 'name_desc' | 'new';
 }
 
 /** Next page of the admin university list — same filters as the page, plus a
- * cursor. Drives the "Load more" button in UniversitiesList. */
+ * cursor. Drives the infinite scroll in UniversitiesList. */
 export async function loadMoreUniversities(
   filters: UniversityListFilters,
   cursor: string,
 ): Promise<{ data: UniversityRowData[]; nextCursor: string | null }> {
   const params = new URLSearchParams({ limit: '50', cursor });
   if (filters.search) params.set('search', filters.search);
+  if (filters.course) params.set('course', filters.course);
+  if (filters.state) params.set('state', filters.state);
+  if (filters.stream) params.set('stream', filters.stream);
+  if (filters.status) params.set('status', filters.status);
+  if (filters.sort === 'name' || filters.sort === 'name_desc') params.set('sort', filters.sort);
 
   return backendFetch<{ data: UniversityRowData[]; nextCursor: string | null }>(
     `/universities/admin/list?${params.toString()}`,
@@ -25,21 +38,36 @@ export async function loadMoreUniversities(
 export interface CollegeOption {
   id: string;
   name: string;
+  district?: string | null;
   city: string | null;
   state: string;
 }
 
-/** Active colleges from our DB matching `query` (name, district or state) —
- * feeds the "pick an existing college" dropdown in the Edit row. */
-export async function searchColleges(query: string): Promise<CollegeOption[]> {
+/** One page (50, the backend's max) of active colleges from our DB matching
+ * `query` (name, district or state), A–Z. Pass the returned `nextCursor` back
+ * as `cursor` to get the following page — the picker keeps asking as the
+ * admin scrolls, so there is no cap on how many colleges can be reached. */
+export async function searchColleges(
+  query: string,
+  cursor?: string | null,
+): Promise<{ data: CollegeOption[]; nextCursor: string | null }> {
   const params = new URLSearchParams({ limit: '50', sort: 'name', activeOnly: 'true' });
   if (query.trim()) params.set('search', query.trim());
+  if (cursor) params.set('cursor', cursor);
   const page = await backendFetch<{
     data: CollegeOption[];
     nextCursor: string | null;
   }>(`/universities/admin/list?${params.toString()}`);
-  return page.data
-    .map(({ id, name, city, state }) => ({ id, name, city, state }));
+  return {
+    data: page.data.map(({ id, name, district, city, state }) => ({
+      id,
+      name,
+      district,
+      city,
+      state,
+    })),
+    nextCursor: page.nextCursor,
+  };
 }
 
 export interface UniversityInput {
@@ -85,6 +113,7 @@ export interface DuplicateUniversity {
   slug: string;
   state: string;
   city: string | null;
+  district?: string | null;
   stream: string | null;
   establishedYear: number | null;
   isActive: boolean;

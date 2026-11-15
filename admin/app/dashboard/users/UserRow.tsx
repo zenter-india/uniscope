@@ -11,6 +11,9 @@ export interface UserRowData {
   id: string;
   displayName: string;
   role: string;
+  /** The person's own specialization (e.g. "Community Medicine"), not UG/PG.
+   * Null when they have none; absent from an older backend. */
+  specialization?: string | null;
   verificationStatus: string;
   isBanned: boolean;
   isActive: boolean;
@@ -71,6 +74,13 @@ export function UserRow({
       </Table.Cell>
       <Table.Cell>
         <Badge>{user.role}</Badge>
+      </Table.Cell>
+      <Table.Cell className="max-w-[16rem] text-zinc-700 dark:text-zinc-300">
+        {user.specialization ? (
+          <span title={user.specialization}>{user.specialization}</span>
+        ) : (
+          <span className="text-zinc-300 dark:text-zinc-600">—</span>
+        )}
       </Table.Cell>
       <Table.Cell>
         <Badge tone={toneFor(user.verificationStatus)}>{user.verificationStatus}</Badge>
