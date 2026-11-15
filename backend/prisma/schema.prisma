@@ -1223,7 +1223,7 @@ model EnrollmentLead {
   documentKey  String?       @map("document_key") @db.VarChar(500)
 
   /// Ops/CRM fields — admin-only, never accepted from the public endpoint.
-  convertedUserId String? @unique @map("converted_user_id")
+  convertedUserId String? @map("converted_user_id")
   adminNote       String? @map("admin_note") @db.Text
 
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
@@ -1236,6 +1236,12 @@ model EnrollmentLead {
   /// but the same person may legitimately register as both an aspirant and a
   /// mentor.
   @@unique([role, phone])
+  /// One account may be linked by one lead per role, not by one lead in total:
+  /// a person who first signs up as an aspirant and later as a mentor ends up
+  /// with a single account (upgraded to mentor) that both of their leads point
+  /// at. Nulls are distinct, so unlinked leads never clash.
+  @@unique([role, convertedUserId])
+  @@index([convertedUserId])
   @@index([status, createdAt(sort: Desc)])
   @@index([role, createdAt(sort: Desc)])
   @@map("enrollment_leads")

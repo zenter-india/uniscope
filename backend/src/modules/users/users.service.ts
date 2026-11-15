@@ -909,7 +909,9 @@ export class UsersService {
     // says) — show it for them until their own login stores the encrypted one.
     const lead = user.phoneEncrypted
       ? null
-      : await this.prisma.enrollmentLead.findUnique({
+      : await this.prisma.enrollmentLead.findFirst({
+          // An upgraded account can be linked by an aspirant and a mentor lead;
+          // both carry the same number.
           where: { convertedUserId: userId },
           select: { phone: true },
         });

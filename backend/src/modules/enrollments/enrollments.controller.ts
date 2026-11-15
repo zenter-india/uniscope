@@ -3,6 +3,7 @@ import {
   Controller,
   Get,
   Header,
+  HttpCode,
   Param,
   Patch,
   Post,
@@ -25,6 +26,7 @@ import {
 } from './dto/create-lead.dto.js';
 import { AliasAvailableDto } from './dto/alias-available.dto.js';
 import { ListLeadsDto } from './dto/list-leads.dto.js';
+import { PhoneAvailableDto } from './dto/phone-available.dto.js';
 import { RetryLeadAccountDto } from './dto/retry-lead-account.dto.js';
 import { UpdateLeadDto } from './dto/update-lead.dto.js';
 import { EnrollmentLeadAcknowledgement } from './enrollment-lead-response.js';
@@ -72,6 +74,18 @@ export class EnrollmentsController {
   @Get('alias-available')
   aliasAvailable(@Query() query: AliasAvailableDto) {
     return this.enrollmentsService.isAliasAvailable(query.alias);
+  }
+
+  /** Public: is this phone number free to sign up with? A number can only be
+   * used for one account, for either role. The forms ask before the person goes
+   * on, so they are told early that the number already has an account. Answers only yes/no (never whose account or which
+   * role) and is throttled tightly so it can't be used to test numbers in
+   * bulk. A POST so the number stays out of URLs and logs. */
+  @Throttle({ default: { limit: 10, ttl: 60_000 } })
+  @Post('phone-available')
+  @HttpCode(200)
+  phoneAvailable(@Body() dto: PhoneAvailableDto) {
+    return this.enrollmentsService.isPhoneAvailable(dto.phone);
   }
 
   /** Honeypot tripped — hand back a response indistinguishable from success so
