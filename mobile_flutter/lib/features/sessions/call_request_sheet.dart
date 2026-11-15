@@ -27,17 +27,22 @@ Future<void> showCallRequestSheet(
 
   if (slotMinutes == null || !context.mounted) return;
 
+  // TEMP DIAGNOSTIC — remove once real-device call testing is confirmed
+  // working. mentorId is an opaque id, never PII.
+  debugPrint('[session] call requested mentorId=$mentorId slotMinutes=$slotMinutes');
   try {
-    await ref.read(sessionsApiProvider).create(
+    final session = await ref.read(sessionsApiProvider).create(
           mentorId,
           SessionKind.audioCall,
           slotMinutes: slotMinutes,
         );
+    debugPrint('[session] call request created sessionId=${session.id} status=${session.status.wire}');
     if (!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Call requested — check the Sessions tab')),
     );
   } catch (e) {
+    debugPrint('[session] call request FAILED mentorId=$mentorId — $e');
     if (!context.mounted) return;
     final message = e is DioException ? (e.message ?? '$e') : '$e';
     ScaffoldMessenger.of(context)
