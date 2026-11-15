@@ -45,6 +45,12 @@ test('comment has marker, tier, no mention pings and a read-only note', () => {
   assert.ok(!/@someone/.test(c));
 });
 
+test('comment footer shows the AI review cost when known, and not otherwise', () => {
+  const withCost = buildComment(facts, review, { usageLine: 'AI review: $0.18, 11 turns, 82.7k in (61.0k cached) / 3.9k out' });
+  assert.ok(withCost.includes('· AI review: $0.18, 11 turns'));
+  assert.ok(!buildComment(facts, review).includes('AI review: $'));
+});
+
 test('comment without a review explains why', () => {
   const c = buildComment(facts, '', { skipReason: 'release PR' });
   assert.ok(c.includes('AI review was not run: release PR'));

@@ -13,6 +13,7 @@
 import { execFileSync } from 'node:child_process';
 import { appendFileSync, existsSync, readFileSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
+import { formatUsage } from './usage.mjs';
 
 export const MARKER = '<!-- uniscope-pr-report -->';
 const EMOJI = { LOW: '🟢', MEDIUM: '🟡', HIGH: '🟠', CRITICAL: '🔴' };
@@ -48,7 +49,7 @@ const checkSummary = (checks) => {
   return { ok, bad, other, total: v.length };
 };
 
-export function buildComment(facts, review, { skipReason = '', now = new Date() } = {}) {
+export function buildComment(facts, review, { skipReason = '', now = new Date(), usageLine = '' } = {}) {
   const { pr, risk } = facts;
   const tier = risk.tier;
   const cs = checkSummary(facts.checks);
@@ -97,7 +98,7 @@ ${why}
 ### Review
 ${reviewBlock}
 
-<sub>Automated, read-only report for \`${pr.headSha.slice(0, 7)}\`, updated ${now.toISOString().replace('T', ' ').slice(0, 16)} UTC. It never approves, merges or pushes; a human decides.</sub>
+<sub>Automated, read-only report for \`${pr.headSha.slice(0, 7)}\`, updated ${now.toISOString().replace('T', ' ').slice(0, 16)} UTC${usageLine ? ` · ${sanitize(usageLine, 200)}` : ''}. It never approves, merges or pushes; a human decides.</sub>
 `;
 }
 
@@ -197,7 +198,11 @@ async function main() {
   const review = existsSync(`${dir}/review.md`) ? readFileSync(`${dir}/review.md`, 'utf8').trim() : '';
   const verdict = review ? parseVerdict(review) : 'NOT REVIEWED';
   const counts = countFindings(review);
-  const body = buildComment(facts, review, { skipReason: process.env.SKIP_REASON || '' });
+  let usageLine = '';
+  if (existsSync(`${dir}/usage.json`)) {
+    try { usageLine = formatUsage(JSON.parse(readFileSync(`${dir}/usage.json`, 'utf8'))); } catch { /* cost line is optional */ }
+  }
+  const body = buildComment(facts, review, { skipReason: process.env.SKIP_REASON || '', usageLine });
   const repo = process.env.GITHUB_REPOSITORY;
 
   let commentUrl = null;

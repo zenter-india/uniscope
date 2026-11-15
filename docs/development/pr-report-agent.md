@@ -60,6 +60,22 @@ node scripts/pr-report/publish.mjs --dir pr-report --dry-run
 ```
 Or ask Claude Code: "use the pr-reviewer agent on PR 50".
 
+## Where it runs
+There is no server to host. It runs as a GitHub Actions job (`.github/workflows/pr-report.yml`)
+on a GitHub-hosted `ubuntu-latest` runner, started by each PR event
+(opened, reopened, ready for review, new push). It calls the Anthropic API for the
+review and posts to GitHub, Slack and Notion. Logs are in the repo's Actions tab.
+It uses a few minutes of GitHub Actions time per run. It can also be run on demand
+from Claude Code ("use the pr-reviewer agent on PR 50").
+
+## Cost
+The AI review uses `claude-sonnet-5-5` ($2 / $10 per million input / output tokens,
+cached reads $0.20). Estimated about $0.10 (small PR) to $0.35 (large PR) per review,
+roughly $10-25 a month at the current PR volume. `CLAUDE.md` (about 150k tokens) is
+excluded in CI because loading it would add roughly $0.65-0.75 to every review.
+Every report ends with the real cost of its AI review. Set a monthly spend limit on
+the API key in the Anthropic console as a hard cap.
+
 ## Limits and trust
 - Runs on the `pull_request` event, so it uses the workflow from the PR itself.
   That is fine while only trusted collaborators can push branches; forks and

@@ -70,12 +70,17 @@ jobs:
       # Read-only review. Strict allowlist, no network tools, may write one file.
       # Slack / Notion credentials are NOT available to this step.
       - name: AI review (read-only)
+        id: review
         if: steps.gate.outputs.run == 'true'
         continue-on-error: true
         uses: anthropics/claude-code-action@f3b070c88125d33dbae5653df5f143101d4ea9dc # v1.0.276
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           github_token: ${{ github.token }}
+          # CLAUDE.md is ~600 KB (~150k tokens): loading it on every turn would cost
+          # several times the review itself. The reviewer reads only its short
+          # "Conventions to follow" section (see .claude/agents/pr-reviewer.md).
+          settings: '{"claudeMdExcludes":["**/CLAUDE.md"]}'
           prompt: |
             Follow .claude/agents/pr-reviewer.md exactly.
             Review pull request #${{ github.event.pull_request.number }}.
@@ -91,6 +96,14 @@ jobs:
             --permission-mode dontAsk
             --allowedTools "Read,Grep,Glob,Edit(pr-report/review.md),Bash(git diff:*),Bash(git log:*),Bash(git show:*)"
             --disallowedTools "WebFetch,WebSearch"
+
+      # What the AI review cost, shown in the report footer. Optional and failure-safe.
+      - name: Read AI review usage
+        if: steps.review.outputs.execution_file != ''
+        continue-on-error: true
+        env:
+          EXECUTION_FILE: ${{ steps.review.outputs.execution_file }}
+        run: node scripts/pr-report/usage.mjs --out pr-report/usage.json
 
       # Plain script posts the report. Credentials for each destination are optional.
       - name: Publish report
