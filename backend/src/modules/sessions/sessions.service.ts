@@ -3,6 +3,7 @@ import {
   ConflictException,
   ForbiddenException,
   Injectable,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
 import {
@@ -59,6 +60,10 @@ const ACTIVE_STATUSES: SessionStatus[] = [
  */
 @Injectable()
 export class SessionsService {
+  // DIAGNOSTIC — call-flow tracing for the two-device manual test (see
+  // ai/CALL_TEST.md). Logs session/user ids only, never tokens or PII.
+  private readonly logger = new Logger(SessionsService.name);
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly mentorsService: MentorsService,
@@ -162,6 +167,11 @@ export class SessionsService {
       },
     });
 
+    this.logger.log(
+      `[call] session created id=${session.id} type=${session.type} ` +
+        `slotMinutes=${slotMinutes} freeSlot=${isFreeSlot} aspirant=${aspirantId} mentor=${dto.mentorId}`,
+    );
+
     if (isAudioCall && !isFreeSlot) {
       const aspirantWallet = await this.prisma.wallet.findUniqueOrThrow({
         where: { userId: aspirantId },
@@ -172,9 +182,13 @@ export class SessionsService {
           sessionId: session.id,
           amountMinor: slotCostMinor,
         });
+        this.logger.log(`[call] hold placed sessionId=${session.id}`);
       } catch (err) {
         // Insufficient balance — undo the session row rather than leaving an
         // orphaned PENDING request the mentor could still see and accept.
+        this.logger.warn(
+          `[call] hold FAILED sessionId=${session.id} — deleting orphaned session row: ${err}`,
+        );
         await this.prisma.session.delete({ where: { id: session.id } });
         throw err;
       }
@@ -214,6 +228,9 @@ export class SessionsService {
       });
     }
 
+    if (isAudioCall) {
+      this.logger.log(`[call] sending SESSION_REQUEST sessionId=${session.id} mentor=${dto.mentorId}`);
+    }
     await this.notificationsService.send({
       userId: dto.mentorId,
       type: isAudioCall ? NotificationType.SESSION_REQUEST : NotificationType.MESSAGE,
@@ -288,6 +305,10 @@ export class SessionsService {
       },
     });
 
+    this.logger.log(
+      `[call] session accepted sessionId=${session.id} type=${session.type} mentor=${mentorUserId} ` +
+        `(SESSION_ACCEPTED will carry sessionType=${session.type} for mobile deep-link)`,
+    );
     await this.notificationsService.send({
       userId: session.aspirantId,
       type: NotificationType.SESSION_ACCEPTED,
@@ -311,6 +332,9 @@ export class SessionsService {
     this.requireParty(session, mentorUserId, 'mentor');
 
     if (session.status !== SessionStatus.PENDING) {
+      this.logger.warn(
+        `[call] reject FAILED sessionId=${sessionId} — status=${session.status}, expected PENDING`,
+      );
       throw new ConflictException(
         `Cannot reject a session in status ${session.status}`,
       );
@@ -328,6 +352,7 @@ export class SessionsService {
     });
 
     await this.releaseHoldsForSession(sessionId);
+    this.logger.log(`[call] session rejected sessionId=${sessionId} mentor=${mentorUserId}`);
 
     await this.notificationsService.send({
       userId: session.aspirantId,
@@ -385,6 +410,9 @@ export class SessionsService {
       throw new ForbiddenException('This session is not an audio call session');
     }
     if (!JOINABLE_STATUSES.includes(session.status) && session.status !== SessionStatus.IN_PROGRESS) {
+      this.logger.warn(
+        `[call] token request FAILED sessionId=${sessionId} userId=${userId} — status=${session.status}`,
+      );
       throw new ConflictException(`Cannot join a call in status ${session.status}`);
     }
 
@@ -397,6 +425,9 @@ export class SessionsService {
       });
     }
 
+    this.logger.log(
+      `[call] token issued sessionId=${sessionId} userId=${userId} channel=${channelName}`,
+    );
     return {
       appId: this.agoraService.getAppId(),
       channelName,
@@ -421,6 +452,9 @@ export class SessionsService {
       throw new ForbiddenException('This session is not an audio call session');
     }
     if (!JOINABLE_STATUSES.includes(session.status)) {
+      this.logger.warn(
+        `[call] confirmJoined FAILED sessionId=${sessionId} userId=${userId} — status=${session.status}`,
+      );
       throw new ConflictException(`Cannot confirm join for a call in status ${session.status}`);
     }
 
@@ -430,9 +464,13 @@ export class SessionsService {
       where: { id: sessionId },
       data: isAspirant ? { aspirantJoinedAt: now } : { mentorJoinedAt: now },
     });
+    this.logger.log(
+      `[call] joined confirmed sessionId=${sessionId} role=${isAspirant ? 'aspirant' : 'mentor'}`,
+    );
 
     const bothJoined = updated.aspirantJoinedAt && updated.mentorJoinedAt;
     if (!bothJoined) {
+      this.logger.log(`[call] waiting on other party sessionId=${sessionId}`);
       return this.toResponseById(sessionId);
     }
 
@@ -451,8 +489,11 @@ export class SessionsService {
 
     if (settled.count === 0) {
       // Another concurrent call already made this transition — no-op.
+      this.logger.log(`[call] both joined but transition already settled by a concurrent call sessionId=${sessionId}`);
       return this.toResponseById(sessionId);
     }
+
+    this.logger.log(`[call] both parties joined — status=IN_PROGRESS sessionId=${sessionId}`);
 
     const slotMinutes = updated.callSlotMinutes ?? 0;
     const slotCostMinor = slotMinutes * MENTOR_RATE_PER_MINUTE_MINOR;
@@ -474,6 +515,7 @@ export class SessionsService {
         where: { id: sessionId },
         data: { totalCostMinor: slotCostMinor },
       });
+      this.logger.log(`[call] billing settled (paid hold) sessionId=${sessionId} slotMinutes=${slotMinutes}`);
     } else {
       // Free-tier slot — decrement the aspirant's remaining free minutes,
       // never below 0.
@@ -485,6 +527,7 @@ export class SessionsService {
         where: { userId: session.aspirantId, freeCallSecondsRemaining: { lt: 0 } },
         data: { freeCallSecondsRemaining: 0 },
       });
+      this.logger.log(`[call] billing settled (free tier) sessionId=${sessionId} slotMinutes=${slotMinutes}`);
     }
 
     return this.toResponseById(sessionId);
@@ -567,6 +610,9 @@ export class SessionsService {
       throw new ForbiddenException('This session is not an audio call session');
     }
     if (session.status !== SessionStatus.IN_PROGRESS && !JOINABLE_STATUSES.includes(session.status)) {
+      this.logger.warn(
+        `[call] end FAILED sessionId=${sessionId} userId=${userId} — status=${session.status}`,
+      );
       throw new ConflictException(`Cannot end a call in status ${session.status}`);
     }
 
@@ -578,6 +624,9 @@ export class SessionsService {
         endReason,
       },
     });
+    this.logger.log(
+      `[call] call ended sessionId=${sessionId} userId=${userId} reason=${endReason}`,
+    );
 
     await this.releaseHoldsForSession(sessionId);
 

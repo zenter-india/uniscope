@@ -8,8 +8,6 @@ export const metadata: Metadata = {
     "The rules applicable to UniMinutes purchases, Mentor Session bookings, cancellations, refunds, and payment adjustments on Uniscope.",
 };
 
-const EFFECTIVE_DATE = "01/08/2026";
-const LAST_UPDATED = "09/08/2026";
 const CONTACT_EMAIL = "support@uniscope.in";
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
@@ -31,9 +29,6 @@ export default function RefundPolicyPage() {
           <h1 className="mt-2 text-[clamp(26px,4vw,36px)] font-extrabold text-ink text-wrap-balance">
             Packages, Access, Refund &amp; Cancellation Policy
           </h1>
-          <p className="mt-2 text-[13.5px] font-semibold text-slate-400">
-            Effective date: {EFFECTIVE_DATE} · Last updated: {LAST_UPDATED}
-          </p>
 
           <Section title="About Us">
             <p>

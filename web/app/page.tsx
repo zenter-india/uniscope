@@ -35,10 +35,6 @@ export default function HomePage() {
             Community Guidelines
           </Link>
           <span className="mx-2">·</span>
-          <Link href="/download" className="hover:text-slate-600 hover:underline">
-            Download the App
-          </Link>
-          <span className="mx-2">·</span>
           <Link href="/wallet" className="hover:text-slate-600 hover:underline">
             Buy Uniminutes
           </Link>
