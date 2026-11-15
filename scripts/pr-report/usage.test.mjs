@@ -26,6 +26,18 @@ test('unexpected or empty logs give null, never throw', () => {
   assert.equal(parseUsage(''), null);
 });
 
+test('a failed run yields a masked, short reason and no cost line', () => {
+  const log = JSON.stringify([
+    { type: 'assistant', error: 'billing_error' },
+    { type: 'result', subtype: 'success', is_error: true, total_cost_usd: 0, result: 'Credit balance is too low (key sk-ant-api03-SECRETSECRET)' },
+  ]);
+  const u = parseUsage(log);
+  assert.equal(u.failed, true);
+  assert.ok(u.message.startsWith('billing_error: Credit balance is too low'));
+  assert.ok(!u.message.includes('SECRETSECRET'));
+  assert.equal(formatUsage(u), '');
+});
+
 test('formats one short footer line', () => {
   const line = formatUsage(parseUsage(JSON.stringify([result])));
   assert.equal(line, 'AI review: $0.18, 11 turns, 82.7k in (61.0k cached) / 3.9k out');

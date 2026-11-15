@@ -199,10 +199,17 @@ async function main() {
   const verdict = review ? parseVerdict(review) : 'NOT REVIEWED';
   const counts = countFindings(review);
   let usageLine = '';
+  let skipReason = process.env.SKIP_REASON || '';
   if (existsSync(`${dir}/usage.json`)) {
-    try { usageLine = formatUsage(JSON.parse(readFileSync(`${dir}/usage.json`, 'utf8'))); } catch { /* cost line is optional */ }
+    try {
+      const u = JSON.parse(readFileSync(`${dir}/usage.json`, 'utf8'));
+      if (u.failed) skipReason = `the AI call failed (${u.message})`;
+      else usageLine = formatUsage(u);
+    } catch { /* cost line is optional */ }
   }
-  const body = buildComment(facts, review, { skipReason: process.env.SKIP_REASON || '', usageLine });
+  if (!review && !skipReason && process.env.REVIEW_OUTCOME === 'failure')
+    skipReason = 'the AI review step failed (see the Actions log)';
+  const body = buildComment(facts, review, { skipReason, usageLine });
   const repo = process.env.GITHUB_REPOSITORY;
 
   let commentUrl = null;

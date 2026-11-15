@@ -20,6 +20,12 @@ export function parseUsage(text) {
   // The final "result" entry carries the totals; fall back to the last entry with a cost.
   const result = [...entries].reverse().find((e) => e && (e.type === 'result' || typeof e.total_cost_usd === 'number'));
   if (!result) return null;
+  if (result.is_error === true) {
+    // The run failed (bad key, no credit, no model access...). Keep a short, masked reason.
+    const code = entries.map((e) => e && typeof e.error === 'string' ? e.error : '').filter(Boolean).pop() || '';
+    const text = typeof result.result === 'string' ? result.result : '';
+    return { failed: true, message: maskSecrets([code, text].filter(Boolean).join(': ')).slice(0, 240) || 'unknown error' };
+  }
   const u = result.usage || {};
   const num = (v) => (typeof v === 'number' && Number.isFinite(v) ? v : 0);
   const out = {
@@ -35,9 +41,18 @@ export function parseUsage(text) {
 
 const k = (n) => (n >= 1000 ? `${(n / 1000).toFixed(1)}k` : String(n));
 
+/** Never let a key or token end up in a log or a PR comment, even by accident. */
+export function maskSecrets(s) {
+  return String(s)
+    .replace(/sk-ant-[A-Za-z0-9_-]+/g, 'sk-ant-(masked)')
+    .replace(/(Bearer\s+)[A-Za-z0-9._-]+/gi, '$1(masked)')
+    .replace(/gh[pousr]_[A-Za-z0-9]{20,}/g, '(masked)')
+    .replace(/https:\/\/hooks\.slack\.com\/services\/\S+/g, '(masked webhook)');
+}
+
 /** One short line for the report footer. */
 export function formatUsage(u) {
-  if (!u) return '';
+  if (!u || u.failed) return '';
   const parts = [];
   if (u.costUsd !== null) parts.push(`$${u.costUsd.toFixed(2)}`);
   if (u.turns) parts.push(`${u.turns} turns`);
@@ -52,7 +67,9 @@ if (import.meta.url === pathToFileURL(process.argv[1] || '').href) {
   const out = outIdx > -1 ? process.argv[outIdx + 1] : 'pr-report/usage.json';
   try {
     const usage = parseUsage(readFileSync(file, 'utf8'));
-    if (usage) { writeFileSync(out, JSON.stringify(usage, null, 2)); console.log(formatUsage(usage)); }
-    else console.log('No usage found in the execution log; skipping cost line.');
+    if (usage) {
+      writeFileSync(out, JSON.stringify(usage, null, 2));
+      console.log(usage.failed ? `AI review FAILED: ${usage.message}` : formatUsage(usage));
+    } else console.log('No usage found in the execution log; skipping cost line.');
   } catch (e) { console.log(`Could not read usage (${String(e.message).split('\n')[0]}); skipping.`); }
 }

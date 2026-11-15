@@ -113,6 +113,7 @@ jobs:
           GITHUB_REPOSITORY: ${{ github.repository }}
           EVENT_ACTION: ${{ github.event.action }}
           SKIP_REASON: ${{ steps.gate.outputs.reason }}
+          REVIEW_OUTCOME: ${{ steps.review.outcome }}
           SLACK_PR_WEBHOOK: ${{ secrets.SLACK_PR_WEBHOOK }}
           NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
           NOTION_PR_REPORTS_DB: ${{ vars.NOTION_PR_REPORTS_DB }}
