@@ -4,6 +4,7 @@ import { HeroCold } from "../components/HeroCold";
 import { HeroWarm } from "../components/HeroWarm";
 import { ClosingCta } from "../components/ClosingCta";
 import { GetStarted } from "../components/GetStarted";
+import { AppDownload } from "../components/AppDownload";
 import { FooterCredits } from "../components/FooterCredits";
 
 export default function HomePage() {
@@ -14,6 +15,7 @@ export default function HomePage() {
       <HeroWarm />
       <ClosingCta />
       <GetStarted />
+      <AppDownload />
       <footer className="px-6 py-10 text-center text-[12.5px] font-semibold text-slate-400">
         <p>© {new Date().getFullYear()} Uniscope. Real Insights. Real Mentors. Real Guidance.</p>
         <p className="mt-1.5">
@@ -35,6 +37,10 @@ export default function HomePage() {
           <span className="mx-2">·</span>
           <Link href="/download" className="hover:text-slate-600 hover:underline">
             Download the App
+          </Link>
+          <span className="mx-2">·</span>
+          <Link href="/wallet" className="hover:text-slate-600 hover:underline">
+            Buy Uniminutes
           </Link>
         </p>
         <div className="mt-4">
