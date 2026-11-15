@@ -58,6 +58,14 @@ test('major dependency bump and SDK change are HIGH, minor is MEDIUM', () => {
   assert.equal(sdk.tier, 'HIGH');
 });
 
+test('tooling that merely mentions the risky words is not flagged (self-scan regression)', () => {
+  const f = 'scripts/pr-report/risk-rules.mjs';
+  const lines = ["if (any.some((l) => /@Throttle\\(/.test(l)))", "idempotencyKey", 'OTP_PROVIDER_TYPE = "mock"', '@UseGuards('];
+  const r = classifyPr([f, 'docs/development/x.md'], { [f]: lines }, { [f]: lines });
+  assert.equal(r.tier, 'MEDIUM');
+  assert.equal(r.reasons.some((x) => x.tier === 'CRITICAL'), false);
+});
+
 test('OTP mock provider added is CRITICAL', () => {
   const f = 'backend/railway.toml';
   assert.equal(classifyPr([f], { [f]: ['OTP_PROVIDER_TYPE = "mock"'] }, {}).tier, 'CRITICAL');

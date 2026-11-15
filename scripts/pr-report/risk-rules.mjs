@@ -31,6 +31,7 @@ const PATH_RULES = [
   [(f) => /^mobile_flutter\/(android|ios|macos)\//.test(f), 'HIGH', 'Native Android / iOS'],
   [(f) => /(^|\/)\.env\.example$|validation\.schema\.ts$|^backend\/src\/config\//.test(f), 'HIGH', 'Environment / production configuration'],
   [(f) => /(railway|nixpacks)\.toml$|(^|\/)vercel\.json$|^\.github\/workflows\//.test(f), 'HIGH', 'Deploy config / CI'],
+  [(f) => /^scripts\//.test(f), 'MEDIUM', 'Repo scripts / tooling'],
   [(f) => /^web\/(lib|next\.config)/.test(f), 'MEDIUM', 'Website logic'],
   [(f) => /^web\//.test(f), 'LOW', 'Marketing site content'],
   [(f) => /^(backend|admin|mobile_flutter)\//.test(f), 'MEDIUM', 'Product code'],
@@ -42,6 +43,7 @@ export function classifyFile(file) {
 }
 
 const SDK_NAMES = /(agora|firebase|stream|razorpay|iris[-_]rtc)/i;
+const CONTENT_SCANNED = /^(backend|admin|mobile_flutter|web)\/|^\.github\//;
 
 /** Parse changed dependency lines in package.json / pubspec.yaml diffs. */
 export function dependencyChanges(addedByFile, removedByFile) {
@@ -82,6 +84,9 @@ export function contentSignals(addedByFile, removedByFile) {
   const files = new Set([...Object.keys(addedByFile), ...Object.keys(removedByFile)]);
   for (const f of files) {
     if (isTestFile(f) || /\.md$/.test(f)) continue;
+    // Only product code and deploy config can carry these risks. Tooling, docs and
+    // this scanner's own source mention the same words as plain text.
+    if (!CONTENT_SCANNED.test(f)) continue;
     const added = addedByFile[f] || [];
     const removed = removedByFile[f] || [];
     const any = [...added, ...removed];
