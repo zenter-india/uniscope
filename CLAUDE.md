@@ -605,6 +605,15 @@ Where secrets actually live:
 - **Local dev:** `backend/.env`, `admin/.env.local`, `web/.env.local` — all gitignored.
 - **Mobile builds:** `--dart-define` values passed by `mobile_flutter/scripts/build_*_release.sh` from the build machine's environment.
 
+## Branching and deployment (2026-11-15)
+
+Full guide: `docs/development/branching-and-deployment.md`. The short version:
+
+- **Work flow:** branch from `staging` → PR into `staging` (squash) → auto-deploys Preview (stage) on Railway → release PR (merge commit) into **`feature/flutter-migration`, which is production** → auto-deploys Production. `main` and `develop` are stale: do not use them.
+- **Website** (`web/`) has its own pair: `stage/web-enrollment-site` → `prod/web-enrollment-site` (Vercel). Do not edit `web/` on `staging`.
+- **Preview shares the production database**, and migrations run on every backend start. Keep migrations backward compatible and use a test account on Preview.
+- Name the risk tier in every PR (`ai/RISK_RULES.md`). HIGH needs a lead's approval; production releases and store uploads need explicit human approval. Never open a PR against production except a release or hotfix.
+
 ## Conventions to follow
 
 - Explicit allowlist response projections (`toXResponse()` functions) for every entity — never return a raw Prisma row, to avoid leaking fields like `phoneHash`/`realNameEncrypted` as the schema evolves.

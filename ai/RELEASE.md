@@ -8,6 +8,14 @@ process.
 **Production release always requires explicit human approval.** No agent
 promotes to production autonomously, regardless of build or CI state.
 
+> **Status note (2026-11-15):** the Environments and CI/CD sections below were
+> written before a staging environment and a CI workflow existed. Both exist now
+> (Railway `staging` deploys from the `staging` branch; `.github/workflows/ci.yml`
+> runs on every PR). For branches, environments, review rules and the release
+> cycle, **[docs/development/branching-and-deployment.md](../docs/development/branching-and-deployment.md)
+> is the source of truth.** The Android/iOS release and `TODO` sections below are
+> still current.
+
 ---
 
 ## Environments (actual)
