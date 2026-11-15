@@ -7,6 +7,7 @@ const LINKS = [
   { href: "/refund", label: "Refund and Cancellation Policy" },
   { href: "/community-guidelines", label: "Community Guidelines" },
   { href: "/download", label: "Download the App" },
+  { href: "/wallet", label: "Buy Uniminutes" },
 ];
 
 export function SiteFooter() {
