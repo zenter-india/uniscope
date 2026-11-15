@@ -15,7 +15,7 @@ const REASON_LABELS: Record<string, string> = {
   OTHER: 'Other',
 };
 
-interface ReportRowData {
+export interface ReportRowData {
   id: string;
   reporterId: string;
   reporterDisplayName?: string;

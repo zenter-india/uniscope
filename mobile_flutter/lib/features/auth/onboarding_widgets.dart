@@ -104,11 +104,17 @@ class OnboardingDropdown extends StatelessWidget {
     required this.hint,
     required this.options,
     required this.onChanged,
+    this.enabled = true,
   });
   final String? value;
   final String hint;
   final List<String> options;
   final ValueChanged<String?> onChanged;
+
+  /// False disables the dropdown entirely (e.g. City before a State is
+  /// picked) — passing `onChanged: null` is what Flutter's own
+  /// DropdownButtonFormField uses to render its disabled state.
+  final bool enabled;
 
   @override
   Widget build(BuildContext context) {
@@ -117,7 +123,7 @@ class OnboardingDropdown extends StatelessWidget {
       isExpanded: true,
       hint: Text(hint),
       items: options.map((o) => DropdownMenuItem(value: o, child: Text(o))).toList(),
-      onChanged: onChanged,
+      onChanged: enabled ? onChanged : null,
     );
   }
 }
@@ -224,6 +230,58 @@ class OnboardingSingleChipGroup extends StatelessWidget {
           side: BorderSide(color: isSelected ? AppColors.primary : AppColors.border),
         );
       }).toList(),
+    );
+  }
+}
+
+/// On/off switch with a label and optional hint below it — used for the
+/// "keep this private" choice on year-of-study / graduation year.
+class OnboardingToggle extends StatelessWidget {
+  const OnboardingToggle({
+    super.key,
+    required this.value,
+    required this.onChanged,
+    required this.label,
+    this.hint,
+  });
+  final bool value;
+  final ValueChanged<bool> onChanged;
+  final String label;
+  final String? hint;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Switch(value: value, onChanged: onChanged, activeThumbColor: AppColors.primary),
+        const SizedBox(width: AppSpacing.xs),
+        Expanded(
+          child: Padding(
+            padding: const EdgeInsets.only(top: AppSpacing.sm),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: const TextStyle(
+                    fontSize: AppFont.sm,
+                    fontWeight: AppFont.semibold,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                if (hint != null) ...[
+                  const SizedBox(height: 2),
+                  Text(
+                    hint!,
+                    style: const TextStyle(fontSize: AppFont.xs, color: AppColors.textMuted),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

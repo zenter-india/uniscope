@@ -1,12 +1,19 @@
-import { randomUUID } from 'node:crypto';
-import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { createHash, randomUUID } from 'node:crypto';
+import { BadRequestException, Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
-import { EnrollmentLeadRole, EnrollmentLeadStatus, Prisma } from '@prisma/client';
+import {
+  EnrollmentLeadRole,
+  EnrollmentLeadStatus,
+  Prisma,
+  UserRole,
+  VerificationStatus,
+} from '@prisma/client';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { parsePhoneNumberFromString } from 'libphonenumber-js';
 import { SlackNotifierService } from '../../common/slack/slack-notifier.service.js';
 import { PrismaService } from '../../database/prisma/prisma.service.js';
 import { SUPABASE_BUCKETS, SUPABASE_CLIENT } from '../../supabase/index.js';
+import { UsersService } from '../users/users.service.js';
 import {
   BaseLeadDto,
   CreateAspirantLeadDto,
@@ -30,11 +37,27 @@ const LEAD_DOCUMENT_PREFIX = 'enrollment-leads';
 
 @Injectable()
 export class EnrollmentsService {
+  private readonly logger = new Logger(EnrollmentsService.name);
+
   constructor(
     private readonly prisma: PrismaService,
     @Inject(SUPABASE_CLIENT) private readonly supabase: SupabaseClient,
     private readonly slack: SlackNotifierService,
+    private readonly usersService: UsersService,
   ) {}
+
+  /** Same phoneHash derivation as AuthService.verifyOtp's production
+   * (non-mock) path: sha256 of the whitespace-stripped phone string. Must
+   * stay byte-for-byte identical to that method, or a website-provisioned
+   * account will never be found by a later OTP login on the same number.
+   * Safe here because `phone` is already this service's own E.164-
+   * normalized value (see normalizePhone) — libphonenumber-js's E.164
+   * output for a valid Indian number and the mobile client's own
+   * `+91<digits>` string are the same shape, so the two sides hash
+   * identically without needing to coordinate normalization logic. */
+  private phoneHashFor(e164Phone: string): string {
+    return createHash('sha256').update(e164Phone.replace(/\s+/g, '').trim()).digest('hex');
+  }
 
   /** E.164 so the (role, phone) uniqueness actually holds — otherwise the same
    * person typing "9876543210" and "+91 98765 43210" creates two leads. */
@@ -60,6 +83,82 @@ export class EnrollmentsService {
       throw new BadRequestException(`Failed to upload document: ${error.message}`);
     }
     return key;
+  }
+
+  /**
+   * Turns a lead submission into a real, immediately-usable account (per
+   * explicit request): a website registration now provisions the actual
+   * `User`/`UserProfile` row, pre-filled from what was submitted, so that
+   * verifying OTP on the same phone in the app later logs straight into
+   * this already-set-up account instead of a blank one that still needs
+   * role selection or the onboarding wizard — findOrCreateByPhoneHash finds
+   * it by the same phoneHash and returns isNewUser:false.
+   *
+   * Best-effort and non-fatal by design: this runs after the lead itself
+   * is already safely upserted, wrapped in try/catch by both call sites,
+   * so a bug or a transient DB/storage error here must never fail the
+   * public form submission — worst case, the lead exists without a linked
+   * account yet, exactly like before this feature existed.
+   *
+   * For a mentor with both a resolved universityId and an uploaded
+   * document, also auto-submits their real VerificationRequest reusing the
+   * already-uploaded file (same Supabase bucket, just a different key
+   * prefix — see LEAD_DOCUMENT_PREFIX) rather than asking them to re-upload
+   * inside the app, per explicit request. Skipped (left for the in-app
+   * verification flow instead) when the college was only free-typed with
+   * no matching University row, since VerificationRequest.universityId is
+   * required.
+   */
+  private async provisionAccountFromLead(
+    role: EnrollmentLeadRole,
+    phone: string,
+    dto: BaseLeadDto,
+    profile: Prisma.UserProfileUncheckedCreateWithoutUserInput,
+    mentorVerification?: {
+      universityId: string | null;
+      documentType?: Prisma.VerificationRequestUncheckedCreateInput['documentType'];
+      documentKey: string | null;
+    },
+  ): Promise<void> {
+    const phoneHash = this.phoneHashFor(phone);
+
+    const { user, isNewUser } = await this.usersService.provisionAccountFromLead({
+      phoneHash,
+      role: role === EnrollmentLeadRole.MENTOR ? UserRole.MENTOR : UserRole.ASPIRANT,
+      displayName: dto.alias,
+      realName: dto.fullName,
+      profile,
+    });
+
+    if (
+      isNewUser &&
+      role === EnrollmentLeadRole.MENTOR &&
+      mentorVerification?.universityId &&
+      mentorVerification.documentType &&
+      mentorVerification.documentKey
+    ) {
+      await this.prisma.$transaction([
+        this.prisma.verificationRequest.create({
+          data: {
+            userId: user.id,
+            universityId: mentorVerification.universityId,
+            documentType: mentorVerification.documentType,
+            documentKey: mentorVerification.documentKey,
+            status: VerificationStatus.SUBMITTED,
+            submittedAt: new Date(),
+          },
+        }),
+        this.prisma.user.update({
+          where: { id: user.id },
+          data: { verificationStatus: VerificationStatus.SUBMITTED },
+        }),
+      ]);
+    }
+
+    await this.prisma.enrollmentLead.update({
+      where: { role_phone: { role, phone } },
+      data: { convertedUserId: user.id, status: EnrollmentLeadStatus.CONVERTED },
+    });
   }
 
   /**
@@ -160,13 +259,150 @@ export class EnrollmentsService {
   async createAspirantLead(
     dto: CreateAspirantLeadDto,
   ): Promise<EnrollmentLeadAcknowledgement> {
-    return this.upsertLead(EnrollmentLeadRole.ASPIRANT, dto, {
+    const universityId = await this.resolveUniversityId(dto.universityId);
+
+    const ack = await this.upsertLead(EnrollmentLeadRole.ASPIRANT, dto, {
+      alias: dto.alias,
       qualification: dto.qualification,
+      universityId: universityId ?? undefined,
+      collegeName: dto.collegeName,
       specialization: dto.specialization,
       courseInterested: dto.courseInterested,
       preferredLanguage: dto.preferredLanguage,
       preferredMentorshipTiming: dto.preferredMentorshipTiming,
     });
+
+    try {
+      await this.provisionAccountFromLead(EnrollmentLeadRole.ASPIRANT, this.normalizePhone(dto.phone), dto, {
+        gender: dto.gender,
+        state: dto.state,
+        city: dto.city,
+        stream: dto.stream,
+        dateOfBirth: dto.dateOfBirth ? new Date(dto.dateOfBirth) : undefined,
+        qualification: dto.qualification,
+        specialization: dto.specialization,
+        courseInterested: dto.courseInterested,
+        preferredLanguage: dto.preferredLanguage,
+        preferredMentorshipTiming: dto.preferredMentorshipTiming,
+        universityId: universityId ?? undefined,
+      });
+    } catch (err) {
+      // Never let account provisioning fail the public form submission --
+      // the lead above is already safely saved either way.
+      this.logger.error(
+        `Failed to provision account for aspirant lead ${ack.id}`,
+        err instanceof Error ? err.stack : String(err),
+      );
+    }
+
+    return ack;
+  }
+
+  /**
+   * Mirrors CURATED_DEGREE_MAP_BY_STREAM in web/components/MentorForm.tsx
+   * -- the form's raw degree label (what dto.degree actually carries,
+   * e.g. "PG", "B.Tech/B.E", "UG") is NOT the same string as the
+   * Program.name that degree's curated dataset was seeded under (e.g.
+   * "MD/MS", "B.Tech", "Law-UG") -- only a few of the ten curated degrees
+   * happen to coincide (DNB, Medical's "Diploma", MDS, DM/MCh). Needed
+   * here so mapSpecializationToCollege looks up the *actual* Program row
+   * instead of silently finding nothing for most streams. There is
+   * nothing that enforces these two maps stay identical -- if
+   * MentorForm.tsx's map changes, this one needs the same edit by hand.
+   */
+  /**
+   * Mirrors SPECIALIZATION_SUGGESTION_STREAMS in
+   * web/components/MentorForm.tsx -- must be kept in sync by hand, same
+   * caveat as CURATED_PROGRAM_NAME_BY_STREAM_DEGREE below. Started
+   * Medical-only (verified live end to end, including that Dental/
+   * Engineering/Law stayed on the old "college's own list only"
+   * behavior while this was Medical-scoped); now extended to every
+   * stream with a curated per-college specialization dataset (see
+   * scripts/data/README.md), per explicit request.
+   */
+  private static readonly SPECIALIZATION_SUGGESTION_STREAMS = new Set([
+    'Medical',
+    'Dental',
+    'Engineering',
+    'Law',
+  ]);
+
+  private static readonly CURATED_PROGRAM_NAME_BY_STREAM_DEGREE: Record<string, Record<string, string>> = {
+    Medical: {
+      DNB: 'DNB',
+      PG: 'MD/MS',
+      'MD/MS': 'MD/MS',
+      Doctorate: 'MD/MS',
+      Others: 'MD/MS',
+      'DM/MCh': 'DM/MCh',
+      Diploma: 'Diploma',
+    },
+    Dental: { MDS: 'MDS' },
+    Engineering: {
+      'B.Tech/B.E': 'B.Tech',
+      'M.Tech/M.E': 'M.Tech',
+      Diploma: 'Diploma-Engg',
+    },
+    Law: { UG: 'Law-UG', PG: 'Law-PG' },
+  };
+
+  /**
+   * "Learn as you go" for the curated per-college specialization datasets
+   * (see scripts/data/README.md) — they're necessarily incomplete, so a
+   * mentor whose real specialization isn't yet mapped to their specific
+   * college has to type it. If what they typed exactly matches (case-
+   * insensitive) a specialization already known *somewhere* in this
+   * stream+degree's overall dataset — a real, recognized value, not a
+   * typo or something we've never seen — and the picked college's own
+   * Program doesn't have it yet, add it there too (in its existing
+   * canonical casing), so the next mentor who picks this same college
+   * sees it directly instead of having to search the full list. An
+   * unrecognized value is never added — it stays exactly what it was, a
+   * plain string on this lead, with zero effect on the curated dataset.
+   * Best-effort and silent: this is a side-effect of lead submission, not
+   * the point of it, so any failure here must never fail the submission
+   * itself. A no-op for any stream not in SPECIALIZATION_SUGGESTION_STREAMS
+   * (Medical only, for now -- see that constant), and for any stream or
+   * degree with no curated per-college dataset at all -- there's simply
+   * nothing to map onto.
+   */
+  private async mapSpecializationToCollege(
+    universityId: string,
+    degree: string,
+    stream: string,
+    specialization: string,
+  ): Promise<void> {
+    if (!EnrollmentsService.SPECIALIZATION_SUGGESTION_STREAMS.has(stream)) return;
+    try {
+      const curatedName =
+        EnrollmentsService.CURATED_PROGRAM_NAME_BY_STREAM_DEGREE[stream]?.[degree] ?? degree;
+      const programName = curatedName.toUpperCase();
+      const program = await this.prisma.program.findUnique({
+        where: { universityId_name: { universityId, name: programName } },
+      });
+      if (!program) return;
+
+      const alreadyMapped = program.specializations.some(
+        (s) => s.toLowerCase() === specialization.toLowerCase(),
+      );
+      if (alreadyMapped) return;
+
+      const siblingPrograms = await this.prisma.program.findMany({
+        where: { name: programName, university: { stream } },
+        select: { specializations: true },
+      });
+      const canonical = siblingPrograms
+        .flatMap((p) => p.specializations)
+        .find((s) => s.toLowerCase() === specialization.toLowerCase());
+      if (!canonical) return; // not a recognized value -- leave the curated dataset alone
+
+      await this.prisma.program.update({
+        where: { id: program.id },
+        data: { specializations: { push: canonical } },
+      });
+    } catch {
+      // Best-effort only -- never let this break lead submission.
+    }
   }
 
   async createMentorLead(
@@ -174,11 +410,20 @@ export class EnrollmentsService {
   ): Promise<EnrollmentLeadAcknowledgement> {
     const universityId = await this.resolveUniversityId(dto.universityId);
 
+    if (universityId && dto.degree && dto.stream && dto.specialization?.trim()) {
+      await this.mapSpecializationToCollege(
+        universityId,
+        dto.degree,
+        dto.stream,
+        dto.specialization.trim(),
+      );
+    }
+
     const documentKey = dto.documentBase64
       ? await this.uploadDocument(dto.documentBase64)
       : null;
 
-    return this.upsertLead(EnrollmentLeadRole.MENTOR, dto, {
+    const ack = await this.upsertLead(EnrollmentLeadRole.MENTOR, dto, {
       alias: dto.alias,
       universityId: universityId ?? undefined,
       collegeName: dto.collegeName,
@@ -195,6 +440,41 @@ export class EnrollmentsService {
       // without re-attaching keeps the document already on file.
       documentKey: documentKey ?? undefined,
     });
+
+    try {
+      await this.provisionAccountFromLead(
+        EnrollmentLeadRole.MENTOR,
+        this.normalizePhone(dto.phone),
+        dto,
+        {
+          gender: dto.gender,
+          state: dto.state,
+          city: dto.city,
+          stream: dto.stream,
+          dateOfBirth: dto.dateOfBirth ? new Date(dto.dateOfBirth) : undefined,
+          // Mentor's "degree" answer is the same UserProfile.qualification
+          // column an aspirant's answer lands in (dual-purpose, mirroring
+          // the mobile onboarding wizard's own mapping -- see
+          // mentor_onboarding_screen.dart's `qualification: _degree`).
+          qualification: dto.degree,
+          specialization: dto.specialization,
+          yearOfStudy: dto.yearOfStudy,
+          graduationYear: dto.graduationYear,
+          yearInfoPrivate: dto.yearInfoPrivate ?? false,
+          languages: dto.languages ?? [],
+          availableDays: dto.availableDays ?? [],
+          universityId: universityId ?? undefined,
+        },
+        { universityId, documentType: dto.documentType, documentKey },
+      );
+    } catch (err) {
+      this.logger.error(
+        `Failed to provision account for mentor lead ${ack.id}`,
+        err instanceof Error ? err.stack : String(err),
+      );
+    }
+
+    return ack;
   }
 
   /** ADMIN — cursor-paginated, newest first. */

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { submitMentorLead, fetchCuratedColleges, fileToBase64, ApiError, type CuratedCollege } from "../lib/api";
+import { checkAliasAvailable, checkPhoneAvailable, submitMentorLead, fetchCuratedColleges, fileToBase64, ApiError, type CuratedCollege } from "../lib/api";
 import { CollegeSearch } from "./CollegeSearch";
 import { CuratedCollegeSearch } from "./CuratedCollegeSearch";
 import { SearchableCombobox } from "./SearchableCombobox";
@@ -22,6 +22,8 @@ import {
   recentYears,
 } from "../lib/options";
 import { useMultiStep } from "../lib/useMultiStep";
+import { ALIAS_TAKEN_MESSAGE, useAliasCheck } from "../lib/useAliasCheck";
+import { PHONE_TAKEN_MESSAGE, usePhoneCheck } from "../lib/usePhoneCheck";
 import { Field, TextInput, Select, ChipGroup, Toggle, toggleInArray, ProgressBar, ErrorText } from "./form-bits";
 
 type FormState = {
@@ -254,6 +256,8 @@ export function MentorForm({ onExit }: { onExit: () => void }) {
   const [form, setForm] = useState<FormState>(EMPTY);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const aliasStatus = useAliasCheck(form.alias);
+  const phoneStatus = usePhoneCheck(form.phone, "MENTOR");
   const [done, setDone] = useState(false);
 
   // Curated College/University picker — populated for the Medical-stream
@@ -307,6 +311,19 @@ export function MentorForm({ onExit }: { onExit: () => void }) {
   // here and keep the plain free-text field via hasFreeTextSpecialization
   // below.
   const hasStreamWideSpecialization = isDoctorateOrOthersDegree && STREAMS_WITH_COLLEGE_DATA.has(form.stream);
+  // Medical's own Doctorate/Others used to show a static, hand-maintained
+  // MEDICAL_SPECIALIZATIONS list that (despite its name) only ever
+  // reflected MD/MS-shaped specialties -- real DNB/Diploma/DM-MCh
+  // specializations were never in it, so Doctorate effectively showed
+  // "the MD list" only. Per explicit bug report, Medical's Doctorate/
+  // Others now gets the same real, data-driven "union across every
+  // curated degree in the stream" treatment as Engineering/Law/Dental
+  // above, via the same streamWideSpecializations fetch below -- just
+  // triggered separately from hasStreamWideSpecialization (which stays
+  // false for Medical, since Medical's own hasCuratedData/isBrowseDegree
+  // branch below already renders Specialization; this only widens what
+  // that branch's option list is fetched from).
+  const shouldFetchMedicalStreamWideSpecialization = isDoctorateOrOthersDegree && form.stream === "Medical";
   // Mirrors the JSX condition below that renders the plain free-text
   // Specialization field for a STREAMS_WITH_EMPTY_SPECIALIZATION
   // stream+degree with no curated, flat, or stream-wide dataset of its
@@ -370,7 +387,7 @@ export function MentorForm({ onExit }: { onExit: () => void }) {
   const [streamWideSpecializations, setStreamWideSpecializations] = useState<string[]>([]);
 
   useEffect(() => {
-    if (!hasStreamWideSpecialization) {
+    if (!hasStreamWideSpecialization && !shouldFetchMedicalStreamWideSpecialization) {
       // eslint-disable-next-line react-hooks/set-state-in-effect -- resets the list when leaving a stream-wide-specialization degree
       setStreamWideSpecializations([]);
       return;
@@ -389,7 +406,7 @@ export function MentorForm({ onExit }: { onExit: () => void }) {
     return () => {
       cancelled = true;
     };
-  }, [form.stream, hasStreamWideSpecialization]);
+  }, [form.stream, hasStreamWideSpecialization, shouldFetchMedicalStreamWideSpecialization]);
 
   useEffect(() => {
     if (!curatedDegree || isBrowseDegree) return;
@@ -418,7 +435,9 @@ export function MentorForm({ onExit }: { onExit: () => void }) {
     if (wizard.step === 1) {
       if (!form.fullName.trim()) return "Enter your full name.";
       if (!form.alias.trim()) return "Enter an alias / display name.";
+      if (aliasStatus === "taken") return ALIAS_TAKEN_MESSAGE;
       if (form.phone.trim().length !== 10) return "Enter a valid 10-digit phone number.";
+      if (phoneStatus === "taken") return PHONE_TAKEN_MESSAGE;
       if (!form.gender) return "Select a gender.";
     }
     if (wizard.step === 2) {
@@ -455,6 +474,18 @@ export function MentorForm({ onExit }: { onExit: () => void }) {
     const err = validateStep();
     if (err) {
       setError(err);
+      return;
+    }
+    // The alias must be free before the person goes past the first step: ask
+    // once more now, in case the live check has not finished or is stale.
+    if (wizard.step === 1 && (await checkAliasAvailable(form.alias)) === false) {
+      setError(ALIAS_TAKEN_MESSAGE);
+      return;
+    }
+    // Same for the phone number: one account per number (an aspirant account
+    // may still sign up as a mentor), so ask once more before going on.
+    if (wizard.step === 1 && (await checkPhoneAvailable(form.phone, "MENTOR")) === false) {
+      setError(PHONE_TAKEN_MESSAGE);
       return;
     }
     setError(null);
@@ -579,10 +610,15 @@ export function MentorForm({ onExit }: { onExit: () => void }) {
             <TextInput
               gold
               required
-              placeholder="e.g. John Snow"
+              placeholder="Choose a unique name"
               value={form.alias}
               onChange={(e) => set("alias", e.target.value)}
             />
+            {aliasStatus === "taken" && (
+              <span role="alert" className="block mt-1.5 text-[12.5px] font-semibold text-red-600">
+                {ALIAS_TAKEN_MESSAGE}
+              </span>
+            )}
           </Field>
           <Field label="Phone number">
             <TextInput
@@ -595,6 +631,11 @@ export function MentorForm({ onExit }: { onExit: () => void }) {
               value={form.phone}
               onChange={(e) => set("phone", e.target.value.replace(/\D/g, "").slice(0, 10))}
             />
+            {phoneStatus === "taken" && (
+              <span role="alert" className="block mt-1.5 text-[12.5px] font-semibold text-red-600">
+                {PHONE_TAKEN_MESSAGE}
+              </span>
+            )}
           </Field>
           <Field label="Gender">
             <ChipGroup
@@ -894,7 +935,19 @@ export function MentorForm({ onExit }: { onExit: () => void }) {
                   // it to a single always-merged list.
                   options={
                     isDoctorateOrOthersDegree
-                      ? [...MEDICAL_SPECIALIZATIONS]
+                      ? // Union of the hand-curated MEDICAL_SPECIALIZATIONS
+                        // list with the real, data-driven union across every
+                        // one of Medical's curated degrees (MD/MS, DNB,
+                        // Diploma, DM/MCh -- see
+                        // shouldFetchMedicalStreamWideSpecialization above).
+                        // Fixes a real bug: MEDICAL_SPECIALIZATIONS alone
+                        // only ever reflected MD/MS-shaped specialties, so
+                        // Doctorate/Others effectively showed just "the MD
+                        // list" instead of every medical degree's
+                        // specializations. Merging (not replacing) means the
+                        // field never regresses to fewer options while the
+                        // fetch is still in flight.
+                        Array.from(new Set([...MEDICAL_SPECIALIZATIONS, ...streamWideSpecializations])).sort()
                       : SPECIALIZATION_SUGGESTION_STREAMS.has(form.stream) && form.specialization.trim()
                         ? Array.from(new Set([...browseSpecializations, ...allSpecializationsForDegree])).sort()
                         : browseSpecializations.length > 0

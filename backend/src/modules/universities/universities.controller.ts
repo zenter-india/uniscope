@@ -1,10 +1,20 @@
-import { Body, Controller, Get, Param, Patch, Post, Query, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  Patch,
+  Post,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
 import { UserRole } from '@prisma/client';
 import { Roles } from '../../auth/decorators/roles.decorator.js';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard.js';
 import { RolesGuard } from '../../auth/guards/roles.guard.js';
 import { CreateUniversityDto } from './dto/create-university.dto.js';
 import { FindOrCreateUniversityDto } from './dto/find-or-create-university.dto.js';
+import { ListCuratedUniversitiesDto } from './dto/list-curated-universities.dto.js';
 import { ListUniversitiesDto } from './dto/list-universities.dto.js';
 import { UpdateUniversityDto } from './dto/update-university.dto.js';
 import { UploadUniversityPhotoDto } from './dto/upload-university-photo.dto.js';
@@ -57,6 +67,13 @@ export class UniversitiesController {
   @Post(':id/photo')
   uploadPhoto(@Param('id') id: string, @Body() dto: UploadUniversityPhotoDto) {
     return this.universitiesService.uploadPhoto(id, dto);
+  }
+
+  /** Mentor form's curated College/University dropdown — see
+   * UniversitiesService.findCurated. */
+  @Get('curated')
+  curated(@Query() query: ListCuratedUniversitiesDto) {
+    return this.universitiesService.findCurated(query);
   }
 
   @Get(':slug')

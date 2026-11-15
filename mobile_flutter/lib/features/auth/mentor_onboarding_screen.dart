@@ -11,10 +11,10 @@ import '../../core/network/users_api.dart';
 import '../../core/network/verification_api.dart';
 import '../../core/theme/app_theme.dart';
 import '../../state/auth_controller.dart';
-import '../../widgets/app_widgets.dart';
 import '../../widgets/primary_button.dart';
 import '../profile/avatar_picker_panel.dart';
 import '../profile/profile_options.dart';
+import 'college_search_field.dart';
 import 'onboarding_widgets.dart';
 
 /// Post-signup wizard for MENTOR users — Basic Information → Location →
@@ -51,7 +51,8 @@ class _MentorOnboardingScreenState extends ConsumerState<MentorOnboardingScreen>
   String? _gender;
 
   String? _state;
-  final _cityController = TextEditingController();
+  String? _city;
+  final _cityOtherController = TextEditingController();
 
   University? _university;
   final _collegeNameController = TextEditingController();
@@ -59,10 +60,15 @@ class _MentorOnboardingScreenState extends ConsumerState<MentorOnboardingScreen>
   String? _stream;
   final _streamOtherController = TextEditingController();
   String? _degree;
+  final _specializationController = TextEditingController();
 
   String? _currentStatus;
   String? _yearOfStudyLabel;
   final _graduationYearController = TextEditingController();
+  bool _yearInfoPrivate = false;
+  final Set<String> _languages = {};
+  final _languagesOtherController = TextEditingController();
+  final Set<String> _preferredTimings = {};
 
   DocumentType _docType = DocumentType.studentId;
   Uint8List? _imageBytes;
@@ -78,7 +84,7 @@ class _MentorOnboardingScreenState extends ConsumerState<MentorOnboardingScreen>
   static const _stepSubtitles = [
     'Core identity details.',
     'For regional aspirant matching.',
-    'Are you still studying or graduated?',
+    'Are you still studying or graduated? How can aspirants reach you?',
     'Your institution and degree.',
     'Pick a look — you can always change this later from your profile.',
     'Help us confirm your college identity and build trust with aspirants.',
@@ -88,10 +94,12 @@ class _MentorOnboardingScreenState extends ConsumerState<MentorOnboardingScreen>
   void dispose() {
     _pageController.dispose();
     _fullNameController.dispose();
-    _cityController.dispose();
+    _cityOtherController.dispose();
     _collegeNameController.dispose();
     _streamOtherController.dispose();
+    _specializationController.dispose();
     _graduationYearController.dispose();
+    _languagesOtherController.dispose();
     super.dispose();
   }
 
@@ -106,26 +114,34 @@ class _MentorOnboardingScreenState extends ConsumerState<MentorOnboardingScreen>
       case 0:
         return _fullNameController.text.trim().isNotEmpty && _gender != null;
       case 1:
-        return _state != null && _cityController.text.trim().isNotEmpty;
+        return _state != null &&
+            _city != null &&
+            (_city != 'Other' || _cityOtherController.text.trim().isNotEmpty);
       case 2:
-        if (_currentStatus == 'Currently Studying') {
-          return _yearOfStudyLabel != null;
-        }
-        if (_currentStatus == 'Graduated') {
-          return int.tryParse(_graduationYearController.text.trim()) != null;
-        }
-        return false;
+        final statusOk = _currentStatus == 'Currently Studying'
+            ? _yearOfStudyLabel != null
+            : _currentStatus == 'Graduated'
+                ? int.tryParse(_graduationYearController.text.trim()) != null
+                : false;
+        final languagesOk = _languages.isNotEmpty &&
+            (!_languages.contains('Others') ||
+                _languagesOtherController.text.trim().isNotEmpty);
+        return statusOk && languagesOk && _preferredTimings.isNotEmpty;
       case 3:
         final streamOk = _stream != null &&
             (_stream != 'Others' || _streamOtherController.text.trim().isNotEmpty);
-        final collegeOk = _stream == 'Medical'
-            ? _university != null
-            : _collegeNameController.text.trim().isNotEmpty;
-        return _degree != null && streamOk && collegeOk;
+        final collegeOk = _collegeNameController.text.trim().isNotEmpty;
+        final specializationOk = !_needsSpecialization ||
+            _specializationController.text.trim().isNotEmpty;
+        return _degree != null && streamOk && collegeOk && specializationOk;
       default:
         return true;
     }
   }
+
+  bool get _needsSpecialization => _stream == 'Medical' && _degree != null && _degree != 'UG';
+
+  String get _resolvedCity => _city == 'Other' ? _cityOtherController.text.trim() : (_city ?? '');
 
   void _goTo(int step) {
     setState(() => _step = step);
@@ -152,18 +168,18 @@ class _MentorOnboardingScreenState extends ConsumerState<MentorOnboardingScreen>
     _goTo(_step + 1);
   }
 
-  /// College Details is the last data-collection step (index 3) — for
-  /// non-Medical streams, the typed college name needs to resolve (find-or-
-  /// create) to a real University row before the profile save, since
-  /// verification requires one. See UniversitiesApi.findOrCreate.
+  /// College Details is the last data-collection step (index 3) — if the
+  /// typed college name wasn't picked from the search suggestions, it needs
+  /// to resolve (find-or-create) to a real University row before the profile
+  /// save, since verification requires one. See UniversitiesApi.findOrCreate.
   Future<void> _resolveCollegeThenSave() async {
-    if (_stream != 'Medical') {
+    if (_university == null) {
       setState(() => _resolvingCollege = true);
       try {
         final university = await ref.read(universitiesApiProvider).findOrCreate(
               name: _collegeNameController.text.trim(),
               state: _state ?? '',
-              city: _cityController.text.trim(),
+              city: _resolvedCity,
               stream: _stream == 'Others' ? _streamOtherController.text.trim() : _stream,
             );
         if (!mounted) return;
@@ -226,10 +242,11 @@ class _MentorOnboardingScreenState extends ConsumerState<MentorOnboardingScreen>
                 : _fullNameController.text.trim(),
             gender: _gender,
             state: _state,
-            city: _cityController.text.trim().isEmpty
-                ? null
-                : _cityController.text.trim(),
+            city: _resolvedCity.isEmpty ? null : _resolvedCity,
             qualification: _degree,
+            specialization: _needsSpecialization
+                ? _specializationController.text.trim()
+                : null,
             stream: resolvedStream,
             yearOfStudy: _currentStatus == 'Currently Studying'
                 ? _yearOfStudyValue()
@@ -237,6 +254,12 @@ class _MentorOnboardingScreenState extends ConsumerState<MentorOnboardingScreen>
             graduationYear: _currentStatus == 'Graduated'
                 ? int.tryParse(_graduationYearController.text.trim())
                 : null,
+            yearInfoPrivate: _yearInfoPrivate,
+            languages: _languages
+                .map((l) => l == 'Others' ? _languagesOtherController.text.trim() : l)
+                .where((l) => l.isNotEmpty)
+                .toList(),
+            availableDays: _preferredTimings.toList(),
           );
       if (!mounted) return;
       setState(() => _saving = false);
@@ -346,16 +369,33 @@ class _MentorOnboardingScreenState extends ConsumerState<MentorOnboardingScreen>
                         value: _state,
                         hint: 'Select your state',
                         options: kIndianStates,
-                        onChanged: (v) => setState(() => _state = v),
+                        // The district list depends entirely on which state
+                        // this is, so a city picked under the old state
+                        // almost never makes sense under the new one.
+                        onChanged: (v) => setState(() {
+                          _state = v;
+                          _city = null;
+                          _cityOtherController.clear();
+                        }),
                       ),
                       const SizedBox(height: AppSpacing.md),
                       const OnboardingFieldLabel('City'),
-                      TextFormField(
-                        controller: _cityController,
-                        onChanged: (_) => setState(() {}),
-                        decoration:
-                            const InputDecoration(hintText: 'Enter your city'),
+                      OnboardingDropdown(
+                        value: _city,
+                        hint: _state == null ? 'Select a state first' : 'Select your city',
+                        enabled: _state != null,
+                        options: [...?kStateDistricts[_state], 'Other'],
+                        onChanged: (v) => setState(() => _city = v),
                       ),
+                      if (_city == 'Other') ...[
+                        const SizedBox(height: AppSpacing.sm),
+                        TextFormField(
+                          controller: _cityOtherController,
+                          onChanged: (_) => setState(() {}),
+                          decoration:
+                              const InputDecoration(hintText: 'Enter your city'),
+                        ),
+                      ],
                     ],
                   ),
                   OnboardingStepScaffold(
@@ -375,6 +415,14 @@ class _MentorOnboardingScreenState extends ConsumerState<MentorOnboardingScreen>
                           selected: _yearOfStudyLabel,
                           onSelect: (v) => setState(() => _yearOfStudyLabel = v),
                         ),
+                        const SizedBox(height: AppSpacing.sm),
+                        OnboardingToggle(
+                          value: _yearInfoPrivate,
+                          onChanged: (v) => setState(() => _yearInfoPrivate = v),
+                          label: 'Keep my year of study private',
+                          hint:
+                              'When on, this stays anonymous and isn\'t shown publicly on your profile.',
+                        ),
                       ],
                       if (_currentStatus == 'Graduated') ...[
                         const SizedBox(height: AppSpacing.md),
@@ -385,7 +433,50 @@ class _MentorOnboardingScreenState extends ConsumerState<MentorOnboardingScreen>
                           onChanged: (_) => setState(() {}),
                           decoration: const InputDecoration(hintText: 'e.g. 2023'),
                         ),
+                        const SizedBox(height: AppSpacing.sm),
+                        OnboardingToggle(
+                          value: _yearInfoPrivate,
+                          onChanged: (v) => setState(() => _yearInfoPrivate = v),
+                          label: 'Keep my graduation year private',
+                          hint:
+                              'When on, this stays anonymous and isn\'t shown publicly on your profile.',
+                        ),
                       ],
+                      const SizedBox(height: AppSpacing.md),
+                      const OnboardingFieldLabel('Preferred Languages'),
+                      OnboardingChipGroup(
+                        options: kLanguageOptions,
+                        selected: _languages,
+                        onToggle: (option, value) => setState(() {
+                          if (value) {
+                            _languages.add(option);
+                          } else {
+                            _languages.remove(option);
+                          }
+                        }),
+                      ),
+                      if (_languages.contains('Others')) ...[
+                        const SizedBox(height: AppSpacing.sm),
+                        TextFormField(
+                          controller: _languagesOtherController,
+                          onChanged: (_) => setState(() {}),
+                          decoration:
+                              const InputDecoration(hintText: 'Enter language'),
+                        ),
+                      ],
+                      const SizedBox(height: AppSpacing.md),
+                      const OnboardingFieldLabel('Preferred Timing'),
+                      OnboardingChipGroup(
+                        options: kTimeSlots,
+                        selected: _preferredTimings,
+                        onToggle: (option, value) => setState(() {
+                          if (value) {
+                            _preferredTimings.add(option);
+                          } else {
+                            _preferredTimings.remove(option);
+                          }
+                        }),
+                      ),
                     ],
                   ),
                   OnboardingStepScaffold(
@@ -396,7 +487,10 @@ class _MentorOnboardingScreenState extends ConsumerState<MentorOnboardingScreen>
                       OnboardingSingleChipGroup(
                         options: kDegrees,
                         selected: _degree,
-                        onSelect: (v) => setState(() => _degree = v),
+                        onSelect: (v) => setState(() {
+                          _degree = v;
+                          _specializationController.clear();
+                        }),
                       ),
                       const SizedBox(height: AppSpacing.md),
                       const OnboardingFieldLabel('Stream / Field'),
@@ -404,13 +498,12 @@ class _MentorOnboardingScreenState extends ConsumerState<MentorOnboardingScreen>
                         options: kStreamOptions,
                         selected: _stream,
                         // Switching streams invalidates whichever college
-                        // input the previous stream used — Medical uses the
-                        // dropdown (_university), everything else uses the
-                        // typed name (_collegeNameController).
+                        // was picked/typed for the previous one.
                         onSelect: (v) => setState(() {
                           _stream = v;
                           _university = null;
                           _collegeNameController.clear();
+                          _specializationController.clear();
                         }),
                       ),
                       if (_stream == 'Others') ...[
@@ -424,33 +517,23 @@ class _MentorOnboardingScreenState extends ConsumerState<MentorOnboardingScreen>
                       ],
                       const SizedBox(height: AppSpacing.md),
                       const OnboardingFieldLabel('College'),
-                      if (_stream == 'Medical')
-                        Consumer(builder: (context, ref, _) {
-                          final universitiesAsync = ref.watch(universitiesListProvider);
-                          return universitiesAsync.when(
-                            loading: () => const Skeleton(height: 48),
-                            error: (_, __) => const Text(
-                              'Could not load universities',
-                              style: TextStyle(color: AppColors.error, fontSize: AppFont.xs),
-                            ),
-                            data: (universities) => DropdownButtonFormField<University>(
-                              initialValue: _university,
-                              isExpanded: true,
-                              hint: const Text('Search or select your college'),
-                              items: universities
-                                  .map((u) => DropdownMenuItem(value: u, child: Text(u.name)))
-                                  .toList(),
-                              onChanged: (u) => setState(() => _university = u),
-                            ),
-                          );
-                        })
-                      else
+                      CollegeSearchField(
+                        initialText: _collegeNameController.text,
+                        onPick: (university, text) => setState(() {
+                          _university = university;
+                          _collegeNameController.text = text;
+                        }),
+                      ),
+                      if (_needsSpecialization) ...[
+                        const SizedBox(height: AppSpacing.md),
+                        const OnboardingFieldLabel('Specialization'),
                         TextFormField(
-                          controller: _collegeNameController,
+                          controller: _specializationController,
                           onChanged: (_) => setState(() {}),
-                          decoration: const InputDecoration(
-                              hintText: 'Enter your college name'),
+                          decoration:
+                              const InputDecoration(hintText: 'e.g. Paediatrics'),
                         ),
+                      ],
                     ],
                   ),
                   OnboardingStepScaffold(

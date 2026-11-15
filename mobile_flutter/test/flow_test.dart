@@ -59,6 +59,7 @@ class _FakeUsersApi extends UsersApi {
     String? state,
     String? city,
     String? qualification,
+    String? specialization,
     String? stream,
     List<String>? goals,
     String? dateOfBirth,
@@ -69,6 +70,7 @@ class _FakeUsersApi extends UsersApi {
     String? realName,
     int? yearOfStudy,
     int? graduationYear,
+    bool? yearInfoPrivate,
   }) async =>
       _profile(displayName ?? 'Test User');
 }

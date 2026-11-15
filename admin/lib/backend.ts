@@ -86,9 +86,46 @@ export async function backendFetch<T>(
 
   if (!res.ok) {
     const body = await res.text().catch(() => '');
-    throw new BackendApiError(res.status, body || res.statusText);
+    throw new BackendApiError(res.status, extractErrorMessage(body) || res.statusText);
   }
 
   if (res.status === 204) return undefined as T;
   return res.json() as Promise<T>;
+}
+
+/** NestJS error responses are `{ statusCode, error, message }` where `message`
+ * is a human string or an array of validation strings. Pull that out so the
+ * admin UI shows the actual reason, not raw JSON. */
+function extractErrorMessage(body: string): string {
+  if (!body) return '';
+  try {
+    const parsed = JSON.parse(body) as { message?: string | string[] };
+    if (Array.isArray(parsed.message)) return parsed.message.join('; ');
+    if (typeof parsed.message === 'string') return parsed.message;
+  } catch {
+    // not JSON — fall through
+  }
+  return body;
+}
+
+/** Same auth/base-URL handling as backendFetch, but for a non-JSON response
+ * (e.g. the CSV export) — reads the body as text instead of parsing JSON. */
+export async function backendFetchText(path: string): Promise<string> {
+  const baseUrl = process.env.BACKEND_API_URL;
+  if (!baseUrl) {
+    throw new Error('BACKEND_API_URL is not configured in admin/.env.local');
+  }
+
+  const token = await signBackendJwt();
+  const res = await fetch(`${baseUrl}${path}`, {
+    cache: 'no-store',
+    headers: { Authorization: `Bearer ${token}` },
+  });
+
+  if (!res.ok) {
+    const body = await res.text().catch(() => '');
+    throw new BackendApiError(res.status, body || res.statusText);
+  }
+
+  return res.text();
 }

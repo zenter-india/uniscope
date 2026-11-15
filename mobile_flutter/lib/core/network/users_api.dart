@@ -21,6 +21,7 @@ class UserProfile {
     this.state,
     this.city,
     this.qualification,
+    this.specialization,
     this.stream,
     this.goals = const [],
     this.dateOfBirth,
@@ -30,6 +31,7 @@ class UserProfile {
     this.availableDays = const [],
     this.yearOfStudy,
     this.graduationYear,
+    this.yearInfoPrivate = false,
     this.avatarUrl,
   });
 
@@ -49,6 +51,7 @@ class UserProfile {
   final String? state;
   final String? city;
   final String? qualification;
+  final String? specialization;
   final String? stream;
   final List<String> goals;
   final String? dateOfBirth;
@@ -58,6 +61,7 @@ class UserProfile {
   final List<String> availableDays;
   final int? yearOfStudy;
   final int? graduationYear;
+  final bool yearInfoPrivate;
 
   factory UserProfile.fromJson(Map<String, dynamic> json) => UserProfile(
         id: json['id'] as String,
@@ -78,6 +82,7 @@ class UserProfile {
         state: json['state'] as String?,
         city: json['city'] as String?,
         qualification: json['qualification'] as String?,
+        specialization: json['specialization'] as String?,
         stream: json['stream'] as String?,
         goals: (json['goals'] as List<dynamic>? ?? [])
             .map((e) => e as String)
@@ -91,6 +96,7 @@ class UserProfile {
             .toList(),
         yearOfStudy: json['yearOfStudy'] as int?,
         graduationYear: json['graduationYear'] as int?,
+        yearInfoPrivate: (json['yearInfoPrivate'] as bool?) ?? false,
         avatarUrl: json['avatarUrl'] as String?,
       );
 
@@ -127,6 +133,7 @@ class UsersApi {
     String? state,
     String? city,
     String? qualification,
+    String? specialization,
     String? stream,
     List<String>? goals,
     String? dateOfBirth,
@@ -137,6 +144,7 @@ class UsersApi {
     String? realName,
     int? yearOfStudy,
     int? graduationYear,
+    bool? yearInfoPrivate,
   }) async {
     final res = await _dio.patch<Map<String, dynamic>>(
       '/users/me',
@@ -150,6 +158,7 @@ class UsersApi {
         if (state != null) 'state': state,
         if (city != null) 'city': city,
         if (qualification != null) 'qualification': qualification,
+        if (specialization != null) 'specialization': specialization,
         if (stream != null) 'stream': stream,
         if (goals != null) 'goals': goals,
         if (dateOfBirth != null) 'dateOfBirth': dateOfBirth,
@@ -161,6 +170,7 @@ class UsersApi {
         if (realName != null) 'realName': realName,
         if (yearOfStudy != null) 'yearOfStudy': yearOfStudy,
         if (graduationYear != null) 'graduationYear': graduationYear,
+        if (yearInfoPrivate != null) 'yearInfoPrivate': yearInfoPrivate,
       },
     );
     return UserProfile.fromJson(res.data!);

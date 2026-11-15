@@ -1,9 +1,10 @@
 'use client';
 
+import Link from 'next/link';
 import { useState, useTransition } from 'react';
 import { setUserBanned } from './actions';
 
-interface UserRowData {
+export interface UserRowData {
   id: string;
   displayName: string;
   role: string;
@@ -23,13 +24,17 @@ const STATUS_COLORS: Record<string, string> = {
 
 export function UserRow({ user }: { user: UserRowData }) {
   const [error, setError] = useState<string | null>(null);
+  // Tracked locally: the list keeps rows in client state, so a server
+  // revalidate after a ban toggle doesn't re-flow fresh props into this row.
+  const [isBanned, setIsBanned] = useState(user.isBanned);
   const [isPending, startTransition] = useTransition();
 
   const toggleBan = () => {
     setError(null);
     startTransition(async () => {
       try {
-        await setUserBanned(user.id, !user.isBanned);
+        await setUserBanned(user.id, !isBanned);
+        setIsBanned((v) => !v);
       } catch (e) {
         setError(e instanceof Error ? e.message : 'Could not update user');
       }
@@ -51,12 +56,12 @@ export function UserRow({ user }: { user: UserRowData }) {
           >
             {user.verificationStatus}
           </span>
-          {user.isBanned && (
+          {isBanned && (
             <span className="rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-700">
               Banned
             </span>
           )}
-          {!user.isActive && !user.isBanned && (
+          {!user.isActive && !isBanned && (
             <span
               className="rounded-full bg-zinc-200 px-2 py-0.5 text-xs font-medium text-zinc-600"
               title="Self-deleted their account — reactivates automatically if they log in again"
@@ -70,17 +75,25 @@ export function UserRow({ user }: { user: UserRowData }) {
         </p>
         {error && <p className="mt-1 text-xs text-red-600">{error}</p>}
       </div>
-      <button
-        onClick={toggleBan}
-        disabled={isPending}
-        className={`rounded-lg px-3 py-1.5 text-sm font-medium disabled:opacity-50 ${
-          user.isBanned
-            ? 'border border-zinc-300 text-zinc-700 hover:bg-zinc-50'
-            : 'bg-red-600 text-white hover:bg-red-700'
-        }`}
-      >
-        {user.isBanned ? 'Unban' : 'Ban'}
-      </button>
+      <div className="flex items-center gap-2">
+        <Link
+          href={`/dashboard/users/${user.id}`}
+          className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm font-medium text-zinc-700 hover:bg-zinc-50"
+        >
+          View details
+        </Link>
+        <button
+          onClick={toggleBan}
+          disabled={isPending}
+          className={`rounded-lg px-3 py-1.5 text-sm font-medium disabled:opacity-50 ${
+            isBanned
+              ? 'border border-zinc-300 text-zinc-700 hover:bg-zinc-50'
+              : 'bg-red-600 text-white hover:bg-red-700'
+          }`}
+        >
+          {isBanned ? 'Unban' : 'Ban'}
+        </button>
+      </div>
     </div>
   );
 }

@@ -174,10 +174,20 @@ export class PayoutsService {
     return rows.map(toPayoutRequestResponse);
   }
 
+  /** Admin list — FIFO by request time, with the mentor's name and current
+   * wallet balance attached so the reviewer isn't looking at bare UUIDs. */
   async findAll(status?: PayoutStatus): Promise<PayoutRequestResponse[]> {
     const rows = await this.prisma.payoutRequest.findMany({
       where: status ? { status } : undefined,
       orderBy: { createdAt: 'asc' },
+      include: {
+        mentor: {
+          select: {
+            displayName: true,
+            wallet: { select: { balanceMinor: true } },
+          },
+        },
+      },
     });
     return rows.map(toPayoutRequestResponse);
   }

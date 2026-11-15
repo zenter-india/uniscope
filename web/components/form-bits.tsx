@@ -30,7 +30,7 @@ const inputClass =
   "bg-white text-ink focus:outline-none focus:border-blue-600 transition-colors";
 
 export function TextInput(
-  props: React.InputHTMLAttributes<HTMLInputElement> & { gold?: boolean },
+  props: React.ComponentProps<"input"> & { gold?: boolean },
 ) {
   const { gold, className, ...rest } = props;
   return (

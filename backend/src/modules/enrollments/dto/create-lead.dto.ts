@@ -62,6 +62,16 @@ export abstract class BaseLeadDto {
   @MaxLength(50)
   stream?: string;
 
+  /** Public-facing pseudonym. Originally mentor-only (mirroring the mobile
+   * mentor wizard's alias step); extended to aspirants per explicit request
+   * so both roles can set one. Not checked for availability here — a lead
+   * isn't a `User` yet, so there's no `displayName` to collide with until
+   * conversion. */
+  @IsOptional()
+  @IsString()
+  @MaxLength(60)
+  alias?: string;
+
   /**
    * Honeypot. Rendered hidden (and never labelled "website") on the form, so a
    * real person can't see or fill it — anything non-empty here is a bot. The
@@ -85,10 +95,28 @@ export class CreateAspirantLeadDto extends BaseLeadDto {
   @MaxLength(50)
   qualification?: string;
 
-  /** Free text — only meaningful (and only shown on the form) for a
-   * Medical-stream aspirant whose qualification is past 12th/UG, e.g.
-   * "Cardiology". Not FK'd to any picklist, same pattern as the mentor
-   * lead's field. */
+  /** Set when the college was picked from the curated/GET /universities
+   * dropdown -- shown (along with collegeName) whenever qualification isn't
+   * "Higher Secondary (12th)", same curated-per-stream mechanism as the
+   * mentor lead's own College field. Previously mentor-only; extended here
+   * per explicit request. */
+  @IsOptional()
+  @IsString()
+  universityId?: string;
+
+  /** Always sent when the College field is shown — the raw text of
+   * whatever was chosen or typed, so a college that isn't in the
+   * University table yet doesn't lose the answer. */
+  @IsOptional()
+  @IsString()
+  @MaxLength(200)
+  collegeName?: string;
+
+  /** Free text or picked from a curated/full-degree list, shown whenever
+   * qualification isn't "Higher Secondary (12th)" -- e.g. "Cardiology"
+   * for a Medical aspirant past 12th/UG, matching whatever the picked
+   * (or typed) specialization is for that stream+degree's dataset. Not
+   * FK'd to any picklist, same pattern as the mentor lead's field. */
   @IsOptional()
   @IsString()
   @MaxLength(100)
@@ -113,14 +141,6 @@ export class CreateAspirantLeadDto extends BaseLeadDto {
 }
 
 export class CreateMentorLeadDto extends BaseLeadDto {
-  /** Public-facing pseudonym, mirroring the mobile mentor wizard's alias step.
-   * Not checked for availability here — a lead isn't a `User` yet, so there's
-   * no `displayName` to collide with until conversion. */
-  @IsOptional()
-  @IsString()
-  @MaxLength(60)
-  alias?: string;
-
   /** Set when the college was picked from the GET /universities dropdown. */
   @IsOptional()
   @IsString()

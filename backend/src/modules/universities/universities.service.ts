@@ -1,5 +1,10 @@
 import { randomUUID } from 'node:crypto';
-import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Inject,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { Prisma, University, UniversityType } from '@prisma/client';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { PrismaService } from '../../database/prisma/prisma.service.js';
@@ -7,12 +12,24 @@ import { SUPABASE_BUCKETS, SUPABASE_CLIENT } from '../../supabase/index.js';
 import { UniversityReviewsService } from '../university-reviews/university-reviews.service.js';
 import { CreateUniversityDto } from './dto/create-university.dto.js';
 import { FindOrCreateUniversityDto } from './dto/find-or-create-university.dto.js';
+import { ListCuratedUniversitiesDto } from './dto/list-curated-universities.dto.js';
 import { ListUniversitiesDto } from './dto/list-universities.dto.js';
 import { UpdateUniversityDto } from './dto/update-university.dto.js';
 import { UploadUniversityPhotoDto } from './dto/upload-university-photo.dto.js';
 
 const DEFAULT_LIMIT = 20;
 const MAX_LIMIT = 50;
+
+// Number of colleges shown directly in the mentor form's curated
+// College/University dropdown (highest specialization count first); every
+// other seeded college is still reachable by typing it under "Other".
+const CURATED_LIMIT = 30;
+
+export interface CuratedCollegeOption {
+  id: string;
+  label: string;
+  specializations: string[];
+}
 
 function slugify(name: string): string {
   return name
@@ -32,28 +49,67 @@ export class UniversitiesService {
 
   /**
    * Cursor-paginated list of active universities, ordered by NIRF rank
-   * (unranked last) with id as a stable tiebreaker for the cursor.
-   * Search is a simple case-insensitive match on name/city/state — full-text
-   * via the search_vector column is a later enhancement.
+   * (unranked last) with id as a stable tiebreaker for the cursor. This is
+   * also the mentor form's UG/"Others" College field (CollegeSearch.tsx),
+   * which needs `browse=true` (see below) — without it, the default
+   * take-50-and-stop page only ever shows colleges from the very start of
+   * the alphabet, since nothing narrows the query yet when the field is
+   * first focused.
+   *
+   * Search is a case-insensitive *substring* match on `name` only (not
+   * city/state — see the "b" search example below), but results are
+   * ranked so a name *starting with* the query sorts before a name that
+   * merely contains it elsewhere, each group alphabetical — plain
+   * `contains` + alphabetical sort previously let irrelevant-looking
+   * matches (e.g. a digit-prefixed name like "7 Air Force Hospital"
+   * matching because names in general contain lots of common letters)
+   * outrank the colleges someone was actually looking for. A college whose
+   * city/state (not name) matches the query used to be included too,
+   * which had its own confusing case: searching "b" could surface "Adesh
+   * Institute…, Bhatinda" (name starts with A, city starts with B) ahead
+   * of colleges actually named starting with B — dropped for that reason,
+   * since this is a college *name* lookup.
+   *
+   * `browse=true` (CollegeSearch.tsx's only mode) returns every matching
+   * row uncapped, ranked as above — same "browse the full list, not just
+   * a capped page" contract as findCurated's browse mode, for the same
+   * reason (a type-to-search field should let you actually reach every
+   * college, not just the alphabetically-first handful). Without
+   * `browse`, results stay cursor-paginated at `take` per page (the
+   * Discover/Colleges tab's usage) — a plain `search` without `browse` in
+   * that mode is still ranked but capped, e.g. mobile's small-page
+   * typeahead.
    */
   async findAll(
     query: ListUniversitiesDto,
   ): Promise<{ data: University[]; nextCursor: string | null }> {
     const take = Math.min(query.limit ?? DEFAULT_LIMIT, MAX_LIMIT);
+    const browse = query.browse === 'true';
 
     const where: Prisma.UniversityWhereInput = {
       isActive: true,
       ...(query.state && { state: query.state }),
       ...(query.type && { type: query.type }),
       ...(query.stream && { stream: query.stream }),
+      ...(query.level && { levels: { has: query.level } }),
       ...(query.search && {
-        OR: [
-          { name: { contains: query.search, mode: 'insensitive' } },
-          { city: { contains: query.search, mode: 'insensitive' } },
-          { state: { contains: query.search, mode: 'insensitive' } },
-        ],
+        name: { contains: query.search, mode: 'insensitive' },
       }),
     };
+
+    if (browse || query.search) {
+      const search = query.search?.toLowerCase();
+      const rows = await this.prisma.university.findMany({ where });
+      const sorted = rows.sort((a, b) => {
+        if (search) {
+          const aStarts = a.name.toLowerCase().startsWith(search) ? 0 : 1;
+          const bStarts = b.name.toLowerCase().startsWith(search) ? 0 : 1;
+          if (aStarts !== bStarts) return aStarts - bStarts;
+        }
+        return a.name.localeCompare(b.name);
+      });
+      return { data: browse ? sorted : sorted.slice(0, take), nextCursor: null };
+    }
 
     const rows = await this.prisma.university.findMany({
       where,
@@ -72,6 +128,103 @@ export class UniversitiesService {
     return { data, nextCursor };
   }
 
+  /**
+   * The mentor form's College/University list for a given stream+degree —
+   * today Medical/DNB, Medical/MD-MS, Medical/DM-MCH, Medical/DIPLOMA, and
+   * Dental/MDS have data (see scripts/seed-*-colleges.mjs). Stream isn't
+   * hardcoded anywhere in this method — it's always whatever `query.stream`
+   * says, so a new stream's curated degree (like Dental/MDS) needs no
+   * backend change, just a seed script and a frontend entry in
+   * MentorForm.tsx's CURATED_DEGREE_MAP_BY_STREAM. Two modes, though only
+   * `browse=true` is used by any degree today (kept as the CURATED_LIMIT
+   * default in case a future degree's data is too large to browse in full):
+   *
+   * - Default: top CURATED_LIMIT by number of accredited specializations,
+   *   alphabetical. Every other seeded college for this stream+degree is
+   *   still reachable in the DB but not surfaced here — the form falls
+   *   back to a free-text "Other" entry.
+   * - `browse=true` (MD/MS, DNB, Diploma, DM/MCh, MDS — all small/complete
+   *   enough to browse in full): returns every matching college, uncapped,
+   *   optionally filtered by `search` as a case-insensitive substring
+   *   match on the college's name, district, *or* state (so searching a
+   *   district/state, e.g. "Cuddalore", finds its colleges too, not just a
+   *   search for the college's own name) — ranked the same way as
+   *   findAll's search (see its doc comment): a *label* starting with the
+   *   query sorts before one that merely contains it elsewhere (the label
+   *   always starts with the name, so this still means name-prefix
+   *   matches surface first; district/state matches sort in after,
+   *   alphabetically). The mentor form's College field is meant to list
+   *   every college for these degrees, not a curated subset.
+   *
+   * Label is "name, district, state" when the Program has a district on
+   * its `description` (DNB/DM-MCh/Diploma/MDS — all seeded with district
+   * data), or just "name, state" otherwise (MD/MS — no district in its
+   * source).
+   */
+  async findCurated(
+    query: ListCuratedUniversitiesDto,
+  ): Promise<CuratedCollegeOption[]> {
+    const browse = query.browse === 'true';
+
+    const programs = await this.prisma.program.findMany({
+      where: {
+        name: query.degree.toUpperCase(),
+        isActive: true,
+        university: {
+          stream: query.stream,
+          isActive: true,
+        },
+        // Matches college name, district (Program.description — see
+        // findCurated's label doc comment above), or state, so a search
+        // for a district/state (e.g. "Cuddalore") surfaces its colleges
+        // too, not just a search for the college's own name.
+        ...(browse &&
+          query.search && {
+            OR: [
+              { university: { name: { contains: query.search, mode: 'insensitive' } } },
+              { description: { contains: query.search, mode: 'insensitive' } },
+              { university: { state: { contains: query.search, mode: 'insensitive' } } },
+            ],
+          }),
+      },
+      include: {
+        university: { select: { id: true, name: true, state: true } },
+      },
+    });
+
+    const options = programs
+      .filter((program) => program.specializations.length > 0)
+      .map((program) => ({
+        specCount: program.specializations.length,
+        id: program.universityId,
+        label: program.description
+          ? `${program.university.name}, ${program.description}, ${program.university.state}`
+          : `${program.university.name}, ${program.university.state}`,
+        specializations: [...program.specializations].sort(),
+      }));
+
+    const search = browse && query.search ? query.search.toLowerCase() : null;
+    const limited = browse
+      ? options.sort((a, b) => {
+          if (search) {
+            const aStarts = a.label.toLowerCase().startsWith(search) ? 0 : 1;
+            const bStarts = b.label.toLowerCase().startsWith(search) ? 0 : 1;
+            if (aStarts !== bStarts) return aStarts - bStarts;
+          }
+          return a.label.localeCompare(b.label);
+        })
+      : options
+          .sort((a, b) => b.specCount - a.specCount)
+          .slice(0, CURATED_LIMIT)
+          .sort((a, b) => a.label.localeCompare(b.label));
+
+    return limited.map(({ id, label, specializations }) => ({
+      id,
+      label,
+      specializations,
+    }));
+  }
+
   async findBySlug(slug: string) {
     const university = await this.prisma.university.findFirst({
       where: { slug, isActive: true },
@@ -87,7 +240,9 @@ export class UniversitiesService {
       throw new NotFoundException(`University '${slug}' not found`);
     }
 
-    const rating = await this.universityReviewsService.ratingSummary(university.id);
+    const rating = await this.universityReviewsService.ratingSummary(
+      university.id,
+    );
     return { ...university, rating: rating.average, reviewCount: rating.count };
   }
 
@@ -159,7 +314,9 @@ export class UniversitiesService {
    * listing; it's still fully usable for this mentor's own verification
    * and shows up in the admin panel's university list for cleanup.
    */
-  async findOrCreateByName(dto: FindOrCreateUniversityDto): Promise<University> {
+  async findOrCreateByName(
+    dto: FindOrCreateUniversityDto,
+  ): Promise<University> {
     const name = dto.name.trim();
     const state = dto.state.trim();
 
@@ -197,7 +354,10 @@ export class UniversitiesService {
    * public (the image is shown to every visitor of the college detail
    * screen), so we store the public URL directly rather than signing it
    * per-request. Bucket is created on first use since it isn't pre-provisioned. */
-  async uploadPhoto(id: string, dto: UploadUniversityPhotoDto): Promise<University> {
+  async uploadPhoto(
+    id: string,
+    dto: UploadUniversityPhotoDto,
+  ): Promise<University> {
     const existing = await this.prisma.university.findUnique({ where: { id } });
     if (!existing) {
       throw new NotFoundException(`University '${id}' not found`);
@@ -208,12 +368,18 @@ export class UniversitiesService {
       throw new BadRequestException('imageBase64 did not decode to any bytes');
     }
 
-    const { error: createBucketError } = await this.supabase.storage.createBucket(
-      SUPABASE_BUCKETS.UNIVERSITY_IMAGES,
-      { public: true },
-    );
-    if (createBucketError && !/already exists/i.test(createBucketError.message)) {
-      throw new BadRequestException(`Failed to prepare storage bucket: ${createBucketError.message}`);
+    const { error: createBucketError } =
+      await this.supabase.storage.createBucket(
+        SUPABASE_BUCKETS.UNIVERSITY_IMAGES,
+        { public: true },
+      );
+    if (
+      createBucketError &&
+      !/already exists/i.test(createBucketError.message)
+    ) {
+      throw new BadRequestException(
+        `Failed to prepare storage bucket: ${createBucketError.message}`,
+      );
     }
 
     const imageKey = `${id}/${randomUUID()}.jpg`;
@@ -221,7 +387,9 @@ export class UniversitiesService {
       .from(SUPABASE_BUCKETS.UNIVERSITY_IMAGES)
       .upload(imageKey, buffer, { contentType: 'image/jpeg', upsert: true });
     if (uploadError) {
-      throw new BadRequestException(`Failed to upload image: ${uploadError.message}`);
+      throw new BadRequestException(
+        `Failed to upload image: ${uploadError.message}`,
+      );
     }
 
     const { data } = this.supabase.storage
