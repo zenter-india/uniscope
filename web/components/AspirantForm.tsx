@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { checkAliasAvailable, submitAspirantLead, fetchCuratedColleges, ApiError } from "../lib/api";
+import { checkAliasAvailable, checkPhoneAvailable, submitAspirantLead, fetchCuratedColleges, ApiError } from "../lib/api";
 import {
   GENDERS,
   INDIAN_STATES,
@@ -16,6 +16,7 @@ import {
 } from "../lib/options";
 import { useMultiStep } from "../lib/useMultiStep";
 import { ALIAS_TAKEN_MESSAGE, useAliasCheck } from "../lib/useAliasCheck";
+import { PHONE_TAKEN_MESSAGE, usePhoneCheck } from "../lib/usePhoneCheck";
 import { Field, TextInput, Select, ChipGroup, toggleInArray, ProgressBar, ErrorText } from "./form-bits";
 import { CollegeSearch } from "./CollegeSearch";
 import { CuratedCollegeSearch } from "./CuratedCollegeSearch";
@@ -74,6 +75,7 @@ export function AspirantForm({ onExit }: { onExit: () => void }) {
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const aliasStatus = useAliasCheck(form.alias);
+  const phoneStatus = usePhoneCheck(form.phone, "ASPIRANT");
   const [done, setDone] = useState(false);
 
   const set = <K extends keyof FormState>(key: K, value: FormState[K]) =>
@@ -192,6 +194,7 @@ export function AspirantForm({ onExit }: { onExit: () => void }) {
       if (!form.alias.trim()) return "Enter an alias / display name.";
       if (aliasStatus === "taken") return ALIAS_TAKEN_MESSAGE;
       if (form.phone.trim().length !== 10) return "Enter a valid 10-digit phone number.";
+      if (phoneStatus === "taken") return PHONE_TAKEN_MESSAGE;
       if (!form.gender) return "Select a gender.";
     }
     if (wizard.step === 2) {
@@ -234,6 +237,12 @@ export function AspirantForm({ onExit }: { onExit: () => void }) {
     // once more now, in case the live check has not finished or is stale.
     if (wizard.step === 1 && (await checkAliasAvailable(form.alias)) === false) {
       setError(ALIAS_TAKEN_MESSAGE);
+      return;
+    }
+    // Same for the phone number: one account per number (an aspirant account
+    // may still sign up as a mentor), so ask once more before going on.
+    if (wizard.step === 1 && (await checkPhoneAvailable(form.phone, "ASPIRANT")) === false) {
+      setError(PHONE_TAKEN_MESSAGE);
       return;
     }
     setError(null);
@@ -371,6 +380,11 @@ export function AspirantForm({ onExit }: { onExit: () => void }) {
               value={form.phone}
               onChange={(e) => set("phone", e.target.value.replace(/\D/g, "").slice(0, 10))}
             />
+            {phoneStatus === "taken" && (
+              <span role="alert" className="block mt-1.5 text-[12.5px] font-semibold text-red-600">
+                {PHONE_TAKEN_MESSAGE}
+              </span>
+            )}
           </Field>
           <Field label="Gender">
             <ChipGroup
