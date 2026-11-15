@@ -16,6 +16,16 @@ Last verified against GitHub and Railway: 2026-11-15.
 
 Mobile app builds and store uploads are a separate step (section 8).
 
+## Who does what
+
+| Person | Role | In this cycle |
+|---|---|---|
+| **Kiran** | Astyllex owner, technical lead | Owns infrastructure, secrets, production deploys and store accounts. Approves High and Critical changes and every release to production. |
+| **Dheepan** | Product owner, client-facing | Decides what gets built and in what order, and signs off from the client's point of view that a change is right **before** it is released. Does not need to review code. |
+| **Anusuya** and **Mega** | Developers (same role) | Build, test and open PRs. Review each other's PRs. Cut and check releases with Kiran. |
+
+"A lead" in this guide means Kiran. If Kiran is away, the one who covers must be named in the release PR.
+
 ## 1. Where things run
 
 | Environment | What it is | Backend | Deploys from |
@@ -81,11 +91,13 @@ The risk tier is in `ai/RISK_RULES.md`. The author never approves their own PR.
 
 | Tier | Examples | Who approves |
 |---|---|---|
-| **Low** | docs, tests, copy, formatting | any teammate |
-| **Medium** | normal features, admin screens, new endpoints | any teammate |
-| **High** | login or OTP, wallet and payments, database schema, notifications, native app config | a lead (Kiran) **and** the usual reviewer |
+| **Low** | docs, tests, copy, formatting | the other developer (Anusuya or Mega) |
+| **Medium** | normal features, admin screens, new endpoints | the other developer (Anusuya or Mega) |
+| **High** | login or OTP, wallet and payments, database schema, notifications, native app config | Kiran **and** the other developer |
 | **Critical** | production credentials, webhook signature checks, deleting data, store publishing | explicit written go-ahead from Kiran for that specific action |
-| **Release to production** | any release PR | a lead (Kiran, or Dheepan when Kiran names them) |
+| **Release to production** | any release PR | Kiran approves and merges. Dheepan confirms the client-facing sign-off first (a comment on the release PR is enough). |
+
+If a developer's own PR is the only one open, Kiran reviews it.
 
 Admin override (merging without approval) is for emergencies only. Write the reason in the PR.
 
