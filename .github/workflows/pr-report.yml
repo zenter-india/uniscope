@@ -56,11 +56,12 @@ jobs:
         id: gate
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           HEAD_REF: ${{ github.event.pull_request.head.ref }}
         run: |
           run=true; reason=""
           files=$(node -e "console.log(JSON.parse(require('fs').readFileSync('pr-report/facts.json','utf8')).pr.changedFiles)")
-          if [ -z "$ANTHROPIC_API_KEY" ]; then run=false; reason="no ANTHROPIC_API_KEY secret is configured"
+          if [ -z "$ANTHROPIC_API_KEY" ] && [ -z "$CLAUDE_CODE_OAUTH_TOKEN" ]; then run=false; reason="no CLAUDE_CODE_OAUTH_TOKEN or ANTHROPIC_API_KEY secret is configured"
           elif [[ "$HEAD_REF" == release/* ]]; then run=false; reason="release promotion PR (its parts were reviewed individually)"
           elif [ "$files" -gt 150 ]; then run=false; reason="very large PR ($files files)"
           fi
@@ -74,12 +75,14 @@ jobs:
         if: steps.gate.outputs.run == 'true'
         continue-on-error: true
         env:
-          # Org-level API keys must name the workspace to bill. The ID is not a secret;
-          # set it as the repo secret ANTHROPIC_WORKSPACE_ID (empty = header not sent).
-          ANTHROPIC_CUSTOM_HEADERS: "${{ secrets.ANTHROPIC_WORKSPACE_ID && format('anthropic-workspace-id: {0}', secrets.ANTHROPIC_WORKSPACE_ID) || '' }}"
+          # Org-level API keys must name the workspace to bill (API-key path only; the
+          # subscription token path sends no header). The ID is not a secret.
+          ANTHROPIC_CUSTOM_HEADERS: "${{ !secrets.CLAUDE_CODE_OAUTH_TOKEN && secrets.ANTHROPIC_WORKSPACE_ID && format('anthropic-workspace-id: {0}', secrets.ANTHROPIC_WORKSPACE_ID) || '' }}"
         uses: anthropics/claude-code-action@f3b070c88125d33dbae5653df5f143101d4ea9dc # v1.0.276
         with:
-          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          # Prefer the Claude subscription token; fall back to a pay-per-use API key.
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          anthropic_api_key: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN == '' && secrets.ANTHROPIC_API_KEY || '' }}
           github_token: ${{ github.token }}
           # CLAUDE.md is ~600 KB (~150k tokens): loading it on every turn would cost
           # several times the review itself. The reviewer reads only its short
