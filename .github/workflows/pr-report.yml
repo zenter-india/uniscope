@@ -75,8 +75,8 @@ jobs:
         continue-on-error: true
         env:
           # Org-level API keys must name the workspace to bill. The ID is not a secret;
-          # set it as the repo VARIABLE ANTHROPIC_WORKSPACE_ID (empty = header not sent).
-          ANTHROPIC_CUSTOM_HEADERS: "${{ vars.ANTHROPIC_WORKSPACE_ID && format('anthropic-workspace-id: {0}', vars.ANTHROPIC_WORKSPACE_ID) || '' }}"
+          # set it as the repo secret ANTHROPIC_WORKSPACE_ID (empty = header not sent).
+          ANTHROPIC_CUSTOM_HEADERS: "${{ secrets.ANTHROPIC_WORKSPACE_ID && format('anthropic-workspace-id: {0}', secrets.ANTHROPIC_WORKSPACE_ID) || '' }}"
         uses: anthropics/claude-code-action@f3b070c88125d33dbae5653df5f143101d4ea9dc # v1.0.276
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
