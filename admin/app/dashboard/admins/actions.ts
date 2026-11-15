@@ -17,8 +17,17 @@ export interface AdminAccount {
 type ActionResult = { ok: true } | { ok: false; error: string };
 type CreateResult = { ok: true; account: AdminAccount } | { ok: false; error: string };
 
+/** A backend that is a few minutes behind this panel (mid-deploy) does not send
+ * the permission fields yet. Before permissions existed every admin had full
+ * access, so that is what a missing value means — the page keeps working
+ * instead of crashing. */
+function withAccessDefaults(a: AdminAccount): AdminAccount {
+  return { ...a, fullAccess: a.fullAccess ?? true, permissions: a.permissions ?? [] };
+}
+
 export async function getAdminAccounts(): Promise<AdminAccount[]> {
-  return backendFetch<AdminAccount[]>('/admin/admin-accounts');
+  const accounts = await backendFetch<AdminAccount[]>('/admin/admin-accounts');
+  return accounts.map(withAccessDefaults);
 }
 
 export async function createAdminAccount(input: {
@@ -34,7 +43,7 @@ export async function createAdminAccount(input: {
       body: JSON.stringify(input),
     });
     revalidatePath('/dashboard/admins');
-    return { ok: true, account };
+    return { ok: true, account: withAccessDefaults(account) };
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : 'Could not create the admin account' };
   }
@@ -77,7 +86,7 @@ export async function updateAdminAccountPermissions(
       body: JSON.stringify(input),
     });
     revalidatePath('/dashboard/admins');
-    return { ok: true, account };
+    return { ok: true, account: withAccessDefaults(account) };
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : 'Could not save the permissions' };
   }
