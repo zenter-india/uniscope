@@ -33,7 +33,22 @@ export function SupportInbox({
   const [selectedUserId, setSelectedUserId] = useState<string | null>(
     initialChannels[0]?.userId ?? null,
   );
+  // Phone / tablet only (below `lg`, where the list and the thread stack):
+  // once a conversation is opened it takes over the screen and the list is
+  // hidden, like a messaging app, so the thread is never pushed down below
+  // the list. From `lg` up the two panes sit side by side and this flag has no
+  // effect — the first conversation stays selected as before.
+  const [threadOpen, setThreadOpen] = useState(false);
   const [refreshing, startRefresh] = useTransition();
+
+  const openThread = (userId: string) => {
+    setSelectedUserId(userId);
+    setThreadOpen(true);
+    // The list may have been scrolled; start the thread at the top of the page.
+    if (window.matchMedia('(max-width: 1023.98px)').matches) {
+      window.scrollTo({ top: 0 });
+    }
+  };
 
   const refreshChannels = useCallback(() => {
     startRefresh(async () => {
@@ -49,7 +64,11 @@ export function SupportInbox({
 
   return (
     <div className="grid gap-4 lg:grid-cols-[320px_1fr]">
-      <Card className="flex max-h-[calc(100vh-180px)] flex-col overflow-hidden p-0">
+      <Card
+        className={`${
+          threadOpen ? 'hidden lg:flex' : 'flex'
+        } max-h-[calc(100vh-180px)] flex-col overflow-hidden p-0`}
+      >
         <div className="flex items-center justify-between border-b border-zinc-200 dark:border-zinc-800 px-4 py-3">
           <span className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
             Conversations
@@ -73,7 +92,7 @@ export function SupportInbox({
             channels.map((c) => (
               <button
                 key={c.channelId}
-                onClick={() => setSelectedUserId(c.userId)}
+                onClick={() => openThread(c.userId)}
                 className={`flex w-full flex-col gap-1 border-b border-zinc-100 dark:border-zinc-800 px-4 py-3 text-left transition hover:bg-zinc-50 dark:hover:bg-zinc-800/60 ${
                   c.userId === selectedUserId ? 'bg-zinc-50 dark:bg-zinc-800/60' : ''
                 }`}
@@ -110,9 +129,11 @@ export function SupportInbox({
           key={selected.userId}
           channel={selected}
           onReplied={refreshChannels}
+          onBack={() => setThreadOpen(false)}
+          visibleOnPhone={threadOpen}
         />
       ) : (
-        <Card className="flex items-center justify-center p-10 text-sm text-zinc-500 dark:text-zinc-400">
+        <Card className="hidden items-center justify-center p-10 text-sm text-zinc-500 lg:flex dark:text-zinc-400">
           Select a conversation to view it.
         </Card>
       )}
@@ -123,9 +144,15 @@ export function SupportInbox({
 function ThreadView({
   channel,
   onReplied,
+  onBack,
+  visibleOnPhone,
 }: {
   channel: SupportChannelSummary;
   onReplied: () => void;
+  /** Phone / tablet: return to the conversation list. */
+  onBack: () => void;
+  /** Below `lg` the thread is only shown once a conversation was opened. */
+  visibleOnPhone: boolean;
 }) {
   const [messages, setMessages] = useState<SupportMessage[]>([]);
   const [hasMore, setHasMore] = useState(false);
@@ -194,21 +221,38 @@ function ThreadView({
   };
 
   return (
-    <Card className="flex max-h-[calc(100vh-180px)] flex-col overflow-hidden p-0">
-      <div className="border-b border-zinc-200 dark:border-zinc-800 px-4 py-3">
-        <div className="flex items-center gap-2">
-          <span className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
-            {channel.displayName}
-          </span>
-          {channel.role && (
-            <Badge tone={channel.role === 'MENTOR' ? 'success' : 'neutral'}>
-              {channel.role === 'MENTOR' ? 'Mentor' : 'Student'}
-            </Badge>
+    // Phone: fill the screen under the page header + tabs (dvh follows the
+    // mobile browser's address bar) so the reply box is on screen without
+    // scrolling the page. lg+: unchanged.
+    <Card
+      className={`${
+        visibleOnPhone ? 'flex' : 'hidden lg:flex'
+      } h-[calc(100dvh-9rem)] flex-col overflow-hidden p-0 lg:h-auto lg:max-h-[calc(100vh-180px)]`}
+    >
+      <div className="flex items-center gap-1 border-b border-zinc-200 dark:border-zinc-800 py-3 pl-2 pr-4 lg:pl-4">
+        <button
+          type="button"
+          onClick={onBack}
+          aria-label="Back to conversations"
+          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md text-zinc-600 hover:bg-zinc-100 lg:hidden dark:text-zinc-300 dark:hover:bg-zinc-800"
+        >
+          <Icon.chevronLeft className="h-5 w-5" />
+        </button>
+        <div className="min-w-0">
+          <div className="flex items-center gap-2">
+            <span className="truncate text-sm font-semibold text-zinc-900 dark:text-zinc-100">
+              {channel.displayName}
+            </span>
+            {channel.role && (
+              <Badge tone={channel.role === 'MENTOR' ? 'success' : 'neutral'}>
+                {channel.role === 'MENTOR' ? 'Mentor' : 'Student'}
+              </Badge>
+            )}
+          </div>
+          {channel.uniqueId && (
+            <span className="text-xs text-zinc-400 dark:text-zinc-500">{channel.uniqueId}</span>
           )}
         </div>
-        {channel.uniqueId && (
-          <span className="text-xs text-zinc-400 dark:text-zinc-500">{channel.uniqueId}</span>
-        )}
       </div>
 
       <div ref={scrollRef} className="flex-1 space-y-3 overflow-y-auto bg-zinc-50 dark:bg-zinc-800/60 p-4">
