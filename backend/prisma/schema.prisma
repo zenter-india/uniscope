@@ -1046,6 +1046,53 @@ model Broadcast {
   @@map("broadcasts")
 }
 
+/// UNI-58: an admin "promotion" -- a message shown to users as a popup the
+/// next time they open the app (plus the usual in-app notification and push),
+/// optionally carrying an https link and a wallet credit. audience is one of
+/// ALL | ASPIRANT | MENTOR | SELECTED (an explicit list of users).
+model Promotion {
+  id                  String   @id @default(uuid())
+  title               String   @db.VarChar(120)
+  body                String?  @db.Text
+  audience            String   @db.VarChar(16)
+  /// Optional https link shown as a button on the popup.
+  linkUrl             String?  @map("link_url") @db.VarChar(500)
+  linkLabel           String?  @map("link_label") @db.VarChar(40)
+  /// Wallet credit per recipient, in minor units (see WalletService:
+  /// 1 Uniminute = 1000 minor, 1 rupee = 100 minor). 0 = no credit.
+  aspirantCreditMinor Int      @default(0) @map("aspirant_credit_minor")
+  mentorCreditMinor   Int      @default(0) @map("mentor_credit_minor")
+  recipientCount      Int      @map("recipient_count")
+  /// How many wallets were actually credited (a recipient with no wallet,
+  /// or whose credit failed, is not counted).
+  creditedCount       Int      @default(0) @map("credited_count")
+  sentBy              String   @map("sent_by")
+  createdAt           DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  recipients PromotionRecipient[]
+
+  @@index([createdAt(sort: Desc)])
+  @@map("promotions")
+}
+
+/// UNI-58: one row per user a promotion was sent to. `seenAt` is set once the
+/// user has been shown the popup, so it is only ever shown once per user.
+model PromotionRecipient {
+  id            String    @id @default(uuid())
+  promotionId   String    @map("promotion_id")
+  userId        String    @map("user_id")
+  /// What was actually credited to this user's wallet (0 = nothing).
+  creditedMinor Int       @default(0) @map("credited_minor")
+  seenAt        DateTime? @map("seen_at") @db.Timestamptz
+  createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamptz
+
+  promotion Promotion @relation(fields: [promotionId], references: [id], onDelete: Cascade)
+
+  @@unique([promotionId, userId])
+  @@index([userId, seenAt])
+  @@map("promotion_recipients")
+}
+
 /// Admin-tunable runtime config — a small, deliberately narrow set of
 /// operational knobs (see SettingsService.SETTINGS_REGISTRY for the
 /// current list and each one's default/min/max). One row per setting;

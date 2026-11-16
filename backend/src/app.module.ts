@@ -54,6 +54,7 @@ import { EnrollmentsModule } from './modules/enrollments/enrollments.module.js';
 import { MetricsModule } from './modules/metrics/metrics.module.js';
 import { ReviewModerationModule } from './modules/review-moderation/review-moderation.module.js';
 import { BroadcastsModule } from './modules/broadcasts/broadcasts.module.js';
+import { PromotionsModule } from './modules/promotions/promotions.module.js';
 import { AdminSearchModule } from './modules/admin-search/admin-search.module.js';
 import { TechnicalReportsModule } from './modules/technical-reports/technical-reports.module.js';
 import { ProfileOptionsModule } from './modules/profile-options/profile-options.module.js';
@@ -136,6 +137,7 @@ import { IntegrationsModule } from './modules/integrations/integrations.module.j
     MetricsModule,
     ReviewModerationModule,
     BroadcastsModule,
+    PromotionsModule,
     AdminSearchModule,
     TechnicalReportsModule,
     ProfileOptionsModule,
