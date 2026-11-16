@@ -27,6 +27,7 @@ const NAV_SECTIONS: {
       { label: 'Payouts', href: '/dashboard/payouts', icon: 'wallet' },
       { label: 'Support', href: '/dashboard/support', icon: 'lifebuoy' },
       { label: 'Announcements', href: '/dashboard/broadcasts', icon: 'megaphone' },
+      { label: 'Promotions', href: '/dashboard/promotions', icon: 'wallet' },
     ],
   },
   {

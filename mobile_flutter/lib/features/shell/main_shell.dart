@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/theme/app_theme.dart';
 import '../../widgets/app_widgets.dart';
+import '../promotions/promotion_popup.dart';
 import '../sessions/call_request_watcher.dart';
 import '../sessions/session_list_screen.dart' show sessionsListProvider;
 
@@ -57,6 +58,9 @@ class MainShell extends ConsumerWidget {
           // /call/:id when the mentor accepts — the stand-in for a real
           // incoming-call push. Renders nothing.
           const CallRequestWatcher(),
+          // Shows admin "Promotions" the user hasn't seen yet as a popup when
+          // the app opens (UNI-58). Renders nothing.
+          const PromotionPopupHost(),
           Container(
             decoration: const BoxDecoration(
               color: AppColors.surface,

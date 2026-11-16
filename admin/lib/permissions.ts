@@ -23,6 +23,7 @@ export const ADMIN_SECTIONS: readonly AdminSection[] = [
   { key: 'payouts', label: 'Payouts', group: 'Operations', path: '/dashboard/payouts' },
   { key: 'support', label: 'Support', group: 'Operations', path: '/dashboard/support' },
   { key: 'broadcasts', label: 'Announcements', group: 'Operations', path: '/dashboard/broadcasts' },
+  { key: 'promotions', label: 'Promotions', group: 'Operations', path: '/dashboard/promotions' },
   { key: 'users', label: 'Users', group: 'Directory', path: '/dashboard/users' },
   { key: 'universities', label: 'Universities', group: 'Directory', path: '/dashboard/universities' },
   { key: 'degrees', label: 'Custom degrees', group: 'Directory', path: '/dashboard/degrees' },
