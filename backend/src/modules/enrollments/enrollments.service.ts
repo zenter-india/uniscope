@@ -1,6 +1,7 @@
 import { createHash, randomUUID } from 'node:crypto';
 import {
   BadRequestException,
+  ConflictException,
   Inject,
   Injectable,
   Logger,
@@ -30,6 +31,7 @@ import {
   CreateMentorLeadDto,
 } from './dto/create-lead.dto.js';
 import { ListLeadsDto } from './dto/list-leads.dto.js';
+import { PHONE_TAKEN_MESSAGE } from './phone-signup-rule.js';
 import { UpdateLeadDto } from './dto/update-lead.dto.js';
 import {
   EnrollmentLeadAcknowledgement,
@@ -151,6 +153,28 @@ export class EnrollmentsService {
         realName: dto.fullName,
         profile,
       });
+
+    // The alias they typed was already used, so they got the next free one
+    // ("John" -> "John1"). Tell them, so a changed name is never a surprise.
+    const requestedAlias = dto.alias?.trim();
+    if (
+      isNewUser &&
+      requestedAlias &&
+      user.displayName.toLowerCase() !== requestedAlias.toLowerCase()
+    ) {
+      await this.notifications
+        .send({
+          userId: user.id,
+          type: NotificationType.SYSTEM,
+          title: 'Your alias was changed',
+          body: `"${requestedAlias}" was already taken, so your alias is "${user.displayName}". You can change it any time in your profile.`,
+        })
+        .catch((err) =>
+          this.logger.warn(
+            `Alias-changed notification failed for ${user.id}: ${err}`,
+          ),
+        );
+    }
 
     // Turn a web-form doc + resolved college into a real VerificationRequest
     // so it lands in the admin queue — instead of silently dropping it. This
@@ -318,6 +342,36 @@ export class EnrollmentsService {
     return { id: lead.id, role: lead.role, status: lead.status };
   }
 
+  /** Whether nobody has this display name yet (letter case ignored, like the
+   * database's unique rule). Public, so it returns only the yes/no. */
+  async isAliasAvailable(alias: string): Promise<{ available: boolean }> {
+    const taken = await this.prisma.user.findFirst({
+      where: { displayName: { equals: alias.trim(), mode: 'insensitive' } },
+      select: { id: true },
+    });
+    return { available: taken === null };
+  }
+
+  /** Whether this number is free to sign up with: a number can only ever be
+   * used for one account, so it is taken the moment any account has it — for
+   * either role, with no exceptions. Public, so it answers only yes/no. */
+  async isPhoneAvailable(rawPhone: string): Promise<{ available: boolean }> {
+    const phone = this.normalizePhone(rawPhone);
+    const existing = await this.prisma.user.findUnique({
+      where: { phoneHash: this.phoneHashFor(phone) },
+      select: { id: true },
+    });
+    return { available: existing === null };
+  }
+
+  /** The server-side authority for the same rule, so a form that skipped the
+   * check (or an old cached page) still can't make a second account. Runs
+   * before anything is uploaded or saved. */
+  private async assertPhoneAvailable(rawPhone: string): Promise<void> {
+    const { available } = await this.isPhoneAvailable(rawPhone);
+    if (!available) throw new ConflictException(PHONE_TAKEN_MESSAGE);
+  }
+
   /** Only accepts a universityId that actually resolves — a bad id from a
    * stale cached page would otherwise fail the FK and 500 the whole form.
    * The typed college name always survives regardless. */
@@ -335,6 +389,7 @@ export class EnrollmentsService {
   async createAspirantLead(
     dto: CreateAspirantLeadDto,
   ): Promise<EnrollmentLeadAcknowledgement> {
+    await this.assertPhoneAvailable(dto.phone);
     const universityId = await this.resolveUniversityId(dto.universityId);
 
     const ack = await this.upsertLead(EnrollmentLeadRole.ASPIRANT, dto, {
@@ -495,6 +550,7 @@ export class EnrollmentsService {
   async createMentorLead(
     dto: CreateMentorLeadDto,
   ): Promise<EnrollmentLeadAcknowledgement> {
+    await this.assertPhoneAvailable(dto.phone);
     let universityId = await this.resolveUniversityId(dto.universityId);
 
     // The web form lets a mentor type a college that isn't in the dropdown.
