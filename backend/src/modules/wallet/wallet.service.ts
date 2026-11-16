@@ -13,6 +13,7 @@ import {
   LedgerEntryType,
   NotificationType,
   Prisma,
+  UserRole,
 } from '@prisma/client';
 import { createHmac, randomUUID, timingSafeEqual } from 'crypto';
 import * as Sentry from '@sentry/node';
@@ -398,6 +399,25 @@ export class WalletService {
   }
 
   /**
+   * UNI-64: mentors never top up -- they earn ₹ and withdraw it, they don't
+   * buy Uniminutes. The role is read from the DB, not the JWT: the token's
+   * role claim stays stale after a role change until the next refresh, so a
+   * token minted while the account was still an aspirant would otherwise
+   * keep passing a role check. Called before any payment is started.
+   */
+  private async assertCanTopUp(userId: string): Promise<void> {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { role: true },
+    });
+    if (user?.role === UserRole.MENTOR) {
+      throw new ForbiddenException(
+        'Wallet top-up is not available for mentor accounts.',
+      );
+    }
+  }
+
+  /**
    * Creates a Razorpay Order for the requested amount. The order carries
    * the userId in `notes` so the webhook — which has no session/JWT context
    * — knows whose wallet to credit. No ledger entry is written here; only
@@ -412,6 +432,8 @@ export class WalletService {
     currency: string;
     keyId: string;
   }> {
+    await this.assertCanTopUp(userId);
+
     const order = await this.razorpay.orders.create({
       amount: dto.amountMinor,
       currency: CURRENCY,
