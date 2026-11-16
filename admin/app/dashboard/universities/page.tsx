@@ -6,6 +6,7 @@ import { AddUniversityForm } from './AddUniversityForm';
 import type { UniversityRowData } from './UniversityRow';
 import { UniversitiesList } from './UniversitiesList';
 import { UniversityFilters } from './UniversityFilters';
+import { UNIVERSITIES_PAGE_SIZE } from './page-size';
 
 interface FilterOption {
   name: string;
@@ -25,15 +26,17 @@ export default async function UniversitiesPage({
   }>;
 }) {
   const { search, course, state, stream, sort: rawSort, status: rawStatus } = await searchParams;
-  // A–Z unless Z–A or "Newest first" is picked explicitly.
+  // Newest first unless A–Z or Z–A is picked explicitly.
   const sort: 'name' | 'name_desc' | 'new' =
-    rawSort === 'new' || rawSort === 'name_desc' ? rawSort : 'name';
+    rawSort === 'name' || rawSort === 'name_desc' ? rawSort : 'new';
   // "Inactive" = hidden from the app (e.g. a college a user typed that no admin
   // has published yet); anything else lists both.
   const status: '' | 'active' | 'inactive' =
     rawStatus === 'active' || rawStatus === 'inactive' ? rawStatus : '';
 
-  const params = new URLSearchParams({ limit: '50' });
+  // 250 colleges per batch (the "Load more" button fetches the same amount) —
+  // big enough to show a lot at once, small enough that the page stays quick.
+  const params = new URLSearchParams({ limit: String(UNIVERSITIES_PAGE_SIZE) });
   if (search) params.set('search', search);
   if (course) params.set('course', course);
   if (state) params.set('state', state);

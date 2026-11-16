@@ -23,6 +23,42 @@ import {
 
 const DEFAULT_LIMIT = 20;
 const MAX_LIMIT = 50;
+/** The admin list pages in bigger batches than the public one (see
+ * findAllAdmin) — the admin panel loads 250 colleges at a time. */
+const ADMIN_MAX_LIMIT = 500;
+
+/**
+ * Courses that are a level of a college rather than a row in `programs`.
+ * Only the postgraduate and diploma datasets were ever loaded as program rows,
+ * so a UG-only college has none — an MBBS or BDS college has no course row at
+ * all, and the admin Course filter could neither list nor find it. These are
+ * recognised the same way the app does it: by the college's stream and level.
+ * (B.TECH, M.TECH and DIPLOMA-ENGG also exist as program rows, so they match
+ * either way.)
+ */
+const LEVEL_COURSES: { name: string; stream: string; level: string }[] = [
+  { name: 'MBBS', stream: 'Medical', level: 'UG' },
+  { name: 'BDS', stream: 'Dental', level: 'UG' },
+  { name: 'B.TECH', stream: 'Engineering', level: 'UG' },
+  { name: 'M.TECH', stream: 'Engineering', level: 'PG' },
+  { name: 'DIPLOMA-ENGG', stream: 'Engineering', level: 'Diploma' },
+];
+
+/** Where-condition for "colleges offering this course". */
+function courseCondition(course: string): Prisma.UniversityWhereInput {
+  const programMatch: Prisma.UniversityWhereInput = {
+    programs: { some: { isActive: true, name: course } },
+  };
+  const byLevel = LEVEL_COURSES.find((c) => c.name === course);
+  return byLevel
+    ? {
+        OR: [
+          programMatch,
+          { stream: byLevel.stream, levels: { has: byLevel.level } },
+        ],
+      }
+    : programMatch;
+}
 /** Most mentors / students the admin college page lists per college. */
 const MAX_COLLEGE_PEOPLE = 1000;
 
@@ -488,7 +524,7 @@ export class UniversitiesService {
     data: Array<University & { district: string | null }>;
     nextCursor: string | null;
   }> {
-    const take = Math.min(query.limit ?? DEFAULT_LIMIT, MAX_LIMIT);
+    const take = Math.min(query.limit ?? DEFAULT_LIMIT, ADMIN_MAX_LIMIT);
 
     const where: Prisma.UniversityWhereInput = {
       // Rows merged into another college are gone as far as admins are
@@ -500,10 +536,14 @@ export class UniversitiesService {
       ...(query.status === 'inactive' && { isActive: false }),
       ...(query.state && { state: query.state }),
       ...(query.stream && { stream: query.stream }),
-      // Colleges offering a given course (Program.name, e.g. "MD/MS").
-      ...(query.course && {
-        programs: { some: { isActive: true, name: query.course } },
-      }),
+      // Colleges offering a given course — a Program.name (e.g. "MD/MS") or a
+      // level course such as MBBS (see LEVEL_COURSES). A plain program course
+      // keeps the simple `programs` condition; a level course needs an OR, so
+      // it goes in AND to sit beside the search OR below.
+      ...(query.course &&
+        (LEVEL_COURSES.some((c) => c.name === query.course)
+          ? { AND: [courseCondition(query.course)] }
+          : courseCondition(query.course))),
       ...(query.search && {
         OR: [
           { name: { contains: query.search, mode: 'insensitive' } },
@@ -683,17 +723,30 @@ export class UniversitiesService {
     };
   }
 
-  /** Every course (distinct `Program.name`) offered by an active college that
-   * is still listed (not merged away), A–Z, with how many colleges offer it.
-   * Feeds the admin Universities page's "Course" filter. */
+  /** Every course an admin can filter by, A–Z, with how many colleges offer
+   * it: each distinct `Program.name` of an active, still-listed college, plus
+   * the level courses (MBBS, BDS, …) that have no program rows — see
+   * LEVEL_COURSES. Feeds the admin Universities page's "Course" filter. */
   async listCourses(): Promise<{ name: string; colleges: number }[]> {
     const rows = await this.prisma.program.groupBy({
       by: ['name'],
       where: { isActive: true, university: { mergedIntoId: null } },
       _count: { universityId: true },
-      orderBy: { name: 'asc' },
     });
-    return rows.map((r) => ({ name: r.name, colleges: r._count.universityId }));
+    const colleges = new Map<string, number>(
+      rows.map((r) => [r.name, r._count.universityId]),
+    );
+    for (const course of LEVEL_COURSES) {
+      colleges.set(
+        course.name,
+        await this.prisma.university.count({
+          where: { mergedIntoId: null, ...courseCondition(course.name) },
+        }),
+      );
+    }
+    return [...colleges]
+      .map(([name, count]) => ({ name, colleges: count }))
+      .sort((a, b) => a.name.localeCompare(b.name));
   }
 
   /** Slug is derived once at creation and never changes afterward — stable
