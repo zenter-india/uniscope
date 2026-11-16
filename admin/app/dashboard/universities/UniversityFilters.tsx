@@ -106,9 +106,9 @@ export function UniversityFilters({
       </Field>
       <Field label="Sort">
         <select name="sort" defaultValue={sort} onChange={submit} className={SELECT_CLASS}>
+          <option value="new">Newest first</option>
           <option value="name">Alphabet (A–Z)</option>
           <option value="name_desc">Alphabet (Z–A)</option>
-          <option value="new">Newest first</option>
         </select>
       </Field>
       <button
