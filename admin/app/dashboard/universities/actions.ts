@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache';
 import { backendFetch } from '../../../lib/backend';
 import type { UniversityRowData } from './UniversityRow';
+import { UNIVERSITIES_PAGE_SIZE } from './page-size';
 
 export interface UniversityListFilters {
   search?: string;
@@ -16,13 +17,13 @@ export interface UniversityListFilters {
   sort?: 'name' | 'name_desc' | 'new';
 }
 
-/** Next page of the admin university list — same filters as the page, plus a
- * cursor. Drives the infinite scroll in UniversitiesList. */
+/** Next batch of the admin university list — same filters as the page, plus a
+ * cursor. Drives the "Load more" button in UniversitiesList. */
 export async function loadMoreUniversities(
   filters: UniversityListFilters,
   cursor: string,
 ): Promise<{ data: UniversityRowData[]; nextCursor: string | null }> {
-  const params = new URLSearchParams({ limit: '50', cursor });
+  const params = new URLSearchParams({ limit: String(UNIVERSITIES_PAGE_SIZE), cursor });
   if (filters.search) params.set('search', filters.search);
   if (filters.course) params.set('course', filters.course);
   if (filters.state) params.set('state', filters.state);

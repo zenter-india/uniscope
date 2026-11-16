@@ -71,6 +71,8 @@ export class ListUniversitiesDto {
   @Type(() => Number)
   @IsInt()
   @Min(1)
-  @Max(50)
+  // The public list caps itself at 50 in the service; the admin list allows
+  // bigger batches (its "Load more" fetches 250).
+  @Max(500)
   limit?: number;
 }
