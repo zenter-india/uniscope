@@ -38,6 +38,7 @@ export const Icon = {
   star: (p: IconProps) => base({ ...p, children: <path d="M11.5 2.8a.6.6 0 0 1 1 0l2.4 5 5.4.8a.6.6 0 0 1 .3 1l-3.9 3.8.9 5.4a.6.6 0 0 1-.9.6l-4.8-2.5-4.8 2.5a.6.6 0 0 1-.9-.6l.9-5.4L2.4 9.6a.6.6 0 0 1 .3-1l5.4-.8z" /> }),
   message: (p: IconProps) => base({ ...p, children: <path d="M7.9 20A9 9 0 1 0 4 16.1L2 22z" /> }),
   wallet: (p: IconProps) => base({ ...p, children: <><path d="M19 7V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2" /><path d="M3 5v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-8a2 2 0 0 0-2-2H5a2 2 0 0 1-2-2" /><circle cx="16" cy="12" r="1" /></> }),
+  chevronLeft: (p: IconProps) => base({ ...p, children: <path d="m15 18-6-6 6-6" /> }),
   chevronRight: (p: IconProps) => base({ ...p, children: <path d="m9 18 6-6-6-6" /> }),
   chevronDown: (p: IconProps) => base({ ...p, children: <path d="m6 9 6 6 6-6" /> }),
   search: (p: IconProps) => base({ ...p, children: <><circle cx="11" cy="11" r="8" /><path d="m21 21-4.3-4.3" /></> }),
