@@ -73,6 +73,14 @@ export async function backendFetch<T>(
     throw new Error('BACKEND_API_URL is not configured in admin/.env.local');
   }
 
+  // Reading is open to anyone signed in (the page itself is gated by the
+  // middleware); changing data needs Edit on the section the request came from.
+  const method = (init?.method ?? 'GET').toUpperCase();
+  if (method !== 'GET' && method !== 'HEAD') {
+    const { assertCanEditHere } = await import('./edit-guard');
+    await assertCanEditHere();
+  }
+
   const token = await signBackendJwt();
   const res = await fetch(`${baseUrl}${path}`, {
     ...init,

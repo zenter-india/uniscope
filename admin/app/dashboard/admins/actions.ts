@@ -8,6 +8,8 @@ export interface AdminAccount {
   email: string;
   displayName: string | null;
   isActive: boolean;
+  fullAccess: boolean;
+  permissions: string[];
   lastLoginAt: string | null;
   createdAt: string;
 }
@@ -15,14 +17,25 @@ export interface AdminAccount {
 type ActionResult = { ok: true } | { ok: false; error: string };
 type CreateResult = { ok: true; account: AdminAccount } | { ok: false; error: string };
 
+/** A backend that is a few minutes behind this panel (mid-deploy) does not send
+ * the permission fields yet. Before permissions existed every admin had full
+ * access, so that is what a missing value means — the page keeps working
+ * instead of crashing. */
+function withAccessDefaults(a: AdminAccount): AdminAccount {
+  return { ...a, fullAccess: a.fullAccess ?? true, permissions: a.permissions ?? [] };
+}
+
 export async function getAdminAccounts(): Promise<AdminAccount[]> {
-  return backendFetch<AdminAccount[]>('/admin/admin-accounts');
+  const accounts = await backendFetch<AdminAccount[]>('/admin/admin-accounts');
+  return accounts.map(withAccessDefaults);
 }
 
 export async function createAdminAccount(input: {
   email: string;
   password: string;
   displayName?: string;
+  fullAccess: boolean;
+  permissions: string[];
 }): Promise<CreateResult> {
   try {
     const account = await backendFetch<AdminAccount>('/admin/admin-accounts', {
@@ -30,7 +43,7 @@ export async function createAdminAccount(input: {
       body: JSON.stringify(input),
     });
     revalidatePath('/dashboard/admins');
-    return { ok: true, account };
+    return { ok: true, account: withAccessDefaults(account) };
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : 'Could not create the admin account' };
   }
@@ -59,5 +72,22 @@ export async function resetAdminAccountPassword(id: string, password: string): P
     return { ok: true };
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : 'Could not reset the password' };
+  }
+}
+
+/** Saves what an admin may open and change (replaces the stored list). */
+export async function updateAdminAccountPermissions(
+  id: string,
+  input: { fullAccess: boolean; permissions: string[] },
+): Promise<{ ok: true; account: AdminAccount } | { ok: false; error: string }> {
+  try {
+    const account = await backendFetch<AdminAccount>(`/admin/admin-accounts/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(input),
+    });
+    revalidatePath('/dashboard/admins');
+    return { ok: true, account: withAccessDefaults(account) };
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : 'Could not save the permissions' };
   }
 }

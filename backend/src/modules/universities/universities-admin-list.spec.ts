@@ -169,24 +169,106 @@ describe('UniversitiesService.mergeUniversities — which colleges can be merged
   });
 });
 
-describe('UniversitiesService.listCourses', () => {
-  it('returns distinct course names A–Z with the college count', async () => {
-    const groupBy = jest.fn().mockResolvedValue([
-      { name: 'DNB', _count: { universityId: 120 } },
-      { name: 'MD/MS', _count: { universityId: 340 } },
+describe('UniversitiesService.findAllAdmin — level courses (MBBS, BDS, …)', () => {
+  async function whereFor(query: Record<string, unknown>) {
+    const findMany = jest.fn().mockResolvedValue([]);
+    await makeService({ university: { findMany } }).findAllAdmin(query);
+    return findMany.mock.calls[0][0].where;
+  }
+
+  it('finds MBBS colleges by stream and level, since they have no course row', async () => {
+    const where = await whereFor({ course: 'MBBS' });
+    expect(where.AND).toEqual([
+      {
+        OR: [
+          { programs: { some: { isActive: true, name: 'MBBS' } } },
+          { stream: 'Medical', levels: { has: 'UG' } },
+        ],
+      },
     ]);
-    const svc = makeService({ program: { groupBy } });
+    expect(where.programs).toBeUndefined();
+  });
+
+  it('finds BDS colleges the same way', async () => {
+    const where = await whereFor({ course: 'BDS' });
+    expect(where.AND[0].OR[1]).toEqual({
+      stream: 'Dental',
+      levels: { has: 'UG' },
+    });
+  });
+
+  it('B.TECH matches a program row or an engineering UG college', async () => {
+    const where = await whereFor({ course: 'B.TECH' });
+    expect(where.AND[0].OR).toHaveLength(2);
+  });
+
+  it('a plain program course keeps the simple programs condition', async () => {
+    const where = await whereFor({ course: 'DNB' });
+    expect(where.programs).toEqual({
+      some: { isActive: true, name: 'DNB' },
+    });
+    expect(where.AND).toBeUndefined();
+  });
+
+  it('a level course still combines with a text search', async () => {
+    const where = await whereFor({ course: 'MBBS', search: 'delhi' });
+    expect(where.AND).toHaveLength(1);
+    expect(where.OR).toHaveLength(4);
+  });
+});
+
+describe('UniversitiesService.listCourses', () => {
+  it('lists the program courses plus MBBS and BDS, A–Z, with their counts', async () => {
+    const groupBy = jest.fn().mockResolvedValue([
+      { name: 'MD/MS', _count: { universityId: 651 } },
+      { name: 'DNB', _count: { universityId: 1440 } },
+      { name: 'B.TECH', _count: { universityId: 3422 } },
+    ]);
+    const count = jest.fn().mockImplementation(({ where }) => {
+      const level = JSON.stringify(where);
+      if (level.includes('"Medical"')) return Promise.resolve(942);
+      if (level.includes('"Dental"')) return Promise.resolve(328);
+      if (level.includes('"PG"')) return Promise.resolve(4000);
+      if (level.includes('"Diploma"')) return Promise.resolve(370);
+      return Promise.resolve(4100); // B.TECH: programs + engineering UG colleges
+    });
+    const svc = makeService({ program: { groupBy }, university: { count } });
 
     const courses = await svc.listCourses();
 
-    expect(courses).toEqual([
-      { name: 'DNB', colleges: 120 },
-      { name: 'MD/MS', colleges: 340 },
-    ]);
-    expect(groupBy.mock.calls[0][0].orderBy).toEqual({ name: 'asc' });
+    // Only active courses of colleges that are still listed.
     expect(groupBy.mock.calls[0][0].where).toEqual({
       isActive: true,
       university: { mergedIntoId: null },
     });
+    expect(courses.map((c) => c.name)).toEqual([
+      'B.TECH',
+      'BDS',
+      'DIPLOMA-ENGG',
+      'DNB',
+      'M.TECH',
+      'MBBS',
+      'MD/MS',
+    ]);
+    const by = Object.fromEntries(courses.map((c) => [c.name, c.colleges]));
+    expect(by.MBBS).toBe(942);
+    expect(by.BDS).toBe(328);
+    // A level course also offered as program rows counts the union, not just
+    // the program rows.
+    expect(by['B.TECH']).toBe(4100);
+    expect(by['MD/MS']).toBe(651);
+  });
+});
+
+describe('UniversitiesService.findAllAdmin — batch size', () => {
+  it('returns up to 250 colleges per batch and 500 at most', async () => {
+    const findMany = jest.fn().mockResolvedValue([]);
+    const svc = makeService({ university: { findMany } });
+
+    await svc.findAllAdmin({ limit: 250 });
+    expect(findMany.mock.calls[0][0].take).toBe(251); // one extra to know if there is more
+
+    await svc.findAllAdmin({ limit: 500 });
+    expect(findMany.mock.calls[1][0].take).toBe(501);
   });
 });

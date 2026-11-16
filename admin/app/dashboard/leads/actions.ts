@@ -69,3 +69,35 @@ export async function bulkUpdateLeadStatus(
     };
   }
 }
+
+export interface RetryAccountResult {
+  ok: true;
+  status: string;
+  convertedUserId: string | null;
+}
+
+/** Re-runs account creation for a lead that never became an account. `alias`
+ * is optional: leave it out to use what the person typed (a taken alias gets
+ * the next free number, e.g. "John1"). */
+export async function retryLeadAccount(
+  leadId: string,
+  alias?: string,
+): Promise<RetryAccountResult | { ok: false; error: string }> {
+  try {
+    const lead = await backendFetch<{ status: string; convertedUserId: string | null }>(
+      `/enrollments/${leadId}/retry-account`,
+      {
+        method: 'POST',
+        body: JSON.stringify(alias?.trim() ? { alias: alias.trim() } : {}),
+      },
+    );
+    revalidatePath('/dashboard/leads');
+    revalidatePath('/dashboard');
+    return { ok: true, status: lead.status, convertedUserId: lead.convertedUserId };
+  } catch (e) {
+    return {
+      ok: false,
+      error: e instanceof Error ? e.message : 'Could not create the account',
+    };
+  }
+}
