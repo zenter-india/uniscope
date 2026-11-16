@@ -7,6 +7,8 @@ export interface AdminAccountResponse {
   email: string;
   displayName: string | null;
   isActive: boolean;
+  fullAccess: boolean;
+  permissions: string[];
   lastLoginAt: string | null;
   createdAt: string;
 }
@@ -19,6 +21,8 @@ export function toAdminAccountResponse(
     email: row.email,
     displayName: row.displayName,
     isActive: row.isActive,
+    fullAccess: row.fullAccess,
+    permissions: row.permissions,
     lastLoginAt: row.lastLoginAt?.toISOString() ?? null,
     createdAt: row.createdAt.toISOString(),
   };

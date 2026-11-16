@@ -5,6 +5,7 @@ import {
   Param,
   Patch,
   Post,
+  Query,
   UseGuards,
 } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
@@ -15,6 +16,7 @@ import { RolesGuard } from '../../auth/guards/roles.guard.js';
 import { AdminAccountResponse } from './admin-account-response.js';
 import {
   AdminAccountsService,
+  type AdminAccess,
   type AdminLoginResult,
 } from './admin-accounts.service.js';
 import { CreateAdminAccountDto } from './dto/create-admin-account.dto.js';
@@ -33,6 +35,13 @@ export class AdminAccountsController {
   @Get()
   list(): Promise<AdminAccountResponse[]> {
     return this.adminAccountsService.list();
+  }
+
+  /** What one admin may do right now -- called by the admin panel on each
+   * request. Declared before any `:id` route so "access" is not read as an id. */
+  @Get('access')
+  access(@Query('email') email = ''): Promise<AdminAccess> {
+    return this.adminAccountsService.accessFor(email);
   }
 
   @Post()
