@@ -135,7 +135,10 @@ The website is deployed by Vercel from its **own two branches**:
 
 - Web changes go to `stage/web-enrollment-site`, not `staging`. Do not edit `web/` on `staging` or production.
 - Vercel needs a Preview-only `NEXT_PUBLIC_API_URL` pointing at the staging backend. Without it, previews talk to the **production** backend.
-- Production is only updated by a release PR into `prod/web-enrollment-site`. It was last updated on 2026-10-14.
+- Production is only updated by a release PR **from `stage/web-enrollment-site`** into `prod/web-enrollment-site`. Never push to it directly and never copy files across by hand: that is what caused the conflicts of 2026-11-15.
+- GitHub enforces this on `prod/web-enrollment-site`: a PR with 1 approval, a green `web (build)`, and no force pushes or deletion (set 2026-11-17; admins can still override in an emergency). The check `release source (stage only)` makes any other source branch fail. It is required only once its workflow has reached production (PR #69, then a release).
+- `stage/web-enrollment-site` is deliberately unprotected. The gate before uniscope.in is the release PR, so review it carefully.
+- Razorpay must list `uniscope.in` and `www.uniscope.in` as registered websites, or website top-ups are blocked at the payment step.
 
 ## 10. Hotfix
 
@@ -158,7 +161,7 @@ The website is deployed by Vercel from its **own two branches**:
 | 2 | The production branch is called `feature/flutter-migration`. | Rename to `production` (needs Railway and GitHub settings changed together: a Critical, planned change). |
 | 3 | The website branches have drifted far from `staging` (hundreds of commits, 24+ files in `web/`). | Move the website onto the same two-step flow, or document the website as a separate product with its own owner. |
 | 4 | Railway deploys without waiting for CI. | Turn on "wait for CI" for both environments. |
-| 5 | GitHub enforces only one rule: production needs 1 approval, with no required checks. `staging` had "5 checks + 1 approval" earlier this month and it is gone now; the website branches never had one. | Turn "5 checks + 1 approval" back on for `staging` and require the checks on production. Add 1 approval to both website branches. |
+| 5 | `staging` and `stage/web-enrollment-site` have no GitHub rule (`staging` had "5 checks + 1 approval" earlier this month and it is gone). `prod/web-enrollment-site` is now protected; the production backend branch needs 1 approval but no required checks. | Turn "5 checks + 1 approval" back on for `staging` and require the checks on the production backend branch. Stage website branch is left open on purpose. |
 | 6 | Dependabot opens PRs against `main`. | Point it at `staging`, group small updates, and cap open PRs. |
 | 7 | No fixed release rhythm. | Pick one (for example every Tuesday) so everyone knows when production changes. |
 | 8 | No named owner for the after-release checklist. | Assign one person per release. |
