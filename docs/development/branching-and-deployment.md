@@ -158,7 +158,7 @@ The website is deployed by Vercel from its **own two branches**:
 | # | Gap | Suggested fix |
 |---|---|---|
 | 1 | Preview shares the production database. | Give Preview its own database, then tests and migrations stop touching real data. |
-| 2 | The production branch is called `feature/flutter-migration`. | Rename it per section 13 (planned, Critical: Railway, Vercel and GitHub settings change together). |
+| 2 | The production branch is called `feature/flutter-migration`. | Rename it `production` per section 13 (planned, Critical: Railway, Vercel and GitHub settings change together). |
 | 3 | The website branches have drifted far from `staging` (hundreds of commits, 24+ files in `web/`). | Move the website onto the same two-step flow, or document the website as a separate product with its own owner. |
 | 4 | Railway deploys without waiting for CI. | Turn on "wait for CI" for both environments. |
 | 5 | `staging` and `stage/web-enrollment-site` have no GitHub rule (`staging` had "5 checks + 1 approval" earlier this month and it is gone). `prod/web-enrollment-site` is now protected; the production backend branch needs 1 approval but no required checks. | Turn "5 checks + 1 approval" back on for `staging` and require the checks on the production backend branch. Stage website branch is left open on purpose. |
@@ -168,33 +168,37 @@ The website is deployed by Vercel from its **own two branches**:
 
 Related: `ai/RISK_RULES.md`, `ai/ENGINEERING_RULES.md`, `ai/DEFINITION_OF_DONE.md`, `ai/QA.md` (release QA), `CONTRIBUTING.md`.
 
-## 13. Planned: one production branch per part (needs Kiran's approval)
+## 13. Planned: `staging` and `production` for every part (needs Kiran's approval)
 
-**Decision (2026-11-17):** each part gets a stage branch and a production branch named after it, so nobody has to know that `feature/flutter-migration` means "production".
+**Decision (2026-11-17):** one pipeline for every part (backend, admin panel, website, mobile builds): topic branches into `staging`, release PRs into `production`. The branch `feature/flutter-migration` is renamed `production`.
 
-| Part | Stage branch (today -> new) | Production branch (today -> new) |
-|---|---|---|
-| Backend (Railway `uniscope`, `/backend`) | `staging` -> `staging-uniscope` | `feature/flutter-migration` -> `production-uniscope` |
-| Admin panel (Railway `admin`, `/admin`) | `staging` -> `staging-uniscope-admin` | `feature/flutter-migration` -> `production-uniscope-admin` |
-| Website (Vercel, `web/`) | `stage/web-enrollment-site` -> `staging-uniscope-web` | `prod/web-enrollment-site` -> `production-uniscope-web` |
-| Mobile app | test builds point at the stage backend | store builds cut from `production-uniscope` (proposal: no separate branch) |
+| Branch | Role |
+|---|---|
+| `production` | What is live. Railway and Vercel deploy production from it. Protected: PR with 1 approval, required checks, no force push, no deletion. Only receives PRs from `staging` or `hotfix/*`. |
+| `staging` | The integration branch. Deploys to Preview. Every topic branch lands here first. Also the GitHub default branch, so new PRs target it. |
+| `feat/…` `fix/…` `chore/…` `docs/…` | Short-lived topic branches, cut from `staging`. Put the Notion item ID in the name (`feat/UNI-34-web-wallet`). |
+| `feature/<program>` | Only for a multi-week workstream (for example referral). Cut from `staging`, merge `staging` into it weekly, merge it back into `staging` by PR. |
+| `hotfix/…` | Urgent production fix, cut from `production`. |
+| `archive/old-main` | The stale `main`, kept for reference. Not used. |
 
-Names are not final until Kiran confirms them.
+**Mobile:** no branch of its own. Store builds are cut from a tagged `production`.
 
-**New flow per part:** your branch -> PR (squash) into that part's stage branch -> release PR (merge commit) from the same part's stage branch into its production branch. A production branch only accepts releases from its own stage branch (plus `hotfix/*`).
+**Tags:** every release gets `release-YYYY-MM-DD` on `production`; every store upload gets `mobile-v<version>+<build>`.
 
-**What the split costs:** backend and admin are in one repository, and each branch holds the whole repo (Railway only builds its own folder). So:
-- A change that touches both backend and admin needs two PRs, one into each stage branch, and the two stage branches can drift apart. Merge the backend PR first.
-- Every release is two release PRs. The admin must never be released before the backend it calls.
-- Test on the stage pair together before releasing either.
-If this proves too heavy, the fallback is one `staging-uniscope` and one `production-uniscope` for backend and admin together.
+**Downmerge (keeping `staging` in step with `production`)**
+- A release is merged into `production` with a merge commit, and a hotfix goes only to `production`. `staging` does not have either.
+- After every release or hotfix, open a PR **from `production` into `staging`** (an automated action will do it). Merge it with a merge commit. After a plain release it is almost empty.
+- This is what stops the next release from undoing a hotfix.
 
-**Order of the rename (a planned Critical change, outside working hours, nothing is deleted until the end):**
-1. Create the new branches from the current stage and production heads. Nothing deploys yet.
-2. Copy the branch rules to the new branches (1 approval, required checks, no force push, no deletion), and add the source-branch check.
-3. Update everything that names the old branches: `.github/workflows/*.yml` (`branches:` lists and the release-source checks), this guide, `CLAUDE.md`, `CONTRIBUTING.md`, `ai/RELEASE.md`, the PR template.
-4. Change the source branch in Railway (`uniscope` and `admin`, stage and production) and the preview and production branches in Vercel. Each redeploys once. Then check `/health`, the admin login and uniscope.in.
-5. Tell the team in one message: new release PR targets, old names retired.
-6. After one quiet week, delete the old branches.
+**For a developer with work in progress:** keep your `feat/…` branch. Before opening the PR, merge `staging` into it. Open the PR into `staging`. Nothing else changes.
 
-**Rollback:** point Railway and Vercel back at the old branch names, which still exist until step 6.
+**Website:** still has its own pair (`stage/web-enrollment-site`, `prod/web-enrollment-site`) until it is folded into `staging` and `production`. That needs a one-off reconciliation of the files where they differ (keep production's legal pages and the empty Play Store URL until the Play listing is live).
+
+**Order of the rename (a planned Critical change, outside working hours, nothing deleted until the end):**
+1. Rename `main` to `archive/old-main`, then rename `feature/flutter-migration` to `production` (GitHub retargets open PRs and moves the branch rule). Set `staging` as the default branch.
+2. Update everything that names the old branches: `.github/workflows/*.yml`, this guide, `CLAUDE.md`, `CONTRIBUTING.md`, `ai/RELEASE.md`, the PR template, Dependabot's target.
+3. Repoint Railway (`uniscope` and `admin`, production) and Vercel's production branch to `production`. Check `/health`, the admin login and uniscope.in.
+4. Add the required checks on `production` (engineering rules, backend, admin, release source) and turn on Railway "wait for CI".
+5. Tell the team in one message. Delete nothing for a week.
+
+**Rollback:** point Railway and Vercel back at the old branch name (GitHub keeps a redirect for the renamed branch).
