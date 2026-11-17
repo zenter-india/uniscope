@@ -97,24 +97,99 @@ void main() {
 
   // While kWalletTopupEnabledAndroid is off (see feature_flags.dart), the full
   // sheet still opens and shows every package — only picking one to actually
-  // pay is blocked, with a soft notice that names no reason.
-  testWidgets('tapping a package shows the paused notice, not Razorpay', (tester) async {
+  // pay is blocked. Instead of "coming soon", the person is told to recharge on
+  // the website (UNI-66), in exactly the product's wording.
+  const rechargeMessage =
+      'To recharge your wallet, visit our official website: https://www.uniscope.in '
+      'and login from your registered mobile number';
+
+  Finder rechargeMessageText() => find.byWidgetPredicate(
+    (w) => w is RichText && w.text.toPlainText() == rechargeMessage,
+  );
+
+  testWidgets('tapping a package tells an Android user to recharge on the website, not "soon"', (
+    tester,
+  ) async {
     debugDefaultTargetPlatformOverride = TargetPlatform.android;
     try {
       await _openTopUpSheet(tester, const Size(393, 852));
       expect(find.text('₹250'), findsOneWidget);
       await tester.tap(find.text('₹250'));
       await tester.pumpAndSettle();
-      expect(find.text('Recharge isn’t available right now'), findsOneWidget);
+
       final dialog = find.byType(AlertDialog);
       expect(dialog, findsOneWidget);
       expect(
-        find.descendant(of: dialog, matching: find.textContaining('call')),
-        findsNothing,
-        reason: 'the dialog must not name the real reason',
+        find.descendant(of: dialog, matching: rechargeMessageText()),
+        findsOneWidget,
+        reason: 'the message must be exactly the product wording',
       );
+
+      // No "available soon" wording anywhere in the dialog.
+      final allText = tester
+          .widgetList<RichText>(find.descendant(of: dialog, matching: find.byType(RichText)))
+          .map((r) => r.text.toPlainText().toLowerCase())
+          .join(' | ');
+      expect(allText, isNot(contains('soon')));
+      expect(allText, isNot(contains('isn’t available')));
+      expect(allText, isNot(contains('working on it')));
+
+      // The address inside the message is a real, tappable link...
+      final message = tester.widget<RichText>(rechargeMessageText());
+      var linkIsTappable = false;
+      (message.text as TextSpan).visitChildren((span) {
+        if (span is TextSpan && span.text == 'https://www.uniscope.in' && span.recognizer != null) {
+          linkIsTappable = true;
+        }
+        return true;
+      });
+      expect(linkIsTappable, isTrue, reason: 'the website address should open the browser');
+
+      // ...and there is a plain button for it too, plus a way to dismiss.
+      expect(find.widgetWithText(FilledButton, 'Open website'), findsOneWidget);
+      expect(find.widgetWithText(TextButton, 'Got it'), findsOneWidget);
     } finally {
       debugDefaultTargetPlatformOverride = null;
     }
   });
+
+  testWidgets('"Got it" closes the website message', (tester) async {
+    debugDefaultTargetPlatformOverride = TargetPlatform.android;
+    try {
+      await _openTopUpSheet(tester, const Size(393, 852));
+      await tester.tap(find.text('₹250'));
+      await tester.pumpAndSettle();
+      expect(find.byType(AlertDialog), findsOneWidget);
+
+      await tester.tap(find.widgetWithText(TextButton, 'Got it'));
+      await tester.pumpAndSettle();
+      expect(find.byType(AlertDialog), findsNothing);
+    } finally {
+      debugDefaultTargetPlatformOverride = null;
+    }
+  });
+
+  for (final MapEntry(key: name, value: size) in phones.entries) {
+    testWidgets('the website message fits on screen — $name', (tester) async {
+      debugDefaultTargetPlatformOverride = TargetPlatform.android;
+      try {
+        await _openTopUpSheet(tester, size);
+        await tester.ensureVisible(find.text('₹250'));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('₹250'));
+        await tester.pumpAndSettle();
+
+        final dialog = tester.getRect(find.byType(AlertDialog));
+        expect(dialog.left, greaterThanOrEqualTo(0));
+        expect(dialog.right, lessThanOrEqualTo(size.width));
+        expect(dialog.top, greaterThanOrEqualTo(0));
+        expect(dialog.bottom, lessThanOrEqualTo(size.height));
+        final text = tester.getRect(rechargeMessageText());
+        expect(text.right, lessThanOrEqualTo(size.width), reason: 'message clipped at the side');
+        expect(tester.takeException(), isNull, reason: 'no overflow / layout error');
+      } finally {
+        debugDefaultTargetPlatformOverride = null;
+      }
+    });
+  }
 }
