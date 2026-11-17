@@ -158,7 +158,7 @@ The website is deployed by Vercel from its **own two branches**:
 | # | Gap | Suggested fix |
 |---|---|---|
 | 1 | Preview shares the production database. | Give Preview its own database, then tests and migrations stop touching real data. |
-| 2 | The production branch is called `feature/flutter-migration`. | Rename to `production` (needs Railway and GitHub settings changed together: a Critical, planned change). |
+| 2 | The production branch is called `feature/flutter-migration`. | Rename it per section 13 (planned, Critical: Railway, Vercel and GitHub settings change together). |
 | 3 | The website branches have drifted far from `staging` (hundreds of commits, 24+ files in `web/`). | Move the website onto the same two-step flow, or document the website as a separate product with its own owner. |
 | 4 | Railway deploys without waiting for CI. | Turn on "wait for CI" for both environments. |
 | 5 | `staging` and `stage/web-enrollment-site` have no GitHub rule (`staging` had "5 checks + 1 approval" earlier this month and it is gone). `prod/web-enrollment-site` is now protected; the production backend branch needs 1 approval but no required checks. | Turn "5 checks + 1 approval" back on for `staging` and require the checks on the production backend branch. Stage website branch is left open on purpose. |
@@ -167,3 +167,28 @@ The website is deployed by Vercel from its **own two branches**:
 | 8 | No named owner for the after-release checklist. | Assign one person per release. |
 
 Related: `ai/RISK_RULES.md`, `ai/ENGINEERING_RULES.md`, `ai/DEFINITION_OF_DONE.md`, `ai/QA.md` (release QA), `CONTRIBUTING.md`.
+
+## 13. Planned: one production branch per part (needs Kiran's approval)
+
+**Decision (2026-11-17):** each part gets a production branch named after it, so nobody has to know that `feature/flutter-migration` means "production".
+
+| Part | Today | New name |
+|---|---|---|
+| Backend (Railway `uniscope`, `/backend`) | `feature/flutter-migration` | `production-uniscope` |
+| Admin panel (Railway `admin`, `/admin`) | `feature/flutter-migration` | `production-uniscope-admin` |
+| Website (Vercel, `web/`) | `prod/web-enrollment-site` | `production-uniscope-web` |
+| Mobile store builds | built from `feature/flutter-migration` | cut from `production-uniscope` (proposal: no separate branch) |
+
+Names are not final until Kiran confirms them. Stage branches are unchanged for now (`staging`, `stage/web-enrollment-site`).
+
+**What the split costs:** backend and admin are in one repository and today ship together from one branch. With two branches, every release has two release PRs (staging into `production-uniscope`, staging into `production-uniscope-admin`), and the admin must never be released before the backend it calls. Keep them in step, or keep one branch for both.
+
+**Order of the rename (a planned Critical change, outside working hours, nothing is deleted until the end):**
+1. Create the new branches from the current production heads. Nothing deploys yet.
+2. Copy the branch rules to the new branches (1 approval, required checks, no force push, no deletion), and add the source-branch check.
+3. Update everything that names the old branches: `.github/workflows/*.yml` (`branches:` lists and the release-source checks), this guide, `CLAUDE.md`, `CONTRIBUTING.md`, `ai/RELEASE.md`, the PR template.
+4. Change the source branch in Railway (production `uniscope` and `admin`) and the Production Branch in Vercel. Each redeploys once. Then check `/health`, the admin login and uniscope.in.
+5. Tell the team in one message: new release PR targets, old names retired.
+6. After one quiet week, delete the old branches.
+
+**Rollback:** point Railway and Vercel back at the old branch names, which still exist until step 6.
