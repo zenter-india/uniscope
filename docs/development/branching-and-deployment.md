@@ -170,24 +170,30 @@ Related: `ai/RISK_RULES.md`, `ai/ENGINEERING_RULES.md`, `ai/DEFINITION_OF_DONE.m
 
 ## 13. Planned: one production branch per part (needs Kiran's approval)
 
-**Decision (2026-11-17):** each part gets a production branch named after it, so nobody has to know that `feature/flutter-migration` means "production".
+**Decision (2026-11-17):** each part gets a stage branch and a production branch named after it, so nobody has to know that `feature/flutter-migration` means "production".
 
-| Part | Today | New name |
+| Part | Stage branch (today -> new) | Production branch (today -> new) |
 |---|---|---|
-| Backend (Railway `uniscope`, `/backend`) | `feature/flutter-migration` | `production-uniscope` |
-| Admin panel (Railway `admin`, `/admin`) | `feature/flutter-migration` | `production-uniscope-admin` |
-| Website (Vercel, `web/`) | `prod/web-enrollment-site` | `production-uniscope-web` |
-| Mobile store builds | built from `feature/flutter-migration` | cut from `production-uniscope` (proposal: no separate branch) |
+| Backend (Railway `uniscope`, `/backend`) | `staging` -> `staging-uniscope` | `feature/flutter-migration` -> `production-uniscope` |
+| Admin panel (Railway `admin`, `/admin`) | `staging` -> `staging-uniscope-admin` | `feature/flutter-migration` -> `production-uniscope-admin` |
+| Website (Vercel, `web/`) | `stage/web-enrollment-site` -> `staging-uniscope-web` | `prod/web-enrollment-site` -> `production-uniscope-web` |
+| Mobile app | test builds point at the stage backend | store builds cut from `production-uniscope` (proposal: no separate branch) |
 
-Names are not final until Kiran confirms them. Stage branches are unchanged for now (`staging`, `stage/web-enrollment-site`).
+Names are not final until Kiran confirms them.
 
-**What the split costs:** backend and admin are in one repository and today ship together from one branch. With two branches, every release has two release PRs (staging into `production-uniscope`, staging into `production-uniscope-admin`), and the admin must never be released before the backend it calls. Keep them in step, or keep one branch for both.
+**New flow per part:** your branch -> PR (squash) into that part's stage branch -> release PR (merge commit) from the same part's stage branch into its production branch. A production branch only accepts releases from its own stage branch (plus `hotfix/*`).
+
+**What the split costs:** backend and admin are in one repository, and each branch holds the whole repo (Railway only builds its own folder). So:
+- A change that touches both backend and admin needs two PRs, one into each stage branch, and the two stage branches can drift apart. Merge the backend PR first.
+- Every release is two release PRs. The admin must never be released before the backend it calls.
+- Test on the stage pair together before releasing either.
+If this proves too heavy, the fallback is one `staging-uniscope` and one `production-uniscope` for backend and admin together.
 
 **Order of the rename (a planned Critical change, outside working hours, nothing is deleted until the end):**
-1. Create the new branches from the current production heads. Nothing deploys yet.
+1. Create the new branches from the current stage and production heads. Nothing deploys yet.
 2. Copy the branch rules to the new branches (1 approval, required checks, no force push, no deletion), and add the source-branch check.
 3. Update everything that names the old branches: `.github/workflows/*.yml` (`branches:` lists and the release-source checks), this guide, `CLAUDE.md`, `CONTRIBUTING.md`, `ai/RELEASE.md`, the PR template.
-4. Change the source branch in Railway (production `uniscope` and `admin`) and the Production Branch in Vercel. Each redeploys once. Then check `/health`, the admin login and uniscope.in.
+4. Change the source branch in Railway (`uniscope` and `admin`, stage and production) and the preview and production branches in Vercel. Each redeploys once. Then check `/health`, the admin login and uniscope.in.
 5. Tell the team in one message: new release PR targets, old names retired.
 6. After one quiet week, delete the old branches.
 
