@@ -1,0 +1,30 @@
+name: Production release source
+
+# The production branch (backend and admin panel) only receives code that was
+# promoted from staging, or an urgent fix from a hotfix/* branch. This check
+# fails for any other source branch; it is required on feature/flutter-migration
+# (see docs/development/branching-and-deployment.md).
+
+on:
+  pull_request:
+    branches: [feature/flutter-migration]
+
+jobs:
+  release-source:
+    name: release source (staging or hotfix only)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Only staging or hotfix/* may be released to production
+        env:
+          HEAD_REF: ${{ github.head_ref }}
+          HEAD_REPO: ${{ github.event.pull_request.head.repo.full_name }}
+        run: |
+          case "$HEAD_REF" in
+            staging|hotfix/*) ok=1 ;;
+            *) ok=0 ;;
+          esac
+          if [ "$ok" != "1" ] || [ "$HEAD_REPO" != "$GITHUB_REPOSITORY" ]; then
+            echo "::error::Releases to feature/flutter-migration must come from staging or a hotfix/* branch in this repository (got '$HEAD_REF' from '$HEAD_REPO')."
+            exit 1
+          fi
+          echo "Source branch '$HEAD_REF' is allowed."
