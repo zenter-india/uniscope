@@ -7,6 +7,7 @@ import {
   TOPUP_PACKS,
   createTopup,
   formatRupees,
+  getMyRole,
   getWallet,
   hasSession,
   requestOtp,
@@ -19,7 +20,7 @@ import {
 } from "../lib/wallet";
 import { CheckoutDismissed, openCheckout } from "../lib/razorpay";
 
-type Step = "loading" | "phone" | "otp" | "packs";
+type Step = "loading" | "phone" | "otp" | "packs" | "mentor";
 
 const INPUT_CLASS =
   "w-full rounded-[11px] border border-border bg-white px-3.5 py-3 text-[15px] text-ink placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500";
@@ -53,9 +54,15 @@ export function WalletTopup() {
   const [testMode, setTestMode] = useState(false);
 
   /** Loads the balance and shows the packs; a lapsed login goes back to the
-   * phone step. */
+   * phone step. A mentor gets a notice instead: wallet top-up is for
+   * aspirants only (the backend refuses a mentor's top-up as well). */
   const showWallet = useCallback(async () => {
     try {
+      if ((await getMyRole()) === "MENTOR") {
+        setWallet(null);
+        setStep("mentor");
+        return;
+      }
       setWallet(await getWallet());
       setStep("packs");
     } catch (err) {
@@ -299,6 +306,26 @@ export function WalletTopup() {
             </button>
           </div>
         </form>
+      )}
+
+      {step === "mentor" && (
+        <div
+          role="alert"
+          className="rounded-2xl border border-amber-200 bg-amber-50 p-5 sm:p-6 flex items-start justify-between gap-4"
+        >
+          <div>
+            <p className="text-[16px] font-extrabold text-amber-900">
+              Wallet top-up is not available for mentors.
+            </p>
+            <p className="mt-1 text-[13.5px] leading-relaxed text-amber-800">
+              Top-up is only for aspirants. As a mentor you earn from your calls, and you can see your
+              earnings and request a payout from the Wallet tab in the Uniscope app.
+            </p>
+          </div>
+          <button type="button" onClick={logOut} className={`${LINK_BUTTON} shrink-0 whitespace-nowrap`}>
+            Log out
+          </button>
+        </div>
       )}
 
       {step === "packs" && wallet && (
