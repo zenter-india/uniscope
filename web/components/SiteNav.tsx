@@ -65,20 +65,20 @@ export function SiteNav() {
             className="inline-flex items-center gap-1.5 rounded-[9px] bg-gradient-to-b from-gold-400 to-gold-500 text-navy-deep text-[12.5px] sm:text-[13.5px] font-extrabold px-2.5 sm:px-3.5 py-2 shadow-[0_8px_20px_-8px_rgba(201,150,47,.75)] hover:brightness-105 active:scale-[0.96] transition-all"
           >
             <Smartphone size={16} strokeWidth={2.4} aria-hidden="true" />
-            <span className="hidden min-[430px]:inline whitespace-nowrap">Get the app</span>
+            <span className="hidden min-[520px]:inline whitespace-nowrap">Get the app</span>
           </Link>
-          <RoleTrigger className="inline-flex items-center rounded-[9px] bg-blue-600 text-white text-[13.5px] font-bold px-3.5 py-2 shadow-[0_8px_20px_-8px_rgba(33,72,201,0.55)] hover:bg-blue-500 active:scale-[0.96] transition-all">
+          <RoleTrigger className="inline-flex shrink-0 items-center whitespace-nowrap rounded-[9px] bg-blue-600 text-white text-[13.5px] font-bold px-3.5 py-2 shadow-[0_8px_20px_-8px_rgba(33,72,201,0.55)] hover:bg-blue-500 active:scale-[0.96] transition-all">
             Sign up
           </RoleTrigger>
           <Link
             href="/wallet"
             aria-label={loggedIn ? "Wallet" : "Log in"}
-            className="inline-flex items-center gap-1.5 rounded-[9px] border border-border bg-white text-ink text-[12.5px] sm:text-[13.5px] font-bold px-2.5 sm:px-3.5 py-2 hover:bg-slate-50 transition-colors"
+            className="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-[9px] border border-border bg-white text-ink text-[12.5px] sm:text-[13.5px] font-bold px-2.5 sm:px-3.5 py-2 hover:bg-slate-50 transition-colors"
           >
             {loggedIn ? (
               <>
                 <Wallet size={16} strokeWidth={2.4} aria-hidden="true" />
-                <span className="hidden min-[430px]:inline whitespace-nowrap">Wallet</span>
+                <span className="hidden min-[520px]:inline whitespace-nowrap">Wallet</span>
               </>
             ) : (
               <span className="whitespace-nowrap">Log in</span>
