@@ -1,0 +1,25 @@
+name: Website release source
+
+# uniscope.in only receives code that was promoted from the stage branch.
+# This check fails for any other source branch; it is required on
+# prod/web-enrollment-site (see docs/development/branching-and-deployment.md).
+
+on:
+  pull_request:
+    branches: [prod/web-enrollment-site]
+
+jobs:
+  release-source:
+    name: release source (stage only)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Only stage/web-enrollment-site may be released to production
+        env:
+          HEAD_REF: ${{ github.head_ref }}
+          HEAD_REPO: ${{ github.event.pull_request.head.repo.full_name }}
+        run: |
+          if [ "$HEAD_REF" != "stage/web-enrollment-site" ] || [ "$HEAD_REPO" != "$GITHUB_REPOSITORY" ]; then
+            echo "::error::Releases to prod/web-enrollment-site must come from stage/web-enrollment-site in this repository (got '$HEAD_REF' from '$HEAD_REPO')."
+            exit 1
+          fi
+          echo "Source branch is stage/web-enrollment-site."
