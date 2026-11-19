@@ -1,10 +1,12 @@
 import 'package:flutter/foundation.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:uniscope_mobile/core/network/wallet_api.dart';
 import 'package:uniscope_mobile/core/theme/app_theme.dart';
+import 'package:uniscope_mobile/features/wallet/recharge_on_website_dialog.dart';
 import 'package:uniscope_mobile/features/wallet/wallet_screen.dart';
 
 /// The app's own font, so text wraps as it does on a real phone — the test
@@ -98,9 +100,10 @@ void main() {
   // While kWalletTopupEnabledAndroid is off (see feature_flags.dart), the full
   // sheet still opens and shows every package — only picking one to actually
   // pay is blocked. Instead of "coming soon", the person is told to recharge on
-  // the website (UNI-66), in exactly the product's wording.
+  // the website (UNI-66), in the product's wording — with the address pointing
+  // straight at the website's wallet page, where they log in.
   const rechargeMessage =
-      'To recharge your wallet, visit our official website: https://www.uniscope.in '
+      'To recharge your wallet, visit our official website: https://www.uniscope.in/wallet '
       'and login from your registered mobile number';
 
   Finder rechargeMessageText() => find.byWidgetPredicate(
@@ -138,7 +141,7 @@ void main() {
       final message = tester.widget<RichText>(rechargeMessageText());
       var linkIsTappable = false;
       (message.text as TextSpan).visitChildren((span) {
-        if (span is TextSpan && span.text == 'https://www.uniscope.in' && span.recognizer != null) {
+        if (span is TextSpan && span.text == 'https://www.uniscope.in/wallet' && span.recognizer != null) {
           linkIsTappable = true;
         }
         return true;
@@ -167,6 +170,50 @@ void main() {
     } finally {
       debugDefaultTargetPlatformOverride = null;
     }
+  });
+
+  // The message names the site, but the link goes straight to the website's
+  // wallet page (where the person logs in) — not to its home page.
+  testWidgets('the website link and "Open website" open the wallet page, not the home page', (
+    tester,
+  ) async {
+    final opened = <Uri>[];
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: buildAppTheme(),
+        home: Scaffold(
+          body: WalletRechargeOnWebsiteDialog(
+            launcher: (url) async {
+              opened.add(url);
+              return true;
+            },
+          ),
+        ),
+      ),
+    );
+
+    // Tapping the address inside the message...
+    final message = tester.widget<RichText>(rechargeMessageText());
+    TapGestureRecognizer? linkTap;
+    (message.text as TextSpan).visitChildren((span) {
+      if (span is TextSpan &&
+          span.text == 'https://www.uniscope.in/wallet' &&
+          span.recognizer is TapGestureRecognizer) {
+        linkTap = span.recognizer as TapGestureRecognizer;
+      }
+      return true;
+    });
+    expect(linkTap, isNotNull, reason: 'the address in the message should be tappable');
+    linkTap!.onTap!();
+    await tester.pump();
+
+    // ...and the "Open website" button both go to the wallet page.
+    await tester.tap(find.widgetWithText(FilledButton, 'Open website'));
+    await tester.pump();
+
+    final wallet = Uri.parse('https://www.uniscope.in/wallet');
+    expect(opened, [wallet, wallet]);
+    expect(kRechargeWebsiteUrl, 'https://www.uniscope.in/wallet');
   });
 
   for (final MapEntry(key: name, value: size) in phones.entries) {
