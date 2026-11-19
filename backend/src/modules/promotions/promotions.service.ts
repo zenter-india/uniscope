@@ -44,6 +44,27 @@ export interface PromotionResponse {
   createdAt: string;
 }
 
+/** How many recipients one history lookup returns at most. */
+export const MAX_LISTED_RECIPIENTS = 1000;
+
+export interface PromotionRecipientRow {
+  userId: string;
+  displayName: string;
+  role: string | null;
+  uniqueId: string | null;
+  /** What was credited to this person's wallet, in minor units (0 = nothing). */
+  creditedMinor: number;
+  /** When the popup was shown to them; null = not opened the app since. */
+  seenAt: string | null;
+}
+
+export interface PromotionRecipientsResponse {
+  total: number;
+  /** True when `total` is larger than the list returned. */
+  truncated: boolean;
+  recipients: PromotionRecipientRow[];
+}
+
 /** What the app shows in the popup. */
 export interface PendingPromotion {
   id: string;
@@ -328,6 +349,50 @@ export class PromotionsService {
     });
     const seenById = new Map(seen.map((s) => [s.promotionId, s._count._all]));
     return rows.map((r) => toResponse(r, seenById.get(r.id) ?? 0));
+  }
+
+  /** Who one promotion was sent to, for the admin's history: name, public ID,
+   * role, what each was credited and whether they have seen the popup yet.
+   * Capped, so an "everyone" promotion can't return an enormous list; `total`
+   * is the real number of recipients. Names are looked up separately because a
+   * recipient row only stores the user id. */
+  async recipientsOf(promotionId: string): Promise<PromotionRecipientsResponse> {
+    const promotion = await this.prisma.promotion.findUnique({
+      where: { id: promotionId },
+      select: { id: true },
+    });
+    if (!promotion) throw new NotFoundException('Promotion not found');
+
+    const [rows, total] = await Promise.all([
+      this.prisma.promotionRecipient.findMany({
+        where: { promotionId },
+        orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
+        take: MAX_LISTED_RECIPIENTS,
+        select: { userId: true, creditedMinor: true, seenAt: true },
+      }),
+      this.prisma.promotionRecipient.count({ where: { promotionId } }),
+    ]);
+    const users = await this.prisma.user.findMany({
+      where: { id: { in: rows.map((r) => r.userId) } },
+      select: { id: true, displayName: true, role: true, uniqueId: true },
+    });
+    const userById = new Map(users.map((u) => [u.id, u]));
+
+    return {
+      total,
+      truncated: total > rows.length,
+      recipients: rows.map((r) => {
+        const u = userById.get(r.userId);
+        return {
+          userId: r.userId,
+          displayName: u?.displayName ?? 'Deleted user',
+          role: u?.role ?? null,
+          uniqueId: u?.uniqueId ?? null,
+          creditedMinor: r.creditedMinor,
+          seenAt: r.seenAt ? r.seenAt.toISOString() : null,
+        };
+      }),
+    };
   }
 
   // ── what the app sees ────────────────────────────────────────────────────
