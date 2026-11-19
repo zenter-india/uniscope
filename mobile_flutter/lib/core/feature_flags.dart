@@ -33,6 +33,10 @@ const bool kCallBookingEnabled = true;
 /// whose live credentials are still pending, so enabling it would let users
 /// start payments against a gateway that isn't live. Flip
 /// [kWalletTopupEnabledAndroid] to `true` once Razorpay is live.
+///
+/// While Android is paused, picking a pack shows
+/// `WalletRechargeOnWebsiteDialog` (features/wallet) — it sends the person to
+/// the website to recharge (UNI-66) — rather than [WalletTopupPausedDialog].
 const bool kWalletTopupEnabledIOS = true;
 const bool kWalletTopupEnabledAndroid = false;
 
@@ -70,9 +74,10 @@ class CallsPausedDialog extends StatelessWidget {
 }
 
 /// Shown once the user has seen the full package list and picks one to pay
-/// for, while a platform's top-up flag is off. Deliberately soft and generic —
-/// it names no reason, so it doesn't disclose the real cause (see
-/// feature_flags.dart's own doc comment on [kWalletTopupEnabledAndroid]).
+/// for, while iOS's top-up flag ([kWalletTopupEnabledIOS]) is off. Android no
+/// longer uses it: its paused state points to the website instead (see the doc
+/// comment on [kWalletTopupEnabledAndroid]). Deliberately soft and generic —
+/// it names no reason, so it doesn't disclose the real cause.
 class WalletTopupPausedDialog extends StatelessWidget {
   const WalletTopupPausedDialog({super.key});
 

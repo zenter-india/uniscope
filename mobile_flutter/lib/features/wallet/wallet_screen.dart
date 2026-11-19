@@ -18,6 +18,7 @@ import '../../state/auth_controller.dart';
 import '../../widgets/app_widgets.dart';
 import '../common/legal_links.dart';
 import '../sessions/call_time_windows.dart' show clockLabel;
+import 'recharge_on_website_dialog.dart';
 
 const _kGroupMonths = [
   'Jan',
@@ -156,7 +157,9 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
 
   Future<void> _startRazorpayTopup(int amountMinor) async {
     if (!kWalletTopupEnabledAndroid) {
-      await showDialog<void>(context: context, builder: (_) => const WalletTopupPausedDialog());
+      // Android can't take payments yet: tell the person where to recharge
+      // (the website) instead of "coming soon".
+      await showDialog<void>(context: context, builder: (_) => const WalletRechargeOnWebsiteDialog());
       return;
     }
     setState(() => _toppingUp = true);
