@@ -1,10 +1,13 @@
 'use client';
 
+import Link from 'next/link';
 import { useEffect, useRef, useState, useTransition } from 'react';
 import { Badge, Button, Card, fieldClass } from '../../../components/ui';
 import { toast } from '../../../lib/toast';
 import {
+  getPromotionRecipients,
   previewPromotion,
+  type PromotionRecipients,
   searchPromotionUsers,
   sendPromotion,
   type PickableUser,
@@ -181,8 +184,66 @@ function UserPicker({
   );
 }
 
+/** "Who got this one": loaded on demand when a history card is opened. */
+function RecipientList({ promotionId }: { promotionId: string }) {
+  const [data, setData] = useState<PromotionRecipients | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    getPromotionRecipients(promotionId).then((res) => {
+      if (cancelled) return;
+      if (res.ok) setData(res.data);
+      else setError(res.error);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [promotionId]);
+
+  if (error) return <p className="mt-2 text-xs text-red-600 dark:text-red-400">{error}</p>;
+  if (!data) return <p className="mt-2 text-xs text-zinc-400 dark:text-zinc-500">Loading recipients…</p>;
+
+  const seen = data.recipients.filter((r) => r.seenAt).length;
+  return (
+    <div className="mt-3 border-t border-zinc-100 pt-3 dark:border-zinc-800">
+      <p className={`${hintClass} mb-2`}>
+        {plural(data.total, 'recipient', 'recipients')}
+        {data.truncated
+          ? ` · showing the first ${data.recipients.length.toLocaleString()}`
+          : ` · ${seen.toLocaleString()} have seen the popup`}
+      </p>
+      <ul className="max-h-72 divide-y divide-zinc-100 overflow-y-auto dark:divide-zinc-800">
+        {data.recipients.map((r) => (
+          <li key={r.userId} className="flex flex-wrap items-center gap-x-3 gap-y-1 py-1.5 text-sm">
+            <Link
+              href={`/dashboard/users/${r.userId}`}
+              className="font-medium text-zinc-900 hover:underline dark:text-zinc-100"
+            >
+              {r.displayName}
+            </Link>
+            {r.uniqueId && <span className="text-xs text-zinc-400 dark:text-zinc-500">@{r.uniqueId}</span>}
+            {r.role && <Badge>{r.role === 'MENTOR' ? 'Mentor' : 'Student'}</Badge>}
+            {r.creditedMinor > 0 && (
+              <span className="text-xs font-medium text-emerald-700 dark:text-emerald-400">
+                {r.role === 'MENTOR'
+                  ? `+₹${rupees(r.creditedMinor).toLocaleString()}`
+                  : `+${uniminutes(r.creditedMinor).toLocaleString()} Uniminutes`}
+              </span>
+            )}
+            <span className="ml-auto text-xs text-zinc-400 dark:text-zinc-500">
+              {r.seenAt ? `Seen ${new Date(r.seenAt).toLocaleString()}` : 'Not seen yet'}
+            </span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
 export function PromotionPanel({ initialHistory }: { initialHistory: Promotion[] }) {
   const [history, setHistory] = useState(initialHistory);
+  const [openId, setOpenId] = useState<string | null>(null);
 
   const [title, setTitle] = useState('');
   const [body, setBody] = useState('');
@@ -527,9 +588,19 @@ export function PromotionPanel({ initialHistory }: { initialHistory: Promotion[]
                       {p.recipientCount.toLocaleString()}
                     </p>
                   )}
-                  <p className="mt-1 text-xs text-zinc-400 dark:text-zinc-500">
-                    {new Date(p.createdAt).toLocaleString()}
-                  </p>
+                  <div className="mt-1 flex items-center justify-between gap-2">
+                    <p className="text-xs text-zinc-400 dark:text-zinc-500">
+                      {new Date(p.createdAt).toLocaleString()}
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => setOpenId(openId === p.id ? null : p.id)}
+                      className="text-xs font-medium text-zinc-600 hover:underline dark:text-zinc-300"
+                    >
+                      {openId === p.id ? 'Hide recipients' : 'View recipients'}
+                    </button>
+                  </div>
+                  {openId === p.id && <RecipientList promotionId={p.id} />}
                 </Card>
               );
             })}

@@ -40,6 +40,38 @@ export async function listPromotions(): Promise<Promotion[]> {
   return backendFetch<Promotion[]>('/admin/promotions');
 }
 
+export interface PromotionRecipient {
+  userId: string;
+  displayName: string;
+  role: string | null;
+  uniqueId: string | null;
+  /** Credited to this person's wallet, in minor units (0 = nothing). */
+  creditedMinor: number;
+  /** When the popup was shown to them; null = hasn't opened the app since. */
+  seenAt: string | null;
+}
+
+export interface PromotionRecipients {
+  total: number;
+  /** True when `total` is larger than the list returned. */
+  truncated: boolean;
+  recipients: PromotionRecipient[];
+}
+
+/** Who one promotion was sent to, for the history list. */
+export async function getPromotionRecipients(
+  id: string,
+): Promise<{ ok: true; data: PromotionRecipients } | { ok: false; error: string }> {
+  try {
+    const data = await backendFetch<PromotionRecipients>(
+      `/admin/promotions/${encodeURIComponent(id)}/recipients`,
+    );
+    return { ok: true, data };
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : 'Could not load the recipients' };
+  }
+}
+
 export async function previewPromotion(
   audience: PromotionAudience,
   userIds: string[],
