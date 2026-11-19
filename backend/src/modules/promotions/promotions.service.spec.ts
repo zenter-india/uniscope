@@ -387,3 +387,79 @@ describe('CreatePromotionDto -- link and credit rules', () => {
     expect((await check({ audience: 'EVERYONE' })).length).toBeGreaterThan(0);
   });
 });
+
+describe('PromotionsService.recipientsOf', () => {
+  function buildHistory(opts: { promotion: boolean; total?: number }) {
+    const recipientFindMany = jest.fn().mockResolvedValue([
+      {
+        userId: 'u1',
+        creditedMinor: 6000,
+        seenAt: new Date('2026-11-19T10:00:00Z'),
+      },
+      { userId: 'u2', creditedMinor: 0, seenAt: null },
+      { userId: 'gone', creditedMinor: 0, seenAt: null },
+    ]);
+    const prisma = {
+      promotion: {
+        findUnique: jest.fn().mockResolvedValue(opts.promotion ? { id: 'p1' } : null),
+      },
+      promotionRecipient: {
+        findMany: recipientFindMany,
+        count: jest.fn().mockResolvedValue(opts.total ?? 3),
+      },
+      user: {
+        findMany: jest.fn().mockResolvedValue([
+          { id: 'u1', displayName: 'Asha', role: UserRole.ASPIRANT, uniqueId: 'A1' },
+          { id: 'u2', displayName: 'Ravi', role: UserRole.MENTOR, uniqueId: 'M1' },
+        ]),
+      },
+    } as unknown as PrismaService;
+    const service = new PromotionsService(
+      prisma,
+      {} as NotificationsService,
+      {} as WalletService,
+    );
+    return { service, recipientFindMany };
+  }
+
+  it('lists who got it, with credit and seen state', async () => {
+    const { service } = buildHistory({ promotion: true });
+    const res = await service.recipientsOf('p1');
+    expect(res.total).toBe(3);
+    expect(res.truncated).toBe(false);
+    expect(res.recipients[0]).toEqual({
+      userId: 'u1',
+      displayName: 'Asha',
+      role: UserRole.ASPIRANT,
+      uniqueId: 'A1',
+      creditedMinor: 6000,
+      seenAt: '2026-11-19T10:00:00.000Z',
+    });
+    expect(res.recipients[1].seenAt).toBeNull();
+  });
+
+  it('still lists a recipient whose account no longer exists', async () => {
+    const { service } = buildHistory({ promotion: true });
+    const res = await service.recipientsOf('p1');
+    expect(res.recipients[2]).toMatchObject({
+      userId: 'gone',
+      displayName: 'Deleted user',
+      role: null,
+      uniqueId: null,
+    });
+  });
+
+  it('says so when the list is cut short', async () => {
+    const { service } = buildHistory({ promotion: true, total: 5000 });
+    const res = await service.recipientsOf('p1');
+    expect(res.total).toBe(5000);
+    expect(res.truncated).toBe(true);
+  });
+
+  it('404s for an unknown promotion', async () => {
+    const { service } = buildHistory({ promotion: false });
+    await expect(service.recipientsOf('nope')).rejects.toBeInstanceOf(
+      NotFoundException,
+    );
+  });
+});

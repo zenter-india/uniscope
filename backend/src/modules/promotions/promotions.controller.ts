@@ -53,6 +53,13 @@ export class AdminPromotionsController {
     return this.service.previewCount(a, ids);
   }
 
+  /** Who this promotion was sent to (declared after `preview`, so the literal
+   * path still wins over `:id`). */
+  @Get(':id/recipients')
+  recipients(@Param('id') id: string) {
+    return this.service.recipientsOf(id);
+  }
+
   @Post()
   create(@Body() dto: CreatePromotionDto, @CurrentUser() user: JwtPayload) {
     return this.service.create(dto, user.sub);
