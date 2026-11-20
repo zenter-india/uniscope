@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:uniscope_mobile/core/network/mentors_api.dart';
 import 'package:uniscope_mobile/core/theme/app_theme.dart';
 import 'package:uniscope_mobile/features/mentors/mentor_detail_screen.dart';
+import 'package:uniscope_mobile/features/mentors/mentor_list_screen.dart';
 import 'package:uniscope_mobile/state/auth_controller.dart';
 
 class _FakeAuth extends AuthController {
@@ -103,4 +104,74 @@ void main() {
     expect(find.text('Chat'), findsNothing);
     expect(find.text('Call · soon'), findsNothing);
   });
+
+  testWidgets('a mentor viewing another mentor sees no call status at all', (
+    t,
+  ) async {
+    await _pump(t, viewer: mentorViewer);
+
+    expect(find.text('Accepting calls'), findsNothing);
+    expect(find.text('Chat only'), findsNothing);
+  });
+
+  testWidgets('a student still sees "Accepting calls" on an available mentor', (
+    t,
+  ) async {
+    await _pump(
+      t,
+      viewer: const AuthUser(
+        id: 'asp',
+        role: UserRole.aspirant,
+        displayName: 'Student',
+      ),
+    );
+
+    expect(find.text('Accepting calls'), findsOneWidget);
+  });
+
+  testWidgets('a mentor on their own profile still sees their call status', (
+    t,
+  ) async {
+    await _pump(
+      t,
+      viewer: mentorViewer,
+      mentor: _mentor(id: 'me'),
+    );
+
+    expect(find.text('Accepting calls'), findsOneWidget);
+  });
+
+  testWidgets(
+    'mentor list card: a mentor viewer sees no call status, a student "Calls open"',
+    (t) async {
+      Future<void> card(AuthUser viewer) async {
+        await t.pumpWidget(
+          ProviderScope(
+            key: UniqueKey(),
+            overrides: [
+              authControllerProvider.overrideWith(() => _FakeAuth(viewer)),
+            ],
+            child: MaterialApp(
+              theme: buildAppTheme(),
+              home: Scaffold(body: MentorCard(mentor: _mentor())),
+            ),
+          ),
+        );
+        await t.pumpAndSettle();
+      }
+
+      await card(mentorViewer);
+      expect(find.text('Calls open'), findsNothing);
+      expect(find.text('Chat only'), findsNothing);
+
+      await card(
+        const AuthUser(
+          id: 'asp',
+          role: UserRole.aspirant,
+          displayName: 'Student',
+        ),
+      );
+      expect(find.text('Calls open'), findsOneWidget);
+    },
+  );
 }

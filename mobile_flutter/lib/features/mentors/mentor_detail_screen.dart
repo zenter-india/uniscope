@@ -293,8 +293,21 @@ class _IdentityCard extends StatelessWidget {
                     const SizedBox(height: 6),
                     Align(
                       alignment: Alignment.centerLeft,
-                      child: CallAvailabilityChip(
-                        isAvailable: mentor.isAvailable,
+                      // Calls are aspirant -> mentor only. Another mentor
+                      // viewing this profile can only chat (UNI-35), so they
+                      // see no call status at all; a mentor on their own
+                      // profile still sees their real call status.
+                      child: Consumer(
+                        builder: (context, ref, _) {
+                          final viewer = ref.watch(authControllerProvider).user;
+                          final isPeerMentor =
+                              viewer?.role == UserRole.mentor &&
+                              viewer?.id != mentor.id;
+                          if (isPeerMentor) return const SizedBox.shrink();
+                          return CallAvailabilityChip(
+                            isAvailable: mentor.isAvailable,
+                          );
+                        },
                       ),
                     ),
                     if (_affiliation != null) ...[
