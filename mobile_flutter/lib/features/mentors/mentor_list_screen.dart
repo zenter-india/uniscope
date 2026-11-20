@@ -468,18 +468,22 @@ class _MentorListScreenState extends ConsumerState<MentorListScreen> {
                       onPick: (v) => setState(() => _language = v),
                     ),
                   ),
-                  const SizedBox(width: AppSpacing.xs),
-                  _MentorFilterChip(
-                    label: _availability ?? 'Availability',
-                    active: _availability != null,
-                    dropdown: true,
-                    onTap: () => _pickOne(
-                      title: 'Availability',
-                      options: const [_kAvailForCalls, _kChatOnly],
-                      selected: _availability,
-                      onPick: (v) => setState(() => _availability = v),
+                  // Call availability means nothing to a mentor, who can
+                  // only chat with other mentors: no Availability filter.
+                  if (!isMentorViewer) ...[
+                    const SizedBox(width: AppSpacing.xs),
+                    _MentorFilterChip(
+                      label: _availability ?? 'Availability',
+                      active: _availability != null,
+                      dropdown: true,
+                      onTap: () => _pickOne(
+                        title: 'Availability',
+                        options: const [_kAvailForCalls, _kChatOnly],
+                        selected: _availability,
+                        onPick: (v) => setState(() => _availability = v),
+                      ),
                     ),
-                  ),
+                  ],
                   const SizedBox(width: AppSpacing.xs),
                   _MentorFilterChip(
                     label: _rating ?? 'Rating',
@@ -720,12 +724,16 @@ class MentorCard extends ConsumerWidget {
                   padding: const EdgeInsets.only(top: 4),
                   child: Row(
                     children: [
-                      CallAvailabilityChip(
-                        isAvailable: mentor.isAvailable,
-                        compact: true,
-                      ),
+                      // Calls are aspirant -> mentor only. A mentor looking at
+                      // another mentor can only chat, so they see no call
+                      // status at all (UNI-35).
+                      if (!isMentor)
+                        CallAvailabilityChip(
+                          isAvailable: mentor.isAvailable,
+                          compact: true,
+                        ),
                       if (mentor.rating != null) ...[
-                        const SizedBox(width: 6),
+                        if (!isMentor) const SizedBox(width: 6),
                         const Icon(
                           Icons.star_rounded,
                           size: 14,
