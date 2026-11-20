@@ -33,6 +33,10 @@
          required unless told otherwise — a mentor without one can still
          verify via the gallery option, so don't gate installability on it. -->
     <uses-feature android:name="android.hardware.camera" android:required="false"/>
+    <!-- A library asks for the Wi-Fi state permission, which makes Play Store
+         assume Wi-Fi hardware is required. The app works on mobile data too,
+         so don't gate installability on it (Play Console warning on 1.2.3+47). -->
+    <uses-feature android:name="android.hardware.wifi" android:required="false"/>
     <application
         android:label="Uniscope"
         android:name="${applicationName}"
