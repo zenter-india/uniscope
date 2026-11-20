@@ -71,7 +71,8 @@ class MentorReviewsScreen extends ConsumerWidget {
                   children: [
                     _RatingSummary(reviews: reviews),
                     const SizedBox(height: AppSpacing.md),
-                    for (final review in reviews) _ReviewTile(review: review),
+                    for (final review in reviews)
+                      _ReviewTile(review: review),
                   ],
                 ),
         ),
