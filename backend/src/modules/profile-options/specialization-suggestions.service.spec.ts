@@ -92,11 +92,18 @@ describe('SpecializationSuggestionsService.submit', () => {
     });
   });
 
-  it('is mentors only', async () => {
-    const prisma = makePrisma({
+  it('lets a student suggest one too, but not an admin', async () => {
+    const student = makePrisma({
       user: { findUnique: jest.fn().mockResolvedValue({ role: 'ASPIRANT' }) },
     });
-    await expect(svc(prisma).submit('u1', dto)).rejects.toBeInstanceOf(
+    await expect(svc(student).submit('u1', dto)).resolves.toEqual({
+      status: 'PENDING',
+    });
+
+    const admin = makePrisma({
+      user: { findUnique: jest.fn().mockResolvedValue({ role: 'ADMIN' }) },
+    });
+    await expect(svc(admin).submit('u1', dto)).rejects.toBeInstanceOf(
       ForbiddenException,
     );
   });
@@ -240,5 +247,153 @@ describe('SpecializationSuggestionsService.review — approve', () => {
     await svc(prisma).review('s1', 'admin1', { status: 'PENDING' });
     const undo = prisma.specializationSuggestion.update.mock.calls[1][0].data;
     expect(undo.reviewedBy).toBeNull();
+  });
+});
+
+describe('SpecializationSuggestionsService — approving a profile with a suggestion', () => {
+  const pending = {
+    id: 's1',
+    universityId: 'c1',
+    degree: 'MD/MS',
+    name: 'Community Medicine',
+    nameKey: 'community medicine',
+    status: 'PENDING',
+  };
+
+  function prismaWith(opts: {
+    specialization?: string | null;
+    suggestions?: unknown[];
+    list?: string[];
+  }) {
+    const prisma = makePrisma({
+      userProfile: {
+        findUnique: jest.fn().mockResolvedValue({
+          specialization:
+            opts.specialization === undefined
+              ? 'Community Medicine'
+              : opts.specialization,
+        }),
+        updateMany: jest.fn().mockResolvedValue({ count: 1 }),
+      },
+    });
+    prisma.specializationSuggestion.findMany = jest
+      .fn()
+      .mockResolvedValue(opts.suggestions ?? [pending]);
+    prisma.program.findMany = jest.fn().mockResolvedValue([
+      {
+        universityId: 'c1',
+        name: 'MD/MS',
+        specializations: opts.list ?? ['Anatomy', 'MD - Social & Preventive Medicine'],
+      },
+    ]);
+    return prisma;
+  }
+
+  it('shows the pending suggestion with what the college already lists', async () => {
+    const prisma = prismaWith({});
+    const [row] = await svc(prisma).forApplicants([
+      { universityId: 'c1', specialization: '  community  medicine ' },
+    ]);
+    expect(row).toEqual({
+      id: 's1',
+      name: 'Community Medicine',
+      degree: 'MD/MS',
+      collegeSpecializations: ['Anatomy', 'MD - Social & Preventive Medicine'],
+    });
+  });
+
+  it('shows nothing when the applicant has no specialization or no pending suggestion', async () => {
+    const none = prismaWith({ suggestions: [] });
+    await expect(
+      svc(none).forApplicants([
+        { universityId: 'c1', specialization: 'Community Medicine' },
+        { universityId: 'c1', specialization: null },
+      ]),
+    ).resolves.toEqual([null, null]);
+    expect(none.program.findMany).not.toHaveBeenCalled();
+  });
+
+  it('does nothing when the admin made no choice', async () => {
+    const prisma = prismaWith({});
+    await expect(
+      svc(prisma).prepareApprovalChoice('u1', 'c1', {}),
+    ).resolves.toBeNull();
+  });
+
+  it('plans to add the suggestion as typed', async () => {
+    await expect(
+      svc(prismaWith({})).prepareApprovalChoice('u1', 'c1', {
+        addSuggested: true,
+      }),
+    ).resolves.toEqual({ suggestionId: 's1', mode: 'ADD' });
+  });
+
+  it('plans to use an existing entry, spelled as the college has it', async () => {
+    await expect(
+      svc(prismaWith({})).prepareApprovalChoice('u1', 'c1', {
+        useName: 'md - social & preventive medicine',
+      }),
+    ).resolves.toEqual({
+      suggestionId: 's1',
+      mode: 'USE',
+      useName: 'MD - Social & Preventive Medicine',
+    });
+  });
+
+  it('refuses an entry the college does not have, both choices at once, or no suggestion', async () => {
+    await expect(
+      svc(prismaWith({})).prepareApprovalChoice('u1', 'c1', {
+        useName: 'Cardiology',
+      }),
+    ).rejects.toBeInstanceOf(BadRequestException);
+    await expect(
+      svc(prismaWith({})).prepareApprovalChoice('u1', 'c1', {
+        addSuggested: true,
+        useName: 'Anatomy',
+      }),
+    ).rejects.toBeInstanceOf(BadRequestException);
+    await expect(
+      svc(prismaWith({ suggestions: [] })).prepareApprovalChoice('u1', 'c1', {
+        addSuggested: true,
+      }),
+    ).rejects.toBeInstanceOf(BadRequestException);
+  });
+
+  it('USE switches the profile to the existing entry and drops the typed one', async () => {
+    const prisma = prismaWith({});
+    prisma.specializationSuggestion.findUnique.mockResolvedValue(pending);
+    await svc(prisma).applyApprovalChoice(
+      { suggestionId: 's1', mode: 'USE', useName: 'Anatomy' },
+      'admin1',
+      'u1',
+    );
+    expect(prisma.userProfile.updateMany).toHaveBeenCalledWith({
+      where: { userId: 'u1' },
+      data: { specialization: 'Anatomy' },
+    });
+    expect(prisma.specializationSuggestion.update.mock.calls[0][0].data).toMatchObject(
+      { status: 'REJECTED', reviewedBy: 'admin1' },
+    );
+  });
+
+  it('ADD approves the suggestion, which puts it on the college list', async () => {
+    const prisma = prismaWith({});
+    prisma.specializationSuggestion.findUnique.mockResolvedValue(pending);
+    prisma.program.findUnique.mockResolvedValue({
+      id: 'p1',
+      specializations: ['Anatomy'],
+    });
+    await svc(prisma).applyApprovalChoice(
+      { suggestionId: 's1', mode: 'ADD' },
+      'admin1',
+      'u1',
+    );
+    expect(prisma.program.update).toHaveBeenCalledWith({
+      where: { id: 'p1' },
+      data: {
+        specializations: ['Anatomy', 'Community Medicine'],
+        isActive: true,
+      },
+    });
   });
 });

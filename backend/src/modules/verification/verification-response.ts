@@ -1,5 +1,6 @@
 import { VerificationRequest } from '@prisma/client';
 import { decryptRealName } from '../../common/helpers/profile-encryption.helper.js';
+import type { VerificationSpecializationSuggestion } from '../profile-options/specialization-suggestions.service.js';
 
 export interface VerificationApplicant {
   displayName: string;
@@ -24,6 +25,9 @@ export interface VerificationApplicant {
   specialty: string | null;
   preferredLanguage: string | null;
   preferredMentorshipTiming: string | null;
+  /** Pending-queue only: the typed specialization is waiting for review, with
+   * what the college's list already has to pick from instead. */
+  specializationSuggestion?: VerificationSpecializationSuggestion | null;
 }
 
 export interface VerificationRequestResponse {
