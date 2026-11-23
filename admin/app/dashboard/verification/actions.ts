@@ -44,14 +44,25 @@ export async function getVerificationDocumentUrl(requestId: string): Promise<str
   return url;
 }
 
+/** What to do with a specialization the applicant typed that their college's
+ * list doesn't have yet, when approving: add it as typed, or use an entry the
+ * college already has. */
+export type SpecializationChoice = { mode: 'ADD' } | { mode: 'USE'; name: string };
+
 export async function reviewVerificationRequest(
   requestId: string,
   approve: boolean,
   note?: string,
+  specialization?: SpecializationChoice,
 ): Promise<void> {
   await backendFetch(`/verification/${requestId}/review`, {
     method: 'PATCH',
-    body: JSON.stringify({ approve, ...(note && { note }) }),
+    body: JSON.stringify({
+      approve,
+      ...(note && { note }),
+      ...(approve && specialization?.mode === 'ADD' && { addSuggestedSpecialization: true }),
+      ...(approve && specialization?.mode === 'USE' && { useSpecialization: specialization.name }),
+    }),
   });
   revalidatePath('/dashboard/verification');
   revalidatePath('/dashboard');

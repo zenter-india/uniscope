@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { PrismaModule } from '../../database/prisma/prisma.module.js';
 import { NotificationsModule } from '../notifications/notifications.module.js';
+import { ProfileOptionsModule } from '../profile-options/profile-options.module.js';
 import { VerificationController } from './verification.controller.js';
 import { VerificationService } from './verification.service.js';
 
@@ -13,7 +14,7 @@ import { VerificationService } from './verification.service.js';
  * need to be imported here explicitly.
  */
 @Module({
-  imports: [PrismaModule, NotificationsModule],
+  imports: [PrismaModule, NotificationsModule, ProfileOptionsModule],
   controllers: [VerificationController],
   providers: [VerificationService],
   exports: [VerificationService],
