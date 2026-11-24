@@ -5,12 +5,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import {
-  CustomDegreeStatus,
-  Prisma,
-  University,
-  UserRole,
-} from '@prisma/client';
+import { Prisma, University, UserRole } from '@prisma/client';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { PrismaService } from '../../database/prisma/prisma.service.js';
 import { SUPABASE_BUCKETS, SUPABASE_CLIENT } from '../../supabase/index.js';
@@ -461,41 +456,15 @@ export class UniversitiesService {
       },
     });
 
-    // Specializations people typed under "Others" that are still waiting for
-    // an admin join the dropdown straight away, so the next person can pick
-    // them instead of typing them again. A rejected one drops out again.
-    const waiting =
-      programs.length > 0
-        ? await this.prisma.specializationSuggestion.findMany({
-            where: {
-              status: CustomDegreeStatus.PENDING,
-              degree: query.degree.toUpperCase(),
-              universityId: { in: programs.map((p) => p.universityId) },
-            },
-            select: { universityId: true, name: true },
-          })
-        : [];
-    const specializationsOf = (program: (typeof programs)[number]) => {
-      const seen = new Set(
-        program.specializations.map((s) => s.trim().toLowerCase()),
-      );
-      const typed = waiting
-        .filter((w) => w.universityId === program.universityId)
-        .filter((w) => !seen.has(w.name.trim().toLowerCase()))
-        .map((w) => w.name);
-      return [...program.specializations, ...typed];
-    };
-
     const options = programs
-      .map((program) => ({ program, specs: specializationsOf(program) }))
-      .filter(({ specs }) => specs.length > 0)
-      .map(({ program, specs }) => ({
-        specCount: specs.length,
+      .filter((program) => program.specializations.length > 0)
+      .map((program) => ({
+        specCount: program.specializations.length,
         id: program.universityId,
         label: program.description
           ? `${program.university.name}, ${program.description}, ${program.university.state}`
           : `${program.university.name}, ${program.university.state}`,
-        specializations: [...specs].sort(),
+        specializations: [...program.specializations].sort(),
       }));
 
     const search = browse && query.search ? query.search.toLowerCase() : null;
