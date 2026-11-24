@@ -54,26 +54,6 @@ export interface SpecializationSuggestionResponse {
   collegeActivated?: boolean;
 }
 
-/** What the verification queue shows next to an applicant whose typed
- * specialization is still waiting for review: the suggestion itself, and what
- * their college's list already has, so the admin can pick one of those instead. */
-export interface VerificationSpecializationSuggestion {
-  id: string;
-  name: string;
-  degree: string;
-  collegeSpecializations: string[];
-}
-
-/** The admin's pick when approving a profile that has a pending suggestion. */
-export interface ApprovalSpecializationChoice {
-  suggestionId: string;
-  /** ADD: the typed name joins the college's list. USE: the profile switches to
-   * an existing entry and the typed name is dropped. */
-  mode: 'ADD' | 'USE';
-  /** For USE: the existing entry, spelled as the college's list has it. */
-  useName?: string;
-}
-
 const COLLEGE_SELECT = {
   university: {
     select: { id: true, name: true, state: true, city: true, isActive: true },
@@ -140,11 +120,9 @@ export class SpecializationSuggestionsService {
       where: { id: userId },
       select: { role: true },
     });
-    // Mentors and students both type a specialization when theirs isn't
-    // listed; either way it joins the shared list for that college.
-    if (user?.role !== UserRole.MENTOR && user?.role !== UserRole.ASPIRANT) {
+    if (user?.role !== UserRole.MENTOR) {
       throw new ForbiddenException(
-        'Only mentors and students can suggest a specialization.',
+        'Only mentors can suggest a specialization for their college.',
       );
     }
 
@@ -184,137 +162,6 @@ export class SpecializationSuggestionsService {
       update: { submissionCount: { increment: 1 } },
     });
     return { status: row.status };
-  }
-
-  /**
-   * For the verification queue: for each applicant, the PENDING suggestion that
-   * matches the specialization they typed for their college (null when it was
-   * already on the college's list, or never needed one), with what the college's
-   * list already has for that degree. Same order as `items`.
-   */
-  async forApplicants(
-    items: { universityId: string; specialization: string | null }[],
-  ): Promise<(VerificationSpecializationSuggestion | null)[]> {
-    const collegeCache = new Map<string, string>();
-    const wanted = await Promise.all(
-      items.map(async (item) => {
-        const { name, nameKey } = tidyDegreeName(item.specialization ?? '');
-        if (!isUsable(name, nameKey)) return null;
-        let universityId = collegeCache.get(item.universityId);
-        if (!universityId) {
-          universityId = await this.resolveCollegeId(
-            this.prisma,
-            item.universityId,
-          ).catch(() => item.universityId);
-          collegeCache.set(item.universityId, universityId);
-        }
-        return { universityId, nameKey };
-      }),
-    );
-    const pairs = wanted.filter((w) => w !== null);
-    if (pairs.length === 0) return items.map(() => null);
-
-    const rows = await this.prisma.specializationSuggestion.findMany({
-      where: {
-        status: CustomDegreeStatus.PENDING,
-        OR: pairs.map((p) => ({
-          universityId: p.universityId,
-          nameKey: p.nameKey,
-        })),
-      },
-    });
-    if (rows.length === 0) return items.map(() => null);
-
-    const programs = await this.prisma.program.findMany({
-      where: {
-        OR: rows.map((r) => ({ universityId: r.universityId, name: r.degree })),
-      },
-      select: { universityId: true, name: true, specializations: true },
-    });
-    const listOf = (universityId: string, degree: string) =>
-      [
-        ...(programs.find(
-          (p) => p.universityId === universityId && p.name === degree,
-        )?.specializations ?? []),
-      ].sort((a, b) => a.localeCompare(b));
-
-    return wanted.map((w) => {
-      if (!w) return null;
-      const row = rows.find(
-        (r) => r.universityId === w.universityId && r.nameKey === w.nameKey,
-      );
-      if (!row) return null;
-      return {
-        id: row.id,
-        name: row.name,
-        degree: row.degree,
-        collegeSpecializations: listOf(row.universityId, row.degree),
-      };
-    });
-  }
-
-  /**
-   * Checks the admin's choice for an applicant's pending specialization BEFORE
-   * anything is changed, so a bad request fails the approval cleanly. Returns
-   * what to apply once the profile is approved, or null when there is nothing
-   * to do (no choice made).
-   */
-  async prepareApprovalChoice(
-    userId: string,
-    universityId: string,
-    choice: { addSuggested?: boolean; useName?: string },
-  ): Promise<ApprovalSpecializationChoice | null> {
-    const useRaw = choice.useName?.trim();
-    if (choice.addSuggested && useRaw) {
-      throw new BadRequestException(
-        'Choose either to add the suggested specialization or to use an existing one, not both.',
-      );
-    }
-    if (!choice.addSuggested && !useRaw) return null;
-
-    const profile = await this.prisma.userProfile.findUnique({
-      where: { userId },
-      select: { specialization: true },
-    });
-    const [suggestion] = await this.forApplicants([
-      { universityId, specialization: profile?.specialization ?? null },
-    ]);
-    if (!suggestion) {
-      throw new BadRequestException(
-        'This profile has no specialization suggestion waiting for review.',
-      );
-    }
-    if (choice.addSuggested) {
-      return { suggestionId: suggestion.id, mode: 'ADD' };
-    }
-    const { nameKey } = tidyDegreeName(useRaw ?? '');
-    const existing = suggestion.collegeSpecializations.find(
-      (s) => s.trim().toLowerCase() === nameKey,
-    );
-    if (!existing) {
-      throw new BadRequestException(
-        `"${useRaw}" is not on this college's list for ${suggestion.degree}.`,
-      );
-    }
-    return { suggestionId: suggestion.id, mode: 'USE', useName: existing };
-  }
-
-  /** Applies a choice from prepareApprovalChoice once the profile is approved. */
-  async applyApprovalChoice(
-    choice: ApprovalSpecializationChoice,
-    adminId: string,
-    userId: string,
-  ): Promise<void> {
-    if (choice.mode === 'ADD') {
-      await this.review(choice.suggestionId, adminId, { status: 'APPROVED' });
-      return;
-    }
-    await this.prisma.userProfile.updateMany({
-      where: { userId },
-      data: { specialization: choice.useName },
-    });
-    // The typed name was a duplicate/misspelling of an existing entry.
-    await this.review(choice.suggestionId, adminId, { status: 'REJECTED' });
   }
 
   async findAllForAdmin(query: {

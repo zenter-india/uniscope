@@ -79,9 +79,6 @@ class _AspirantOnboardingScreenState
   String? _universityId;
   final _collegeNameController = TextEditingController();
   String? _specialization;
-  /// The specializations the dropdown last offered, kept so a typed one can be
-  /// told apart from a listed one when the profile is saved.
-  List<String> _shownSpecializations = const [];
   final _specializationOtherController = TextEditingController();
 
   final _courseInterestedController = TextEditingController();
@@ -347,7 +344,6 @@ class _AspirantOnboardingScreenState
                 _preferredTimings.isEmpty ? null : _preferredTimings.join(', '),
           );
       _queueCustomQualification();
-      _queueSpecializationSuggestion();
       if (saveAvatar) {
         final avatarConfig = _avatarPanelKey.currentState?.currentConfig;
         if (avatarConfig != null) {
@@ -386,35 +382,6 @@ class _AspirantOnboardingScreenState
     final provider = approvedDegreesProvider(stream);
     return (watch ? ref.watch(provider) : ref.read(provider)).asData?.value ??
         const [];
-  }
-
-  /// A specialization the student typed under "Not listed here" for their
-  /// college goes into that college's shared list, so the next person who
-  /// picks the college can choose it instead of typing it again. Skipped when
-  /// it is already offered, for Medical Doctorate/Others (whose list isn't the
-  /// college's own), and without a real college. Fire-and-forget: never blocks
-  /// or fails onboarding.
-  void _queueSpecializationSuggestion() {
-    if (!_needsSpecialization || _needsMedicalStreamWideSpecialization) return;
-    if (!_showCollege) return;
-    if (!shouldSuggestCollegeSpecialization(
-      specialization: _specialization,
-      universityId: _universityId,
-      degreeKey: _curatedDegree,
-      collegeList: _shownSpecializations,
-    )) {
-      return;
-    }
-    unawaited(
-      ref
-          .read(profileOptionsApiProvider)
-          .submitSpecialization(
-            universityId: _universityId!,
-            degree: _curatedDegree!,
-            name: _specialization!,
-          )
-          .catchError((Object _) {}),
-    );
   }
 
   /// A qualification typed under "Others" that isn't a known/approved one yet
@@ -664,7 +631,6 @@ class _AspirantOnboardingScreenState
                         Builder(
                           builder: (context) {
                             final options = _specializationOptions();
-                            _shownSpecializations = options;
                             // No curated/stream-wide data at all for this
                             // field of interest (e.g. Arts & Humanities,
                             // Commerce & Business, Design, a free-typed
