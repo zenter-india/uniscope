@@ -54,6 +54,13 @@ export interface SpecializationSuggestionResponse {
   collegeActivated?: boolean;
 }
 
+/** One existing specialization name offered in the admin queue's dropdown. */
+export interface SpecializationOption {
+  name: string;
+  /** How many active colleges list it under the degree. */
+  colleges: number;
+}
+
 const COLLEGE_SELECT = {
   university: {
     select: { id: true, name: true, state: true, city: true, isActive: true },
@@ -162,6 +169,54 @@ export class SpecializationSuggestionsService {
       update: { submissionCount: { increment: 1 } },
     });
     return { status: row.status };
+  }
+
+  /**
+   * Every specialization name that any active, still-listed college has under
+   * `degree` (e.g. all of MD/MS's), A–Z, with how many colleges list it. This
+   * feeds the admin queue's dropdown, so an approval can pick the existing,
+   * correctly spelled name ("MD - Microbiology") instead of retyping it from a
+   * half-typed suggestion ("microb"). Names that differ only by case or extra
+   * spaces are one entry, shown in their most common spelling.
+   */
+  async optionsForDegree(degree: string): Promise<SpecializationOption[]> {
+    const key = degree.trim().toUpperCase();
+    if (!key) throw new BadRequestException('Choose a degree first.');
+
+    const programs = await this.prisma.program.findMany({
+      where: { name: key, isActive: true, university: { mergedIntoId: null } },
+      select: { specializations: true },
+    });
+
+    const byKey = new Map<
+      string,
+      { spellings: Map<string, number>; colleges: number }
+    >();
+    for (const program of programs) {
+      const seenHere = new Set<string>();
+      for (const raw of program.specializations) {
+        const { name, nameKey } = tidyDegreeName(raw);
+        if (!isUsable(name, nameKey) || seenHere.has(nameKey)) continue;
+        seenHere.add(nameKey);
+        const entry = byKey.get(nameKey) ?? {
+          spellings: new Map<string, number>(),
+          colleges: 0,
+        };
+        entry.colleges += 1;
+        entry.spellings.set(name, (entry.spellings.get(name) ?? 0) + 1);
+        byKey.set(nameKey, entry);
+      }
+    }
+
+    return [...byKey.values()]
+      .map(({ spellings, colleges }) => ({
+        // The spelling most colleges use (ties: the alphabetically first).
+        name: [...spellings.entries()].sort(
+          (a, b) => b[1] - a[1] || a[0].localeCompare(b[0]),
+        )[0][0],
+        colleges,
+      }))
+      .sort((a, b) => a.name.localeCompare(b.name));
   }
 
   async findAllForAdmin(query: {

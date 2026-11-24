@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useState, useTransition } from 'react';
 import { InfiniteList } from '../../../components/InfiniteList';
-import { Badge, Button, Card, fieldClass } from '../../../components/ui';
+import { Badge, Button, Card } from '../../../components/ui';
 import { toast } from '../../../lib/toast';
 import {
   loadSuggestions,
@@ -11,6 +11,7 @@ import {
   type SpecializationSuggestion,
   type SuggestionStatus,
 } from './actions';
+import { SpecializationNameInput } from './SpecializationNameInput';
 
 const STATUS_TONE: Record<SuggestionStatus, 'warning' | 'success' | 'danger'> = {
   PENDING: 'warning',
@@ -113,13 +114,13 @@ function SuggestionCard({ suggestion }: { suggestion: SpecializationSuggestion }
         )}
       </div>
 
-      <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center">
-        <input
+      <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-start">
+        <SpecializationNameInput
           value={name}
-          onChange={(e) => setName(e.target.value)}
-          maxLength={100}
-          aria-label="Specialization name shown to users"
-          className={`${fieldClass} sm:max-w-md`}
+          onChange={setName}
+          degree={row.degree}
+          disabled={isPending}
+          className="sm:max-w-md"
         />
         <div className="flex flex-wrap gap-2">
           {row.status !== 'APPROVED' && (

@@ -34,7 +34,9 @@ export default async function CollegeSpecializationsPage({
         doesn&apos;t have yet — typed under “Not listed here”, or picked from the wider list
         (a new college starts with an empty list, so its first mentor&apos;s choice shows up
         here). Approve one and it is added to that college&apos;s list for everyone from then on;
-        if the college is new, approving also publishes it. You can fix the spelling first.
+        if the college is new, approving also publishes it. Before approving, pick the matching
+        name from our list (start typing, or use the arrow) so it is spelled the way the rest of
+        our data has it; if it really is new, just keep what you typed.
       </p>
 
       <div className="mb-4 flex items-center gap-1.5">
