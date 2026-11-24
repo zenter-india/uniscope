@@ -86,4 +86,31 @@ describe('resolveMoneyRange', () => {
       resolveMoneyRange({ from: '2025-11-23', to: '2026-11-24' }, NOW),
     ).toThrow(BadRequestException);
   });
+
+  describe('the period before, to compare with', () => {
+    it('is the equally long window that ends where a rolling one starts', () => {
+      const r = resolveMoneyRange({ days: 7 }, NOW);
+      expect(r.previous.until).toEqual(r.since);
+      expect(r.previous.since).toEqual(new Date(r.since.getTime() - 7 * DAY));
+    });
+
+    it('is the same number of days right before a custom range', () => {
+      const r = resolveMoneyRange(
+        { from: '2026-11-01', to: '2026-11-10' },
+        NOW,
+      );
+      expect(r.previous.since).toEqual(new Date('2026-10-22T00:00:00.000Z'));
+      expect(r.previous.until).toEqual(new Date('2026-11-01T00:00:00.000Z'));
+    });
+
+    it('follows a "to" that was cut back to today', () => {
+      const r = resolveMoneyRange(
+        { from: '2026-11-20', to: '2026-12-31' },
+        NOW,
+      );
+      // 5 days (20–24 Nov), so the 5 days before are 15–19 Nov
+      expect(r.previous.since).toEqual(new Date('2026-11-15T00:00:00.000Z'));
+      expect(r.previous.until).toEqual(new Date('2026-11-20T00:00:00.000Z'));
+    });
+  });
 });

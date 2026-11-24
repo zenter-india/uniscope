@@ -18,7 +18,15 @@ export interface MoneyRange {
   range: { from: string; to: string } | null;
   /** Days covered (a rolling 24h is 1). */
   days: number;
+  /** The equally long period right before this one, to compare with. */
+  previous: { since: Date; until: Date };
 }
+
+/** The window of the same length that ends where `since` starts. */
+const before = (since: Date, until: Date) => ({
+  since: new Date(since.getTime() - (until.getTime() - since.getTime())),
+  until: since,
+});
 
 /**
  * The same range rules as the Overview: either a rolling window of `days`
@@ -57,19 +65,23 @@ export function resolveMoneyRange(
         `Pick a range of at most ${MAX_CUSTOM_DAYS} days.`,
       );
     }
+    const until = new Date(lastDay.getTime() + DAY_MS);
     return {
       since: start,
-      until: new Date(lastDay.getTime() + DAY_MS),
+      until,
       range: { from: query.from, to: dayKey(lastDay) },
       days,
+      previous: before(start, until),
     };
   }
 
   const days = query.days ?? 30;
+  const since = new Date(now.getTime() - days * DAY_MS);
   return {
-    since: new Date(now.getTime() - days * DAY_MS),
+    since,
     until: now,
     range: null,
     days,
+    previous: before(since, now),
   };
 }

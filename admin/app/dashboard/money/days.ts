@@ -77,6 +77,27 @@ export function fmtWhen(iso: string): string {
   })} UTC`;
 }
 
+/** The screens of the Money page. */
+export const TABS = [
+  'overview',
+  'topups',
+  'payers',
+  'mentors',
+  'balances',
+  'usage',
+] as const;
+export type Tab = (typeof TABS)[number];
+export const TAB_LABEL: Record<Tab, string> = {
+  overview: 'Overview',
+  topups: 'Top-ups',
+  payers: 'Payers & packs',
+  mentors: 'Mentors',
+  balances: 'Balances',
+  usage: 'Usage',
+};
+export const isTab = (v: string | undefined): v is Tab =>
+  !!v && (TABS as readonly string[]).includes(v);
+
 /**
  * The query string for the backend (and for links on this page) from the
  * page's address. Only known keys, each checked, so nothing else ever reaches
@@ -94,4 +115,39 @@ export function moneyQueryString(q: MoneyQuery): string {
   const text = q.q?.trim().slice(0, 80);
   if (text) p.set('q', text);
   return p.toString();
+}
+
+/** A link to this page: the range and filters, and which screen. The screen is
+ * for this page only — it is never sent to the backend. */
+export function pageHref(q: MoneyQuery, tab: Tab): string {
+  const p = new URLSearchParams(moneyQueryString(q));
+  if (tab !== 'overview') p.set('tab', tab);
+  const s = p.toString();
+  return `/dashboard/money${s ? `?${s}` : ''}`;
+}
+
+/** Percent of a 0..1 share ("61%"), or a dash when there is nothing to divide. */
+export const pct = (share: number | null, digits = 0): string =>
+  share === null ? '—' : `${(share * 100).toFixed(digits)}%`;
+
+export const nf = (n: number): string => n.toLocaleString('en-IN');
+
+/** Minor units as Uniminutes ("2,811", or "0.3" for a small amount), signed
+ * when asked. */
+export function uniminutes(minor: number, signed = false): string {
+  const n = Number((minor / 1000).toFixed(1));
+  return `${signed && n > 0 ? '+' : ''}${nf(n)}`;
+}
+
+/** A day written YYYY-MM-DD for a chart label, or the day of an ISO time. */
+export function fmtDate(iso: string, unit?: 'day' | 'week' | 'month'): string {
+  const d = new Date(iso.length === 10 ? `${iso}T00:00:00Z` : iso);
+  return unit === 'month'
+    ? d.toLocaleDateString('en-IN', { month: 'short', year: 'numeric', timeZone: 'UTC' })
+    : d.toLocaleDateString('en-IN', {
+        day: 'numeric',
+        month: 'short',
+        ...(unit ? {} : { year: 'numeric' }),
+        timeZone: 'UTC',
+      });
 }
