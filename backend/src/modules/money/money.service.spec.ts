@@ -3,7 +3,7 @@ import { BadRequestException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../database/prisma/prisma.service.js';
 import { CSV_BOM } from './money-csv';
-import { MoneyService } from './money.service';
+import { MoneyService, mentorStats, type MoneyMentor } from './money.service';
 
 const RANGE = { from: '2026-11-01', to: '2026-11-10' };
 
@@ -17,75 +17,97 @@ describe('MoneyService', () => {
   beforeEach(() => queryRaw.mockReset());
 
   describe('summary', () => {
-    const topups: {
-      platform: string | null;
-      topups: number;
-      users: number;
-      credited_minor: bigint;
-      paid_minor: bigint;
-      paid_known: number;
-    }[] = [
-      {
+    const agg = (over: Record<string, unknown>) => ({
+      is_payment: true,
+      platform: 'android',
+      topups: 0,
+      users: 0,
+      credited_minor: 0n,
+      paid_minor: 0n,
+      paid_known: 0,
+      ...over,
+    });
+    const topups = [
+      agg({
         platform: 'android',
         topups: 3,
         users: 2,
         credited_minor: 50_000n, // BigInt, as Postgres sums come back
         paid_minor: 75_000n,
         paid_known: 3,
-      },
-      {
+      }),
+      agg({
         platform: 'ios',
         topups: 2,
         users: 2,
         credited_minor: 50_000n,
-        paid_minor: 0n,
-        paid_known: 0,
-      },
+        paid_minor: 51_900n, // Apple sends the price: ₹325 + ₹194
+        paid_known: 2,
+      }),
     ];
+    const flow = (over: Record<string, unknown>) => ({
+      type: 'SESSION_CREDIT',
+      no_session: false,
+      entries: 0,
+      wallets: 0,
+      sessions: 0,
+      sum_minor: 0n,
+      credits_minor: 0n,
+      debits_minor: 0n,
+      ...over,
+    });
     const flows = [
-      {
+      flow({
         type: 'SESSION_CREDIT',
         entries: 5,
         wallets: 2,
         sessions: 4,
         sum_minor: 30_000n,
         credits_minor: 30_000n,
-        debits_minor: 0n,
-      },
-      {
+      }),
+      flow({
         type: 'PAYOUT',
+        no_session: true,
         entries: 1,
         wallets: 1,
-        sessions: 0,
         sum_minor: -10_000n,
-        credits_minor: 0n,
         debits_minor: -10_000n,
-      },
-      {
+      }),
+      flow({
         type: 'REFUND',
+        no_session: true,
         entries: 1,
         wallets: 1,
         sessions: 1,
         sum_minor: 2_000n,
         credits_minor: 2_000n,
-        debits_minor: 0n,
-      },
-      {
+      }),
+      flow({
         type: 'ADJUSTMENT',
+        no_session: true,
         entries: 3,
         wallets: 2,
-        sessions: 0,
         sum_minor: 4_000n,
         credits_minor: 5_000n,
         debits_minor: -1_000n,
-      },
+      }),
     ];
     const owed = [{ owed_minor: 15_000n, mentors: 2 }];
 
-    const run = async (t = topups, f = flows, o = owed) => {
+    /** Calls run in this order: this period's top-ups and flows, the previous
+     * period's top-ups and flows, then what mentors hold. */
+    const run = async (
+      t: unknown[] = topups,
+      f: unknown[] = flows,
+      o: unknown[] = owed,
+      prevT: unknown[] = [],
+      prevF: unknown[] = [],
+    ) => {
       queryRaw
         .mockResolvedValueOnce(t)
         .mockResolvedValueOnce(f)
+        .mockResolvedValueOnce(prevT)
+        .mockResolvedValueOnce(prevF)
         .mockResolvedValueOnce(o);
       return build().summary(RANGE);
     };
@@ -117,8 +139,15 @@ describe('MoneyService', () => {
         paidMinor: 75_000,
         paidKnown: 3,
       });
-      // An Apple purchase records no rupee price: paid stays unknown.
-      expect(ios).toMatchObject({ count: 2, uniminutes: 50, paidKnown: 0 });
+      // The price Apple sent counts: iOS rupees are known, not left blank.
+      expect(ios).toEqual({
+        platform: 'ios',
+        count: 2,
+        users: 2,
+        uniminutes: 50,
+        paidMinor: 51_900,
+        paidKnown: 2,
+      });
     });
 
     it('totals the platforms', async () => {
@@ -126,7 +155,7 @@ describe('MoneyService', () => {
       expect(s.topups).toMatchObject({
         count: 5,
         uniminutes: 100,
-        paidMinor: 75_000,
+        paidMinor: 126_900,
       });
     });
 
@@ -139,6 +168,23 @@ describe('MoneyService', () => {
       });
       expect(s.payoutsPaidMinor).toBe(10_000);
       expect(s.refundsMinor).toBe(2_000);
+    });
+
+    it('keeps a mentor credit with no call behind it out of earnings', async () => {
+      // Real data has one: "Manual test earnings credit … (not a real session)".
+      const s = await run(topups, [
+        ...flows,
+        flow({
+          type: 'SESSION_CREDIT',
+          no_session: true,
+          entries: 1,
+          wallets: 1,
+          sum_minor: 20_000n,
+          credits_minor: 20_000n,
+        }),
+      ]);
+      expect(s.mentorEarnings.earnedMinor).toBe(30_000);
+      expect(s.manualEarnings).toEqual({ count: 1, minor: 20_000 });
     });
 
     it('keeps admin adjustments on their own line, debits as a positive number', async () => {
@@ -156,31 +202,36 @@ describe('MoneyService', () => {
       expect(s.mentorsOwed).toBe(2);
     });
 
-    it('keeps test and manual credits out of "money in" and counts them on their own line', async () => {
-      // Real data has two: a developer test row and a "manual test credit".
+    it('keeps test, Apple test-mode and refunded credits out of "money in", on their own line', async () => {
+      // Real data: a developer test row and a manual credit (no platform), and
+      // two Apple "Sandbox" purchases (an iOS platform, but not real money).
       const s = await run([
         ...topups,
-        {
+        agg({
+          is_payment: false,
           platform: null,
           topups: 2,
           users: 2,
           credited_minor: 150_000n,
-          paid_minor: 0n,
-          paid_known: 0,
-        },
+        }),
+        agg({
+          is_payment: false,
+          platform: 'ios',
+          topups: 2,
+          users: 1,
+          credited_minor: 30_000n,
+          paid_minor: 84_400n,
+          paid_known: 2,
+        }),
       ]);
-      expect(s.topups.byPlatform.map((p) => p.platform)).toEqual([
-        'android',
-        'ios',
-        'web',
-      ]);
-      expect(s.topups.notPayments).toEqual({ count: 2, uniminutes: 150 });
-      // the totals are still only the real payments
-      expect(s.topups).toMatchObject({
-        count: 5,
-        uniminutes: 100,
-        paidMinor: 75_000,
+      expect(s.topups.notPayments).toEqual({ count: 4, uniminutes: 180 });
+      // iOS is untouched by the Sandbox purchases, and so are the totals
+      expect(s.topups.byPlatform[1]).toMatchObject({
+        count: 2,
+        uniminutes: 50,
+        paidMinor: 51_900,
       });
+      expect(s.topups).toMatchObject({ count: 5, uniminutes: 100 });
     });
 
     it('has nothing on the not-a-payment line when every top-up was a payment', async () => {
@@ -195,11 +246,45 @@ describe('MoneyService', () => {
       expect(s.topups.count).toBe(0);
       expect(s.topups.notPayments.count).toBe(0);
       expect(s.mentorEarnings.earnedMinor).toBe(0);
+      expect(s.manualEarnings.count).toBe(0);
       expect(s.payoutsPaidMinor).toBe(0);
       expect(s.mentorBalanceMinor).toBe(0);
     });
 
-    it('asks every query for the same days, and echoes the range', async () => {
+    it('carries the period before, for the comparison', async () => {
+      const s = await run(
+        topups,
+        flows,
+        owed,
+        [
+          agg({
+            platform: 'android',
+            topups: 1,
+            users: 1,
+            credited_minor: 10_000n,
+            paid_minor: 25_000n,
+            paid_known: 1,
+          }),
+          agg({
+            is_payment: false,
+            platform: null,
+            topups: 1,
+            credited_minor: 99_000n,
+          }),
+        ],
+        [
+          flow({ type: 'SESSION_CREDIT', sessions: 1, sum_minor: 6_000n }),
+          flow({ type: 'PAYOUT', no_session: true, sum_minor: -3_000n }),
+        ],
+      );
+      expect(s.previous).toEqual({
+        topups: { count: 1, uniminutes: 10, paidMinor: 25_000 },
+        mentorEarnedMinor: 6_000,
+        payoutsPaidMinor: 3_000,
+      });
+    });
+
+    it('asks this period for the picked days and the previous one for the days before', async () => {
       const s = await run();
       expect(s.range).toEqual(RANGE);
       const since = new Date('2026-11-01T00:00:00.000Z');
@@ -209,6 +294,13 @@ describe('MoneyService', () => {
           expect.arrayContaining([since, until]),
         );
       }
+      // 10 days: the 10 days right before are 22 Oct – 31 Oct
+      const prevSince = new Date('2026-10-22T00:00:00.000Z');
+      for (const call of [2, 3]) {
+        expect(sqlOf(call).values).toEqual(
+          expect.arrayContaining([prevSince, since]),
+        );
+      }
     });
 
     it('classifies by the iOS price tiers, read from the price list', async () => {
@@ -216,6 +308,20 @@ describe('MoneyService', () => {
       expect(sqlOf(0).values).toEqual(
         expect.arrayContaining([32_500, 52_000, 97_500, 130_000]),
       );
+    });
+
+    it("reads Apple's own price, and drops test-mode and refunded purchases", async () => {
+      await run();
+      const sql = sqlOf(0).sql;
+      expect(sql).toContain("raw_payload->>'price'");
+      expect(sql).toContain("raw_payload->>'currency' = 'INR'");
+      expect(sql).toContain("<> 'Sandbox'");
+      expect(sql).toContain("= 'CREDITED'");
+    });
+
+    it('counts only calls as earnings (session_id set)', async () => {
+      await run();
+      expect(sqlOf(1).sql).toContain('(le.session_id IS NULL) AS no_session');
     });
   });
 
@@ -266,14 +372,16 @@ describe('MoneyService', () => {
       });
     });
 
-    it('shows no price for an Apple purchase, and no platform it cannot tell', async () => {
+    it('shows the price Apple sent for an iOS purchase, and no price only when it is unknown', async () => {
       queryRaw.mockResolvedValue([
-        row(1, { platform: 'ios', paid_minor: null }),
-        row(2, { platform: null, paid_minor: null }),
+        row(1, { platform: 'ios', paid_minor: 32_500 }),
+        row(2, { platform: 'ios', paid_minor: null }),
+        row(3, { platform: null, paid_minor: null }),
       ]);
       const { data } = await build().listTopups(RANGE);
-      expect(data[0]).toMatchObject({ platform: 'ios', paidMinor: null });
-      expect(data[1].platform).toBeNull();
+      expect(data[0]).toMatchObject({ platform: 'ios', paidMinor: 32_500 });
+      expect(data[1]).toMatchObject({ platform: 'ios', paidMinor: null });
+      expect(data[2].platform).toBeNull();
     });
 
     it('carries the platform filter and the search text to the query', async () => {
@@ -285,13 +393,13 @@ describe('MoneyService', () => {
       expect(values.filter((v) => v === 'asha')).toHaveLength(2);
     });
 
-    it('lists real payments only, never test or manual credits', async () => {
+    it('lists real payments only, never test, test-mode or refunded ones', async () => {
       queryRaw.mockResolvedValue([]);
       await build().listTopups(RANGE);
       const sql = sqlOf(0).sql;
-      expect(sql).toContain("LIKE 'apple-iap:%'");
-      expect(sql).toContain("LIKE 'razorpay:%'");
-      expect(sql).toContain('le.platform IS NOT NULL');
+      expect(sql).toContain('WHERE t.is_payment');
+      expect(sql).toContain("<> 'Sandbox'");
+      expect(sql).toContain('apple_transactions');
     });
 
     it('does not filter when none is asked for', async () => {
@@ -366,6 +474,70 @@ describe('MoneyService', () => {
       expect(res.data).toHaveLength(1000);
       expect(res.truncated).toBe(true);
     });
+
+    it('counts only credits for a call as earnings', async () => {
+      queryRaw.mockResolvedValue([]);
+      await build().mentors(RANGE);
+      expect(sqlOf(0).sql).toContain(
+        "le.type = 'SESSION_CREDIT' AND le.session_id IS NOT NULL",
+      );
+    });
+
+    it('reports how earnings are spread', async () => {
+      queryRaw.mockResolvedValue([
+        mrow(1, { earned_minor: 60_000n, sessions: 6 }),
+        mrow(2, { earned_minor: 30_000n, sessions: 3 }),
+        mrow(3, { earned_minor: 10_000n, sessions: 1 }),
+      ]);
+      const { stats } = await build().mentors(RANGE);
+      expect(stats).toEqual({
+        mentorsEarning: 3,
+        totalEarnedMinor: 100_000,
+        topOneShare: 0.6,
+        topThreeShare: 1,
+        averagePerCallMinor: 10_000, // 100 000 over 10 calls
+      });
+    });
+  });
+
+  describe('mentorStats', () => {
+    const m = (earnedMinor: number, sessions: number): MoneyMentor => ({
+      id: `m-${earnedMinor}`,
+      name: 'x',
+      uniqueId: null,
+      sessions,
+      minutes: earnedMinor / 1000,
+      earnedMinor,
+      paidOutMinor: 0,
+      balanceMinor: 0,
+    });
+
+    it('is empty, not a divide-by-zero, when nobody earned', () => {
+      expect(mentorStats([])).toEqual({
+        mentorsEarning: 0,
+        totalEarnedMinor: 0,
+        topOneShare: null,
+        topThreeShare: null,
+        averagePerCallMinor: null,
+      });
+    });
+
+    it('ignores a mentor who was only paid out', () => {
+      const s = mentorStats([m(10_000, 2), m(0, 0)]);
+      expect(s.mentorsEarning).toBe(1);
+      expect(s.topOneShare).toBe(1);
+    });
+
+    it('takes the top three of many', () => {
+      const s = mentorStats([
+        m(50_000, 5),
+        m(20_000, 2),
+        m(20_000, 2),
+        m(10_000, 1),
+      ]);
+      expect(s.topOneShare).toBe(0.5);
+      expect(s.topThreeShare).toBe(0.9);
+    });
   });
 
   describe('CSV exports', () => {
@@ -377,7 +549,7 @@ describe('MoneyService', () => {
           cursor_ts: '2026-11-01T10:00:00.000000Z',
           amount_minor: 10_000,
           platform: 'ios',
-          paid_minor: null,
+          paid_minor: 32_500,
           user_id: 'u1',
           display_name: '=HYPERLINK("x")',
           unique_id: 'A112600001',
@@ -389,7 +561,7 @@ describe('MoneyService', () => {
           cursor_ts: '2026-11-02T10:00:00.000000Z',
           amount_minor: 20_000,
           platform: 'android',
-          paid_minor: 40_000,
+          paid_minor: null,
           user_id: 'u2',
           display_name: 'Ravi',
           unique_id: null,
@@ -401,12 +573,13 @@ describe('MoneyService', () => {
       expect(lines[0]).toBe(
         '"Date (UTC)","User","User ID","Role","Platform","Uniminutes credited","Paid (INR)"',
       );
-      // a name that looks like a formula is neutralised; iOS price is blank
+      // a name that looks like a formula is neutralised; the iOS price is Apple's
       expect(lines[1]).toBe(
-        `"2026-11-01T10:00:00.000Z","'=HYPERLINK(""x"")","A112600001","ASPIRANT","ios",10,`,
+        `"2026-11-01T10:00:00.000Z","'=HYPERLINK(""x"")","A112600001","ASPIRANT","ios",10,325`,
       );
+      // an unknown price is a blank cell, not a zero
       expect(lines[2]).toBe(
-        '"2026-11-02T10:00:00.000Z","Ravi",,"ASPIRANT","android",20,400',
+        '"2026-11-02T10:00:00.000Z","Ravi",,"ASPIRANT","android",20,',
       );
     });
 
