@@ -25,6 +25,7 @@ const NAV_SECTIONS: {
       { label: 'Reviews', href: '/dashboard/reviews', icon: 'star' },
       { label: 'Sessions', href: '/dashboard/sessions', icon: 'message' },
       { label: 'Payouts', href: '/dashboard/payouts', icon: 'wallet' },
+      { label: 'Money', href: '/dashboard/money', icon: 'trendUp' },
       { label: 'Support', href: '/dashboard/support', icon: 'lifebuoy' },
       { label: 'Announcements', href: '/dashboard/broadcasts', icon: 'megaphone' },
       { label: 'Promotions', href: '/dashboard/promotions', icon: 'wallet' },
