@@ -4,14 +4,12 @@ import {
   ConflictException,
   Inject,
   Injectable,
-  Logger,
   NotFoundException,
 } from '@nestjs/common';
 import { NotificationType, Prisma, VerificationStatus } from '@prisma/client';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { PrismaService } from '../../database/prisma/prisma.service.js';
 import { NotificationsService } from '../notifications/notifications.service.js';
-import { SpecializationSuggestionsService } from '../profile-options/specialization-suggestions.service.js';
 import { SUPABASE_BUCKETS, SUPABASE_CLIENT } from '../../supabase/index.js';
 import { ListVerificationHistoryDto } from './dto/list-verification-history.dto.js';
 import { ReviewVerificationDto } from './dto/review-verification.dto.js';
@@ -31,12 +29,9 @@ const RESUBMITTABLE_STATUSES: VerificationStatus[] = [
 
 @Injectable()
 export class VerificationService {
-  private readonly logger = new Logger(VerificationService.name);
-
   constructor(
     private readonly prisma: PrismaService,
     private readonly notificationsService: NotificationsService,
-    private readonly specializations: SpecializationSuggestionsService,
     @Inject(SUPABASE_CLIENT) private readonly supabase: SupabaseClient,
   ) {}
 
@@ -166,23 +161,7 @@ export class VerificationService {
         university: { select: { name: true } },
       },
     });
-    const responses = rows.map(toVerificationRequestResponse);
-
-    // An applicant who typed a specialization their college's list doesn't
-    // have gets it shown as a dropdown, so the admin can add it as typed or
-    // pick an existing entry while approving.
-    const suggestions = await this.specializations.forApplicants(
-      rows.map((r) => ({
-        universityId: r.universityId,
-        specialization: r.user.profile?.specialization ?? null,
-      })),
-    );
-    responses.forEach((response, i) => {
-      if (response.applicant) {
-        response.applicant.specializationSuggestion = suggestions[i];
-      }
-    });
-    return responses;
+    return rows.map(toVerificationRequestResponse);
   }
 
   /** ADMIN — resolved (VERIFIED/REJECTED) requests, newest-decision-first,
@@ -271,19 +250,6 @@ export class VerificationService {
       );
     }
 
-    // Validate the admin's specialization pick first, so a bad one fails the
-    // approval before anything has changed. Only meaningful when approving.
-    const specializationChoice = dto.approve
-      ? await this.specializations.prepareApprovalChoice(
-          request.userId,
-          request.universityId,
-          {
-            addSuggested: dto.addSuggestedSpecialization,
-            useName: dto.useSpecialization,
-          },
-        )
-      : null;
-
     const newStatus = dto.approve
       ? VerificationStatus.VERIFIED
       : VerificationStatus.REJECTED;
@@ -324,22 +290,6 @@ export class VerificationService {
           ]
         : []),
     ]);
-
-    if (specializationChoice) {
-      try {
-        await this.specializations.applyApprovalChoice(
-          specializationChoice,
-          adminId,
-          request.userId,
-        );
-      } catch (err) {
-        // The profile is already approved; the suggestion simply stays on the
-        // Specializations page for an admin to handle there.
-        this.logger.warn(
-          `verification ${requestId}: could not apply the specialization choice: ${String(err)}`,
-        );
-      }
-    }
 
     await this.notificationsService.send({
       userId: request.userId,

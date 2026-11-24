@@ -6,11 +6,7 @@ import { Badge, Button } from '../../../components/ui';
 import { ExpandableRow } from '../../../components/ExpandableRow';
 import type { RowSelection } from '../../../components/InfiniteList';
 import { toast } from '../../../lib/toast';
-import {
-  getVerificationDocumentUrl,
-  reviewVerificationRequest,
-  type SpecializationChoice,
-} from './actions';
+import { getVerificationDocumentUrl, reviewVerificationRequest } from './actions';
 
 const DOCUMENT_TYPE_LABELS: Record<string, string> = {
   STUDENT_ID: 'Student ID',
@@ -41,14 +37,6 @@ interface Applicant {
   specialty: string | null;
   preferredLanguage: string | null;
   preferredMentorshipTiming: string | null;
-  /** Set while the typed specialization is waiting for review. */
-  specializationSuggestion?: {
-    id: string;
-    name: string;
-    degree: string;
-    /** What the college's list already has for this degree. */
-    collegeSpecializations: string[];
-  } | null;
 }
 
 export interface VerificationRequestRow {
@@ -84,9 +72,6 @@ export function VerificationRow({
   const [docUrl, setDocUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [resolved, setResolved] = useState(false);
-  // The applicant's typed specialization: '' = add it as typed, otherwise the
-  // existing entry to use instead.
-  const [useSpecialization, setUseSpecialization] = useState('');
   const [isPending, startTransition] = useTransition();
 
   const viewDocument = () => {
@@ -104,13 +89,7 @@ export function VerificationRow({
     setError(null);
     startTransition(async () => {
       try {
-        const suggestion = request.applicant?.specializationSuggestion;
-        const choice: SpecializationChoice | undefined = suggestion
-          ? useSpecialization
-            ? { mode: 'USE', name: useSpecialization }
-            : { mode: 'ADD' }
-          : undefined;
-        await reviewVerificationRequest(request.id, approve, note || undefined, choice);
+        await reviewVerificationRequest(request.id, approve, note || undefined);
         setResolved(true);
         toast.success(approve ? 'Approved.' : 'Rejected.');
       } catch (e) {
@@ -197,37 +176,6 @@ export function VerificationRow({
               <Field label="Bio" value={a.bio} />
             </div>
           )}
-        </div>
-      )}
-
-      {a?.specializationSuggestion && (
-        <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50 p-3 dark:border-amber-900/60 dark:bg-amber-950/30">
-          <label
-            htmlFor={`spec-${request.id}`}
-            className="text-xs font-medium uppercase tracking-wide text-amber-800 dark:text-amber-300"
-          >
-            Specialization suggestion
-          </label>
-          <p className="mt-1 text-sm text-zinc-700 dark:text-zinc-200">
-            &ldquo;{a.specializationSuggestion.name}&rdquo; is not on this college&apos;s{' '}
-            {a.specializationSuggestion.degree} list yet. Choose what approving this profile does with it.
-          </p>
-          <select
-            id={`spec-${request.id}`}
-            value={useSpecialization}
-            onChange={(e) => setUseSpecialization(e.target.value)}
-            disabled={isPending}
-            className="mt-2 w-full rounded-md border border-zinc-300 bg-white px-3 py-1.5 text-sm text-zinc-900 shadow-sm outline-none focus:border-zinc-400 focus:ring-2 focus:ring-zinc-400/40 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:focus:border-zinc-600 dark:focus:ring-zinc-600/40"
-          >
-            <option value="">
-              Add &ldquo;{a.specializationSuggestion.name}&rdquo; to the college&apos;s list (as typed)
-            </option>
-            {a.specializationSuggestion.collegeSpecializations.map((s) => (
-              <option key={s} value={s}>
-                Use existing: {s}
-              </option>
-            ))}
-          </select>
         </div>
       )}
 

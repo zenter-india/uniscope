@@ -21,8 +21,5 @@ import { SpecializationSuggestionsService } from './specialization-suggestions.s
     AdminSpecializationSuggestionsController,
   ],
   providers: [CustomDegreesService, SpecializationSuggestionsService],
-  // The verification queue shows an applicant's pending specialization and
-  // applies the admin's choice when the profile is approved.
-  exports: [SpecializationSuggestionsService],
 })
 export class ProfileOptionsModule {}
