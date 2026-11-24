@@ -37,6 +37,28 @@ export async function loadSuggestions(
   return backendFetch<Page>(`/admin/specialization-suggestions?${params.toString()}`);
 }
 
+/** An existing specialization name for a degree, offered in the dropdown. */
+export interface SpecializationOption {
+  name: string;
+  /** How many colleges list it under the degree. */
+  colleges: number;
+}
+
+/** Every specialization name already in our data for one degree (e.g. "MD/MS"),
+ * A–Z. If the lookup fails the list is empty, so the name box still works as a
+ * plain text box. */
+export async function loadSpecializationOptions(
+  degree: string,
+): Promise<SpecializationOption[]> {
+  try {
+    return await backendFetch<SpecializationOption[]>(
+      `/admin/specialization-suggestions/options?degree=${encodeURIComponent(degree)}`,
+    );
+  } catch {
+    return [];
+  }
+}
+
 export type ReviewResult =
   | { ok: true; suggestion: SpecializationSuggestion }
   | { ok: false; error: string };
