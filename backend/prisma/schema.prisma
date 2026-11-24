@@ -790,6 +790,11 @@ model LedgerEntry {
   sessionId         String?         @map("session_id")
   idempotencyKey    String          @unique @map("idempotency_key")
   note              String?         @db.VarChar(300)
+  /// UNI-17: "android" | "ios" | "web" — where a TOPUP was made. Written once,
+  /// when the top-up is credited; null on every other entry type and on
+  /// top-ups from before this column existed (those are worked out when read,
+  /// from the idempotency key and the amount paid — never by editing the row).
+  platform          String?         @db.VarChar(20)
   createdAt         DateTime        @default(now()) @map("created_at") @db.Timestamptz
 
   wallet  Wallet   @relation(fields: [walletId], references: [id])
@@ -797,6 +802,8 @@ model LedgerEntry {
 
   @@index([walletId, createdAt])
   @@index([sessionId])
+  /// The admin Money page reads one entry type over a date range.
+  @@index([type, createdAt])
   @@map("ledger_entries")
 }
 

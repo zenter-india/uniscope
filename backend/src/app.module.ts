@@ -52,6 +52,7 @@ import { UniversityWishlistModule } from './modules/university-wishlist/universi
 import { DataImportModule } from './modules/data-import/data-import.module.js';
 import { EnrollmentsModule } from './modules/enrollments/enrollments.module.js';
 import { MetricsModule } from './modules/metrics/metrics.module.js';
+import { MoneyModule } from './modules/money/money.module.js';
 import { ReviewModerationModule } from './modules/review-moderation/review-moderation.module.js';
 import { BroadcastsModule } from './modules/broadcasts/broadcasts.module.js';
 import { PromotionsModule } from './modules/promotions/promotions.module.js';
@@ -135,6 +136,7 @@ import { IntegrationsModule } from './modules/integrations/integrations.module.j
     DataImportModule,
     EnrollmentsModule,
     MetricsModule,
+    MoneyModule,
     ReviewModerationModule,
     BroadcastsModule,
     PromotionsModule,

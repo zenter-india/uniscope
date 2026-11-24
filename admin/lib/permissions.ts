@@ -21,6 +21,7 @@ export const ADMIN_SECTIONS: readonly AdminSection[] = [
   { key: 'reviews', label: 'Reviews', group: 'Operations', path: '/dashboard/reviews' },
   { key: 'sessions', label: 'Sessions', group: 'Operations', path: '/dashboard/sessions' },
   { key: 'payouts', label: 'Payouts', group: 'Operations', path: '/dashboard/payouts' },
+  { key: 'money', label: 'Money', group: 'Operations', path: '/dashboard/money' },
   { key: 'support', label: 'Support', group: 'Operations', path: '/dashboard/support' },
   { key: 'broadcasts', label: 'Announcements', group: 'Operations', path: '/dashboard/broadcasts' },
   { key: 'promotions', label: 'Promotions', group: 'Operations', path: '/dashboard/promotions' },

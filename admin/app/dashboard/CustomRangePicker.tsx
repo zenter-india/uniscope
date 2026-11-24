@@ -29,6 +29,9 @@ export function CustomRangePicker({
   to,
   today,
   label,
+  action = '/dashboard',
+  keep = {},
+  compared = true,
 }: {
   /** The active custom range, or '' when a preset is selected. */
   from: string;
@@ -37,6 +40,13 @@ export function CustomRangePicker({
   today: string;
   /** Text for the chip when a custom range is active, e.g. "3 Nov – 9 Nov". */
   label: string;
+  /** The page the range is applied to. The Overview by default. */
+  action?: string;
+  /** Other filters on that page that a new range should not reset. */
+  keep?: Record<string, string>;
+  /** Whether the page compares the range with the one before it (the
+   * Overview does; the Money page does not). */
+  compared?: boolean;
 }) {
   const active = from !== '' && to !== '';
   const [open, setOpen] = useState(active);
@@ -67,9 +77,12 @@ export function CustomRangePicker({
       {open && (
         <form
           method="get"
-          action="/dashboard"
+          action={action}
           className="basis-full rounded-lg border border-zinc-200 bg-white p-3 dark:border-zinc-800 dark:bg-zinc-900"
         >
+          {Object.entries(keep).map(([name, value]) => (
+            <input key={name} type="hidden" name={name} value={value} />
+          ))}
           <div className="flex flex-wrap items-end gap-3">
             <label className="flex min-w-[9.5rem] flex-1 flex-col gap-1 text-xs font-medium uppercase tracking-wide text-zinc-500 sm:flex-none dark:text-zinc-400">
               From
@@ -108,7 +121,7 @@ export function CustomRangePicker({
             {shortcuts.map((s) => (
               <a
                 key={s.text}
-                href={`/dashboard?from=${s.from}&to=${s.to}`}
+                href={`${action}?${new URLSearchParams({ ...keep, from: s.from, to: s.to }).toString()}`}
                 className="rounded-md border border-zinc-200 px-2.5 py-1.5 text-xs font-medium text-zinc-600 hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
               >
                 {s.text}
@@ -116,8 +129,8 @@ export function CustomRangePicker({
             ))}
           </div>
           <p className="mt-2 text-xs text-zinc-400 dark:text-zinc-500">
-            Whole days, counted in UTC like the charts. Compared with the same number of days right
-            before.
+            Whole days, counted in UTC like the charts.
+            {compared ? ' Compared with the same number of days right before.' : ''}
           </p>
         </form>
       )}

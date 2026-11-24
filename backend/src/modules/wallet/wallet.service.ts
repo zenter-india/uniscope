@@ -39,6 +39,7 @@ import {
 import { ListLedgerDto } from './dto/list-ledger.dto.js';
 import { VerifyAppleTopupDto } from './dto/verify-apple-topup.dto.js';
 import { VerifyTopupDto } from './dto/verify-topup.dto.js';
+import { razorpayTopupPlatform, type TopupPlatform } from './topup-platform.js';
 import {
   LedgerEntryResponse,
   WalletResponse,
@@ -437,7 +438,10 @@ export class WalletService {
     const order = await this.razorpay.orders.create({
       amount: dto.amountMinor,
       currency: CURRENCY,
-      notes: { userId },
+      // `platform` rides along only when the app said where it is running; the
+      // credit step reads it back (or works it out from the price) so the
+      // admin Money page can split top-ups by platform.
+      notes: { userId, ...(dto.platform ? { platform: dto.platform } : {}) },
     });
 
     return {
@@ -492,6 +496,10 @@ export class WalletService {
       amountMinor: creditedAmountMinor,
       idempotencyKey: `razorpay:${dto.razorpayPaymentId}`,
       note: `Razorpay order ${dto.razorpayOrderId} — paid ${paidAmountMinor} minor, credited ${uniminutes} Uniminutes`,
+      platform: razorpayTopupPlatform(
+        (order.notes as Record<string, string> | undefined)?.['platform'],
+        paidAmountMinor,
+      ),
     });
     if (applied) {
       await this.notifyTopupCredited(userId, creditedAmountMinor);
@@ -561,6 +569,10 @@ export class WalletService {
       amountMinor: creditedAmountMinor,
       idempotencyKey: `razorpay:${payment.id}`,
       note: `Razorpay order ${payment.order_id} — paid ${payment.amount} minor, credited ${uniminutes} Uniminutes`,
+      platform: razorpayTopupPlatform(
+        (order.notes as Record<string, string> | undefined)?.['platform'],
+        payment.amount,
+      ),
     });
 
     if (!applied) {
@@ -801,6 +813,7 @@ export class WalletService {
       amountMinor: creditedAmountMinor,
       idempotencyKey,
       note: `Apple IAP ${productId} — transaction ${transactionId}`,
+      platform: 'ios',
     });
 
     await this.prisma.appleTransaction.upsert({
@@ -918,6 +931,8 @@ export class WalletService {
     idempotencyKey: string;
     sessionId?: string;
     note?: string;
+    /** Only for TOPUP entries — where the top-up was made. */
+    platform?: TopupPlatform;
   }): Promise<boolean> {
     try {
       await this.prisma.$transaction(async (tx) => {
@@ -937,6 +952,7 @@ export class WalletService {
             sessionId: params.sessionId,
             idempotencyKey: params.idempotencyKey,
             note: params.note,
+            platform: params.platform,
           },
         });
       });
