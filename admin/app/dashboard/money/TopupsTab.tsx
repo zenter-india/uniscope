@@ -31,7 +31,7 @@ export async function TopupsTab({
         title="Top-ups"
         hint="Who recharged, on which platform, for how many minutes. Newest first."
       >
-        <a href={`/dashboard/money/export?kind=topups&${tableQs}`} className={EXPORT_LINK}>
+        <a href={`/dashboard/money/export?${tableQs}`} className={EXPORT_LINK}>
           Export CSV
         </a>
       </SectionHeading>
