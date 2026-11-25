@@ -166,6 +166,13 @@ async function authed<T>(path: string, init?: RequestInit): Promise<T> {
   }
 }
 
+/** The signed-in account's role (ASPIRANT, MENTOR, ...). Asked of the backend
+ * each time rather than remembered, so a role change is picked up. */
+export async function getMyRole(): Promise<string> {
+  const me = await authed<{ role: string }>("/users/me");
+  return me.role;
+}
+
 export interface Wallet {
   balanceMinor: number;
   reservedMinor: number;
