@@ -58,31 +58,6 @@ export interface MoneyTopup {
   paidMinor: number | null;
 }
 
-export interface MoneyMentor {
-  id: string;
-  name: string;
-  uniqueId: string | null;
-  sessions: number;
-  minutes: number;
-  earnedMinor: number;
-  paidOutMinor: number;
-  balanceMinor: number;
-}
-
-export interface MoneyMentorStats {
-  mentorsEarning: number;
-  totalEarnedMinor: number;
-  topOneShare: number | null;
-  topThreeShare: number | null;
-  averagePerCallMinor: number | null;
-}
-
-export interface MoneyMentors {
-  data: MoneyMentor[];
-  truncated: boolean;
-  stats: MoneyMentorStats;
-}
-
 export interface MoneyTrendPoint {
   /** `YYYY-MM-DD`, the UTC start of the day, week or month. */
   bucket: string;
@@ -135,69 +110,6 @@ export interface MoneyPayers {
   };
   packs: MoneyPack[];
   topPayers: MoneyTopPayer[];
-}
-
-export type BalanceKind =
-  | 'BOUGHT'
-  | 'TEST_CREDIT'
-  | 'MANUAL_EARNINGS'
-  | 'SESSION_DEBIT'
-  | 'SESSION_CREDIT'
-  | 'PAYOUT'
-  | 'ADJUSTMENT'
-  | 'REFUND'
-  | 'HOLD_RELEASE';
-
-export interface MoneyBalanceBreakdown {
-  wallets: number;
-  balanceMinor: number;
-  lines: { kind: BalanceKind; entries: number; minor: number }[];
-  /** Balance minus the lines: 0 when the ledger explains it fully. */
-  unexplainedMinor: number;
-}
-
-export interface MoneyOwedMentor {
-  id: string;
-  name: string;
-  uniqueId: string | null;
-  balanceMinor: number;
-  lastPayoutAt: string | null;
-  owedSince: string | null;
-  daysOwed: number | null;
-}
-
-export interface MoneyBalances {
-  aspirants: MoneyBalanceBreakdown;
-  mentors: MoneyBalanceBreakdown;
-  owedMentors: MoneyOwedMentor[];
-}
-
-export type UsageOutcome =
-  | 'billed'
-  | 'declined'
-  | 'cancelled'
-  | 'aspirant_no_show'
-  | 'mentor_no_show'
-  | 'not_connected'
-  | 'open';
-
-export interface MoneyUsage {
-  range: { from: string; to: string } | null;
-  days: number;
-  requested: number;
-  billedCalls: number;
-  billedMinutes: number;
-  billedCostMinor: number;
-  averageBilledMinutes: number | null;
-  billedShare: number | null;
-  callers: number;
-  mentorsCalled: number;
-  outcomes: {
-    outcome: UsageOutcome;
-    count: number;
-    minutes: number;
-    costMinor: number;
-  }[];
 }
 
 /** What the page's address can carry. */

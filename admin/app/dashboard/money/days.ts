@@ -78,22 +78,12 @@ export function fmtWhen(iso: string): string {
 }
 
 /** The screens of the Money page. */
-export const TABS = [
-  'overview',
-  'topups',
-  'payers',
-  'mentors',
-  'balances',
-  'usage',
-] as const;
+export const TABS = ['overview', 'topups', 'payers'] as const;
 export type Tab = (typeof TABS)[number];
 export const TAB_LABEL: Record<Tab, string> = {
   overview: 'Overview',
   topups: 'Top-ups',
   payers: 'Payers & packs',
-  mentors: 'Mentors',
-  balances: 'Balances',
-  usage: 'Usage',
 };
 export const isTab = (v: string | undefined): v is Tab =>
   !!v && (TABS as readonly string[]).includes(v);
@@ -131,13 +121,6 @@ export const pct = (share: number | null, digits = 0): string =>
   share === null ? '—' : `${(share * 100).toFixed(digits)}%`;
 
 export const nf = (n: number): string => n.toLocaleString('en-IN');
-
-/** Minor units as Uniminutes ("2,811", or "0.3" for a small amount), signed
- * when asked. */
-export function uniminutes(minor: number, signed = false): string {
-  const n = Number((minor / 1000).toFixed(1));
-  return `${signed && n > 0 ? '+' : ''}${nf(n)}`;
-}
 
 /** A day written YYYY-MM-DD for a chart label, or the day of an ISO time. */
 export function fmtDate(iso: string, unit?: 'day' | 'week' | 'month'): string {
