@@ -5,6 +5,8 @@
  *
  * Google Play:  https://play.google.com/store/apps/details?id=in.uniscope.app
  * App Store:    https://apps.apple.com/in/app/<name>/id<numeric-apple-id>
- *               (the numeric id only exists once the app is approved) */
+ *               (the numeric id only exists once the app is approved)
+ *
+ * Both listings are live now, so both values below are set. */
 export const PLAY_STORE_URL = "https://play.google.com/store/apps/details?id=in.uniscope.app";
 export const APP_STORE_URL = "https://apps.apple.com/in/app/uniscope/id6796029786";
