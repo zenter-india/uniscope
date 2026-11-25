@@ -22,6 +22,8 @@ import { adminOrderBy } from '../../common/helpers/admin-sort.helper.js';
 import { SlackNotifierService } from '../../common/slack/slack-notifier.service.js';
 import { PrismaService } from '../../database/prisma/prisma.service.js';
 import { NotificationsService } from '../notifications/notifications.service.js';
+import { CustomDegreesService } from '../profile-options/custom-degrees.service.js';
+import { SpecializationSuggestionsService } from '../profile-options/specialization-suggestions.service.js';
 import { SUPABASE_BUCKETS, SUPABASE_CLIENT } from '../../supabase/index.js';
 import { UniversitiesService } from '../universities/universities.service.js';
 import { UsersService } from '../users/users.service.js';
@@ -31,6 +33,10 @@ import {
   CreateMentorLeadDto,
 } from './dto/create-lead.dto.js';
 import { ListLeadsDto } from './dto/list-leads.dto.js';
+import {
+  customDegreeToQueue,
+  specializationToQueue,
+} from './lead-custom-options.js';
 import { PHONE_TAKEN_MESSAGE } from './phone-signup-rule.js';
 import { UpdateLeadDto } from './dto/update-lead.dto.js';
 import {
@@ -68,6 +74,8 @@ export class EnrollmentsService {
     private readonly usersService: UsersService,
     private readonly notifications: NotificationsService,
     private readonly universitiesService: UniversitiesService,
+    private readonly customDegrees: CustomDegreesService,
+    private readonly specializationSuggestions: SpecializationSuggestionsService,
   ) {}
 
   /** Same phoneHash derivation as AuthService.verifyOtp's production
@@ -149,7 +157,7 @@ export class EnrollmentsService {
       documentType?: Prisma.VerificationRequestUncheckedCreateInput['documentType'];
       documentKey: string | null;
     },
-  ): Promise<void> {
+  ): Promise<string> {
     const phoneHash = this.phoneHashFor(phone);
 
     const { user, isNewUser } =
@@ -269,6 +277,76 @@ export class EnrollmentsService {
         status: EnrollmentLeadStatus.CONVERTED,
       },
     });
+    return user.id;
+  }
+
+  /**
+   * The website form submits a course or specialization someone typed in the
+   * same field as a picked one, and — unlike the mobile app — has no logged-in
+   * user to call the approval endpoints with. So the backend queues them here,
+   * for the account the lead just became, exactly as the app does:
+   *  - a typed course that isn't a built-in or approved one → the admin
+   *    "Degrees" queue;
+   *  - a typed specialization missing from the mentor's college list → the
+   *    admin "Specializations" queue (`degreeKey` is the curated program the
+   *    college's list is kept under; null when this degree has none).
+   * Best-effort and silent: this is a side effect of sign-up, never a reason
+   * to fail it, and every failure (not a mentor yet, queue full, odd text) just
+   * leaves the typed text on the lead exactly as before.
+   */
+  private async queueTypedChoices(
+    userId: string,
+    choices: {
+      stream?: string;
+      degree?: string;
+      universityId?: string | null;
+      degreeKey?: string | null;
+      specialization?: string;
+    },
+  ): Promise<void> {
+    const degree = customDegreeToQueue(choices.stream, choices.degree);
+    if (degree) {
+      await this.customDegrees
+        .submit(userId, degree)
+        .catch((err) =>
+          this.logger.warn(`Custom degree not queued for ${userId}: ${err}`),
+        );
+    }
+
+    const specialization = specializationToQueue(choices.specialization);
+    if (specialization && choices.universityId && choices.degreeKey) {
+      await this.specializationSuggestions
+        .submit(userId, {
+          universityId: choices.universityId,
+          degree: choices.degreeKey,
+          name: specialization,
+        })
+        .catch((err) =>
+          this.logger.warn(`Specialization not queued for ${userId}: ${err}`),
+        );
+    }
+  }
+
+  /** The curated Program name a mentor's degree is stored under for the
+   * specialization queue — null for degrees with no per-college list (and for
+   * Medical Doctorate/Others, whose list is not the college's own; the app
+   * skips those too). */
+  private curatedDegreeKey(stream?: string, degree?: string): string | null {
+    if (!stream || !degree) return null;
+    if (
+      stream === 'Medical' &&
+      (degree === 'Doctorate' || degree === 'Others')
+    ) {
+      return null;
+    }
+    if (!EnrollmentsService.SPECIALIZATION_SUGGESTION_STREAMS.has(stream)) {
+      return null;
+    }
+    const name =
+      EnrollmentsService.CURATED_PROGRAM_NAME_BY_STREAM_DEGREE[stream]?.[
+        degree
+      ];
+    return name ? name.toUpperCase() : null;
   }
 
   /**
@@ -414,7 +492,7 @@ export class EnrollmentsService {
     });
 
     try {
-      await this.provisionAccountFromLead(
+      const userId = await this.provisionAccountFromLead(
         EnrollmentLeadRole.ASPIRANT,
         this.normalizePhone(dto.phone),
         dto,
@@ -432,6 +510,12 @@ export class EnrollmentsService {
           universityId: universityId ?? undefined,
         },
       );
+      // Only the typed course: an aspirant's specialization is an interest,
+      // not a program their college offers, so there is no college list to grow.
+      await this.queueTypedChoices(userId, {
+        stream: dto.stream,
+        degree: dto.qualification,
+      });
     } catch (err) {
       // Never let account provisioning fail the public form submission --
       // the lead above is already safely saved either way.
@@ -622,7 +706,7 @@ export class EnrollmentsService {
     });
 
     try {
-      await this.provisionAccountFromLead(
+      const userId = await this.provisionAccountFromLead(
         EnrollmentLeadRole.MENTOR,
         this.normalizePhone(dto.phone),
         dto,
@@ -647,6 +731,13 @@ export class EnrollmentsService {
         },
         { universityId, documentType: dto.documentType, documentKey },
       );
+      await this.queueTypedChoices(userId, {
+        stream: dto.stream,
+        degree: dto.degree,
+        universityId,
+        degreeKey: this.curatedDegreeKey(dto.stream, dto.degree),
+        specialization: dto.specialization,
+      });
     } catch (err) {
       this.logger.error(
         `Failed to provision account for mentor lead ${ack.id}`,
