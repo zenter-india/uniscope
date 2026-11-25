@@ -33,6 +33,7 @@ import {
   CreateMentorLeadDto,
 } from './dto/create-lead.dto.js';
 import { ListLeadsDto } from './dto/list-leads.dto.js';
+import { describeAccountFailure, lastLine } from './lead-account-failure.js';
 import {
   customDegreeToQueue,
   specializationToQueue,
@@ -52,16 +53,6 @@ const MAX_LIMIT = 100;
  * verification bucket, so a lead's document is never confused with a real
  * VerificationRequest's (which is keyed by `<userId>/`). */
 const LEAD_DOCUMENT_PREFIX = 'enrollment-leads';
-
-/** The last non-empty line of an error message, shortened (Prisma errors put
- * the useful reason at the end). */
-function lastLine(text: string): string {
-  const lines = text
-    .split(/\r?\n/)
-    .map((l) => l.trim())
-    .filter(Boolean);
-  return (lines[lines.length - 1] ?? 'unknown error').slice(0, 200);
-}
 
 @Injectable()
 export class EnrollmentsService {
@@ -474,6 +465,33 @@ export class EnrollmentsService {
     return university?.id ?? null;
   }
 
+  /**
+   * Tells the team in Slack that a website sign-up did not become an account,
+   * with the reason. Creating the account is a best-effort step after the lead
+   * is saved, so without this a failure only reached the server log and
+   * nobody noticed for days. It runs inside the catch that keeps the public
+   * form working, so it must never throw.
+   */
+  private async alertAccountNotCreated(
+    role: 'aspirant' | 'mentor',
+    dto: BaseLeadDto,
+    err: unknown,
+  ): Promise<void> {
+    try {
+      let phone = dto.phone;
+      try {
+        phone = this.normalizePhone(dto.phone);
+      } catch {
+        // Shown as typed: the number itself may be why the account failed.
+      }
+      await this.slack.send(
+        `:warning: Account not created for ${role} ${dto.fullName.trim()} (${phone}) — ${describeAccountFailure(err)} Open Leads in the admin panel and use Retry account.`,
+      );
+    } catch (alertErr) {
+      this.logger.warn(`Slack alert for a failed account failed: ${alertErr}`);
+    }
+  }
+
   async createAspirantLead(
     dto: CreateAspirantLeadDto,
   ): Promise<EnrollmentLeadAcknowledgement> {
@@ -491,6 +509,7 @@ export class EnrollmentsService {
       preferredMentorshipTiming: dto.preferredMentorshipTiming,
     });
 
+    let accountCreated = false;
     try {
       const userId = await this.provisionAccountFromLead(
         EnrollmentLeadRole.ASPIRANT,
@@ -510,6 +529,7 @@ export class EnrollmentsService {
           universityId: universityId ?? undefined,
         },
       );
+      accountCreated = true;
       // Only the typed course: an aspirant's specialization is an interest,
       // not a program their college offers, so there is no college list to grow.
       await this.queueTypedChoices(userId, {
@@ -523,6 +543,9 @@ export class EnrollmentsService {
         `Failed to provision account for aspirant lead ${ack.id}`,
         err instanceof Error ? err.stack : String(err),
       );
+      if (!accountCreated) {
+        await this.alertAccountNotCreated('aspirant', dto, err);
+      }
     }
 
     return ack;
@@ -705,6 +728,7 @@ export class EnrollmentsService {
       documentKey: documentKey ?? undefined,
     });
 
+    let accountCreated = false;
     try {
       const userId = await this.provisionAccountFromLead(
         EnrollmentLeadRole.MENTOR,
@@ -731,6 +755,7 @@ export class EnrollmentsService {
         },
         { universityId, documentType: dto.documentType, documentKey },
       );
+      accountCreated = true;
       await this.queueTypedChoices(userId, {
         stream: dto.stream,
         degree: dto.degree,
@@ -743,6 +768,9 @@ export class EnrollmentsService {
         `Failed to provision account for mentor lead ${ack.id}`,
         err instanceof Error ? err.stack : String(err),
       );
+      if (!accountCreated) {
+        await this.alertAccountNotCreated('mentor', dto, err);
+      }
     }
 
     return ack;
