@@ -33,7 +33,12 @@ import {
   CreateMentorLeadDto,
 } from './dto/create-lead.dto.js';
 import { ListLeadsDto } from './dto/list-leads.dto.js';
-import { describeAccountFailure, lastLine } from './lead-account-failure.js';
+import {
+  LEAD_ACCOUNT_FAILED,
+  LEAD_WITHOUT_ACCOUNT,
+  describeAccountFailure,
+  lastLine,
+} from './lead-account-failure.js';
 import {
   customDegreeToQueue,
   specializationToQueue,
@@ -266,6 +271,9 @@ export class EnrollmentsService {
       data: {
         convertedUserId: user.id,
         status: EnrollmentLeadStatus.CONVERTED,
+        // The account exists now, so any earlier failure no longer applies.
+        accountFailureReason: null,
+        accountFailedAt: null,
       },
     });
     return user.id;
@@ -466,29 +474,28 @@ export class EnrollmentsService {
   }
 
   /**
-   * Tells the team in Slack that a website sign-up did not become an account,
-   * with the reason. Creating the account is a best-effort step after the lead
-   * is saved, so without this a failure only reached the server log and
-   * nobody noticed for days. It runs inside the catch that keeps the public
-   * form working, so it must never throw.
+   * Remembers on the lead why its account could not be created, and when, so
+   * the admin "Account creation" page can list it. Creating the account is a
+   * best-effort step after the lead is saved, so without this a failure only
+   * reached the server log and nobody noticed for days. It runs inside the
+   * catch that keeps the public form working, so it must never throw.
    */
-  private async alertAccountNotCreated(
-    role: 'aspirant' | 'mentor',
-    dto: BaseLeadDto,
+  private async recordAccountFailure(
+    leadId: string,
     err: unknown,
   ): Promise<void> {
     try {
-      let phone = dto.phone;
-      try {
-        phone = this.normalizePhone(dto.phone);
-      } catch {
-        // Shown as typed: the number itself may be why the account failed.
-      }
-      await this.slack.send(
-        `:warning: Account not created for ${role} ${dto.fullName.trim()} (${phone}) — ${describeAccountFailure(err)} Open Leads in the admin panel and use Retry account.`,
+      await this.prisma.enrollmentLead.update({
+        where: { id: leadId },
+        data: {
+          accountFailureReason: describeAccountFailure(err),
+          accountFailedAt: new Date(),
+        },
+      });
+    } catch (recordErr) {
+      this.logger.warn(
+        `Could not record the account failure on lead ${leadId}: ${recordErr}`,
       );
-    } catch (alertErr) {
-      this.logger.warn(`Slack alert for a failed account failed: ${alertErr}`);
     }
   }
 
@@ -544,7 +551,7 @@ export class EnrollmentsService {
         err instanceof Error ? err.stack : String(err),
       );
       if (!accountCreated) {
-        await this.alertAccountNotCreated('aspirant', dto, err);
+        await this.recordAccountFailure(ack.id, err);
       }
     }
 
@@ -769,7 +776,7 @@ export class EnrollmentsService {
         err instanceof Error ? err.stack : String(err),
       );
       if (!accountCreated) {
-        await this.alertAccountNotCreated('mentor', dto, err);
+        await this.recordAccountFailure(ack.id, err);
       }
     }
 
@@ -784,6 +791,10 @@ export class EnrollmentsService {
 
     const where: Prisma.EnrollmentLeadWhereInput = {
       ...(query.role && { role: query.role }),
+      // Before the status filter, so a status picked on purpose wins over the
+      // "not rejected" default of these.
+      ...(query.account === 'failed' && LEAD_ACCOUNT_FAILED),
+      ...(query.account === 'missing' && LEAD_WITHOUT_ACCOUNT),
       ...(query.status && { status: query.status }),
       ...(query.search && {
         OR: [
@@ -822,17 +833,27 @@ export class EnrollmentsService {
     total: number;
     byStatus: Record<string, number>;
     byRole: Record<string, number>;
+    /** Leads with no account where the server recorded why it failed. */
+    accountFailed: number;
+    /** Every lead with no account that was not rejected, including older ones
+     * from before the website made accounts, which have no recorded reason. */
+    withoutAccount: number;
   }> {
-    const [byStatus, byRole, total] = await Promise.all([
-      this.prisma.enrollmentLead.groupBy({ by: ['status'], _count: true }),
-      this.prisma.enrollmentLead.groupBy({ by: ['role'], _count: true }),
-      this.prisma.enrollmentLead.count(),
-    ]);
+    const [byStatus, byRole, total, accountFailed, withoutAccount] =
+      await Promise.all([
+        this.prisma.enrollmentLead.groupBy({ by: ['status'], _count: true }),
+        this.prisma.enrollmentLead.groupBy({ by: ['role'], _count: true }),
+        this.prisma.enrollmentLead.count(),
+        this.prisma.enrollmentLead.count({ where: LEAD_ACCOUNT_FAILED }),
+        this.prisma.enrollmentLead.count({ where: LEAD_WITHOUT_ACCOUNT }),
+      ]);
 
     return {
       total,
       byStatus: Object.fromEntries(byStatus.map((r) => [r.status, r._count])),
       byRole: Object.fromEntries(byRole.map((r) => [r.role, r._count])),
+      accountFailed,
+      withoutAccount,
     };
   }
 
@@ -932,6 +953,9 @@ export class EnrollmentsService {
           // in sync here means an admin can't leave a lead marked NEW while
           // its account already exists.
           status: EnrollmentLeadStatus.CONVERTED,
+          // ...and an account that exists means there is nothing left to retry.
+          accountFailureReason: null,
+          accountFailedAt: null,
         }),
       },
       include: { university: { select: { name: true } } },
@@ -1019,6 +1043,9 @@ export class EnrollmentsService {
         `Retry of account creation failed for lead ${id}`,
         err instanceof Error ? err.stack : String(err),
       );
+      // Keep the lead's reason current: the latest attempt is what an admin
+      // needs to see, not the one from the original sign-up.
+      await this.recordAccountFailure(id, err);
       const text = err instanceof Error ? err.message : String(err);
       if (/converted_user_id/i.test(text)) {
         throw new ConflictException(
@@ -1054,6 +1081,8 @@ export class EnrollmentsService {
   async exportCsv(query: ListLeadsDto): Promise<string> {
     const where: Prisma.EnrollmentLeadWhereInput = {
       ...(query.role && { role: query.role }),
+      ...(query.account === 'failed' && LEAD_ACCOUNT_FAILED),
+      ...(query.account === 'missing' && LEAD_WITHOUT_ACCOUNT),
       ...(query.status && { status: query.status }),
     };
 

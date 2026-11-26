@@ -8,6 +8,7 @@ import {
   VerificationStatus,
 } from '@prisma/client';
 import { PrismaService } from '../../database/prisma/prisma.service.js';
+import { LEAD_ACCOUNT_FAILED } from '../enrollments/lead-account-failure.js';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const OPEN_PAYOUTS: PayoutStatus[] = [
@@ -88,6 +89,10 @@ export interface DashboardMetrics {
   };
   queues: {
     newLeads: number;
+    /** Website sign-ups whose account could not be created (the server
+     * recorded why) and that still have none. Older leads from before the
+     * website made accounts are not counted. */
+    leadsWithAccountFailure: number;
     pendingVerifications: number;
     openReports: number;
     pendingPayouts: number;
@@ -176,6 +181,7 @@ export class MetricsService {
       verifiedMentors,
       totalUniversities,
       newLeads,
+      leadsWithAccountFailure,
       pendingVerifications,
       openReports,
       pendingPayouts,
@@ -226,6 +232,7 @@ export class MetricsService {
       this.prisma.enrollmentLead.count({
         where: { status: EnrollmentLeadStatus.NEW },
       }),
+      this.prisma.enrollmentLead.count({ where: LEAD_ACCOUNT_FAILED }),
       this.prisma.user.count({
         where: { verificationStatus: { in: IN_REVIEW } },
       }),
@@ -313,6 +320,7 @@ export class MetricsService {
       },
       queues: {
         newLeads,
+        leadsWithAccountFailure,
         pendingVerifications,
         openReports,
         pendingPayouts,

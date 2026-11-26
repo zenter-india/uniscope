@@ -92,6 +92,7 @@ export async function retryLeadAccount(
       },
     );
     revalidatePath('/dashboard/leads');
+    revalidatePath('/dashboard/leads/account-creation');
     revalidatePath('/dashboard');
     return { ok: true, status: lead.status, convertedUserId: lead.convertedUserId };
   } catch (e) {

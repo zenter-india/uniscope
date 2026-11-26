@@ -24,6 +24,13 @@ export class ListLeadsDto {
   @IsEnum(EnrollmentLeadStatus)
   status?: EnrollmentLeadStatus;
 
+  /** `failed`: no account, and the server recorded why creating it failed.
+   * `missing`: no account at all, including older leads with no recorded
+   * reason. Both leave out leads rejected on purpose. */
+  @IsOptional()
+  @IsIn(['failed', 'missing'])
+  account?: 'failed' | 'missing';
+
   /** Matches against name, phone, email, or college name. */
   @IsOptional()
   @IsString()
