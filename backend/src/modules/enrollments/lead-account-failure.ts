@@ -1,4 +1,27 @@
-/** The most a reason in a team alert may hold. */
+import { EnrollmentLeadStatus, type Prisma } from '@prisma/client';
+
+/**
+ * A lead that should have an account but has none: nothing is linked to it, and
+ * nobody has rejected it on purpose. One definition, used by the list filter,
+ * the stats and the Overview count, so the numbers always agree.
+ */
+export const LEAD_WITHOUT_ACCOUNT: Prisma.EnrollmentLeadWhereInput = {
+  convertedUserId: null,
+  status: { not: EnrollmentLeadStatus.REJECTED },
+};
+
+/**
+ * The same, but only where the server recorded why creating the account
+ * failed. That is every failure since this was tracked, and none of the older
+ * leads from before the website made accounts at all, which have no reason and
+ * are mostly not failures. This is what the admin is told about.
+ */
+export const LEAD_ACCOUNT_FAILED: Prisma.EnrollmentLeadWhereInput = {
+  ...LEAD_WITHOUT_ACCOUNT,
+  accountFailureReason: { not: null },
+};
+
+/** The most a reason shown to an admin may hold. */
 const REASON_MAX = 300;
 
 /** The last non-empty line of an error message, shortened (Prisma errors put
@@ -12,7 +35,7 @@ export function lastLine(text: string): string {
 }
 
 /**
- * A short, readable reason an account could not be created, for the team alert.
+ * A short, readable reason an account could not be created, for the admin page.
  * Known causes get a plain sentence; anything else shows the last line of the
  * error. Never the raw stack, and never more than a short sentence.
  */
@@ -30,5 +53,8 @@ export function describeAccountFailure(err: unknown): string {
   } else {
     reason = lastLine(text);
   }
-  return reason.slice(0, REASON_MAX);
+  // The reason is shown as a sentence, so it has to end like one. The last line
+  // of an unexpected error usually does not.
+  const clipped = reason.slice(0, REASON_MAX - 1);
+  return /[.!?]$/.test(clipped) ? clipped : `${clipped}.`;
 }

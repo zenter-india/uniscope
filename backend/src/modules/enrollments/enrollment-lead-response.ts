@@ -47,6 +47,10 @@ export interface EnrollmentLeadResponse {
 
   convertedUserId: string | null;
   adminNote: string | null;
+  /** Why creating the account failed (short, readable) and when. Null when it
+   * never failed, or failed before this was recorded. */
+  accountFailureReason: string | null;
+  accountFailedAt: Date | null;
   createdAt: Date;
   updatedAt: Date;
 
@@ -94,6 +98,8 @@ export function toEnrollmentLeadResponse(
 
     convertedUserId: lead.convertedUserId,
     adminNote: lead.adminNote,
+    accountFailureReason: lead.accountFailureReason,
+    accountFailedAt: lead.accountFailedAt,
     createdAt: lead.createdAt,
     updatedAt: lead.updatedAt,
 
