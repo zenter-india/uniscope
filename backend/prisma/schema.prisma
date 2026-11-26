@@ -1281,12 +1281,14 @@ model EnrollmentLead {
   adminNote       String? @map("admin_note") @db.Text
 
   /// Why creating the account failed when the website form was submitted (a
-  /// short reason an admin can read) and when. Written by the server, never
-  /// accepted from the public form, and cleared as soon as the lead is linked
-  /// to an account. Null on a lead that never failed (or failed before this was
-  /// tracked).
+  /// short reason an admin can read), when, and at which step it stopped
+  /// ('account', 'document' or 'link'). Written by the server, never accepted
+  /// from the public form, and cleared as soon as the lead is linked to an
+  /// account. Null on a lead that never failed (or failed before this was
+  /// tracked); the step is also null on a failure recorded before steps were.
   accountFailureReason String?   @map("account_failure_reason") @db.VarChar(300)
   accountFailedAt      DateTime? @map("account_failed_at") @db.Timestamptz
+  accountFailureStep   String?   @map("account_failure_step") @db.VarChar(20)
 
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
   updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz

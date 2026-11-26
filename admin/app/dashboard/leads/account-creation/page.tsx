@@ -3,6 +3,7 @@ import { getAdminEmail } from '../../../../lib/adminAuth';
 import { EmptyState, FilterTabs } from '../../../../components/ui';
 import { DashboardShell } from '../../DashboardShell';
 import { AccountIssueRow, type AccountIssue } from './AccountIssueRow';
+import { parseStep } from './accountSteps';
 
 const VIEWS = ['attention', 'all'] as const;
 type View = (typeof VIEWS)[number];
@@ -23,6 +24,9 @@ interface LeadFromApi {
   createdAt: string;
   accountFailureReason?: string | null;
   accountFailedAt?: string | null;
+  /** Absent on an older backend, and null on a failure from before steps were
+   * recorded. */
+  accountFailureStep?: string | null;
 }
 
 /** UTC like the Money page, written here on the server so the text never
@@ -74,14 +78,16 @@ export default async function AccountCreationPage({
     signedUp: when(l.createdAt),
     reason: l.accountFailureReason ?? null,
     failedAt: l.accountFailedAt ? when(l.accountFailedAt) : null,
+    step: parseStep(l.accountFailureStep),
   }));
 
   return (
     <DashboardShell title="Account creation" email={email}>
       <p className="mb-5 max-w-3xl text-sm text-zinc-500 dark:text-zinc-400">
         Website sign-ups that did not become an account. When creating the account fails, the
-        reason is recorded here straight away, so nobody is left waiting without anyone knowing.
-        Retry account re-runs the creation with the details saved on the sign-up.
+        step it stopped at and the reason are recorded here straight away, so nobody is left
+        waiting without anyone knowing. Retry account re-runs the creation with the details saved
+        on the sign-up.
       </p>
 
       <div className="mb-4">

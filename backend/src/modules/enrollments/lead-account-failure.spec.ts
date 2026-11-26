@@ -6,8 +6,10 @@ import type {
 } from './dto/create-lead.dto';
 import { EnrollmentsService } from './enrollments.service';
 import {
+  AccountStepError,
   LEAD_ACCOUNT_FAILED,
   LEAD_WITHOUT_ACCOUNT,
+  accountStepOf,
   describeAccountFailure,
 } from './lead-account-failure';
 
@@ -73,6 +75,38 @@ describe('describeAccountFailure', () => {
   });
 });
 
+describe('an error that remembers its step', () => {
+  it('keeps the original message and stack, so nothing that reads them changes', () => {
+    const original = new Error(
+      'Unique constraint failed on the constraint: `enrollment_leads_converted_user_id_key`',
+    );
+    const wrapped = new AccountStepError('link', original);
+
+    expect(wrapped).toBeInstanceOf(Error);
+    expect(wrapped.message).toBe(original.message);
+    expect(wrapped.stack).toBe(original.stack);
+    expect(wrapped.original).toBe(original);
+    expect(describeAccountFailure(wrapped)).toBe(
+      describeAccountFailure(original),
+    );
+  });
+
+  it('gives the step back, and null for an error that has none', () => {
+    expect(
+      accountStepOf(new AccountStepError('document', new Error('x'))),
+    ).toBe('document');
+    expect(accountStepOf(new Error('x'))).toBeNull();
+    expect(accountStepOf('plain text')).toBeNull();
+    expect(accountStepOf(undefined)).toBeNull();
+  });
+
+  it('copes with something that is not an Error', () => {
+    const wrapped = new AccountStepError('account', 'plain text');
+    expect(wrapped.message).toBe('plain text');
+    expect(accountStepOf(wrapped)).toBe('account');
+  });
+});
+
 describe('the "no account" rules', () => {
   it('"without an account" means nothing linked and not rejected on purpose', () => {
     expect(LEAD_WITHOUT_ACCOUNT).toEqual({
@@ -135,6 +169,28 @@ describe('a sign-up whose account could not be created', () => {
       'The alias is already in use by another account.',
     );
     expect(arg.data.accountFailedAt).toBeInstanceOf(Date);
+  });
+
+  it('saves the step it stopped at next to the reason', async () => {
+    const { svc, update, provision } = setup();
+    provision.mockRejectedValue(
+      new AccountStepError('document', new Error('Something broke')),
+    );
+
+    await svc.createAspirantLead(aspirantDto);
+
+    const data = update.mock.calls[0][0].data;
+    expect(data.accountFailureStep).toBe('document');
+    expect(data.accountFailureReason).toBe('Something broke.');
+  });
+
+  it('saves no step when the error did not come from one', async () => {
+    const { svc, update, provision } = setup();
+    provision.mockRejectedValue(new Error('Something broke'));
+
+    await svc.createAspirantLead(aspirantDto);
+
+    expect(update.mock.calls[0][0].data.accountFailureStep).toBeNull();
   });
 
   it('does the same for a mentor', async () => {
@@ -210,6 +266,7 @@ describe('clearing an earlier failure', () => {
       status: 'CONVERTED',
       accountFailureReason: null,
       accountFailedAt: null,
+      accountFailureStep: null,
     });
   });
 
@@ -236,7 +293,111 @@ describe('clearing an earlier failure', () => {
       convertedUserId: 'u1',
       accountFailureReason: null,
       accountFailedAt: null,
+      accountFailureStep: null,
     });
+  });
+});
+
+describe('the step a real attempt stops at', () => {
+  const newMentor = {
+    user: { id: 'u1', displayName: 'Ravi', role: 'MENTOR' },
+    isNewUser: true,
+  };
+  const withDocument = {
+    universityId: 'uni1',
+    documentType: 'COLLEGE_ID',
+    documentKey: 'lead-docs/a.jpg',
+  };
+
+  function attempt(parts: {
+    provision?: jest.Mock;
+    transaction?: jest.Mock;
+    leadUpdate?: jest.Mock;
+  }) {
+    const svc = Object.assign(Object.create(EnrollmentsService.prototype), {
+      prisma: {
+        enrollmentLead: {
+          update: parts.leadUpdate ?? jest.fn().mockResolvedValue({}),
+        },
+        verificationRequest: { create: jest.fn(), count: jest.fn() },
+        user: { update: jest.fn() },
+        $transaction: parts.transaction ?? jest.fn().mockResolvedValue([]),
+      },
+      usersService: {
+        provisionAccountFromLead:
+          parts.provision ?? jest.fn().mockResolvedValue(newMentor),
+      },
+      notifications: { send: jest.fn().mockResolvedValue(undefined) },
+      logger: { error: jest.fn(), warn: jest.fn() },
+    }) as EnrollmentsService;
+    return (svc as any).provisionAccountFromLead(
+      'MENTOR',
+      '+919876543210',
+      { fullName: 'Ravi' },
+      {},
+      withDocument,
+    ) as Promise<string>;
+  }
+
+  async function stepOf(run: Promise<string>) {
+    const err: unknown = await run.then(
+      () => null,
+      (e: unknown) => e,
+    );
+    return { step: accountStepOf(err), message: (err as Error).message };
+  }
+
+  it('is "account" when the account itself could not be created', async () => {
+    const result = await stepOf(
+      attempt({ provision: jest.fn().mockRejectedValue(new Error('no db')) }),
+    );
+    expect(result).toEqual({ step: 'account', message: 'no db' });
+  });
+
+  it('is "document" when only the college document could not be sent', async () => {
+    const result = await stepOf(
+      attempt({ transaction: jest.fn().mockRejectedValue(new Error('no db')) }),
+    );
+    expect(result).toEqual({ step: 'document', message: 'no db' });
+  });
+
+  it('is "link" when only linking the sign-up to the account failed', async () => {
+    const result = await stepOf(
+      attempt({ leadUpdate: jest.fn().mockRejectedValue(new Error('no db')) }),
+    );
+    expect(result).toEqual({ step: 'link', message: 'no db' });
+  });
+
+  it('never says "document" for a sign-up with no document to send', async () => {
+    const svc = Object.assign(Object.create(EnrollmentsService.prototype), {
+      prisma: {
+        enrollmentLead: {
+          update: jest.fn().mockRejectedValue(new Error('no db')),
+        },
+      },
+      usersService: {
+        provisionAccountFromLead: jest.fn().mockResolvedValue({
+          user: { id: 'u1', displayName: 'Asha', role: 'ASPIRANT' },
+          isNewUser: true,
+        }),
+      },
+    }) as EnrollmentsService;
+
+    const result = await stepOf(
+      (svc as any).provisionAccountFromLead(
+        'ASPIRANT',
+        '+919876543210',
+        { fullName: 'Asha' },
+        {},
+      ) as Promise<string>,
+    );
+    expect(result.step).toBe('link');
+  });
+
+  it('is cleared along with the reason once the account is linked', async () => {
+    const leadUpdate = jest.fn().mockResolvedValue({});
+    await expect(attempt({ leadUpdate })).resolves.toBe('u1');
+    expect(leadUpdate.mock.calls[0][0].data.accountFailureStep).toBeNull();
   });
 });
 
@@ -275,6 +436,44 @@ describe('a failed retry', () => {
     expect(update.mock.calls[0][0].data.accountFailureReason).toBe(
       'Something broke.',
     );
+  });
+
+  it('refreshes the step too, and still reports a clash in plain words', async () => {
+    const update = jest.fn().mockResolvedValue({});
+    const svc = Object.assign(Object.create(EnrollmentsService.prototype), {
+      prisma: {
+        enrollmentLead: {
+          findUnique: jest.fn().mockResolvedValue({
+            id: 'lead1',
+            role: 'ASPIRANT',
+            phone: '+919876543210',
+            fullName: 'Asha',
+            alias: 'Asha',
+            convertedUserId: null,
+            languages: [],
+            availableDays: [],
+            yearInfoPrivate: false,
+          }),
+          update,
+        },
+      },
+      logger: { error: jest.fn(), warn: jest.fn() },
+      provisionAccountFromLead: jest
+        .fn()
+        .mockRejectedValue(
+          new AccountStepError(
+            'link',
+            new Error(
+              'Unique constraint failed on the constraint: `enrollment_leads_converted_user_id_key`',
+            ),
+          ),
+        ),
+    }) as EnrollmentsService;
+
+    await expect(svc.retryAccount('lead1')).rejects.toThrow(
+      'already has an account that is linked to another lead',
+    );
+    expect(update.mock.calls[0][0].data.accountFailureStep).toBe('link');
   });
 });
 
