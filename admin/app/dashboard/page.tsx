@@ -291,7 +291,7 @@ export default async function DashboardPage({
                 no account
               </span>
               <span className="text-amber-800/80 dark:text-amber-300/80">
-                See why and retry →
+                See why →
               </span>
             </Link>
           )}
