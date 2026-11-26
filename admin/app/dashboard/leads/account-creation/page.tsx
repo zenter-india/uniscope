@@ -3,6 +3,7 @@ import { getAdminEmail } from '../../../../lib/adminAuth';
 import { EmptyState, FilterTabs } from '../../../../components/ui';
 import { DashboardShell } from '../../DashboardShell';
 import { AccountIssueRow, type AccountIssue } from './AccountIssueRow';
+import { parseStep } from './accountSteps';
 
 const VIEWS = ['attention', 'all'] as const;
 type View = (typeof VIEWS)[number];
@@ -23,6 +24,9 @@ interface LeadFromApi {
   createdAt: string;
   accountFailureReason?: string | null;
   accountFailedAt?: string | null;
+  /** Absent on an older backend, and null on a failure from before steps were
+   * recorded. */
+  accountFailureStep?: string | null;
 }
 
 /** UTC like the Money page, written here on the server so the text never
@@ -74,23 +78,31 @@ export default async function AccountCreationPage({
     signedUp: when(l.createdAt),
     reason: l.accountFailureReason ?? null,
     failedAt: l.accountFailedAt ? when(l.accountFailedAt) : null,
+    step: parseStep(l.accountFailureStep),
   }));
 
   return (
     <DashboardShell title="Account creation" email={email}>
       <p className="mb-5 max-w-3xl text-sm text-zinc-500 dark:text-zinc-400">
         Website sign-ups that did not become an account. When creating the account fails, the
-        reason is recorded here straight away, so nobody is left waiting without anyone knowing.
-        Retry account re-runs the creation with the details saved on the sign-up.
+        step it stopped at and the reason are recorded here straight away, so nobody is left
+        waiting without anyone knowing. Export CSV downloads the list shown below, with the step
+        and the reason for each sign-up.
       </p>
 
-      <div className="mb-4">
+      <div className="mb-4 flex flex-wrap items-center gap-3">
         <FilterTabs
           items={VIEWS}
           current={view}
           hrefFor={(v) => (v === 'attention' ? PAGE : `${PAGE}?view=all`)}
           labelFor={label}
         />
+        <a
+          href={`/dashboard/leads/export?account=${view === 'all' ? 'missing' : 'failed'}`}
+          className="ml-auto inline-flex h-9 items-center rounded-md border border-zinc-300 bg-white px-3.5 text-sm font-medium text-zinc-700 shadow-sm transition-colors hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800/60"
+        >
+          Export CSV
+        </a>
       </div>
 
       {view === 'all' && (

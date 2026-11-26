@@ -34,10 +34,14 @@ import {
 } from './dto/create-lead.dto.js';
 import { ListLeadsDto } from './dto/list-leads.dto.js';
 import {
+  AccountStepError,
   LEAD_ACCOUNT_FAILED,
   LEAD_WITHOUT_ACCOUNT,
+  accountExportColumns,
+  accountStepOf,
   describeAccountFailure,
   lastLine,
+  type AccountStep,
 } from './lead-account-failure.js';
 import {
   customDegreeToQueue,
@@ -154,6 +158,40 @@ export class EnrollmentsService {
       documentKey: string | null;
     },
   ): Promise<string> {
+    // Remember how far it got, so a failure says which step it stopped at.
+    let step: AccountStep = 'account';
+    try {
+      return await this.provisionSteps(
+        role,
+        phone,
+        dto,
+        profile,
+        mentorVerification,
+        (reached) => {
+          step = reached;
+        },
+      );
+    } catch (err) {
+      throw new AccountStepError(step, err);
+    }
+  }
+
+  /** The work of `provisionAccountFromLead`, calling `reach` as it moves on to
+   * the next step. */
+  private async provisionSteps(
+    role: EnrollmentLeadRole,
+    phone: string,
+    dto: BaseLeadDto,
+    profile: Prisma.UserProfileUncheckedCreateWithoutUserInput,
+    mentorVerification:
+      | {
+          universityId: string | null;
+          documentType?: Prisma.VerificationRequestUncheckedCreateInput['documentType'];
+          documentKey: string | null;
+        }
+      | undefined,
+    reach: (step: AccountStep) => void,
+  ): Promise<string> {
     const phoneHash = this.phoneHashFor(phone);
 
     const { user, isNewUser } =
@@ -211,6 +249,7 @@ export class EnrollmentsService {
         : null;
 
     if (verifDoc) {
+      reach('document');
       // For an existing account: only (re)submit from a state that can be —
       // not already VERIFIED/SUSPENDED, and not with a request already in
       // the review queue (SUBMITTED/UNDER_REVIEW).
@@ -266,6 +305,7 @@ export class EnrollmentsService {
       }
     }
 
+    reach('link');
     await this.prisma.enrollmentLead.update({
       where: { role_phone: { role, phone } },
       data: {
@@ -274,6 +314,7 @@ export class EnrollmentsService {
         // The account exists now, so any earlier failure no longer applies.
         accountFailureReason: null,
         accountFailedAt: null,
+        accountFailureStep: null,
       },
     });
     return user.id;
@@ -490,6 +531,7 @@ export class EnrollmentsService {
         data: {
           accountFailureReason: describeAccountFailure(err),
           accountFailedAt: new Date(),
+          accountFailureStep: accountStepOf(err),
         },
       });
     } catch (recordErr) {
@@ -956,6 +998,7 @@ export class EnrollmentsService {
           // ...and an account that exists means there is nothing left to retry.
           accountFailureReason: null,
           accountFailedAt: null,
+          accountFailureStep: null,
         }),
       },
       include: { university: { select: { name: true } } },
@@ -1123,6 +1166,12 @@ export class EnrollmentsService {
       ['Available days', (l) => l.availableDays.join('; ')],
       ['ID uploaded', (l) => (l.hasDocument ? 'Yes' : 'No')],
       ['Admin note', (l) => l.adminNote],
+      // Added last, so a spreadsheet that already reads the columns above still
+      // lines up. The Account creation page exports through here.
+      ['Has account', (l) => accountExportColumns(l).hasAccount],
+      ['Account stopped at', (l) => accountExportColumns(l).step],
+      ['Account problem', (l) => accountExportColumns(l).reason],
+      ['Account problem time', (l) => accountExportColumns(l).failedAt],
     ];
 
     // Excel reads a leading "=", "+", "-" or "@" as a formula, so a crafted

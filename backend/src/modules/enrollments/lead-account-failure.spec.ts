@@ -6,9 +6,13 @@ import type {
 } from './dto/create-lead.dto';
 import { EnrollmentsService } from './enrollments.service';
 import {
+  AccountStepError,
   LEAD_ACCOUNT_FAILED,
   LEAD_WITHOUT_ACCOUNT,
+  accountExportColumns,
+  accountStepOf,
   describeAccountFailure,
+  describeAccountStep,
 } from './lead-account-failure';
 
 describe('describeAccountFailure', () => {
@@ -70,6 +74,38 @@ describe('describeAccountFailure', () => {
     expect(
       describeAccountFailure(new Error('converted_user_id'.repeat(50))).length,
     ).toBeLessThanOrEqual(300);
+  });
+});
+
+describe('an error that remembers its step', () => {
+  it('keeps the original message and stack, so nothing that reads them changes', () => {
+    const original = new Error(
+      'Unique constraint failed on the constraint: `enrollment_leads_converted_user_id_key`',
+    );
+    const wrapped = new AccountStepError('link', original);
+
+    expect(wrapped).toBeInstanceOf(Error);
+    expect(wrapped.message).toBe(original.message);
+    expect(wrapped.stack).toBe(original.stack);
+    expect(wrapped.original).toBe(original);
+    expect(describeAccountFailure(wrapped)).toBe(
+      describeAccountFailure(original),
+    );
+  });
+
+  it('gives the step back, and null for an error that has none', () => {
+    expect(
+      accountStepOf(new AccountStepError('document', new Error('x'))),
+    ).toBe('document');
+    expect(accountStepOf(new Error('x'))).toBeNull();
+    expect(accountStepOf('plain text')).toBeNull();
+    expect(accountStepOf(undefined)).toBeNull();
+  });
+
+  it('copes with something that is not an Error', () => {
+    const wrapped = new AccountStepError('account', 'plain text');
+    expect(wrapped.message).toBe('plain text');
+    expect(accountStepOf(wrapped)).toBe('account');
   });
 });
 
@@ -135,6 +171,28 @@ describe('a sign-up whose account could not be created', () => {
       'The alias is already in use by another account.',
     );
     expect(arg.data.accountFailedAt).toBeInstanceOf(Date);
+  });
+
+  it('saves the step it stopped at next to the reason', async () => {
+    const { svc, update, provision } = setup();
+    provision.mockRejectedValue(
+      new AccountStepError('document', new Error('Something broke')),
+    );
+
+    await svc.createAspirantLead(aspirantDto);
+
+    const data = update.mock.calls[0][0].data;
+    expect(data.accountFailureStep).toBe('document');
+    expect(data.accountFailureReason).toBe('Something broke.');
+  });
+
+  it('saves no step when the error did not come from one', async () => {
+    const { svc, update, provision } = setup();
+    provision.mockRejectedValue(new Error('Something broke'));
+
+    await svc.createAspirantLead(aspirantDto);
+
+    expect(update.mock.calls[0][0].data.accountFailureStep).toBeNull();
   });
 
   it('does the same for a mentor', async () => {
@@ -210,6 +268,7 @@ describe('clearing an earlier failure', () => {
       status: 'CONVERTED',
       accountFailureReason: null,
       accountFailedAt: null,
+      accountFailureStep: null,
     });
   });
 
@@ -236,7 +295,111 @@ describe('clearing an earlier failure', () => {
       convertedUserId: 'u1',
       accountFailureReason: null,
       accountFailedAt: null,
+      accountFailureStep: null,
     });
+  });
+});
+
+describe('the step a real attempt stops at', () => {
+  const newMentor = {
+    user: { id: 'u1', displayName: 'Ravi', role: 'MENTOR' },
+    isNewUser: true,
+  };
+  const withDocument = {
+    universityId: 'uni1',
+    documentType: 'COLLEGE_ID',
+    documentKey: 'lead-docs/a.jpg',
+  };
+
+  function attempt(parts: {
+    provision?: jest.Mock;
+    transaction?: jest.Mock;
+    leadUpdate?: jest.Mock;
+  }) {
+    const svc = Object.assign(Object.create(EnrollmentsService.prototype), {
+      prisma: {
+        enrollmentLead: {
+          update: parts.leadUpdate ?? jest.fn().mockResolvedValue({}),
+        },
+        verificationRequest: { create: jest.fn(), count: jest.fn() },
+        user: { update: jest.fn() },
+        $transaction: parts.transaction ?? jest.fn().mockResolvedValue([]),
+      },
+      usersService: {
+        provisionAccountFromLead:
+          parts.provision ?? jest.fn().mockResolvedValue(newMentor),
+      },
+      notifications: { send: jest.fn().mockResolvedValue(undefined) },
+      logger: { error: jest.fn(), warn: jest.fn() },
+    }) as EnrollmentsService;
+    return (svc as any).provisionAccountFromLead(
+      'MENTOR',
+      '+919876543210',
+      { fullName: 'Ravi' },
+      {},
+      withDocument,
+    ) as Promise<string>;
+  }
+
+  async function stepOf(run: Promise<string>) {
+    const err: unknown = await run.then(
+      () => null,
+      (e: unknown) => e,
+    );
+    return { step: accountStepOf(err), message: (err as Error).message };
+  }
+
+  it('is "account" when the account itself could not be created', async () => {
+    const result = await stepOf(
+      attempt({ provision: jest.fn().mockRejectedValue(new Error('no db')) }),
+    );
+    expect(result).toEqual({ step: 'account', message: 'no db' });
+  });
+
+  it('is "document" when only the college document could not be sent', async () => {
+    const result = await stepOf(
+      attempt({ transaction: jest.fn().mockRejectedValue(new Error('no db')) }),
+    );
+    expect(result).toEqual({ step: 'document', message: 'no db' });
+  });
+
+  it('is "link" when only linking the sign-up to the account failed', async () => {
+    const result = await stepOf(
+      attempt({ leadUpdate: jest.fn().mockRejectedValue(new Error('no db')) }),
+    );
+    expect(result).toEqual({ step: 'link', message: 'no db' });
+  });
+
+  it('never says "document" for a sign-up with no document to send', async () => {
+    const svc = Object.assign(Object.create(EnrollmentsService.prototype), {
+      prisma: {
+        enrollmentLead: {
+          update: jest.fn().mockRejectedValue(new Error('no db')),
+        },
+      },
+      usersService: {
+        provisionAccountFromLead: jest.fn().mockResolvedValue({
+          user: { id: 'u1', displayName: 'Asha', role: 'ASPIRANT' },
+          isNewUser: true,
+        }),
+      },
+    }) as EnrollmentsService;
+
+    const result = await stepOf(
+      (svc as any).provisionAccountFromLead(
+        'ASPIRANT',
+        '+919876543210',
+        { fullName: 'Asha' },
+        {},
+      ) as Promise<string>,
+    );
+    expect(result.step).toBe('link');
+  });
+
+  it('is cleared along with the reason once the account is linked', async () => {
+    const leadUpdate = jest.fn().mockResolvedValue({});
+    await expect(attempt({ leadUpdate })).resolves.toBe('u1');
+    expect(leadUpdate.mock.calls[0][0].data.accountFailureStep).toBeNull();
   });
 });
 
@@ -275,6 +438,44 @@ describe('a failed retry', () => {
     expect(update.mock.calls[0][0].data.accountFailureReason).toBe(
       'Something broke.',
     );
+  });
+
+  it('refreshes the step too, and still reports a clash in plain words', async () => {
+    const update = jest.fn().mockResolvedValue({});
+    const svc = Object.assign(Object.create(EnrollmentsService.prototype), {
+      prisma: {
+        enrollmentLead: {
+          findUnique: jest.fn().mockResolvedValue({
+            id: 'lead1',
+            role: 'ASPIRANT',
+            phone: '+919876543210',
+            fullName: 'Asha',
+            alias: 'Asha',
+            convertedUserId: null,
+            languages: [],
+            availableDays: [],
+            yearInfoPrivate: false,
+          }),
+          update,
+        },
+      },
+      logger: { error: jest.fn(), warn: jest.fn() },
+      provisionAccountFromLead: jest
+        .fn()
+        .mockRejectedValue(
+          new AccountStepError(
+            'link',
+            new Error(
+              'Unique constraint failed on the constraint: `enrollment_leads_converted_user_id_key`',
+            ),
+          ),
+        ),
+    }) as EnrollmentsService;
+
+    await expect(svc.retryAccount('lead1')).rejects.toThrow(
+      'already has an account that is linked to another lead',
+    );
+    expect(update.mock.calls[0][0].data.accountFailureStep).toBe('link');
   });
 });
 
@@ -348,5 +549,186 @@ describe('the counts', () => {
       accountFailed: 2,
       withoutAccount: 165,
     });
+  });
+});
+
+describe('the account columns of the CSV export', () => {
+  const noAccount = {
+    convertedUserId: null,
+    status: 'NEW',
+    accountFailureStep: null,
+    accountFailureReason: null,
+    accountFailedAt: null,
+  };
+
+  it('names each step in plain words, and nothing for an unknown one', () => {
+    expect(describeAccountStep('account')).toBe('Creating the account');
+    expect(describeAccountStep('document')).toBe(
+      'Sending the college ID for review',
+    );
+    expect(describeAccountStep('link')).toBe(
+      'Linking the account to the sign-up',
+    );
+    expect(describeAccountStep('something new')).toBe('');
+    expect(describeAccountStep(null)).toBe('');
+  });
+
+  it('gives the step, reason and time of a failure', () => {
+    const failedAt = new Date('2026-11-20T10:00:00.000Z');
+    expect(
+      accountExportColumns({
+        ...noAccount,
+        accountFailureStep: 'link',
+        accountFailureReason: 'The alias is already in use by another account.',
+        accountFailedAt: failedAt,
+      }),
+    ).toEqual({
+      hasAccount: 'No',
+      step: 'Linking the account to the sign-up',
+      reason: 'The alias is already in use by another account.',
+      failedAt: '2026-11-20T10:00:00.000Z',
+    });
+  });
+
+  it('says "Not recorded" for a sign-up with no account and nothing saved', () => {
+    expect(accountExportColumns(noAccount)).toEqual({
+      hasAccount: 'No',
+      step: 'Not recorded',
+      reason: 'Not recorded',
+      failedAt: '',
+    });
+  });
+
+  it('says "Not recorded" for the step alone when only the reason was saved', () => {
+    expect(
+      accountExportColumns({
+        ...noAccount,
+        accountFailureReason: 'Something broke.',
+      }),
+    ).toMatchObject({ step: 'Not recorded', reason: 'Something broke.' });
+  });
+
+  it('leaves them empty for a sign-up that has an account', () => {
+    expect(
+      accountExportColumns({ ...noAccount, convertedUserId: 'u1' }),
+    ).toEqual({ hasAccount: 'Yes', step: '', reason: '', failedAt: '' });
+  });
+
+  it('leaves them empty for a sign-up rejected on purpose', () => {
+    expect(accountExportColumns({ ...noAccount, status: 'REJECTED' })).toEqual({
+      hasAccount: 'No',
+      step: '',
+      reason: '',
+      failedAt: '',
+    });
+  });
+});
+
+describe('exporting the sign-ups without an account', () => {
+  const row = (over: Record<string, unknown>) => ({
+    id: 'l1',
+    role: 'MENTOR',
+    status: 'NEW',
+    fullName: 'Ravi',
+    phone: '+919876543210',
+    email: null,
+    dateOfBirth: null,
+    gender: null,
+    state: null,
+    city: null,
+    stream: null,
+    qualification: null,
+    courseInterested: null,
+    preferredLanguage: null,
+    preferredMentorshipTiming: null,
+    alias: null,
+    universityId: null,
+    collegeName: null,
+    degree: null,
+    specialization: null,
+    currentStatus: null,
+    yearOfStudy: null,
+    graduationYear: null,
+    yearInfoPrivate: false,
+    languages: [],
+    availableDays: [],
+    documentType: null,
+    documentKey: null,
+    convertedUserId: null,
+    adminNote: null,
+    accountFailureReason: null,
+    accountFailedAt: null,
+    accountFailureStep: null,
+    createdAt: new Date('2026-11-19T09:00:00.000Z'),
+    updatedAt: new Date('2026-11-19T09:00:00.000Z'),
+    university: null,
+    ...over,
+  });
+
+  function exporting(rows: unknown[]) {
+    const findMany = jest.fn().mockResolvedValue(rows);
+    const svc = Object.assign(Object.create(EnrollmentsService.prototype), {
+      prisma: { enrollmentLead: { findMany } },
+    }) as EnrollmentsService;
+    return { svc, findMany };
+  }
+
+  /** The cells of one CSV line. An empty value is written bare, a text one in
+   * quotes; none of the values used here holds a comma. */
+  const cells = (line: string) =>
+    line.split(',').map((cell) => cell.replace(/^"|"$/g, ''));
+
+  it('asks only for the sign-ups that need attention, or all without an account', async () => {
+    const failed = exporting([]);
+    await failed.svc.exportCsv({ account: 'failed' } as never);
+    expect(failed.findMany.mock.calls[0][0].where).toMatchObject(
+      LEAD_ACCOUNT_FAILED,
+    );
+
+    const missing = exporting([]);
+    await missing.svc.exportCsv({ account: 'missing' } as never);
+    expect(missing.findMany.mock.calls[0][0].where).toMatchObject(
+      LEAD_WITHOUT_ACCOUNT,
+    );
+    expect(missing.findMany.mock.calls[0][0].where).not.toHaveProperty(
+      'accountFailureReason',
+    );
+  });
+
+  it('adds the step, reason and time after the columns it always had', async () => {
+    const { svc } = exporting([
+      row({
+        accountFailureStep: 'document',
+        accountFailureReason: 'Timed out.',
+        accountFailedAt: new Date('2026-11-19T09:00:05.000Z'),
+      }),
+      row({ id: 'l2', fullName: 'Older one' }),
+    ]);
+
+    const [header, failed, older] = (
+      await svc.exportCsv({ account: 'missing' } as never)
+    ).split('\n');
+
+    const head = cells(header);
+    expect(head.slice(-5)).toEqual([
+      'Admin note',
+      'Has account',
+      'Account stopped at',
+      'Account problem',
+      'Account problem time',
+    ]);
+    expect(head[0]).toBe('Submitted');
+    expect(cells(failed).slice(-4)).toEqual([
+      'No',
+      'Sending the college ID for review',
+      'Timed out.',
+      '2026-11-19T09:00:05.000Z',
+    ]);
+    expect(cells(older).slice(-4)).toEqual([
+      'No',
+      'Not recorded',
+      'Not recorded',
+      '',
+    ]);
   });
 });

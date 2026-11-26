@@ -21,6 +21,81 @@ export const LEAD_ACCOUNT_FAILED: Prisma.EnrollmentLeadWhereInput = {
   accountFailureReason: { not: null },
 };
 
+/**
+ * The steps of turning a website sign-up into an account, in order. A failure
+ * is saved with the step it stopped at, so the admin can see how far it got:
+ *  - 'account'  creating the account (or giving an existing one the role);
+ *  - 'document' sending the mentor's college ID for review. The account exists
+ *               by now, but the document was not sent;
+ *  - 'link'     linking the account back to the sign-up. The account exists,
+ *               and so does the document request, but the sign-up does not
+ *               know it yet.
+ */
+export type AccountStep = 'account' | 'document' | 'link';
+
+/**
+ * An error that remembers which step it came from. It keeps the original
+ * message and stack, so everything that reads the message (the reason shown to
+ * the admin, the clash detection on retry) works as it did before.
+ */
+export class AccountStepError extends Error {
+  constructor(
+    readonly step: AccountStep,
+    readonly original: unknown,
+  ) {
+    super(original instanceof Error ? original.message : String(original));
+    this.name = 'AccountStepError';
+    if (original instanceof Error && original.stack)
+      this.stack = original.stack;
+  }
+}
+
+/** The step a failure stopped at, or null when it did not come from one. */
+export function accountStepOf(err: unknown): AccountStep | null {
+  return err instanceof AccountStepError ? err.step : null;
+}
+
+/** The step in plain words, for a spreadsheet. Empty for a step this code does
+ * not know (or none). */
+export function describeAccountStep(step: string | null): string {
+  switch (step) {
+    case 'account':
+      return 'Creating the account';
+    case 'document':
+      return 'Sending the college ID for review';
+    case 'link':
+      return 'Linking the account to the sign-up';
+    default:
+      return '';
+  }
+}
+
+/**
+ * The account columns of the CSV export. A sign-up that still has no account
+ * (and was not rejected on purpose) always says something in the step and reason
+ * columns, "Not recorded" when nothing was saved, so an empty cell never looks
+ * like "no problem". A sign-up with an account, or a rejected one, has none.
+ */
+export function accountExportColumns(lead: {
+  convertedUserId: string | null;
+  status: string;
+  accountFailureStep: string | null;
+  accountFailureReason: string | null;
+  accountFailedAt: Date | null;
+}): { hasAccount: string; step: string; reason: string; failedAt: string } {
+  const noAccount = lead.convertedUserId === null;
+  const unrecorded =
+    noAccount && lead.status !== EnrollmentLeadStatus.REJECTED
+      ? 'Not recorded'
+      : '';
+  return {
+    hasAccount: noAccount ? 'No' : 'Yes',
+    step: describeAccountStep(lead.accountFailureStep) || unrecorded,
+    reason: lead.accountFailureReason ?? unrecorded,
+    failedAt: lead.accountFailedAt?.toISOString() ?? '',
+  };
+}
+
 /** The most a reason shown to an admin may hold. */
 const REASON_MAX = 300;
 
