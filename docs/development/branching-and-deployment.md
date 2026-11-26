@@ -15,6 +15,54 @@ Last verified against GitHub and Railway: 2026-11-15.
 8. Railway deploys production by itself. Run the after-release checklist.
 
 Mobile app builds and store uploads are a separate step (section 8).
+**When** a release goes out is fixed by the release calendar below.
+
+## Release calendar and sprint numbers
+
+Production releases follow a Thursday calendar. Each release is one **sprint**.
+
+**The calendar**
+
+- Production deploys happen on **Thursdays**, alternating between two tracks.
+- The month starts with **Web / Admin** on the 1st Thursday. The next Thursday is
+  **Mobile (iOS and Android)**, then Web / Admin again, and so on through the month.
+  The pattern simply continues into the next month.
+- **Web / Admin** means the website (`web/`), the admin panel (`admin/`) and the backend.
+  The backend always ships with Web / Admin, never alone.
+- **Mobile** means the iOS and Android store builds. A Mobile release goes out the
+  Thursday **after** a Web / Admin release, so the store apps always point at a
+  backend that has already been live for a week (this is the rule in section 8).
+- A hotfix (section 10) does not wait for Thursday. It is recorded in the notes of the
+  next sprint, not given a sprint number of its own.
+
+**Sprint numbers**
+
+- Sprints are counted from the production go-live of the app, **one running number
+  shared by both tracks**, in the order the releases ship.
+- Sprint 1 was Web / Admin, Sprint 2 was Mobile (iOS and Android), and **Sprint 3 is
+  Web / Admin** (shipped on Thu 26 Nov 2026, the release before this calendar started).
+- Title the release PR `Release: Web/Admin Sprint N` or `Release: Mobile Sprint N`,
+  and put the same words at the top of the release notes.
+- These are release sprints. The old planning folders in `docs/sprints/` (Sprint 0 and
+  Sprint 1) are a different, earlier numbering and stay as they are.
+
+**Next dates**
+
+| Thursday | Track | Sprint |
+|---|---|---|
+| 3 Dec 2026 | Web / Admin | 4 |
+| 10 Dec 2026 | Mobile | 5 |
+| 17 Dec 2026 | Web / Admin | 6 |
+| 24 Dec 2026 | Mobile | 7 |
+| 31 Dec 2026 | Web / Admin | 8 |
+
+If a Thursday is a public holiday, or nothing is ready, the lead moves the release to
+the next working day. Do not skip the numbering: record "no release" in
+`docs/releases/README.md` and carry on with the next number.
+
+**Release notes** live in `docs/releases/`, one file per sprint, written from the
+template in `docs/releases/README.md`. They are written on the release day, before
+the release PR is merged, and linked from the release PR.
 
 ## Who does what
 

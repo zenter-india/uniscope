@@ -613,6 +613,7 @@ Full guide: `docs/development/branching-and-deployment.md`. The short version:
 - **Website** (`web/`) has its own pair: `stage/web-enrollment-site` → `prod/web-enrollment-site` (Vercel). Do not edit `web/` on `staging`.
 - **Preview shares the production database**, and migrations run on every backend start. Keep migrations backward compatible and use a test account on Preview.
 - Name the risk tier in every PR (`ai/RISK_RULES.md`). HIGH needs a lead's approval; production releases and store uploads need explicit human approval. Never open a PR against production except a release or hotfix.
+- **Release calendar and sprint numbers:** production releases go out on **Thursdays**, alternating **Web / Admin** (website, admin, backend) and **Mobile** (iOS and Android), starting each month with Web / Admin on the 1st Thursday. Each release is one sprint, numbered in one running sequence shared by both tracks (Sprint 1 Web/Admin, 2 Mobile, 3 Web/Admin shipped 26 Nov 2026; next is Sprint 4 on 3 Dec). Title release PRs `Release: Web/Admin Sprint N` or `Release: Mobile Sprint N` and write the notes in `docs/releases/` from its template. Details: the "Release calendar and sprint numbers" section of the guide above. (`docs/sprints/` is an older, unrelated numbering.)
 
 ## Conventions to follow
 
