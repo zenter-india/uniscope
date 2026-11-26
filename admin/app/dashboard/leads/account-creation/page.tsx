@@ -86,17 +86,23 @@ export default async function AccountCreationPage({
       <p className="mb-5 max-w-3xl text-sm text-zinc-500 dark:text-zinc-400">
         Website sign-ups that did not become an account. When creating the account fails, the
         step it stopped at and the reason are recorded here straight away, so nobody is left
-        waiting without anyone knowing. Retry account re-runs the creation with the details saved
-        on the sign-up.
+        waiting without anyone knowing. Export CSV downloads the list shown below, with the step
+        and the reason for each sign-up.
       </p>
 
-      <div className="mb-4">
+      <div className="mb-4 flex flex-wrap items-center gap-3">
         <FilterTabs
           items={VIEWS}
           current={view}
           hrefFor={(v) => (v === 'attention' ? PAGE : `${PAGE}?view=all`)}
           labelFor={label}
         />
+        <a
+          href={`/dashboard/leads/export?account=${view === 'all' ? 'missing' : 'failed'}`}
+          className="ml-auto inline-flex h-9 items-center rounded-md border border-zinc-300 bg-white px-3.5 text-sm font-medium text-zinc-700 shadow-sm transition-colors hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800/60"
+        >
+          Export CSV
+        </a>
       </div>
 
       {view === 'all' && (

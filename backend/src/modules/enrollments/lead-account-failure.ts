@@ -55,6 +55,47 @@ export function accountStepOf(err: unknown): AccountStep | null {
   return err instanceof AccountStepError ? err.step : null;
 }
 
+/** The step in plain words, for a spreadsheet. Empty for a step this code does
+ * not know (or none). */
+export function describeAccountStep(step: string | null): string {
+  switch (step) {
+    case 'account':
+      return 'Creating the account';
+    case 'document':
+      return 'Sending the college ID for review';
+    case 'link':
+      return 'Linking the account to the sign-up';
+    default:
+      return '';
+  }
+}
+
+/**
+ * The account columns of the CSV export. A sign-up that still has no account
+ * (and was not rejected on purpose) always says something in the step and reason
+ * columns, "Not recorded" when nothing was saved, so an empty cell never looks
+ * like "no problem". A sign-up with an account, or a rejected one, has none.
+ */
+export function accountExportColumns(lead: {
+  convertedUserId: string | null;
+  status: string;
+  accountFailureStep: string | null;
+  accountFailureReason: string | null;
+  accountFailedAt: Date | null;
+}): { hasAccount: string; step: string; reason: string; failedAt: string } {
+  const noAccount = lead.convertedUserId === null;
+  const unrecorded =
+    noAccount && lead.status !== EnrollmentLeadStatus.REJECTED
+      ? 'Not recorded'
+      : '';
+  return {
+    hasAccount: noAccount ? 'No' : 'Yes',
+    step: describeAccountStep(lead.accountFailureStep) || unrecorded,
+    reason: lead.accountFailureReason ?? unrecorded,
+    failedAt: lead.accountFailedAt?.toISOString() ?? '',
+  };
+}
+
 /** The most a reason shown to an admin may hold. */
 const REASON_MAX = 300;
 

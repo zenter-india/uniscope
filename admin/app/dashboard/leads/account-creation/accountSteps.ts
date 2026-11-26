@@ -26,14 +26,12 @@ export const STEP_COPY: Record<
   document: {
     stoppedAt: 'Sending the college ID for review',
     accountExists: true,
-    outcome:
-      'The account was created, but the college ID was not sent for review. Retry sends it.',
+    outcome: 'The account was created, but the college ID was not sent for review.',
   },
   link: {
     stoppedAt: 'Linking the account to this sign-up',
     accountExists: true,
-    outcome:
-      'The account was created, but it is not linked to this sign-up yet. Retry links it.',
+    outcome: 'The account was created, but it is not linked to this sign-up yet.',
   },
 };
 

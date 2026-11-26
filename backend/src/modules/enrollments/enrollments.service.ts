@@ -37,6 +37,7 @@ import {
   AccountStepError,
   LEAD_ACCOUNT_FAILED,
   LEAD_WITHOUT_ACCOUNT,
+  accountExportColumns,
   accountStepOf,
   describeAccountFailure,
   lastLine,
@@ -1165,6 +1166,12 @@ export class EnrollmentsService {
       ['Available days', (l) => l.availableDays.join('; ')],
       ['ID uploaded', (l) => (l.hasDocument ? 'Yes' : 'No')],
       ['Admin note', (l) => l.adminNote],
+      // Added last, so a spreadsheet that already reads the columns above still
+      // lines up. The Account creation page exports through here.
+      ['Has account', (l) => accountExportColumns(l).hasAccount],
+      ['Account stopped at', (l) => accountExportColumns(l).step],
+      ['Account problem', (l) => accountExportColumns(l).reason],
+      ['Account problem time', (l) => accountExportColumns(l).failedAt],
     ];
 
     // Excel reads a leading "=", "+", "-" or "@" as a formula, so a crafted

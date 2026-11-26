@@ -9,8 +9,10 @@ import {
   AccountStepError,
   LEAD_ACCOUNT_FAILED,
   LEAD_WITHOUT_ACCOUNT,
+  accountExportColumns,
   accountStepOf,
   describeAccountFailure,
+  describeAccountStep,
 } from './lead-account-failure';
 
 describe('describeAccountFailure', () => {
@@ -547,5 +549,186 @@ describe('the counts', () => {
       accountFailed: 2,
       withoutAccount: 165,
     });
+  });
+});
+
+describe('the account columns of the CSV export', () => {
+  const noAccount = {
+    convertedUserId: null,
+    status: 'NEW',
+    accountFailureStep: null,
+    accountFailureReason: null,
+    accountFailedAt: null,
+  };
+
+  it('names each step in plain words, and nothing for an unknown one', () => {
+    expect(describeAccountStep('account')).toBe('Creating the account');
+    expect(describeAccountStep('document')).toBe(
+      'Sending the college ID for review',
+    );
+    expect(describeAccountStep('link')).toBe(
+      'Linking the account to the sign-up',
+    );
+    expect(describeAccountStep('something new')).toBe('');
+    expect(describeAccountStep(null)).toBe('');
+  });
+
+  it('gives the step, reason and time of a failure', () => {
+    const failedAt = new Date('2026-11-20T10:00:00.000Z');
+    expect(
+      accountExportColumns({
+        ...noAccount,
+        accountFailureStep: 'link',
+        accountFailureReason: 'The alias is already in use by another account.',
+        accountFailedAt: failedAt,
+      }),
+    ).toEqual({
+      hasAccount: 'No',
+      step: 'Linking the account to the sign-up',
+      reason: 'The alias is already in use by another account.',
+      failedAt: '2026-11-20T10:00:00.000Z',
+    });
+  });
+
+  it('says "Not recorded" for a sign-up with no account and nothing saved', () => {
+    expect(accountExportColumns(noAccount)).toEqual({
+      hasAccount: 'No',
+      step: 'Not recorded',
+      reason: 'Not recorded',
+      failedAt: '',
+    });
+  });
+
+  it('says "Not recorded" for the step alone when only the reason was saved', () => {
+    expect(
+      accountExportColumns({
+        ...noAccount,
+        accountFailureReason: 'Something broke.',
+      }),
+    ).toMatchObject({ step: 'Not recorded', reason: 'Something broke.' });
+  });
+
+  it('leaves them empty for a sign-up that has an account', () => {
+    expect(
+      accountExportColumns({ ...noAccount, convertedUserId: 'u1' }),
+    ).toEqual({ hasAccount: 'Yes', step: '', reason: '', failedAt: '' });
+  });
+
+  it('leaves them empty for a sign-up rejected on purpose', () => {
+    expect(accountExportColumns({ ...noAccount, status: 'REJECTED' })).toEqual({
+      hasAccount: 'No',
+      step: '',
+      reason: '',
+      failedAt: '',
+    });
+  });
+});
+
+describe('exporting the sign-ups without an account', () => {
+  const row = (over: Record<string, unknown>) => ({
+    id: 'l1',
+    role: 'MENTOR',
+    status: 'NEW',
+    fullName: 'Ravi',
+    phone: '+919876543210',
+    email: null,
+    dateOfBirth: null,
+    gender: null,
+    state: null,
+    city: null,
+    stream: null,
+    qualification: null,
+    courseInterested: null,
+    preferredLanguage: null,
+    preferredMentorshipTiming: null,
+    alias: null,
+    universityId: null,
+    collegeName: null,
+    degree: null,
+    specialization: null,
+    currentStatus: null,
+    yearOfStudy: null,
+    graduationYear: null,
+    yearInfoPrivate: false,
+    languages: [],
+    availableDays: [],
+    documentType: null,
+    documentKey: null,
+    convertedUserId: null,
+    adminNote: null,
+    accountFailureReason: null,
+    accountFailedAt: null,
+    accountFailureStep: null,
+    createdAt: new Date('2026-11-19T09:00:00.000Z'),
+    updatedAt: new Date('2026-11-19T09:00:00.000Z'),
+    university: null,
+    ...over,
+  });
+
+  function exporting(rows: unknown[]) {
+    const findMany = jest.fn().mockResolvedValue(rows);
+    const svc = Object.assign(Object.create(EnrollmentsService.prototype), {
+      prisma: { enrollmentLead: { findMany } },
+    }) as EnrollmentsService;
+    return { svc, findMany };
+  }
+
+  /** The cells of one CSV line. An empty value is written bare, a text one in
+   * quotes; none of the values used here holds a comma. */
+  const cells = (line: string) =>
+    line.split(',').map((cell) => cell.replace(/^"|"$/g, ''));
+
+  it('asks only for the sign-ups that need attention, or all without an account', async () => {
+    const failed = exporting([]);
+    await failed.svc.exportCsv({ account: 'failed' } as never);
+    expect(failed.findMany.mock.calls[0][0].where).toMatchObject(
+      LEAD_ACCOUNT_FAILED,
+    );
+
+    const missing = exporting([]);
+    await missing.svc.exportCsv({ account: 'missing' } as never);
+    expect(missing.findMany.mock.calls[0][0].where).toMatchObject(
+      LEAD_WITHOUT_ACCOUNT,
+    );
+    expect(missing.findMany.mock.calls[0][0].where).not.toHaveProperty(
+      'accountFailureReason',
+    );
+  });
+
+  it('adds the step, reason and time after the columns it always had', async () => {
+    const { svc } = exporting([
+      row({
+        accountFailureStep: 'document',
+        accountFailureReason: 'Timed out.',
+        accountFailedAt: new Date('2026-11-19T09:00:05.000Z'),
+      }),
+      row({ id: 'l2', fullName: 'Older one' }),
+    ]);
+
+    const [header, failed, older] = (
+      await svc.exportCsv({ account: 'missing' } as never)
+    ).split('\n');
+
+    const head = cells(header);
+    expect(head.slice(-5)).toEqual([
+      'Admin note',
+      'Has account',
+      'Account stopped at',
+      'Account problem',
+      'Account problem time',
+    ]);
+    expect(head[0]).toBe('Submitted');
+    expect(cells(failed).slice(-4)).toEqual([
+      'No',
+      'Sending the college ID for review',
+      'Timed out.',
+      '2026-11-19T09:00:05.000Z',
+    ]);
+    expect(cells(older).slice(-4)).toEqual([
+      'No',
+      'Not recorded',
+      'Not recorded',
+      '',
+    ]);
   });
 });
