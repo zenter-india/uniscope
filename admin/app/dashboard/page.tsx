@@ -44,6 +44,9 @@ interface DashboardMetrics {
   };
   queues: {
     newLeads: number;
+    /** Website sign-ups whose account could not be created. Absent on an
+     * older backend. */
+    leadsWithAccountFailure?: number;
     pendingVerifications: number;
     openReports: number;
     pendingPayouts: number;
@@ -274,6 +277,24 @@ export default async function DashboardPage({
         </p>
       ) : (
         <div className="flex flex-col gap-6">
+          {(m.queues.leadsWithAccountFailure ?? 0) > 0 && (
+            <Link
+              href="/dashboard/leads/account-creation"
+              className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 transition hover:bg-amber-100/70 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-200 dark:hover:bg-amber-500/15"
+            >
+              <Icon.alert className="h-4 w-4 shrink-0" />
+              <span className="font-medium">
+                {m.queues.leadsWithAccountFailure}{' '}
+                {m.queues.leadsWithAccountFailure === 1
+                  ? 'website sign-up has'
+                  : 'website sign-ups have'}{' '}
+                no account
+              </span>
+              <span className="text-amber-800/80 dark:text-amber-300/80">
+                See why →
+              </span>
+            </Link>
+          )}
           <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
             <StatCard
               label="New leads"

@@ -242,3 +242,76 @@ describe('SpecializationSuggestionsService.review — approve', () => {
     expect(undo.reviewedBy).toBeNull();
   });
 });
+
+describe('SpecializationSuggestionsService.optionsForDegree', () => {
+  const programsDouble = (rows: { specializations: string[] }[]) =>
+    makePrisma({ program: { findMany: jest.fn().mockResolvedValue(rows) } });
+
+  it('lists each existing name once, A–Z, with how many colleges have it', async () => {
+    const prisma = programsDouble([
+      { specializations: ['MD - Microbiology', 'MD - Anatomy'] },
+      { specializations: ['MD - Microbiology'] },
+      { specializations: ['MD - Pharmacology', 'MD - Microbiology'] },
+    ]);
+
+    await expect(svc(prisma).optionsForDegree('MD/MS')).resolves.toEqual([
+      { name: 'MD - Anatomy', colleges: 1 },
+      { name: 'MD - Microbiology', colleges: 3 },
+      { name: 'MD - Pharmacology', colleges: 1 },
+    ]);
+  });
+
+  it('asks only for active, still-listed colleges under the upper-cased degree', async () => {
+    const prisma = programsDouble([]);
+    await svc(prisma).optionsForDegree('  md/ms ');
+
+    expect(prisma.program.findMany).toHaveBeenCalledWith({
+      where: {
+        name: 'MD/MS',
+        isActive: true,
+        university: { mergedIntoId: null },
+      },
+      select: { specializations: true },
+    });
+  });
+
+  it('treats case and spacing variants as one entry, in the most common spelling', async () => {
+    const prisma = programsDouble([
+      { specializations: ['MD - Microbiology'] },
+      { specializations: ['MD - Microbiology'] },
+      { specializations: ['md  -  microbiology'] },
+    ]);
+
+    await expect(svc(prisma).optionsForDegree('MD/MS')).resolves.toEqual([
+      { name: 'MD - Microbiology', colleges: 3 },
+    ]);
+  });
+
+  it('counts a college once even if it lists a name twice, and skips junk', async () => {
+    const prisma = programsDouble([
+      {
+        specializations: [
+          'MD - Anatomy',
+          'MD - Anatomy',
+          'Other',
+          'Others',
+          'X',
+          '  ',
+        ],
+      },
+    ]);
+
+    await expect(svc(prisma).optionsForDegree('MD/MS')).resolves.toEqual([
+      { name: 'MD - Anatomy', colleges: 1 },
+    ]);
+  });
+
+  it('returns an empty list for a degree nobody offers, and 400s without a degree', async () => {
+    await expect(
+      svc(programsDouble([])).optionsForDegree('NOPE'),
+    ).resolves.toEqual([]);
+    await expect(
+      svc(programsDouble([])).optionsForDegree('   '),
+    ).rejects.toBeInstanceOf(BadRequestException);
+  });
+});

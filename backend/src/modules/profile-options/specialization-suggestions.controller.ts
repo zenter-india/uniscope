@@ -44,6 +44,13 @@ export class SpecializationSuggestionsController {
 export class AdminSpecializationSuggestionsController {
   constructor(private readonly suggestions: SpecializationSuggestionsService) {}
 
+  /** The existing specialization names for one degree, for the approval
+   * dropdown (see SpecializationSuggestionsService.optionsForDegree). */
+  @Get('options')
+  options(@Query('degree') degree?: string) {
+    return this.suggestions.optionsForDegree(degree ?? '');
+  }
+
   @Get()
   list(
     @Query('status') status?: string,

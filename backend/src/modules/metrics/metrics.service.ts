@@ -8,6 +8,7 @@ import {
   VerificationStatus,
 } from '@prisma/client';
 import { PrismaService } from '../../database/prisma/prisma.service.js';
+import { LEAD_ACCOUNT_FAILED } from '../enrollments/lead-account-failure.js';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const OPEN_PAYOUTS: PayoutStatus[] = [
@@ -19,14 +20,14 @@ const IN_REVIEW: VerificationStatus[] = [
   VerificationStatus.UNDER_REVIEW,
 ];
 
-const dayKey = (d: Date) => d.toISOString().slice(0, 10);
+export const dayKey = (d: Date) => d.toISOString().slice(0, 10);
 
 /** Longest custom range the Overview will build (one series bucket per day). */
 export const MAX_CUSTOM_DAYS = 366;
 
 /** `YYYY-MM-DD` -> that UTC day's midnight, or null if it isn't a real date
  * (e.g. 2026-02-31 would silently roll into March with a plain Date). */
-function parseUtcDay(value: string): Date | null {
+export function parseUtcDay(value: string): Date | null {
   const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
   if (!m) return null;
   const d = new Date(Date.UTC(Number(m[1]), Number(m[2]) - 1, Number(m[3])));
@@ -88,6 +89,10 @@ export interface DashboardMetrics {
   };
   queues: {
     newLeads: number;
+    /** Website sign-ups whose account could not be created (the server
+     * recorded why) and that still have none. Older leads from before the
+     * website made accounts are not counted. */
+    leadsWithAccountFailure: number;
     pendingVerifications: number;
     openReports: number;
     pendingPayouts: number;
@@ -176,6 +181,7 @@ export class MetricsService {
       verifiedMentors,
       totalUniversities,
       newLeads,
+      leadsWithAccountFailure,
       pendingVerifications,
       openReports,
       pendingPayouts,
@@ -226,6 +232,7 @@ export class MetricsService {
       this.prisma.enrollmentLead.count({
         where: { status: EnrollmentLeadStatus.NEW },
       }),
+      this.prisma.enrollmentLead.count({ where: LEAD_ACCOUNT_FAILED }),
       this.prisma.user.count({
         where: { verificationStatus: { in: IN_REVIEW } },
       }),
@@ -313,6 +320,7 @@ export class MetricsService {
       },
       queues: {
         newLeads,
+        leadsWithAccountFailure,
         pendingVerifications,
         openReports,
         pendingPayouts,

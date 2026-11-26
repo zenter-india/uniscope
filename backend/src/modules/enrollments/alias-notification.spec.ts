@@ -67,6 +67,6 @@ describe('website sign-up — alias changed notification', () => {
   it('still completes when the notification fails', async () => {
     const { svc, notifications } = setup({ displayName: 'John1' }, true);
     notifications.send.mockRejectedValue(new Error('push down'));
-    await expect(provision(svc, 'John')).resolves.toBeUndefined();
+    await expect(provision(svc, 'John')).resolves.toBe('u1');
   });
 });

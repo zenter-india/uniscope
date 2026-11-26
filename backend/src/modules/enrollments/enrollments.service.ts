@@ -22,6 +22,8 @@ import { adminOrderBy } from '../../common/helpers/admin-sort.helper.js';
 import { SlackNotifierService } from '../../common/slack/slack-notifier.service.js';
 import { PrismaService } from '../../database/prisma/prisma.service.js';
 import { NotificationsService } from '../notifications/notifications.service.js';
+import { CustomDegreesService } from '../profile-options/custom-degrees.service.js';
+import { SpecializationSuggestionsService } from '../profile-options/specialization-suggestions.service.js';
 import { SUPABASE_BUCKETS, SUPABASE_CLIENT } from '../../supabase/index.js';
 import { UniversitiesService } from '../universities/universities.service.js';
 import { UsersService } from '../users/users.service.js';
@@ -31,6 +33,20 @@ import {
   CreateMentorLeadDto,
 } from './dto/create-lead.dto.js';
 import { ListLeadsDto } from './dto/list-leads.dto.js';
+import {
+  AccountStepError,
+  LEAD_ACCOUNT_FAILED,
+  LEAD_WITHOUT_ACCOUNT,
+  accountExportColumns,
+  accountStepOf,
+  describeAccountFailure,
+  lastLine,
+  type AccountStep,
+} from './lead-account-failure.js';
+import {
+  customDegreeToQueue,
+  specializationToQueue,
+} from './lead-custom-options.js';
 import { PHONE_TAKEN_MESSAGE } from './phone-signup-rule.js';
 import { UpdateLeadDto } from './dto/update-lead.dto.js';
 import {
@@ -47,16 +63,6 @@ const MAX_LIMIT = 100;
  * VerificationRequest's (which is keyed by `<userId>/`). */
 const LEAD_DOCUMENT_PREFIX = 'enrollment-leads';
 
-/** The last non-empty line of an error message, shortened (Prisma errors put
- * the useful reason at the end). */
-function lastLine(text: string): string {
-  const lines = text
-    .split(/\r?\n/)
-    .map((l) => l.trim())
-    .filter(Boolean);
-  return (lines[lines.length - 1] ?? 'unknown error').slice(0, 200);
-}
-
 @Injectable()
 export class EnrollmentsService {
   private readonly logger = new Logger(EnrollmentsService.name);
@@ -68,6 +74,8 @@ export class EnrollmentsService {
     private readonly usersService: UsersService,
     private readonly notifications: NotificationsService,
     private readonly universitiesService: UniversitiesService,
+    private readonly customDegrees: CustomDegreesService,
+    private readonly specializationSuggestions: SpecializationSuggestionsService,
   ) {}
 
   /** Same phoneHash derivation as AuthService.verifyOtp's production
@@ -149,7 +157,41 @@ export class EnrollmentsService {
       documentType?: Prisma.VerificationRequestUncheckedCreateInput['documentType'];
       documentKey: string | null;
     },
-  ): Promise<void> {
+  ): Promise<string> {
+    // Remember how far it got, so a failure says which step it stopped at.
+    let step: AccountStep = 'account';
+    try {
+      return await this.provisionSteps(
+        role,
+        phone,
+        dto,
+        profile,
+        mentorVerification,
+        (reached) => {
+          step = reached;
+        },
+      );
+    } catch (err) {
+      throw new AccountStepError(step, err);
+    }
+  }
+
+  /** The work of `provisionAccountFromLead`, calling `reach` as it moves on to
+   * the next step. */
+  private async provisionSteps(
+    role: EnrollmentLeadRole,
+    phone: string,
+    dto: BaseLeadDto,
+    profile: Prisma.UserProfileUncheckedCreateWithoutUserInput,
+    mentorVerification:
+      | {
+          universityId: string | null;
+          documentType?: Prisma.VerificationRequestUncheckedCreateInput['documentType'];
+          documentKey: string | null;
+        }
+      | undefined,
+    reach: (step: AccountStep) => void,
+  ): Promise<string> {
     const phoneHash = this.phoneHashFor(phone);
 
     const { user, isNewUser } =
@@ -207,6 +249,7 @@ export class EnrollmentsService {
         : null;
 
     if (verifDoc) {
+      reach('document');
       // For an existing account: only (re)submit from a state that can be —
       // not already VERIFIED/SUSPENDED, and not with a request already in
       // the review queue (SUBMITTED/UNDER_REVIEW).
@@ -262,13 +305,88 @@ export class EnrollmentsService {
       }
     }
 
+    reach('link');
     await this.prisma.enrollmentLead.update({
       where: { role_phone: { role, phone } },
       data: {
         convertedUserId: user.id,
         status: EnrollmentLeadStatus.CONVERTED,
+        // The account exists now, so any earlier failure no longer applies.
+        accountFailureReason: null,
+        accountFailedAt: null,
+        accountFailureStep: null,
       },
     });
+    return user.id;
+  }
+
+  /**
+   * The website form submits a course or specialization someone typed in the
+   * same field as a picked one, and — unlike the mobile app — has no logged-in
+   * user to call the approval endpoints with. So the backend queues them here,
+   * for the account the lead just became, exactly as the app does:
+   *  - a typed course that isn't a built-in or approved one → the admin
+   *    "Degrees" queue;
+   *  - a typed specialization missing from the mentor's college list → the
+   *    admin "Specializations" queue (`degreeKey` is the curated program the
+   *    college's list is kept under; null when this degree has none).
+   * Best-effort and silent: this is a side effect of sign-up, never a reason
+   * to fail it, and every failure (not a mentor yet, queue full, odd text) just
+   * leaves the typed text on the lead exactly as before.
+   */
+  private async queueTypedChoices(
+    userId: string,
+    choices: {
+      stream?: string;
+      degree?: string;
+      universityId?: string | null;
+      degreeKey?: string | null;
+      specialization?: string;
+    },
+  ): Promise<void> {
+    const degree = customDegreeToQueue(choices.stream, choices.degree);
+    if (degree) {
+      await this.customDegrees
+        .submit(userId, degree)
+        .catch((err) =>
+          this.logger.warn(`Custom degree not queued for ${userId}: ${err}`),
+        );
+    }
+
+    const specialization = specializationToQueue(choices.specialization);
+    if (specialization && choices.universityId && choices.degreeKey) {
+      await this.specializationSuggestions
+        .submit(userId, {
+          universityId: choices.universityId,
+          degree: choices.degreeKey,
+          name: specialization,
+        })
+        .catch((err) =>
+          this.logger.warn(`Specialization not queued for ${userId}: ${err}`),
+        );
+    }
+  }
+
+  /** The curated Program name a mentor's degree is stored under for the
+   * specialization queue — null for degrees with no per-college list (and for
+   * Medical Doctorate/Others, whose list is not the college's own; the app
+   * skips those too). */
+  private curatedDegreeKey(stream?: string, degree?: string): string | null {
+    if (!stream || !degree) return null;
+    if (
+      stream === 'Medical' &&
+      (degree === 'Doctorate' || degree === 'Others')
+    ) {
+      return null;
+    }
+    if (!EnrollmentsService.SPECIALIZATION_SUGGESTION_STREAMS.has(stream)) {
+      return null;
+    }
+    const name =
+      EnrollmentsService.CURATED_PROGRAM_NAME_BY_STREAM_DEGREE[stream]?.[
+        degree
+      ];
+    return name ? name.toUpperCase() : null;
   }
 
   /**
@@ -396,6 +514,33 @@ export class EnrollmentsService {
     return university?.id ?? null;
   }
 
+  /**
+   * Remembers on the lead why its account could not be created, and when, so
+   * the admin "Account creation" page can list it. Creating the account is a
+   * best-effort step after the lead is saved, so without this a failure only
+   * reached the server log and nobody noticed for days. It runs inside the
+   * catch that keeps the public form working, so it must never throw.
+   */
+  private async recordAccountFailure(
+    leadId: string,
+    err: unknown,
+  ): Promise<void> {
+    try {
+      await this.prisma.enrollmentLead.update({
+        where: { id: leadId },
+        data: {
+          accountFailureReason: describeAccountFailure(err),
+          accountFailedAt: new Date(),
+          accountFailureStep: accountStepOf(err),
+        },
+      });
+    } catch (recordErr) {
+      this.logger.warn(
+        `Could not record the account failure on lead ${leadId}: ${recordErr}`,
+      );
+    }
+  }
+
   async createAspirantLead(
     dto: CreateAspirantLeadDto,
   ): Promise<EnrollmentLeadAcknowledgement> {
@@ -413,8 +558,9 @@ export class EnrollmentsService {
       preferredMentorshipTiming: dto.preferredMentorshipTiming,
     });
 
+    let accountCreated = false;
     try {
-      await this.provisionAccountFromLead(
+      const userId = await this.provisionAccountFromLead(
         EnrollmentLeadRole.ASPIRANT,
         this.normalizePhone(dto.phone),
         dto,
@@ -432,6 +578,13 @@ export class EnrollmentsService {
           universityId: universityId ?? undefined,
         },
       );
+      accountCreated = true;
+      // Only the typed course: an aspirant's specialization is an interest,
+      // not a program their college offers, so there is no college list to grow.
+      await this.queueTypedChoices(userId, {
+        stream: dto.stream,
+        degree: dto.qualification,
+      });
     } catch (err) {
       // Never let account provisioning fail the public form submission --
       // the lead above is already safely saved either way.
@@ -439,6 +592,9 @@ export class EnrollmentsService {
         `Failed to provision account for aspirant lead ${ack.id}`,
         err instanceof Error ? err.stack : String(err),
       );
+      if (!accountCreated) {
+        await this.recordAccountFailure(ack.id, err);
+      }
     }
 
     return ack;
@@ -621,8 +777,9 @@ export class EnrollmentsService {
       documentKey: documentKey ?? undefined,
     });
 
+    let accountCreated = false;
     try {
-      await this.provisionAccountFromLead(
+      const userId = await this.provisionAccountFromLead(
         EnrollmentLeadRole.MENTOR,
         this.normalizePhone(dto.phone),
         dto,
@@ -647,11 +804,22 @@ export class EnrollmentsService {
         },
         { universityId, documentType: dto.documentType, documentKey },
       );
+      accountCreated = true;
+      await this.queueTypedChoices(userId, {
+        stream: dto.stream,
+        degree: dto.degree,
+        universityId,
+        degreeKey: this.curatedDegreeKey(dto.stream, dto.degree),
+        specialization: dto.specialization,
+      });
     } catch (err) {
       this.logger.error(
         `Failed to provision account for mentor lead ${ack.id}`,
         err instanceof Error ? err.stack : String(err),
       );
+      if (!accountCreated) {
+        await this.recordAccountFailure(ack.id, err);
+      }
     }
 
     return ack;
@@ -665,6 +833,10 @@ export class EnrollmentsService {
 
     const where: Prisma.EnrollmentLeadWhereInput = {
       ...(query.role && { role: query.role }),
+      // Before the status filter, so a status picked on purpose wins over the
+      // "not rejected" default of these.
+      ...(query.account === 'failed' && LEAD_ACCOUNT_FAILED),
+      ...(query.account === 'missing' && LEAD_WITHOUT_ACCOUNT),
       ...(query.status && { status: query.status }),
       ...(query.search && {
         OR: [
@@ -703,17 +875,27 @@ export class EnrollmentsService {
     total: number;
     byStatus: Record<string, number>;
     byRole: Record<string, number>;
+    /** Leads with no account where the server recorded why it failed. */
+    accountFailed: number;
+    /** Every lead with no account that was not rejected, including older ones
+     * from before the website made accounts, which have no recorded reason. */
+    withoutAccount: number;
   }> {
-    const [byStatus, byRole, total] = await Promise.all([
-      this.prisma.enrollmentLead.groupBy({ by: ['status'], _count: true }),
-      this.prisma.enrollmentLead.groupBy({ by: ['role'], _count: true }),
-      this.prisma.enrollmentLead.count(),
-    ]);
+    const [byStatus, byRole, total, accountFailed, withoutAccount] =
+      await Promise.all([
+        this.prisma.enrollmentLead.groupBy({ by: ['status'], _count: true }),
+        this.prisma.enrollmentLead.groupBy({ by: ['role'], _count: true }),
+        this.prisma.enrollmentLead.count(),
+        this.prisma.enrollmentLead.count({ where: LEAD_ACCOUNT_FAILED }),
+        this.prisma.enrollmentLead.count({ where: LEAD_WITHOUT_ACCOUNT }),
+      ]);
 
     return {
       total,
       byStatus: Object.fromEntries(byStatus.map((r) => [r.status, r._count])),
       byRole: Object.fromEntries(byRole.map((r) => [r.role, r._count])),
+      accountFailed,
+      withoutAccount,
     };
   }
 
@@ -813,6 +995,10 @@ export class EnrollmentsService {
           // in sync here means an admin can't leave a lead marked NEW while
           // its account already exists.
           status: EnrollmentLeadStatus.CONVERTED,
+          // ...and an account that exists means there is nothing left to retry.
+          accountFailureReason: null,
+          accountFailedAt: null,
+          accountFailureStep: null,
         }),
       },
       include: { university: { select: { name: true } } },
@@ -900,6 +1086,9 @@ export class EnrollmentsService {
         `Retry of account creation failed for lead ${id}`,
         err instanceof Error ? err.stack : String(err),
       );
+      // Keep the lead's reason current: the latest attempt is what an admin
+      // needs to see, not the one from the original sign-up.
+      await this.recordAccountFailure(id, err);
       const text = err instanceof Error ? err.message : String(err);
       if (/converted_user_id/i.test(text)) {
         throw new ConflictException(
@@ -935,6 +1124,8 @@ export class EnrollmentsService {
   async exportCsv(query: ListLeadsDto): Promise<string> {
     const where: Prisma.EnrollmentLeadWhereInput = {
       ...(query.role && { role: query.role }),
+      ...(query.account === 'failed' && LEAD_ACCOUNT_FAILED),
+      ...(query.account === 'missing' && LEAD_WITHOUT_ACCOUNT),
       ...(query.status && { status: query.status }),
     };
 
@@ -975,6 +1166,12 @@ export class EnrollmentsService {
       ['Available days', (l) => l.availableDays.join('; ')],
       ['ID uploaded', (l) => (l.hasDocument ? 'Yes' : 'No')],
       ['Admin note', (l) => l.adminNote],
+      // Added last, so a spreadsheet that already reads the columns above still
+      // lines up. The Account creation page exports through here.
+      ['Has account', (l) => accountExportColumns(l).hasAccount],
+      ['Account stopped at', (l) => accountExportColumns(l).step],
+      ['Account problem', (l) => accountExportColumns(l).reason],
+      ['Account problem time', (l) => accountExportColumns(l).failedAt],
     ];
 
     // Excel reads a leading "=", "+", "-" or "@" as a formula, so a crafted

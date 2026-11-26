@@ -790,6 +790,11 @@ model LedgerEntry {
   sessionId         String?         @map("session_id")
   idempotencyKey    String          @unique @map("idempotency_key")
   note              String?         @db.VarChar(300)
+  /// UNI-17: "android" | "ios" | "web" — where a TOPUP was made. Written once,
+  /// when the top-up is credited; null on every other entry type and on
+  /// top-ups from before this column existed (those are worked out when read,
+  /// from the idempotency key and the amount paid — never by editing the row).
+  platform          String?         @db.VarChar(20)
   createdAt         DateTime        @default(now()) @map("created_at") @db.Timestamptz
 
   wallet  Wallet   @relation(fields: [walletId], references: [id])
@@ -797,6 +802,8 @@ model LedgerEntry {
 
   @@index([walletId, createdAt])
   @@index([sessionId])
+  /// The admin Money page reads one entry type over a date range.
+  @@index([type, createdAt])
   @@map("ledger_entries")
 }
 
@@ -1272,6 +1279,16 @@ model EnrollmentLead {
   /// Ops/CRM fields — admin-only, never accepted from the public endpoint.
   convertedUserId String? @map("converted_user_id")
   adminNote       String? @map("admin_note") @db.Text
+
+  /// Why creating the account failed when the website form was submitted (a
+  /// short reason an admin can read), when, and at which step it stopped
+  /// ('account', 'document' or 'link'). Written by the server, never accepted
+  /// from the public form, and cleared as soon as the lead is linked to an
+  /// account. Null on a lead that never failed (or failed before this was
+  /// tracked); the step is also null on a failure recorded before steps were.
+  accountFailureReason String?   @map("account_failure_reason") @db.VarChar(300)
+  accountFailedAt      DateTime? @map("account_failed_at") @db.Timestamptz
+  accountFailureStep   String?   @map("account_failure_step") @db.VarChar(20)
 
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
   updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz

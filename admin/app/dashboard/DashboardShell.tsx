@@ -20,11 +20,13 @@ const NAV_SECTIONS: {
     items: [
       { label: 'Overview', href: '/dashboard', icon: 'gauge' },
       { label: 'Leads', href: '/dashboard/leads', icon: 'users' },
+      { label: 'Account creation', href: '/dashboard/leads/account-creation', icon: 'alert' },
       { label: 'Verification', href: '/dashboard/verification', icon: 'shieldCheck' },
       { label: 'Moderation', href: '/dashboard/moderation', icon: 'flag' },
       { label: 'Reviews', href: '/dashboard/reviews', icon: 'star' },
       { label: 'Sessions', href: '/dashboard/sessions', icon: 'message' },
       { label: 'Payouts', href: '/dashboard/payouts', icon: 'wallet' },
+      { label: 'Money', href: '/dashboard/money', icon: 'trendUp' },
       { label: 'Support', href: '/dashboard/support', icon: 'lifebuoy' },
       { label: 'Announcements', href: '/dashboard/broadcasts', icon: 'megaphone' },
       { label: 'Promotions', href: '/dashboard/promotions', icon: 'wallet' },
@@ -57,6 +59,15 @@ function isActive(pathname: string, href: string) {
     : pathname === href || pathname.startsWith(`${href}/`);
 }
 
+/** The one menu item that matches the address best. Some pages sit under
+ * another item's address (Account creation under Leads), and only the longer
+ * match should light up. */
+function activeHref(pathname: string): string | undefined {
+  return NAV_SECTIONS.flatMap((s) => s.items.map((i) => i.href))
+    .filter((href) => isActive(pathname, href))
+    .sort((a, b) => b.length - a.length)[0];
+}
+
 function NavSections({
   pathname,
   onNavigate,
@@ -85,7 +96,7 @@ function NavSections({
           </p>
           <div className="flex flex-col gap-0.5">
             {section.items.map((item) => {
-              const active = isActive(pathname, item.href);
+              const active = item.href === activeHref(pathname);
               const IconCmp = Icon[item.icon];
               return (
                 <Link

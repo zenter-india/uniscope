@@ -21,5 +21,8 @@ import { SpecializationSuggestionsService } from './specialization-suggestions.s
     AdminSpecializationSuggestionsController,
   ],
   providers: [CustomDegreesService, SpecializationSuggestionsService],
+  // Also used by the public website sign-up (EnrollmentsModule), which has no
+  // logged-in user to call the endpoints above with.
+  exports: [CustomDegreesService, SpecializationSuggestionsService],
 })
 export class ProfileOptionsModule {}

@@ -1,5 +1,5 @@
 import { Type } from 'class-transformer';
-import { IsIn, IsInt } from 'class-validator';
+import { IsIn, IsInt, IsOptional } from 'class-validator';
 
 /**
  * The four fixed recharge packages (product decision, 2026-09-06 — replaces
@@ -53,4 +53,13 @@ export class CreateTopupDto {
   @IsInt()
   @IsIn(RECHARGE_AMOUNTS_MINOR)
   amountMinor!: number;
+
+  /** Where the app is running. Optional: older app builds don't send it, and
+   * then it is worked out from the price (see topup-platform.ts). The website
+   * wallet sends "web". Only used for the admin Money page's breakdown. Kept
+   * as a literal list here so this DTO has no import cycle with
+   * topup-platform.ts (which imports this file for the price list). */
+  @IsOptional()
+  @IsIn(['android', 'ios', 'web'])
+  platform?: 'android' | 'ios' | 'web';
 }
