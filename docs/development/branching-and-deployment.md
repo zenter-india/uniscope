@@ -2,6 +2,7 @@
 
 One page the whole team follows. If this and another doc disagree, this one wins.
 Last verified against GitHub and Railway: 2026-11-15.
+New to the team? Start with the [Uniscope handbook](../handbook/README.md) (product knowledge, SOPs, KT toolkit).
 
 ## The cycle in 30 seconds
 

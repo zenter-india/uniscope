@@ -52,6 +52,7 @@ mobile apps are not part of this release. The website changes are waiting in PR 
   people twice. A fix is planned. Until then, check the Promotions history before
   resending any credit promotion.
 - Merged without a recorded approving review (GitHub shows none on #103).
+- Merged as a **squash** commit, but release PRs are meant to be merge commits (branching guide, section 6). Production now has commits `staging` lacks, so a downmerge PR from production into `staging` is still to do (SOP 02, step 10). Release #80 was squashed the same way.
 
 ## After-release checks
 - [ ] Backend health is OK and the Railway deploy shows Success.
