@@ -3,6 +3,7 @@ import {
   Controller,
   Delete,
   Get,
+  Header,
   HttpCode,
   HttpStatus,
   NotFoundException,
@@ -26,6 +27,7 @@ import {
 } from '../notifications/dto/list-notifications.dto.js';
 import { NotificationsService } from '../notifications/notifications.service.js';
 import { AdminUpdateUserDto } from './dto/admin-update-user.dto.js';
+import { ListStoppedMentorsDto } from './dto/list-stopped-mentors.dto.js';
 import { BulkSetBannedDto } from './dto/bulk-set-banned.dto.js';
 import { ListUsersDto } from './dto/list-users.dto.js';
 import { SetBannedDto } from './dto/set-banned.dto.js';
@@ -181,6 +183,27 @@ export class UsersController {
   @Get('filter-options')
   filterOptions() {
     return this.usersService.listFilterOptions();
+  }
+
+  /** ADMIN: mentors who signed up but never submitted a college ID, with where
+   * they stopped. Declared before the `:id` routes so it isn't taken as an id. */
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @Get('stopped-mentors')
+  stoppedMentors(@Query() query: ListStoppedMentorsDto) {
+    return this.usersService.findStoppedMentors(query);
+  }
+
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @Header('Content-Type', 'text/csv; charset=utf-8')
+  @Header(
+    'Content-Disposition',
+    'attachment; filename="uniscope-mentors-who-stopped.csv"',
+  )
+  @Get('stopped-mentors/export')
+  exportStoppedMentors() {
+    return this.usersService.exportStoppedMentorsCsv();
   }
 
   /** ADMIN bulk ban/unban — see UsersService.bulkSetBanned. Declared before

@@ -21,6 +21,7 @@ import {
 } from '../../common/helpers/display-name.helper.js';
 import { generatePseudonym } from '../../common/helpers/pseudonym.helper.js';
 import {
+  decryptFieldSafe,
   encryptField,
   encryptRealName,
 } from '../../common/helpers/profile-encryption.helper.js';
@@ -35,10 +36,19 @@ import { AvatarService } from '../avatar/avatar.service.js';
 import { profileLevelWhere } from '../universities/college-people.helper.js';
 import type { OnboardingFields } from './user-response.js';
 import { AdminUpdateUserDto } from './dto/admin-update-user.dto.js';
+import { ListStoppedMentorsDto } from './dto/list-stopped-mentors.dto.js';
 import { ListUsersDto } from './dto/list-users.dto.js';
 import { SetBannedDto } from './dto/set-banned.dto.js';
 import { UpdateProfileDto } from './dto/update-profile.dto.js';
 import { UpdateRoleDto } from './dto/update-role.dto.js';
+import {
+  STOPPED_MENTOR_SELECT,
+  STOPPED_MENTOR_WHERE,
+  stoppedMentorsCsv,
+  toStoppedMentor,
+  type StoppedMentorResponse,
+  type StoppedMentorRow,
+} from './stopped-mentors.js';
 
 const ALLOWED_ROLE_TRANSITIONS: Record<UserRole, UserRole[]> = {
   [UserRole.ASPIRANT]: [UserRole.MENTOR],
@@ -48,6 +58,8 @@ const ALLOWED_ROLE_TRANSITIONS: Record<UserRole, UserRole[]> = {
 
 const ADMIN_DEFAULT_LIMIT = 20;
 const ADMIN_MAX_LIMIT = 50;
+const STOPPED_DEFAULT_LIMIT = 100;
+const STOPPED_MAX_LIMIT = 200;
 
 /** Self-deleted accounts can be reactivated by simply logging back in, but
  * only within this window of the deletion — matches the mobile delete
@@ -855,6 +867,76 @@ export class UsersService {
     const nextCursor = hasMore ? data[data.length - 1].id : null;
 
     return { data, nextCursor };
+  }
+
+  /**
+   * ADMIN: mentors who have an account but never submitted a college ID
+   * (verification still Draft), newest first, each with where they stopped in
+   * the app's sign-up. Feeds the "Mentors who stopped in the app" part of the
+   * Account creation page. `total` is the whole list, not just this page.
+   */
+  async findStoppedMentors(query: ListStoppedMentorsDto): Promise<{
+    data: StoppedMentorResponse[];
+    nextCursor: string | null;
+    total: number;
+  }> {
+    const take = Math.min(
+      query.limit ?? STOPPED_DEFAULT_LIMIT,
+      STOPPED_MAX_LIMIT,
+    );
+    const [rows, total] = await Promise.all([
+      this.prisma.user.findMany({
+        where: STOPPED_MENTOR_WHERE,
+        select: STOPPED_MENTOR_SELECT,
+        orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+        take: take + 1,
+        ...(query.cursor && { cursor: { id: query.cursor }, skip: 1 }),
+      }),
+      this.prisma.user.count({ where: STOPPED_MENTOR_WHERE }),
+    ]);
+
+    const hasMore = rows.length > take;
+    const page = hasMore ? rows.slice(0, take) : rows;
+    return {
+      data: await this.toStoppedMentors(page),
+      nextCursor: hasMore ? page[page.length - 1].id : null,
+      total,
+    };
+  }
+
+  /** The same list as a CSV, whole, for follow-up outside the admin panel. */
+  async exportStoppedMentorsCsv(): Promise<string> {
+    const rows = await this.prisma.user.findMany({
+      where: STOPPED_MENTOR_WHERE,
+      select: STOPPED_MENTOR_SELECT,
+      orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+    });
+    return stoppedMentorsCsv(await this.toStoppedMentors(rows));
+  }
+
+  /** Adds what needs decrypting or another table: the real name, the number we
+   * hold (or, for a website sign-up, the one they typed on the form), and
+   * whether the account came from the website. */
+  private async toStoppedMentors(
+    rows: StoppedMentorRow[],
+  ): Promise<StoppedMentorResponse[]> {
+    if (rows.length === 0) return [];
+    const leads = await this.prisma.enrollmentLead.findMany({
+      where: { convertedUserId: { in: rows.map((r) => r.id) } },
+      select: { convertedUserId: true, phone: true },
+    });
+    const leadPhone = new Map<string, string>();
+    for (const lead of leads) {
+      if (lead.convertedUserId) leadPhone.set(lead.convertedUserId, lead.phone);
+    }
+    return rows.map((row) =>
+      toStoppedMentor(row, {
+        realName: decryptFieldSafe(row.profile?.realNameEncrypted),
+        phone:
+          decryptFieldSafe(row.phoneEncrypted) ?? leadPhone.get(row.id) ?? null,
+        fromWebsite: leadPhone.has(row.id),
+      }),
+    );
   }
 
   /**
