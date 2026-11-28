@@ -9,6 +9,7 @@ import { NestFactory } from '@nestjs/core';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { AppModule } from './app.module.js';
 import { SentryExceptionFilter } from './common/filters/sentry-exception.filter.js';
+import { rejectBrotliRequestBodies } from './common/middleware/reject-brotli-request.middleware.js';
 
 async function bootstrap() {
   // rawBody:true exposes request.rawBody — needed to verify the Razorpay
@@ -18,6 +19,12 @@ async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {
     rawBody: true,
   });
+
+  // Refuse Brotli request bodies before any body parser can decode them —
+  // a defence against the Node.js Brotli decoder bug (CVE-2026-111497).
+  // Order matters: Nest's useBodyParser registers the parser immediately,
+  // so this must stay ABOVE it (a test in the middleware's spec checks it).
+  app.use(rejectBrotliRequestBodies);
 
   // Verification document submission sends a base64-encoded photo in the
   // JSON body (simpler than multipart for the mobile Dio client) — bump
@@ -53,8 +60,10 @@ async function bootstrap() {
 
   await app.listen(port);
 
-  new Logger('Bootstrap').log(
-    `Uniscope API listening on http://localhost:${port}/${apiPrefix}`,
-  );
+  const logger = new Logger('Bootstrap');
+  logger.log(`Uniscope API listening on http://localhost:${port}/${apiPrefix}`);
+  // Which Node runtime is actually serving — lets the deploy log answer
+  // "are we on a patched Node?" without a shell on the host.
+  logger.log(`Node.js runtime ${process.version}`);
 }
 void bootstrap();
