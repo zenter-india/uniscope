@@ -6,14 +6,17 @@ Thank you for helping build Uniscope. This guide covers how we work in the monor
 
 1. Read the [README](README.md) and [local setup](docs/development/local-setup.md).
 2. Review [coding standards](docs/standards/coding-standards.md) and [naming conventions](docs/standards/naming-conventions.md).
-3. Follow the [branch strategy](docs/development/branch-strategy.md).
+3. Follow [branching and deployment](docs/development/branching-and-deployment.md).
 
 ## Branch workflow
 
-1. Branch from `develop` (or `main` for hotfixes).
-2. Use prefixes: `feature/`, `bugfix/`, `hotfix/`.
+The full cycle is in [branching and deployment](docs/development/branching-and-deployment.md). In short:
+
+1. Branch from `staging` (website changes: from `stage/web-enrollment-site`; hotfixes: from the production branch).
+2. Use prefixes: `feat/`, `fix/`, `chore/`, `docs/`, `hotfix/`.
 3. Keep PRs focused and small.
-4. Open a PR using the [pull request template](.github/pull_request_template.md).
+4. Open a PR into `staging` using the [pull request template](.github/pull_request_template.md), and name its risk tier.
+5. Squash and merge after the checks pass and a teammate approves.
 
 ## Commit messages
 
