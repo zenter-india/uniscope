@@ -1,12 +1,7 @@
 import Link from 'next/link';
 import { Badge, Card } from '../../../../components/ui';
-import {
-  STEP_COPY,
-  trackFor,
-  type AccountStep,
-  type TrackItem,
-  type TrackState,
-} from './accountSteps';
+import { STEP_COPY, trackFor, type AccountStep } from './accountSteps';
+import { StepTrack } from './StepTrack';
 
 /** One website sign-up that has no account. Dates arrive already formatted by
  * the server page, so the browser and the server always agree on the text. */
@@ -24,60 +19,6 @@ export interface AccountIssue {
   failedAt: string | null;
   /** The step it stopped at. Null on a failure recorded before steps were. */
   step: AccountStep | null;
-}
-
-const MARK: Record<TrackState, { glyph: string; text: string; ring: string }> = {
-  done: {
-    glyph: '✓',
-    text: 'done',
-    ring: 'bg-emerald-600 text-white dark:bg-emerald-500',
-  },
-  failed: {
-    glyph: '✕',
-    text: 'stopped here',
-    ring: 'bg-red-600 text-white dark:bg-red-500',
-  },
-  pending: {
-    glyph: '·',
-    text: 'not reached',
-    ring: 'bg-zinc-200 text-zinc-500 dark:bg-zinc-700 dark:text-zinc-300',
-  },
-};
-
-/** The steps a sign-up goes through, with the one it stopped at marked. */
-function StepTrack({ items }: { items: TrackItem[] }) {
-  return (
-    <ol
-      aria-label="Account creation steps"
-      className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1.5"
-    >
-      {items.map((item) => {
-        const mark = MARK[item.state];
-        return (
-          <li key={item.label} className="flex items-center gap-1.5 text-xs">
-            <span
-              aria-hidden="true"
-              className={`inline-flex h-4 w-4 items-center justify-center rounded-full text-[10px] font-bold leading-none ${mark.ring}`}
-            >
-              {mark.glyph}
-            </span>
-            <span
-              className={
-                item.state === 'failed'
-                  ? 'font-semibold text-red-700 dark:text-red-400'
-                  : item.state === 'pending'
-                    ? 'text-zinc-500 dark:text-zinc-400'
-                    : 'text-zinc-800 dark:text-zinc-200'
-              }
-            >
-              {item.label}
-            </span>
-            <span className="sr-only">({mark.text})</span>
-          </li>
-        );
-      })}
-    </ol>
-  );
 }
 
 export function AccountIssueRow({ issue }: { issue: AccountIssue }) {

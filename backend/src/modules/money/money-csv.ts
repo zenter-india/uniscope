@@ -10,14 +10,17 @@ export const CSV_BOM = String.fromCharCode(0xfeff);
  * shows the original text. */
 const FORMULA_START = /^[=+\-@\t\r]/;
 
-function cell(value: CsvCell): string {
+function cell(value: CsvCell, trusted?: (text: string) => boolean): string {
   if (value === null || value === undefined) return '';
   // Numbers are ours (sums and counts), never user text: written as they are,
   // so a negative amount stays a number instead of being quoted as a formula.
   if (typeof value === 'number') {
     return Number.isFinite(value) ? String(value) : '';
   }
-  const safe = FORMULA_START.test(value) ? `'${value}` : value;
+  // A value the caller has checked is plain (a phone number they need to copy
+  // and dial) is written as it is.
+  const safe =
+    FORMULA_START.test(value) && !trusted?.(value) ? `'${value}` : value;
   return `"${safe.replace(/"/g, '""')}"`;
 }
 
@@ -28,10 +31,13 @@ function cell(value: CsvCell): string {
 export function toCsv<T>(
   rows: readonly T[],
   columns: readonly (readonly [string, (row: T) => CsvCell])[],
+  /** Text that is safe to write without the formula guard, for example a
+   * phone number in "+" and digits only. Everything else is still guarded. */
+  trusted?: (text: string) => boolean,
 ): string {
   const header = columns.map(([name]) => cell(name)).join(',');
   const body = rows
-    .map((row) => columns.map(([, get]) => cell(get(row))).join(','))
+    .map((row) => columns.map(([, get]) => cell(get(row), trusted)).join(','))
     .join('\n');
   return `${CSV_BOM}${header}${body ? `\n${body}` : ''}`;
 }
