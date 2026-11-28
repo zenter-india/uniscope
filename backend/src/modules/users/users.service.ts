@@ -33,6 +33,7 @@ import { PrismaService } from '../../database/prisma/prisma.service.js';
 import { AvatarConfig } from '../avatar/avatar.constants.js';
 import { AvatarService } from '../avatar/avatar.service.js';
 import { profileLevelWhere } from '../universities/college-people.helper.js';
+import type { OnboardingFields } from './user-response.js';
 import { AdminUpdateUserDto } from './dto/admin-update-user.dto.js';
 import { ListUsersDto } from './dto/list-users.dto.js';
 import { SetBannedDto } from './dto/set-banned.dto.js';
@@ -786,7 +787,11 @@ export class UsersService {
   }
 
   async findAllAdmin(query: ListUsersDto): Promise<{
-    data: Array<User & { profile: { specialization: string | null } | null }>;
+    data: Array<
+      User & {
+        profile: ({ specialization: string | null } & OnboardingFields) | null;
+      }
+    >;
     nextCursor: string | null;
   }> {
     const take = Math.min(query.limit ?? ADMIN_DEFAULT_LIMIT, ADMIN_MAX_LIMIT);
@@ -821,8 +826,20 @@ export class UsersService {
 
     const rows = await this.prisma.user.findMany({
       where,
-      // Just the one profile column the list shows (the person's specialization).
-      include: { profile: { select: { specialization: true } } },
+      // Only what the list needs from the profile: the person's
+      // specialization, plus the four onboarding columns that tell whether the
+      // signup wizard was ever finished (see isProfileIncomplete).
+      include: {
+        profile: {
+          select: {
+            specialization: true,
+            qualification: true,
+            stream: true,
+            state: true,
+            city: true,
+          },
+        },
+      },
       orderBy: adminOrderBy(query.sortBy, query.sortDir, {
         joined: 'createdAt',
         name: 'displayName',

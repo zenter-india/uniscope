@@ -193,7 +193,13 @@ export default async function UsersPage({
             items={VERIFICATION_TABS}
             current={verificationStatus as (typeof VERIFICATION_TABS)[number]}
             hrefFor={(tab) => hrefFor(current, { verificationStatus: tab })}
-            labelFor={(tab) => (tab === 'ALL' ? 'Any verification' : tab.replace('_', ' '))}
+            labelFor={(tab) =>
+              tab === 'ALL'
+                ? 'Any verification'
+                : tab === 'DRAFT'
+                  ? 'Draft / not submitted'
+                  : tab.replace('_', ' ')
+            }
           />
           <Link
             href={hrefFor(current, { banned: !current.banned })}

@@ -8,6 +8,7 @@ import { DangerZone } from './DangerZone';
 import { EditUserPanel } from './EditUserPanel';
 import { WalletPanel } from './WalletPanel';
 import type { LedgerPage } from './actions';
+import { accountStatus } from '../../../../lib/account-status';
 
 interface AdminUserDetail {
   id: string;
@@ -18,6 +19,8 @@ interface AdminUserDetail {
   phone?: string | null;
   role: 'ASPIRANT' | 'MENTOR' | 'ADMIN';
   verificationStatus: string;
+  /** Onboarding never finished (absent on an older backend). */
+  profileIncomplete?: boolean;
   isActive: boolean;
   isBanned: boolean;
   lastActiveAt: string | null;
@@ -223,10 +226,12 @@ export default async function UserDetailPage({
               </span>
               <span
                 className={`rounded-full px-2 py-0.5 text-xs font-medium ${
-                  VERIFICATION_COLORS[user.verificationStatus] ?? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300'
+                  (accountStatus(user).raw
+                    ? VERIFICATION_COLORS[user.verificationStatus]
+                    : undefined) ?? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300'
                 }`}
               >
-                {user.verificationStatus}
+                {accountStatus(user).label}
               </span>
               {user.isBanned && (
                 <span className="rounded-full bg-red-100 dark:bg-red-500/15 px-2 py-0.5 text-xs font-medium text-red-700 dark:text-red-400">

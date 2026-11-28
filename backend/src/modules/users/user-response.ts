@@ -93,6 +93,8 @@ export interface AdminUserDetail {
   phone: string | null;
   role: User['role'];
   verificationStatus: User['verificationStatus'];
+  /** True when onboarding was never finished — see isProfileIncomplete. */
+  profileIncomplete: boolean;
   isActive: boolean;
   isBanned: boolean;
   lastActiveAt: Date | null;
@@ -242,6 +244,7 @@ export function toAdminUserDetail(
           updatedAt: p.updatedAt,
         }
       : null,
+    profileIncomplete: isProfileIncomplete(p),
     wallet: user.wallet ? { balanceMinor: user.wallet.balanceMinor } : null,
     verificationRequests: (user.verificationRequests ?? []).map((r) => ({
       id: r.id,
@@ -264,15 +267,51 @@ export function toAdminUserDetail(
  * specialization (their actual one, e.g. "Community Medicine" — not their UG/PG
  * level). Built from the list query, which loads only that one profile column,
  * so nothing else on the profile can leak into the list. */
-export type AdminListUser = PublicUser & { specialization: string | null };
+export type AdminListUser = PublicUser & {
+  specialization: string | null;
+  /** True when the onboarding wizard was never finished — see
+   * {@link isProfileIncomplete}. */
+  profileIncomplete: boolean;
+};
+
+/** The profile columns the onboarding wizard saves together at its last step
+ * (aspirant_onboarding_screen / mentor_onboarding_screen). */
+export type OnboardingFields = {
+  qualification?: string | null;
+  stream?: string | null;
+  state?: string | null;
+  city?: string | null;
+};
+
+/**
+ * True when the person never finished onboarding: no profile row, or none of
+ * qualification / stream / state / city set. Mirrors the mobile app's own
+ * check in otp_screen.dart (all four empty = the wizard was abandoned). The
+ * account itself is created at OTP verification, before any of this is asked,
+ * so an abandoned signup is a normal DRAFT account with an empty profile.
+ */
+export function isProfileIncomplete(
+  profile: OnboardingFields | null | undefined,
+): boolean {
+  if (!profile) return true;
+  return ![
+    profile.qualification,
+    profile.stream,
+    profile.state,
+    profile.city,
+  ].some((v) => typeof v === 'string' && v.trim() !== '');
+}
 
 export function toAdminListUser(
-  user: User & { profile?: { specialization: string | null } | null },
+  user: User & {
+    profile?: ({ specialization: string | null } & OnboardingFields) | null;
+  },
 ): AdminListUser {
   const { profile, ...rest } = user;
   return {
     ...toPublicUser(rest),
     specialization: profile?.specialization?.trim() || null,
+    profileIncomplete: isProfileIncomplete(profile),
   };
 }
 
