@@ -1,10 +1,11 @@
 'use client';
 
 import { useState, useTransition } from 'react';
-import { Badge, Button, ButtonLink, Table, toneFor } from '../../../components/ui';
+import { Badge, Button, ButtonLink, Table } from '../../../components/ui';
 import { ConfirmButton } from '../../../components/ConfirmButton';
 import type { RowSelection } from '../../../components/InfiniteList';
 import { toast } from '../../../lib/toast';
+import { accountStatus } from '../../../lib/account-status';
 import { setUserBanned } from './actions';
 
 export interface UserRowData {
@@ -15,6 +16,8 @@ export interface UserRowData {
    * Null when they have none; absent from an older backend. */
   specialization?: string | null;
   verificationStatus: string;
+  /** Onboarding never finished (absent on an older backend). */
+  profileIncomplete?: boolean;
   isBanned: boolean;
   isActive: boolean;
   createdAt: string;
@@ -83,7 +86,10 @@ export function UserRow({
         )}
       </Table.Cell>
       <Table.Cell>
-        <Badge tone={toneFor(user.verificationStatus)}>{user.verificationStatus}</Badge>
+        {(() => {
+          const status = accountStatus(user);
+          return <Badge tone={status.tone}>{status.label}</Badge>;
+        })()}
       </Table.Cell>
       <Table.Cell className="whitespace-nowrap text-zinc-500 dark:text-zinc-400">
         {new Date(user.createdAt).toLocaleDateString()}

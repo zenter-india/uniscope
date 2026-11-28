@@ -1,4 +1,4 @@
-import { toAdminListUser } from './user-response';
+import { isProfileIncomplete, toAdminListUser } from './user-response';
 
 const baseUser = {
   id: 'u1',
@@ -62,5 +62,46 @@ describe('toAdminListUser — the Users list row', () => {
     ]) {
       expect(json).not.toContain(secret);
     }
+  });
+});
+
+describe('isProfileIncomplete — was onboarding ever finished?', () => {
+  it('is incomplete with no profile row at all', () => {
+    expect(isProfileIncomplete(null)).toBe(true);
+    expect(isProfileIncomplete(undefined)).toBe(true);
+  });
+
+  it('is incomplete when qualification, stream, state and city are all empty', () => {
+    expect(isProfileIncomplete({})).toBe(true);
+    expect(
+      isProfileIncomplete({
+        qualification: null,
+        stream: '  ',
+        state: '',
+        city: null,
+      }),
+    ).toBe(true);
+  });
+
+  it('is complete as soon as any one of the four is saved', () => {
+    expect(isProfileIncomplete({ stream: 'Medical' })).toBe(false);
+    expect(isProfileIncomplete({ city: 'Chennai' })).toBe(false);
+    expect(isProfileIncomplete({ qualification: 'MBBS' })).toBe(false);
+    expect(isProfileIncomplete({ state: 'Kerala' })).toBe(false);
+  });
+
+  it('shows up on the list row', () => {
+    expect(
+      toAdminListUser({
+        ...baseUser,
+        profile: { specialization: null },
+      } as never).profileIncomplete,
+    ).toBe(true);
+    expect(
+      toAdminListUser({
+        ...baseUser,
+        profile: { specialization: null, stream: 'Medical' },
+      } as never).profileIncomplete,
+    ).toBe(false);
   });
 });
